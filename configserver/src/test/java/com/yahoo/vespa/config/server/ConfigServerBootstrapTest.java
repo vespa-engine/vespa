@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_SEPARATE_THREAD;
-import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.INITIALIZE_ONLY;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_FILE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
@@ -74,9 +72,8 @@ public class ConfigServerBootstrapTest {
         provisioner.allocations().values().iterator().next().remove(0);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
-                                                                    versionState, stateMonitor,
-                                                                    vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -105,9 +102,8 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer,
-                                                                    versionState, stateMonitor,
-                                                                    vipStatus, INITIALIZE_ONLY, VIP_STATUS_FILE);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
+                                                                    stateMonitor, vipStatus, VIP_STATUS_FILE);
         assertTrue(vipStatus.isInRotation()); // default is in rotation when using status file
 
         bootstrap.start();
@@ -137,8 +133,7 @@ public class ConfigServerBootstrapTest {
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor,
-                                                                    vipStatus, INITIALIZE_ONLY, VIP_STATUS_PROGRAMMATICALLY);
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
@@ -181,8 +176,8 @@ public class ConfigServerBootstrapTest {
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus,
-                                                                    BOOTSTRAP_IN_SEPARATE_THREAD, VIP_STATUS_PROGRAMMATICALLY);
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");

@@ -36,8 +36,8 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         auto msg = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), dId, 100);
 
         op = std::make_unique<RemoveOperation>(
-                distributor_component(),
-                distributor_component(),
+                node_context(),
+                operation_context(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().

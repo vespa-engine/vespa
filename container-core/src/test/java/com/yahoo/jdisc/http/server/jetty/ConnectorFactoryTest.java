@@ -31,8 +31,10 @@ public class ConnectorFactoryTest {
             JettyConnectionLogger connectionLogger = new JettyConnectionLogger(
                     new ServerConfig.ConnectionLog.Builder().enabled(false).build(),
                     new VoidConnectionLog());
+            DummyMetric metric = new DummyMetric();
+            var connectionMetricAggregator = new ConnectionMetricAggregator(new ServerConfig(new ServerConfig.Builder()), metric);
             JDiscServerConnector connector =
-                    (JDiscServerConnector)factory.createConnector(new DummyMetric(), server, connectionLogger);
+                    (JDiscServerConnector)factory.createConnector(metric, server, connectionLogger, connectionMetricAggregator);
             server.addConnector(connector);
             server.setHandler(new HelloWorldHandler());
             server.start();

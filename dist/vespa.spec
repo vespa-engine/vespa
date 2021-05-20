@@ -28,17 +28,30 @@ Source0:        vespa-%{version}.tar.gz
 
 %if 0%{?centos}
 BuildRequires: epel-release
-%if 0%{?el7}
+%if 0%{?el7} && ! 0%{?amzn2}
 BuildRequires: centos-release-scl
 %endif
 %endif
 %if 0%{?el7}
+%if 0%{?amzn2}
+BuildRequires: gcc10-c++
+BuildRequires: libatomic10-devel
+BuildRequires: gcc10-binutils
+BuildRequires: maven
+%define _use_mvn_wrapper 1
+%define _java_home /usr/lib/jvm/java-11-amazon-corretto.%{?_arch}
+BuildRequires: python3-pytest
+%else
 BuildRequires: devtoolset-9-gcc-c++
 BuildRequires: devtoolset-9-libatomic-devel
 BuildRequires: devtoolset-9-binutils
 BuildRequires: rh-maven35
 %define _devtoolset_enable /opt/rh/devtoolset-9/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
+BuildRequires: python36-pytest
+%endif
+BuildRequires: vespa-pybind11-devel
+BuildRequires: python3-devel
 %endif
 %if 0%{?el8}
 %if 0%{?centos}
@@ -55,10 +68,16 @@ BuildRequires: gcc-toolset-9-binutils
 %define _devtoolset_enable /opt/rh/gcc-toolset-9/enable
 %endif
 BuildRequires: maven
+BuildRequires: pybind11-devel
+BuildRequires: python3-pytest
+BuildRequires: python36-devel
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
 BuildRequires: libatomic
+BuildRequires: pybind11-devel
+BuildRequires: python3-pytest
+BuildRequires: python3-devel
 %endif
 %if 0%{?el7}
 BuildRequires: cmake3
@@ -70,9 +89,13 @@ BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-openssl-devel >= 1.1.1k-1
 %if 0%{?centos}
-BuildRequires: vespa-protobuf-devel = 3.7.0-4
+%if 0%{?amzn2}
+BuildRequires: vespa-protobuf-devel = 3.7.0-5.amzn2
 %else
-BuildRequires: vespa-protobuf-devel = 3.7.0-5
+BuildRequires: vespa-protobuf-devel = 3.7.0-4.el7
+%endif
+%else
+BuildRequires: vespa-protobuf-devel = 3.7.0-5.el7
 %endif
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
@@ -88,7 +111,7 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-protobuf-devel = 3.7.0-5
+BuildRequires: vespa-protobuf-devel = 3.7.0-5.el8
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?fedora}
@@ -127,23 +150,30 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
+%if 0%{?el7} && 0%{?amzn2}
+BuildRequires: vespa-xxhash-devel = 0.8.0
+BuildRequires: vespa-openblas-devel = 0.3.12
+BuildRequires: vespa-re2-devel = 20190801
+%else
 BuildRequires: xxhash-devel >= 0.8.0
 BuildRequires: openblas-devel
-BuildRequires: zlib-devel
 BuildRequires: re2-devel
+%endif
+BuildRequires: zlib-devel
 %if ! 0%{?el7}
 BuildRequires: libicu-devel
 %endif
+%if 0%{?el7} && 0%{?amzn2}
+BuildRequires: java-11-amazon-corretto
+%else
 BuildRequires: java-11-openjdk-devel
+%endif
 BuildRequires: rpm-build
 BuildRequires: make
 BuildRequires: git
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
-%if 0%{?centos}
-Requires: epel-release
-%endif
 Requires: which
 Requires: initscripts
 Requires: libcgroup-tools
@@ -166,18 +196,13 @@ Requires: perl-URI
 %if ! 0%{?el7}
 Requires: valgrind
 %endif
+%if 0%{?el7} && 0%{?amzn2}
+Requires: vespa-xxhash = 0.8.0
+%else
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
-%if 0%{?el8}
-Requires: openblas
-%else
-Requires: openblas-serial
 %endif
 Requires: zlib
-Requires: re2
-%if ! 0%{?el7}
-Requires: libicu
-%endif
 Requires: perf
 Requires: gdb
 Requires: nc
@@ -187,77 +212,63 @@ Requires: unzip
 Requires: zstd
 %if 0%{?el7}
 Requires: llvm7.0
-Requires: vespa-icu >= 65.1.0-1
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-openssl >= 1.1.1k-1
-%if 0%{?centos}
-Requires: vespa-protobuf = 3.7.0-4
-%else
-Requires: vespa-protobuf = 3.7.0-5
-%endif
+%if ! 0%{?amzn2}
 Requires: vespa-telegraf >= 1.1.1-1
-Requires: vespa-valgrind >= 3.16.0-1
-Requires: vespa-zstd >= 1.4.5-2
+Requires: vespa-valgrind >= 3.17.0-1
+%endif
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
+%if 0%{?amzn2}
+%define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include
+%else
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
+%endif
 %endif
 %if 0%{?el8}
 %if 0%{?_centos_stream}
-Requires: llvm-libs >= 11.0.0
 %define _vespa_llvm_version 11
 %else
-Requires: llvm-libs >= 10.0.1
 %define _vespa_llvm_version 10
 %endif
-Requires: openssl-libs
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-protobuf = 3.7.0-5
-Requires: vespa-zstd >= 1.4.5-2
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?fedora}
-Requires: openssl-libs
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-zstd >= 1.4.5-2
 %if 0%{?fc32}
-Requires: protobuf
-Requires: llvm-libs >= 10.0.0
 %define _vespa_llvm_version 10
 %endif
 %if 0%{?fc33}
-Requires: protobuf
-Requires: llvm-libs >= 11.0.0
 %define _vespa_llvm_version 11
 %endif
 %if 0%{?fc34}
-Requires: protobuf
-Requires: llvm-libs >= 12.0.0
 %define _vespa_llvm_version 12
 %endif
 %if 0%{?fc35}
-Requires: protobuf
-Requires: llvm-libs >= 12.0.0
 %define _vespa_llvm_version 12
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
+%ifnarch x86_64
+%define _skip_vespamalloc 1
+%endif
 Requires: %{name}-base = %{version}-%{release}
-Requires: %{name}-base-libs = %{version}-%{release}
+Requires: %{name}-libs = %{version}-%{release}
 Requires: %{name}-clients = %{version}-%{release}
 Requires: %{name}-config-model-fat = %{version}-%{release}
 Requires: %{name}-jars = %{version}-%{release}
+%if ! 0%{?_skip_vespamalloc:1}
 Requires: %{name}-malloc = %{version}-%{release}
+%endif
 Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function. Exclude automated reqires for libraries in /opt/vespa-deps/lib64.
+%if 0%{?amzn2}
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime|openblas|re2|xxhash)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
+%else
 %global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
+%endif
 
 
 %description
@@ -268,7 +279,11 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
+%if 0%{?el7} && 0%{?amzn2}
+Requires: java-11-amazon-corretto
+%else
 Requires: java-11-openjdk-devel
+%endif
 Requires: perl
 Requires: perl-Getopt-Long
 Requires(pre): shadow-utils
@@ -279,9 +294,16 @@ Vespa - The open big data serving engine - base
 
 %package base-libs
 
-Summary: Vespa - The open big data serving engine - base C++ libs
+Summary: Vespa - The open big data serving engine - base C++ libraries
 
+%if 0%{?centos}
+Requires: epel-release
+%endif
+%if 0%{?amzn2}
+Requires: vespa-xxhash = 0.8.0
+%else
 Requires: xxhash-libs >= 0.8.0
+%endif
 %if 0%{?el7}
 Requires: vespa-openssl >= 1.1.1k-1
 %else
@@ -289,10 +311,75 @@ Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-libzstd >= 1.4.5-2
+%if 0%{?el8}
+Requires: openblas
+%else
+%if 0%{?amzn2}
+Requires: vespa-openblas
+%else
+Requires: openblas-serial
+%endif
+%endif
+%if 0%{?amzn2}
+Requires: vespa-re2 = 20190801
+%else
+Requires: re2
+%endif
 
 %description base-libs
 
-Vespa - The open big data serving engine - base C++ libs
+Vespa - The open big data serving engine - base C++ libraries
+
+%package libs
+
+Summary: Vespa - The open big data serving engine - C++ libraries
+
+Requires: %{name}-base-libs = %{version}-%{release}
+%if 0%{?el7}
+Requires: llvm7.0-libs
+Requires: vespa-icu >= 65.1.0-1
+Requires: vespa-openssl >= 1.1.1k-1
+%if 0%{?centos}
+%if 0%{?amzn2}
+Requires: vespa-protobuf = 3.7.0-5.amzn2
+%else
+Requires: vespa-protobuf = 3.7.0-4.el7
+%endif
+%else
+Requires: vespa-protobuf = 3.7.0-5.el7
+%endif
+%else
+Requires: libicu
+Requires: openssl-libs
+%endif
+%if 0%{?el8}
+%if 0%{?_centos_stream}
+Requires: llvm-libs >= 11.0.0
+%else
+Requires: llvm-libs >= 10.0.1
+%endif
+Requires: vespa-protobuf = 3.7.0-5.el8
+%endif
+%if 0%{?fedora}
+Requires: protobuf
+%if 0%{?fc32}
+Requires: llvm-libs >= 10.0.0
+%endif
+%if 0%{?fc33}
+Requires: llvm-libs >= 11.0.0
+%endif
+%if 0%{?fc34}
+Requires: llvm-libs >= 12.0.0
+%endif
+%if 0%{?fc35}
+Requires: llvm-libs >= 12.0.0
+%endif
+%endif
+Requires: vespa-onnxruntime = 1.7.1
+
+%description libs
+
+Vespa - The open big data serving engine - C++ libraries
 
 %package clients
 
@@ -329,6 +416,7 @@ Summary: Vespa - The open big data serving engine - shared java jar files
 
 Vespa - The open big data serving engine - shared java jar files
 
+%if ! 0%{?_skip_vespamalloc:1}
 %package malloc
 
 Summary: Vespa - The open big data serving engine - malloc library
@@ -336,6 +424,7 @@ Summary: Vespa - The open big data serving engine - malloc library
 %description malloc
 
 Vespa - The open big data serving engine - malloc library
+%endif
 
 %package tools
 
@@ -364,14 +453,21 @@ source %{_devtoolset_enable} || true
 source %{_rhmaven35_enable} || true
 %endif
 
+%if 0%{?_java_home:1}
+export JAVA_HOME=%{?_java_home}
+%else
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+%endif
 export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
 
-sh bootstrap.sh java
-mvn --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+%if 0%{?_use_mvn_wrapper}
+mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
+%endif
+%{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
+%{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
-       -DJAVA_HOME=/usr/lib/jvm/java-11-openjdk \
+       -DJAVA_HOME=$JAVA_HOME \
        -DCMAKE_PREFIX_PATH=%{_vespa_deps_prefix} \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
@@ -489,7 +585,9 @@ fi
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa
+%if ! 0%{?_skip_vespamalloc:1}
 %exclude %{_prefix}/etc/vespamalloc.conf
+%endif
 %{_prefix}/include
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
@@ -523,14 +621,6 @@ fi
 %{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
 %{_prefix}/lib/perl5
-%{_prefix}/lib64
-%exclude %{_prefix}/lib64/libfastos.so
-%exclude %{_prefix}/lib64/libfnet.so
-%exclude %{_prefix}/lib64/libstaging_vespalib.so
-%exclude %{_prefix}/lib64/libvespadefaults.so
-%exclude %{_prefix}/lib64/libvespalib.so
-%exclude %{_prefix}/lib64/libvespalog.so
-%exclude %{_prefix}/lib64/vespa
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa/common-env.sh
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
@@ -589,6 +679,22 @@ fi
 %{_prefix}/lib64/libvespadefaults.so
 %{_prefix}/lib64/libvespalib.so
 %{_prefix}/lib64/libvespalog.so
+
+%files libs
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
+%dir %{_prefix}
+%{_prefix}/lib64
+%exclude %{_prefix}/lib64/libfastos.so
+%exclude %{_prefix}/lib64/libfnet.so
+%exclude %{_prefix}/lib64/libstaging_vespalib.so
+%exclude %{_prefix}/lib64/libvespadefaults.so
+%exclude %{_prefix}/lib64/libvespalib.so
+%exclude %{_prefix}/lib64/libvespalog.so
+%if ! 0%{?_skip_vespamalloc:1}
+%exclude %{_prefix}/lib64/vespa
+%endif
 
 %files clients
 %if %{_defattr_is_vespa_vespa}
@@ -651,8 +757,6 @@ fi
 %{_prefix}/lib/jars/hk2-*.jar
 %{_prefix}/lib/jars/hosted-zone-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jackson-*.jar
-%{_prefix}/lib/jars/jakarta.activation-api-*.jar
-%{_prefix}/lib/jars/jakarta.xml.bind-api-*.jar
 %{_prefix}/lib/jars/javassist-*.jar
 %{_prefix}/lib/jars/javax.*.jar
 %{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
@@ -681,6 +785,7 @@ fi
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/standalone-container.sh
 
+%if ! 0%{?_skip_vespamalloc:1}
 %files malloc
 %if %{_defattr_is_vespa_vespa}
 %defattr(-,%{_vespa_user},%{_vespa_group},-)
@@ -690,6 +795,7 @@ fi
 %config(noreplace) %{_prefix}/etc/vespamalloc.conf
 %dir %{_prefix}/lib64
 %{_prefix}/lib64/vespa
+%endif
 
 %files tools
 %if %{_defattr_is_vespa_vespa}

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.test.ManualClock;
@@ -65,7 +66,9 @@ class ModelTestUtils {
             mock(Metric.class),
             new TestTimer(),
             new DummyAntiServiceMonitor());
-    private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clusterControllerClientFactory, applicationApiFactory()),
+    private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, Zone.defaultZone()),
+                                                                                         clusterControllerClientFactory,
+                                                                                         applicationApiFactory()),
                                                                    clusterControllerClientFactory,
                                                                    statusService,
                                                                    serviceMonitor,

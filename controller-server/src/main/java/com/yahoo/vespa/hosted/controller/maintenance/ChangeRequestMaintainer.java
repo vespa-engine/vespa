@@ -31,14 +31,12 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
 
     private final Logger logger = Logger.getLogger(ChangeRequestMaintainer.class.getName());
     private final ChangeRequestClient changeRequestClient;
-    private final SystemName system;
     private final CuratorDb curator;
     private final NodeRepository nodeRepository;
 
     public ChangeRequestMaintainer(Controller controller, Duration interval) {
         super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.changeRequestClient = controller.serviceRegistry().changeRequestClient();
-        this.system = controller.system();
         this.curator = controller.curator();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
@@ -51,21 +49,8 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
 
         logger.fine(() -> "Found requests: " + changeRequests);
         storeChangeRequests(changeRequests);
-        if (system.equals(SystemName.main)) {
-            approveChanges(changeRequests);
-        }
 
         return true;
-    }
-
-    private void approveChanges(List<ChangeRequest> changeRequests) {
-        var unapprovedRequests = changeRequests
-                .stream()
-                .filter(changeRequest -> changeRequest.getApproval() == ChangeRequest.Approval.REQUESTED)
-                .collect(Collectors.toList());
-
-        logger.fine(() -> "Approving " + unapprovedRequests);
-        changeRequestClient.approveChangeRequests(unapprovedRequests);
     }
 
     private void storeChangeRequests(List<ChangeRequest> changeRequests) {

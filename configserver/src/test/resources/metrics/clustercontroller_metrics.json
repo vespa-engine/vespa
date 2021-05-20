@@ -1,0 +1,33 @@
+{
+  "services": [
+    {
+      "name": "vespa.container-clustercontroller",
+      "timestamp": 1619529109,
+      "metrics": [
+        {
+          "values": {
+            "cluster-controller.resource_usage.disk_limit.last": 0.75,
+            "cluster-controller.resource_usage.nodes_above_limit.last": 0,
+            "cluster-controller.resource_usage.max_memory_utilization.last": 0.8907474348626,
+            "cluster-controller.resource_usage.max_disk_utilization.last": 0.8351705494609,
+            "cluster-controller.cluster-state-change.count": 2,
+            "cluster-controller.resource_usage.memory_limit.last": 0.8
+          },
+          "dimensions": {
+            "clustertype": "content",
+            "clusterid": "content_cluster_id"
+          }
+        },
+        {
+          "values": {
+            "some.other.metrics": 1
+          },
+          "dimensions": {
+            "clustertype": "admin",
+            "clusterid": "cluster-controllers"
+          }
+        }
+      ]
+    }
+  ]
+}

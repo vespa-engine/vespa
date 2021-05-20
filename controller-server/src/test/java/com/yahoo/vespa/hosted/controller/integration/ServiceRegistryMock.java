@@ -9,6 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
@@ -66,8 +67,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
-    private final RoleService roleService = new NoopRoleService();
-    private final BillingController billingController = new MockBillingController();
+    private final RoleService roleService = new MockRoleService();
+    private final BillingController billingController = new MockBillingController(clock);
     private final ContainerRegistryMock containerRegistry = new ContainerRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final ArchiveService archiveService = new MockArchiveService();

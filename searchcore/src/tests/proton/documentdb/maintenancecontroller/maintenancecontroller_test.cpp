@@ -264,53 +264,24 @@ public:
     bool waitIdle(vespalib::duration timeout);
 };
 
-
-class MyFrozenBucket
-{
-    IBucketFreezer &_freezer;
-    BucketId _bucketId;
-public:
-    typedef std::unique_ptr<MyFrozenBucket> UP;
-
-    MyFrozenBucket(IBucketFreezer &freezer,
-                   const BucketId &bucketId)
-        : _freezer(freezer),
-          _bucketId(bucketId)
-    {
-        _freezer.freezeBucket(_bucketId);
-    }
-
-    ~MyFrozenBucket()
-    {
-        _freezer.thawBucket(_bucketId);
-    }
-};
-
 struct MySimpleJob : public BlockableMaintenanceJob
 {
     vespalib::CountDownLatch _latch;
     size_t                   _runCnt;
-    bool                     _stopped;
 
     MySimpleJob(vespalib::duration delay,
                 vespalib::duration interval,
                 uint32_t finishCount)
         : BlockableMaintenanceJob("my_job", delay, interval),
           _latch(finishCount),
-          _runCnt(0),
-          _stopped(false)
-    {
-    }
+          _runCnt(0)
+    { }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     bool run() override {
         LOG(info, "MySimpleJob::run()");
         _latch.countDown();
         ++_runCnt;
         return true;
-    }
-    void onStop() override {
-        BlockableMaintenanceJob::onStop();
-        _stopped = true;
     }
 };
 
@@ -333,13 +304,11 @@ struct MySplitJob : public MySimpleJob
 struct MyLongRunningJob : public BlockableMaintenanceJob
 {
     vespalib::Gate _firstRun;
-    bool           _stopped;
 
     MyLongRunningJob(vespalib::duration delay,
                      vespalib::duration interval)
         : BlockableMaintenanceJob("long_running_job", delay, interval),
-          _firstRun(),
-          _stopped(false)
+          _firstRun()
     {
     }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
@@ -347,10 +316,6 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
         _firstRun.countDown();
         usleep(10000);
         return false;
-    }
-    void onStop() override {
-        BlockableMaintenanceJob::onStop();
-        _stopped = true;
     }
 };
 
@@ -405,7 +370,7 @@ public:
     void removeDocs(const test::UserDocuments &docs, Timestamp timestamp);
 
     void
-    setPruneConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneConfig)
+    setPruneConfig(const DocumentDBPruneConfig &pruneConfig)
     {
         auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
                            pruneConfig,
@@ -855,7 +820,7 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _fh, _mc,
+        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _fh,
                                             _bucketCreateNotifier, makeBucketSpace(), _fh, _fh,
                                             _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
@@ -929,57 +894,6 @@ MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs, Timest
     }
 }
 
-TEST_F("require that bucket move controller is active", MaintenanceControllerFixture)
-{
-    f._builder.createDocs(1, 1, 4); // 3 docs
-    f._builder.createDocs(2, 4, 6); // 2 docs
-    test::UserDocuments readyDocs(f._builder.getDocs());
-    BucketId bucketId1(readyDocs.getBucket(1));
-    BucketId bucketId2(readyDocs.getBucket(2));
-    f.insertDocs(readyDocs, f._ready);
-    f._builder.clearDocs();
-    f._builder.createDocs(3, 1, 3); // 2 docs
-    f._builder.createDocs(4, 3, 6); // 3 docs
-    test::UserDocuments notReadyDocs(f._builder.getDocs());
-    BucketId bucketId4(notReadyDocs.getBucket(4));
-    f.insertDocs(notReadyDocs, f._notReady);
-    f._builder.clearDocs();
-    f.notifyClusterStateChanged();
-    EXPECT_TRUE(f._executor.isIdle());
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-    f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(0u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(0u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(10u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._notReady.getDocumentCount());
-    f._calc->addReady(bucketId1);
-    f.notifyClusterStateChanged();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(3u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(3u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(7u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(7u, f._notReady.getDocumentCount());
-    MyFrozenBucket::UP frozen2(new MyFrozenBucket(f._mc, bucketId2));
-    f._calc->addReady(bucketId2);
-    f._calc->addReady(bucketId4);
-    f.notifyClusterStateChanged();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(6u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(6u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(4u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(4u, f._notReady.getDocumentCount());
-    frozen2.reset();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(8u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(8u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(2u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(2u, f._notReady.getDocumentCount());
-}
-
 TEST_F("require that document pruner is active", MaintenanceControllerFixture)
 {
     uint64_t tshz = 1000000;
@@ -1004,23 +918,15 @@ TEST_F("require that document pruner is active", MaintenanceControllerFixture)
     ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    MyFrozenBucket::UP frozen3(new MyFrozenBucket(f._mc, bucketId3));
-    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(200ms, 900s));
-    for (uint32_t i = 0; i < 6; ++i) {
-        std::this_thread::sleep_for(100ms);
-        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-        if (f._removed.getNumUsedLids() != 10u)
-            break;
-    }
-    EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    frozen3.reset();
+    f.setPruneConfig(DocumentDBPruneConfig(200ms, 900s));
     for (uint32_t i = 0; i < 600; ++i) {
         std::this_thread::sleep_for(100ms);
         ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
         if (f._removed.getNumUsedLids() != 10u)
             break;
     }
+    f._bucketExecutor.sync();
+    f._executor.sync();
     EXPECT_EQUAL(5u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(5u, f._removed.getDocumentCount());
 }
@@ -1054,74 +960,6 @@ TEST_F("require that periodic session prunings are scheduled",
     ASSERT_TRUE(f._gsp.isInvoked);
 }
 
-TEST_F("require that active bucket is not moved until de-activated", MaintenanceControllerFixture)
-{
-    f._builder.createDocs(1, 1, 4); // 3 docs
-    f._builder.createDocs(2, 4, 6); // 2 docs
-    test::UserDocuments readyDocs(f._builder.getDocs());
-    f.insertDocs(readyDocs, f._ready);
-    f._builder.clearDocs();
-    f._builder.createDocs(3, 1, 3); // 2 docs
-    f._builder.createDocs(4, 3, 6); // 3 docs
-    test::UserDocuments notReadyDocs(f._builder.getDocs());
-    f.insertDocs(notReadyDocs, f._notReady);
-    f._builder.clearDocs();
-
-    // bucket 1 (active) should be moved from ready to not ready according to cluster state
-    f._calc->addReady(readyDocs.getBucket(2));
-    f._ready.setBucketState(readyDocs.getBucket(1), true);
-
-    f.notifyClusterStateChanged();
-    EXPECT_TRUE(f._executor.isIdle());
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-
-    f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-
-    // de-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), false);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::NOT_ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(2u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(2u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(8u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(8u, f._notReady.getDocumentCount());
-
-    // re-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), true);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-
-    // de-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), false);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::NOT_ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(2u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(2u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(8u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(8u, f._notReady.getDocumentCount());
-
-    // re-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), true);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-}
-
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
 {
     auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 3);
@@ -1144,39 +982,6 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
     bool done = myJob._latch.await(TIMEOUT);
     EXPECT_TRUE(done);
     EXPECT_EQUAL(0u, myJob._latch.getCount());
-}
-
-TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
-        MaintenanceControllerFixture)
-{
-    auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 1);
-    MySimpleJob &myJob1 = *job1;
-    auto job2 = std::make_unique< MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
-    MySimpleJob &myJob2 = *job2;
-    f._mc.registerJobInMasterThread(std::move(job1));
-    f._mc.registerJobInMasterThread(std::move(job2));
-    f._injectDefaultJobs = false;
-    f.startMaintenance();
-
-    myJob1.block();
-    EXPECT_TRUE(myJob1.isBlocked());
-    EXPECT_FALSE(myJob2.isBlocked());
-    IBucketFreezer &ibf = f._mc;
-    ibf.freezeBucket(BucketId(1));
-    ibf.thawBucket(BucketId(1));
-    EXPECT_TRUE(myJob1.isBlocked());
-    ibf.freezeBucket(BucketId(1));
-    IFrozenBucketHandler & fbh = f._mc;
-    // This is to simulate contention, as that is required for notification on thawed buckets.
-    EXPECT_FALSE(fbh.acquireExclusiveBucket(BucketId(1)));
-    ibf.thawBucket(BucketId(1));
-    f._executor.sync();
-    EXPECT_FALSE(myJob1.isBlocked());
-    EXPECT_FALSE(myJob2.isBlocked());
-    bool done1 = myJob1._latch.await(TIMEOUT);
-    EXPECT_TRUE(done1);
-    std::this_thread::sleep_for(2s);
-    EXPECT_EQUAL(0u, myJob2._runCnt);
 }
 
 TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixture)
@@ -1217,39 +1022,6 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
     EXPECT_EQUAL(2u, allJobs.children());
     EXPECT_EQUAL("my_job", allJobs[0]["name"].asString().make_string());
     EXPECT_EQUAL("long_running_job", allJobs[1]["name"].asString().make_string());
-}
-
-TEST("Verify FrozenBucketsMap interface") {
-    FrozenBucketsMap m;
-    BucketId a(8, 6);
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_TRUE(bool(guard));
-        EXPECT_EQUAL(a, guard->getBucket());
-    }
-    m.freezeBucket(a);
-    EXPECT_FALSE(m.thawBucket(a));
-    m.freezeBucket(a);
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_FALSE(bool(guard));
-    }
-    EXPECT_TRUE(m.thawBucket(a));
-    m.freezeBucket(a);
-    m.freezeBucket(a);
-    m.freezeBucket(a);
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_FALSE(bool(guard));
-    }
-    EXPECT_FALSE(m.thawBucket(a));
-    EXPECT_FALSE(m.thawBucket(a));
-    EXPECT_TRUE(m.thawBucket(a));
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_TRUE(bool(guard));
-        EXPECT_EQUAL(a, guard->getBucket());
-    }
 }
 
 const MaintenanceJobRunner *
@@ -1308,7 +1080,7 @@ TEST_F("require that maintenance jobs are run by correct executor", MaintenanceC
 void
 assertPruneRemovedDocumentsConfig(vespalib::duration expDelay, vespalib::duration expInterval, vespalib::duration interval, MaintenanceControllerFixture &f)
 {
-    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(interval, 1000s));
+    f.setPruneConfig(DocumentDBPruneConfig(interval, 1000s));
     const auto *job = findJob(f._mc.getJobList(), "prune_removed_documents.searchdocument");
     EXPECT_EQUAL(expDelay, job->getJob().getDelay());
     EXPECT_EQUAL(expInterval, job->getJob().getInterval());

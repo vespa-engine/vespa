@@ -61,7 +61,6 @@ private:
     using DocId = typename B::DocId;
     using DocIndices = typename MultiValueNumericEnumAttribute<B, M>::DocIndices;
     using FrozenDictionary = typename Dictionary::FrozenView;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using Posting = typename PostingParent::Posting;
     using PostingList = typename PostingParent::PostingList;
     using PostingMap = typename PostingParent::PostingMap;

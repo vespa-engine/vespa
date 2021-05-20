@@ -16,6 +16,7 @@ class MetricDefinitions {
     static final String CLIENT_AUTHENTICATED_DIMENSION = "clientAuthenticated";
     static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
     static final String FILTER_CHAIN_ID_DIMENSION = "chainId";
+    static final String PROTOCOL_DIMENSION = "protocol";
 
     static final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
     static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
@@ -23,6 +24,7 @@ class MetricDefinitions {
     static final String CONNECTION_DURATION_MEAN = "serverConnectionDurationMean";
     static final String CONNECTION_DURATION_STD_DEV = "serverConnectionDurationStdDev";
     static final String NUM_PREMATURELY_CLOSED_CONNECTIONS = "jdisc.http.request.prematurely_closed";
+    static final String REQUESTS_PER_CONNECTION = "jdisc.http.request.requests_per_connection";
 
     static final String NUM_BYTES_RECEIVED = "serverBytesReceived";
     static final String NUM_BYTES_SENT     = "serverBytesSent";

@@ -53,7 +53,7 @@ public:
     using LidVector = LidVectorContext::LidVector;
     using Document = document::Document;
     using DocumentUpdate = document::DocumentUpdate;
-    using OnWriteDoneType =const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
     using OnForceCommitDoneType =const std::shared_ptr<ForceCommitContext> &;
     using OnOperationDoneType = const std::shared_ptr<OperationDoneContext> &;
     using OnPutDoneType = const std::shared_ptr<PutDoneContext> &;
@@ -66,6 +66,7 @@ public:
     using DocumentSP = std::shared_ptr<Document>;
     using DocumentUpdateSP = std::shared_ptr<DocumentUpdate>;
     using LidReuseDelayer = documentmetastore::LidReuseDelayer;
+    using IDestructorCallbackSP = std::shared_ptr<vespalib::IDestructorCallback>;
 
     using Lid = search::DocumentIdT;
 
@@ -180,8 +181,7 @@ private:
     // returns the number of documents removed.
     size_t removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attribute_fields);
 
-    void internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
-                        Lid lid, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx);
+    void internalRemove(IDestructorCallbackSP token, IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid);
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
 

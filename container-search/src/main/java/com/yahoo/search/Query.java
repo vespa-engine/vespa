@@ -7,7 +7,6 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.fs4.MapEncoder;
-import java.util.logging.Level;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -56,6 +55,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -336,7 +337,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
-        startTime = System.currentTimeMillis();
+        startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
             Properties queryProfileProperties = new QueryProfileProperties(queryProfile);

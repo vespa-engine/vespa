@@ -82,7 +82,7 @@ public abstract class InvokerFactory {
             if ( ! searchCluster.isPartialGroupCoverageSufficient(success) && !acceptIncompleteCoverage) {
                 return Optional.empty();
             }
-            if (invokers.size() == 0) {
+            if (invokers.isEmpty()) {
                 return Optional.of(createCoverageErrorInvoker(nodes, failed));
             }
         }

@@ -28,6 +28,7 @@ import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 
@@ -91,12 +92,12 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     private Reply syncSend(Message msg, DocumentOperationParameters parameters) {
-        return syncSend(msg, defaultTimeout, parameters());
+        return syncSend(msg, defaultTimeout, parameters);
     }
 
     private Reply syncSend(Message msg, Duration timeout, DocumentOperationParameters parameters) {
         if (timeout != null) {
-            msg.setTimeRemaining(timeout.toMillis());
+            parameters = parameters.withDeadline(Instant.now().plus(timeout));
         }
         try {
             RequestMonitor monitor = new RequestMonitor();

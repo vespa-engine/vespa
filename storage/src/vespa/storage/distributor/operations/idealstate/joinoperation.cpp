@@ -21,7 +21,7 @@ JoinOperation::JoinOperation(const ClusterContext &clusterName,
 JoinOperation::~JoinOperation() = default;
 
 void
-JoinOperation::onStart(DistributorMessageSender& sender)
+JoinOperation::onStart(DistributorStripeMessageSender& sender)
 {
     _ok = false;
 
@@ -96,7 +96,7 @@ JoinOperation::enqueueJoinMessagePerTargetNode(
 }
 
 void
-JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP& msg)
+JoinOperation::onReceive(DistributorStripeMessageSender&, const api::StorageReply::SP& msg)
 {
     api::JoinBucketsReply& rep = static_cast<api::JoinBucketsReply&>(*msg);
     uint16_t node = _tracker.handleReply(rep);

@@ -34,8 +34,7 @@ public class FileServer {
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
 
     private final FileDirectory root;
-    private final ExecutorService pushExecutor;
-    private final ExecutorService pullExecutor;
+    private final ExecutorService executor;
     private final FileDownloader downloader;
 
     private enum FileApiErrorCodes {
@@ -82,10 +81,8 @@ public class FileServer {
     public FileServer(File rootDir, FileDownloader fileDownloader) {
         this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
-        this.pushExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
-                                                         new DaemonThreadFactory("file server push"));
-        this.pullExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
-                                                         new DaemonThreadFactory("file server pull"));
+        this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+                                                     new DaemonThreadFactory("file server push"));
     }
 
     boolean hasFile(String fileReference) {
@@ -110,7 +107,7 @@ public class FileServer {
         File file = root.getFile(reference);
 
         if (file.exists()) {
-            pushExecutor.execute(() -> serveFile(reference, target));
+            serveFile(reference, target);
         }
     }
 
@@ -151,7 +148,7 @@ public class FileServer {
     }
 
     public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
-        pullExecutor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver));
+        executor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver));
     }
 
     private void serveFileInternal(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
@@ -200,8 +197,7 @@ public class FileServer {
 
     public void close() {
         downloader.close();
-        pullExecutor.shutdown();
-        pushExecutor.shutdown();
+        executor.shutdown();
     }
 
 }

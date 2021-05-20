@@ -338,9 +338,8 @@ public class FederationSearcher extends ForkingSearcher {
     private List<String> allSourceRefDescriptions() {
         List<String> descriptions = new ArrayList<>();
 
-        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.allTopLevelTargets()) {
+        for (com.yahoo.search.federation.sourceref.Target target : searchChainResolver.allTopLevelTargets())
             descriptions.add(target.searchRefDescription());
-        }
         return descriptions;
     }
 

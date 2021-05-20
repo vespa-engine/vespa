@@ -14,6 +14,7 @@
 </handler>
 
 <handler id="com.yahoo.vespa.hosted.provision.restapi.LoadBalancersV1ApiHandler" bundle="node-repository">
+    <binding>http://*/loadbalancers/v1</binding>
     <binding>http://*/loadbalancers/v1/*</binding>
 </handler>
 

@@ -5,17 +5,14 @@
 
 namespace proton {
 
-RemoveDoneTask::RemoveDoneTask(IDocumentMetaStore &documentMetaStore,
-                               uint32_t lid)
+RemoveDoneTask::RemoveDoneTask(IDocumentMetaStore &documentMetaStore, uint32_t lid)
     : vespalib::Executor::Task(),
       _documentMetaStore(documentMetaStore),
       _lid(lid)
 {
 }
 
-RemoveDoneTask::~RemoveDoneTask()
-{
-}
+RemoveDoneTask::~RemoveDoneTask() = default;
 
 void
 RemoveDoneTask::run()

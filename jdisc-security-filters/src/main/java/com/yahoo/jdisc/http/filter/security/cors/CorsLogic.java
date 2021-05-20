@@ -27,25 +27,20 @@ class CorsLogic {
     static Map<String, String> createCorsResponseHeaders(String requestOriginHeader,
                                                          Set<String> allowedOrigins) {
         if (requestOriginHeader == null) return Map.of();
+
         TreeMap<String, String> headers = new TreeMap<>();
-        allowedOrigins.stream()
-                .filter(allowedUrl -> matchesRequestOrigin(requestOriginHeader, allowedUrl))
-                .findAny()
-                .ifPresent(allowedOrigin -> headers.put(ALLOW_ORIGIN_HEADER, allowedOrigin));
-        ACCESS_CONTROL_HEADERS.forEach(headers::put);
+        if (requestOriginMatchesAnyAllowed(requestOriginHeader, allowedOrigins))
+            headers.put(ALLOW_ORIGIN_HEADER, requestOriginHeader);
+        headers.putAll(ACCESS_CONTROL_HEADERS);
         return headers;
     }
 
     static Map<String, String> createCorsPreflightResponseHeaders(String requestOriginHeader,
                                                                   Set<String> allowedOrigins) {
-        TreeMap<String, String> headers = new TreeMap<>();
-        if (requestOriginHeader != null && allowedOrigins.contains(requestOriginHeader))
-            headers.put(ALLOW_ORIGIN_HEADER, requestOriginHeader);
-        ACCESS_CONTROL_HEADERS.forEach(headers::put);
-        return headers;
+        return createCorsResponseHeaders(requestOriginHeader, allowedOrigins);
     }
 
-    private static boolean matchesRequestOrigin(String requestOrigin, String allowedUrl) {
-        return allowedUrl.equals("*") || requestOrigin.startsWith(allowedUrl);
+    private static boolean requestOriginMatchesAnyAllowed(String requestOrigin, Set<String> allowedUrls) {
+        return allowedUrls.stream().anyMatch(requestOrigin::startsWith) || allowedUrls.contains("*");
     }
 }

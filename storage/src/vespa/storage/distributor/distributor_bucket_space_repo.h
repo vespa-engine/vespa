@@ -19,7 +19,8 @@ private:
     BucketSpaceMap _map;
 
 public:
-    explicit DistributorBucketSpaceRepo(uint16_t node_index);
+    // TODO STRIPE: Remove the use_bucket_db parameter when legacy mode is gone.
+    explicit DistributorBucketSpaceRepo(uint16_t node_index, bool use_bucket_db = true);
     ~DistributorBucketSpaceRepo();
 
     DistributorBucketSpaceRepo(const DistributorBucketSpaceRepo&&) = delete;

@@ -106,7 +106,7 @@ struct NodeIndexComparator
 }
 
 void
-MergeOperation::onStart(DistributorMessageSender& sender)
+MergeOperation::onStart(DistributorStripeMessageSender& sender)
 {
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     if (!entry.valid()) {
@@ -209,7 +209,7 @@ MergeOperation::sourceOnlyCopyChangedDuringMerge(
 void
 MergeOperation::deleteSourceOnlyNodes(
         const BucketDatabase::Entry& currentState,
-        DistributorMessageSender& sender)
+        DistributorStripeMessageSender& sender)
 {
     assert(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
@@ -253,7 +253,7 @@ MergeOperation::deleteSourceOnlyNodes(
 }
 
 void
-MergeOperation::onReceive(DistributorMessageSender& sender,
+MergeOperation::onReceive(DistributorStripeMessageSender& sender,
                           const std::shared_ptr<api::StorageReply> & msg)
 {
     if (_removeOperation.get()) {

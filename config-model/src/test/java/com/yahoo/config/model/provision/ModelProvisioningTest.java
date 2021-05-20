@@ -35,7 +35,6 @@ import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -896,6 +895,89 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testLogForwarderNotInAdminCluster() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'>" +
+                        "    <logservers>" +
+                        "      <nodes count='1' dedicated='true'/>" +
+                        "    </logservers>" +
+                        "    <logforwarding>" +
+                        "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' />" +
+                        "    </logforwarding>" +
+                        "  </admin>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+
+        int numberOfHosts = 2;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts+1);
+
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+
+        Admin admin = model.getAdmin();
+        Logserver logserver = admin.getLogserver();
+        HostResource hostResource = logserver.getHostResource();
+
+        assertNotNull(hostResource.getService("logserver"));
+        assertNull(hostResource.getService("container"));
+        assertNull(hostResource.getService("logforwarder"));
+
+        var clist = model.getContainerClusters().get("foo").getContainers();
+        assertThat(clist.size(), is(1));
+        hostResource = clist.get(0).getHostResource();
+        assertNull(hostResource.getService("logserver"));
+        assertNotNull(hostResource.getService("container"));
+        assertNotNull(hostResource.getService("logforwarder"));
+    }
+
+
+    @Test
+    public void testLogForwarderInAdminCluster() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'>" +
+                        "    <logservers>" +
+                        "      <nodes count='1' dedicated='true'/>" +
+                        "    </logservers>" +
+                        "    <logforwarding include-admin='true'>" +
+                        "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' />" +
+                        "    </logforwarding>" +
+                        "  </admin>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+
+        int numberOfHosts = 2;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts+1);
+
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+
+        Admin admin = model.getAdmin();
+        Logserver logserver = admin.getLogserver();
+        HostResource hostResource = logserver.getHostResource();
+
+        assertNotNull(hostResource.getService("logserver"));
+        assertNull(hostResource.getService("container"));
+        assertNotNull(hostResource.getService("logforwarder"));
+
+        var clist = model.getContainerClusters().get("foo").getContainers();
+        assertThat(clist.size(), is(1));
+        hostResource = clist.get(0).getHostResource();
+        assertNull(hostResource.getService("logserver"));
+        assertNotNull(hostResource.getService("container"));
+        assertNotNull(hostResource.getService("logforwarder"));
+    }
+
+    @Test
     public void testImplicitLogserverContainer() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1015,6 +1097,35 @@ public class ModelProvisioningTest {
         assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(2, cluster.getRootGroup().getSubgroups().size());
+    }
+
+    @Test
+    public void testRedundancy2DownscaledToOneNodeButOneRetired() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 3;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false, false, true, "node-1-3-10-03");
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        assertEquals(2, cluster.getStorageNodes().getChildren().size());
+        assertEquals(1, cluster.redundancy().effectiveInitialRedundancy());
+        assertEquals(1, cluster.redundancy().effectiveFinalRedundancy());
+        assertEquals(1, cluster.redundancy().effectiveReadyCopies());
+        assertEquals(2, cluster.getRootGroup().getNodes().size());
+        assertEquals(0, cluster.getRootGroup().getSubgroups().size());
     }
 
     @Test
@@ -1483,7 +1594,7 @@ public class ModelProvisioningTest {
         assertEquals("We get 1 node per cluster and no admin node apart from the dedicated cluster controller", 3, model.getHosts().size());
         assertEquals(1, model.getContainerClusters().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
-        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes(true));
         assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());
     }
 
@@ -1536,7 +1647,7 @@ public class ModelProvisioningTest {
         assertEquals(6, model.getRoot().hostSystem().getHosts().size());
         assertEquals(3, model.getAdmin().getSlobroks().size());
         assertEquals(2, model.getContainerClusters().get("foo").getContainers().size());
-        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes(true));
     }
 
     @Test
@@ -1606,7 +1717,7 @@ public class ModelProvisioningTest {
         assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
-        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
+        assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes(true));
     }
 
     /** Recreate the combination used in some factory tests */
@@ -1889,7 +2000,7 @@ public class ModelProvisioningTest {
             assertTrue("Initial servers are not joining", config.build().server().stream().noneMatch(ZookeeperServerConfig.Server::joining));
         }
         {
-            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(5), true, false, 0, Optional.of(model), new DeployState.Builder());
+            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(5), true, false, false, 0, Optional.of(model), new DeployState.Builder());
             ApplicationContainerCluster cluster = nextModel.getContainerClusters().get("zk");
             ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
             cluster.getContainers().forEach(c -> c.getConfig(config));

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -39,10 +38,8 @@ public interface ConfigServerClient extends Closeable {
                                                       .setRedirectsEnabled(false)
                                                       .build();
 
-    /** Wraps with a {@link RetryException} and rethrows. */
-    Consumer<IOException> retryAll = (e) -> {
-        throw new RetryException(e);
-    };
+    /** Does nothing, letting the client wrap with a {@link RetryException} and re-throw. */
+    ExceptionHandler retryAll = (exception, request) -> { };
 
     /** Throws a a {@link RetryException} if {@code statusCode == 503}, or a {@link ResponseException} unless {@code 200 <= statusCode < 300}. */
     ResponseVerifier throwOnError = new DefaultResponseVerifier() { };
@@ -101,15 +98,15 @@ public interface ConfigServerClient extends Closeable {
          * Sets the catch clause for {@link IOException}s during execution of this.
          * The default is to wrap the IOException in a {@link RetryException} and rethrow this;
          * this makes the client retry the request, as long as there are remaining entries in the {@link HostStrategy}.
-         * If the catcher returns normally, the {@link IOException} is unchecked and thrown instead.
+         * If the catcher returns normally, the exception is wrapped and retried, as per the default.
          */
-         RequestBuilder catching(Consumer<IOException> catcher);
+        RequestBuilder catching(ExceptionHandler catcher);
 
         /**
          * Sets the (error) response handler for this request. The default is {@link #throwOnError}.
          * When the handler returns normally, the response is treated as a success, and passed on to a response mapper.
          */
-         RequestBuilder throwing(ResponseVerifier handler);
+        RequestBuilder throwing(ResponseVerifier handler);
 
         /** Reads the response as a {@link String}, or throws if unsuccessful. */
         String read();
@@ -203,6 +200,19 @@ public interface ConfigServerClient extends Closeable {
     }
 
 
+    @FunctionalInterface
+    interface ExceptionHandler {
+
+        /**
+         * Called with any IO exception that might occur when attempting to send the request.
+         * To retry, wrap the exception with a {@link RetryException} and re-throw, or exit normally.
+         * Any other thrown exception will propagate out to the caller.
+         */
+        void handle(IOException exception, ClassicHttpRequest request);
+
+    }
+
+
     /** What host(s) to try for a request, in what order. A host may be specified multiple times, for retries.  */
     @FunctionalInterface
     interface HostStrategy extends Iterable<URI> {
@@ -238,6 +248,10 @@ public interface ConfigServerClient extends Closeable {
 
         public RetryException(RuntimeException cause) {
             super(requireNonNull(cause));
+        }
+
+        static RetryException wrap(IOException exception, ClassicHttpRequest request) {
+            return new RetryException(new UncheckedIOException(request + " failed (" + exception.getClass().getSimpleName() + ")", exception));
         }
 
     }

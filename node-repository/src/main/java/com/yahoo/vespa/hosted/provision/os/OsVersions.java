@@ -40,18 +40,16 @@ public class OsVersions {
     private final CuratorDatabaseClient db;
     private final boolean reprovisionToUpgradeOs;
     private final int maxDelegatedUpgrades;
-    private final int maxRebuilds;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), MAX_DELEGATED_UPGRADES, MAX_REBUILDS);
+        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), MAX_DELEGATED_UPGRADES);
     }
 
-    OsVersions(NodeRepository nodeRepository, boolean reprovisionToUpgradeOs, int maxDelegatedUpgrades, int maxRebuilds) {
+    OsVersions(NodeRepository nodeRepository, boolean reprovisionToUpgradeOs, int maxDelegatedUpgrades) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.db = nodeRepository.database();
         this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
         this.maxDelegatedUpgrades = maxDelegatedUpgrades;
-        this.maxRebuilds = maxRebuilds;
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -146,7 +144,7 @@ public class OsVersions {
                                                 .anyMatch(osVersion -> osVersion.current().isPresent() &&
                                                                        osVersion.current().get().getMajor() < target.getMajor());
         if (rebuildRequired) {
-            return new RebuildingOsUpgrader(nodeRepository, maxRebuilds);
+            return new RebuildingOsUpgrader(nodeRepository);
         }
         return new DelegatingOsUpgrader(nodeRepository, maxDelegatedUpgrades);
     }

@@ -105,6 +105,7 @@ ClusterControllers = element cluster-controllers {
 }
 
 LogForwarding = element logforwarding {
+    attribute include-admin { xsd:boolean }? &
     element splunk {
         attribute splunk-home { xsd:string }? &
         attribute deployment-server { xsd:string } &

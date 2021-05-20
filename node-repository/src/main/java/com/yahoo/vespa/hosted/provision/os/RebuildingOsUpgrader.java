@@ -2,50 +2,93 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * An upgrader that retires and rebuilds hosts on stale OS versions. Retirement of each host is spread out in time,
- * according to a time budget, to avoid potential service impact of retiring too many hosts close together.
+ * An upgrader that retires and rebuilds hosts on stale OS versions.
+ *
+ * - We limit the number of concurrent rebuilds to reduce impact of retiring too many hosts.
+ * - We limit rebuilds by cluster so that at most one node per stateful cluster per application is retired at a time.
  *
  * Used in cases where performing an OS upgrade requires rebuilding the host, e.g. when upgrading across major versions.
  *
  * @author mpolden
  */
-public class RebuildingOsUpgrader extends RetiringOsUpgrader {
+public class RebuildingOsUpgrader implements OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RebuildingOsUpgrader.class.getName());
 
-    private final int maxRebuilds;
+    private final NodeRepository nodeRepository;
+    private final IntFlag maxRebuilds;
 
-    public RebuildingOsUpgrader(NodeRepository nodeRepository, int maxRebuilds) {
-        super(nodeRepository);
-        this.maxRebuilds = maxRebuilds;
-        if (maxRebuilds < 1) throw new IllegalArgumentException("maxRebuilds must be positive, was " + maxRebuilds);
+    public RebuildingOsUpgrader(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
+        this.maxRebuilds = PermanentFlags.MAX_REBUILDS.bindTo(nodeRepository.flagSource());
     }
 
     @Override
-    protected NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
-        if (allNodes.nodeType(target.nodeType()).rebuilding().size() < maxRebuilds) {
-            return super.candidates(instant, target, allNodes);
+    public void upgradeTo(OsVersionTarget target) {
+        NodeList allNodes = nodeRepository.nodes().list();
+        Instant now = nodeRepository.clock().instant();
+        rebuildableHosts(target, allNodes).forEach(host -> rebuild(host, target.version(), now));
+    }
+
+    @Override
+    public void disableUpgrade(NodeType type) {
+        // No action needed in this implementation. Hosts that have started rebuilding cannot be halted
+    }
+
+    /** Returns the number of hosts of given type that can be rebuilt concurrently */
+    private int upgradeLimit(NodeType hostType, NodeList hosts) {
+        int limit = hostType == NodeType.host ? maxRebuilds.value() : 1;
+        return Math.max(0, limit - hosts.rebuilding().size());
+    }
+
+    private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes) {
+        NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
+        NodeList activeHosts = hostsOfTargetType.state(Node.State.active);
+        int upgradeLimit = upgradeLimit(target.nodeType(), hostsOfTargetType);
+
+        // Find stateful clusters with retiring nodes
+        NodeList activeNodes = allNodes.state(Node.State.active);
+        Set<ClusterId> retiringClusters = statefulClustersOf(activeNodes.nodeType(target.nodeType().childNodeType())
+                                                                        .retiring());
+
+        // Upgrade hosts not running stateful clusters that are already retiring
+        List<Node> hostsToUpgrade = new ArrayList<>(upgradeLimit);
+        NodeList candidates = activeHosts.not().rebuilding()
+                                         .osVersionIsBefore(target.version())
+                                         .byIncreasingOsVersion();
+        for (Node host : candidates) {
+            if (hostsToUpgrade.size() == upgradeLimit) break;
+            Set<ClusterId> clustersOnHost = statefulClustersOf(activeNodes.childrenOf(host));
+            boolean canUpgrade = Collections.disjoint(retiringClusters, clustersOnHost);
+            if (canUpgrade) {
+                hostsToUpgrade.add(host);
+                retiringClusters.addAll(clustersOnHost);
+            }
         }
-        return NodeList.of();
-    }
-
-    @Override
-    protected void upgradeNodes(NodeList candidates, Version version, Instant instant) {
-        candidates.not().rebuilding()
-                  .byIncreasingOsVersion()
-                  .first(1)
-                  .forEach(node -> rebuild(node, version, instant));
+        return Collections.unmodifiableList(hostsToUpgrade);
     }
 
     private void rebuild(Node host, Version target, Instant now) {
@@ -54,7 +97,48 @@ public class RebuildingOsUpgrader extends RetiringOsUpgrader {
                  ", want " + target);
         nodeRepository.nodes().rebuild(host.hostname(), Agent.RebuildingOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
+    }
+
+    private static Set<ClusterId> statefulClustersOf(NodeList nodes) {
+        Set<ClusterId> clusters = new HashSet<>();
+        for (Node node : nodes) {
+            if (node.type().isHost()) throw new IllegalArgumentException("All nodes must be children, got host " + node);
+            if (node.allocation().isEmpty()) continue;
+            Allocation allocation = node.allocation().get();
+            if (!allocation.membership().cluster().isStateful()) continue;
+            clusters.add(new ClusterId(allocation.owner(), allocation.membership().cluster().id()));
+        }
+        return clusters;
+    }
+
+    private static class ClusterId {
+
+        private final ApplicationId application;
+        private final ClusterSpec.Id cluster;
+
+        public ClusterId(ApplicationId application, ClusterSpec.Id cluster) {
+            this.application = Objects.requireNonNull(application);
+            this.cluster = Objects.requireNonNull(cluster);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ClusterId that = (ClusterId) o;
+            return application.equals(that.application) && cluster.equals(that.cluster);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(application, cluster);
+        }
+
+        @Override
+        public String toString() {
+            return cluster + " of " + application;
+        }
+
     }
 
 }

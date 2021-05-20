@@ -61,7 +61,7 @@ struct SetMemberHash : PluginState {
     vespalib::hash_set<double> members;
     explicit SetMemberHash(const In &in) : members(in.num_entries() * 3) {
         for (size_t i = 0; i < in.num_entries(); ++i) {
-            members.insert(in.get_entry(i).get_const_value());
+            members.insert(in.get_entry(i).get_const_double_value());
         }
     }
     static bool check_membership(const PluginState *state, double value) {
@@ -260,8 +260,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     bool open(const Node &node) override {
-        if (node.is_const()) {
-            push_double(node.get_const_value());
+        if (node.is_const_double()) {
+            push_double(node.get_const_double_value());
             return false;
         }
         if (!inside_forest && (pass_params != PassParams::SEPARATE) && node.is_forest()) {
@@ -412,7 +412,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             // build explicit code to check all set members
             llvm::Value *found = builder.getFalse();
             for (size_t i = 0; i < item.num_entries(); ++i) {
-                llvm::Value *elem = llvm::ConstantFP::get(builder.getDoubleTy(), item.get_entry(i).get_const_value());
+                llvm::Value *elem = llvm::ConstantFP::get(builder.getDoubleTy(), item.get_entry(i).get_const_double_value());
                 llvm::Value *elem_eq = builder.CreateFCmpOEQ(lhs, elem, "elem_eq");
                 found = builder.CreateOr(found, elem_eq, "found");
             }

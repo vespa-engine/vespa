@@ -302,7 +302,7 @@ void test_dump(const char* s, unsigned int len)
         unsigned int start = i;
         for (; i < len;)
         {
-            if (s[i] < 0) {
+            if ((signed char) s[i] < 0) {
                 printf("�");
             } else {
                 printf("%c", s[i]);

@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
@@ -137,13 +136,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
-            "max-pending-move-ops", 10,
-            List.of("baldersheim"), "2021-02-15", "2021-05-01",
-            "Max number of move operations inflight",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
@@ -151,17 +143,10 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
-            "use-bucket-executor-for-lid-space-compact", false,
-            List.of("baldersheim"), "2021-01-24", "2021-05-01",
-            "Wheter to use content-level bucket executor or legacy frozen buckets",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE = defineFeatureFlag(
-            "use-bucket-executor-for-bucket-move", false,
-            List.of("baldersheim"), "2021-02-15", "2021-05-01",
-            "Wheter to use content-level bucket executor or legacy frozen buckets",
+    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED = defineFeatureFlag(
+            "use-bucket-executor-for-prune-removed", true,
+            List.of("baldersheim"), "2021-05-04", "2021-06-01",
+            "Wheter to use content-level bucket executor or legacy frozen buckets for prune removed",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
@@ -172,52 +157,31 @@ public class Flags {
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
+            "encrypt-disk", false,
+            List.of("hakonhall"), "2021-05-05", "2021-06-05",
+            "Allow migrating an unencrypted data partition to being encrypted.",
+            "Takes effect on next host-admin tick.");
+
+    public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
+            "encrypt-dirty-disk", false,
+            List.of("hakonhall"), "2021-05-14", "2021-06-05",
+            "Allow migrating an unencrypted data partition to being encrypted when provisioned or dirty.",
+            "Takes effect on next host-admin tick.");
+
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2021-05-01",
+            List.of("geirst"), "2021-01-27", "2021-07-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag MAX_DEAD_BYTES_RATIO = defineDoubleFlag(
-            "max-dead-bytes-ratio", 0.15,
-            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-05-01",
-            "max ratio of dead to used memory bytes in large data structures before compaction is attempted",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundStringFlag SYNC_HOST_LOGS_TO_S3_BUCKET = defineStringFlag(
-            "sync-host-logs-to-s3-bucket", "", List.of("andreer", "valerijf"), "2021-02-10", "2021-05-01",
-            "Host-admin should sync host logs to an S3 bucket named by this flag. If left empty, sync is disabled",
-            "Takes effect on next run of S3 log sync task in host-admin",
-            TENANT_ID, ZONE_ID);
-
-    public static final UnboundBooleanFlag CACHE_ACL = defineFeatureFlag(
-            "cache-acl", true,
-            List.of("hakon"), "2021-04-26", "2021-05-26",
-            "Whether host-admin should cache the ACL responses w/TTL 115s, or always ask config server.",
-            "Takes effect on next host-admin tick.",
-            ZONE_ID);
-
-    public static final UnboundIntFlag CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "cluster-controller-max-heap-size-in-mb", 128,
-            List.of("hmusum"), "2021-02-10", "2021-05-15",
-            "JVM max heap size for cluster controller in Mb",
-            "Takes effect when restarting cluster controller");
-
     public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "metrics-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-01", "2021-05-15",
+            List.of("hmusum"), "2021-03-01", "2021-06-15",
             "JVM max heap size for metrics proxy in Mb",
             "Takes effect when restarting metrics proxy",
             CLUSTER_TYPE);
-
-    public static final UnboundIntFlag CONFIG_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "config-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-15", "2021-05-15",
-            "JVM max heap size for config proxy in Mb",
-            "Takes effect on restart of Docker container",
-            CLUSTER_TYPE, CLUSTER_ID);
 
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
             "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-05-25",
@@ -240,7 +204,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2021-05-01",
+            List.of("vekterli"), "2021-02-19", "2021-07-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -260,13 +224,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag UPGRADE_DELL_SSD_FIRMWARE = defineFeatureFlag(
-            "upgrade_dell_ssd_firmware", false,
-            List.of("andreer"), "2021-04-13", "2021-05-13",
-            "Whether to consider upgrading Dell SSD firmware",
-            "Takes effect on next host-admin tick",
-            HOSTNAME);
-
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
             List.of("geirst", "vekterli"), "2021-04-20", "2021-07-01",
@@ -280,6 +237,13 @@ public class Flags {
             "Whether to enable core dumps for routing layer",
             "Takes effect on next host-admin tick",
             HOSTNAME);
+
+    public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
+            "cfg-deploy-multipart", false,
+            List.of("tokle"), "2021-05-19", "2021-08-01",
+            "Wheter to deploy applications using multipart form data (instead of url params)",
+            "Takes effect immediately",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

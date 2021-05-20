@@ -6,6 +6,7 @@ vespa_add_library(storage_distributor
     bucket_db_prune_elision.cpp
     bucket_space_distribution_configs.cpp
     bucket_space_distribution_context.cpp
+    bucket_space_state_map.cpp
     bucketdbupdater.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
@@ -14,18 +15,21 @@ vespa_add_library(storage_distributor
     distributor.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
+    distributor_component.cpp
     distributor_host_info_reporter.cpp
     distributor_status.cpp
     distributor_stripe.cpp
     distributor_stripe_component.cpp
+    distributor_stripe_pool.cpp
+    distributor_stripe_thread.cpp
     distributormessagesender.cpp
     distributormetricsset.cpp
     externaloperationhandler.cpp
     ideal_service_layer_nodes_bundle.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
-    legacy_single_stripe_accessor.cpp
     messagetracker.cpp
+    multi_threaded_stripe_access_guard.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp
     operation_sequencer.cpp

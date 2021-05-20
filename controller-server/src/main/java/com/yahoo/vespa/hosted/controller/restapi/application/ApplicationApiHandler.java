@@ -497,7 +497,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static void toSlime(Cursor cursor, Notification notification) {
         cursor.setLong("at", notification.at().toEpochMilli());
-        cursor.setString("level", notificatioLevelAsString(notification.type().level()));
+        cursor.setString("level", notificationLevelAsString(notification.level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
         Cursor messagesArray = cursor.setArray("messages");
         notification.messages().forEach(messagesArray::addString);
@@ -515,13 +515,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String notificationTypeAsString(Notification.Type type) {
         switch (type) {
-            case APPLICATION_PACKAGE_WARNING: return "APPLICATION_PACKAGE_WARNING";
-            case DEPLOYMENT_FAILURE: return "DEPLOYMENT_FAILURE";
+            case applicationPackage: return "applicationPackage";
+            case deployment: return "deployment";
+            case feedBlock: return "feedBlock";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
 
-    private static String notificatioLevelAsString(Notification.Level level) {
+    private static String notificationLevelAsString(Notification.Level level) {
         switch (level) {
             case warning: return "warning";
             case error: return "error";
@@ -1307,6 +1308,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setString("url", endpoint.url().toString());
         object.setString("scope", endpointScopeString(endpoint.scope()));
         object.setString("routingMethod", routingMethodString(endpoint.routingMethod()));
+        object.setBool("legacy", endpoint.legacy());
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
@@ -1318,17 +1320,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
 
         // Add zone endpoints
+        boolean legacyEndpoints = request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
         EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId)
-                                               .scope(Endpoint.Scope.zone)
-                                               .not().legacy();
+                                               .scope(Endpoint.Scope.zone);
+        if (!legacyEndpoints) {
+            zoneEndpoints = zoneEndpoints.not().legacy();
+        }
         for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }
         // Add global endpoints
         EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
-                                                 .not().legacy()
                                                  .targets(deploymentId.zoneId());
+        if (!legacyEndpoints) {
+            globalEndpoints = globalEndpoints.not().legacy();
+        }
         for (var endpoint : controller.routing().directEndpoints(globalEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }

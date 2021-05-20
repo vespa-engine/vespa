@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -44,6 +45,8 @@ public class ApplicationFileManager implements AddFileInterface {
             rbc = Channels.newChannel(website.openStream());
             fos = new FileOutputStream(file.getAbsolutePath());
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        } catch (SocketTimeoutException e) {
+            throw new IllegalArgumentException("Failed connecting to or reading from " + uri, e);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed creating directory " + file.getParent(), e);
         } finally {

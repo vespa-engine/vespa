@@ -68,4 +68,5 @@ public final class SplitExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + splitPattern.toString().hashCode();
     }
+
 }

@@ -145,7 +145,7 @@ BitVectorCache::populate(Key2Index & newKeys, CondensedBitVector & chunk, const 
             accum += percentage;
             m.chunkId(0);
             m.chunkIndex(index);
-            LOG(info, "Populating bitvector %2d with feature %" PRIu64 " and %ld bits set. Cost is %8f = %2.2f%%, accumulated cost is %2.2f%%",
+            LOG(debug, "Populating bitvector %2d with feature %" PRIu64 " and %ld bits set. Cost is %8f = %2.2f%%, accumulated cost is %2.2f%%",
                        index, e.first, m.bitCount(), m.cost(), percentage, accum);
             assert(m.isCached());
             assert(newKeys[e.first].isCached());

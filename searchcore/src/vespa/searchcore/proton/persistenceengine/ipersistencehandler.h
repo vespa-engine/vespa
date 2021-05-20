@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucket_guard.h"
 #include "i_document_retriever.h"
 #include "resulthandler.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -68,7 +67,6 @@ public:
                             const storage::spi::Bucket &target1, const storage::spi::Bucket &target2) = 0;
 
     virtual RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency consistency) = 0;
-    virtual BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) = 0;
 
     virtual void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) = 0;
 

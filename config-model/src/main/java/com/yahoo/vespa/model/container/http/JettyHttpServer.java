@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.yahoo.component.ComponentSpecification.fromString;
-
 /**
  * @author Einar M R Rosenvinge
  * @author bjorncs

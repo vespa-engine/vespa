@@ -45,7 +45,7 @@ GetOperation::GroupId::operator==(const GroupId& other) const
             && _node == other._node);
 }
 
-GetOperation::GetOperation(DistributorNodeContext& node_ctx,
+GetOperation::GetOperation(const DistributorNodeContext& node_ctx,
                            const DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                            std::shared_ptr<api::GetCommand> msg,
@@ -68,7 +68,7 @@ GetOperation::GetOperation(DistributorNodeContext& node_ctx,
 }
 
 void
-GetOperation::onClose(DistributorMessageSender& sender)
+GetOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _returnCode = api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down");
     sendReply(sender);
@@ -99,7 +99,7 @@ GetOperation::findBestUnsentTarget(const GroupVector& candidates) const
 }
 
 bool
-GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res)
+GetOperation::sendForChecksum(DistributorStripeMessageSender& sender, const document::BucketId& id, GroupVector& res)
 {
     const int best = findBestUnsentTarget(res);
 
@@ -122,7 +122,7 @@ GetOperation::sendForChecksum(DistributorMessageSender& sender, const document::
 }
 
 void
-GetOperation::onStart(DistributorMessageSender& sender)
+GetOperation::onStart(DistributorStripeMessageSender& sender)
 {
     // Send one request for each unique group (BucketId/checksum)
     bool sent = false;
@@ -138,7 +138,7 @@ GetOperation::onStart(DistributorMessageSender& sender)
 };
 
 void
-GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
+GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
     auto* getreply = dynamic_cast<api::GetReply*>(msg.get());
     assert(getreply != nullptr);
@@ -225,7 +225,7 @@ void GetOperation::update_internal_metrics() {
 }
 
 void
-GetOperation::sendReply(DistributorMessageSender& sender)
+GetOperation::sendReply(DistributorStripeMessageSender& sender)
 {
     if (_msg.get()) {
         const auto newest = _newest_replica.value_or(NewestReplica::make_empty());

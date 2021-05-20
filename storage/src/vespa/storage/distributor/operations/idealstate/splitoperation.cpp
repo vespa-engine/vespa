@@ -22,7 +22,7 @@ SplitOperation::SplitOperation(const ClusterContext &cluster_ctx, const BucketAn
 SplitOperation::~SplitOperation() = default;
 
 void
-SplitOperation::onStart(DistributorMessageSender& sender)
+SplitOperation::onStart(DistributorStripeMessageSender& sender)
 {
     _ok = false;
 
@@ -49,7 +49,7 @@ SplitOperation::onStart(DistributorMessageSender& sender)
 }
 
 void
-SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP& msg)
+SplitOperation::onReceive(DistributorStripeMessageSender&, const api::StorageReply::SP& msg)
 {
     api::SplitBucketReply& rep = static_cast<api::SplitBucketReply&>(*msg);
 

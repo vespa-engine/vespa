@@ -64,11 +64,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
-    private final int maxPendingMoveOps;
     private final double defaultFeedConcurrency;
-    private final boolean useBucketExecutorForLidSpaceCompact;
-    private final boolean useBucketExecutorForBucketMove;
-    private final double defaultMaxDeadBytesRatio;
+    private final boolean useBucketExecutorForPruneRemoved;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -211,12 +208,9 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.syncTransactionLog = syncTransactionLog;
 
         this.combined = combined;
-        maxPendingMoveOps = featureFlags.maxPendingMoveOps();
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         defaultFeedConcurrency = featureFlags.feedConcurrency();
-        useBucketExecutorForLidSpaceCompact = featureFlags.useBucketExecutorForLidSpaceCompact();
-        useBucketExecutorForBucketMove = featureFlags.useBucketExecutorForBucketMove();
-        defaultMaxDeadBytesRatio = featureFlags.maxDeadBytesRatio();
+        useBucketExecutorForPruneRemoved = featureFlags.useBucketExecutorForPruneRemoved();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -383,7 +377,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
                 .global(globalDocType);
-            ddbB.allocation.max_dead_bytes_ratio(defaultMaxDeadBytesRatio);
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedCluster = true;
@@ -434,9 +427,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.indexing.optimize(feedSequencerType);
         }
-        builder.maintenancejobs.maxoutstandingmoveops(maxPendingMoveOps);
-        builder.lidspacecompaction.usebucketexecutor(useBucketExecutorForLidSpaceCompact);
-        builder.bucketmove.usebucketexecutor(useBucketExecutorForBucketMove);
+        builder.pruneremoveddocuments.usebucketexecutor(useBucketExecutorForPruneRemoved);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {

@@ -388,11 +388,7 @@
       "public long getQueryStartTime()",
       "public long getTimeout()"
     ],
-    "fields": [
-      "protected long summaryStartTime",
-      "protected long queryStartTime",
-      "protected long timeout"
-    ]
+    "fields": []
   },
   "com.yahoo.container.handler.VipStatus": {
     "superClass": "java.lang.Object",
@@ -1430,6 +1426,18 @@
     ],
     "fields": []
   },
+  "com.yahoo.jdisc.http.CookieHelper": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static java.util.List decodeSetCookieHeader(com.yahoo.jdisc.HeaderFields)",
+      "public static void encodeSetCookieHeader(com.yahoo.jdisc.HeaderFields, java.util.List)"
+    ],
+    "fields": []
+  },
   "com.yahoo.jdisc.http.HttpHeaders$Names": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -2291,25 +2299,6 @@
       "public void setUserPrincipal(java.security.Principal)",
       "public java.util.List getClientCertificateChain()",
       "public void clearCookies()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.filter.JdiscFilterResponse": {
-    "superClass": "com.yahoo.jdisc.http.filter.DiscFilterResponse",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpResponse)",
-      "public void setStatus(int)",
-      "public void setHeader(java.lang.String, java.lang.String)",
-      "public void removeHeaders(java.lang.String)",
-      "public void setHeaders(java.lang.String, java.lang.String)",
-      "public void setHeaders(java.lang.String, java.util.List)",
-      "public void addHeader(java.lang.String, java.lang.String)",
-      "public java.lang.String getHeader(java.lang.String)",
-      "public void setCookies(java.util.List)"
     ],
     "fields": []
   },

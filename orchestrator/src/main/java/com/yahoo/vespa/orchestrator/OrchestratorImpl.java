@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -74,9 +75,10 @@ public class OrchestratorImpl implements Orchestrator {
                             OrchestratorConfig orchestratorConfig,
                             ServiceMonitor serviceMonitor,
                             ConfigserverConfig configServerConfig,
-                            FlagSource flagSource)
+                            FlagSource flagSource,
+                            Zone zone)
     {
-        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource),
+        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                    clusterControllerClientFactory,
                                    new ApplicationApiFactory(configServerConfig.zookeeperserver().size(), Clock.systemUTC())),
                 clusterControllerClientFactory,

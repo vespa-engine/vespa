@@ -29,7 +29,6 @@ struct DummyPersistenceHandler : public IPersistenceHandler {
     void handleJoin(FeedToken, const storage::spi::Bucket &, const storage::spi::Bucket &, const storage::spi::Bucket &) override {}
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override { return RetrieversSP(); }
-    BucketGuard::UP lockBucket(const storage::spi::Bucket &) override { return BucketGuard::UP(); }
     void handleListActiveBuckets(IBucketIdListResultHandler &) override {}
     void handlePopulateActiveBuckets(document::BucketId::List &, IGenericResultHandler &) override {}
 };

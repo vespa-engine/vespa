@@ -50,21 +50,25 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
      */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
-        this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
-                             ZoneApiMock.fromId("staging.us-east-3"),
-                             ZoneApiMock.fromId("dev.us-east-1"),
-                             ZoneApiMock.fromId("dev.aws-us-east-2a"),
-                             ZoneApiMock.fromId("perf.us-east-3"),
-                             ZoneApiMock.fromId("prod.aws-us-east-1a"),
-                             ZoneApiMock.fromId("prod.ap-northeast-1"),
-                             ZoneApiMock.fromId("prod.ap-northeast-2"),
-                             ZoneApiMock.fromId("prod.ap-southeast-1"),
-                             ZoneApiMock.fromId("prod.us-east-3"),
-                             ZoneApiMock.fromId("prod.us-west-1"),
-                             ZoneApiMock.fromId("prod.us-central-1"),
-                             ZoneApiMock.fromId("prod.eu-west-1"));
+        this.zones = system.isPublic() ?
+                List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                        ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                        ZoneApiMock.fromId("prod.aws-us-east-1c")) :
+                List.of(ZoneApiMock.fromId("test.us-east-1"),
+                        ZoneApiMock.fromId("staging.us-east-3"),
+                        ZoneApiMock.fromId("dev.us-east-1"),
+                        ZoneApiMock.fromId("dev.aws-us-east-2a"),
+                        ZoneApiMock.fromId("perf.us-east-3"),
+                        ZoneApiMock.fromId("prod.aws-us-east-1a"),
+                        ZoneApiMock.fromId("prod.ap-northeast-1"),
+                        ZoneApiMock.fromId("prod.ap-northeast-2"),
+                        ZoneApiMock.fromId("prod.ap-southeast-1"),
+                        ZoneApiMock.fromId("prod.us-east-3"),
+                        ZoneApiMock.fromId("prod.us-west-1"),
+                        ZoneApiMock.fromId("prod.us-central-1"),
+                        ZoneApiMock.fromId("prod.eu-west-1"));
         // All zones use a shared routing method by default
-        setRoutingMethod(this.zones, RoutingMethod.shared);
+        setRoutingMethod(this.zones, system.isPublic() ? RoutingMethod.exclusive : RoutingMethod.shared);
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {
@@ -203,11 +207,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public URI supportUrl() {
         return URI.create("https://help.tld");
-    }
-
-    @Override
-    public URI badgeUrl() {
-        return URI.create("https://badges.tld");
     }
 
     @Override

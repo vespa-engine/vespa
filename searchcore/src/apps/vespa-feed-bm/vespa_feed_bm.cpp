@@ -286,6 +286,7 @@ class BMParams {
     bool     _use_storage_chain;
     bool     _use_async_message_handling_on_schedule;
     uint32_t _bucket_db_stripe_bits;
+    uint32_t _distributor_stripes;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _client_threads) * thread_id + std::min(thread_id, _documents % _client_threads);
     }
@@ -310,7 +311,8 @@ public:
           _use_message_bus(false),
           _use_storage_chain(false),
           _use_async_message_handling_on_schedule(false),
-          _bucket_db_stripe_bits(0)
+          _bucket_db_stripe_bits(0),
+          _distributor_stripes(0)
     {
     }
     BMRange get_range(uint32_t thread_id) const {
@@ -335,6 +337,7 @@ public:
     bool get_use_storage_chain() const { return _use_storage_chain; }
     bool get_use_async_message_handling_on_schedule() const { return _use_async_message_handling_on_schedule; }
     uint32_t get_bucket_db_stripe_bits() const { return _bucket_db_stripe_bits; }
+    uint32_t get_distributor_stripes() const { return _distributor_stripes; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_max_pending(uint32_t max_pending_in) { _max_pending = max_pending_in; }
     void set_client_threads(uint32_t threads_in) { _client_threads = threads_in; }
@@ -355,6 +358,7 @@ public:
     void set_use_storage_chain(bool value) { _use_storage_chain = value; }
     void set_use_async_message_handling_on_schedule(bool value) { _use_async_message_handling_on_schedule = value; }
     void set_bucket_db_stripe_bits(uint32_t value) { _bucket_db_stripe_bits = value; }
+    void set_distributor_stripes(uint32_t value) { _distributor_stripes = value; }
     bool check() const;
     bool needs_service_layer() const { return _enable_service_layer || _enable_distributor || _use_storage_chain || _use_message_bus || _use_document_api; }
     bool needs_distributor() const { return _enable_distributor || _use_document_api; }
@@ -573,6 +577,7 @@ struct MyDistributorConfig : public MyStorageConfig
           stor_distributormanager(),
           stor_visitordispatcher()
     {
+        stor_distributormanager.numDistributorStripes = params.get_distributor_stripes();
     }
 
     ~MyDistributorConfig();
@@ -1361,8 +1366,9 @@ App::usage()
         "USAGE:\n";
     std::cerr <<
         "vespa-feed-bm\n"
-        "[--bucket-db-stripe-bits]\n"
+        "[--bucket-db-stripe-bits bits]\n"
         "[--client-threads threads]\n"
+        "[--distributor-stripes stripes]\n"
         "[--get-passes get-passes]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
         "[--max-pending max-pending]\n"
@@ -1392,6 +1398,7 @@ App::get_options()
     static struct option long_opts[] = {
         { "bucket-db-stripe-bits", 1, nullptr, 0 },
         { "client-threads", 1, nullptr, 0 },
+        { "distributor-stripes", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "enable-distributor", 0, nullptr, 0 },
         { "enable-service-layer", 0, nullptr, 0 },
@@ -1414,6 +1421,7 @@ App::get_options()
     enum longopts_enum {
         LONGOPT_BUCKET_DB_STRIPE_BITS,
         LONGOPT_CLIENT_THREADS,
+        LONGOPT_DISTRIBUTOR_STRIPES,
         LONGOPT_DOCUMENTS,
         LONGOPT_ENABLE_DISTRIBUTOR,
         LONGOPT_ENABLE_SERVICE_LAYER,
@@ -1444,6 +1452,9 @@ App::get_options()
                 break;
             case LONGOPT_CLIENT_THREADS:
                 _bm_params.set_client_threads(atoi(opt_argument));
+                break;
+            case LONGOPT_DISTRIBUTOR_STRIPES:
+                _bm_params.set_distributor_stripes(atoi(opt_argument));
                 break;
             case LONGOPT_DOCUMENTS:
                 _bm_params.set_documents(atoi(opt_argument));

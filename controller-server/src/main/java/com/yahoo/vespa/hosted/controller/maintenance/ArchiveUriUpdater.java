@@ -6,9 +6,9 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
 
 import java.net.URI;
 import java.time.Duration;
@@ -28,7 +28,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
-    private final ArchiveBucketDb archiveBucketDb;
+    private final CuratorArchiveBucketDb archiveBucketDb;
 
     public ArchiveUriUpdater(Controller controller, Duration duration) {
         super(controller, duration, ArchiveUriUpdater.class.getSimpleName(), SystemName.all());

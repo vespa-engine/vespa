@@ -73,6 +73,7 @@ public class ExpressionTestCase {
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");
         assertExpression(ToWsetExpression.class, "to_wset");
+        assertExpression(ToBoolExpression.class, "to_bool");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent");
         assertExpression(ToWsetExpression.class, "to_wset remove_if_zero");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent remove_if_zero");

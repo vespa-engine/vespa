@@ -5,18 +5,16 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 
-import java.util.concurrent.Executor;
-
 public class JDiscContext {
     final FilterResolver filterResolver;
     final CurrentContainer container;
-    final Executor janitor;
+    final Janitor janitor;
     final Metric metric;
     final ServerConfig serverConfig;
 
     public JDiscContext(FilterBindings filterBindings,
                         CurrentContainer container,
-                        Executor janitor,
+                        Janitor janitor,
                         Metric metric,
                         ServerConfig serverConfig) {
 

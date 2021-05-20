@@ -14,7 +14,7 @@ import static org.mockito.Mockito.verify;
 public class SlobrokMonitorTest {
     private final SlobrokList slobrokList = mock(SlobrokList.class);
     private final Mirror mirror = mock(Mirror.class);
-    private SlobrokMonitor slobrokMonitor = new SlobrokMonitor(slobrokList, mirror);
+    private final SlobrokMonitor slobrokMonitor = new SlobrokMonitor(slobrokList, mirror);
 
     @Test
     public void testUpdateSlobrokList() {

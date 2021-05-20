@@ -61,7 +61,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
         maintainers.add(new ContainerImageExpirer(controller, intervals.containerImageExpirer));
-        maintainers.add(new HostInfoUpdater(controller, intervals.hostSwitchUpdater));
+        maintainers.add(new HostInfoUpdater(controller, intervals.hostInfoUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
         maintainers.add(new TrafficShareUpdater(controller, intervals.trafficFractionUpdater));
@@ -116,7 +116,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration systemRoutingPolicyMaintainer;
         private final Duration applicationMetaDataGarbageCollector;
         private final Duration containerImageExpirer;
-        private final Duration hostSwitchUpdater;
+        private final Duration hostInfoUpdater;
         private final Duration reindexingTriggerer;
         private final Duration endpointCertificateMaintainer;
         private final Duration trafficFractionUpdater;
@@ -135,7 +135,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.deploymentMetricsMaintainer = duration(10, MINUTES);
             this.applicationOwnershipConfirmer = duration(12, HOURS);
             this.systemUpgrader = duration(2, MINUTES);
-            this.jobRunner = duration(90, SECONDS);
+            this.jobRunner = duration(system.isCd() ? 45 : 90, SECONDS);
             this.osVersionStatusUpdater = duration(2, MINUTES);
             this.osUpgrader = duration(1, MINUTES);
             this.osUpgradeScheduler = duration(3, HOURS);
@@ -148,7 +148,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.systemRoutingPolicyMaintainer = duration(10, MINUTES);
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
             this.containerImageExpirer = duration(12, HOURS);
-            this.hostSwitchUpdater = duration(12, HOURS);
+            this.hostInfoUpdater = duration(12, HOURS);
             this.reindexingTriggerer = duration(1, HOURS);
             this.endpointCertificateMaintainer = duration(12, HOURS);
             this.trafficFractionUpdater = duration(5, MINUTES);

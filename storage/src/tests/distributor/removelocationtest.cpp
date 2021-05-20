@@ -28,9 +28,9 @@ struct RemoveLocationOperationTest : Test, DistributorTestUtil {
         auto msg = std::make_shared<api::RemoveLocationCommand>(selection, makeDocumentBucket(document::BucketId(0)));
 
         op = std::make_unique<RemoveLocationOperation>(
-                distributor_component(),
-                distributor_component(),
-                distributor_component(),
+                node_context(),
+                operation_context(),
+                doc_selection_parser(),
                 getDistributorBucketSpace(),
                 msg,
                 getDistributor().getMetrics().

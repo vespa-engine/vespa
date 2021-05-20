@@ -12,7 +12,7 @@ LOG_SETUP(".distributor.operation.idealstate.remove");
 using namespace storage::distributor;
 
 bool
-RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
+RemoveBucketOperation::onStartInternal(DistributorStripeMessageSender& sender)
 {
     std::vector<std::pair<uint16_t, std::shared_ptr<api::DeleteBucketCommand> > > msgs;
 
@@ -51,7 +51,7 @@ RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
 
 
 void
-RemoveBucketOperation::onStart(DistributorMessageSender& sender)
+RemoveBucketOperation::onStart(DistributorStripeMessageSender& sender)
 {
     if (onStartInternal(sender)) {
         done();
@@ -104,7 +104,7 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
 
 
 void
-RemoveBucketOperation::onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply> &msg)
+RemoveBucketOperation::onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply> &msg)
 {
     if (onReceiveInternal(msg)) {
         done();

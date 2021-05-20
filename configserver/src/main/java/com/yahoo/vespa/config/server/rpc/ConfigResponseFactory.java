@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 
@@ -27,12 +28,12 @@ public interface ConfigResponseFactory {
     /**
      * Creates a {@link ConfigResponse} for a given payload and generation.
      *
-     * @param payload        the {@link ConfigPayload} to put in the response
+     * @param rawPayload     the {@link ConfigPayload} to put in the response
      * @param generation     the payload generation
      * @param applyOnRestart true if this config change should only be applied on restart,
      *                       false if it should be applied immediately
      * @return a {@link ConfigResponse} that can be sent to the client
      */
-    ConfigResponse createResponse(ConfigPayload payload, long generation, boolean applyOnRestart);
+    ConfigResponse createResponse(AbstractUtf8Array rawPayload, long generation, boolean applyOnRestart);
 
 }

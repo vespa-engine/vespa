@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -55,8 +54,8 @@ public class Instance {
     public Instance(ApplicationId id, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
                     List<AssignedRotation> rotations, RotationStatus rotationStatus, Change change) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
-        this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null").stream()
-                                                      .collect(Collectors.toMap(Deployment::zone, Function.identity())));
+        this.deployments = Objects.requireNonNull(deployments, "deployments cannot be null").stream()
+                                  .collect(Collectors.toUnmodifiableMap(Deployment::zone, Function.identity()));
         this.jobPauses = Map.copyOf(Objects.requireNonNull(jobPauses, "deploymentJobs cannot be null"));
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
@@ -140,9 +139,9 @@ public class Instance {
      * (deployments also includes manually deployed environments)
      */
     public Map<ZoneId, Deployment> productionDeployments() {
-        return ImmutableMap.copyOf(deployments.values().stream()
-                                           .filter(deployment -> deployment.zone().environment() == Environment.prod)
-                                           .collect(Collectors.toMap(Deployment::zone, Function.identity())));
+        return deployments.values().stream()
+                          .filter(deployment -> deployment.zone().environment() == Environment.prod)
+                          .collect(Collectors.toUnmodifiableMap(Deployment::zone, Function.identity()));
     }
 
     /** Returns the instant until which the given job is paused, or empty. */

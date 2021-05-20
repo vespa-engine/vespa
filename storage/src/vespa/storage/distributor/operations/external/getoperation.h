@@ -26,16 +26,16 @@ class DistributorBucketSpace;
 class GetOperation  : public Operation
 {
 public:
-    GetOperation(DistributorNodeContext& node_ctx,
+    GetOperation(const DistributorNodeContext& node_ctx,
                  const DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                  std::shared_ptr<api::GetCommand> msg,
                  PersistenceOperationMetricSet& metric,
                  api::InternalReadConsistency desired_read_consistency = api::InternalReadConsistency::Strong);
 
-    void onClose(DistributorMessageSender& sender) override;
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
     const char* getName() const override { return "get"; }
     std::string getStatus() const override { return ""; }
 
@@ -97,7 +97,7 @@ private:
     // within that bucket.
     std::map<GroupId, GroupVector> _responses;
 
-    DistributorNodeContext& _node_ctx;
+    const DistributorNodeContext& _node_ctx;
     const DistributorBucketSpace &_bucketSpace;
 
     std::shared_ptr<api::GetCommand> _msg;
@@ -114,8 +114,8 @@ private:
     bool _has_replica_inconsistency;
     bool _any_replicas_failed;
 
-    void sendReply(DistributorMessageSender& sender);
-    bool sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res);
+    void sendReply(DistributorStripeMessageSender& sender);
+    bool sendForChecksum(DistributorStripeMessageSender& sender, const document::BucketId& id, GroupVector& res);
 
     void assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard);
     bool copyIsOnLocalNode(const BucketCopy&) const;

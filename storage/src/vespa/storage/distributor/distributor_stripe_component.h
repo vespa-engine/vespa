@@ -158,8 +158,8 @@ public:
      */
     bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override;
 
-    const char* storage_node_up_states() const override {
-        return getDistributor().getStorageNodeUpStates();
+    const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const override {
+        return getDistributor().getBucketIdHasher();
     }
 
     // Implements DocumentSelectionParser

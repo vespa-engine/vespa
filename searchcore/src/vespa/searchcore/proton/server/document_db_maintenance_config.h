@@ -26,7 +26,7 @@ public:
     vespalib::duration getAge() const noexcept { return _age; }
 };
 
-typedef DocumentDBPruneConfig DocumentDBPruneRemovedDocumentsConfig;
+using DocumentDBPruneRemovedDocumentsConfig = DocumentDBPruneConfig;
 
 class DocumentDBHeartBeatConfig
 {
@@ -51,7 +51,6 @@ private:
     double               _remove_batch_block_rate;
     double               _remove_block_rate;
     bool                 _disabled;
-    bool                 _useBucketExecutor;
 
 public:
     DocumentDBLidSpaceCompactionConfig() noexcept;
@@ -60,8 +59,7 @@ public:
                                        double allowwedLidBloatFactor,
                                        double remove_batch_block_rate,
                                        double remove_block_rate,
-                                       bool disabled,
-                                       bool useBucketExecutor) noexcept;
+                                       bool disabled) noexcept;
 
     static DocumentDBLidSpaceCompactionConfig createDisabled() noexcept;
     bool operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const noexcept;
@@ -72,7 +70,6 @@ public:
     double get_remove_batch_block_rate() const noexcept { return _remove_batch_block_rate; }
     double get_remove_block_rate() const noexcept { return _remove_block_rate; }
     bool isDisabled() const noexcept { return _disabled; }
-    bool useBucketExecutor() const noexcept { return _useBucketExecutor; }
 };
 
 class BlockableMaintenanceJobConfig {
@@ -92,13 +89,11 @@ public:
 class BucketMoveConfig {
 public:
     BucketMoveConfig() noexcept;
-    BucketMoveConfig(uint32_t  _maxDocsToMovePerBucket, bool useBucketExecutor) noexcept;
+    BucketMoveConfig(uint32_t  _maxDocsToMovePerBucket) noexcept;
     bool operator==(const BucketMoveConfig &rhs) const noexcept;
     uint32_t getMaxDocsToMovePerBucket() const noexcept { return _maxDocsToMovePerBucket; }
-    bool useBucketExecutor() const noexcept { return _useBucketExecutor; }
 private:
     uint32_t  _maxDocsToMovePerBucket;
-    bool      _useBucketExecutor;
 };
 
 class DocumentDBMaintenanceConfig
@@ -107,7 +102,7 @@ public:
     typedef std::shared_ptr<DocumentDBMaintenanceConfig> SP;
 
 private:
-    DocumentDBPruneRemovedDocumentsConfig _pruneRemovedDocuments;
+    DocumentDBPruneConfig                 _pruneRemovedDocuments;
     DocumentDBHeartBeatConfig             _heartBeat;
     vespalib::duration                    _sessionCachePruneInterval;
     vespalib::duration                    _visibilityDelay;
@@ -120,7 +115,7 @@ private:
 
 public:
     DocumentDBMaintenanceConfig() noexcept;
-    DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
+    DocumentDBMaintenanceConfig(const DocumentDBPruneConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
                                 vespalib::duration sessionCachePruneInterval,
                                 vespalib::duration visibilityDelay,
@@ -139,7 +134,7 @@ public:
     bool
     operator==(const DocumentDBMaintenanceConfig &rhs) const noexcept ;
 
-    const DocumentDBPruneRemovedDocumentsConfig &getPruneRemovedDocumentsConfig() const noexcept {
+    const DocumentDBPruneConfig &getPruneRemovedDocumentsConfig() const noexcept {
         return _pruneRemovedDocuments;
     }
     const DocumentDBHeartBeatConfig &getHeartBeatConfig() const noexcept {

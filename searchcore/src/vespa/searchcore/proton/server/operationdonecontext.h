@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/idestructorcallback.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
 
 namespace proton {
 
@@ -16,17 +15,14 @@ namespace proton {
  */
 class OperationDoneContext : public vespalib::IDestructorCallback
 {
-    FeedToken _token;
-protected:
-    void ack();
-    FeedToken steal() { return std::move(_token); }
-
 public:
-    OperationDoneContext(FeedToken token);
+    using IDestructorCallback = vespalib::IDestructorCallback;
+    OperationDoneContext(IDestructorCallback::SP token);
 
     ~OperationDoneContext() override;
     bool hasToken() const { return static_cast<bool>(_token); }
+private:
+    IDestructorCallback::SP _token;
 };
-
 
 }  // namespace proton

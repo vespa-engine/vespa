@@ -5,18 +5,24 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
+import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This API serves redirects to a badge server.
@@ -62,24 +68,31 @@ public class BadgeApiHandler extends LoggingRequestHandler {
 
     /** Returns a URI which points to an overview badge for the given application. */
     private HttpResponse badge(String tenant, String application, String instance) {
-        URI location = controller.jobController().overviewBadge(ApplicationId.from(tenant, application, instance));
-        return redirect(location);
+        ApplicationId id = ApplicationId.from(tenant, application, instance);
+        DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(TenantAndApplicationId.from(id)));
+        Predicate<JobStatus> isDeclaredJob = job -> status.jobSteps().get(job.id()) != null && status.jobSteps().get(job.id()).isDeclared();
+        return svgResponse(Badges.overviewBadge(id,
+                                                status.jobs().instance(id.instance()).matching(isDeclaredJob),
+                                                controller.system()));
     }
 
     /** Returns a URI which points to a history badge for the given application and job type. */
     private HttpResponse badge(String tenant, String application, String instance, String jobName, String historyLength) {
-        URI location = controller.jobController().historicBadge(ApplicationId.from(tenant, application, instance),
-                                                                JobType.fromJobName(jobName),
-                                                                historyLength == null ? 5 : Math.min(32, Math.max(0, Integer.parseInt(historyLength))));
-        return redirect(location);
+        ApplicationId id = ApplicationId.from(tenant, application, instance);
+        return svgResponse(Badges.historyBadge(id,
+                                               controller.jobController().jobStatus(new JobId(id, JobType.fromJobName(jobName))),
+                                               historyLength == null ? 5 : Math.min(32, Math.max(0, Integer.parseInt(historyLength)))));
     }
 
-    private static HttpResponse redirect(URI location) {
-        HttpResponse httpResponse = new HttpResponse(Response.Status.FOUND) {
-            @Override public void render(OutputStream outputStream) { }
+    private static HttpResponse svgResponse(String svg) {
+        return new HttpResponse(200) {
+            @Override public void render(OutputStream outputStream) throws IOException {
+                outputStream.write(svg.getBytes(UTF_8));
+            }
+            @Override public String getContentType() {
+                return "image/svg+xml; charset=UTF-8";
+            }
         };
-        httpResponse.headers().add("Location", location.toString());
-        return httpResponse;
     }
 
 }

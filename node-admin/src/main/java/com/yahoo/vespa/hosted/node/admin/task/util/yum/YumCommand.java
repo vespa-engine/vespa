@@ -4,19 +4,36 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author freva
  */
 public abstract class YumCommand<T extends YumCommand<T>> {
+
+    // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
+    public static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do\\.?$");
+    public static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
+    public static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No [pP]ackages marked for removal\\.?$");
+
+    // WARNING: These must be in the same order as the supplier below
+    private static final String RPM_QUERYFORMAT = Stream.of("NAME", "EPOCH", "VERSION", "RELEASE", "ARCH")
+            .map(formatter -> "%{" + formatter + "}")
+            .collect(Collectors.joining("\\n"));
+    private static final Function<YumPackageName.Builder, List<Function<String, YumPackageName.Builder>>>
+            PACKAGE_NAME_BUILDERS_GENERATOR = builder -> List.of(
+            builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
 
     private List<String> enabledRepos = List.of();
     private final Terminal terminal;
@@ -54,34 +71,31 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile("(?dm)^No package ([^ ]+) available\\.$");
 
         private final Terminal terminal;
-        private final String yumCommand;
-        private final List<Pattern> outputNoopPatterns;
+        private final CommandType yumCommand;
         private final List<YumPackageName> packages;
         private final List<String> options = new ArrayList<>();
 
-        GenericYumCommand(Terminal terminal, String yumCommand, List<YumPackageName> packages, Pattern... outputNoopPatterns) {
+        GenericYumCommand(Terminal terminal, CommandType yumCommand, List<YumPackageName> packages) {
             super(terminal);
             this.terminal = terminal;
             this.yumCommand = yumCommand;
             this.packages = packages;
-            this.outputNoopPatterns = List.of(outputNoopPatterns);
 
             switch (yumCommand) {
-                case "install": {
+                case install: {
                     if (packages.size() > 1) options.add("skip_missing_names_on_install=False");
                     break;
                 }
-                case "upgrade": {
+                case upgrade: {
                     if (packages.size() > 1) options.add("skip_missing_names_on_update=False");
                     break;
                 }
-                case "remove": break;
+                case remove: break;
                 default: throw new IllegalArgumentException("Unknown yum command: " + yumCommand);
             }
 
-            if (packages.isEmpty() && ! "upgrade".equals(yumCommand)) {
+            if (packages.isEmpty() && yumCommand != CommandType.upgrade)
                 throw new IllegalArgumentException("No packages specified");
-            }
         }
 
         @Override
@@ -92,13 +106,14 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
         @Override
         public boolean converge(TaskContext context) {
-            if (packages.isEmpty() && ! "upgrade".equals(yumCommand)) {
-                throw new IllegalArgumentException("No packages specified");
-            }
+            if (yumCommand == CommandType.install)
+                if (packages.stream().allMatch(pkg -> isInstalled(context, pkg))) return false;
+            if (yumCommand == CommandType.remove)
+                if (packages.stream().noneMatch(pkg -> isInstalled(context, pkg))) return false;
 
             Version yumVersion = version(context);
             CommandLine commandLine = terminal.newCommandLine(context);
-            commandLine.add("yum", yumCommand);
+            commandLine.add("yum", yumCommand.name());
             addParametersToCommandLine(commandLine);
             commandLine.add(packages.stream().map(pkg -> pkg.toName(yumVersion)).collect(Collectors.toList()));
 
@@ -121,10 +136,19 @@ public abstract class YumCommand<T extends YumCommand<T>> {
                 throw new IllegalArgumentException("Unknown package: " + unknownPackageMatcher.group(1));
             }
 
-            return outputNoopPatterns.stream().noneMatch(pattern -> pattern.matcher(output).find());
+            return yumCommand.outputNoopPatterns.stream().noneMatch(pattern -> pattern.matcher(output).find());
         }
 
         protected GenericYumCommand getThis() { return this; }
+
+        enum CommandType {
+            install(INSTALL_NOOP_PATTERN), remove(REMOVE_NOOP_PATTERN), upgrade(INSTALL_NOOP_PATTERN, UPGRADE_NOOP_PATTERN);
+
+            private final List<Pattern> outputNoopPatterns;
+            CommandType(Pattern... outputNoopPatterns) {
+                this.outputNoopPatterns = List.of(outputNoopPatterns);
+            }
+        }
     }
 
 
@@ -211,7 +235,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
             String output = installCommand.executeSilently().getUntrimmedOutput();
 
-            if (Yum.INSTALL_NOOP_PATTERN.matcher(output).find()) {
+            if (INSTALL_NOOP_PATTERN.matcher(output).find()) {
                 if (CHECKING_FOR_UPDATE_PATTERN.matcher(output).find()) {
                     // case 3.
                     var upgradeCommand = terminal.newCommandLine(context).add("yum", "downgrade");
@@ -233,4 +257,25 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         protected InstallFixedYumCommand getThis() { return this; }
     }
 
+    protected boolean isInstalled(TaskContext context, YumPackageName yumPackage) {
+        return queryInstalled(terminal, context, yumPackage.getName()).map(yumPackage::isSubsetOf).orElse(false);
+    }
+
+    static Optional<YumPackageName> queryInstalled(Terminal terminal, TaskContext context, String packageName) {
+        CommandResult commandResult = terminal.newCommandLine(context)
+                .add("rpm", "-q", packageName, "--queryformat", RPM_QUERYFORMAT)
+                .ignoreExitCode()
+                .executeSilently();
+
+        if (commandResult.getExitCode() != 0) return Optional.empty();
+
+        YumPackageName.Builder builder = new YumPackageName.Builder();
+        List<Function<String, YumPackageName.Builder>> builders = PACKAGE_NAME_BUILDERS_GENERATOR.apply(builder);
+        List<Optional<String>> lines = commandResult.mapEachLine(line -> Optional.of(line).filter(s -> !"(none)".equals(s)));
+        if (lines.size() != builders.size()) throw new IllegalStateException(String.format(
+                "Unexpected response from rpm, expected %d lines, got %s", builders.size(), commandResult.getOutput()));
+
+        IntStream.range(0, builders.size()).forEach(i -> lines.get(i).ifPresent(builders.get(i)::apply));
+        return Optional.of(builder.build());
+    }
 }

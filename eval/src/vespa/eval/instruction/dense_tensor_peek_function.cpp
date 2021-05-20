@@ -21,7 +21,7 @@ void my_tensor_peek_op(InterpretedFunction::State &state, uint64_t param) {
         if (dim.first >= 0) {
             idx += (dim.first * factor);
         } else {
-            size_t dim_idx = state.peek(0).as_double();
+            size_t dim_idx = (int64_t) state.peek(0).as_double();
             state.stack.pop_back();
             valid &= (dim_idx < dim.second);
             idx += (dim_idx * factor);

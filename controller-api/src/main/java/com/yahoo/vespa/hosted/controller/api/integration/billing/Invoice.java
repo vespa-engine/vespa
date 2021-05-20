@@ -6,6 +6,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -325,9 +327,10 @@ public class Invoice {
             this.history = history;
         }
 
-        public static StatusHistory open() {
+        public static StatusHistory open(Clock clock) {
+            var now = clock.instant().atZone(ZoneOffset.UTC);
             return new StatusHistory(
-                    new TreeMap<>(Map.of(ZonedDateTime.now(), "OPEN"))
+                    new TreeMap<>(Map.of(now, "OPEN"))
             );
         }
 

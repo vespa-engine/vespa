@@ -95,11 +95,11 @@ struct FunctionInfo {
         if (node) {
             auto lhs_symbol = as<Symbol>(node->lhs());
             auto rhs_symbol = as<Symbol>(node->rhs());
-            if (lhs_symbol && node->rhs().is_const()) {
-                inputs[lhs_symbol->id()].cmp_with.push_back(node->rhs().get_const_value());
+            if (lhs_symbol && node->rhs().is_const_double()) {
+                inputs[lhs_symbol->id()].cmp_with.push_back(node->rhs().get_const_double_value());
             }
-            if (node->lhs().is_const() && rhs_symbol) {
-                inputs[rhs_symbol->id()].cmp_with.push_back(node->lhs().get_const_value());
+            if (node->lhs().is_const_double() && rhs_symbol) {
+                inputs[rhs_symbol->id()].cmp_with.push_back(node->lhs().get_const_double_value());
             }
         }
     }
@@ -108,7 +108,7 @@ struct FunctionInfo {
         if (node) {
             if (auto symbol = as<Symbol>(node->child())) {
                 for (size_t i = 0; i < node->num_entries(); ++i) {
-                    inputs[symbol->id()].cmp_with.push_back(node->get_entry(i).get_const_value());
+                    inputs[symbol->id()].cmp_with.push_back(node->get_entry(i).get_const_double_value());
                 }
             }
         }

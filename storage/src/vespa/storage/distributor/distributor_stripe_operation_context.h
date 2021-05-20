@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include "bucketgctimecalculator.h"
 #include "bucketownership.h"
+#include "distributor_operation_context.h"
 #include "operation_routing_snapshot.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
@@ -11,21 +13,16 @@
 
 namespace document { class Bucket; }
 
-namespace storage { class DistributorConfiguration; }
-namespace storage::lib { class ClusterStateBundle; }
-
 namespace storage::distributor {
 
-class DistributorBucketSpaceRepo;
 class PendingMessageTracker;
 
 /**
  * Interface with functionality that is used when handling distributor stripe operations.
  */
-class DistributorStripeOperationContext {
+class DistributorStripeOperationContext : public DistributorOperationContext {
 public:
     virtual ~DistributorStripeOperationContext() {}
-    virtual api::Timestamp generate_unique_timestamp() = 0;
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,
                                         uint32_t update_flags = 0) = 0;
@@ -35,15 +32,10 @@ public:
     virtual void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) = 0;
     virtual void remove_nodes_from_bucket_database(const document::Bucket& bucket,
                                                    const std::vector<uint16_t>& nodes) = 0;
-    virtual const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept= 0;
-    virtual DistributorBucketSpaceRepo& bucket_space_repo() noexcept = 0;
-    virtual const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept = 0;
-    virtual DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept = 0;
     virtual document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& docId) const = 0;
     virtual void recheck_bucket_info(uint16_t node_index, const document::Bucket& bucket) = 0;
     virtual document::BucketId get_sibling(const document::BucketId& bid) const = 0;
 
-    virtual const DistributorConfiguration& distributor_config() const noexcept = 0;
     virtual void send_inline_split_if_bucket_too_large(document::BucketSpace bucket_space,
                                                        const BucketDatabase::Entry& entry,
                                                        uint8_t pri) = 0;
@@ -55,10 +47,7 @@ public:
     virtual const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const = 0;
     virtual const lib::ClusterStateBundle& cluster_state_bundle() const = 0;
     virtual bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const = 0;
-
-    // TODO: Move to being a free function instead.
-    virtual const char* storage_node_up_states() const = 0;
-
+    virtual const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const = 0;
 };
 
 }

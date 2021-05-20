@@ -135,26 +135,28 @@ SingleValueEnumAttribute<B>::onUpdateStat()
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques)
+SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     EnumIndex idx;
     if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-        newUniques.insert(c._data);
+        c._enumScratchPad = inserter.insert(c._data.raw()).ref();
+    } else {
+        c._enumScratchPad = idx.ref();
     }
     considerUpdateAttributeChange(c); // for numeric
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, UniqueSet & newUniques)
+SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     if (c._type == ChangeBase::UPDATE) {
-        considerUpdateAttributeChange(c, newUniques);
+        considerUpdateAttributeChange(c, inserter);
     } else if (c._type >= ChangeBase::ADD && c._type <= ChangeBase::DIV) {
-        considerArithmeticAttributeChange(c, newUniques); // for numeric
+        considerArithmeticAttributeChange(c, inserter); // for numeric
     } else if (c._type == ChangeBase::CLEARDOC) {
         this->_defaultValue._doc = c._doc;
-        considerUpdateAttributeChange(this->_defaultValue, newUniques);
+        considerUpdateAttributeChange(this->_defaultValue, inserter);
     }
 }
 

@@ -22,7 +22,7 @@ StatBucketOperation::StatBucketOperation(
 StatBucketOperation::~StatBucketOperation() = default;
 
 void
-StatBucketOperation::onClose(DistributorMessageSender& sender)
+StatBucketOperation::onClose(DistributorStripeMessageSender& sender)
 {
     api::StatBucketReply* rep = (api::StatBucketReply*)_command->makeReply().release();
     rep->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
@@ -30,7 +30,7 @@ StatBucketOperation::onClose(DistributorMessageSender& sender)
 }
 
 void
-StatBucketOperation::onStart(DistributorMessageSender& sender)
+StatBucketOperation::onStart(DistributorStripeMessageSender& sender)
 {
     std::vector<uint16_t> nodes;
 
@@ -68,7 +68,7 @@ StatBucketOperation::onStart(DistributorMessageSender& sender)
 };
 
 void
-StatBucketOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
+StatBucketOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     assert(msg->getType() == api::MessageType::STATBUCKET_REPLY);
     api::StatBucketReply& myreply(dynamic_cast<api::StatBucketReply&>(*msg));

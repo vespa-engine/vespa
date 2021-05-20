@@ -3,7 +3,7 @@
     {
       "at": "(ignore)",
       "level": "warning",
-      "type": "APPLICATION_PACKAGE_WARNING",
+      "type": "applicationPackage",
       "messages": [
         "Something something deprecated..."
       ],
@@ -12,7 +12,7 @@
     {
       "at": "(ignore)",
       "level": "error",
-      "type": "DEPLOYMENT_FAILURE",
+      "type": "deployment",
       "messages": [
         "Failed to deploy: Out of capacity"
       ],

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import java.util.Random;
@@ -21,7 +21,6 @@ public class TimingValues {
     private long fixedDelay = 5000;
     private long unconfiguredDelay = 1000;
     private long configuredErrorDelay = 15000;
-    private int  maxDelayMultiplier = 10;
     private final Random rand;
 
     public TimingValues() {
@@ -38,8 +37,7 @@ public class TimingValues {
                         long subscribeTimeout,
                         long unconfiguredDelay,
                         long configuredErrorDelay,
-                        long fixedDelay,
-                        int maxDelayMultiplier) {
+                        long fixedDelay) {
         this.successTimeout = successTimeout;
         this.errorTimeout = errorTimeout;
         this.initialTimeout = initialTimeout;
@@ -47,7 +45,6 @@ public class TimingValues {
         this.unconfiguredDelay = unconfiguredDelay;
         this.configuredErrorDelay = configuredErrorDelay;
         this.fixedDelay = fixedDelay;
-        this.maxDelayMultiplier = maxDelayMultiplier;
         this.rand = new Random(System.currentTimeMillis());
     }
 
@@ -58,7 +55,6 @@ public class TimingValues {
                          long unconfiguredDelay,
                          long configuredErrorDelay,
                          long fixedDelay,
-                         int maxDelayMultiplier,
                          Random rand) {
         this.successTimeout = successTimeout;
         this.errorTimeout = errorTimeout;
@@ -67,7 +63,6 @@ public class TimingValues {
         this.unconfiguredDelay = unconfiguredDelay;
         this.configuredErrorDelay = configuredErrorDelay;
         this.fixedDelay = fixedDelay;
-        this.maxDelayMultiplier = maxDelayMultiplier;
         this.rand = rand;
     }
 
@@ -79,7 +74,6 @@ public class TimingValues {
                 tv.unconfiguredDelay,
                 tv.configuredErrorDelay,
                 tv.fixedDelay,
-                tv.maxDelayMultiplier,
                 random);
     }
 
@@ -154,16 +148,6 @@ public class TimingValues {
     }
 
     /**
-     * Returns maximum multiplier to use when calculating delay (the delay is multiplied by the number of
-     * failed requests, unless that number is this maximum multiplier).
-     *
-     * @return timeout in milliseconds.
-     */
-    public int getMaxDelayMultiplier() {
-        return maxDelayMultiplier;
-    }
-
-    /**
      * Returns fixed delay that is used when retrying getting config no matter if it was a success or an error
      * and independent of number of retries.
      *
@@ -176,24 +160,35 @@ public class TimingValues {
     /**
      * Returns a number +/- a random component
      *
-     * @param val      input
+     * @param value      input
      * @param fraction for instance 0.1 for +/- 10%
      * @return a number
      */
-    public long getPlusMinusFractionRandom(long val, float fraction) {
-        return Math.round(val - (val * fraction) + (rand.nextFloat() * 2L * val * fraction));
+    public long getPlusMinusFractionRandom(long value, float fraction) {
+        return Math.round(value - (value * fraction) + (rand.nextFloat() * 2L * value * fraction));
+    }
+
+    /**
+     * Returns a number between 0 and maxValue
+     *
+     * @param maxValue max maxValue
+     * @return a number
+     */
+    public long getRandomTransientDelay(long maxValue) {
+        return Math.round(rand.nextFloat() * maxValue);
     }
 
     @Override
     public String toString() {
         return "TimingValues [successTimeout=" + successTimeout
-                + ", errorTimeout=" + errorTimeout + ", initialTimeout="
-                + initialTimeout + ", subscribeTimeout=" + subscribeTimeout
-                + ", configuredErrorTimeout=" + configuredErrorTimeout
-                + ", fixedDelay=" + fixedDelay + ", unconfiguredDelay="
-                + unconfiguredDelay + ", configuredErrorDelay="
-                + configuredErrorDelay + ", maxDelayMultiplier="
-                + maxDelayMultiplier + ", rand=" + rand + "]";
+               + ", errorTimeout=" + errorTimeout
+               + ", initialTimeout=" + initialTimeout
+               + ", subscribeTimeout=" + subscribeTimeout
+               + ", configuredErrorTimeout=" + configuredErrorTimeout
+               + ", fixedDelay=" + fixedDelay
+               + ", unconfiguredDelay=" + unconfiguredDelay
+               + ", configuredErrorDelay=" + configuredErrorDelay
+               + ", rand=" + rand + "]";
     }
 
 

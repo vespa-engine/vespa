@@ -13,7 +13,6 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.application.provider.SimpleApplicationValidator;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
@@ -393,7 +392,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
-        assertEquals(256, qrStartConfig.jvm().heapsize());
+        assertEquals(128, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
         assertFalse(qrStartConfig.jvm().verbosegc());
@@ -404,44 +403,6 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
         assertReindexingConfigPresent(model);
         assertReindexingConfiguredOnAdminCluster(model);
-    }
-
-    @Test
-    public void testQrStartConfigWithFeatureFlagForMaxHeap() throws Exception {
-        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                     "<services>\n" +
-                     "\n" +
-                     "  <admin version=\"2.0\">\n" +
-                     "    <adminserver hostalias=\"configserver\" />\n" +
-                     "    <logserver hostalias=\"logserver\" />\n" +
-                     "    <slobroks>\n" +
-                     "      <slobrok hostalias=\"configserver\" />\n" +
-                     "      <slobrok hostalias=\"logserver\" />\n" +
-                     "    </slobroks>\n" +
-                     "  </admin>\n" +
-                     "  <content version='1.0' id='bar'>" +
-                     "     <redundancy>1</redundancy>\n" +
-                     "     <documents>" +
-                     "       <document type=\"type1\" mode=\"store-only\"/>\n" +
-                     "     </documents>\n" +
-                     "     <group>" +
-                     "       <node hostalias='node0' distribution-key='0' />" +
-                     "     </group>" +
-                     "   </content>" +
-                     "\n" +
-                     "</services>";
-
-        VespaModel model = createVespaModel(xml, new DeployState.Builder().properties(new TestProperties().clusterControllerMaxHeapSizeInMb(256)));
-        assertTrue(model.getService("admin/cluster-controllers/0").isPresent());
-
-        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
-        // Taken from ContainerCluster
-        assertEquals(32, qrStartConfig.jvm().minHeapsize());
-        // Overridden values from ClusterControllerContainerCluster
-        assertEquals(256, qrStartConfig.jvm().heapsize());
-        assertFalse(qrStartConfig.jvm().verbosegc());
     }
 
     @Test

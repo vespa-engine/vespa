@@ -311,7 +311,7 @@ Test::testAggregationSimple()
     ctx.add(FloatAttrBuilder("float").add(3).add(7).add(15).sp());
     ctx.add(StringAttrBuilder("string").add("3").add("7").add("15").sp());
 
-    char strsum[3] = {-101, '5', 0};
+    char strsum[3] = {(char)-101, '5', 0};
     testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode(strsum));
     testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15"));
     testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7"));

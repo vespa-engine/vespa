@@ -11,6 +11,8 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.config.model.api.TenantSecretStore;
@@ -21,9 +23,11 @@ import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Parameters for preparing an application. Immutable.
@@ -163,6 +167,16 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder containerEndpointList(List<ContainerEndpoint> endpoints) {
+            this.containerEndpoints = endpoints;
+            return this;
+        }
+
+        public Builder endpointCertificateMetadata(EndpointCertificateMetadata endpointCertificateMetadata) {
+            this.endpointCertificateMetadata = Optional.ofNullable(endpointCertificateMetadata);
+            return this;
+        }
+
         public Builder endpointCertificateMetadata(String serialized) {
             this.endpointCertificateMetadata = (serialized == null)
                     ? Optional.empty()
@@ -194,6 +208,11 @@ public final class PrepareParams {
 
         public Builder applicationRoles(ApplicationRoles applicationRoles) {
             this.applicationRoles = Optional.ofNullable(applicationRoles);
+            return this;
+        }
+
+        public Builder quota(Quota quota) {
+            this.quota = Optional.ofNullable(quota);
             return this;
         }
 
@@ -253,6 +272,61 @@ public final class PrepareParams {
                             .build();
     }
 
+    public static PrepareParams fromJson(byte[] json, TenantName tenant, Duration barrierTimeout) {
+        Slime slime = SlimeUtils.jsonToSlimeOrThrow(json);
+        Inspector params = slime.get();
+
+        return new Builder()
+                .ignoreValidationErrors(booleanValue(params, IGNORE_VALIDATION_PARAM_NAME))
+                .dryRun(booleanValue(params, DRY_RUN_PARAM_NAME))
+                .verbose(booleanValue(params, VERBOSE_PARAM_NAME))
+                .timeoutBudget(SessionHandler.getTimeoutBudget(getTimeout(params, barrierTimeout)))
+                .applicationId(createApplicationId(params, tenant))
+                .vespaVersion(SlimeUtils.optionalString(params.field(VESPA_VERSION_PARAM_NAME)).orElse(null))
+                .containerEndpointList(deserialize(params.field(CONTAINER_ENDPOINTS_PARAM_NAME), ContainerEndpointSerializer::endpointListFromSlime, Collections.emptyList()))
+                .endpointCertificateMetadata(deserialize(params.field(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME), EndpointCertificateMetadataSerializer::fromSlime))
+                .dockerImageRepository(SlimeUtils.optionalString(params.field(DOCKER_IMAGE_REPOSITORY)).orElse(null))
+                .athenzDomain(SlimeUtils.optionalString(params.field(ATHENZ_DOMAIN)).orElse(null))
+                .applicationRoles(ApplicationRoles.fromString(SlimeUtils.optionalString(params.field(APPLICATION_HOST_ROLE)).orElse(null), SlimeUtils.optionalString(params.field(APPLICATION_CONTAINER_ROLE)).orElse(null)))
+                .quota(deserialize(params.field(QUOTA_PARAM_NAME), Quota::fromSlime))
+                .tenantSecretStores(SlimeUtils.optionalString(params.field(TENANT_SECRET_STORES_PARAM_NAME)).orElse(null))
+                .force(booleanValue(params, FORCE_PARAM_NAME))
+                .waitForResourcesInPrepare(booleanValue(params, WAIT_FOR_RESOURCES_IN_PREPARE))
+                .build();
+    }
+
+    private static <T> T deserialize(Inspector field, Function<Inspector, T> mapper) {
+        return deserialize(field, mapper, null);
+    }
+    private static <T> T deserialize(Inspector field, Function<Inspector, T> mapper, T defaultValue) {
+        return field.valid()
+                ? mapper.apply(field)
+                : defaultValue;
+    }
+
+    private static boolean booleanValue(Inspector inspector, String fieldName) {
+        Inspector field = inspector.field(fieldName);
+        return field.valid()
+                ? field.asBool()
+                : false;
+    }
+
+    private static Duration getTimeout(Inspector params, Duration defaultTimeout) {
+        if(params.field("timeout").valid()) {
+            return Duration.ofSeconds(params.field("timeout").asLong());
+        } else {
+            return defaultTimeout;
+        }
+    }
+
+    private static ApplicationId createApplicationId(Inspector params, TenantName tenant) {
+        return new ApplicationId.Builder()
+                .tenant(tenant)
+                .applicationName(SlimeUtils.optionalString(params.field(APPLICATION_NAME_PARAM_NAME)).orElse("default"))
+                .instanceName(SlimeUtils.optionalString(params.field(INSTANCE_PARAM_NAME)).orElse("default"))
+                .build();
+    }
+
     private static ApplicationId createApplicationId(HttpRequest request, TenantName tenant) {
         return new ApplicationId.Builder()
                .tenant(tenant)
@@ -268,7 +342,7 @@ public final class PrepareParams {
     private static Optional<String> getProperty(HttpRequest request, String propertyName) {
         return Optional.ofNullable(request.getProperty(propertyName));
     }
-    
+
     public String getApplicationName() {
         return applicationId.application().value();
     }

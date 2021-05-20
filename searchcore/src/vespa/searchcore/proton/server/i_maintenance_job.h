@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
 #include <memory>
+#include <atomic>
 
 namespace proton {
 
@@ -21,7 +22,9 @@ private:
     const vespalib::string     _name;
     const vespalib::duration   _delay;
     const vespalib::duration   _interval;
-
+    std::atomic<bool>          _stopped;
+protected:
+    virtual void onStop() = 0;
 public:
     using UP = std::unique_ptr<IMaintenanceJob>;
     using SP = std::shared_ptr<IMaintenanceJob>;
@@ -31,7 +34,8 @@ public:
                     vespalib::duration interval)
         : _name(name),
           _delay(delay),
-          _interval(interval)
+          _interval(interval),
+          _stopped(false)
     {}
 
     virtual ~IMaintenanceJob() = default;
@@ -41,9 +45,12 @@ public:
     virtual vespalib::duration getInterval() const { return _interval; }
     virtual bool isBlocked() const { return false; }
     virtual IBlockableMaintenanceJob *asBlockable() { return nullptr; }
-    virtual void onStop() = 0;
     virtual void updateMetrics(DocumentDBTaggedMetrics &) const {}
-
+    void stop() {
+        _stopped = true;
+        onStop();
+    }
+    bool stopped() const { return _stopped.load(std::memory_order_relaxed); }
     /**
      * Register maintenance job runner, in case event passed to the
      * job causes it to want to be run again.

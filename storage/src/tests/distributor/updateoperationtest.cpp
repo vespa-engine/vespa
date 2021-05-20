@@ -66,9 +66,8 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
 
     auto msg = std::make_shared<api::UpdateCommand>(makeDocumentBucket(document::BucketId(0)), update, 100);
 
-    auto& comp = distributor_component();
     return std::make_shared<UpdateOperation>(
-            comp, comp, getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
+            node_context(), operation_context(), getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
             getDistributor().getMetrics().updates);
 }
 

@@ -319,7 +319,7 @@ documentdb[].allocation.amortizecount int default=10000
 documentdb[].allocation.multivaluegrowfactor double default=0.2
 
 ## The ratio of used bytes that can be dead before attempting to perform compaction.
-documentdb[].allocation.max_dead_bytes_ratio double default=0.15
+documentdb[].allocation.max_dead_bytes_ratio double default=0.05
 
 ## The ratio of used address space that can be dead before attempting to perform compaction.
 documentdb[].allocation.max_dead_address_space_ratio double default=0.2
@@ -351,6 +351,9 @@ pruneremoveddocumentsinterval double default=0.0
 ##
 ## Default value is 2 weeks (1209600 seconds).
 pruneremoveddocumentsage double default=1209600.0
+
+## Set to true to enable bucket locking via content layer
+pruneremoveddocuments.usebucketexecutor bool default=true
 
 ## Minimum size of packets to compress (0 means no compression)
 ##
@@ -413,13 +416,15 @@ lidspacecompaction.removebatchblockrate double default=0.5
 lidspacecompaction.removeblockrate double default=100.0
 
 ## Set to true to enable bucket locking via content layer
-lidspacecompaction.usebucketexecutor bool default=false
+## DEPRECATED and unused
+lidspacecompaction.usebucketexecutor bool default=true
 
 ## Maximum docs to move in single operation per bucket
 bucketmove.maxdocstomoveperbucket int default=1
 
 ## Set to true to enable bucket locking via content layer
-bucketmove.usebucketexecutor bool default=false
+## DEPRECATED and unused
+bucketmove.usebucketexecutor bool default=true
 
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.
@@ -515,7 +520,7 @@ maintenancejobs.resourcelimitfactor double default = 1.05
 ##
 ## The job is unblocked (and executed again) when this goes under the limit again.
 ## Currently used by 'lid_space_compaction' job.
-maintenancejobs.maxoutstandingmoveops int default=10
+maintenancejobs.maxoutstandingmoveops int default=100
 
 ## Controls the type of bucket checksum used. Do not change unless 
 ## in depth understanding is present.

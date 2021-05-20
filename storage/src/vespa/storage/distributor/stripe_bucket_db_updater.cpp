@@ -21,23 +21,22 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.stripe_bucket_db_updater");
 
+using document::BucketSpace;
 using storage::lib::Node;
 using storage::lib::NodeType;
-using document::BucketSpace;
+using vespalib::xml::XmlAttribute;
 
 namespace storage::distributor {
 
-StripeBucketDBUpdater::StripeBucketDBUpdater(DistributorStripeInterface& owner,
-                                             DistributorBucketSpaceRepo& bucketSpaceRepo,
-                                             DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+StripeBucketDBUpdater::StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
+                                             DistributorStripeOperationContext& op_ctx,
+                                             DistributorStripeInterface& owner,
                                              DistributorMessageSender& sender,
-                                             DistributorComponentRegister& compReg,
                                              bool use_legacy_mode)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
-      _node_ctx(_distributorComponent),
-      _op_ctx(_distributorComponent),
-      _distributor_interface(_distributorComponent.getDistributor()),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _distributor_interface(owner),
       _delayedRequests(),
       _sentMessages(),
       _pendingClusterState(),
@@ -225,7 +224,7 @@ StripeBucketDBUpdater::removeSuperfluousBuckets(
 {
     assert(_use_legacy_mode);
     const bool move_to_read_only_db = shouldDeferStateEnabling();
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
     for (auto& elem : _op_ctx.bucket_space_repo()) {
         const auto& newDistribution(elem.second->getDistribution());
         const auto& oldClusterState(elem.second->getClusterState());
@@ -273,7 +272,7 @@ StripeBucketDBUpdater::remove_superfluous_buckets(
     assert(!_use_legacy_mode);
     (void)is_distribution_change; // TODO remove if not needed
     const bool move_to_read_only_db = shouldDeferStateEnabling();
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
 
     auto& s = _op_ctx.bucket_space_repo().get(bucket_space);
     const auto& new_distribution = s.getDistribution();
@@ -377,7 +376,7 @@ StripeBucketDBUpdater::storageDistributionChanged()
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
             _op_ctx.cluster_state_bundle(),
-            _op_ctx.storage_node_up_states());
+            storage_node_up_states());
     _pendingClusterState = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
@@ -489,7 +488,7 @@ StripeBucketDBUpdater::onSetSystemState(
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _node_ctx.node_index(),
                 _op_ctx.cluster_state_bundle(),
-                _op_ctx.storage_node_up_states());
+                storage_node_up_states());
     _pendingClusterState = PendingClusterState::createForClusterStateChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
@@ -960,18 +959,28 @@ StripeBucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
     }
     xos << XmlEndTag()
         << XmlTag("single_bucket_requests");
-    for (const auto & entry : _sentMessages)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
-    }
+    report_single_bucket_requests(xos);
     xos << XmlEndTag()
         << XmlTag("delayed_single_bucket_requests");
-    for (const auto & entry : _delayedRequests)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
-    }
+    report_delayed_single_bucket_requests(xos);
     xos << XmlEndTag() << XmlEndTag();
     return "";
+}
+
+void
+StripeBucketDBUpdater::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
+{
+    for (const auto& entry : _sentMessages) {
+        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
+    }
+}
+
+void
+StripeBucketDBUpdater::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
+{
+    for (const auto& entry : _delayedRequests) {
+        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
+    }
 }
 
 StripeBucketDBUpdater::MergingNodeRemover::MergingNodeRemover(

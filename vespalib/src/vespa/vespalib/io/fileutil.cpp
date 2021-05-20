@@ -185,8 +185,7 @@ File::open(int flags, bool autoCreateDirectories) {
                   | ((flags & File::DIRECTIO) != 0 ? O_DIRECT : 0)
 #endif
                   | ((flags & File::TRUNC) != 0 ? O_TRUNC: 0);
-    int fd = openAndCreateDirsIfMissing(_filename, openflags,
-                                        autoCreateDirectories);
+    int fd = openAndCreateDirsIfMissing(_filename, openflags, autoCreateDirectories);
 #ifdef __linux__
     if (fd < 0 && ((flags & File::DIRECTIO) != 0)) {
         openflags = (openflags ^ O_DIRECT);
@@ -194,8 +193,7 @@ File::open(int flags, bool autoCreateDirectories) {
         LOG(debug, "open(%s, %d): Retrying without direct IO due to failure "
                    "opening with errno(%d): %s",
             _filename.c_str(), flags, errno, safeStrerror(errno).c_str());
-        fd = openAndCreateDirsIfMissing(_filename, openflags,
-                                        autoCreateDirectories);
+        fd = openAndCreateDirsIfMissing(_filename, openflags, autoCreateDirectories);
     }
 #endif
     if (fd < 0) {
@@ -203,8 +201,7 @@ File::open(int flags, bool autoCreateDirectories) {
         ost << "open(" << _filename << ", 0x"
             << hex << flags << dec << "): Failed, errno(" << errno
             << "): " << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno),
-                          VESPA_STRLOC);
+        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     _flags = flags;
     if (_close && _fd != -1) close();
@@ -250,8 +247,7 @@ File::resize(off_t size)
         asciistream ost;
         ost << "resize(" << _filename << ", " << size << "): Failed, errno("
             << errno << "): " << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno),
-                          VESPA_STRLOC);
+        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     LOG(debug, "resize(%s): Resized to %" PRIu64 " bytes.",
         _filename.c_str(), size);
@@ -312,8 +308,7 @@ File::write(const void *buf, size_t bufsize, off_t offset)
             ost << "write(" << _fd << ", " << buf
                 << ", " << left << ", " << offset << "), Failed, errno("
                 << errno << "): " << safeStrerror(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno),
-                              VESPA_STRLOC);
+            throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
     return bufsize;
@@ -339,16 +334,13 @@ File::read(void *buf, size_t bufsize, off_t offset) const
             remaining -= bytesread;
             buf = ((char*) buf) + bytesread;
             offset += bytesread;
-            if (((_flags & DIRECTIO) != 0) && ((bytesread % 512) != 0) &&
-		(offset == getFileSize())) {
-	      LOG(spam, "read(%s): Found EOF. Directio read to unaligned "
-		  "file end at offset %" PRIu64 ".",
-		  _filename.c_str(), offset);
-	      break;
+            if (((_flags & DIRECTIO) != 0) && ((bytesread % 512) != 0) && (offset == getFileSize())) {
+                LOG(spam, "read(%s): Found EOF. Directio read to unaligned file end at offset %" PRIu64 ".",
+                    _filename.c_str(), offset);
+                break;
             }
         } else if (bytesread == 0) { // EOF
-            LOG(spam, "read(%s): Found EOF. Zero bytes read from offset %"
-                      PRIu64 ".",
+            LOG(spam, "read(%s): Found EOF. Zero bytes read from offset %" PRIu64 ".",
                 _filename.c_str(), offset);
             break;
         } else if (errno != EINTR && errno != EAGAIN) {
@@ -356,8 +348,7 @@ File::read(void *buf, size_t bufsize, off_t offset) const
             ost << "read(" << _fd << ", " << buf << ", " << remaining << ", "
                 << offset << "): Failed, errno(" << errno << "): "
                 << safeStrerror(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno),
-                              VESPA_STRLOC);
+            throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
         }
     }
     return bufsize - remaining;
@@ -398,18 +389,13 @@ File::sync()
 {
     if (_fd != -1) {
         if (::fsync(_fd) == 0) {
-            LOG(debug, "sync(%s): File synchronized with disk.",
-                _filename.c_str());
+            LOG(debug, "sync(%s): File synchronized with disk.", _filename.c_str());
         } else {
-            asciistream ost;
-            ost << "sync(" << _filename << "): Failed, errno(" << errno << "): "
-                << safeStrerror(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno),
-                              VESPA_STRLOC);
+            LOG(warning, "fsync(%s): Failed to sync file. errno(%d): %s",
+                _filename.c_str(), errno, safeStrerror(errno).c_str());
         }
     } else {
-        LOG(debug, "sync(%s): Called on closed file.",
-            _filename.c_str());
+        LOG(debug, "sync(%s): Called on closed file.", _filename.c_str());
     }
 }
 
@@ -427,8 +413,7 @@ File::close()
 {
     if (_fd != -1) {
         if (::close(_fd) == 0) {
-            LOG(debug, "close(%s): Closed file with descriptor %i.",
-                _filename.c_str(), _fd);
+            LOG(debug, "close(%s): Closed file with descriptor %i.", _filename.c_str(), _fd);
             _fd = -1;
             return true;
         } else {
@@ -438,8 +423,7 @@ File::close()
             return false;
         }
     } else {
-        LOG(debug, "close(%s): Called on closed file.",
-            _filename.c_str());
+        LOG(debug, "close(%s): Called on closed file.", _filename.c_str());
     }
     return true;
 }
@@ -459,10 +443,8 @@ getCurrentDirectory()
         return string(static_cast<char*>(ptr.get()));
     }
     asciistream ost;
-    ost << "getCurrentDirectory(): Failed, errno(" << errno
-        << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno),
-                      VESPA_STRLOC);
+    ost << "getCurrentDirectory(): Failed, errno(" << errno << "): " << safeStrerror(errno);
+    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
 }
 
 bool
@@ -479,8 +461,7 @@ mkdir(const string & directory, bool recursive)
             string superdir = directory.substr(0, slashpos);
             mkdir(superdir, recursive);
             if (::mkdir(directory.c_str(), 0777) == 0) {
-                LOG(debug, "mkdir(%s): Created directory recursively",
-                    directory.c_str());
+                LOG(debug, "mkdir(%s): Created directory recursively", directory.c_str());
                 return true;
             }
         }
@@ -501,20 +482,17 @@ mkdir(const string & directory, bool recursive)
             } else {
                 ost << " A file of some sort already exist.";
             }
-            throw IoException(
-                    ost.str(), IoException::ILLEGAL_PATH, VESPA_STRLOC);
+            throw IoException(ost.str(), IoException::ILLEGAL_PATH, VESPA_STRLOC);
         }
     }
     asciistream ost;
     ost << "mkdir(" << directory << (recursive ? ", recursive" : "")
         << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno),
-                      VESPA_STRLOC);
+    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
 }
 
 void
-symlink(const string & oldPath,
-        const string & newPath)
+symlink(const string & oldPath, const string & newPath)
 {
     if (::symlink(oldPath.c_str(), newPath.c_str())) {
         asciistream ss;
@@ -548,8 +526,7 @@ chdir(const string & directory)
         asciistream ost;
         ost << "chdir(" << directory << "): Failed, errno(" << errno << "): "
             << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno),
-                          VESPA_STRLOC);
+        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     LOG(debug, "chdir(%s): Working directory changed.", directory.c_str());
 }
@@ -562,8 +539,7 @@ rmdir(const string & directory, bool recursive)
         dirname.resize(dirname.size() - 1);
     }
     if (dirname.empty()) {
-        LOG(debug, "rmdir(%s): Not allowing deletion of '/'.",
-            directory.c_str());
+        LOG(debug, "rmdir(%s): Not allowing deletion of '/'.", directory.c_str());
         return false;
     }
     if (recursive) {
@@ -591,20 +567,17 @@ rmdir(const string & directory, bool recursive)
         }
     }
     if (::rmdir(dirname.c_str()) == 0) {
-        LOG(debug, "rmdir(%s): Directory deleted.",
-            directory.c_str());
+        LOG(debug, "rmdir(%s): Directory deleted.", directory.c_str());
         return true;
     }
     if (errno == ENOENT) {
-        LOG(debug, "rmdir(%s): No directory to delete.",
-            directory.c_str());
+        LOG(debug, "rmdir(%s): No directory to delete.", directory.c_str());
         return false;
     }
     asciistream ost;
     ost << "rmdir(" << dirname << (recursive ? ", recursive" : "")
         << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno),
-                      VESPA_STRLOC);
+    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
 }
 
 FileInfo::UP
@@ -636,8 +609,7 @@ unlink(const string & filename)
         asciistream ost;
         ost << "unlink(" << filename << "): Failed, errno(" << errno << "): "
             << safeStrerror(errno);
-        throw IoException(ost.str(), IoException::getErrorType(errno),
-                          VESPA_STRLOC);
+        throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     LOG(debug, "unlink(%s): File deleted.", filename.c_str());
     return true;
@@ -659,11 +631,9 @@ rename(const string & frompath, const string & topath,
                 if (pos != string::npos) {
                     string path(topath.substr(0, pos));
                     vespalib::mkdir(path);
-                    LOG(debug, "rename(%s, %s): Created target directory. "
-                               "Calling recursively.",
+                    LOG(debug, "rename(%s, %s): Created target directory. Calling recursively.",
                         frompath.c_str(), topath.c_str());
-                    return rename(frompath, topath,
-                                  copyDeleteBetweenFilesystems, false);
+                    return rename(frompath, topath, copyDeleteBetweenFilesystems, false);
                 }
             } else {
                 asciistream ost;
@@ -768,11 +738,11 @@ listDirectory(const string & path)
 MallocAutoPtr
 getAlignedBuffer(size_t size)
 {
-        void *ptr;
-        int result = posix_memalign(&ptr, diskAlignmentSize, size);
-        assert(result == 0);
-        (void)result;
-        return MallocAutoPtr(ptr);
+    void *ptr;
+    int result = posix_memalign(&ptr, diskAlignmentSize, size);
+    assert(result == 0);
+    (void)result;
+    return MallocAutoPtr(ptr);
 }
 
 string dirname(stringref name)

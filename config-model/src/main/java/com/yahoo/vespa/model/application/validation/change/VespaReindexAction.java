@@ -46,7 +46,7 @@ public class VespaReindexAction extends VespaConfigChangeAction implements Confi
         return new VespaReindexAction(clusterId(), validationId, newMessage, newServices, documentType);
     }
 
-    @Override public Optional<ValidationId> validationId() { return Optional.of(validationId); }
+    @Override public Optional<ValidationId> validationId() { return Optional.ofNullable(validationId); }
     @Override public String getDocumentType() { return documentType; }
     @Override public boolean ignoreForInternalRedeploy() { return false; }
     @Override public String toString() { return super.toString() + ", documentType='" + documentType + "'"; }

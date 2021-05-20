@@ -91,7 +91,7 @@ int
 GetConfig::Main()
 {
     bool debugging = false;
-    char c = -1;
+    int c = -1;
 
     std::vector<vespalib::string> defSchema;
     const char *schema = nullptr;

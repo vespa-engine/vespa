@@ -449,7 +449,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(storageMaintainer, containerOperations, nodeRepository);
         inOrder.verify(containerOperations, times(1)).stopServices(eq(context));
-        inOrder.verify(storageMaintainer, times(1)).handleCoreDumpsForContainer(eq(context), any());
+        inOrder.verify(storageMaintainer, times(1)).handleCoreDumpsForContainer(eq(context), any(), eq(true));
         inOrder.verify(containerOperations, times(1)).removeContainer(eq(context), any());
         inOrder.verify(storageMaintainer, times(1)).archiveNodeStorage(eq(context));
         inOrder.verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(NodeState.ready));

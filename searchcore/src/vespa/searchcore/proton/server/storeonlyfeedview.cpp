@@ -43,45 +43,11 @@ namespace proton {
 
 namespace {
 
-class PutDoneContextForMove : public PutDoneContext {
-private:
-    IDestructorCallback::SP _moveDoneCtx;
-
-public:
-    PutDoneContextForMove(FeedToken token, IPendingLidTracker::Token uncommitted,
-                          std::shared_ptr<const Document> doc,
-                          uint32_t lid,
-                          IDestructorCallback::SP moveDoneCtx)
-        : PutDoneContext(std::move(token), std::move(uncommitted),std::move(doc), lid),
-          _moveDoneCtx(std::move(moveDoneCtx))
-    {}
-    ~PutDoneContextForMove() override = default;
-};
-
 std::shared_ptr<PutDoneContext>
-createPutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
-                     std::shared_ptr<const Document> doc,
-                     uint32_t lid,
-                     IDestructorCallback::SP moveDoneCtx)
+createPutDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+                     std::shared_ptr<const Document> doc, uint32_t lid)
 {
-    std::shared_ptr<PutDoneContext> result;
-    if (moveDoneCtx) {
-        result = std::make_shared<PutDoneContextForMove>(std::move(token), std::move(uncommitted),
-                                                         std::move(doc), lid, std::move(moveDoneCtx));
-    } else {
-        result = std::make_shared<PutDoneContext>(std::move(token), std::move(uncommitted),
-                                                  std::move(doc), lid);
-    }
-    return result;
-}
-
-std::shared_ptr<PutDoneContext>
-createPutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
-                     std::shared_ptr<const Document> doc,
-                     uint32_t lid)
-{
-    return createPutDoneContext(std::move(token), std::move(uncommitted), std::move(doc),
-                                lid, IDestructorCallback::SP());
+    return std::make_shared<PutDoneContext>(std::move(token), std::move(uncommitted), std::move(doc), lid);
 }
 
 std::shared_ptr<UpdateDoneContext>
@@ -100,34 +66,11 @@ void setPrev(DocumentOperation &op, const documentmetastore::IStore::Result &res
     }
 }
 
-class RemoveDoneContextForMove : public RemoveDoneContext {
-private:
-    IDestructorCallback::SP _moveDoneCtx;
-
-public:
-    RemoveDoneContextForMove(FeedToken token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
-                             IDocumentMetaStore &documentMetaStore,
-                             uint32_t lid, IDestructorCallback::SP moveDoneCtx)
-        : RemoveDoneContext(std::move(token), std::move(uncommitted), executor,
-                            documentMetaStore, lid),
-          _moveDoneCtx(std::move(moveDoneCtx))
-    {}
-    ~RemoveDoneContextForMove() override = default;
-};
-
 std::shared_ptr<RemoveDoneContext>
-createRemoveDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
-                        IDocumentMetaStore &documentMetaStore,
-                        uint32_t lid, IDestructorCallback::SP moveDoneCtx)
+createRemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
+                        IDocumentMetaStore &documentMetaStore, uint32_t lid)
 {
-    if (moveDoneCtx) {
-        return std::make_shared<RemoveDoneContextForMove>
-            (std::move(token), std::move(uncommitted), executor, documentMetaStore,
-             lid, std::move(moveDoneCtx));
-    } else {
-        return std::make_shared<RemoveDoneContext>
-            (std::move(token), std::move(uncommitted), executor, documentMetaStore, lid);
-    }
+    return std::make_shared<RemoveDoneContext>(std::move(token), std::move(uncommitted), executor, documentMetaStore, lid);
 }
 
 class SummaryPutDoneContext : public OperationDoneContext
@@ -163,8 +106,8 @@ void putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_i
                  const DocumentOperation &op, bool is_removed_doc)
 {
     documentmetastore::IStore::Result putRes(
-            meta_store.put(doc_id.getGlobalId(),
-                           op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid(), op.get_prepare_serial_num()));
+            meta_store.put(doc_id.getGlobalId(), op.getBucketId(), op.getTimestamp(),
+                           op.getSerializedDocSize(), op.getLid(), op.get_prepare_serial_num()));
     if (!putRes.ok()) {
         throw IllegalStateException(
                 make_string("Could not put <lid, gid> pair for %sdocument with id '%s' and gid '%s'",
@@ -304,7 +247,6 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     adjustMetaStore(putOp, docId.getGlobalId(), docId);
-    auto uncommitted = get_pending_lid_token(putOp);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
 
@@ -312,17 +254,15 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         if (putOp.changedDbdId() && useDocumentMetaStore(serialNum)) {
             _gidToLidChangeHandler.notifyPut(token, docId.getGlobalId(), putOp.getLid(), serialNum);
         }
-        std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(std::move(token), std::move(uncommitted),
-                                 doc, putOp.getLid());
+        auto onWriteDone = createPutDoneContext(std::move(token), get_pending_lid_token(putOp), doc, putOp.getLid());
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, putOp.getLid(), *doc, onWriteDone);
         putIndexedFields(serialNum, putOp.getLid(), doc, onWriteDone);
     }
     if (docAlreadyExists && putOp.changedDbdId()) {
+        //TODO, better to have an else than an assert ?
         assert(!putOp.getValidDbdId(_params._subDbId));
-        internalRemove(std::move(token), _pendingLidsForCommit->produce(putOp.getPrevLid()), serialNum,
-                       putOp.getPrevLid(), IDestructorCallback::SP());
+        internalRemove(std::move(token), _pendingLidsForCommit->produce(putOp.getPrevLid()), serialNum, putOp.getPrevLid());
     }
 }
 
@@ -468,9 +408,8 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         (void) updateOk;
         _metaStore.commit(CommitParam(serialNum));
     }
-    auto uncommitted = get_pending_lid_token(updOp);
 
-    auto onWriteDone = createUpdateDoneContext(std::move(token), std::move(uncommitted), updOp.getUpdate());
+    auto onWriteDone = createUpdateDoneContext(std::move(token), get_pending_lid_token(updOp), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
     updateAttributes(serialNum, lid, upd, onWriteDone, updateScope);
 
@@ -592,19 +531,18 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
          rmOp.getSubDbId(), rmOp.getLid(), rmOp.getPrevSubDbId(), rmOp.getPrevLid(), _params._subDbId);
 
     adjustMetaStore(rmOp, docId.getGlobalId(), docId);
-    auto uncommitted = get_pending_lid_token(rmOp);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {
         auto clearDoc = std::make_unique<Document>(*_docType, docId);
         clearDoc->setRepo(*_repo);
 
-        putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::make_shared<SummaryPutDoneContext>(std::move(token), std::move(uncommitted)));
+        putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::make_shared<SummaryPutDoneContext>(std::move(token), get_pending_lid_token(rmOp)));
     }
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
+            //TODO Prefer else over assert ?
             assert(!rmOp.getValidDbdId(_params._subDbId));
-            internalRemove(std::move(token), _pendingLidsForCommit->produce(rmOp.getPrevLid()), serialNum,
-                           rmOp.getPrevLid(), IDestructorCallback::SP());
+            internalRemove(std::move(token), _pendingLidsForCommit->produce(rmOp.getPrevLid()), serialNum, rmOp.getPrevLid());
         }
     }
 }
@@ -617,27 +555,21 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid 
     const SerialNum serialNum = rmOp.getSerialNum();
     DocumentId dummy;
     adjustMetaStore(rmOp, rmOp.getGlobalId(), dummy);
-    auto uncommitted = _pendingLidsForCommit->produce(rmOp.getLid());
 
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
             assert(!rmOp.getValidDbdId(_params._subDbId));
-            internalRemove(std::move(token), _pendingLidsForCommit->produce(rmOp.getPrevLid()), serialNum,
-                           rmOp.getPrevLid(), IDestructorCallback::SP());
+            internalRemove(std::move(token), _pendingLidsForCommit->produce(rmOp.getPrevLid()), serialNum, rmOp.getPrevLid());
         }
     }
 }
 
 void
-StoreOnlyFeedView::internalRemove(FeedToken token, IPendingLidTracker::Token uncommitted, SerialNum serialNum,
-                                  Lid lid,
-                                  IDestructorCallback::SP moveDoneCtx)
+StoreOnlyFeedView::internalRemove(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid)
 {
     bool explicitReuseLid = _lidReuseDelayer.delayReuse(lid);
-    std::shared_ptr<RemoveDoneContext> onWriteDone;
-    onWriteDone = createRemoveDoneContext(std::move(token), std::move(uncommitted),_writeService.master(), _metaStore,
-                                          (explicitReuseLid ? lid : 0u),
-                                          std::move(moveDoneCtx));
+    auto onWriteDone = createRemoveDoneContext(std::move(token), std::move(uncommitted), _writeService.master(), _metaStore,
+                                               (explicitReuseLid ? lid : 0u));
     removeSummary(serialNum, lid, onWriteDone);
     removeAttributes(serialNum, lid, onWriteDone);
     removeIndexedFields(serialNum, lid, onWriteDone);
@@ -786,15 +718,13 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
         if (moveOp.changedDbdId() && useDocumentMetaStore(serialNum)) {
             _gidToLidChangeHandler.notifyPut(FeedToken(), docId.getGlobalId(), moveOp.getLid(), serialNum);
         }
-        std::shared_ptr<PutDoneContext> onWriteDone =
-            createPutDoneContext(FeedToken(), _pendingLidsForCommit->produce(moveOp.getLid()),
-                                 doc, moveOp.getLid(), doneCtx);
+        auto onWriteDone = createPutDoneContext(doneCtx, _pendingLidsForCommit->produce(moveOp.getLid()), doc, moveOp.getLid());
         putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, moveOp.getLid(), *doc, onWriteDone);
         putIndexedFields(serialNum, moveOp.getLid(), doc, onWriteDone);
     }
     if (docAlreadyExists && moveOp.changedDbdId()) {
-        internalRemove(FeedToken(), _pendingLidsForCommit->produce(moveOp.getPrevLid()), serialNum, moveOp.getPrevLid(), doneCtx);
+        internalRemove(std::move(doneCtx), _pendingLidsForCommit->produce(moveOp.getPrevLid()), serialNum, moveOp.getPrevLid());
     }
 }
 

@@ -164,6 +164,8 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
                 rc = resClass->AddConfigEntry(fieldname, RES_STRING);
             } else if (strcmp(fieldtype, "data") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_DATA);
+            } else if (strcmp(fieldtype, "raw") == 0) {
+                rc = resClass->AddConfigEntry(fieldname, RES_DATA);
             } else if (strcmp(fieldtype, "longstring") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_LONG_STRING);
             } else if (strcmp(fieldtype, "longdata") == 0) {

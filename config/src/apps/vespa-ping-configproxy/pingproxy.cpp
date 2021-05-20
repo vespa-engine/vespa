@@ -70,7 +70,7 @@ PingProxy::Main()
 {
     int retval = 0;
     bool debugging = false;
-    char c = -1;
+    int c = -1;
 
     const char *serverHost = "localhost";
     int clientTimeout = 5;

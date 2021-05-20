@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class DeploymentStatus {
         this.now = requireNonNull(now);
         List<StepStatus> allSteps = new ArrayList<>();
         this.jobSteps = jobDependencies(application.deploymentSpec(), allSteps);
-        this.allSteps = List.copyOf(allSteps);
+        this.allSteps = Collections.unmodifiableList(allSteps);
     }
 
     /** The application this deployment status concerns. */
@@ -146,7 +147,7 @@ public class DeploymentStatus {
                                                       Map.Entry::getValue,
                                                       DeploymentStatus::union,
                                                       LinkedHashMap::new),
-                                                ImmutableMap::copyOf));
+                                                Collections::unmodifiableMap));
     }
 
     private Map<JobId, List<Versions>> jobsToRun(Map<InstanceName, Change> changes, boolean eagerTests) {
@@ -173,7 +174,7 @@ public class DeploymentStatus {
             if (step.completedAt(change, firstProductionJobWithDeployment).isEmpty())
                 jobs.merge(job, List.of(versions), DeploymentStatus::union);
         });
-        return ImmutableMap.copyOf(jobs);
+        return Collections.unmodifiableMap(jobs);
     }
 
     /** The set of jobs that need to run for the given changes to be considered complete. */
@@ -281,7 +282,7 @@ public class DeploymentStatus {
                     testJobs.merge(firstDeclaredOrElseImplicitTest(testType), List.of(versions), DeploymentStatus::union);
             });
         }
-        return ImmutableMap.copyOf(testJobs);
+        return Collections.unmodifiableMap(testJobs);
     }
 
     private JobId firstDeclaredOrElseImplicitTest(JobType testJob) {
@@ -306,7 +307,7 @@ public class DeploymentStatus {
         for (DeploymentSpec.Step step : spec.steps())
             previous = fillStep(dependencies, allSteps, step, previous, null);
 
-        return ImmutableMap.copyOf(dependencies);
+        return Collections.unmodifiableMap(dependencies);
     }
 
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */

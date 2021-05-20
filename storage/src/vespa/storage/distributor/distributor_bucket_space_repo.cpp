@@ -13,11 +13,11 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(uint16_t node_index)
+DistributorBucketSpaceRepo::DistributorBucketSpaceRepo(uint16_t node_index, bool use_bucket_db)
     : _map()
 {
-    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>(node_index));
-    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>(node_index));
+    add(document::FixedBucketSpaces::default_space(), std::make_unique<DistributorBucketSpace>(node_index, use_bucket_db));
+    add(document::FixedBucketSpaces::global_space(), std::make_unique<DistributorBucketSpace>(node_index, use_bucket_db));
 }
 
 DistributorBucketSpaceRepo::~DistributorBucketSpaceRepo() = default;

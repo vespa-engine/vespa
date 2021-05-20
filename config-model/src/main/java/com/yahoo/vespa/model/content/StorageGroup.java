@@ -54,7 +54,7 @@ public class StorageGroup {
      *
      * @param isHosted true if this is in a hosted setup
      * @param name the name of this group
-     * @param index the distribution-key index og this group
+     * @param index the distribution-key index of this group
      * @param partitions the distribution strategy to use to distribute content to subgroups or empty
      *        (meaning that the "*" distribution will be used) only if this is a leaf group
      *        (having nodes, not subgroups as children).
@@ -162,10 +162,10 @@ public class StorageGroup {
     }
 
     /** Returns the total number of nodes below this group */
-    public int countNodes() {
-        int nodeCount = nodes.size();
+    public int countNodes(boolean includeRetired) {
+        int nodeCount = (int)nodes.stream().filter(node -> includeRetired || ! node.isRetired()).count();
         for (StorageGroup group : subgroups)
-            nodeCount += group.countNodes();
+            nodeCount += group.countNodes(includeRetired);
         return nodeCount;
     }
 
@@ -220,7 +220,7 @@ public class StorageGroup {
                     ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
                     : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
             Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
-                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(),
+                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false),
                                                             maxRedundancy);
             owner.setRedundancy(redundancy);
             if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {

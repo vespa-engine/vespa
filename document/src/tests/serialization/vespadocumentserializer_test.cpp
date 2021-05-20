@@ -713,7 +713,9 @@ void checkDeserialization(const string &name, std::unique_ptr<Slime> slime) {
     const string data_dir = TEST_PATH("../../test/resources/predicates/");
 
     PredicateFieldValue value(std::move(slime));
-    serializeToFile(value, data_dir + name + "__cpp");
+    serializeToFile(value, data_dir + name + "__cpp.new");
+    vespalib::rename(data_dir + name + "__cpp.new",
+                     data_dir + name + "__cpp");
 
     deserializeAndCheck(data_dir + name + "__cpp", value);
     deserializeAndCheck(data_dir + name + "__java", value);
@@ -841,7 +843,10 @@ void checkDeserialization(const string &name, std::unique_ptr<vespalib::eval::Va
     if (tensor) {
         value = std::move(tensor);
     }
-    serializeToFile(value, data_dir + name + "__cpp");
+    serializeToFile(value, data_dir + name + "__cpp.new");
+    vespalib::rename(data_dir + name + "__cpp.new",
+                     data_dir + name + "__cpp");
+
     deserializeAndCheck(data_dir + name + "__cpp", value);
     deserializeAndCheck(data_dir + name + "__java", value);
 }
@@ -966,8 +971,10 @@ struct RefFixture {
                                              const ReferenceFieldValue& value) {
         const string data_dir = TEST_PATH("../../test/resources/reference/");
         const string field_name = "ref_field";
-        serializeToFile(value, data_dir + file_base_name + "__cpp",
+        serializeToFile(value, data_dir + file_base_name + "__cpp.new",
                         ref_doc_type, field_name);
+        vespalib::rename(data_dir + file_base_name + "__cpp.new",
+                         data_dir + file_base_name + "__cpp");
 
         deserializeAndCheck(data_dir + file_base_name + "__cpp",
                             value, fixed_repo, field_name);

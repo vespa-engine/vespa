@@ -366,7 +366,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
         }
 
-        storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
+        storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer), true);
         containerOperations.removeContainer(context, existingContainer);
         containerState = ABSENT;
         context.log(logger, "Container successfully removed, new containerState is " + containerState);
@@ -405,7 +405,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private boolean noCpuCap(ZoneApi zone) {
-        return zone.getEnvironment() == Environment.dev || zone.getSystemName().isCd();
+        return zone.getEnvironment() == Environment.dev;
     }
 
     private boolean downloadImageIfNeeded(NodeAgentContext context, Optional<Container> container) {
@@ -469,7 +469,7 @@ public class NodeAgentImpl implements NodeAgent {
             case active:
                 storageMaintainer.syncLogs(context, true);
                 storageMaintainer.cleanDiskIfFull(context);
-                storageMaintainer.handleCoreDumpsForContainer(context, container);
+                storageMaintainer.handleCoreDumpsForContainer(context, container, false);
 
                 if (downloadImageIfNeeded(context, container)) {
                     context.log(logger, "Waiting for image to download " + context.node().wantedDockerImage().get().asString());

@@ -6,7 +6,6 @@ vespa_add_library(searchcore_server STATIC
     bootstrapconfigmanager.cpp
     buckethandler.cpp
     bucketmovejob.cpp
-    bucketmovejobv2.cpp
     clusterstatehandler.cpp
     combiningfeedview.cpp
     ddbstate.cpp
@@ -51,7 +50,6 @@ vespa_add_library(searchcore_server STATIC
     flushhandlerproxy.cpp
     forcecommitcontext.cpp
     forcecommitdonetask.cpp
-    frozenbuckets.cpp
     health_adapter.cpp
     heart_beat_job.cpp
     idocumentdbowner.cpp
@@ -59,8 +57,6 @@ vespa_add_library(searchcore_server STATIC
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp
     lid_space_compaction_job.cpp
-    lid_space_compaction_job_base.cpp
-    lid_space_compaction_job_take2.cpp
     maintenance_controller_explorer.cpp
     maintenance_jobs_injector.cpp
     maintenancecontroller.cpp

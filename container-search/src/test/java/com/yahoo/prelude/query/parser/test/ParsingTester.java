@@ -11,14 +11,17 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
-import com.yahoo.prelude.query.parser.SpecialTokens;
+import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -32,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 public class ParsingTester {
 
     private static final Linguistics linguistics = new SimpleLinguistics();
-    private IndexFacts indexFacts;
+    private final IndexFacts indexFacts;
     private SpecialTokenRegistry tokenRegistry;
 
     public ParsingTester() {
@@ -49,11 +52,10 @@ public class ParsingTester {
 
     public ParsingTester(IndexFacts indexFacts, SpecialTokens specialTokens) {
         indexFacts.freeze();
-        specialTokens.freeze();
 
         this.indexFacts = indexFacts;
         tokenRegistry = new SpecialTokenRegistry();
-        tokenRegistry.addSpecialTokens(specialTokens);
+        tokenRegistry = new SpecialTokenRegistry(List.of(specialTokens));
     }
 
     /**
@@ -72,13 +74,13 @@ public class ParsingTester {
      * This can be used to add new tokens and passing the resulting special tokens to the constructor of this.
      */
     public static SpecialTokens createSpecialTokens() {
-        SpecialTokens tokens = new SpecialTokens("default");
-        tokens.addSpecialToken("c++", null);
-        tokens.addSpecialToken(".net", "dotnet");
-        tokens.addSpecialToken("tcp/ip", null);
-        tokens.addSpecialToken("c#", null);
-        tokens.addSpecialToken("special-token-fs","firstsecond");
-        return tokens;
+        List<SpecialTokens.Token> tokens = new ArrayList<>();
+        tokens.add(new SpecialTokens.Token("c++"));
+        tokens.add(new SpecialTokens.Token(".net", "dotnet"));
+        tokens.add(new SpecialTokens.Token("tcp/ip"));
+        tokens.add(new SpecialTokens.Token("c#"));
+        tokens.add(new SpecialTokens.Token("special-token-fs","firstsecond"));
+        return new SpecialTokens("default", tokens);
     }
 
     /**

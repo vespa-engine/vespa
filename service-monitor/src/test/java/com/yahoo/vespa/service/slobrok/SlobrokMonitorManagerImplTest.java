@@ -3,6 +3,7 @@ package com.yahoo.vespa.service.slobrok;
 
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -28,7 +29,7 @@ public class SlobrokMonitorManagerImplTest {
 
     private final DuperModelManager duperModelManager = mock(DuperModelManager.class);
     private final SlobrokMonitorManagerImpl slobrokMonitorManager =
-            new SlobrokMonitorManagerImpl(slobrokMonitorFactory, duperModelManager);
+            new SlobrokMonitorManagerImpl(slobrokMonitorFactory, mock(Transport.class), duperModelManager);
     private final SlobrokMonitor slobrokMonitor = mock(SlobrokMonitor.class);
     private final ApplicationId applicationId = ApplicationId.from("tenant", "app", "instance");
     private final ApplicationInfo application = mock(ApplicationInfo.class);

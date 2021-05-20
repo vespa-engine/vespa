@@ -16,19 +16,24 @@ import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
+import org.apache.hc.core5.http.ContentType;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
@@ -43,6 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -171,6 +177,22 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         assertIllegalFromParameter("http://host:4013/application/v2/tenant/" + tenant + "/application/foo/environment/prod/region/baz/instance");
     }
 
+    @Test
+    public void require_that_content_type_is_parsed_correctly() throws FileNotFoundException {
+        HttpRequest request = post(new ByteArrayInputStream("foo".getBytes(StandardCharsets.UTF_8)),
+                                   Map.of("Content-Type", "multipart/form-data; charset=ISO-8859-1; boundary=g5gJAzUWl_t6"),
+                                   Collections.emptyMap());
+
+        // Valid header should validate ok
+        SessionCreateHandler.validateDataAndHeader(request, List.of(ContentType.MULTIPART_FORM_DATA.getMimeType()));
+
+        // Accepting only application/json should fail:
+        try {
+            SessionCreateHandler.validateDataAndHeader(request, List.of(ContentType.APPLICATION_JSON.getMimeType()));
+            fail("Request contained invalid content type, but validated ok");
+        } catch (Exception expected) {}
+    }
+
     private SessionCreateHandler createHandler() {
         return new SessionCreateHandler(SessionCreateHandler.testOnlyContext(),
                                         applicationRepository,
@@ -178,7 +200,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     }
 
     private HttpRequest post() throws FileNotFoundException {
-        return post(null, postHeaders, new HashMap<>());
+        return post((InputStream) null, postHeaders, new HashMap<>());
     }
 
     private HttpRequest post(File file) throws FileNotFoundException {
@@ -186,10 +208,12 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     }
 
     private HttpRequest post(File file, Map<String, String> headers, Map<String, String> parameters) throws FileNotFoundException {
+        return post(file == null ? null : new FileInputStream(file), headers, parameters);
+    }
+
+    private HttpRequest post(InputStream data, Map <String, String > headers, Map < String, String > parameters) throws FileNotFoundException {
         HttpRequest request = HttpRequest.createTestRequest("http://" + hostname + ":" + port + "/application/v2/tenant/" + tenant + "/session",
-                POST,
-                file == null ? null : new FileInputStream(file),
-                parameters);
+                POST, data, parameters);
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             request.getJDiscRequest().headers().put(entry.getKey(), entry.getValue());
         }
@@ -197,6 +221,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     }
 
     private HttpRequest post(Map<String, String> parameters) throws FileNotFoundException {
-        return post(null, new HashMap<>(), parameters);
+        return post((InputStream) null, new HashMap<>(), parameters);
     }
 }

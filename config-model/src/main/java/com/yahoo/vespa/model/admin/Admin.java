@@ -9,6 +9,7 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -59,11 +60,13 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private Logserver logserver;
 
     private LogForwarder.Config logForwarderConfig = null;
+    private boolean logForwarderIncludeAdmin = false;
 
     private ApplicationType applicationType = ApplicationType.DEFAULT;
 
-    public void setLogForwarderConfig(LogForwarder.Config cfg) {
+    public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
+        this.logForwarderIncludeAdmin = includeAdmin;
     }
 
     /**
@@ -216,7 +219,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
 
-        addMetricsProxyCluster(hosts, deployState);
+        if (! deployState.isHosted() || ! deployState.getProperties().applicationId().instance().isTester())
+            addMetricsProxyCluster(hosts, deployState);
 
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
@@ -243,7 +247,18 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         addConfigProxy(deployState.getDeployLogger(), host);
         addFileDistribution(host);
         if (logForwarderConfig != null) {
-            addLogForwarder(deployState.getDeployLogger(), host);
+            boolean actuallyAdd = true;
+            var membership = host.spec().membership();
+            if (membership.isPresent()) {
+                var clustertype = membership.get().cluster().type();
+                // XXX should skip only if this.isHostedVespa is true?
+                if (clustertype == ClusterSpec.Type.admin) {
+                    actuallyAdd = logForwarderIncludeAdmin;
+                }
+            }
+            if (actuallyAdd) {
+                addLogForwarder(deployState.getDeployLogger(), host);
+            }
         }
     }
 

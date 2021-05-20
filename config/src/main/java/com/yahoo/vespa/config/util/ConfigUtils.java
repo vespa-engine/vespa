@@ -6,8 +6,8 @@ import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.slime.JsonFormat;
+import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8;
-import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 
@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -69,11 +70,17 @@ public class ConfigUtils {
         return getMd5(input.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String getMd5(Utf8Array input) {
-        return getMd5(input.getBytes());
+    public static String getMd5(AbstractUtf8Array input) {
+        return getMd5(input.wrap());
     }
 
     public static String getMd5(byte[] input) {
+        MessageDigest md5 = getMd5Instance();
+        md5.update(input);
+        return HexDump.toHexString(md5.digest()).toLowerCase();
+    }
+
+    public static String getMd5(ByteBuffer input) {
         MessageDigest md5 = getMd5Instance();
         md5.update(input);
         return HexDump.toHexString(md5.digest()).toLowerCase();

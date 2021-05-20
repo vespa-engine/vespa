@@ -11,6 +11,9 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -69,17 +72,49 @@ public class RoutingPolicy {
         return new RoutingPolicy(id, canonicalName, dnsZone, endpoints, status);
     }
 
-    /** Returns the zone endpoint of this */
-    public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+    /** Returns the zone endpoints of this */
+    public List<Endpoint> endpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
-        return infraEndpoint.orElseGet(() -> endpoint(routingMethod).target(id.cluster(), id.zone())
-                                                                    .in(system));
+        if (infraEndpoint.isPresent()) {
+            return List.of(infraEndpoint.get());
+        }
+        List<Endpoint> endpoints = new ArrayList<>(3);
+        endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).in(system));
+        if (system.isPublic()) {
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).legacy().in(system));
+        }
+        // Add legacy endpoints
+        if (routingMethod == RoutingMethod.shared) {
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+                                                 .on(Port.plain(4080))
+                                                 .legacy()
+                                                 .in(system));
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+                                                 .on(Port.tls(4443))
+                                                 .legacy()
+                                                 .in(system));
+        }
+        return endpoints;
+    }
+
+    /** Returns all region endpoints of this */
+    public List<Endpoint> regionEndpointsIn(SystemName system, RoutingMethod routingMethod) {
+        List<Endpoint> endpoints = new ArrayList<>(2);
+        endpoints.add(regionEndpointIn(system, routingMethod, false));
+        if (system.isPublic()) {
+            endpoints.add(regionEndpointIn(system, routingMethod, true));
+        }
+        return Collections.unmodifiableList(endpoints);
     }
 
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
-        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, boolean legacy) {
+        Endpoint.EndpointBuilder endpoint = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
+        if (legacy) {
+            endpoint = endpoint.legacy();
+        }
+        return endpoint.in(system);
     }
 
     @Override

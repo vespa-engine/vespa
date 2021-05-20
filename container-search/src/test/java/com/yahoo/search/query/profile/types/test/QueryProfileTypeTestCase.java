@@ -38,29 +38,32 @@ public class QueryProfileTypeTestCase {
 
     private QueryProfileRegistry registry;
 
-    private QueryProfileType type, typeStrict, user, userStrict;
+    private QueryProfileType testtype, emptyInheritingTesttype, testtypeStrict, user, userStrict;
 
     @Before
     public void setUp() {
         registry = new QueryProfileRegistry();
 
-        type = new QueryProfileType(new ComponentId("testtype"));
-        type.inherited().add(registry.getTypeRegistry().getComponent(new ComponentId("native")));
-        typeStrict = new QueryProfileType(new ComponentId("testtypeStrict"));
-        typeStrict.setStrict(true);
+        testtype = new QueryProfileType(new ComponentId("testtype"));
+        testtype.inherited().add(registry.getTypeRegistry().getComponent(new ComponentId("native")));
+        emptyInheritingTesttype = new QueryProfileType(new ComponentId("emptyInheritingTesttype"));
+        emptyInheritingTesttype.inherited().add(testtype);
+        testtypeStrict = new QueryProfileType(new ComponentId("testtypeStrict"));
+        testtypeStrict.setStrict(true);
         user = new QueryProfileType(new ComponentId("user"));
         userStrict = new QueryProfileType(new ComponentId("userStrict"));
         userStrict.setStrict(true);
 
-        registry.getTypeRegistry().register(type);
-        registry.getTypeRegistry().register(typeStrict);
+        registry.getTypeRegistry().register(testtype);
+        registry.getTypeRegistry().register(emptyInheritingTesttype);
+        registry.getTypeRegistry().register(testtypeStrict);
         registry.getTypeRegistry().register(user);
         registry.getTypeRegistry().register(userStrict);
 
-        addTypeFields(type, registry.getTypeRegistry());
-        type.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user", registry.getTypeRegistry())));
-        addTypeFields(typeStrict, registry.getTypeRegistry());
-        typeStrict.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:userStrict", registry.getTypeRegistry())));
+        addTypeFields(testtype, registry.getTypeRegistry());
+        testtype.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:user", registry.getTypeRegistry())));
+        addTypeFields(testtypeStrict, registry.getTypeRegistry());
+        testtypeStrict.addField(new FieldDescription("myUserQueryProfile", FieldType.fromString("query-profile:userStrict", registry.getTypeRegistry())));
         addUserFields(user, registry.getTypeRegistry());
         addUserFields(userStrict, registry.getTypeRegistry());
 
@@ -89,7 +92,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedOfPrimitivesAssignmentNonStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
         registry.register(profile);
 
         profile.set("myString","anyValue", registry);
@@ -99,7 +102,7 @@ public class QueryProfileTypeTestCase {
         profile.set("myInteger", 3, registry);
         assertWrongType(profile,"long","myLong","notLong");
         assertWrongType(profile, "long", "myLong", "1.5");
-        profile.set("myLong", 4000000000000l, registry);
+        profile.set("myLong", 4000000000000L, registry);
         assertWrongType(profile, "float", "myFloat", "notFloat");
         profile.set("myFloat", 3.14f, registry);
         assertWrongType(profile, "double", "myDouble", "notDouble");
@@ -156,7 +159,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedOfPrimitivesAssignmentStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(typeStrict);
+        profile.setType(testtypeStrict);
 
         profile.set("myString", "anyValue", registry);
         assertNotPermitted(profile, "nontypedString", "anyValueToo"); // Illegal because this is strict
@@ -198,7 +201,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfilesNonStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile map1=new QueryProfile("myMap1");
         map1.set("key1","value1", registry);
@@ -229,7 +232,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfilesStrict() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(typeStrict);
+        profile.setType(testtypeStrict);
 
         QueryProfile map1=new QueryProfile("myMap1");
         map1.set("key1","value1", registry);
@@ -260,7 +263,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrict() {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile map1 = new QueryProfile("myMap1");
         map1.set("key1","value1", registry);
@@ -304,7 +307,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedOverridingOfQueryProfileReferencesNonStrictThroughQuery() {
         QueryProfile profile=new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile myUser=new QueryProfile("myUser");
         myUser.setType(user);
@@ -338,7 +341,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesNonStrictThroughQuery() {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
 
         QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(user);
@@ -367,7 +370,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTypedAssignmentOfQueryProfileReferencesStrictThroughQuery() {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(typeStrict);
+        profile.setType(testtypeStrict);
 
         QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(userStrict);
@@ -399,7 +402,25 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testTensorRankFeatureInRequest() throws UnsupportedEncodingException {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(type);
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
+        Query query = new Query(HttpRequest.createTestRequest("?" + encode("ranking.features.query(myTensor1)") +
+                                                              "=" + encode(tensorString),
+                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET),
+                                cRegistry.getComponent("test"));
+        assertEquals(0, query.errors().size());
+        assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
+        assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+    }
+
+    // Expected to work exactly as testTensorRankFeatureInRequest
+    @Test
+    public void testTensorRankFeatureInRequestWithInheritedQueryProfileType() throws UnsupportedEncodingException {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(emptyInheritingTesttype);
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
@@ -420,7 +441,7 @@ public class QueryProfileTypeTestCase {
     @Test
     public void testIllegalStrictAssignmentFromRequest() {
         QueryProfile profile = new QueryProfile("test");
-        profile.setType(typeStrict);
+        profile.setType(testtypeStrict);
 
         QueryProfile newUser = new QueryProfile("newUser");
         newUser.setType(userStrict);
@@ -452,7 +473,7 @@ public class QueryProfileTypeTestCase {
         topMap.set("subMap", subMap, registry);
 
         QueryProfile test = new QueryProfile("test");
-        test.setType(type);
+        test.setType(testtype);
         subMap.set("typeProfile", test, registry);
 
         QueryProfile myUser = new QueryProfile("myUser");
@@ -494,7 +515,7 @@ public class QueryProfileTypeTestCase {
         topMap.set("subMap", subMap, registry);
 
         QueryProfile test = new QueryProfile("test");
-        test.setType(type);
+        test.setType(testtype);
         subMap.set("typeProfile", test, registry);
 
         QueryProfile myUser = new QueryProfile("myUser");
@@ -533,7 +554,7 @@ public class QueryProfileTypeTestCase {
         topMap.set("subMap", subMap, registry);
 
         QueryProfile test = new QueryProfile("test");
-        test.setType(typeStrict);
+        test.setType(testtypeStrict);
         subMap.set("typeProfile", test, registry);
 
         registry.register(topMap);
@@ -567,7 +588,7 @@ public class QueryProfileTypeTestCase {
         topMap.set("subMap",subMap, registry);
 
         QueryProfile test = new QueryProfile("test");
-        test.setType(type);
+        test.setType(testtype);
         subMap.set("typeProfile",test, registry);
 
         QueryProfile newUser = new QueryProfile("newUser");

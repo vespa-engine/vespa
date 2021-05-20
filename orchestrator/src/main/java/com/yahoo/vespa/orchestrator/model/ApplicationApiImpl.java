@@ -10,12 +10,11 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 
 import java.time.Clock;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -23,8 +22,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
 
 /**
  * @author hakonhall
@@ -87,11 +84,12 @@ public class ApplicationApiImpl implements ApplicationApi {
     }
 
     @Override
-    public List<StorageNode> getUpStorageNodesInGroupInClusterOrder() {
+    public List<StorageNode> getNoRemarksStorageNodesInGroupInClusterOrder() {
         return clusterInOrder.stream()
-                .map(ClusterApi::upStorageNodeInGroup)
+                .map(ClusterApi::storageNodeInGroup)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
+                .filter(x -> hostInfos.getOrNoRemarks(x.hostName()).status() == HostStatus.NO_REMARKS)
                 .collect(Collectors.toList());
     }
 

@@ -50,7 +50,6 @@ private:
     using ComparatorType = typename EnumStore::ComparatorType;
     using DocId = typename MultiValueStringAttributeT<B, T>::DocId;
     using DocIndices = typename MultiValueStringAttributeT<B, T>::DocIndices;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using Posting = typename PostingParent::Posting;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;

@@ -597,7 +597,7 @@ Benchmark::Main()
     setup_search_features(_factory);
 
     int idx = 1;
-    char opt;
+    int opt;
     const char * arg;
     bool optError = false;
     vespalib::string file;

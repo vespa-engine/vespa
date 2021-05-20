@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_stripe_component.h>
+#include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
@@ -16,7 +17,8 @@ using document::test::makeDocumentBucket;
 namespace storage::distributor {
 
 DistributorTestUtil::DistributorTestUtil()
-    : _messageSender(_sender, _senderDown)
+    : _messageSender(_sender, _senderDown),
+      _num_distributor_stripes(0) // TODO STRIPE change default
 {
     _config = getStandardConfig(false);
 }
@@ -27,12 +29,14 @@ DistributorTestUtil::createLinks()
 {
     _node.reset(new TestDistributorApp(_config.getConfigId()));
     _threadPool = framework::TickingThreadPool::createDefault("distributor");
+    _stripe_pool = std::make_unique<DistributorStripePool>();
     _distributor.reset(new Distributor(
             _node->getComponentRegister(),
             _node->node_identity(),
             *_threadPool,
+            *_stripe_pool,
             *this,
-            0,
+            _num_distributor_stripes,
             _hostInfo,
             &_messageSender));
     _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));
@@ -291,7 +295,7 @@ DistributorTestUtil::insertBucketInfo(document::BucketId id,
     if (active) {
         info2.setActive();
     }
-    BucketCopy copy(distributor_component().getUniqueTimestamp(), node, info2);
+    BucketCopy copy(operation_context().generate_unique_timestamp(), node, info2);
 
     entry->addNode(copy.setTrusted(trusted), toVector<uint16_t>(0));
 
@@ -351,14 +355,18 @@ DistributorTestUtil::getExternalOperationHandler() {
     return _distributor->external_operation_handler();
 }
 
-storage::distributor::DistributorStripeComponent&
-DistributorTestUtil::distributor_component() {
-    // TODO STRIPE tests use this to indirectly access bucket space repos/DBs!
+const storage::distributor::DistributorNodeContext&
+DistributorTestUtil::node_context() const {
     return _distributor->distributor_component();
 }
 
 storage::distributor::DistributorStripeOperationContext&
 DistributorTestUtil::operation_context() {
+    return _distributor->distributor_component();
+}
+
+const DocumentSelectionParser&
+DistributorTestUtil::doc_selection_parser() const {
     return _distributor->distributor_component();
 }
 
@@ -425,6 +433,36 @@ DistributorTestUtil::getReadOnlyBucketSpaceRepo() const {
     return _distributor->getReadOnlyBucketSpaceRepo();
 }
 
+bool
+DistributorTestUtil::distributor_is_in_recovery_mode() const noexcept {
+    return _distributor->isInRecoveryMode();
+}
+
+const lib::ClusterStateBundle&
+DistributorTestUtil::current_distributor_cluster_state_bundle() const noexcept {
+    return getDistributor().getClusterStateBundle();
+}
+
+std::string
+DistributorTestUtil::active_ideal_state_operations() const {
+    return _distributor->getActiveIdealStateOperations();
+}
+
+const PendingMessageTracker&
+DistributorTestUtil::pending_message_tracker() const noexcept {
+    return _distributor->getPendingMessageTracker();
+}
+
+PendingMessageTracker&
+DistributorTestUtil::pending_message_tracker() noexcept {
+    return _distributor->getPendingMessageTracker();
+}
+
+std::chrono::steady_clock::duration
+DistributorTestUtil::db_memory_sample_interval() const noexcept {
+    return _distributor->db_memory_sample_interval();
+}
+
 const lib::Distribution&
 DistributorTestUtil::getDistribution() const {
     return getBucketSpaceRepo().get(makeBucketSpace()).getDistribution();
@@ -451,6 +489,11 @@ void
 DistributorTestUtil::enable_distributor_cluster_state(const lib::ClusterStateBundle& state)
 {
     getBucketDBUpdater().simulate_cluster_state_bundle_activation(state);
+}
+
+void
+DistributorTestUtil::setSystemState(const lib::ClusterState& systemState) {
+    _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
 }
 
 }

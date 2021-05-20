@@ -5,15 +5,11 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
-import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
@@ -1061,17 +1057,13 @@ public class DeploymentTriggerTest {
         ApplicationPackage cdPackage = new ApplicationPackageBuilder().region("cd-us-central-1")
                                                                       .region("cd-aws-us-east-1a")
                                                                       .build();
-        ServiceRegistryMock services = new ServiceRegistryMock();
-        var zones = List.of(ZoneApiMock.fromId("test.cd-us-central-1"),
-                            ZoneApiMock.fromId("staging.cd-us-central-1"),
-                            ZoneApiMock.fromId("prod.cd-us-central-1"),
-                            ZoneApiMock.fromId("prod.cd-aws-us-east-1a"));
-        services.zoneRegistry()
-                .setSystemName(SystemName.cd)
-                .setZones(zones)
-                .setRoutingMethod(zones, RoutingMethod.shared);
-        tester = new DeploymentTester(new ControllerTester(services));
-        tester.configServer().bootstrap(services.zoneRegistry().zones().all().ids(), SystemApplication.values());
+        var zones = List.of(ZoneId.from("test.cd-us-central-1"),
+                            ZoneId.from("staging.cd-us-central-1"),
+                            ZoneId.from("prod.cd-us-central-1"),
+                            ZoneId.from("prod.cd-aws-us-east-1a"));
+        tester.controllerTester()
+              .setZones(zones, SystemName.cd)
+              .setRoutingMethod(zones, RoutingMethod.shared);
         tester.controllerTester().upgradeSystem(Version.fromString("6.1"));
         tester.controllerTester().computeVersionStatus();
         var app = tester.newDeploymentContext();

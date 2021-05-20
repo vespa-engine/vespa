@@ -24,7 +24,7 @@ class UpdateDoneContext : public OperationDoneContext
     document::DocumentUpdate::SP _upd;
     std::shared_future<std::unique_ptr<const document::Document>> _doc;
 public:
-    UpdateDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, const document::DocumentUpdate::SP &upd);
+    UpdateDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, const document::DocumentUpdate::SP &upd);
     ~UpdateDoneContext() override;
 
     const document::DocumentUpdate &getUpdate() { return *_upd; }

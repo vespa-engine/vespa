@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.clustercontroller;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -19,14 +18,12 @@ import java.util.Optional;
  */
 public class ClusterControllerContainerCluster extends ContainerCluster<ClusterControllerContainer> {
 
-    private final ModelContext.FeatureFlags featureFlags;
     private final ReindexingContext reindexingContext;
 
     public ClusterControllerContainerCluster(
             AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState, false);
         addDefaultHandlersWithVip();
-        this.featureFlags = deployState.featureFlags();
         this.reindexingContext = createReindexingContext(deployState);
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }
@@ -40,8 +37,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
 
-        builder.jvm
-                .heapsize(featureFlags.clusterControllerMaxHeapSizeInMb());
+        builder.jvm.heapsize(128);
     }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }

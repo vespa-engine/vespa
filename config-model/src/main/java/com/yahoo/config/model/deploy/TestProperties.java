@@ -43,7 +43,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
-    private int maxPendingMoveOps = 10;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -51,11 +50,9 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
-    private boolean useBucketExecutorForLidSpaceCompact;
-    private boolean useBucketExecutorForBucketMove;
+    private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
-    private double maxDeadBytesRatio = 0.2;
-    private int clusterControllerMaxHeapSizeInMb = 256;
+    private int clusterControllerMaxHeapSizeInMb = 128;
     private int metricsProxyMaxHeapSizeInMb = 256;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
@@ -85,7 +82,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }
-    @Override public int maxPendingMoveOps() { return maxPendingMoveOps; }
     @Override public boolean skipCommunicationManagerThread() { return false; }
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
@@ -93,10 +89,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
-    @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
-    @Override public boolean useBucketExecutorForBucketMove() { return useBucketExecutorForBucketMove; }
+    @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
-    @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
@@ -131,10 +125,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         responseNumThreads = numThreads;
         return this;
     }
-    public TestProperties setMaxPendingMoveOps(int moveOps) {
-        maxPendingMoveOps = moveOps;
-        return this;
-    }
+
     public TestProperties setDefaultTermwiseLimit(double limit) {
         defaultTermwiseLimit = limit;
         return this;
@@ -200,23 +191,13 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties useBucketExecutorForLidSpaceCompact(boolean enabled) {
-        useBucketExecutorForLidSpaceCompact = enabled;
-        return this;
-    }
-
-    public TestProperties useBucketExecutorForBucketMove(boolean enabled) {
-        useBucketExecutorForBucketMove = enabled;
+    public TestProperties useBucketExecutorForPruneRemoved(boolean enabled) {
+        useBucketExecutorForPruneRemoved = enabled;
         return this;
     }
 
     public TestProperties enableFeedBlockInDistributor(boolean enabled) {
         enableFeedBlockInDistributor = enabled;
-        return this;
-    }
-
-    public TestProperties maxDeadBytesRatio(double ratio) {
-        maxDeadBytesRatio = ratio;
         return this;
     }
 

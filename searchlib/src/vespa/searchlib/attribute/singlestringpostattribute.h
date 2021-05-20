@@ -37,7 +37,6 @@ private:
     using ComparatorType = typename EnumStore::ComparatorType;
     using DocId = typename SingleValueStringAttributeT<B>::DocId;
     using EnumIndex = typename SingleValueStringAttributeT<B>::EnumIndex;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueStringPostingAttributeT<B>;

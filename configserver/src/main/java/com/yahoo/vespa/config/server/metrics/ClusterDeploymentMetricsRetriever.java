@@ -22,11 +22,13 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -46,8 +48,8 @@ public class ClusterDeploymentMetricsRetriever {
     private static final String VESPA_CONTAINER = "vespa.container";
     private static final String VESPA_QRSERVER = "vespa.qrserver";
     private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
-    private static final String VESPA_SEARCHNODE = "vespa.searchnode";
-    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR, VESPA_SEARCHNODE);
+    private static final String VESPA_CONTAINER_CLUSTERCONTROLLER = "vespa.container-clustercontroller";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR, VESPA_CONTAINER_CLUSTERCONTROLLER);
 
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
@@ -110,36 +112,40 @@ public class ClusterDeploymentMetricsRetriever {
 
     private static void parseService(Inspector service, Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap) {
         String serviceName = service.field("name").asString();
+        if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
         service.field("metrics").traverse((ArrayTraverser) (i, metric) ->
-                addMetricsToAggeregator(serviceName, metric, clusterMetricsMap)
+                addMetricsToAggregator(serviceName, metric, clusterMetricsMap)
         );
     }
 
-    private static void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap) {
-        if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
+    private static void addMetricsToAggregator(String serviceName, Inspector metric, Map<ClusterInfo, DeploymentMetricsAggregator> clusterMetricsMap) {
         Inspector values = metric.field("values");
         ClusterInfo clusterInfo = getClusterInfoFromDimensions(metric.field("dimensions"));
-        DeploymentMetricsAggregator deploymentMetricsAggregator = clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
+        Supplier<DeploymentMetricsAggregator> aggregator = () -> clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
             case VESPA_CONTAINER:
-                deploymentMetricsAggregator.addContainerLatency(
-                        values.field("query_latency.sum").asDouble(),
-                        values.field("query_latency.count").asDouble());
-                deploymentMetricsAggregator.addFeedLatency(
-                        values.field("feed.latency.sum").asDouble(),
-                        values.field("feed.latency.count").asDouble());
+                optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
+                        aggregator.get()
+                                .addContainerLatency(qlSum, values.field("query_latency.count").asDouble())
+                                .addFeedLatency(values.field("feed.latency.sum").asDouble(), values.field("feed.latency.count").asDouble()));
                 break;
             case VESPA_QRSERVER:
-                deploymentMetricsAggregator.addQrLatency(
-                        values.field("query_latency.sum").asDouble(),
-                        values.field("query_latency.count").asDouble());
+                optionalDouble(values.field("query_latency.sum")).ifPresent(qlSum ->
+                        aggregator.get()
+                                .addQrLatency(qlSum, values.field("query_latency.count").asDouble()));
                 break;
             case VESPA_DISTRIBUTOR:
-                deploymentMetricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
+                optionalDouble(values.field("vds.distributor.docsstored.average"))
+                        .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
                 break;
-            case VESPA_SEARCHNODE:
-                deploymentMetricsAggregator.addFeedingBlocked((int) values.field("content.proton.resource_usage.feeding_blocked.last").asLong());
+            case VESPA_CONTAINER_CLUSTERCONTROLLER:
+                optionalDouble(values.field("cluster-controller.resource_usage.max_memory_utilization.last")).ifPresent(memoryUtil ->
+                        aggregator.get()
+                                .addMemoryUsage(memoryUtil,
+                                        values.field("cluster-controller.resource_usage.memory_limit.last").asDouble())
+                                .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.last").asDouble(),
+                                        values.field("cluster-controller.resource_usage.disk_limit.last").asDouble()));
                 break;
         }
     }
@@ -157,5 +163,9 @@ public class ClusterDeploymentMetricsRetriever {
             log.info("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
             return new Slime();
         }
+    }
+
+    private static OptionalDouble optionalDouble(Inspector field) {
+        return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
     }
 }

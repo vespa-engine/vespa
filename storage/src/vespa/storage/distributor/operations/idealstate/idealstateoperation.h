@@ -114,7 +114,7 @@ public:
 
     virtual ~IdealStateOperation();
 
-    void onClose(DistributorMessageSender&) override {}
+    void onClose(DistributorStripeMessageSender&) override {}
 
     /**
        Returns true if the operation was performed successfully.

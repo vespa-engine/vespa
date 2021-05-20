@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
@@ -203,8 +204,14 @@ public class UnixPath {
         return this;
     }
 
+    /** Create directory unless it already exists, and return this. */
     public UnixPath createDirectory() {
-        uncheck(() -> Files.createDirectory(path));
+        try {
+            Files.createDirectory(path);
+        } catch (FileAlreadyExistsException ignore) {
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return this;
     }
 

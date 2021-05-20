@@ -183,6 +183,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
+        addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
 
         metrics.add(new Metric("http.status.1xx.rate"));
         metrics.add(new Metric("http.status.2xx.rate"));
@@ -239,6 +240,14 @@ public class VespaMetricSet {
         metrics.add(new Metric("cluster-controller.stopping.count.last"));
         metrics.add(new Metric("cluster-controller.up.count.last"));
         metrics.add(new Metric("cluster-controller.cluster-state-change.count"));
+        metrics.add(new Metric("cluster-controller.busy-tick-time-ms.last"));
+        metrics.add(new Metric("cluster-controller.busy-tick-time-ms.max"));
+        metrics.add(new Metric("cluster-controller.busy-tick-time-ms.sum"));
+        metrics.add(new Metric("cluster-controller.busy-tick-time-ms.count"));
+        metrics.add(new Metric("cluster-controller.idle-tick-time-ms.last"));
+        metrics.add(new Metric("cluster-controller.idle-tick-time-ms.max"));
+        metrics.add(new Metric("cluster-controller.idle-tick-time-ms.sum"));
+        metrics.add(new Metric("cluster-controller.idle-tick-time-ms.count"));
 
         metrics.add(new Metric("cluster-controller.is-master.last"));
         metrics.add(new Metric("cluster-controller.remote-task-queue.size.last"));

@@ -7,9 +7,8 @@
 
 namespace proton {
 
-RemoveDoneContext::RemoveDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
-                                     IDocumentMetaStore &documentMetaStore,
-                                     uint32_t lid)
+RemoveDoneContext::RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+                                     vespalib::Executor &executor, IDocumentMetaStore &documentMetaStore, uint32_t lid)
     : OperationDoneContext(std::move(token)),
       _executor(executor),
       _task(),
@@ -22,7 +21,6 @@ RemoveDoneContext::RemoveDoneContext(FeedToken token, IPendingLidTracker::Token 
 
 RemoveDoneContext::~RemoveDoneContext()
 {
-    ack();
     if (_task) {
         vespalib::Executor::Task::UP res = _executor.execute(std::move(_task));
         assert(!res);

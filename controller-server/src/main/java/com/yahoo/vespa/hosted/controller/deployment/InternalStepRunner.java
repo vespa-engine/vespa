@@ -712,12 +712,12 @@ public class InternalStepRunner implements StepRunner {
 
     private void updateConsoleNotification(Run run) {
         NotificationSource source = NotificationSource.from(run.id());
-        Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.DEPLOYMENT_FAILURE, msg);
+        Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.error, msg);
         switch (run.status()) {
             case aborted: return; // wait and see how the next run goes.
             case running:
             case success:
-                controller.notificationsDb().removeNotification(source, Notification.Type.DEPLOYMENT_FAILURE);
+                controller.notificationsDb().removeNotification(source, Notification.Type.deployment);
                 return;
             case outOfCapacity:
                 if ( ! run.id().type().environment().isTest()) updater.accept("lack of capacity. Please contact the Vespa team to request more!");

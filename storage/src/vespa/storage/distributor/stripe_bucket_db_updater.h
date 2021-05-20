@@ -36,11 +36,10 @@ class StripeBucketDBUpdater final
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    StripeBucketDBUpdater(DistributorStripeInterface& owner,
-                          DistributorBucketSpaceRepo& bucketSpaceRepo,
-                          DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+    StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
+                          DistributorStripeOperationContext& op_ctx,
+                          DistributorStripeInterface& owner,
                           DistributorMessageSender& sender,
-                          DistributorComponentRegister& compReg,
                           bool use_legacy_mode);
     ~StripeBucketDBUpdater() override;
 
@@ -59,6 +58,11 @@ public:
     vespalib::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const framework::HttpUrlPath&) const;
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
+
+    // Functions used for state reporting when a StripeAccessGuard is held.
+    void report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const;
+    void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const;
+
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
     const DistributorNodeContext& node_context() const { return _node_ctx; }
     DistributorStripeOperationContext& operation_context() { return _op_ctx; }
@@ -140,7 +144,8 @@ private:
 
     friend class DistributorTestUtil;
     // TODO refactor and rewire to avoid needing this direct meddling
-    friend class LegacySingleStripeAccessGuard;
+    friend class DistributorStripe;
+
     // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
     // components agree on the currently active cluster state bundle.
     // Transitively invokes Distributor::enableClusterStateBundle
@@ -258,7 +263,6 @@ private:
         mutable bool _cachedOwned;
     };
 
-    DistributorStripeComponent _distributorComponent;
     const DistributorNodeContext& _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
     DistributorStripeInterface& _distributor_interface;

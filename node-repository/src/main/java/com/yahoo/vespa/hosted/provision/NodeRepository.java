@@ -84,7 +84,7 @@ public class NodeRepository extends AbstractComponent {
              flagSource,
              metricsDb,
              config.useCuratorClientCache(),
-             zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() ? 1 : 0,
+             zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() && !zone.system().isCd() ? 1 : 0,
              config.nodeCacheSize());
     }
 

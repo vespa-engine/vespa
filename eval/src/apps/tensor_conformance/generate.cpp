@@ -432,9 +432,13 @@ void generate_expanding_reduce(TestBuilder &dst) {
 //-----------------------------------------------------------------------------
 
 void generate_converting_lambda(TestBuilder &dst) {
-    auto spec = GenSpec::from_desc("x3y5_2");
+    auto dense = GenSpec::from_desc("x3");
+    auto sparse = GenSpec::from_desc("y5_2");
+    auto mixed = GenSpec::from_desc("x3y5_2");
     // change cell type and dimension types
-    dst.add("tensor<bfloat16>(x[5],y[10])(a{x:(x),y:(y)})", {{"a", spec}});
+    dst.add("tensor<bfloat16>(x[5])(a{x:(x)})", {{"a", dense}});
+    dst.add("tensor<bfloat16>(y[10])(a{y:(y)})", {{"a", sparse}});
+    dst.add("tensor<bfloat16>(x[5],y[10])(a{x:(x),y:(y)})", {{"a", mixed}});
 }
 
 //-----------------------------------------------------------------------------
@@ -477,6 +481,27 @@ void generate_erf_value_test(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
+void generate_nan_existence(TestBuilder &dst) {
+    auto seq1 = Seq({1.0, 1.0, my_nan, my_nan});
+    auto seq2 = Seq({2.0, 2.0, my_nan, my_nan});
+    auto sparse1 = GenSpec().from_desc("x8_1").seq(seq1);
+    auto sparse2 = GenSpec().from_desc("x8_2").seq(seq2);
+    auto mixed1 = GenSpec().from_desc("x4_1y4").seq(seq1);
+    auto mixed2 = GenSpec().from_desc("x4_2y4").seq(seq2);
+    // try to provoke differences between nan and non-existence
+    const vespalib::string inner_expr = "f(x,y)(if(isNan(x),11,x)+if(isNan(y),22,y))";
+    vespalib::string merge_expr = fmt("merge(a,b,%s)", inner_expr.c_str());
+    vespalib::string join_expr = fmt("join(a,b,%s)", inner_expr.c_str());
+    dst.add(merge_expr, {{"a", sparse1}, {"b", sparse2}});
+    dst.add(merge_expr, {{"a",  mixed1}, {"b",  mixed2}});
+    dst.add(join_expr, {{"a", sparse1}, {"b", sparse2}});
+    dst.add(join_expr, {{"a",  mixed1}, {"b",  mixed2}});
+    dst.add(join_expr, {{"a", sparse1}, {"b",  mixed2}});
+    dst.add(join_expr, {{"a",  mixed1}, {"b", sparse2}});
+}
+
+//-----------------------------------------------------------------------------
+
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -505,4 +530,5 @@ Generator::generate(TestBuilder &dst)
     generate_strict_verbatim_peek(dst);
     generate_nested_tensor_lambda(dst);
     generate_erf_value_test(dst);
+    generate_nan_existence(dst);
 }

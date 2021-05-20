@@ -33,13 +33,13 @@ public:
        Tell the callback that storage is shutting down. Reply to any pending
        stuff.
     */
-    virtual void onClose(DistributorMessageSender&) = 0;
+    virtual void onClose(DistributorStripeMessageSender&) = 0;
 
     /**
        When a reply has been received, the storagelink will call receive()
        on the owner of the message that was replied to.
     */
-    virtual void receive(DistributorMessageSender& sender,
+    virtual void receive(DistributorStripeMessageSender& sender,
                  const std::shared_ptr<api::StorageReply> & msg)
     {
         onReceive(sender, msg);
@@ -56,7 +56,7 @@ public:
     /**
        Starts the callback, sending any messages etc. Sets _startTime to current time
     */
-    virtual void start(DistributorMessageSender& sender, framework::MilliSecTime startTime);
+    virtual void start(DistributorStripeMessageSender& sender, framework::MilliSecTime startTime);
 
     /**
      * Returns true if we are blocked to start this operation given
@@ -81,9 +81,9 @@ private:
     /**
        Implementation of start for the callback
      */
-    virtual void onStart(DistributorMessageSender& sender) = 0;
+    virtual void onStart(DistributorStripeMessageSender& sender) = 0;
 
-    virtual void onReceive(DistributorMessageSender& sender,
+    virtual void onReceive(DistributorStripeMessageSender& sender,
                            const std::shared_ptr<api::StorageReply> & msg) = 0;
 
 protected:

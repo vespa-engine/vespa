@@ -168,11 +168,13 @@
       "public com.yahoo.documentapi.DocumentOperationParameters withFieldSet(java.lang.String)",
       "public com.yahoo.documentapi.DocumentOperationParameters withRoute(java.lang.String)",
       "public com.yahoo.documentapi.DocumentOperationParameters withTraceLevel(int)",
+      "public com.yahoo.documentapi.DocumentOperationParameters withDeadline(java.time.Instant)",
       "public com.yahoo.documentapi.DocumentOperationParameters withResponseHandler(com.yahoo.documentapi.ResponseHandler)",
       "public java.util.Optional priority()",
       "public java.util.Optional fieldSet()",
       "public java.util.Optional route()",
       "public java.util.OptionalInt traceLevel()",
+      "public java.util.Optional deadline()",
       "public java.util.Optional responseHandler()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -414,6 +416,7 @@
       "public static final enum com.yahoo.documentapi.Response$Outcome CONDITION_FAILED",
       "public static final enum com.yahoo.documentapi.Response$Outcome NOT_FOUND",
       "public static final enum com.yahoo.documentapi.Response$Outcome INSUFFICIENT_STORAGE",
+      "public static final enum com.yahoo.documentapi.Response$Outcome TIMEOUT",
       "public static final enum com.yahoo.documentapi.Response$Outcome ERROR"
     ]
   },

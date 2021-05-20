@@ -5,6 +5,8 @@
 #include "node_visitor.h"
 #include "interpreted_function.h"
 #include "simple_value.h"
+#include "fast_value.h"
+#include "node_tools.h"
 
 namespace vespalib::eval::nodes {
 
@@ -21,13 +23,32 @@ struct Frame {
 } // namespace vespalib::eval::nodes::<unnamed>
 
 double
-Node::get_const_value() const {
-    assert(is_const());
+Node::get_const_double_value() const
+{
+    assert(is_const_double());
     NodeTypes node_types(*this);
     InterpretedFunction function(SimpleValueBuilderFactory::get(), *this, node_types);
     NoParams no_params;
     InterpretedFunction::Context ctx(function);
     return function.eval(ctx, no_params).as_double();
+}
+
+Value::UP
+Node::get_const_value() const
+{
+    if (nodes::as<nodes::Error>(*this)) {
+        // cannot get const value for parse error
+        return {nullptr};
+    }
+    if (NodeTools::min_num_params(*this) != 0) {
+        // cannot get const value for non-const sub-expression
+        return {nullptr};
+    }
+    NodeTypes node_types(*this);
+    InterpretedFunction function(SimpleValueBuilderFactory::get(), *this, node_types);
+    NoParams no_params;
+    InterpretedFunction::Context ctx(function);
+    return FastValueBuilderFactory::get().copy(function.eval(ctx, no_params));
 }
 
 void
@@ -69,16 +90,16 @@ If::If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_tr
     auto less = as<Less>(cond());
     auto in = as<In>(cond());
     auto inverted = as<Not>(cond());
-    bool true_is_subtree = (true_expr().is_tree() || true_expr().is_const());
-    bool false_is_subtree = (false_expr().is_tree() || false_expr().is_const());
+    bool true_is_subtree = (true_expr().is_tree() || true_expr().is_const_double());
+    bool false_is_subtree = (false_expr().is_tree() || false_expr().is_const_double());
     if (true_is_subtree && false_is_subtree) {
         if (less) {
-            _is_tree = (less->lhs().is_param() && less->rhs().is_const());
+            _is_tree = (less->lhs().is_param() && less->rhs().is_const_double());
         } else if (in) {
             _is_tree = in->child().is_param();
         } else if (inverted) {
             if (auto ge = as<GreaterEqual>(inverted->child())) {
-                _is_tree = (ge->lhs().is_param() && ge->rhs().is_const());
+                _is_tree = (ge->lhs().is_param() && ge->rhs().is_const_double());
             }
         }
     }

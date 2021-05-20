@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query;
 
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.parser.ParserEnvironment;
@@ -12,13 +11,12 @@ import com.yahoo.search.yql.VespaGroupingStep;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
 
 /**
- * The parameters defining the where-clause and groping of a query
+ * The parameters defining the where-clause and grouping of a query
  *
  * @author henrhoi
  */
@@ -26,7 +24,6 @@ public class Select implements Cloneable {
 
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
-    private static final CompoundName argumentTypeName;
 
     public static final String SELECT = "select";
     public static final String WHERE = "where";
@@ -46,7 +43,6 @@ public class Select implements Cloneable {
         argumentType.addField(new FieldDescription(WHERE, "string"));
         argumentType.addField(new FieldDescription(GROUPING, "string"));
         argumentType.freeze();
-        argumentTypeName = new CompoundName(argumentType.getId().getName());
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }

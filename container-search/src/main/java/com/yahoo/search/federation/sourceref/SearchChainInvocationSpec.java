@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Specifices which search chain should be run and how it should be run.
+ * Specifies which search chain should be run and how it should be run.
  * This is a value object.
  *
  * @author Tony Vaagenes

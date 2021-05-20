@@ -18,9 +18,9 @@ using namespace storage;
 using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
-        DistributorNodeContext& node_ctx,
+        const DistributorNodeContext& node_ctx,
         DistributorStripeOperationContext& op_ctx,
-        DocumentSelectionParser& parser,
+        const DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::RemoveLocationCommand> msg,
         PersistenceOperationMetricSet& metric)
@@ -41,8 +41,8 @@ RemoveLocationOperation::~RemoveLocationOperation() = default;
 
 int
 RemoveLocationOperation::getBucketId(
-        DistributorNodeContext& node_ctx,
-        DocumentSelectionParser& parser,
+        const DistributorNodeContext& node_ctx,
+        const DocumentSelectionParser& parser,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
     document::BucketSelector bucketSel(node_ctx.bucket_id_factory());
@@ -60,7 +60,7 @@ RemoveLocationOperation::getBucketId(
 }
 
 void
-RemoveLocationOperation::onStart(DistributorMessageSender& sender)
+RemoveLocationOperation::onStart(DistributorStripeMessageSender& sender)
 {
     document::BucketId bid;
     int count = getBucketId(_node_ctx, _parser, *_msg, bid);
@@ -108,14 +108,14 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
 
 void
 RemoveLocationOperation::onReceive(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         const std::shared_ptr<api::StorageReply> & msg)
 {
     _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));
 }
 
 void
-RemoveLocationOperation::onClose(DistributorMessageSender& sender)
+RemoveLocationOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED,
                                           "Process is shutting down"));

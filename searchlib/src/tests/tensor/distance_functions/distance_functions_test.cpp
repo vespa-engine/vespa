@@ -28,10 +28,15 @@ void verify_geo_miles(const DistanceFunction *dist_fun,
     double raw_score = dist_fun->to_rawscore(abstract_distance);
     double km = ((1.0/raw_score)-1.0);
     double d_miles = km / 1.609344;
-    EXPECT_GE(d_miles, exp_miles*0.99);
-    EXPECT_LE(d_miles, exp_miles*1.01);
-    double threshold = dist_fun->convert_threshold(km);
-    EXPECT_DOUBLE_EQ(threshold, abstract_distance);
+    if (exp_miles != 0.0) {
+        EXPECT_GE(d_miles, exp_miles*0.99);
+        EXPECT_LE(d_miles, exp_miles*1.01);
+        double threshold = dist_fun->convert_threshold(km);
+        EXPECT_DOUBLE_EQ(threshold, abstract_distance);
+    } else {
+        EXPECT_LE(d_miles, 7e-13);
+        EXPECT_LE(abstract_distance, 6e-33);
+    }
 }
 
 

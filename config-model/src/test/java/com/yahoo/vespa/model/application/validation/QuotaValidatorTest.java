@@ -26,7 +26,7 @@ public class QuotaValidatorTest {
     @Test
     public void test_deploy_under_quota() {
         var tester = new ValidationTester(8, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
-        tester.deploy(null, getServices("testCluster", 5), Environment.prod, null);
+        tester.deploy(null, getServices("testCluster", 4), Environment.prod, null);
     }
 
     @Test
@@ -54,13 +54,26 @@ public class QuotaValidatorTest {
 
     @Test
     public void test_deploy_above_quota_budget_in_publiccd() {
-        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota.withBudget(BigDecimal.ONE)).setZone(publicCdZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
             assertEquals("publiccd: Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
                          ValidationTester.censorNumbers(e.getMessage()));
+        }
+    }
+
+    @Test
+    public void test_deploy_max_resources_above_quota() {
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
+        try {
+            tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals("publiccd: Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
+                    ValidationTester.censorNumbers(e.getMessage()));
+
         }
     }
 
@@ -88,7 +101,7 @@ public class QuotaValidatorTest {
                 "      <document type='music' mode='index'/>" +
                 "    </documents>" +
                 "    <nodes count='" + nodeCount + "'>" +
-                "      <resources vcpu=\"[0.5, 1]\" memory=\"[1Gb, 3Gb]\" disk=\"[1Gb, 9Gb]\"/>\n" +
+                "      <resources vcpu=\"[0.5, 2]\" memory=\"[1Gb, 6Gb]\" disk=\"[1Gb, 18Gb]\"/>\n" +
                 "    </nodes>" +
                 "   </content>" +
                 "</services>";

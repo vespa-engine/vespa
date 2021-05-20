@@ -28,9 +28,8 @@ class PutDoneContext : public OperationDoneContext
     std::shared_ptr<const document::Document> _doc;
 
 public:
-    PutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
-                   std::shared_ptr<const document::Document> doc,
-                   uint32_t lid);
+    PutDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+                   std::shared_ptr<const document::Document> doc, uint32_t lid);
     ~PutDoneContext() override;
 
     void registerPutLid(DocIdLimit *docIdLimit) { _docIdLimit = docIdLimit; }

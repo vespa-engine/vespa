@@ -16,9 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Creates top level search chains(searchchain, provider) from xml.
+ *
  * @author Tony Vaagenes
  * @author gjoranv
- * Creates top level search chains(searchchain, provider) from xml.
  */
 public class SearchChainsBuilder extends ChainsBuilder<Searcher<?>, SearchChain> {
 

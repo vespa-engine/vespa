@@ -424,6 +424,26 @@ class QTest extends Specification {
         q == """yql=select * from sources * where f1 contains ([{"key":"value"}]uri("https://test.uri"));"""
     }
 
+    def "nearestNeighbor"() {
+        given:
+        def q = Q.p("f1").nearestNeighbor("query_vector")
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sources * where nearestNeighbor(f1, query_vector);"""
+    }
+
+    def "nearestNeighbor with annotation"() {
+        given:
+        def q = Q.p("f1").nearestNeighbor(A.a("targetHits", 10), "query_vector")
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sources * where ([{"targetHits":10}]nearestNeighbor(f1, query_vector));"""
+    }
+
     def "use contains instead of contains equiv when input size is 1"() {
         def q = Q.p("f1").containsEquiv(["p1"])
             .semicolon()

@@ -20,7 +20,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -67,9 +66,11 @@ public class ConnectorFactory {
         return connectorConfig;
     }
 
-    public ServerConnector createConnector(final Metric metric, final Server server, JettyConnectionLogger connectionLogger) {
+    public ServerConnector createConnector(final Metric metric, final Server server, JettyConnectionLogger connectionLogger,
+                                           ConnectionMetricAggregator connectionMetricAggregator) {
         ServerConnector connector = new JDiscServerConnector(
-                connectorConfig, metric, server, connectionLogger, createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
+                connectorConfig, metric, server, connectionLogger, connectionMetricAggregator,
+                createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
         connector.setPort(connectorConfig.listenPort());
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
@@ -103,7 +104,7 @@ public class ConnectorFactory {
         HttpConnectionFactory http1Factory = newHttp1ConnectionFactory();
         if (connectorConfig.http2Enabled()) {
             HTTP2ServerConnectionFactory http2Factory = newHttp2ConnectionFactory();
-            ALPNServerConnectionFactory alpnFactory = newAlpnConnectionFactory(List.of(http1Factory, http2Factory), http1Factory);
+            ALPNServerConnectionFactory alpnFactory = newAlpnConnectionFactory();
             SslConnectionFactory sslFactory = newSslConnectionFactory(metric, alpnFactory);
             if (proxyProtocolConfig.enabled()) {
                 ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
@@ -160,7 +161,9 @@ public class ConnectorFactory {
     }
 
     private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
-        return new HTTP2ServerConnectionFactory(newHttpConfiguration());
+        HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
+        factory.setMaxConcurrentStreams(4096);
+        return factory;
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
@@ -170,11 +173,9 @@ public class ConnectorFactory {
         return connectionFactory;
     }
 
-    private ALPNServerConnectionFactory newAlpnConnectionFactory(Collection<ConnectionFactory> alternatives,
-                                                                 ConnectionFactory defaultFactory) {
-        String[] protocols = alternatives.stream().map(ConnectionFactory::getProtocol).toArray(String[]::new);
-        ALPNServerConnectionFactory factory = new ALPNServerConnectionFactory(protocols);
-        factory.setDefaultProtocol(defaultFactory.getProtocol());
+    private ALPNServerConnectionFactory newAlpnConnectionFactory() {
+        ALPNServerConnectionFactory factory = new ALPNServerConnectionFactory("h2", "http/1.1");
+        factory.setDefaultProtocol("http/1.1");
         return factory;
     }
 

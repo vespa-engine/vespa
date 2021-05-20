@@ -18,8 +18,8 @@ public class MockChangeRequestClient implements ChangeRequestClient {
     }
 
     @Override
-    public void approveChangeRequests(List<ChangeRequest> changeRequests) {
-        approvedChangeRequests.addAll(changeRequests);
+    public void approveChangeRequest(ChangeRequest changeRequest) {
+        approvedChangeRequests.add(changeRequest);
     }
 
     public void setUpcomingChangeRequests(List<ChangeRequest> changeRequests) {

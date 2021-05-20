@@ -467,7 +467,6 @@ public class SelectParser implements Parser {
     }
 
     private Item buildNearestNeighbor(String key, Inspector value) {
-
         HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
         String field = children.get(0).asString();

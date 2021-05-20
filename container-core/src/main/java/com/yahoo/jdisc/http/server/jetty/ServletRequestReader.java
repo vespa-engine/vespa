@@ -10,7 +10,6 @@ import javax.servlet.ServletInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +41,7 @@ class ServletRequestReader implements ReadListener {
     private final ServletInputStream servletInputStream;
     private final ContentChannel requestContentChannel;
 
-    private final Executor executor;
+    private final Janitor janitor;
     private final RequestMetricReporter metricReporter;
 
     private int bytesRead;
@@ -93,17 +92,17 @@ class ServletRequestReader implements ReadListener {
     public ServletRequestReader(
             ServletInputStream servletInputStream,
             ContentChannel requestContentChannel,
-            Executor executor,
+            Janitor janitor,
             RequestMetricReporter metricReporter) {
 
         Preconditions.checkNotNull(servletInputStream);
         Preconditions.checkNotNull(requestContentChannel);
-        Preconditions.checkNotNull(executor);
+        Preconditions.checkNotNull(janitor);
         Preconditions.checkNotNull(metricReporter);
 
         this.servletInputStream = servletInputStream;
         this.requestContentChannel = requestContentChannel;
-        this.executor = executor;
+        this.janitor = janitor;
         this.metricReporter = metricReporter;
     }
 
@@ -163,7 +162,7 @@ class ServletRequestReader implements ReadListener {
         }
 
         if (shouldCloseRequestContentChannel) {
-            executor.execute(this::closeCompletionHandler_noThrow);
+            janitor.scheduleTask(this::closeCompletionHandler_noThrow);
         }
     }
 

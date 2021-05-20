@@ -7,6 +7,7 @@ import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Base config producer for search chains that communicate with backends.
@@ -15,7 +16,7 @@ import java.util.Collection;
  */
 public class Provider extends GenericTarget {
 
-    private ConfigProducerGroup<Source> sources;
+    private final ConfigProducerGroup<Source> sources;
 
     public Provider(ChainSpecification specWithoutInnerSearchers, FederationOptions federationOptions) {
         super(specWithoutInnerSearchers, federationOptions);
@@ -37,9 +38,10 @@ public class Provider extends GenericTarget {
 
     public Collection<? extends GenericTarget> defaultFederationTargets() {
         if (sources.getComponents().isEmpty()) {
-            return Arrays.asList(this);
+            return List.of(this);
         } else {
             return sources.getComponents();
         }
     }
+
 }

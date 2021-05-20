@@ -175,6 +175,10 @@ struct DistributorTest : Test, DistributorTestUtil {
         return _distributor->handleMessage(msg);
     }
 
+    uint64_t db_sample_interval_sec() const noexcept {
+        return std::chrono::duration_cast<std::chrono::seconds>(_distributor->db_memory_sample_interval()).count();
+    }
+
     void configure_stale_reads_enabled(bool enabled) {
         ConfigBuilder builder;
         builder.allowStaleReadsDuringClusterStateTransitions = enabled;
@@ -280,19 +284,19 @@ TEST_F(DistributorTest, recovery_mode_on_cluster_state_change) {
                      "storage:1 .0.s:d distributor:1");
     enableDistributorClusterState("storage:1 distributor:1");
 
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
     for (uint32_t i = 0; i < 3; ++i) {
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
     }
     for (int i = 0; i < 3; ++i) {
         tick();
-        EXPECT_TRUE(_distributor->isInRecoveryMode());
+        EXPECT_TRUE(distributor_is_in_recovery_mode());
     }
     tick();
-    EXPECT_FALSE(_distributor->isInRecoveryMode());
+    EXPECT_FALSE(distributor_is_in_recovery_mode());
 
     enableDistributorClusterState("storage:2 distributor:1");
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
 }
 
 // TODO -> stripe test
@@ -489,14 +493,6 @@ TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) 
     }
 }
 
-namespace {
-
-uint64_t db_sample_interval_sec(const Distributor& d) noexcept {
-    return std::chrono::duration_cast<std::chrono::seconds>(d.db_memory_sample_interval()).count();
-}
-
-}
-
 // TODO -> stripe test
 TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {
     getClock().setAbsoluteTimeInSeconds(1000);
@@ -517,7 +513,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
     // interval has passed. Instead, old metric gauge values should be preserved.
     addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a,1=2/2/2");
 
-    const auto sample_interval_sec = db_sample_interval_sec(getDistributor());
+    const auto sample_interval_sec = db_sample_interval_sec();
     getClock().setAbsoluteTimeInSeconds(1000 + sample_interval_sec - 1); // Not there yet.
     tickDistributorNTimes(50);
     distributor_metric_update_hook().updateMetrics(metrics::MetricLockGuard(l));
@@ -925,7 +921,7 @@ TEST_F(DistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_mes
     reply->setResult(api::ReturnCode(api::ReturnCode::BUSY));
     _distributor->handleReply(std::shared_ptr<api::StorageReply>(std::move(reply)));
 
-    auto& node_info = _distributor->getPendingMessageTracker().getNodeInfo();
+    auto& node_info = pending_message_tracker().getNodeInfo();
 
     EXPECT_TRUE(node_info.isBusy(0));
     getClock().addSecondsToTime(99);
@@ -1045,7 +1041,7 @@ TEST_F(DistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
     tickDistributorNTimes(5); // 1/3rds into second round through database
 
     enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
     // Bucket space stats should now be invalid per space per node, pending stats
     // from state version 2. Exposing stats from version 1 risks reporting stale
     // information back to the cluster controller.
@@ -1066,13 +1062,13 @@ TEST_F(DistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_rep
     addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
 
     enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
     EXPECT_EQ(0, explicit_node_state_reply_send_invocations());
     tickDistributorNTimes(1); // DB round not yet complete
     EXPECT_EQ(0, explicit_node_state_reply_send_invocations());
     tickDistributorNTimes(2); // DB round complete after 2nd bucket + "scan done" discovery tick
     EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
-    EXPECT_FALSE(_distributor->isInRecoveryMode());
+    EXPECT_FALSE(distributor_is_in_recovery_mode());
     // Now out of recovery mode, subsequent round completions should not send replies
     tickDistributorNTimes(10);
     EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
@@ -1080,12 +1076,12 @@ TEST_F(DistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_rep
 
 void DistributorTest::do_test_pending_merge_getnodestate_reply_edge(BucketSpace space) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
     // 2 buckets with missing replicas triggering merge pending stats
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a");
     addNodesToBucketDB(Bucket(space, BucketId(16, 2)), "0=1/1/1/t/a");
     tickDistributorNTimes(3);
-    EXPECT_FALSE(_distributor->isInRecoveryMode());
+    EXPECT_FALSE(distributor_is_in_recovery_mode());
     const auto space_name = FixedBucketSpaces::to_string(space);
     assertBucketSpaceStats(2, 0, 1, space_name, _distributor->getBucketSpacesStats());
     // First completed scan sends off merge stats et al to cluster controller
@@ -1214,7 +1210,7 @@ TEST_F(DistributorTest, gets_are_not_started_outside_main_distributor_logic_if_s
 TEST_F(DistributorTest, gets_started_outside_main_thread_are_not_tracked_by_main_pending_message_tracker) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     Bucket bucket(FixedBucketSpaces::default_space(), BucketId(16, 1));
-    EXPECT_FALSE(_distributor->getPendingMessageTracker().hasPendingMessage(
+    EXPECT_FALSE(pending_message_tracker().hasPendingMessage(
             0, bucket, api::MessageType::GET_ID));
 }
 
@@ -1256,6 +1252,63 @@ TEST_F(DistributorTest, wanted_split_bit_count_is_lower_bounded) {
     configureDistributor(builder);
 
     EXPECT_EQ(getConfig().getMinimalBucketSplit(), 8);
+}
+
+TEST_F(DistributorTest, host_info_sent_immediately_once_all_stripes_first_reported) {
+    set_num_distributor_stripes(3);
+    createLinks();
+    getClock().setAbsoluteTimeInSeconds(1000);
+    // TODO STRIPE can't call this currently since it touches the bucket DB updater directly:
+    //   setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+
+    tickDistributorNTimes(1);
+    EXPECT_EQ(0, explicit_node_state_reply_send_invocations()); // Nothing yet
+    getDistributor().notify_stripe_wants_to_send_host_info(1);
+    getDistributor().notify_stripe_wants_to_send_host_info(2);
+
+    tickDistributorNTimes(1);
+    // Still nothing. Missing initial report from stripe 0
+    EXPECT_EQ(0, explicit_node_state_reply_send_invocations());
+
+    getDistributor().notify_stripe_wants_to_send_host_info(0);
+    tickDistributorNTimes(1);
+    // All stripes have reported in, it's time to party!
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
+
+    // No further sends if stripes haven't requested it yet.
+    getClock().setAbsoluteTimeInSeconds(2000);
+    tickDistributorNTimes(10);
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
+}
+
+// TODO STRIPE make delay configurable instead of hardcoded
+TEST_F(DistributorTest, non_bootstrap_host_info_send_request_delays_sending) {
+    set_num_distributor_stripes(3);
+    createLinks();
+    getClock().setAbsoluteTimeInSeconds(1000);
+
+    for (uint16_t i = 0; i < 3; ++i) {
+        getDistributor().notify_stripe_wants_to_send_host_info(i);
+    }
+    tickDistributorNTimes(1);
+    // Bootstrap case
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
+
+    // Stripe 1 suddenly really wants to tell the cluster controller something again
+    getDistributor().notify_stripe_wants_to_send_host_info(1);
+    tickDistributorNTimes(1);
+    // But its cry for attention is not yet honored since the delay hasn't passed.
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
+
+    getClock().addMilliSecondsToTime(999);
+    tickDistributorNTimes(1);
+    // 1 sec delay has still not passed
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
+
+    getClock().addMilliSecondsToTime(1);
+    tickDistributorNTimes(1);
+    // But now it has
+    EXPECT_EQ(2, explicit_node_state_reply_send_invocations());
 }
 
 }

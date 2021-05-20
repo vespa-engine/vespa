@@ -5,7 +5,6 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -45,8 +44,7 @@ public class SuperModelController {
     public ConfigResponse resolveConfig(GetConfigRequest request) {
         ConfigKey<?> configKey = request.getConfigKey();
         validateConfigDefinition(request.getConfigKey(), request.getDefContent());
-        ConfigPayload payload = model.getConfig(configKey);
-        return responseFactory.createResponse(payload, generation, false);
+        return responseFactory.createResponse(model.getConfig(configKey).toUtf8Array(true), generation, false);
     }
 
     private void validateConfigDefinition(ConfigKey<?> configKey, DefContent defContent) {

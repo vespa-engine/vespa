@@ -82,7 +82,7 @@ public class Result {
         /** The request failed, and retrying is pointless. */
         FATAL_ERROR,
         /** Condition specified in operation not met error  */
-        @Deprecated(since = "7", forRemoval = true) // TODO: Remove on Vespa 8 — this is a Response outcome, not a Result outcome.
+        @Deprecated(since = "7", forRemoval = true) // TODO: Remove on Vespa 8 — this is a Response outcome, not a Result outcome.
         CONDITION_NOT_MET_ERROR
     }
 

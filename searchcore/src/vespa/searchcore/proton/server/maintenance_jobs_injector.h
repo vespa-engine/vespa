@@ -38,7 +38,6 @@ struct MaintenanceJobsInjector
                            IHeartBeatHandler &hbHandler,
                            matching::ISessionCachePruner &scPruner,
                            IOperationStorer &opStorer,
-                           IFrozenBucketHandler &fbHandler,
                            bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                            document::BucketSpace bucketSpace,
                            IPruneRemovedDocumentsHandler &prdHandler,

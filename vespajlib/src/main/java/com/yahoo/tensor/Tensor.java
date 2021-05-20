@@ -67,8 +67,11 @@ public interface Tensor {
     /** Returns the number of cells in this */
     long size();
 
-    /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
+    /** Returns the value of a cell, or 0.0 if this cell does not exist */
     double get(TensorAddress address);
+
+    /** Returns true if this cell exists */
+    boolean has(TensorAddress address);
 
     /**
      * Returns the cell of this in some undefined order.
@@ -365,6 +368,8 @@ public interface Tensor {
     }
 
     static boolean approxEquals(double x, double y, double tolerance) {
+        if (x == y) return true;
+        if (Double.isNaN(x) && Double.isNaN(y)) return true;
         return Math.abs(x-y) < tolerance;
     }
 

@@ -95,8 +95,8 @@ public class RoutingController {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
-                endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
-                endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
+                endpoints.addAll(policy.endpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
+                endpoints.addAll(policy.regionEndpointsIn(controller.system(), routingMethod));
             }
         }
         return EndpointList.copyOf(endpoints);
@@ -140,7 +140,7 @@ public class RoutingController {
     public Map<ZoneId, List<Endpoint>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
         var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
-            EndpointList zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone);
+            EndpointList zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone).not().legacy();
             zoneEndpoints = directEndpoints(zoneEndpoints, deployment.applicationId());
             if  ( ! zoneEndpoints.isEmpty()) {
                 endpoints.put(deployment.zoneId(), zoneEndpoints.asList());
@@ -189,9 +189,7 @@ public class RoutingController {
     /** Returns the global endpoints for given deployment as container endpoints */
     public Set<ContainerEndpoint> containerEndpointsOf(Application application, InstanceName instanceName, ZoneId zone) {
         Instance instance = application.require(instanceName);
-        boolean registerLegacyNames = application.deploymentSpec().instance(instanceName)
-                                                 .flatMap(DeploymentInstanceSpec::globalServiceId)
-                                                 .isPresent();
+        boolean registerLegacyNames = legacyNamesAvailable(application, instanceName);
         Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
         EndpointList endpoints = endpointsOf(application, instanceName);
         // Add endpoints backed by a rotation, and register them in DNS if necessary
@@ -305,6 +303,7 @@ public class RoutingController {
         var directMethods = 0;
         var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
         var availableRoutingMethods = routingMethodsOfAll(deployments, application);
+        boolean legacyNamesAvailable = legacyNamesAvailable(application, routingId.application().instance());
 
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
@@ -316,8 +315,16 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            // TODO(mpolden): Remove this once all applications have migrated away from legacy endpoints
-            if (method == RoutingMethod.shared) {
+            if (controller.system().isPublic()) {
+                endpoints.add(Endpoint.of(routingId.application())
+                                      .target(routingId.endpointId(), cluster, zones)
+                                      .on(Port.fromRoutingMethod(method))
+                                      .routingMethod(method)
+                                      .legacy()
+                                      .in(controller.system()));
+            }
+            // Add legacy endpoints
+            if (legacyNamesAvailable && method == RoutingMethod.shared) {
                 endpoints.add(Endpoint.of(routingId.application())
                                       .target(routingId.endpointId(), cluster, zones)
                                       .on(Port.plain(4080))
@@ -333,6 +340,13 @@ public class RoutingController {
             }
         }
         return endpoints;
+    }
+
+    /** Whether legacy global DNS names should be available for given application */
+    private static boolean legacyNamesAvailable(Application application, InstanceName instanceName) {
+        return application.deploymentSpec().instance(instanceName)
+                          .flatMap(DeploymentInstanceSpec::globalServiceId)
+                          .isPresent();
     }
 
     /** Returns direct routing endpoints if any exist and feature flag is set for given application */

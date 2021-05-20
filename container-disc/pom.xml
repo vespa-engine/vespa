@@ -220,8 +220,6 @@
                 jackson-jaxrs-base-${jackson2.version}.jar,
                 jackson-jaxrs-json-provider-${jackson2.version}.jar,
                 jackson-module-jaxb-annotations-${jackson2.version}.jar,
-                jakarta.activation-api-${jakarta-activation-api.version}.jar,
-                jakarta.xml.bind-api-${jakarta-xml-bind-api.version}.jar,
                 javassist-${javassist.version}.jar,
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
                 jersey-client-${jersey2.version}.jar,

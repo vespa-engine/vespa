@@ -89,6 +89,7 @@ public class VespaChangeRequest extends ChangeRequest {
 
     public enum Status {
         COMPLETED,
+        READY,
         IN_PROGRESS,
         PENDING_ACTION,
         PENDING_ASSESSMENT,

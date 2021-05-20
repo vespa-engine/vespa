@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,7 +53,7 @@ public class ServletOutputStreamWriter {
 
     // GuardedBy("state")
     private final ServletOutputStream outputStream;
-    private final Executor executor;
+    private final Janitor janitor;
 
     // GuardedBy("monitor")
     private final Deque<ResponseContentPart> responseContentQueue = new ArrayDeque<>();
@@ -70,9 +69,9 @@ public class ServletOutputStreamWriter {
     final CompletableFuture<Void> finishedFuture = new CompletableFuture<>();
 
 
-    public ServletOutputStreamWriter(ServletOutputStream outputStream, Executor executor, RequestMetricReporter metricReporter) {
+    public ServletOutputStreamWriter(ServletOutputStream outputStream, Janitor janitor, RequestMetricReporter metricReporter) {
         this.outputStream = outputStream;
-        this.executor = executor;
+        this.janitor = janitor;
         this.metricReporter = metricReporter;
     }
 
@@ -96,7 +95,7 @@ public class ServletOutputStreamWriter {
 
         synchronized (monitor) {
             if (state == State.FINISHED_OR_ERROR) {
-                executor.execute(() ->  handler.failed(new IllegalStateException("ContentChannel already closed.")));
+                janitor.scheduleTask(() ->  handler.failed(new IllegalStateException("ContentChannel already closed.")));
                 return;
             }
             responseContentQueue.addLast(new ResponseContentPart(buf, handler));
@@ -207,8 +206,7 @@ public class ServletOutputStreamWriter {
                 runCompletionHandler_logOnExceptions(
                         () -> responseContentPart.handler.failed(failReason));
 
-        executor.execute(
-                () -> failedParts.forEach(failCompletionHandler));
+        janitor.scheduleTask(() -> failedParts.forEach(failCompletionHandler));
     }
 
     private void writeBufferToOutputStream(ResponseContentPart contentPart) throws Throwable {

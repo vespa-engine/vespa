@@ -73,7 +73,7 @@ TEST_F(StatOperationTest, bucket_list) {
     StatBucketListOperation op(
             getDistributorBucketSpace().getBucketDatabase(),
             getIdealStateManager(),
-            distributor_component().getIndex(),
+            node_context().node_index(),
             msg);
     op.start(_sender, framework::MilliSecTime(0));
 

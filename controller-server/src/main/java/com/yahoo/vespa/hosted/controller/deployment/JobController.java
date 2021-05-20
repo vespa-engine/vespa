@@ -82,7 +82,6 @@ public class JobController {
     private final CuratorDb curator;
     private final BufferedLogStore logs;
     private final TesterCloud cloud;
-    private final Badges badges;
     private final JobMetrics metric;
 
     private final AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
@@ -92,7 +91,6 @@ public class JobController {
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
         this.cloud = controller.serviceRegistry().testerCloud();
-        this.badges = new Badges(controller.zoneRegistry().badgeUrl());
         this.metric = new JobMetrics(controller.metric(), controller::system);
     }
 
@@ -537,30 +535,6 @@ public class JobController {
             // tester instances have none.
             controller.routing().policies().refresh(id.id(), DeploymentSpec.empty, zone);
         }
-    }
-
-    /** Returns a URI which points at a badge showing historic status of given length for the given job type for the given application. */
-    public URI historicBadge(ApplicationId id, JobType type, int historyLength) {
-        List<Run> runs = new ArrayList<>(runs(id, type).values());
-        Run lastCompleted = null;
-        if (runs.size() > 0)
-            lastCompleted = runs.get(runs.size() - 1);
-        if (runs.size() > 1 && ! lastCompleted.hasEnded())
-            lastCompleted = runs.get(runs.size() - 2);
-
-        return badges.historic(id, Optional.ofNullable(lastCompleted), runs.subList(Math.max(0, runs.size() - historyLength), runs.size()));
-    }
-
-    /** Returns a URI which points at a badge showing current status for all jobs for the given application. */
-    public URI overviewBadge(ApplicationId id) {
-        DeploymentSteps steps = new DeploymentSteps(controller.applications().requireApplication(TenantAndApplicationId.from(id))
-                                                              .deploymentSpec().requireInstance(id.instance()),
-                                                    controller::system);
-        return badges.overview(id,
-                               steps.jobs().stream()
-                                    .map(type -> last(id, type))
-                                    .flatMap(Optional::stream)
-                                    .collect(toList()));
     }
 
     private void prunePackages(TenantAndApplicationId id) {

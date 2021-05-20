@@ -25,9 +25,9 @@ public:
 
     const char* getName() const override { return "statBucket"; }
     std::string getStatus() const override { return ""; }
-    void onClose(DistributorMessageSender& sender) override;
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
 private:
     DistributorBucketSpace &_bucketSpace;
 

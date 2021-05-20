@@ -36,7 +36,7 @@ private:
 public:
     PersistenceMessageTrackerImpl(PersistenceOperationMetricSet& metric,
                                   std::shared_ptr<api::BucketInfoReply> reply,
-                                  DistributorNodeContext& node_ctx,
+                                  const DistributorNodeContext& node_ctx,
                                   DistributorStripeOperationContext& op_ctx,
                                   api::Timestamp revertTimestamp = 0);
     ~PersistenceMessageTrackerImpl() override;
