@@ -134,7 +134,10 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
             boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
-            var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor).build(contentElement);
+            var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
+                                                                   stateIsHosted(deployState),
+                                                                   deployState.getDeployLogger())
+                    .build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
                     contentElement,
                     resourceLimits.getClusterControllerLimits()).build(deployState, c, contentElement.getXml());
