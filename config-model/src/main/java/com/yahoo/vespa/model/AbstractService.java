@@ -92,11 +92,10 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * Preferred constructor when building from XML. Use this if you are building
      * in doBuild() in an AbstractConfigProducerBuilder.
      * build() will call initService() in that case, after setting hostalias and baseport.
-     *
-     * @param parent the parent config producer in the model tree
-     * @param name   the name of this service
+     * @param parent Parent config producer in the model tree.
+     * @param name   Name of this service.
      */
-    public AbstractService(AbstractConfigProducer<?> parent, String name) {
+    public AbstractService(AbstractConfigProducer parent, String name) {
         super(parent, name);
     }
 
@@ -106,13 +105,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      */
     public AbstractService(String name) {
         super(name);
-    }
-
-    @Override
-    public void remove() {
-        super.remove();
-        if (hostResource != null)
-            hostResource.deallocateService(this);
     }
 
     /**
