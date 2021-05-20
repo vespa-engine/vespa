@@ -75,7 +75,7 @@ class CliArguments {
     Optional<CertificateAndKey> certificateAndKey() throws CliArgumentsException {
         Path certificateFile = fileValue(CERTIFICATE_OPTION).orElse(null);
         Path privateKeyFile = fileValue(PRIVATE_KEY_OPTION).orElse(null);
-        if ((certificateFile != null && privateKeyFile == null) || (certificateFile == null && privateKeyFile != null)) {
+        if ((certificateFile == null) != (privateKeyFile == null)) {
             throw new CliArgumentsException(String.format("Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
         }
         if (privateKeyFile == null && certificateFile == null) return Optional.empty();
