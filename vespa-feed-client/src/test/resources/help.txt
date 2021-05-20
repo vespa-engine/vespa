@@ -6,6 +6,7 @@ Vespa feed client
     --disable-ssl-hostname-verification
     --endpoint <arg>
     --file <arg>
+    --header <arg>
     --help
     --max-streams-per-connection <arg>
     --private-key <arg>
