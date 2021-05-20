@@ -148,23 +148,15 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
 
     public void setClusterControllers(ClusterControllerContainerCluster clusterControllers, DeployLogger deployLogger) {
         this.clusterControllers = clusterControllers;
-        if (isHostedVespa) {
-            // Prefer to put Slobroks on the admin cluster running cluster controllers to avoid unnecessary
-            // movement of the slobroks when there are changes to the content cluster nodes
-            removeSlobroks();
+        if (isHostedVespa)
             addSlobroks(createSlobroksOn(clusterControllers, deployLogger));
-        }
-    }
-
-    private void removeSlobroks() {
-        slobroks.forEach(Slobrok::remove);
-        slobroks.clear();
     }
 
     private List<Slobrok> createSlobroksOn(ClusterControllerContainerCluster clusterControllers, DeployLogger deployLogger) {
         List<Slobrok> slobroks = new ArrayList<>();
+        int index = this.slobroks.size();
         for (ClusterControllerContainer clusterController : clusterControllers.getContainers()) {
-            Slobrok slobrok = new Slobrok(this, clusterController.index());
+            Slobrok slobrok = new Slobrok(this, index++);
             slobrok.setHostResource(clusterController.getHostResource());
             slobroks.add(slobrok);
             slobrok.initService(deployLogger);

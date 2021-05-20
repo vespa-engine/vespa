@@ -67,7 +67,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                            admin,
                            allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
         }
-        else { // These will be removed later, if an admin cluster (for cluster controllers) is assigned
+        else { // TODO: Remove
             createSlobroks(deployLogger,
                            admin,
                            pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
