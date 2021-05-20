@@ -172,7 +172,7 @@ class CliArguments {
                 writer,
                 formatter.getWidth(),
                 "vespa-feed-client <options>",
-                "Vespa feed client (" + Vespa.VERSION + ")",
+                "Vespa feed client",
                 optionsDefinition,
                 formatter.getLeftPadding(),
                 formatter.getDescPadding(),
