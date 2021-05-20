@@ -1,0 +1,12 @@
+usage: vespa-feed-client <options>
+Vespa feed client (7.164.0)
+    --ca-certificates <arg>
+    --certificate <arg>
+    --connections <arg>
+    --disable-ssl-hostname-verification
+    --endpoint <arg>
+    --file <arg>
+    --help
+    --key <arg>
+    --max-streams-per-connection <arg>
+    --version
