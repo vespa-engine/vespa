@@ -164,6 +164,8 @@ public class JsonReaderTestCase {
                                  new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
             x.addField(new Field("dense_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x", 2).indexed("y", 3).build())));
+            x.addField(new Field("dense_int8_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<int8>(x[2],y[3])"))));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
@@ -1322,6 +1324,25 @@ public class JsonReaderTestCase {
                                                                         "}"), "dense_tensor"), "dense_tensor");
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
+
+    @Test
+    public void testParsingOfDenseTensorHexFormat() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x[2],y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+
+        Tensor tensor = assertTensorField(expected,
+                                          createPutWithTensor(inputJson("{",
+                                                                        "  'values': \"020304050607\"",
+                                                                        "}"), "dense_int8_tensor"), "dense_int8_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+    }
+
 
     @Test
     public void testParsingOfMixedTensorOnMixedForm() {
