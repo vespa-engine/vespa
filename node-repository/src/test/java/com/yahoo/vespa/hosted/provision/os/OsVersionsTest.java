@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -23,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -432,6 +434,40 @@ public class OsVersionsTest {
         assertEquals(allHosts.size(), allHosts.onOsVersion(version1).size());
     }
 
+    @Test
+    public void upgrade_by_rebuilding_is_limited_by_infrastructure_host() {
+        int hostCount = 3;
+        tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), hostCount);
+        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        ApplicationId routingApp = ApplicationId.from("t1", "a1", "i1");
+        List<Node> proxyHosts = provisionInfraApplication(hostCount, infraApplication, NodeType.proxyhost);
+        for (int i = 0; i < proxyHosts.size(); i++) {
+            tester.makeReadyChildren(1, i, new NodeResources(4,8, 100, 0.3),
+                                     NodeType.proxy, proxyHosts.get(i).hostname(), (index) -> "proxy" + index);
+        }
+        Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
+        tester.deploy(routingApp, capacity);
+        Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.proxyhost);
+
+        // All hosts are on initial version
+        var version0 = Version.fromString("7.0");
+        versions.setTarget(NodeType.proxyhost, version0, Duration.ZERO, false);
+        setCurrentVersion(hosts.get().asList(), version0);
+
+        // Target is set for new major version
+        var version1 = Version.fromString("8.0");
+        versions.setTarget(NodeType.proxyhost, version1, Duration.ZERO, false);
+
+        // Upgrades 1 host at a time
+        for (int i = 0; i < hostCount; i++) {
+            versions.resumeUpgradeOf(NodeType.proxyhost, true);
+            List<Node> hostsRebuilding = hosts.get().rebuilding().asList();
+            assertEquals(1, hostsRebuilding.size());
+            replaceNodes(routingApp, (app) -> tester.deploy(app, capacity));
+            completeRebuildOf(hostsRebuilding, NodeType.proxyhost);
+        }
+    }
+
     private void deployApplication(ApplicationId application) {
         ClusterSpec contentSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7").build();
         List<HostSpec> hostSpecs = tester.prepare(application, contentSpec, 2, 1, new NodeResources(4, 8, 100, 0.3));
@@ -439,14 +475,18 @@ public class OsVersionsTest {
     }
 
     private void replaceNodes(ApplicationId application) {
+        replaceNodes(application, this::deployApplication);
+    }
+
+    private void replaceNodes(ApplicationId application, Consumer<ApplicationId> deployer) {
         // Deploy to retire nodes
-        deployApplication(application);
+        deployer.accept(application);
         List<Node> retired = tester.nodeRepository().nodes().list().owner(application).retired().asList();
         assertFalse("At least one node is retired", retired.isEmpty());
         tester.nodeRepository().nodes().setRemovable(application, retired);
 
         // Redeploy to deactivate removable nodes and allocate new ones
-        deployApplication(application);
+        deployer.accept(application);
         tester.nodeRepository().nodes().list(Node.State.inactive).owner(application)
               .forEach(node -> tester.nodeRepository().nodes().removeRecursively(node, true));
     }
