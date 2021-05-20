@@ -187,6 +187,7 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             1,
             std::make_shared<RankProfilesConfig>(),
             std::make_shared<matching::RankingConstants>(),
+            std::make_shared<matching::RankingExpressions>(),
             std::make_shared<matching::OnnxModels>(),
             indexschema,
             attributes,

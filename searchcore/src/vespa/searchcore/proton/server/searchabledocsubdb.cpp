@@ -201,7 +201,8 @@ SearchableDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const Sess
     const Schema::SP &schema = configSnapshot.getSchemaSP();
     const IIndexManager::SP &indexMgr = getIndexManager();
     _constantValueRepo.reconfigure(configSnapshot.getRankingConstants());
-    Matchers::SP matchers = _configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig(), configSnapshot.getOnnxModels());
+    Matchers::SP matchers = _configurer.createMatchers(schema, configSnapshot.getRankProfilesConfig(),
+                                                       configSnapshot.getRankingExpressions(), configSnapshot.getOnnxModels());
     auto matchView = std::make_shared<MatchView>(std::move(matchers), indexMgr->getSearchable(), attrMgr,
                                                  sessionManager, _metaStoreCtx, _docIdLimit);
     _rSearchView.set(SearchView::create(

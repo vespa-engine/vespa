@@ -74,6 +74,7 @@ public:
 
     Matchers::UP createMatchers(const search::index::Schema::SP &schema,
                                 const vespa::config::search::RankProfilesConfig &cfg,
+                                const proton::matching::RankingExpressions &rankingExpressions,
                                 const proton::matching::OnnxModels &onnxModels);
 
     void reconfigureIndexSearchable();

@@ -48,14 +48,13 @@ using std::map;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 
 struct DBConfigFixture {
     using UP = std::unique_ptr<DBConfigFixture>;
     AttributesConfigBuilder _attributesBuilder;
     RankProfilesConfigBuilder _rankProfilesBuilder;
-    RankingConstantsConfigBuilder _rankingConstantsBuilder;
-    OnnxModelsConfigBuilder _onnxModelsBuilder;
     IndexschemaConfigBuilder _indexschemaBuilder;
     SummaryConfigBuilder _summaryBuilder;
     SummarymapConfigBuilder _summarymapBuilder;
@@ -76,6 +75,11 @@ struct DBConfigFixture {
         return std::make_shared<RankingConstants>();
     }
 
+    RankingExpressions::SP buildRankingExpressions()
+    {
+        return std::make_shared<RankingExpressions>();
+    }
+
     OnnxModels::SP buildOnnxModels()
     {
         return std::make_shared<OnnxModels>();
@@ -91,6 +95,7 @@ struct DBConfigFixture {
             (generation,
              std::make_shared<RankProfilesConfig>(_rankProfilesBuilder),
              buildRankingConstants(),
+             buildRankingExpressions(),
              buildOnnxModels(),
              std::make_shared<IndexschemaConfig>(_indexschemaBuilder),
              std::make_shared<AttributesConfig>(_attributesBuilder),

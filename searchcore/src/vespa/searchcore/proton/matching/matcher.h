@@ -88,7 +88,8 @@ public:
      **/
     Matcher(const search::index::Schema &schema, const Properties &props,
             const vespalib::Clock &clock, QueryLimiter &queryLimiter,
-            const IConstantValueRepo &constantValueRepo, OnnxModels onnxModels,
+            const IConstantValueRepo &constantValueRepo,
+            RankingExpressions rankingExpressions, OnnxModels onnxModels,
             uint32_t distributionKey);
 
     const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }
