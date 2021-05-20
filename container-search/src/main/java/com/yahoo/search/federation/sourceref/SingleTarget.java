@@ -5,8 +5,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.processing.request.Properties;
 
 /**
- * TODO: What is this?
- *
 * @author Tony Vaagenes
 */
 public class SingleTarget extends Target {

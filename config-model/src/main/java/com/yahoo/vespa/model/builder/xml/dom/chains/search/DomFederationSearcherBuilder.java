@@ -43,7 +43,6 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
             return XML.getChild(searcherSpec, "source-set") != null;
         }
 
-
         private List<FederationSearcherModel.TargetSpec> readSources(Element searcherSpec) {
             List<FederationSearcherModel.TargetSpec> sources = new ArrayList<>();
             for (Element source : XML.getChildren(searcherSpec, "source")) {
@@ -76,14 +75,14 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected FederationSearcher doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element searcherElement) {
+    protected FederationSearcher doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element searcherElement) {
         FederationSearcherModel model = new FederationSearcherModelBuilder(searcherElement).build();
         Optional<Component> targetSelector = buildTargetSelector(deployState, ancestor, searcherElement, model.getComponentId());
 
         return new FederationSearcher(model, targetSelector);
     }
 
-    private Optional<Component> buildTargetSelector(DeployState deployState, AbstractConfigProducer ancestor, Element searcherElement, ComponentId namespace) {
+    private Optional<Component> buildTargetSelector(DeployState deployState, AbstractConfigProducer<?> ancestor, Element searcherElement, ComponentId namespace) {
         Element targetSelectorElement = XML.getChild(searcherElement, "target-selector");
         if (targetSelectorElement == null)
             return Optional.empty();
