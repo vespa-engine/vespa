@@ -61,7 +61,11 @@ public class SessionHandler extends HttpHandler {
     }
 
     public static TimeoutBudget getTimeoutBudget(HttpRequest request, Duration defaultTimeout) {
-        return new TimeoutBudget(Clock.systemUTC(), getRequestTimeout(request, defaultTimeout));
+        return getTimeoutBudget(getRequestTimeout(request, defaultTimeout));
+    }
+
+    public static TimeoutBudget getTimeoutBudget(Duration requestTimeout) {
+        return new TimeoutBudget(Clock.systemUTC(), requestTimeout);
     }
 
     /**
