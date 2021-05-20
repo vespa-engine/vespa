@@ -276,12 +276,13 @@ public final class PrepareParams {
         Slime slime = SlimeUtils.jsonToSlime(json);
         Inspector params = slime.get();
 
-        return new Builder().ignoreValidationErrors(params.field(IGNORE_VALIDATION_PARAM_NAME).asBool())
-                .dryRun(params.field(DRY_RUN_PARAM_NAME).asBool())
-                .verbose(params.field(VERBOSE_PARAM_NAME).asBool())
+        return new Builder()
+                .ignoreValidationErrors(booleanValue(params, IGNORE_VALIDATION_PARAM_NAME))
+                .dryRun(booleanValue(params, DRY_RUN_PARAM_NAME))
+                .verbose(booleanValue(params, VERBOSE_PARAM_NAME))
                 .timeoutBudget(SessionHandler.getTimeoutBudget(getTimeout(params, barrierTimeout)))
                 .applicationId(createApplicationId(params, tenant))
-                .vespaVersion(params.field(VESPA_VERSION_PARAM_NAME).asString())
+                .vespaVersion(SlimeUtils.optionalString(params.field(VESPA_VERSION_PARAM_NAME)).orElse(null))
                 .containerEndpointList(deserialize(params.field(CONTAINER_ENDPOINTS_PARAM_NAME), ContainerEndpointSerializer::endpointListFromSlime, Collections.emptyList()))
                 .endpointCertificateMetadata(deserialize(params.field(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME), EndpointCertificateMetadataSerializer::fromSlime))
                 .dockerImageRepository(SlimeUtils.optionalString(params.field(DOCKER_IMAGE_REPOSITORY)).orElse(null))
@@ -289,8 +290,8 @@ public final class PrepareParams {
                 .applicationRoles(ApplicationRoles.fromString(SlimeUtils.optionalString(params.field(APPLICATION_HOST_ROLE)).orElse(null), SlimeUtils.optionalString(params.field(APPLICATION_CONTAINER_ROLE)).orElse(null)))
                 .quota(deserialize(params.field(QUOTA_PARAM_NAME), Quota::fromSlime))
                 .tenantSecretStores(SlimeUtils.optionalString(params.field(TENANT_SECRET_STORES_PARAM_NAME)).orElse(null))
-                .force(params.field(FORCE_PARAM_NAME).asBool())
-                .waitForResourcesInPrepare(params.field(WAIT_FOR_RESOURCES_IN_PREPARE).asBool())
+                .force(booleanValue(params, FORCE_PARAM_NAME))
+                .waitForResourcesInPrepare(booleanValue(params, WAIT_FOR_RESOURCES_IN_PREPARE))
                 .build();
     }
 
@@ -301,6 +302,13 @@ public final class PrepareParams {
         return field.valid()
                 ? mapper.apply(field)
                 : defaultValue;
+    }
+
+    private static boolean booleanValue(Inspector inspector, String fieldName) {
+        Inspector field = inspector.field(fieldName);
+        return field.valid()
+                ? field.asBool()
+                : false;
     }
 
     private static Duration getTimeout(Inspector params, Duration defaultTimeout) {
