@@ -4,12 +4,6 @@ package=com.yahoo.document.restapi
 # Duration for which resender thread sleeps after an operation is throttled
 resendDelayMillis     int default=10
 
-# Bound on number of document operations to keep in retry queue — further operations are rejected
-maxThrottled          int default=1000
-
-# Whether to perform dispatch from Jetty threads
-doDispatchWithEnqueue bool default=true
-
-# Number of workers in the resender thread pool
-resenderCount         int default=1
+# Bound on number of document operations to keep in retry queue — further operations are rejected
+maxThrottled          int default=4096
 
