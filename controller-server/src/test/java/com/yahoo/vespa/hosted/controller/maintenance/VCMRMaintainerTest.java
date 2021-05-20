@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VCMRReport;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
@@ -39,22 +40,32 @@ public class VCMRMaintainerTest {
     public void setup() {
         tester = new ControllerTester();
         maintainer = new VCMRMaintainer(tester.controller(), Duration.ofMinutes(1));
-        nodeRepo = tester.serviceRegistry().configServer().nodeRepository();
+        nodeRepo = tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
     }
 
     @Test
     public void recycle_hosts_after_completion() {
+        var vcmrReport = new VCMRReport();
+        vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
+        parkedNode = new Node.Builder(parkedNode)
+                .reports(vcmrReport.toNodeReports())
+                .build();
+
         nodeRepo.putNodes(zoneId, List.of(parkedNode, failedNode));
 
         tester.curator().writeChangeRequest(canceledChangeRequest());
         maintainer.maintain();
 
-        // Only the parked node is recycled
+        // Only the parked node is recycled, VCMR report is cleared
         var nodeList = nodeRepo.list(zoneId, List.of(host1, host2));
         assertEquals(Node.State.dirty, nodeList.get(0).state());
         assertEquals(Node.State.failed, nodeList.get(1).state());
+
+        var report = nodeList.get(0).reports();
+        assertNull(report.get(VCMRReport.getReportId()));
+
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
         assertEquals(Status.COMPLETED, writtenChangeRequest.getStatus());
     }
@@ -82,7 +93,7 @@ public class VCMRMaintainerTest {
         var activeNode = createNode(host1, NodeType.host, Node.State.active, false);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
         nodeRepo.putNodes(zoneId, List.of(activeNode, failedNode));
-        nodeRepo.allowPatching(true).hasSpareCapacity(true);
+        nodeRepo.hasSpareCapacity(true);
 
         tester.curator().writeChangeRequest(startingChangeRequest());
         maintainer.maintain();
@@ -150,6 +161,13 @@ public class VCMRMaintainerTest {
 
         var approvedChangeRequests = tester.serviceRegistry().changeRequestClient().getApprovedChangeRequests();
         assertEquals(1, approvedChangeRequests.size());
+
+        activeNode = nodeRepo.list(zoneId, List.of(host2)).get(0);
+        var report = VCMRReport.fromReports(activeNode.reports());
+        var reportAdded = report.getVcmrs().stream()
+                        .filter(vcmr -> vcmr.getId().equals(changeRequestId))
+                        .count() == 1;
+        assertTrue(reportAdded);
     }
 
     @Test
@@ -157,7 +175,7 @@ public class VCMRMaintainerTest {
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, false);
         var retiringNode = createNode(host2, NodeType.host, Node.State.active, true);
         nodeRepo.putNodes(zoneId, List.of(parkedNode, retiringNode));
-        nodeRepo.allowPatching(true).hasSpareCapacity(true);
+        nodeRepo.hasSpareCapacity(true);
 
         tester.curator().writeChangeRequest(postponedChangeRequest());
         maintainer.maintain();
