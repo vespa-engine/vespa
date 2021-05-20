@@ -1,6 +1,5 @@
-package com.yahoo.vespa.feed.client;// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package ai.vespa.feed.client;// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-import com.yahoo.vespa.feed.client.CliArguments.CliArgumentsException;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -17,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CliArgumentsTest {
 
     @Test
-    void parses_parameters_correctly() throws CliArgumentsException {
+    void parses_parameters_correctly() throws CliArguments.CliArgumentsException {
         CliArguments args = CliArguments.fromRawArgs(new String[]{
                 "--endpoint=https://vespa.ai:4443/", "--file=feed.json", "--connections=10",
                 "--max-streams-per-connection=128", "--certificate=cert.pem", "--private-key=key.pem",
@@ -34,16 +33,16 @@ class CliArgumentsTest {
     }
 
     @Test
-    void fails_on_missing_parameters() throws CliArgumentsException {
+    void fails_on_missing_parameters() throws CliArguments.CliArgumentsException {
         CliArguments cliArguments = CliArguments.fromRawArgs(new String[0]);
-        CliArgumentsException exception =  assertThrows(CliArgumentsException.class, cliArguments::endpoint);
+        CliArguments.CliArgumentsException exception =  assertThrows(CliArguments.CliArgumentsException.class, cliArguments::endpoint);
         assertEquals("Endpoint must be specified", exception.getMessage());
-        exception =  assertThrows(CliArgumentsException.class, cliArguments::inputFile);
+        exception =  assertThrows(CliArguments.CliArgumentsException.class, cliArguments::inputFile);
         assertEquals("Feed file must be specified", exception.getMessage());
     }
 
     @Test
-    void generated_help_page_contains_expected_description() throws CliArgumentsException, IOException {
+    void generated_help_page_contains_expected_description() throws CliArguments.CliArgumentsException, IOException {
         CliArguments args = CliArguments.fromRawArgs(new String[]{"--help"});
         assertTrue(args.helpSpecified());
 

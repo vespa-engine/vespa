@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.feed.client;
+package ai.vespa.feed.client;
 
 import org.apache.hc.client5.http.HttpRequestRetryStrategy;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
@@ -17,8 +17,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-
-import static com.yahoo.vespa.feed.client.FeedClient.OperationType.remove;
 
 /**
  * Controls request execution and retries:
@@ -69,7 +67,7 @@ class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRe
         switch (request.getMethod().toUpperCase()) {
             case "POST":   return wrapped.retry(FeedClient.OperationType.put);
             case "PUT":    return wrapped.retry(FeedClient.OperationType.update);
-            case "DELETE": return wrapped.retry(remove);
+            case "DELETE": return wrapped.retry(FeedClient.OperationType.remove);
             default: throw new IllegalStateException("Unexpected HTTP method: " + request.getMethod());
         }
     }

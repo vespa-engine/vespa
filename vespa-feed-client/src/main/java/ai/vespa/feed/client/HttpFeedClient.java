@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.feed.client;
+package ai.vespa.feed.client;
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
@@ -31,9 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static com.yahoo.vespa.feed.client.Result.Type.conditionNotMet;
-import static com.yahoo.vespa.feed.client.Result.Type.failure;
-import static com.yahoo.vespa.feed.client.Result.Type.success;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -140,7 +137,7 @@ class HttpFeedClient implements FeedClient {
                     try { close(); }
                     catch (IOException exception) { throw new UncheckedIOException(exception); }
                 }
-                return new Result(failure, documentId, thrown.getMessage(), null);
+                return new Result(Result.Type.failure, documentId, thrown.getMessage(), null);
             }
             return toResult(response, documentId);
         });
@@ -149,9 +146,9 @@ class HttpFeedClient implements FeedClient {
     static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
         Result.Type type;
         switch (response.getCode()) {
-            case 200: type = success; break;
-            case 412: type = conditionNotMet; break;
-            default:  type = failure;
+            case 200: type = Result.Type.success; break;
+            case 412: type = Result.Type.conditionNotMet; break;
+            default:  type = Result.Type.failure;
         }
         Map<String, String> responseJson = null; // TODO: parse JSON.
         return new Result(type, documentId, response.getBodyText(), "trace");
