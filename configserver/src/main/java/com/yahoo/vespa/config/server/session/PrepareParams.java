@@ -273,7 +273,7 @@ public final class PrepareParams {
     }
 
     public static PrepareParams fromJson(byte[] json, TenantName tenant, Duration barrierTimeout) {
-        Slime slime = SlimeUtils.jsonToSlime(json);
+        Slime slime = SlimeUtils.jsonToSlimeOrThrow(json);
         Inspector params = slime.get();
 
         return new Builder()
