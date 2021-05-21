@@ -111,13 +111,12 @@ public class Badges {
 
         Run lastTriggered = status.lastTriggered().get();
         List<Run> runs = status.runs().descendingMap().values().stream()
-                .filter(Run::hasEnded)
-                .limit(length + (lastTriggered.hasEnded() ? 0 : 1))
-                .collect(toList());
+                               .filter(Run::hasEnded)
+                               .skip(1)
+                               .limit(length + (lastTriggered.hasEnded() ? 0 : 1))
+                               .collect(toList());
 
-        boolean isOk = runs.isEmpty() || runs.get(0).status() == RunStatus.success;
-        if ( ! lastTriggered.hasEnded())
-            runs.remove(0);
+        boolean isOk = status.lastCompleted().map(run -> run.status() == RunStatus.success).orElse(true);
 
         text = lastTriggered.id().type().jobName();
         textWidth = widthOf(text);
