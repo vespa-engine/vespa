@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
@@ -11,9 +10,9 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newReindexAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
-import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 
 public class DocumentDatabaseChangeValidatorTest {
 
