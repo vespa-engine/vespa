@@ -281,46 +281,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         serviceClusters.addAll(builder.getClusters(deployState, this));
     }
 
-    private OnnxModels onnxModelInfoFromSource(ImportedMlModel model) {
-        OnnxModels onnxModels = new OnnxModels();
-        if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
-            String path = model.source();
-            String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
-            if (path.startsWith(applicationPath)) {
-                path = path.substring(applicationPath.length() + 1);
-            }
-            loadModelInfo(onnxModels, model.name(), path);
-        }
-        return onnxModels;
-    }
-
-    private OnnxModels onnxModelInfoFromStore(String modelName) {
-        OnnxModels onnxModels = new OnnxModels();
-        String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
-        loadModelInfo(onnxModels, modelName, path);
-        return onnxModels;
-    }
-
-    private void loadModelInfo(OnnxModels onnModels, String name, String path) {
-        boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
-        if ( ! modelExists) {
-            path = ApplicationPackage.MODELS_DIR.append(path).toString();
-            modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
-        }
-        if (modelExists) {
-            OnnxModel onnxModel = new OnnxModel(name, path);
-            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(onnxModel.getFileName(), this.applicationPackage);
-            for (String onnxName : onnxModelInfo.getInputs()) {
-                onnxModel.addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
-            }
-            for (String onnxName : onnxModelInfo.getOutputs()) {
-                onnxModel.addOutputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
-            }
-            onnxModel.setModelInfo(onnxModelInfo);
-            onnModels.add(onnxModel);
-        }
-    }
-
     /**
      * Creates a rank profile not attached to any search definition, for each imported model in the application package,
      * and adds it to the given rank profile registry.
@@ -351,6 +311,48 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             }
         }
         new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
+    }
+
+    private OnnxModels onnxModelInfoFromSource(ImportedMlModel model) {
+        OnnxModels onnxModels = new OnnxModels();
+        if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
+            String path = model.source();
+            String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
+            if (path.startsWith(applicationPath)) {
+                path = path.substring(applicationPath.length() + 1);
+            }
+            loadModelInfo(onnxModels, model.name(), path);
+        }
+        return onnxModels;
+    }
+
+    private OnnxModels onnxModelInfoFromStore(String modelName) {
+        OnnxModels onnxModels = new OnnxModels();
+        String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
+        loadModelInfo(onnxModels, modelName, path);
+        return onnxModels;
+    }
+
+    private void loadModelInfo(OnnxModels onnModels, String name, String path) {
+        boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
+        if ( ! modelExists) {
+            path = ApplicationPackage.MODELS_DIR.append(path).toString();
+            modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
+        }
+        if (modelExists) {
+            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage);
+            if (onnxModelInfo.getModelPath() != null) {
+                OnnxModel onnxModel = new OnnxModel(name, onnxModelInfo.getModelPath());
+                for (String onnxName : onnxModelInfo.getInputs()) {
+                    onnxModel.addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
+                }
+                for (String onnxName : onnxModelInfo.getOutputs()) {
+                    onnxModel.addOutputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
+                }
+                onnxModel.setModelInfo(onnxModelInfo);
+                onnModels.add(onnxModel);
+            }
+        }
     }
 
     /** Returns the global rank profiles as a rank profile list */
