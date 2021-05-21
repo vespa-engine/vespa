@@ -39,7 +39,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
                 .map(ComponentId::new)
                 .ifPresent(builder::defaultResponseFilterChain);
         SslProvider sslProviderComponent = getSslConfigComponents(name, serverSpec);
-        return builder.sslProvider(sslProviderComponent).enableHttp2(deployState.featureFlags().enableJdiscHttp2()).build();
+        return builder.sslProvider(sslProviderComponent).build();
     }
 
     SslProvider getSslConfigComponents(String serverName, Element serverSpec) {

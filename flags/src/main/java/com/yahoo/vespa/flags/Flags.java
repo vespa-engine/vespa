@@ -210,13 +210,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_JDISC_HTTP2 = defineFeatureFlag(
-            "enable-jdisc-http2", false,
-            List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
-            "Whether jdisc HTTPS connectors should allow HTTP/2",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
             "enable-custom-acl-mapping", false,
             List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
