@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.pool.PoolConcurrencyPolicy;
@@ -73,17 +74,17 @@ class HttpFeedClient implements FeedClient {
                                 .setConnectionRequestTimeout(Timeout.DISABLED)
                                 .setResponseTimeout(Timeout.ofMinutes(5))
                                 .build())
-                .setH2Config(H2Config.custom()
+                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_2)
+                .setH2Config(H2Config.initial()
                         .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
                         .setCompressionEnabled(true)
                         .setPushEnabled(false)
                         .build());
 
-        int maxConnections = builder.maxConnections;
         PoolingAsyncClientConnectionManagerBuilder connectionManagerBuilder = PoolingAsyncClientConnectionManagerBuilder.create()
                 .setConnectionTimeToLive(TimeValue.ofMinutes(10))
-                .setMaxConnTotal(maxConnections)
-                .setMaxConnPerRoute(maxConnections)
+                .setMaxConnTotal(builder.maxConnections)
+                .setMaxConnPerRoute(builder.maxConnections)
                 .setPoolConcurrencyPolicy(PoolConcurrencyPolicy.LAX);
         if (builder.sslContext != null) {
             ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
