@@ -15,17 +15,21 @@ import java.util.stream.Collectors;
 
 public class OperatorCertificateSerializer {
 
+    private final static String certificateField = "certificates";
+
+
     public static Slime toSlime(List<X509Certificate> certificateList) {
         Slime slime = new Slime();
-        Cursor array = slime.setArray();
+        var root = slime.setObject();
+        Cursor array = root.setArray(certificateField);
         certificateList.stream()
                 .map(X509CertificateUtils::toPem)
                 .forEach(array::addString);
         return slime;
     }
 
-    public static List<X509Certificate> fromSlime(Inspector array) {
-        return SlimeUtils.entriesStream(array)
+    public static List<X509Certificate> fromSlime(Inspector object) {
+        return SlimeUtils.entriesStream(object.field(certificateField))
                 .map(Inspector::asString)
                 .map(X509CertificateUtils::fromPem)
                 .collect(Collectors.toList());
