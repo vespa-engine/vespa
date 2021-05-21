@@ -1,6 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.searchdefinition.derived.TestableDeployLogger;
+import com.yahoo.text.XML;
+import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -43,7 +48,7 @@ public class ClusterResourceLimitsTest {
             return this;
         }
         public ClusterResourceLimits build() {
-            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor);
+            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false, new BaseDeployLogger());
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
             return builder.build();
@@ -112,6 +117,29 @@ public class ClusterResourceLimitsTest {
     public void default_resource_limits_when_feed_block_is_enabled_in_distributor() {
         assertLimits(0.8, 0.8, 0.9, 0.9,
                 new Fixture(true));
+    }
+
+    @Test
+    // TODO: Change to expect exception being thrown when no one uses this in hosted
+    public void default_resource_limits_when_hosted_and_warning_is_logged() {
+        TestableDeployLogger logger = new TestableDeployLogger();
+        final boolean hosted = true;
+
+        ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true, hosted, logger);
+        ClusterResourceLimits limits = builder.build(new ModelElement(XML.getDocument("<cluster id=\"test\">" +
+                                                       "  <tuning>\n" +
+                                                       "    <resource-limits>\n" +
+                                                       "      <memory>0.92</memory>\n" +
+                                                       "    </resource-limits>\n" +
+                                                       "  </tuning>\n" +
+                                                       "</cluster>")
+                                          .getDocumentElement()));
+
+        assertLimits(0.8, 0.8, limits.getClusterControllerLimits());
+        assertLimits(0.9, 0.9, limits.getContentNodeLimits());
+
+        assertEquals(1, logger.warnings.size());
+        assertEquals("Element resource-limits is not allowed, default limits will be used", logger.warnings.get(0));
     }
 
     private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk, Double expNodeMemory, Fixture f) {

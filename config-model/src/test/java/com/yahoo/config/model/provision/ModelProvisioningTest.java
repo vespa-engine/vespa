@@ -2056,9 +2056,6 @@ public class ModelProvisioningTest {
                 "    </nodes>",
                 "    <engine>",
                 "      <proton>",
-                "        <resource-limits>",
-                "          <memory>0.92</memory>",
-                "        </resource-limits>",
                 "        <tuning>",
                 "          <searchnode>",
                 "            <flushstrategy>",
@@ -2084,7 +2081,6 @@ public class ModelProvisioningTest {
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
         assertEquals((long) ((128 - reservedMemoryGb) * GB / 8), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
-        assertEquals(0.92, cfg.writefilter().memorylimit(), 0.0001); // from explicit resource-limits
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
