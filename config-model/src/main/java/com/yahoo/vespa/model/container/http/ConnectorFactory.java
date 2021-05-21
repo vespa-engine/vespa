@@ -20,7 +20,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final String name;
     private final int listenPort;
     private final SslProvider sslProviderComponent;
-    private final boolean enableHttp2;
     private volatile ComponentId defaultRequestFilterChain;
     private volatile ComponentId defaultResponseFilterChain;
 
@@ -33,7 +32,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.sslProviderComponent = builder.sslProvider != null ? builder.sslProvider : new DefaultSslProvider(name);
         this.defaultRequestFilterChain = builder.defaultRequestFilterChain;
         this.defaultResponseFilterChain = builder.defaultResponseFilterChain;
-        this.enableHttp2 = builder.enableHttp2 != null ? builder.enableHttp2 : false;
         addChild(sslProviderComponent);
         inject(sslProviderComponent);
     }
@@ -42,7 +40,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         connectorBuilder.listenPort(listenPort);
         connectorBuilder.name(name);
-        connectorBuilder.http2Enabled(enableHttp2);
         sslProviderComponent.amendConnectorConfig(connectorBuilder);
     }
 
@@ -69,7 +66,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         private SslProvider sslProvider;
         private ComponentId defaultRequestFilterChain;
         private ComponentId defaultResponseFilterChain;
-        private Boolean enableHttp2;
 
         public Builder(String name, int listenPort) {
             this.name = name;
@@ -87,8 +83,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         public Builder defaultResponseFilterChain(ComponentId filterChain) {
             this.defaultResponseFilterChain = filterChain; return this;
         }
-
-        public Builder enableHttp2(boolean enabled) { this.enableHttp2 = enabled; return this; }
 
         public ConnectorFactory build() {
             return new ConnectorFactory(this);
