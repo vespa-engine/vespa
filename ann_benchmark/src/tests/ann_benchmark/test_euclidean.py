@@ -9,7 +9,7 @@ from vespa_ann_benchmark import DistanceMetric, HnswIndexParams, HnswIndex
 
 class Fixture:
     def __init__(self):
-        self.index = HnswIndex(2, HnswIndexParams(16, 200, DistanceMetric.Euclidean, False))
+        self.index = HnswIndex(2, HnswIndexParams(16, 200, DistanceMetric.Euclidean, False), False)
 
     def set(self, lid, value):
        self.index.set_vector(lid, value)
