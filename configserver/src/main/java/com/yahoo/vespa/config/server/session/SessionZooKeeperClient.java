@@ -21,6 +21,7 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
+import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +59,7 @@ public class SessionZooKeeperClient {
     private static final String ATHENZ_DOMAIN = "athenzDomain";
     private static final String QUOTA_PATH = "quota";
     private static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
+    private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
 
     private final Curator curator;
     private final ConfigCurator configCurator;
@@ -191,6 +194,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(TENANT_SECRET_STORES_PATH).getAbsolute();
     }
 
+    private String operatorCertificatesPath() {
+        return sessionPath.append(OPERATOR_CERTIFICATES_PATH).getAbsolute();
+    }
+
     public void writeVespaVersion(Version version) {
         configCurator.putData(versionPath(), version.toString());
     }
@@ -279,6 +286,21 @@ public class SessionZooKeeperClient {
         return Optional.ofNullable(configCurator.getData(tenantSecretStorePath()))
                 .map(SlimeUtils::jsonToSlime)
                 .map(slime -> TenantSecretStoreSerializer.listFromSlime(slime.get()))
+                .orElse(List.of());
+    }
+
+    public void writeOperatorCertificates(List<X509Certificate> certificates) {
+        if( ! certificates.isEmpty()) {
+            var bytes = uncheck(() -> SlimeUtils.toJsonBytes(OperatorCertificateSerializer.toSlime(certificates)));
+            configCurator.putData(operatorCertificatesPath(), bytes);
+        }
+    }
+
+    public List<X509Certificate> readOperatorCertificates() {
+        if ( ! configCurator.exists(operatorCertificatesPath())) return List.of();
+        return Optional.ofNullable(configCurator.getData(operatorCertificatesPath()))
+                .map(SlimeUtils::jsonToSlime)
+                .map(slime -> OperatorCertificateSerializer.fromSlime(slime.get()))
                 .orElse(List.of());
     }
 

@@ -16,6 +16,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +60,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private String jvmOmitStackTraceInFastThrowOption;
     private int numDistributorStripes = 0;
     private boolean allowDisableMtls = true;
+    private List<X509Certificate> operatorCertificates = Collections.emptyList();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -98,6 +100,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
     @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
+    @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -233,6 +236,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties allowDisableMtls(boolean value) {
         this.allowDisableMtls = value;
+        return this;
+    }
+
+    public TestProperties setOperatorCertificates(List<X509Certificate> operatorCertificates) {
+        this.operatorCertificates = List.copyOf(operatorCertificates);
         return this;
     }
 
