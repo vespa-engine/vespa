@@ -5,7 +5,6 @@
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storageframework/generic/clock/time.h>
 
-
 namespace storage {
 
 namespace api {

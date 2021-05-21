@@ -56,9 +56,9 @@ public:
         }
     };
 
-    typedef ConstIterator const_iterator;
+    using const_iterator = ConstIterator;
 
-    virtual ~BucketPriorityDatabase() { }
+    virtual ~BucketPriorityDatabase() = default;
     
     virtual const_iterator begin() const = 0;
 
