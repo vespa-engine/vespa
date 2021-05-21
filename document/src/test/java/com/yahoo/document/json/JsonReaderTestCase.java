@@ -170,6 +170,8 @@ public class JsonReaderTestCase {
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
                     new TensorDataType(new TensorType.Builder().mapped("x").indexed("y", 3).build())));
+            x.addField(new Field("mixed_bfloat16_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<bfloat16>(x{},y[3])"))));
             x.addField(new Field("mixed_tensor_adv",
                     new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").mapped("z").indexed("a", 3).build())));
             types.registerDocumentType(x);
@@ -1335,7 +1337,6 @@ public class JsonReaderTestCase {
         builder.cell().label("x", 1).label("y", 1).value(6.0);
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
-
         Tensor tensor = assertTensorField(expected,
                                           createPutWithTensor(inputJson("{",
                                                                         "  'values': \"020304050607\"",
@@ -1343,6 +1344,23 @@ public class JsonReaderTestCase {
         assertTrue(tensor instanceof IndexedTensor); // this matters for performance
     }
 
+    @Test
+    public void testParsingOfMixedTensorHexFormat() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor<bfloat16>(x{},y[3])"));
+        builder.cell().label("x", "foo").label("y", 0).value(2.0);
+        builder.cell().label("x", "foo").label("y", 1).value(3.0);
+        builder.cell().label("x", "foo").label("y", 2).value(4.0);
+        builder.cell().label("x", "bar").label("y", 0).value(5.0);
+        builder.cell().label("x", "bar").label("y", 1).value(6.0);
+        builder.cell().label("x", "bar").label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+        String mixedJson = "{\"blocks\":[" +
+                           "{\"address\":{\"x\":\"foo\"},\"values\":\"400040404080\"}," +
+                           "{\"address\":{\"x\":\"bar\"},\"values\":\"40A040C040E0\"}" +
+                           "]}";
+        var put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
+        Tensor tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
+    }
 
     @Test
     public void testParsingOfMixedTensorOnMixedForm() {
