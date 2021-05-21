@@ -127,4 +127,4 @@ maxRequestsPerConnection       int     default=0
 maxConnectionLife              double  default=0.0
 
 # Enable HTTP/2 (in addition to HTTP/1.1 using ALPN)
-http2Enabled                   bool  default=false
+http2Enabled                   bool  default=true
