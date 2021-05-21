@@ -59,36 +59,37 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     }
 
     /** Returns the number of hosts of given type that can be rebuilt concurrently */
-    private int upgradeLimit(NodeType hostType, NodeList hosts) {
+    private int rebuildLimit(NodeType hostType, NodeList hostsOfType) {
+        if (hostsOfType.stream().anyMatch(host -> host.type() != hostType)) illegal("All hosts must a " + hostType);
         int limit = hostType == NodeType.host ? maxRebuilds.value() : 1;
-        return Math.max(0, limit - hosts.rebuilding().size());
+        return Math.max(0, limit - hostsOfType.rebuilding().size());
     }
 
     private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
-        NodeList activeHosts = hostsOfTargetType.state(Node.State.active);
-        int upgradeLimit = upgradeLimit(target.nodeType(), hostsOfTargetType);
+        int rebuildLimit = rebuildLimit(target.nodeType(), hostsOfTargetType);
 
         // Find stateful clusters with retiring nodes
         NodeList activeNodes = allNodes.state(Node.State.active);
         Set<ClusterId> retiringClusters = statefulClustersOf(activeNodes.nodeType(target.nodeType().childNodeType())
                                                                         .retiring());
 
-        // Upgrade hosts not running stateful clusters that are already retiring
-        List<Node> hostsToUpgrade = new ArrayList<>(upgradeLimit);
-        NodeList candidates = activeHosts.not().rebuilding()
-                                         .osVersionIsBefore(target.version())
-                                         .byIncreasingOsVersion();
+        // Rebuild hosts not containing stateful clusters with retiring nodes, up to rebuild limit
+        List<Node> hostsToRebuild = new ArrayList<>(rebuildLimit);
+        NodeList candidates = hostsOfTargetType.state(Node.State.active)
+                                               .not().rebuilding()
+                                               .osVersionIsBefore(target.version())
+                                               .byIncreasingOsVersion();
         for (Node host : candidates) {
-            if (hostsToUpgrade.size() == upgradeLimit) break;
+            if (hostsToRebuild.size() == rebuildLimit) break;
             Set<ClusterId> clustersOnHost = statefulClustersOf(activeNodes.childrenOf(host));
-            boolean canUpgrade = Collections.disjoint(retiringClusters, clustersOnHost);
-            if (canUpgrade) {
-                hostsToUpgrade.add(host);
+            boolean canRebuild = Collections.disjoint(retiringClusters, clustersOnHost);
+            if (canRebuild) {
+                hostsToRebuild.add(host);
                 retiringClusters.addAll(clustersOnHost);
             }
         }
-        return Collections.unmodifiableList(hostsToUpgrade);
+        return Collections.unmodifiableList(hostsToRebuild);
     }
 
     private void rebuild(Node host, Version target, Instant now) {
@@ -102,13 +103,17 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     private static Set<ClusterId> statefulClustersOf(NodeList nodes) {
         Set<ClusterId> clusters = new HashSet<>();
         for (Node node : nodes) {
-            if (node.type().isHost()) throw new IllegalArgumentException("All nodes must be children, got host " + node);
+            if (node.type().isHost()) illegal("All nodes must be children, got host " + node);
             if (node.allocation().isEmpty()) continue;
             Allocation allocation = node.allocation().get();
             if (!allocation.membership().cluster().isStateful()) continue;
             clusters.add(new ClusterId(allocation.owner(), allocation.membership().cluster().id()));
         }
         return clusters;
+    }
+
+    private static void illegal(String msg) {
+        throw new IllegalArgumentException(msg);
     }
 
     private static class ClusterId {
