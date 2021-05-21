@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -12,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Instant;
@@ -19,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -114,36 +112,6 @@ public class RebuildingOsUpgrader implements OsUpgrader {
 
     private static void illegal(String msg) {
         throw new IllegalArgumentException(msg);
-    }
-
-    private static class ClusterId {
-
-        private final ApplicationId application;
-        private final ClusterSpec.Id cluster;
-
-        public ClusterId(ApplicationId application, ClusterSpec.Id cluster) {
-            this.application = Objects.requireNonNull(application);
-            this.cluster = Objects.requireNonNull(cluster);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ClusterId that = (ClusterId) o;
-            return application.equals(that.application) && cluster.equals(that.cluster);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(application, cluster);
-        }
-
-        @Override
-        public String toString() {
-            return cluster + " of " + application;
-        }
-
     }
 
 }
