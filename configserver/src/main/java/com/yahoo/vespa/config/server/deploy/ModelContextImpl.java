@@ -174,7 +174,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean tenantIamRole;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
-        private final boolean enableJdiscHttp2;
         private final boolean enableCustomAclMapping;
         private final int numDistributorStripes;
 
@@ -197,7 +196,6 @@ public class ModelContextImpl implements ModelContext {
             this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
-            this.enableJdiscHttp2 = flagValue(source, appId, Flags.ENABLE_JDISC_HTTP2);
             this.enableCustomAclMapping = flagValue(source, appId, Flags.ENABLE_CUSTOM_ACL_MAPPING);
             this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
         }
@@ -222,7 +220,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
             return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
         }
-        @Override public boolean enableJdiscHttp2() { return enableJdiscHttp2; }
         @Override public boolean enableCustomAclMapping() { return enableCustomAclMapping; }
         @Override public int numDistributorStripes() { return numDistributorStripes; }
 
