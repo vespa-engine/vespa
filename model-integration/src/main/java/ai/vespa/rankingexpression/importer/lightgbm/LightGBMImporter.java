@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.lightgbm;
 
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import ai.vespa.rankingexpression.importer.ModelImporter;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
@@ -39,7 +40,7 @@ public class LightGBMImporter extends ModelImporter {
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {
         try {
-            ImportedModel model = new ImportedModel(modelName, modelPath);
+            ImportedModel model = new ImportedModel(modelName, modelPath, ImportedMlModel.ModelType.LIGHTGBM);
             LightGBMParser parser = new LightGBMParser(modelPath);
             RankingExpression expression = new RankingExpression(parser.toRankingExpression());
             model.expression(modelName, expression);

@@ -73,14 +73,23 @@ public class ConvertedModel {
         this.sourceModel = sourceModel;
     }
 
+    public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
+        return fromSourceOrStore(modelPath, pathIsFile, context, false);
+    }
+
     /**
      * Create and store a converted model for a rank profile given from either an imported model,
      * or (if unavailable) from stored application package data.
      *
      * @param modelPath the path to the model
      * @param pathIsFile true if that path (this kind of model) is stored in a file, false if it is in a directory
+     * @param context the transform context
+     * @param convertToNative force conversion to native Vespa expressions (if applicable)
      */
-    public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
+    public static ConvertedModel fromSourceOrStore(Path modelPath,
+                                                   boolean pathIsFile,
+                                                   RankProfileTransformContext context,
+                                                   boolean convertToNative) {
         ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
                 context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
@@ -90,6 +99,9 @@ public class ConvertedModel {
                                                context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
 
         if (sourceModel != null) {
+            if (convertToNative && ! sourceModel.isNative()) {
+                sourceModel = sourceModel.asNative();
+            }
             return fromSource(modelName,
                               modelPath.toString(),
                               context.rankProfile(),
@@ -592,7 +604,7 @@ public class ConvertedModel {
             // Write content explicitly as a file on the file system as this is distributed using file distribution
             // - but only if this is a global model to avoid writing the same constants for each rank profile
             //   where they are used
-            if (modelFiles.modelName.isGlobal()) {
+            if (modelFiles.modelName.isGlobal() || ! application.getFileReference(constantPath).exists()) {
                 createIfNeeded(constantsPath);
                 IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
             }

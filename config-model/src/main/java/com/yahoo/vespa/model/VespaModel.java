@@ -30,6 +30,9 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
+import com.yahoo.path.Path;
+import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.OnnxModels;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -57,6 +60,7 @@ import com.yahoo.vespa.model.filedistribution.FileDistributor;
 import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
+import com.yahoo.vespa.model.ml.OnnxModelInfo;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
@@ -277,6 +281,46 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         serviceClusters.addAll(builder.getClusters(deployState, this));
     }
 
+    private OnnxModels onnxModelInfoFromSource(ImportedMlModel model) {
+        OnnxModels onnxModels = new OnnxModels();
+        if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
+            String path = model.source();
+            String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
+            if (path.startsWith(applicationPath)) {
+                path = path.substring(applicationPath.length() + 1);
+            }
+            loadModelInfo(onnxModels, model.name(), path);
+        }
+        return onnxModels;
+    }
+
+    private OnnxModels onnxModelInfoFromStore(String modelName) {
+        OnnxModels onnxModels = new OnnxModels();
+        String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
+        loadModelInfo(onnxModels, modelName, path);
+        return onnxModels;
+    }
+
+    private void loadModelInfo(OnnxModels onnModels, String name, String path) {
+        boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
+        if ( ! modelExists) {
+            path = ApplicationPackage.MODELS_DIR.append(path).toString();
+            modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
+        }
+        if (modelExists) {
+            OnnxModel onnxModel = new OnnxModel(name, path);
+            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(onnxModel.getFileName(), this.applicationPackage);
+            for (String onnxName : onnxModelInfo.getInputs()) {
+                onnxModel.addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
+            }
+            for (String onnxName : onnxModelInfo.getOutputs()) {
+                onnxModel.addOutputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
+            }
+            onnxModel.setModelInfo(onnxModelInfo);
+            onnModels.add(onnxModel);
+        }
+    }
+
     /**
      * Creates a rank profile not attached to any search definition, for each imported model in the application package,
      * and adds it to the given rank profile registry.
@@ -286,7 +330,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                           QueryProfiles queryProfiles) {
         if ( ! importedModels.all().isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels.all()) {
-                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
+                OnnxModels onnxModels = onnxModelInfoFromSource(model);
+                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry, onnxModels);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
                                                                           model.name(), profile, queryProfiles.getRegistry(), model);
@@ -298,7 +343,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
                 String modelName = generatedModelDir.getPath().last();
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
-                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
+                OnnxModels onnxModels = onnxModelInfoFromStore(modelName);
+                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry, onnxModels);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
                 convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));

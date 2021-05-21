@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.ml;
 import com.yahoo.path.Path;
 
 /**
- * Models used in a rank profile has the rank profile name as name space while gGlobal model names have no namespace
+ * Models used in a rank profile has the rank profile name as name space while global model names have no namespace
  *
  * @author bratseth
  */

@@ -75,6 +75,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
         for (RankProfile rank : rankProfileRegistry.rankProfilesOf(search)) {
             if (search != null && "default".equals(rank.getName())) continue;
+            if (search == null) {
+                this.onnxModels.add(rank.onnxModels());
+            }
 
             RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, importedModels, attributeFields, deployProperties);
             rankProfiles.put(rawRank.getName(), rawRank);

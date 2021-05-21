@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
@@ -52,8 +53,10 @@ public abstract class ModelImporter implements MlModelImporter {
      * Takes an IntermediateGraph and converts it to a ImportedModel containing
      * the actual Vespa ranking expressions.
      */
-    protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
-        ImportedModel model = new ImportedModel(graph.name(), modelSource);
+    protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph,
+                                                                   String modelSource,
+                                                                   ImportedMlModel.ModelType modelType) {
+        ImportedModel model = new ImportedModel(graph.name(), modelSource, modelType);
         log.log(Level.FINER, () -> "Intermediate graph created from '" + modelSource + "':\n" +
                                    ExpressionFormatter.inTwoColumnMode(70, 50).format(graph.toFullString()));
 

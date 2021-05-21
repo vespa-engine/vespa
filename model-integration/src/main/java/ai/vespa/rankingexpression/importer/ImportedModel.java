@@ -35,6 +35,7 @@ public class ImportedModel implements ImportedMlModel {
     private static final Pattern nameRegexp = Pattern.compile("[A-Za-z0-9_]*");
     private final String name;
     private final String source;
+    private final ModelType modelType;
 
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> inputs = new HashMap<>();
@@ -49,11 +50,12 @@ public class ImportedModel implements ImportedMlModel {
      * @param name the name of this mode, containing only characters in [A-Za-z0-9_]
      * @param source the source path (directory or file) of this model
      */
-    public ImportedModel(String name, String source) {
+    public ImportedModel(String name, String source, ModelType modelType) {
         if ( ! nameRegexp.matcher(name).matches())
             throw new IllegalArgumentException("An imported model name can only contain [A-Za-z0-9_], but is '" + name + "'");
         this.name = name;
         this.source = source;
+        this.modelType = modelType;
     }
 
     /** Returns the name of this model, which can only contain the characters in [A-Za-z0-9_] */
@@ -63,6 +65,10 @@ public class ImportedModel implements ImportedMlModel {
     /** Returns the source path (directory or file) of this model */
     @Override
     public String source() { return source; }
+
+    /** Returns the original model type */
+    @Override
+    public ModelType modelType() { return modelType; }
 
     @Override
     public String toString() { return "imported model '" + name + "' from " + source; }
@@ -210,6 +216,16 @@ public class ImportedModel implements ImportedMlModel {
         for (Map.Entry<String, RankingExpression> entry : map.entrySet())
             values.put(entry.getKey(), entry.getValue().getRoot().toString());
         return values;
+    }
+
+    @Override
+    public boolean isNative() {
+        return true;
+    }
+
+    @Override
+    public ImportedModel asNative() {
+        return this;
     }
 
     /**
