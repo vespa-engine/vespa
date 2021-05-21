@@ -44,7 +44,7 @@
     </clipPath>
     <g clip-path='url(#rounded)'>
         <rect x='653.26809109179' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='646.1879570885093' rx='3' width='13.080134003280707' height='20' fill='#bf103c'/>
+        <rect x='646.1879570885093' rx='3' width='13.080134003280707' height='20' fill='#00f244'/>
         <rect x='646.1879570885093' rx='3' width='13.080134003280707' height='20' fill='url(#shade)'/>
         <rect x='646.4043039211865' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='639.1078230852286' rx='3' width='13.296480835957981' height='20' fill='#bf103c'/>
@@ -137,7 +137,7 @@
         <rect x='306.2923447644306' rx='3' width='23.466284764430597' height='20' fill='#bf103c'/>
         <rect x='306.2923447644306' rx='3' width='23.466284764430597' height='20' fill='url(#shade)'/>
         <rect x='306.82606' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='288.82606' rx='3' width='24.0' height='20' fill='#00f244'/>
+        <rect x='288.82606' rx='3' width='24.0' height='20' fill='#bf103c'/>
         <rect x='288.82606' rx='3' width='24.0' height='20' fill='url(#shade)'/>
         <rect x='288.82606' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='163.18729000000002' rx='3' width='131.63876999999997' height='20' fill='#00f244'/>
