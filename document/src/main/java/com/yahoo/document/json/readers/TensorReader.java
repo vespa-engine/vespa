@@ -176,17 +176,21 @@ public class TensorReader {
      * @return the values read
      */
     private static double[] readValues(TokenBuffer buffer, int size, TensorAddress address, TensorType type) {
-        expectArrayStart(buffer.currentToken());
-
         int index = 0;
-        int initNesting = buffer.nesting();
         double[] values = new double[size];
-        for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
-            values[index++] = readDouble(buffer);
+        if (buffer.currentToken() == JsonToken.VALUE_STRING) {
+            values = decodeHexString(buffer.currentText(), type.valueType());
+            index = values.length;
+        } else {
+            expectArrayStart(buffer.currentToken());
+            int initNesting = buffer.nesting();
+            for (buffer.next(); buffer.nesting() >= initNesting; buffer.next())
+                values[index++] = readDouble(buffer);
+            expectCompositeEnd(buffer.currentToken());
+        }
         if (index != size)
             throw new IllegalArgumentException((address != null ? "At " + address.toString(type) + ": " : "") +
                                                "Expected " + size + " values, but got " + index);
-        expectCompositeEnd(buffer.currentToken());
         return values;
     }
 
