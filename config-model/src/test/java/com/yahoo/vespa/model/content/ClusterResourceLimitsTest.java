@@ -120,7 +120,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    // TODO: Change to expect exception being thrown when noone uses this in hosted
+    // TODO: Change to expect exception being thrown when no one uses this in hosted
     public void default_resource_limits_when_hosted_and_warning_is_logged() {
         TestableDeployLogger logger = new TestableDeployLogger();
         final boolean hosted = true;
