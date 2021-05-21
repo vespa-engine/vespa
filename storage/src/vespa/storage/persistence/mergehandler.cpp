@@ -1127,32 +1127,6 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
     return tracker;
 }
 
-namespace {
-
-    struct DiffInfoTimestampOrder
-        : public std::binary_function<api::GetBucketDiffCommand::Entry,
-                                      api::GetBucketDiffCommand::Entry, bool>
-    {
-        bool operator()(const api::GetBucketDiffCommand::Entry& x,
-                        const api::GetBucketDiffCommand::Entry& y)
-        {
-            return (x._timestamp < y._timestamp);
-        }
-    };
-
-    struct ApplyDiffInfoTimestampOrder
-        : public std::binary_function<api::ApplyBucketDiffCommand::Entry,
-                                      api::ApplyBucketDiffCommand::Entry, bool>
-    {
-        bool operator()(const api::ApplyBucketDiffCommand::Entry& x,
-                        const api::ApplyBucketDiffCommand::Entry& y)
-        {
-            return (x._entry._timestamp < y._entry._timestamp);
-        }
-    };
-
-} // End of anonymous namespace
-
 void
 MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSender& sender) const
 {
