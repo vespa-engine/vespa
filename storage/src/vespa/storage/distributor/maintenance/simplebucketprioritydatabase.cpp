@@ -6,9 +6,7 @@
 
 namespace storage::distributor {
 
-SimpleBucketPriorityDatabase::~SimpleBucketPriorityDatabase()
-{
-}
+SimpleBucketPriorityDatabase::~SimpleBucketPriorityDatabase() = default;
 
 void
 SimpleBucketPriorityDatabase::clearAllEntriesForBucket(const document::Bucket &bucket)

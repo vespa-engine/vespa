@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenancePriority
 {
@@ -18,7 +17,7 @@ public:
         PRIORITY_LIMIT
     };
 
-    static const std::string toString(Priority pri) {
+    static constexpr const char* toString(Priority pri) noexcept {
         switch (pri) {
         case NO_MAINTENANCE_NEEDED: return "NO_MAINTENANCE_NEEDED";
         case VERY_LOW: return "VERY_LOW";
@@ -56,6 +55,3 @@ private:
 };
 
 }
-}
-
-

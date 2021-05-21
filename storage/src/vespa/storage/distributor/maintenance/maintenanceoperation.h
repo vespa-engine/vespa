@@ -3,13 +3,12 @@
 
 #include <vespa/storage/distributor/operations/operation.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenanceOperation : public Operation
 {
 public:
-    typedef enum {
+    enum Type {
         DELETE_BUCKET,
         MERGE_BUCKET,
         SPLIT_BUCKET,
@@ -17,12 +16,11 @@ public:
         SET_BUCKET_STATE,
         GARBAGE_COLLECTION,
         OPERATION_COUNT
-    } Type;
+    };
 
-    typedef std::shared_ptr<MaintenanceOperation> SP;
+    using SP = std::shared_ptr<MaintenanceOperation>;
 
     virtual const std::string& getDetailedReason() const = 0;
 };
 
-} // distributor
-} // storage
+} // storage::distributor
