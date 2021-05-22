@@ -20,7 +20,8 @@ public class DomResourceLimitsBuilder {
         if (resourceLimits == null) { return builder; }
 
         if (hostedVespa) {
-            deployLogger.log(Level.WARNING, "Element " + resourceLimits + " is not allowed, default limits will be used");
+            deployLogger.logApplicationPackage(Level.WARNING, "Element " + resourceLimits +
+                                                              " is not allowed, default limits will be used");
             // TODO: Throw exception when we are sure nobody is using this
             //throw new IllegalArgumentException("Element " + element + " is not allowed to be set, default limits will be used");
             return builder;
