@@ -12,6 +12,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -198,12 +199,14 @@ public class ModelsEvaluationHandlerTest {
                 RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                 RankingConstantsConfig.class).getConfig("");
+        RankingExpressionsConfig expressionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
+                RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
                 OnnxModelsConfig.class).getConfig("");
         ModelTester.RankProfilesConfigImporterWithMockedConstants importer =
                 new ModelTester.RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"),
                                                                               MockFileAcquirer.returnFile(null));
-        return new ModelsEvaluator(importer.importFrom(config, constantsConfig, onnxModelsConfig));
+        return new ModelsEvaluator(importer.importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
     }
 
     private String inputTensor() {

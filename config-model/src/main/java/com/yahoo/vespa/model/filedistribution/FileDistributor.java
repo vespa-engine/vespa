@@ -8,7 +8,12 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.Host;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * Sends RPC requests to hosts (tenant hosts and config servers) asking them to start download of files. This is used

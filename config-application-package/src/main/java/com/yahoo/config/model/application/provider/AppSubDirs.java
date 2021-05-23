@@ -13,22 +13,14 @@ import java.io.File;
  */
 public class AppSubDirs {
 
-    final Tuple2<File, String> root;
-    public final Tuple2<File, String> rules;
-    final Tuple2<File, String> searchchains;
-    final Tuple2<File, String> docprocchains;
-    final Tuple2<File, String> routingtables;
-    final Tuple2<File, String> configDefs;
-    final Tuple2<File, String> searchdefinitions;
+    private final Tuple2<File, String> root;
+    private final Tuple2<File, String> routingtables;
+    private final Tuple2<File, String> configDefs;
 
     public AppSubDirs(File root) {
         this.root = new Tuple2<>(root, root.getName());
-        rules = createTuple(ApplicationPackage.RULES_DIR.getRelative());
-        searchchains = createTuple(ApplicationPackage.SEARCHCHAINS_DIR);
-        docprocchains = createTuple(ApplicationPackage.DOCPROCCHAINS_DIR);
         routingtables = createTuple(ApplicationPackage.ROUTINGTABLES_DIR);
         configDefs = createTuple(ApplicationPackage.CONFIG_DEFINITIONS_DIR);
-        searchdefinitions = createTuple(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
     }
 
     private Tuple2<File, String> createTuple(String name) {
@@ -43,23 +35,11 @@ public class AppSubDirs {
         return root.first;
     }
 
-    public File rules() {
-        return rules.first;
-    }
-
-    public File searchchains() {
-        return searchchains.first;
-    }
-
-    public File docprocchains() {
-        return docprocchains.first;
-    }
-
     public File configDefs() {
         return configDefs.first;
     }
-
-    @Deprecated // Remove after March 2020
-    public File searchdefinitions() { return searchdefinitions.first; }
+    public Tuple2<File, String> routingTables() {
+        return routingtables;
+    }
 
 }

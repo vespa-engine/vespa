@@ -7,7 +7,11 @@ import com.yahoo.config.application.api.FileRegistry;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -50,7 +54,7 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     }
 
     public static String exportRegistry(FileRegistry registry) {
-        List<FileRegistry.Entry> entries = registry.export();
+        List<Entry> entries = registry.export();
         StringBuilder builder = new StringBuilder();
 
         builder.append(registry.fileSourceHost()).append('\n');
@@ -66,7 +70,11 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     }
 
     public FileReference addFile(String relativePath) {
-        return new FileReference(path2Hash.get(relativePath));
+        String reference = path2Hash.get(relativePath);
+        if (reference == null) {
+            throw new IllegalArgumentException("File '" + relativePath + "' not found");
+        }
+        return new FileReference(reference);
     }
 
     @Override

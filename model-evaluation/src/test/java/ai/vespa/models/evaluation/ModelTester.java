@@ -16,6 +16,7 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import java.io.IOException;
 import java.util.Map;
@@ -46,10 +47,12 @@ public class ModelTester {
                                                        RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                                                                     RankingConstantsConfig.class).getConfig("");
+        RankingExpressionsConfig expresionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
+                                                                       RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
-                                                                    OnnxModelsConfig.class).getConfig("");
+                                                               OnnxModelsConfig.class).getConfig("");
         return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null))
-                       .importFrom(config, constantsConfig, onnxModelsConfig);
+                       .importFrom(config, constantsConfig, expresionsConfig, onnxModelsConfig);
     }
 
     public ExpressionFunction assertFunction(String name, String expression, Model model) {
