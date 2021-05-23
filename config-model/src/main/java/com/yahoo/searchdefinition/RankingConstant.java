@@ -1,13 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.utils.FileSender;
-
-import java.util.Collection;
-import java.util.Objects;
 
 /**
  * A global ranking constant distributed using file distribution.
@@ -17,81 +11,38 @@ import java.util.Objects;
  * @author arnej
  * @author bratseth
  */
-public class RankingConstant {
-
-    public enum PathType {FILE, URI};
-
-    /** The search definition-unique name of this constant */
-    private final String name;
+public class RankingConstant extends DistributableResource {
     private TensorType tensorType = null;
-    private String path = null;
-    private String fileReference = "";
-
-    public PathType getPathType() {
-        return pathType;
-    }
-
-    private PathType pathType = PathType.FILE;
 
     public RankingConstant(String name) {
-        this.name = name;
+        super(name);
     }
 
     public RankingConstant(String name, TensorType type, String fileName) {
-        this(name);
+        super(name, fileName);
         this.tensorType = type;
-        this.path = fileName;
         validate();
-    }
-
-    public void setFileName(String fileName) {
-        Objects.requireNonNull(fileName, "Filename cannot be null");
-        this.path = fileName;
-        this.pathType = PathType.FILE;
-    }
-
-    public void setUri(String uri) {
-        Objects.requireNonNull(uri, "uri cannot be null");
-        this.path = uri;
-        this.pathType = PathType.URI;
     }
 
     public void setType(TensorType type) {
         this.tensorType = type;
     }
 
-    /** Initiate sending of this constant to some services over file distribution */
-    public void sendTo(Collection<? extends AbstractService> services) {
-        FileReference reference = (pathType == RankingConstant.PathType.FILE)
-                                  ? FileSender.sendFileToServices(path, services)
-                                  : FileSender.sendUriToServices(path, services);
-        this.fileReference = reference.value();
-    }
-
-    public String getName() { return name; }
-    public String getFileName() { return path; }
-    public String getUri() { return path; }
-    public String getFileReference() { return fileReference; }
     public TensorType getTensorType() { return tensorType; }
     public String getType() { return tensorType.toString(); }
 
     public void validate() {
-        if (path == null || path.isEmpty())
-            throw new IllegalArgumentException("Ranking constants must have a file or uri.");
+        super.validate();
         if (tensorType == null)
-            throw new IllegalArgumentException("Ranking constant '" + name + "' must have a type.");
+            throw new IllegalArgumentException("Ranking constant '" + getName() + "' must have a type.");
         if (tensorType.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
-            throw new IllegalArgumentException("Illegal type in field " + name + " type " + tensorType +
+            throw new IllegalArgumentException("Illegal type in field " + getName() + " type " + tensorType +
                                                ": Dense tensor dimensions must have a size");
     }
 
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("constant '").append(name)
-         .append(pathType == PathType.FILE ? "' from file '" : " from uri ").append(path)
-         .append("' with ref '").append(fileReference)
-         .append("' of type '").append(tensorType)
-         .append("'");
+        StringBuilder b = new StringBuilder(super.toString())
+                .append("' of type '").append(tensorType).append("'");
         return b.toString();
     }
 
