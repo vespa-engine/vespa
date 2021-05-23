@@ -30,6 +30,7 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
+import com.yahoo.searchdefinition.RankExpressionFiles;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -125,6 +126,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** The global ranking constants of this model */
     private final RankingConstants rankingConstants = new RankingConstants();
 
+    /** External rank expression files of this */
+    private final RankExpressionFiles rankExpressionFiles = new RankExpressionFiles();
+
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
 
@@ -177,12 +181,14 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
         createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
                                  deployState.rankProfileRegistry(), deployState.getQueryProfiles());
-        this.rankProfileList = new RankProfileList(null, // null search -> global
-                                                   rankingConstants, AttributeFields.empty,
-                                                   deployState.rankProfileRegistry(),
-                                                   deployState.getQueryProfiles().getRegistry(),
-                                                   deployState.getImportedModels(),
-                                                   deployState.getProperties());
+        rankProfileList = new RankProfileList(null, // null search -> global
+                                              rankingConstants,
+                                              rankExpressionFiles,
+                                              AttributeFields.empty,
+                                              deployState.rankProfileRegistry(),
+                                              deployState.getQueryProfiles().getRegistry(),
+                                              deployState.getImportedModels(),
+                                              deployState.getProperties());
 
         HostSystem hostSystem = root.hostSystem();
         if (complete) { // create a a completed, frozen model
@@ -255,6 +261,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     /** Returns the global ranking constants of this */
     public RankingConstants rankingConstants() { return rankingConstants; }
+
+    public RankExpressionFiles rankExpressionFiles() { return rankExpressionFiles; }
 
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
