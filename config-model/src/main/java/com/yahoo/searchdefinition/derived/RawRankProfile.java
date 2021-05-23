@@ -125,8 +125,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          */
         private Map<String, FieldRankSettings> fieldRankSettings = new java.util.LinkedHashMap<>();
 
+        private final RankProfile rankProfile;
         private RankingExpression firstPhaseRanking = null;
-
         private RankingExpression secondPhaseRanking = null;
 
         private Set<ReferenceNode> summaryFeatures = new LinkedHashSet<>();
@@ -166,8 +166,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          * Creates a raw rank profile from the given rank profile
          */
         Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
-                       AttributeFields attributeFields, ModelContext.Properties deployProperties)
+                AttributeFields attributeFields, ModelContext.Properties deployProperties)
         {
+            this.rankProfile = rankProfile;
             RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
@@ -333,7 +334,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         public List<Pair<String, String>>  derive() {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
-                if ("rankingExpression(firstphase).rankingScript".equals(property.getName())) {
+                if (("rankingExpression(" + RankProfile.FIRST_PHASE + ").rankingScript").equals(property.getName())) {
                     // Could have been set by function expansion. Set expressions, then skip this property.
                     try {
                         firstPhaseRanking = new RankingExpression(property.getValue());
@@ -341,7 +342,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                         throw new IllegalArgumentException("Could not parse first phase expression", e);
                     }
                 }
-                else if ("rankingExpression(secondphase).rankingScript".equals(property.getName())) {
+                else if (("rankingExpression(" + RankProfile.SECOND_PHASE + ").rankingScript").equals(property.getName())) {
                     try {
                         secondPhaseRanking = new RankingExpression(property.getValue());
                     } catch (ParseException e) {
