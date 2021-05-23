@@ -40,7 +40,7 @@ public class ApplicationPackageXmlFilesValidator {
         validateOptional(validators.hostsXmlValidator(), FilesApplicationPackage.HOSTS);
         validateOptional(validators.deploymentXmlValidator(), FilesApplicationPackage.DEPLOYMENT_FILE.getName());
         validateOptional(validators.validationOverridesXmlValidator(), FilesApplicationPackage.VALIDATION_OVERRIDES.getName());
-        validateRouting(appDirs.routingtables);
+        validateRouting(appDirs.routingTables());
     }
 
     // For testing

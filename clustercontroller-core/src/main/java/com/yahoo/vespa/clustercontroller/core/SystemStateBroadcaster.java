@@ -2,10 +2,13 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.ErrorCode;
-import java.util.logging.Level;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 
+import java.util.logging.Level;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

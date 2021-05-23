@@ -148,14 +148,13 @@ public class FilesApplicationPackage implements ApplicationPackage {
      * @param metaData metadata for this application package
      * @param includeSourceFiles include files from source dirs
      */
-    @SuppressWarnings("deprecation")
     private FilesApplicationPackage(File appDir, File preprocessedDir, ApplicationMetaData metaData, boolean includeSourceFiles) {
         verifyAppDir(appDir);
         this.includeSourceFiles = includeSourceFiles;
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
-        configDefsDir = new File(appDir, ApplicationPackage.CONFIG_DEFINITIONS_DIR);
+        configDefsDir = new File(appDir, CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
         this.metaData = metaData;
         transformerFactory = TransformerFactory.newInstance();
@@ -236,9 +235,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return getHostsFile().getPath();
     }
 
-    @SuppressWarnings("deprecation")
     private File getHostsFile() {
-        return new File(appDir, ApplicationPackage.HOSTS);
+        return new File(appDir, HOSTS);
     }
 
     @Override
@@ -246,9 +244,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return getServicesFile().getPath();
     }
 
-    @SuppressWarnings("deprecation")
     private File getServicesFile() {
-        return new File(appDir, ApplicationPackage.SERVICES);
+        return new File(appDir, SERVICES);
     }
 
     @Override
@@ -338,7 +335,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             addAllDefsFromConfigDir(defs, new File("src/main/resources/configdefinitions"));
             addAllDefsFromConfigDir(defs, new File("src/test/resources/configdefinitions"));
         }
-        addAllDefsFromBundles(defs, FilesApplicationPackage.getComponents(appDir));
+        addAllDefsFromBundles(defs, getComponents(appDir));
         return defs;
     }
 
@@ -427,13 +424,13 @@ public class FilesApplicationPackage implements ApplicationPackage {
     static List<File> getSearchDefinitionFiles(File appDir) {
         List<File> schemaFiles = new ArrayList<>();
 
-        File sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
+        File sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + ApplicationPackage.SD_NAME_SUFFIX))));
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
-        sdDir = new File(appDir, ApplicationPackage.SCHEMAS_DIR.getRelative());
+        sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
-            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + ApplicationPackage.SD_NAME_SUFFIX))));
+            schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
         return schemaFiles;
     }
@@ -445,16 +442,16 @@ public class FilesApplicationPackage implements ApplicationPackage {
     // Only for use by deploy processor
     public static List<Component> getComponents(File appDir) {
         List<Component> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, ApplicationPackage.COMPONENT_DIR))) {
-            components.add(new Component(bundle, new ComponentInfo(new File(ApplicationPackage.COMPONENT_DIR, bundle.getFile().getName()).getPath())));
+        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
+            components.add(new Component(bundle, new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath())));
         }
         return components;
     }
 
     private static List<ComponentInfo> getComponentsInfo(File appDir) {
         List<ComponentInfo> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, ApplicationPackage.COMPONENT_DIR))) {
-            components.add(new ComponentInfo(new File(ApplicationPackage.COMPONENT_DIR, bundle.getFile().getName()).getPath()));
+        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
+            components.add(new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath()));
         }
         return components;
     }
@@ -545,10 +542,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
         if (new File(name).isAbsolute())
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
 
-        File sdDir = new File(appDir, ApplicationPackage.SCHEMAS_DIR.getRelative());
+        File sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
         File expressionFile = new File(sdDir, name);
         if ( ! expressionFile.exists()) {
-            sdDir = new File(appDir, ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative());
+            sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
             expressionFile = new File(sdDir, name);
         }
         return expressionFile;
@@ -611,7 +608,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         File servicesFile = validateServicesFile();
         preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
         preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
-        FilesApplicationPackage preprocessed = FilesApplicationPackage.fromFile(preprocessedDir, includeSourceFiles);
+        FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
     }
@@ -629,7 +626,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         ConfigDefinitionDir defDir = new ConfigDefinitionDir(destination);
         // Copy the user's def files from components.
         List<Bundle> bundlesAdded = new ArrayList<>();
-        for (FilesApplicationPackage.Component component : FilesApplicationPackage.getComponents(appSubDirs.root())) {
+        for (Component component : getComponents(appSubDirs.root())) {
             Bundle bundle = component.getBundle();
             defDir.addConfigDefinitionsFromBundle(bundle, bundlesAdded);
             bundlesAdded.add(bundle);
@@ -645,7 +642,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         MessageDigest md5;
         try {
             md5 = MessageDigest.getInstance("MD5");
-            for (File file : appDir.listFiles((dir, name) -> !name.equals(ApplicationPackage.EXT_DIR) && !name.startsWith("."))) {
+            for (File file : appDir.listFiles((dir, name) -> !name.equals(EXT_DIR) && !name.startsWith("."))) {
                 addPathToDigest(file, "", md5, true, false);
             }
             return toLowerCase(HexDump.toHexString(md5.digest()));
