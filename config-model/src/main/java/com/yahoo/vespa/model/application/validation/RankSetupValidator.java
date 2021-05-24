@@ -8,6 +8,8 @@ import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.RankExpressionFile;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.system.ProcessExecuter;
@@ -38,7 +40,6 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
@@ -116,50 +117,61 @@ public class RankSetupValidator extends Validator {
     }
 
     private void writeConfigs(String dir, AbstractConfigProducer<?> producer) throws IOException {
-            RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
-            ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
-            RankProfilesConfig rpc = new RankProfilesConfig(rpcb);
-            writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpc);
+        RankProfilesConfig.Builder rpcb = new RankProfilesConfig.Builder();
+        ((RankProfilesConfig.Producer) producer).getConfig(rpcb);
+        RankProfilesConfig rpc = new RankProfilesConfig(rpcb);
+        writeConfig(dir, RankProfilesConfig.getDefName() + ".cfg", rpc);
 
-            IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
-            ((IndexschemaConfig.Producer) producer).getConfig(iscb);
-            IndexschemaConfig isc = new IndexschemaConfig(iscb);
-            writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", isc);
+        IndexschemaConfig.Builder iscb = new IndexschemaConfig.Builder();
+        ((IndexschemaConfig.Producer) producer).getConfig(iscb);
+        IndexschemaConfig isc = new IndexschemaConfig(iscb);
+        writeConfig(dir, IndexschemaConfig.getDefName() + ".cfg", isc);
 
-            AttributesConfig.Builder acb = new AttributesConfig.Builder();
-            ((AttributesConfig.Producer) producer).getConfig(acb);
-            AttributesConfig ac = new AttributesConfig(acb);
-            writeConfig(dir, AttributesConfig.getDefName() + ".cfg", ac);
+        AttributesConfig.Builder acb = new AttributesConfig.Builder();
+        ((AttributesConfig.Producer) producer).getConfig(acb);
+        AttributesConfig ac = new AttributesConfig(acb);
+        writeConfig(dir, AttributesConfig.getDefName() + ".cfg", ac);
 
-            RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
-            ((RankingConstantsConfig.Producer) producer).getConfig(rccb);
-            RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
-            writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rcc);
+        RankingConstantsConfig.Builder rccb = new RankingConstantsConfig.Builder();
+        ((RankingConstantsConfig.Producer) producer).getConfig(rccb);
+        RankingConstantsConfig rcc = new RankingConstantsConfig(rccb);
+        writeConfig(dir, RankingConstantsConfig.getDefName() + ".cfg", rcc);
 
-            OnnxModelsConfig.Builder omcb = new OnnxModelsConfig.Builder();
-            ((OnnxModelsConfig.Producer) producer).getConfig(omcb);
-            OnnxModelsConfig omc = new OnnxModelsConfig(omcb);
-            writeConfig(dir, OnnxModelsConfig.getDefName() + ".cfg", omc);
+        RankingExpressionsConfig.Builder recb = new RankingExpressionsConfig.Builder();
+        ((RankingExpressionsConfig.Producer) producer).getConfig(recb);
+        RankingExpressionsConfig rec = new RankingExpressionsConfig(recb);
+        writeConfig(dir, RankingExpressionsConfig.getDefName() + ".cfg", rec);
 
-            ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
-            ((ImportedFieldsConfig.Producer) producer).getConfig(ifcb);
-            ImportedFieldsConfig ifc = new ImportedFieldsConfig(ifcb);
-            writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifc);
+        OnnxModelsConfig.Builder omcb = new OnnxModelsConfig.Builder();
+        ((OnnxModelsConfig.Producer) producer).getConfig(omcb);
+        OnnxModelsConfig omc = new OnnxModelsConfig(omcb);
+        writeConfig(dir, OnnxModelsConfig.getDefName() + ".cfg", omc);
+
+        ImportedFieldsConfig.Builder ifcb = new ImportedFieldsConfig.Builder();
+        ((ImportedFieldsConfig.Producer) producer).getConfig(ifcb);
+        ImportedFieldsConfig ifc = new ImportedFieldsConfig(ifcb);
+        writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifc);
     }
 
     private void writeExtraVerifyRanksetupConfig(String dir, DocumentDatabase db) throws IOException {
         String configName = "verify-ranksetup.cfg";
         String configContent = "";
 
+        List<String> config = new ArrayList<>();
         // Assist verify-ranksetup in finding the actual ONNX model files
-        Map<String, OnnxModel> models = db.getDerivedConfiguration().getSearch().onnxModels().asMap();
-        if (models.values().size() > 0) {
-            List<String> config = new ArrayList<>(models.values().size() * 2);
-            for (OnnxModel model : models.values()) {
-                String modelPath = getFileRepositoryPath(model.getFilePath(), model.getFileReference());
-                config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, model.getFileReference()));
-                config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
-            }
+        for (OnnxModel model : db.getDerivedConfiguration().getSearch().onnxModels().asMap().values()) {
+            String modelPath = getFileRepositoryPath(model.getFilePath(), model.getFileReference());
+            config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, model.getFileReference()));
+            config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
+        }
+
+        for (RankExpressionFile expr : db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values()) {
+            String modelPath = getFileRepositoryPath(expr.getFilePath(), expr.getFileReference());
+            config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, expr.getFileReference()));
+            config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
+        }
+
+        if ( ! config.isEmpty() ) {
             configContent = StringUtilities.implodeMultiline(config);
         }
         IOUtils.writeFile(dir + configName, configContent, false);

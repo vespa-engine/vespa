@@ -232,12 +232,11 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             SerializationContext context = new SerializationContext(functionExpressions, null, functionProperties);
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
                 String propertyName = RankingExpression.propertyName(e.getKey());
-                if (context.serializedFunctions().containsKey(propertyName)) {
-                    continue;
-                }
+                if (context.serializedFunctions().containsKey(propertyName)) continue;
+
                 String expressionString = e.getValue().function().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
 
-                context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expressionString);
+                context.addFunctionSerialization(propertyName, expressionString);
                 for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
                     context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
                 if (e.getValue().function().returnType().isPresent())
@@ -353,8 +352,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     properties.add(new Pair<>(property.getName(), property.getValue()));
                 }
             }
-            properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
-            properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));
+            properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, rankProfile.getFirstPhaseFile(), RankProfile.FIRST_PHASE));
+            properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, rankProfile.getSecondPhaseFile(), RankProfile.SECOND_PHASE));
             for (FieldRankSettings settings : fieldRankSettings.values()) {
                 properties.addAll(settings.deriveRankProperties());
             }
@@ -421,7 +420,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             return properties;
         }
 
-        private List<Pair<String, String>> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
+        private List<Pair<String, String>> deriveRankingPhaseRankProperties(RankingExpression expression, String fileName, String phase) {
             List<Pair<String, String>> properties = new ArrayList<>();
             if (expression == null) return properties;
 

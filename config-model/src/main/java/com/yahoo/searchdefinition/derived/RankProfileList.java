@@ -6,6 +6,8 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
+import com.yahoo.searchdefinition.RankExpressionFile;
+import com.yahoo.searchdefinition.RankExpressionFiles;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -14,6 +16,7 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
@@ -25,21 +28,21 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public class RankProfileList extends Derived implements RankProfilesConfig.Producer,
-                                                        RankingConstantsConfig.Producer,
-                                                        OnnxModelsConfig.Producer {
+public class RankProfileList extends Derived implements RankProfilesConfig.Producer {
 
     private static final Logger log = Logger.getLogger(RankProfileList.class.getName());
 
     private final Map<String, RawRankProfile> rankProfiles = new java.util.LinkedHashMap<>();
     private final RankingConstants rankingConstants;
+    private final RankExpressionFiles rankExpressionFiles;
     private final OnnxModels onnxModels;
 
     public static RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
-        this.rankingConstants = new RankingConstants();
-        this.onnxModels = new OnnxModels();
+        rankingConstants = new RankingConstants();
+        rankExpressionFiles = new RankExpressionFiles();
+        onnxModels = new OnnxModels();
     }
 
     /**
@@ -50,6 +53,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
      */
     public RankProfileList(Search search,
                            RankingConstants rankingConstants,
+                           RankExpressionFiles rankExpressionFiles,
                            AttributeFields attributeFields,
                            RankProfileRegistry rankProfileRegistry,
                            QueryProfileRegistry queryProfiles,
@@ -57,7 +61,8 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            ModelContext.Properties deployProperties) {
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
-        this.onnxModels = search == null ? new OnnxModels() : search.onnxModels();  // as ONNX models come from parsing rank expressions
+        this.rankExpressionFiles = rankExpressionFiles;
+        onnxModels = search == null ? new OnnxModels() : search.onnxModels();  // as ONNX models come from parsing rank expressions
         deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
     }
 
@@ -90,11 +95,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         return rankProfiles.get(name);
     }
 
-    public void sendConstantsTo(Collection<? extends AbstractService> services) {
+    public void sendTo(Collection<? extends AbstractService> services) {
         rankingConstants.sendTo(services);
-    }
-
-    public void sendOnnxModelsTo(Collection<? extends AbstractService> services) {
+        rankExpressionFiles.sendTo(services);
         onnxModels.sendTo(services);
     }
 
@@ -108,7 +111,10 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         }
     }
 
-    @Override
+    public void getConfig(RankingExpressionsConfig.Builder builder) {
+        rankExpressionFiles.asMap().values().forEach((expr) -> builder.expression.add(new RankingExpressionsConfig.Expression.Builder().name(expr.getName()).fileref(expr.getFileReference())));
+    }
+
     public void getConfig(RankingConstantsConfig.Builder builder) {
         for (RankingConstant constant : rankingConstants.asMap().values()) {
             if ("".equals(constant.getFileReference()))
@@ -121,7 +127,6 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         }
     }
 
-    @Override
     public void getConfig(OnnxModelsConfig.Builder builder) {
         for (OnnxModel model : onnxModels.asMap().values()) {
             if ("".equals(model.getFileReference()))
