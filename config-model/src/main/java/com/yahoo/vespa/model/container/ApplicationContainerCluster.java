@@ -25,6 +25,7 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
@@ -58,6 +59,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         OnnxModelsConfig.Producer,
+        RankingExpressionsConfig.Producer,
         ServletPathsConfig.Producer,
         ContainerMbusConfig.Producer,
         MetricsProxyApiConfig.Producer,
@@ -230,6 +232,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     @Override
     public void getConfig(OnnxModelsConfig.Builder builder) {
+        if (modelEvaluation != null) modelEvaluation.getConfig(builder);
+    }
+
+    public void getConfig(RankingExpressionsConfig.Builder builder) {
         if (modelEvaluation != null) modelEvaluation.getConfig(builder);
     }
 
