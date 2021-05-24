@@ -39,7 +39,8 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer<Abstr
 
     public void prepareToDistributeFiles(List<SearchNode> backends) {
         for (SchemaSpec sds : localSDS) {
-            sds.getSearchDefinition().getSearch().sendTo(backends);
+            sds.getSearchDefinition().getSearch().rankingConstants().sendTo(backends);
+            sds.getSearchDefinition().getSearch().onnxModels().sendTo(backends);
         }
     }
 
