@@ -61,7 +61,6 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                             DeploymentId deploymentId = new DeploymentId(instance.id(), deployment.zone());
                             List<ClusterMetrics> clusterMetrics = controller().serviceRegistry().configServer().getDeploymentMetrics(deploymentId);
                             Instant now = controller().clock().instant();
-
                             applications.lockApplicationIfPresent(application.id(), locked -> {
                                 Deployment existingDeployment = locked.get().require(instance.name()).deployments().get(deployment.zone());
                                 if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
