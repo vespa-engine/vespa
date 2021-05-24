@@ -374,10 +374,13 @@ public class RankProfile implements Cloneable {
         this.firstPhaseRanking = rankingExpression;
     }
 
+    private String getUniqueExpressionName(String name) {
+        return getName() + "." + name;
+    }
     public String getFirstPhaseFile() {
         String name = FIRST_PHASE;
         if (externalFileExpressions.contains(name)) {
-            return rankExpressionFiles().get(name).getFileName();
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
         }
         if ((firstPhaseRanking == null) && (getInherited() != null)) {
             return getInherited().getFirstPhaseFile();
@@ -388,7 +391,7 @@ public class RankProfile implements Cloneable {
     public String getSecondPhaseFile() {
         String name = SECOND_PHASE;
         if (externalFileExpressions.contains(name)) {
-            return rankExpressionFiles().get(name).getFileName();
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
         }
         if ((secondPhaseRanking == null) && (getInherited() != null)) {
             return getInherited().getSecondPhaseFile();
@@ -398,7 +401,7 @@ public class RankProfile implements Cloneable {
 
     public String getExpressionFile(String name) {
         if (externalFileExpressions.contains(name)) {
-            return rankExpressionFiles().get(name).getFileName();
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
         }
         if (getInherited() != null) {
             return getInherited().getExpressionFile(name);
@@ -718,7 +721,7 @@ public class RankProfile implements Cloneable {
             throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
                                                "' in subdirectory, which is not supported.");
 
-        rankExpressionFiles().add(new RankExpressionFile(expName, fileName));
+        rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
         externalFileExpressions.add(expName);
         return search.getRankingExpression(fileName);
     }
