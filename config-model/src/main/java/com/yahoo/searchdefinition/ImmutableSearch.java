@@ -28,7 +28,6 @@ public interface ImmutableSearch {
     Reader getRankingExpression(String fileName);
     ApplicationPackage applicationPackage();
     RankingConstants rankingConstants();
-    RankExpressionFiles rankExpressionFiles();
     OnnxModels onnxModels();
     Stream<ImmutableSDField> allImportedFields();
 
