@@ -159,6 +159,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private final Map<String, String> attributeTypes;
         private final Map<String, String> queryFeatureTypes;
+        private final boolean useExternalExpressionFiles;
 
         private Set<String> filterFields = new java.util.LinkedHashSet<>();
 
@@ -172,6 +173,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
+            useExternalExpressionFiles = deployProperties.featureFlags().useExternalRankExpressions();
             deriveRankingFeatures(compiled, deployProperties);
             deriveRankTypeSetting(compiled, attributeFields);
             deriveFilterFields(compiled);
@@ -231,6 +233,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                                               Map<String, String> functionProperties) {
             SerializationContext context = new SerializationContext(functionExpressions, null, functionProperties);
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
+                if (useExternalExpressionFiles && rankProfile.getExpressionFile(e.getKey()) != null) continue;
                 String propertyName = RankingExpression.propertyName(e.getKey());
                 if (context.serializedFunctions().containsKey(propertyName)) continue;
 
@@ -428,7 +431,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if ("".equals(name))
                 name = phase;
 
-            if (expression.getRoot() instanceof ReferenceNode) {
+            if (useExternalExpressionFiles && (fileName != null)) {
+                properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));
+            } else if (expression.getRoot() instanceof ReferenceNode) {
                 properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
             } else {
                 properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));

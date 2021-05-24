@@ -224,6 +224,13 @@ public class Flags {
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
+            "use-external-rank-expression", false,
+            List.of("baldersheim"), "2021-05-24", "2021-07-01",
+            "Wheter to use distributed external rank expression or inline in rankproperties",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
             "enable-routing-core-dumps", false,
             List.of("tokle"), "2021-04-16", "2021-08-01",
