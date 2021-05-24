@@ -225,7 +225,7 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public boolean enableCustomAclMapping() { return enableCustomAclMapping; }
         @Override public int numDistributorStripes() { return numDistributorStripes; }
-        @Override public boolean isUseExternalRankExpression() { return useExternalRankExpression; }
+        @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
