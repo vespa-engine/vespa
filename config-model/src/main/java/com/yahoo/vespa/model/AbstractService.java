@@ -102,14 +102,15 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     /**
      * Only used for testing. Stay away.
-     * @param name   Name of this service.
+     *
+     * @param name the name of this service.
      */
     public AbstractService(String name) {
         super(name);
     }
 
     @Override
-    protected void remove() {
+    public void remove() {
         super.remove();
         if (hostResource != null)
             hostResource.deallocateService(this);

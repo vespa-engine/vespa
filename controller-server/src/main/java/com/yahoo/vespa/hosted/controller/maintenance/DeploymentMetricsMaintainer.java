@@ -57,6 +57,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                     for (Deployment deployment : instance.deployments().values()) {
                         attempts.incrementAndGet();
                         try {
+                            if (deployment.version().getMajor() < 7) continue;
                             DeploymentId deploymentId = new DeploymentId(instance.id(), deployment.zone());
                             List<ClusterMetrics> clusterMetrics = controller().serviceRegistry().configServer().getDeploymentMetrics(deploymentId);
                             Instant now = controller().clock().instant();

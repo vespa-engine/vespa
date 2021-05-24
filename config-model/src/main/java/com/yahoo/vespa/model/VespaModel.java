@@ -185,7 +185,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                    deployState.getProperties());
 
         HostSystem hostSystem = root.hostSystem();
-        if (complete) { // create a a completed, frozen model
+        if (complete) { // create a completed, frozen model
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState, builder);
             setupRouting(deployState);

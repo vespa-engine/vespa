@@ -39,6 +39,7 @@ public class HostPorts {
 
     private PortFinder portFinder = new PortFinder(Collections.emptyList());
 
+    private boolean flushed = false;
     private Optional<NetworkPorts> networkPortsList = Optional.empty();
 
     public HostPorts(String hostname) {
@@ -147,7 +148,7 @@ public class HostPorts {
     }
 
     void deallocatePorts(NetworkPortRequestor service) {
-        if (networkPortsList.isPresent())
+        if (flushed)
             throw new IllegalStateException("Cannot deallocate ports after calling flushPortReservations()");
         portDB.entrySet().removeIf(entry -> entry.getValue().getServiceName().equals(service.getServiceName()));
         allocatedPorts--;
@@ -155,6 +156,7 @@ public class HostPorts {
 
     public void flushPortReservations() {
         this.networkPortsList = Optional.of(new NetworkPorts(portFinder.allocations()));
+        this.flushed = true;
     }
 
     /**
