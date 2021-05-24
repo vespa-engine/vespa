@@ -227,7 +227,7 @@ public class Flags {
     public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "use-external-rank-expression", false,
             List.of("baldersheim"), "2021-05-24", "2021-07-01",
-            "Wheter to use distributed external rank expression or inline in rankproperties",
+            "Whether to use distributed external rank expression or inline in rankproperties",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
