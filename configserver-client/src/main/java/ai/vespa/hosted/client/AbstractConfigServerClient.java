@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import org.apache.hc.client5.http.classic.methods.ClassicHttpRequests;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ClassicHttpRequest;
@@ -12,6 +11,7 @@ import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
 import org.apache.hc.core5.net.URIBuilder;
 
 import java.io.IOException;
@@ -49,7 +49,9 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         Throwable thrown = null;
         for (URI host : builder.hosts) {
-            ClassicHttpRequest request = ClassicHttpRequests.create(builder.method, concat(host, builder.uriBuilder));
+            ClassicHttpRequest request = ClassicRequestBuilder.create(builder.method.name())
+                    .setUri(concat(host, builder.uriBuilder))
+                    .build();
             request.setEntity(builder.entity);
             try {
                 try {
