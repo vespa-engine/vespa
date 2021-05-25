@@ -19,7 +19,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
-import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -137,8 +136,6 @@ public interface ModelContext {
 
         // Allow disabling mTLS for now, harden later
         default boolean allowDisableMtls() { return true; }
-
-        default List<X509Certificate> operatorCertificates() { return List.of(); }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

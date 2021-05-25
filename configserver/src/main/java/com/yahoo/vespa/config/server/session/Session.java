@@ -17,7 +17,6 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
-import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -138,10 +137,6 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeTenantSecretStores(tenantSecretStores);
     }
 
-    public void setOperatorCertificates(List<X509Certificate> operatorCertificates) {
-        sessionZooKeeperClient.writeOperatorCertificates(operatorCertificates);
-    }
-
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
     public ApplicationId getApplicationId() {
         return sessionZooKeeperClient.readApplicationId()
@@ -175,10 +170,6 @@ public abstract class Session implements Comparable<Session>  {
 
     public List<TenantSecretStore> getTenantSecretStores() {
         return sessionZooKeeperClient.readTenantSecretStores();
-    }
-
-    public List<X509Certificate> getOperatorCertificates() {
-        return sessionZooKeeperClient.readOperatorCertificates();
     }
 
     private Transaction createSetStatusTransaction(Status status) {
