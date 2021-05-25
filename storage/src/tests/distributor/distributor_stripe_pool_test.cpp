@@ -73,7 +73,7 @@ struct ParkingInvariantCheckingMockStripe : MockTickableStripe {
 TEST_F(DistributorStripePoolThreadingTest, can_park_and_unpark_single_stripe) {
     ParkingInvariantCheckingMockStripe stripe(_is_parked);
 
-    _pool.start({{&stripe}});
+    _pool.start({&stripe});
     loop_park_unpark_cycle_until_test_time_expired();
     _pool.stop_and_join();
 }
