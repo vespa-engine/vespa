@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Evaluates machine-learned models added to Vespa applications and available as config form.
