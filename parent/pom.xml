@@ -890,7 +890,7 @@
         <spifly.version>1.3.3</spifly.version>
         <surefire.version>2.22.0</surefire.version>
         <tensorflow.version>1.12.0</tensorflow.version>
-        <zookeeper.client.version>3.6.2</zookeeper.client.version>
+        <zookeeper.client.version>3.6.3</zookeeper.client.version>
 
         <doclint>all</doclint>
         <test.hide>true</test.hide>
