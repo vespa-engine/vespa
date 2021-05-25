@@ -35,8 +35,8 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequests;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
@@ -525,7 +525,7 @@ public class HttpServerTest {
         JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
         try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
             String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
-            SimpleHttpResponse response = client.execute(SimpleHttpRequests.get(uri), null).get();
+            SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
             assertNull(response.getBodyText());
             assertEquals(OK, response.getCode());
         }

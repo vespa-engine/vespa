@@ -13,14 +13,13 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequests;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.HttpStatus;
-import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
@@ -152,7 +151,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Get service generation of service at given URL */
     private CompletableFuture<Long> getServiceGeneration(CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
-        SimpleHttpRequest request = SimpleHttpRequests.get(createApiUri(serviceUrl));
+        SimpleHttpRequest request = SimpleRequestBuilder.get(createApiUri(serviceUrl)).build();
         request.setConfig(createRequestConfig(timeout));
 
         // Ignoring returned Future object as we want to use the more flexible CompletableFuture instead

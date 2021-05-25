@@ -10,8 +10,8 @@ import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.config.server.modelfactory.ModelResult;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequests;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.concurrent.FutureCallback;
@@ -80,7 +80,7 @@ public class DefaultClusterReindexingStatusClient implements ClusterReindexingSt
     private CompletableFuture<Map<String, ClusterReindexing>> getReindexingStatus(ServiceInfo service) {
         URI uri = URI.create(String.format("http://%s:%d/reindexing/v1/status", service.getHostName(), getStatePort(service)));
         CompletableFuture<SimpleHttpResponse> responsePromise = new CompletableFuture<>();
-        httpClient.execute(SimpleHttpRequests.get(uri), new FutureCallback<>() {
+        httpClient.execute(SimpleRequestBuilder.get(uri).build(), new FutureCallback<>() {
             @Override public void completed(SimpleHttpResponse result) { responsePromise.complete(result); }
             @Override public void failed(Exception ex) { responsePromise.completeExceptionally(ex); }
             @Override public void cancelled() { responsePromise.cancel(false); }
