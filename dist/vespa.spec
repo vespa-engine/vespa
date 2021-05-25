@@ -728,7 +728,7 @@ fi
 %dir %{_prefix}/lib/jars
 %{_prefix}/bin/vespa-feed-client
 %{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
-%{_prefix}/lib/jars/vespa-feed-client-jar-with-dependencies.jar
+%{_prefix}/lib/jars/vespa-feed-client-cli.jar
 
 %files config-model-fat
 %if %{_defattr_is_vespa_vespa}
