@@ -520,17 +520,22 @@ public class Nodes {
 
     /**
      * Throws if the given node cannot be removed. Removal is allowed if:
-     *  - Tenant node: node is unallocated
+     *  - Tenant node:
+     *    - non-recursively: node is unallocated
+     *    - recursively: node is unallocated or node is in failed|parked
      *  - Host node: iff in state provisioned|failed|parked
      *  - Child node:
-     *      If only removing the container node: node in state ready
-     *      If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
+     *    - non-recursively: node in state ready
+     *    - recursively: child is in state provisioned|failed|parked|dirty|ready
      */
     private void requireRemovable(Node node, boolean removingRecursively, boolean force) {
         if (force) return;
 
-        if (node.type() == NodeType.tenant && node.allocation().isPresent())
-            illegal(node + " is currently allocated and cannot be removed");
+        if (node.type() == NodeType.tenant && node.allocation().isPresent()) {
+            EnumSet<Node.State> removableStates = EnumSet.of(Node.State.failed, Node.State.parked);
+            if (!removingRecursively || !removableStates.contains(node.state()))
+                illegal(node + " is currently allocated and cannot be removed while in " + node.state());
+        }
 
         final Set<Node.State> removableStates;
         if (node.type().isHost()) {
@@ -542,7 +547,7 @@ public class Nodes {
                     : EnumSet.of(Node.State.ready);
         }
         if (!removableStates.contains(node.state()))
-            illegal(node + " can not be removed as it is not in the states " + removableStates);
+            illegal(node + " can not be removed while in " + node.state());
     }
 
     /**
