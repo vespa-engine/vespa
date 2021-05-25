@@ -53,6 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
+    private boolean useExternalRankExpression = false;
     private int clusterControllerMaxHeapSizeInMb = 128;
     private int metricsProxyMaxHeapSizeInMb = 256;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
@@ -101,7 +102,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
+    @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
 
+    public TestProperties useExternalRankExpression(boolean value) {
+        useExternalRankExpression = value;
+        return this;
+    }
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
         return this;
