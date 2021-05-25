@@ -359,7 +359,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
-                    if (record == null) { // Observed to happen. QuestDb bug?
+                    if (record == null || record.getStr(0) == null) { // Observed to happen. QuestDb bug?
                         nullRecords++;
                         continue;
                     }
