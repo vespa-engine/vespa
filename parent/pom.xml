@@ -853,7 +853,7 @@
         <antlr4.version>4.5</antlr4.version>
         <apache.httpclient.version>4.5.12</apache.httpclient.version>
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
-        <apache.httpclient5.version>5.1</apache.httpclient5.version>
+        <apache.httpclient5.version>5.0.3</apache.httpclient5.version>
         <asm.version>9.1</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.14</athenz.version>
