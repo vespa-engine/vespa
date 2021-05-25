@@ -43,6 +43,9 @@ public interface MetricsDb {
     /** Returns all cluster level metric snapshots for a given cluster */
     ClusterTimeseries getClusterTimeseries(ApplicationId applicationId, ClusterSpec.Id clusterId);
 
+    /** Returns the number of times QuestDb has returned null records since last gc */
+    default int getNullRecordsCount() { return 0; }
+
     /** Must be called intermittently (as long as add is called) to gc old data */
     void gc();
 

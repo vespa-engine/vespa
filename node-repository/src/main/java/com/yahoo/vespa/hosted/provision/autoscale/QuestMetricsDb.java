@@ -59,6 +59,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private long highestTimestampAdded = 0;
 
+    private volatile int nullRecords = 0;
+
     @Inject
     public QuestMetricsDb() {
         this(Defaults.getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
@@ -183,8 +185,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
+    public int getNullRecordsCount() { return nullRecords; }
+
     @Override
     public void gc() {
+        nullRecords = 0;
         gc(nodeTable);
         gc(clusterTable);
     }
@@ -354,6 +359,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
+                    if (record == null) { // Observed to happen. QuestDb bug?
+                        nullRecords++;
+                        continue;
+                    }
                     String hostname = record.getStr(0).toString();
                     if (hostnames.isEmpty() || hostnames.contains(hostname)) {
                         snapshots.put(hostname,
