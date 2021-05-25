@@ -152,7 +152,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
-            List.of("hakon"), "2021-01-22", "2021-05-22",
+            List.of("hakon"), "2021-01-22", "2021-06-22",
             "Allow all content nodes in a hierarchical group to suspend at the same time",
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
