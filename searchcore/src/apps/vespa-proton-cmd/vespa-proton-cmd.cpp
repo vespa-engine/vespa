@@ -3,6 +3,7 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/host_name.h>
@@ -158,6 +159,9 @@ public:
         } catch (config::InvalidConfigException& e) {
             fprintf(stderr, "ERROR: failed to get service location broker configuration\n");
             std::_Exit(1);
+        } catch (vespalib::IllegalStateException& e) {
+            fprintf(stderr, "ERROR: empty or invalid service location broker configuration\n");
+            std::_Exit(2);
         }
         return "";
     }

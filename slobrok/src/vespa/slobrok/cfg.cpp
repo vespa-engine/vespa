@@ -34,7 +34,6 @@ Configurator::Configurator(Configurable& target, const config::ConfigUri & uri)
     : _subscriber(uri.getContext()),
       _handle(_subscriber.subscribe<cloud::config::SlobroksConfig>(uri.getConfigId())),
       _target(target)
-
 {
 }
 
