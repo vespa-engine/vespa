@@ -861,23 +861,24 @@ public class ClusterStateGeneratorTest {
 
     @Test
     public void generator_params_can_inherit_values_from_controller_options() {
-        FleetControllerOptions options = new FleetControllerOptions("foocluster", Set.of(new ConfiguredNode(0, false)));
-        options.maxPrematureCrashes = 1;
-        options.minStorageNodesUp = 2;
-        options.minDistributorNodesUp = 3;
-        options.minRatioOfStorageNodesUp = 0.4;
-        options.minRatioOfDistributorNodesUp = 0.5;
-        options.minNodeRatioPerGroup = 0.6;
-        options.distributionBits = 7;
-        options.maxTransitionTime = ClusterStateGenerator.Params.buildTransitionTimeMap(1000, 2000);
+        var options = new FleetControllerOptions.Builder("foocluster", Set.of(new ConfiguredNode(0, false)))
+                .setMaxPrematureCrashes(1)
+                .setMinStorageNodesUp(2)
+                .setMinDistributorNodesUp(3)
+                .setMinRatioOfStorageNodesUp(0.4)
+                .setMinRatioOfDistributorNodesUp(0.5)
+                .setMinNodeRatioPerGroup(0.6)
+                .setDistributionBits(7)
+                .setMaxTransitionTime(ClusterStateGenerator.Params.buildTransitionTimeMap(1000, 2000))
+                .build();
         final ClusterStateGenerator.Params params = ClusterStateGenerator.Params.fromOptions(options);
-        assertThat(params.maxPrematureCrashes, equalTo(options.maxPrematureCrashes));
-        assertThat(params.minStorageNodesUp, equalTo(options.minStorageNodesUp));
-        assertThat(params.minDistributorNodesUp, equalTo(options.minDistributorNodesUp));
-        assertThat(params.minRatioOfStorageNodesUp, equalTo(options.minRatioOfStorageNodesUp));
-        assertThat(params.minRatioOfDistributorNodesUp, equalTo(options.minRatioOfDistributorNodesUp));
-        assertThat(params.minNodeRatioPerGroup, equalTo(options.minNodeRatioPerGroup));
-        assertThat(params.transitionTimes, equalTo(options.maxTransitionTime));
+        assertThat(params.maxPrematureCrashes, equalTo(options.maxPrematureCrashes()));
+        assertThat(params.minStorageNodesUp, equalTo(options.minStorageNodesUp()));
+        assertThat(params.minDistributorNodesUp, equalTo(options.minDistributorNodesUp()));
+        assertThat(params.minRatioOfStorageNodesUp, equalTo(options.minRatioOfStorageNodesUp()));
+        assertThat(params.minRatioOfDistributorNodesUp, equalTo(options.minRatioOfDistributorNodesUp()));
+        assertThat(params.minNodeRatioPerGroup, equalTo(options.minNodeRatioPerGroup()));
+        assertThat(params.transitionTimes, equalTo(options.maxTransitionTime()));
     }
 
     @Test

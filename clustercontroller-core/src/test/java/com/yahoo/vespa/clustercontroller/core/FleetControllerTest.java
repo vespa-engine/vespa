@@ -131,50 +131,50 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     static protected FleetControllerOptions defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {
-        var opts = new FleetControllerOptions(clusterName, nodes);
-        opts.enableTwoPhaseClusterStateActivation = true; // Enable by default, tests can explicitly disable.
-        return opts;
+        return new FleetControllerOptions.Builder(clusterName, nodes)
+                .setEnableTwoPhaseClusterStateActivation(true) // Enable by default, tests can explicitly disable.
+                .build();
     }
 
     void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         log.log(Level.FINE, "Setting up system");
         slobrok = new Slobrok();
         this.options = options;
-        if (options.zooKeeperServerAddress != null) {
+        if (options.zooKeeperServerAddress() != null) {
             zooKeeperServer = new ZooKeeperTestServer();
-            this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-            log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress);
+            this.options.setZooKeeperServerAddress(zooKeeperServer.getAddress());
+            log.log(Level.FINE, "Set up new zookeeper server at " + this.options.zooKeeperServerAddress());
         }
-        this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
+        this.options.setSlobrokConnectionSpecs(new String[1]);
+        this.options.slobrokConnectionSpecs()[0] = "tcp/localhost:" + slobrok.port();
         this.usingFakeTimer = useFakeTimer;
     }
 
     FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         Objects.requireNonNull(status, "status server cannot be null");
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
-        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
+        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
         EventLog log = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(
-                options.clusterName,
-                options.nodes,
-                options.storageDistribution);
+                options.clusterName(),
+                options.nodes(),
+                options.storageDistribution());
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, log);
         Communicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 timer,
-                options.fleetControllerIndex,
-                options.nodeStateRequestTimeoutMS,
-                options.nodeStateRequestTimeoutEarliestPercentage,
-                options.nodeStateRequestTimeoutLatestPercentage,
-                options.nodeStateRequestRoundTripTimeMaxSeconds);
+                options.fleetControllerIndex(),
+                options.nodeStateRequestTimeoutMS(),
+                options.nodeStateRequestTimeoutEarliestPercentage(),
+                options.nodeStateRequestTimeoutLatestPercentage(),
+                options.nodeStateRequestRoundTripTimeMaxSeconds());
         SlobrokClient lookUp = new SlobrokClient(timer);
         lookUp.setSlobrokConnectionSpecs(new String[0]);
-        RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
-        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
+        RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName(), options.fleetControllerIndex(), options.slobrokBackOffPolicy());
+        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress(), options.fleetControllerIndex(), timer);
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, log);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
-        MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
+        MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
         FleetController controller = new FleetController(timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         if (startThread) {
             controller.start();
@@ -229,9 +229,9 @@ public abstract class FleetControllerTest implements Waiter {
         String[] connectionSpecs = new String[1];
         connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         for (int nodeIndex : nodeIndexes) {
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, true, nodeIndex));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), true, nodeIndex));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, false, nodeIndex));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), false, nodeIndex));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
         }
     }
@@ -248,9 +248,9 @@ public abstract class FleetControllerTest implements Waiter {
         nodes = new ArrayList<>();
         final boolean distributor = true;
         for (ConfiguredNode configuredNode : configuredNodes) {
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, distributor, configuredNode.index()));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), distributor, configuredNode.index()));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
-            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, !distributor, configuredNode.index()));
+            nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName(), !distributor, configuredNode.index()));
             if ( ! startDisconnected) nodes.get(nodes.size() - 1).connect();
         }
         return nodes;

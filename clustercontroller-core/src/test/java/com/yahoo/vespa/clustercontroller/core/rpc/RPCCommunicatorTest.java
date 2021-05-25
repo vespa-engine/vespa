@@ -80,10 +80,11 @@ public class RPCCommunicatorTest {
     @Test
     public void testGenerateNodeStateRequestTimeoutMsWithUpdates() {
         final RPCCommunicator communicator = new RPCCommunicator(RPCCommunicator.createRealSupervisor(), null /* Timer */, INDEX, 1, 1, 100, 0);
-        FleetControllerOptions fleetControllerOptions = new FleetControllerOptions(null /*clustername*/, Set.of(new ConfiguredNode(0, false)));
-        fleetControllerOptions.nodeStateRequestTimeoutEarliestPercentage = 100;
-        fleetControllerOptions.nodeStateRequestTimeoutLatestPercentage = 100;
-        fleetControllerOptions.nodeStateRequestTimeoutMS = NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS;
+        var fleetControllerOptions = new FleetControllerOptions.Builder("clustername", Set.of(new ConfiguredNode(0, false)))
+                .setNodeStateRequestTimeoutEarliestPercentage(100)
+                .setNodeStateRequestTimeoutLatestPercentage(100)
+                .setNodeStateRequestTimeoutMS(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS)
+                .build();
         communicator.propagateOptions(fleetControllerOptions);
         int timeOutMs = communicator.generateNodeStateRequestTimeoutMs();
         assertThat(timeOutMs, is(NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS));

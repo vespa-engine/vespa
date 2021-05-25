@@ -43,20 +43,20 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
     private void initialize(FleetControllerOptions options) throws Exception {
         List<Node> nodes = new ArrayList<>();
-        for (int i = 0; i < options.nodes.size(); ++i) {
+        for (int i = 0; i < options.nodes().size(); ++i) {
             nodes.add(new Node(NodeType.STORAGE, i));
             nodes.add(new Node(NodeType.DISTRIBUTOR, i));
         }
 
         communicator = new DummyCommunicator(nodes, timer);
-        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
+        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex(), options.clusterName());
         EventLog eventLog = new EventLog(timer, metricUpdater);
-        ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
+        ContentCluster cluster = new ContentCluster(options.clusterName(), options.nodes(), options.storageDistribution());
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
-        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
+        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress(), options.fleetControllerIndex(), timer);
         StateChangeHandler stateGenerator = new StateChangeHandler(timer, eventLog);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
-        MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
+        MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex(), options.fleetControllerCount(), timer, timer);
         ctrl = new FleetController(timer, eventLog, cluster, stateGatherer, communicator, null, null, communicator, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
 
         ctrl.tick();
@@ -65,7 +65,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     }
 
     private void markAllNodesAsUp(FleetControllerOptions options) throws Exception {
-        for (int i = 0; i < options.nodes.size(); ++i) {
+        for (int i = 0; i < options.nodes().size(); ++i) {
             communicator.setNodeState(new Node(NodeType.STORAGE, i), State.UP, "");
             communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, i), State.UP, "");
         }
@@ -84,10 +84,10 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
                                                         double clusterFeedBlockNoiseLevel) {
         FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(DistributionBuilder.forFlatCluster(NODE_COUNT));
-        options.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT));
-        options.clusterFeedBlockEnabled = true;
-        options.clusterFeedBlockLimit = Map.copyOf(feedBlockLimits);
-        options.clusterFeedBlockNoiseLevel = clusterFeedBlockNoiseLevel;
+        options.setNodes(new HashSet<>(DistributionBuilder.buildConfiguredNodes(NODE_COUNT)));
+        options.setClusterFeedBlockEnabled(true);
+        options.setClusterFeedBlockLimit(Map.copyOf(feedBlockLimits));
+        options.setClusterFeedBlockNoiseLevel(clusterFeedBlockNoiseLevel);
         return options;
     }
 

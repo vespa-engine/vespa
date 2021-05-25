@@ -46,12 +46,12 @@ public class ClusterController extends AbstractComponent
         metricWrapper.updateMetricImplementation(metricImpl);
         verifyThatZooKeeperWorks(options);
         synchronized (controllers) {
-            FleetController controller = controllers.get(options.clusterName);
+            FleetController controller = controllers.get(options.clusterName());
             if (controller == null) {
                 StatusHandler.ContainerStatusPageServer statusPageServer = new StatusHandler.ContainerStatusPageServer();
                 controller = FleetController.create(options, statusPageServer, metricWrapper);
-                controllers.put(options.clusterName, controller);
-                status.put(options.clusterName, statusPageServer);
+                controllers.put(options.clusterName(), controller);
+                status.put(options.clusterName(), statusPageServer);
             } else {
                 controller.updateOptions(options, 0);
             }
@@ -97,8 +97,8 @@ public class ClusterController extends AbstractComponent
      * Block until we are connected to zookeeper server
      */
     private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
-        if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
-            try (Curator curator = Curator.create(options.zooKeeperServerAddress)) {
+        if (options.zooKeeperServerAddress() != null && !"".equals(options.zooKeeperServerAddress())) {
+            try (Curator curator = Curator.create(options.zooKeeperServerAddress())) {
                 if ( ! curator.framework().blockUntilConnected(600, TimeUnit.SECONDS))
                     com.yahoo.protect.Process.logAndDie("Failed to connect to ZK, dying and restarting container");
             }

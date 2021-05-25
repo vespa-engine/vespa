@@ -11,10 +11,9 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Values;
-import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
-import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.Communicator;
@@ -24,6 +23,7 @@ import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
 import com.yahoo.vespa.clustercontroller.core.Timer;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -94,17 +94,17 @@ public class RPCCommunicator implements Communicator {
 
     @Override
     public void propagateOptions(FleetControllerOptions options) {
-        checkArgument(options.nodeStateRequestTimeoutMS > 0);
-        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage >= 0);
-        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage <= 100);
-        checkArgument(options.nodeStateRequestTimeoutLatestPercentage
-                      >= options.nodeStateRequestTimeoutEarliestPercentage);
-        checkArgument(options.nodeStateRequestTimeoutLatestPercentage <= 100);
-        checkArgument(options.nodeStateRequestRoundTripTimeMaxSeconds >= 0);
-        this.nodeStateRequestTimeoutIntervalMaxSeconds = options.nodeStateRequestTimeoutMS / 1000.0;
-        this.nodeStateRequestTimeoutIntervalStartPercentage = options.nodeStateRequestTimeoutEarliestPercentage;
-        this.nodeStateRequestTimeoutIntervalStopPercentage = options.nodeStateRequestTimeoutLatestPercentage;
-        this.nodeStateRequestRoundTripTimeMaxSeconds = options.nodeStateRequestRoundTripTimeMaxSeconds;
+        checkArgument(options.nodeStateRequestTimeoutMS() > 0);
+        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage() >= 0);
+        checkArgument(options.nodeStateRequestTimeoutEarliestPercentage() <= 100);
+        checkArgument(options.nodeStateRequestTimeoutLatestPercentage()
+                      >= options.nodeStateRequestTimeoutEarliestPercentage());
+        checkArgument(options.nodeStateRequestTimeoutLatestPercentage() <= 100);
+        checkArgument(options.nodeStateRequestRoundTripTimeMaxSeconds() >= 0);
+        this.nodeStateRequestTimeoutIntervalMaxSeconds = options.nodeStateRequestTimeoutMS() / 1000.0;
+        this.nodeStateRequestTimeoutIntervalStartPercentage = options.nodeStateRequestTimeoutEarliestPercentage();
+        this.nodeStateRequestTimeoutIntervalStopPercentage = options.nodeStateRequestTimeoutLatestPercentage();
+        this.nodeStateRequestRoundTripTimeMaxSeconds = options.nodeStateRequestRoundTripTimeMaxSeconds();
     }
 
     @Override

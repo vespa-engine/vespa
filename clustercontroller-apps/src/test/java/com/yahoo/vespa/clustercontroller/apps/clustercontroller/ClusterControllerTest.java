@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNull;
  */
 public class ClusterControllerTest {
 
-    private FleetControllerOptions options = new FleetControllerOptions("storage", Set.of(new ConfiguredNode(0, false)));
+    private FleetControllerOptions options = new FleetControllerOptions.Builder("storage", Set.of(new ConfiguredNode(0, false))).build();
 
     private final Metric metric = new Metric() {
         @Override
@@ -33,10 +33,11 @@ public class ClusterControllerTest {
 
     @Before
     public void setUp() {
-        options = new FleetControllerOptions("storage", Set.of(new ConfiguredNode(0, false)));
-        options.zooKeeperServerAddress = null;
-        options.slobrokConfigId = "raw:";
-        options.slobrokConnectionSpecs = null;
+        options = new FleetControllerOptions.Builder("storage", Set.of(new ConfiguredNode(0, false)))
+                .setZooKeeperServerAddress(null)
+                .setSlobrokConfigId("raw:")
+                .setSlobrokConnectionSpecs(null)
+                .build();
     }
 
     @Test

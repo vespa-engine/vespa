@@ -49,62 +49,62 @@ public class ClusterControllerClusterConfigurer {
                                                     SlobroksConfig slobroksConfig,
                                                     ZookeepersConfig zookeepersConfig) {
         Distribution distribution = new Distribution(distributionConfig);
-        FleetControllerOptions options = new FleetControllerOptions(fleetcontrollerConfig.cluster_name(), distribution.getNodes());
-        options.setStorageDistribution(distribution);
-        configure(options, fleetcontrollerConfig);
-        configure(options, slobroksConfig);
-        configure(options, zookeepersConfig);
-        return options;
+
+        var optionsBuilder = new FleetControllerOptions.Builder(fleetcontrollerConfig.cluster_name(), distribution.getNodes());
+        optionsBuilder.setStorageDistribution(distribution);
+        configure(optionsBuilder, fleetcontrollerConfig);
+        configure(optionsBuilder, slobroksConfig);
+        configure(optionsBuilder, zookeepersConfig);
+        return optionsBuilder.build();
     }
 
-    private static void configure(FleetControllerOptions options, FleetcontrollerConfig config) {
-        options.clusterName = config.cluster_name();
-        options.fleetControllerIndex = config.index();
-        options.fleetControllerCount = config.fleet_controller_count();
-        options.zooKeeperSessionTimeout = (int) (config.zookeeper_session_timeout() * 1000);
-        options.masterZooKeeperCooldownPeriod = (int) (config.master_zookeeper_cooldown_period() * 1000);
-        options.stateGatherCount = config.state_gather_count();
-        options.rpcPort = config.rpc_port();
-        options.httpPort = config.http_port();
-        options.maxTransitionTime.put(NodeType.STORAGE, config.storage_transition_time());
-        options.maxTransitionTime.put(NodeType.DISTRIBUTOR, config.distributor_transition_time());
-        options.maxInitProgressTime = config.init_progress_time();
-        options.statePollingFrequency = config.state_polling_frequency();
-        options.maxPrematureCrashes = config.max_premature_crashes();
-        options.stableStateTimePeriod = config.stable_state_time_period();
-        options.eventLogMaxSize = config.event_log_max_size();
-        options.eventNodeLogMaxSize = config.event_node_log_max_size();
-        options.minDistributorNodesUp = config.min_distributors_up_count();
-        options.minStorageNodesUp = config.min_storage_up_count();
-        options.minRatioOfDistributorNodesUp = config.min_distributor_up_ratio();
-        options.minRatioOfStorageNodesUp = config.min_storage_up_ratio();
-        options.cycleWaitTime = (int) (config.cycle_wait_time() * 1000);
-        options.minTimeBeforeFirstSystemStateBroadcast = (int) (config.min_time_before_first_system_state_broadcast() * 1000);
-        options.nodeStateRequestTimeoutMS = (int) (config.get_node_state_request_timeout() * 1000);
-        options.showLocalSystemStatesInEventLog = config.show_local_systemstates_in_event_log();
-        options.minTimeBetweenNewSystemStates = config.min_time_between_new_systemstates();
-        options.maxSlobrokDisconnectGracePeriod = (int) (config.max_slobrok_disconnect_grace_period() * 1000);
-        options.distributionBits = config.ideal_distribution_bits();
-        options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
-        options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
-        options.clusterHasGlobalDocumentTypes = config.cluster_has_global_document_types();
-        options.minMergeCompletionRatio = config.min_merge_completion_ratio();
-        options.enableTwoPhaseClusterStateActivation = config.enable_two_phase_cluster_state_transitions();
-        options.clusterFeedBlockEnabled = config.enable_cluster_feed_block();
-        options.clusterFeedBlockLimit = Map.copyOf(config.cluster_feed_block_limit());
-        options.clusterFeedBlockNoiseLevel = config.cluster_feed_block_noise_level();
+    private static void configure(FleetControllerOptions.Builder builder, FleetcontrollerConfig config) {
+        builder.setFleetControllerIndex(config.index())
+               .setFleetControllerCount(config.fleet_controller_count())
+               .setZooKeeperSessionTimeout((int) (config.zookeeper_session_timeout() * 1000))
+               .setMasterZooKeeperCooldownPeriod((int) (config.master_zookeeper_cooldown_period() * 1000))
+               .setStateGatherCount(config.state_gather_count())
+               .setRpcPort(config.rpc_port())
+               .setHttpPort(config.http_port())
+               .setMaxTransitionTime(NodeType.STORAGE, config.storage_transition_time())
+               .setMaxTransitionTime(NodeType.DISTRIBUTOR, config.distributor_transition_time())
+               .setMaxInitProgressTime(config.init_progress_time())
+               .setStatePollingFrequency(config.state_polling_frequency())
+               .setMaxPrematureCrashes(config.max_premature_crashes())
+               .setStableStateTimePeriod(config.stable_state_time_period())
+               .setEventLogMaxSize(config.event_log_max_size())
+               .setEventNodeLogMaxSize(config.event_node_log_max_size())
+               .setMinDistributorNodesUp(config.min_distributors_up_count())
+               .setMinStorageNodesUp(config.min_storage_up_count())
+               .setMinRatioOfDistributorNodesUp(config.min_distributor_up_ratio())
+               .setMinRatioOfStorageNodesUp(config.min_storage_up_ratio())
+               .setCycleWaitTime((int) (config.cycle_wait_time() * 1000))
+               .setMinTimeBeforeFirstSystemStateBroadcast((int) (config.min_time_before_first_system_state_broadcast() * 1000))
+               .setNodeStateRequestTimeoutMS((int) (config.get_node_state_request_timeout() * 1000))
+               .setShowLocalSystemStatesInEventLog(config.show_local_systemstates_in_event_log())
+               .setMinTimeBetweenNewSystemStates(config.min_time_between_new_systemstates())
+               .setMaxSlobrokDisconnectGracePeriod((int) (config.max_slobrok_disconnect_grace_period() * 1000))
+               .setDistributionBits(config.ideal_distribution_bits())
+               .setMinNodeRatioPerGroup(config.min_node_ratio_per_group())
+               .setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)))
+               .setClusterHasGlobalDocumentTypes(config.cluster_has_global_document_types())
+               .setMinMergeCompletionRatio(config.min_merge_completion_ratio())
+               .setEnableTwoPhaseClusterStateActivation(config.enable_two_phase_cluster_state_transitions())
+               .setClusterFeedBlockEnabled(config.enable_cluster_feed_block())
+               .setClusterFeedBlockLimit(Map.copyOf(config.cluster_feed_block_limit()))
+               .setClusterFeedBlockNoiseLevel(config.cluster_feed_block_noise_level());
     }
 
-    private static void configure(FleetControllerOptions options, SlobroksConfig config) {
+    private static void configure(FleetControllerOptions.Builder builder, SlobroksConfig config) {
         String[] specs = new String[config.slobrok().size()];
         for (int i = 0; i < config.slobrok().size(); i++) {
             specs[i] = config.slobrok().get(i).connectionspec();
         }
-        options.slobrokConnectionSpecs = specs;
+        builder.setSlobrokConnectionSpecs(specs);
     }
 
-    private static void configure(FleetControllerOptions options, ZookeepersConfig config) {
-        options.zooKeeperServerAddress = verifyZooKeeperAddress(config.zookeeperserverlist());
+    private static void configure(FleetControllerOptions.Builder builder, ZookeepersConfig config) {
+        builder.setZooKeeperServerAddress(verifyZooKeeperAddress(config.zookeeperserverlist()));
     }
 
     private static String verifyZooKeeperAddress(String zooKeeperServerAddress) {

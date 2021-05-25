@@ -7,7 +7,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
@@ -22,6 +21,7 @@ import org.junit.rules.Timeout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -52,15 +52,18 @@ public class MasterElectionTest extends FleetControllerTest {
         }
         slobrok = new Slobrok();
         usingFakeTimer = useFakeTimer;
-        this.options = options;
-        this.options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
-        this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
-        this.options.slobrokConnectionSpecs = new String[1];
-        this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
-        this.options.fleetControllerCount = count;
+
+        this.options = options.toBuilder()
+                .setZooKeeperSessionTimeout(defaultZkSessionTimeoutInMillis())
+                .setZooKeeperServerAddress(zooKeeperServer.getAddress())
+                .setSlobrokConnectionSpecs(new String[]{"tcp/localhost:" + slobrok.port()})
+                .setFleetControllerCount(count)
+                .build();
+
         for (int i=0; i<count; ++i) {
-            FleetControllerOptions nodeOptions = options.clone();
-            nodeOptions.fleetControllerIndex = i;
+            FleetControllerOptions nodeOptions = this.options.toBuilder()
+                    .setFleetControllerIndex(i)
+                    .build();
             fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true, new StatusHandler.ContainerStatusPageServer()));
         }
     }
