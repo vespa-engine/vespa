@@ -241,8 +241,15 @@ public class Flags {
     public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
             "cfg-deploy-multipart", false,
             List.of("tokle"), "2021-05-19", "2021-08-01",
-            "Wheter to deploy applications using multipart form data (instead of url params)",
+            "Whether to deploy applications using multipart form data (instead of url params)",
             "Takes effect immediately",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag VESPA_APP_DOMAIN_IN_CERTIFICATE = defineFeatureFlag(
+            "new-domain-in-certificate", false,
+            List.of("mpolden"), "2021-05-25", "2021-09-01",
+            "Whether to include the vespa-app.cloud names in certificate requests",
+            "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
