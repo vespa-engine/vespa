@@ -160,7 +160,7 @@ public:
             fprintf(stderr, "ERROR: failed to get service location broker configuration\n");
             std::_Exit(1);
         } catch (vespalib::IllegalStateException& e) {
-            fprintf(stderr, "ERROR: empty or invalid service location broker configuration\n");
+            fprintf(stderr, "ERROR: empty or invalid service location broker configuration: %s\n", e.what());
             std::_Exit(2);
         }
         return "";
