@@ -78,6 +78,8 @@ public class RankProfile implements Cloneable {
     /** The ranking expression to be used for second phase */
     private RankingExpression secondPhaseRanking = null;
 
+    private Set<String> externalFileExpressions = new HashSet<>();
+
     /** Number of hits to be reranked in second phase, -1 means use default */
     private int rerankCount = -1;
 
@@ -161,6 +163,10 @@ public class RankProfile implements Cloneable {
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
+    }
+
+    public RankExpressionFiles rankExpressionFiles() {
+        return search != null ? search.rankExpressionFiles() : model.rankExpressionFiles();
     }
 
     public Map<String, OnnxModel> onnxModels() {
@@ -368,9 +374,44 @@ public class RankProfile implements Cloneable {
         this.firstPhaseRanking = rankingExpression;
     }
 
+    private String getUniqueExpressionName(String name) {
+        return getName() + "." + name;
+    }
+    public String getFirstPhaseFile() {
+        String name = FIRST_PHASE;
+        if (externalFileExpressions.contains(name)) {
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
+        }
+        if ((firstPhaseRanking == null) && (getInherited() != null)) {
+            return getInherited().getFirstPhaseFile();
+        }
+        return null;
+    }
+
+    public String getSecondPhaseFile() {
+        String name = SECOND_PHASE;
+        if (externalFileExpressions.contains(name)) {
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
+        }
+        if ((secondPhaseRanking == null) && (getInherited() != null)) {
+            return getInherited().getSecondPhaseFile();
+        }
+        return null;
+    }
+
+    public String getExpressionFile(String name) {
+        if (externalFileExpressions.contains(name)) {
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
+        }
+        if (getInherited() != null) {
+            return getInherited().getExpressionFile(name);
+        }
+        return null;
+    }
+
     public void setFirstPhaseRanking(String expression) {
         try {
-            this.firstPhaseRanking = parseRankingExpression("firstphase", expression);
+            this.firstPhaseRanking = parseRankingExpression(FIRST_PHASE, expression);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal first phase ranking function", e);
@@ -663,18 +704,25 @@ public class RankProfile implements Cloneable {
         }
     }
 
-    private Reader openRankingExpressionReader(String expName, String expression) {
-        if ( ! expression.startsWith("file:")) return new StringReader(expression);
-
+    private static String extractFileName(String expression) {
         String fileName = expression.substring("file:".length()).trim();
         if ( ! fileName.endsWith(ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX))
             fileName = fileName + ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX;
 
+        return fileName;
+    }
+
+    private Reader openRankingExpressionReader(String expName, String expression) {
+        if ( ! expression.startsWith("file:")) return new StringReader(expression);
+
+        String fileName = extractFileName(expression);
         File file = new File(fileName);
-        if ( ! (file.isAbsolute()) && file.getPath().contains("/")) // See ticket 4102122
+        if ( ! file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
             throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
                                                "' in subdirectory, which is not supported.");
 
+        rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
+        externalFileExpressions.add(expName);
         return search.getRankingExpression(fileName);
     }
 

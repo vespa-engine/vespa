@@ -15,6 +15,7 @@ import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
+import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Reader;
 import java.util.ArrayList;
@@ -77,6 +78,9 @@ public class Search implements ImmutableSearch {
 
     /** The explicitly defined summaries of this search definition. _Must_ preserve order. */
     private final Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
+
+    /** External rank expression files of this */
+    private final RankExpressionFiles rankExpressionFiles = new RankExpressionFiles();
 
     /** Ranking constants of this */
     private final RankingConstants rankingConstants = new RankingConstants();
@@ -172,10 +176,19 @@ public class Search implements ImmutableSearch {
     }
 
     @Override
+    public RankExpressionFiles rankExpressionFiles() { return rankExpressionFiles; }
+
+    @Override
     public RankingConstants rankingConstants() { return rankingConstants; }
 
     @Override
     public OnnxModels onnxModels() { return onnxModels; }
+
+    public void sendTo(Collection<? extends AbstractService> services) {
+        rankingConstants.sendTo(services);
+        rankExpressionFiles.sendTo(services);
+        onnxModels.sendTo(services);
+    }
 
     public Optional<TemporaryImportedFields> temporaryImportedFields() {
         return temporaryImportedFields;

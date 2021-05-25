@@ -98,6 +98,7 @@ public class ModelEvaluationTest {
         RankingConstantsConfig constantsConfig = new RankingConstantsConfig(cb);
 
         RankingExpressionsConfig.Builder ce = new RankingExpressionsConfig.Builder();
+        cluster.getConfig(ce);
         RankingExpressionsConfig expressionsConfig = ce.build();
 
         OnnxModelsConfig.Builder ob = new OnnxModelsConfig.Builder();
