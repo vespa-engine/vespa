@@ -15,7 +15,7 @@ namespace proton {
 
 struct IDocumentMetaStore;
 class IPruneRemovedDocumentsHandler;
-class RawDocumentMetaData;
+struct RawDocumentMetaData;
 
 /**
  * Job that regularly checks whether old removed documents should be
