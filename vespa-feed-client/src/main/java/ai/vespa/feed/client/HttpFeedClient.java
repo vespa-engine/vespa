@@ -19,6 +19,7 @@ import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -48,7 +49,7 @@ class HttpFeedClient implements FeedClient {
     private final CloseableHttpAsyncClient httpClient;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    HttpFeedClient(FeedClientBuilder builder) {
+    HttpFeedClient(FeedClientBuilder builder) throws IOException {
         this.endpoint = builder.endpoint;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
 
@@ -57,7 +58,7 @@ class HttpFeedClient implements FeedClient {
         this.httpClient.start();
     }
 
-    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) {
+    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) throws IOException {
         HttpAsyncClientBuilder httpClientBuilder = HttpAsyncClientBuilder.create()
                 .setUserAgent(String.format("vespa-feed-client/%s", Vespa.VERSION))
                 .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
@@ -86,16 +87,26 @@ class HttpFeedClient implements FeedClient {
                 .setMaxConnTotal(builder.maxConnections)
                 .setMaxConnPerRoute(builder.maxConnections)
                 .setPoolConcurrencyPolicy(PoolConcurrencyPolicy.LAX);
-        if (builder.sslContext != null) {
-            ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                    .setSslContext(builder.sslContext);
-            if (builder.hostnameVerifier != null) {
-                tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
-            }
-            connectionManagerBuilder.setTlsStrategy(tlsStrategyBuilder.build());
+        ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
+                .setSslContext(constructSslContext(builder));
+        if (builder.hostnameVerifier != null) {
+            tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
         }
+        connectionManagerBuilder.setTlsStrategy(tlsStrategyBuilder.build());
         httpClientBuilder.setConnectionManager(connectionManagerBuilder.build());
         return httpClientBuilder.build();
+    }
+
+    private static SSLContext constructSslContext(FeedClientBuilder builder) throws IOException {
+        if (builder.sslContext != null) return builder.sslContext;
+        SslContextBuilder sslContextBuilder = new SslContextBuilder();
+        if (builder.certificate != null && builder.privateKey != null) {
+            sslContextBuilder.withCertificateAndKey(builder.certificate, builder.privateKey);
+        }
+        if (builder.caCertificates != null) {
+            sslContextBuilder.withCaCertificates(builder.caCertificates);
+        }
+        return sslContextBuilder.build();
     }
 
     @Override

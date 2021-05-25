@@ -3,7 +3,10 @@ package ai.vespa.feed.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -27,6 +30,9 @@ public class FeedClientBuilder {
     int maxConnections = 4;
     int maxStreamsPerConnection = 1024;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
+    Path certificate;
+    Path privateKey;
+    Path caCertificates;
 
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(endpoint); }
 
@@ -63,6 +69,9 @@ public class FeedClientBuilder {
     }
 
     public FeedClientBuilder setSslContext(SSLContext context) {
+        if (certificate != null || caCertificates != null || privateKey != null) {
+            throw new IllegalArgumentException("Cannot set both SSLContext and certificate / CA certificates");
+        }
         this.sslContext = requireNonNull(context);
         return this;
     }
@@ -86,8 +95,25 @@ public class FeedClientBuilder {
         return this;
     }
 
+    public FeedClientBuilder setCertificate(Path certificatePemFile, Path privateKeyPemFile) {
+        if (sslContext != null) throw new IllegalArgumentException("Cannot set both SSLContext and certificate");
+        this.certificate = certificatePemFile;
+        this.privateKey = privateKeyPemFile;
+        return this;
+    }
+
+    public FeedClientBuilder setCaCertificates(Path caCertificatesFile) {
+        if (sslContext != null) throw new IllegalArgumentException("Cannot set both SSLContext and CA certificate");
+        this.caCertificates = caCertificatesFile;
+        return this;
+    }
+
     public FeedClient build() {
-        return new HttpFeedClient(this);
+        try {
+            return new HttpFeedClient(this);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
 }
