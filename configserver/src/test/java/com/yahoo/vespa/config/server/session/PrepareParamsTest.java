@@ -12,7 +12,6 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.X509CertificateWithKey;
 import com.yahoo.slime.ArrayInserter;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Injector;
@@ -196,11 +195,19 @@ public class PrepareParamsTest {
         Slime slime = SlimeUtils.jsonToSlime(json);
         Cursor cursor = slime.get();
         Cursor array = cursor.setArray(PrepareParams.OPERATOR_CERTIFICATES);
-        X509Certificate certificate = X509CertificateUtils.createSelfSigned("cn=myservice", Duration.ofDays(1)).certificate();
-        array.addString(X509CertificateUtils.toPem(certificate));
+
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        X500Principal subject = new X500Principal("CN=myservice");
+        X509Certificate cert =
+                X509CertificateBuilder.fromKeypair(keyPair, subject, Instant.now(),
+                                                   Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA256_WITH_ECDSA,
+                                                   BigInteger.valueOf(1))
+                        .setBasicConstraints(true, true)
+                        .build();
+        array.addString(X509CertificateUtils.toPem(cert));
         PrepareParams prepareParams = PrepareParams.fromJson(SlimeUtils.toJsonBytes(slime), TenantName.from("foo"), Duration.ofSeconds(60));
         assertEquals(1, prepareParams.operatorCertificates().size());
-        assertEquals(certificate, prepareParams.operatorCertificates().get(0));
+        assertEquals(cert, prepareParams.operatorCertificates().get(0));
     }
 
     private void assertPrepareParamsEqual(PrepareParams urlParams, PrepareParams jsonParams) {

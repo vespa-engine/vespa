@@ -73,7 +73,6 @@ import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -837,9 +836,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .withRoot(applicationFolder.getRoot())
                 .build();
 
+        KeyPair key = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         var applicationTrustCert = X509CertificateUtils.toPem(
-                X509CertificateUtils.createSelfSigned("CN=application", Duration.ofDays(1)).certificate());
-        var operatorCert = X509CertificateUtils.createSelfSigned("CN=operator", Duration.ofDays(1)).certificate();
+                X509CertificateBuilder
+                        .fromKeypair(key, new X500Principal("CN=application"), Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
+                        .build());
+        var operatorCert = X509CertificateBuilder
+                        .fromKeypair(key, new X500Principal("CN=operator"), Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
+                        .build();
 
         applicationPackage.getFile(Path.fromString("security")).createDirectory();
         applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader(applicationTrustCert));
