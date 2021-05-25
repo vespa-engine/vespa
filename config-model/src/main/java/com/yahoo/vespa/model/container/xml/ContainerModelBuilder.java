@@ -34,7 +34,6 @@ import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
-import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -90,7 +89,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.net.URI;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -433,7 +431,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         HostedSslConnectorFactory connectorFactory;
-        boolean enableHttp2 = deployState.featureFlags().enableJdiscHttp2();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
@@ -447,26 +444,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .orElse(false);
 
             connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, getTlsClientAuthorities(deployState))
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
                     : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enforceHandshakeClientAuth);
         } else {
             connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
-    }
-
-    /*
-    Return trusted certificates as a PEM encoded string containing the concatenation of
-    trusted certs from the application package and all operator certificates.
-     */
-    String getTlsClientAuthorities(DeployState deployState) {
-        List<X509Certificate> trustedCertificates = deployState.tlsClientAuthority()
-                .map(X509CertificateUtils::certificateListFromPem)
-                .orElse(Collections.emptyList());
-        ArrayList<X509Certificate> x509Certificates = new ArrayList<>(trustedCertificates);
-        x509Certificates.addAll(deployState.getProperties().operatorCertificates());
-        return X509CertificateUtils.toPem(x509Certificates);
     }
 
     private static boolean isHostedTenantApplication(ConfigModelContext context) {

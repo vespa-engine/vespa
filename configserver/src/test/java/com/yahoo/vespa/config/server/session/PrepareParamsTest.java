@@ -7,12 +7,6 @@ import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.security.KeyAlgorithm;
-import com.yahoo.security.KeyUtils;
-import com.yahoo.security.SignatureAlgorithm;
-import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.X509CertificateWithKey;
 import com.yahoo.slime.ArrayInserter;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Injector;
@@ -26,16 +20,10 @@ import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import org.junit.Test;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -189,18 +177,6 @@ public class PrepareParamsTest {
         PrepareParams urlPrepareParams = PrepareParams.fromHttpRequest(httpRequest, tenantName, barrierTimeout);
         PrepareParams jsonPrepareParams = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), tenantName, barrierTimeout);
         assertPrepareParamsEqual(urlPrepareParams, jsonPrepareParams);
-    }
-
-    @Test
-    public void testOperatorCertificates() throws IOException {
-        Slime slime = SlimeUtils.jsonToSlime(json);
-        Cursor cursor = slime.get();
-        Cursor array = cursor.setArray(PrepareParams.OPERATOR_CERTIFICATES);
-        X509Certificate certificate = X509CertificateUtils.createSelfSigned("cn=myservice", Duration.ofDays(1)).certificate();
-        array.addString(X509CertificateUtils.toPem(certificate));
-        PrepareParams prepareParams = PrepareParams.fromJson(SlimeUtils.toJsonBytes(slime), TenantName.from("foo"), Duration.ofSeconds(60));
-        assertEquals(1, prepareParams.operatorCertificates().size());
-        assertEquals(certificate, prepareParams.operatorCertificates().get(0));
     }
 
     private void assertPrepareParamsEqual(PrepareParams urlParams, PrepareParams jsonParams) {
