@@ -20,8 +20,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Starts zookeeper server and supports reconfiguring zookeeper cluster. Created as a component
- * without any config injected, to make sure that it is not recreated when config changes.
+ * Starts zookeeper server and supports reconfiguring zookeeper cluster. Keep this as a component
+ * without injected config, to make sure that it is not recreated when config changes.
  *
  * @author hmusum
  */
@@ -48,7 +48,6 @@ public class Reconfigurer extends AbstractComponent {
     Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper) {
         this.vespaZooKeeperAdmin = Objects.requireNonNull(vespaZooKeeperAdmin);
         this.sleeper = Objects.requireNonNull(sleeper);
-        log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
     void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
@@ -155,7 +154,7 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {
-        // See https://zookeeper.apache.org/doc/r3.5.8/zookeeperReconfig.html#sc_reconfig_clientport for format
+        // See https://zookeeper.apache.org/doc/r3.6.3/zookeeperReconfig.html#sc_reconfig_clientport for format
         return config.server().stream()
                      .map(server -> server.id() + "=" + server.hostname() + ":" + server.quorumPort() + ":" +
                                     server.electionPort() + ";" + config.clientPort())

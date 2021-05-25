@@ -38,8 +38,7 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
             if (zooKeeperAdmin != null) {
                 try {
                     zooKeeperAdmin.close();
-                } catch (InterruptedException e) {
-                }
+                } catch (InterruptedException e) { /* ignore */}
             }
         }
     }

@@ -2,8 +2,8 @@
 package com.yahoo.vespa.zookeeper;
 
 /**
- * Exception used to wrap zookeeper exception when reconfiguration fails in a
- * class that can be used without depending on ZooKeeper.
+ * Exception used to wrap zookeeper exception when reconfiguration fails, done to be able
+ * to use a class that does not depend on ZooKeeper.
  *
  * @author hmusum
  */
