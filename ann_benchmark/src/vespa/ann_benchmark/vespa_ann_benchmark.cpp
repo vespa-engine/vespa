@@ -65,11 +65,13 @@ class HnswIndex
     TensorAttribute*                 _tensor_attribute;
     const NearestNeighborIndex*      _nearest_neighbor_index;
     size_t                           _dim_size;
+    bool                             _normalize_vectors;
 
     bool check_lid(uint32_t lid);
     bool check_value(const char *op, const std::vector<float>& value);
+    TypedCells get_typed_cells(const std::vector<float>& value, std::vector<float>& normalized_value);
 public:
-    HnswIndex(uint32_t dim_size, const HnswIndexParams &hnsw_index_params);
+    HnswIndex(uint32_t dim_size, const HnswIndexParams &hnsw_index_params, bool normalize_vectors);
     virtual ~HnswIndex();
     void set_vector(uint32_t lid, const std::vector<float>& value);
     std::vector<float> get_vector(uint32_t lid);
@@ -77,13 +79,14 @@ public:
     TopKResult find_top_k(uint32_t k, const std::vector<float>& value, uint32_t explore_k);
 };
 
-HnswIndex::HnswIndex(uint32_t dim_size, const HnswIndexParams &hnsw_index_params)
+HnswIndex::HnswIndex(uint32_t dim_size, const HnswIndexParams &hnsw_index_params, bool normalize_vectors)
     : _tensor_type(ValueType::error_type()),
       _hnsw_index_params(hnsw_index_params),
       _attribute(),
       _tensor_attribute(nullptr),
       _nearest_neighbor_index(nullptr),
-      _dim_size(0u)
+      _dim_size(0u),
+      _normalize_vectors(normalize_vectors)
 {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     _tensor_type = ValueType::from_spec(make_tensor_spec(dim_size));
@@ -122,6 +125,25 @@ HnswIndex::check_value(const char *op, const std::vector<float>& value)
     return true;
 }
 
+TypedCells
+HnswIndex::get_typed_cells(const std::vector<float>& value, std::vector<float>& normalized_value)
+{
+    if (!_normalize_vectors) {
+        return {&value[0], CellType::FLOAT, value.size()};
+    }
+    float sum_of_squared = 0.0f;
+    for (auto elem : value) {
+        sum_of_squared += elem * elem;
+    }
+    float factor = 1.0f / (sqrtf(sum_of_squared) + 1e-40f);
+    normalized_value.reserve(value.size());
+    normalized_value.clear();
+    for (auto elem : value) {
+        normalized_value.emplace_back(elem * factor);
+    }
+    return {&normalized_value[0], CellType::FLOAT, normalized_value.size()};
+}
+
 void
 HnswIndex::set_vector(uint32_t lid, const std::vector<float>& value)
 {
@@ -134,7 +156,8 @@ HnswIndex::set_vector(uint32_t lid, const std::vector<float>& value)
     /*
      * Not thread safe against concurrent set_vector().
      */
-    TypedCells typed_cells(&value[0], CellType::FLOAT, value.size());
+    std::vector<float> normalized_value;
+    auto typed_cells = get_typed_cells(value, normalized_value);
     DenseValueView tensor_view(_tensor_type, typed_cells);
     while (size_t(lid + lid_bias) >= _attribute->getNumDocs()) {
         uint32_t new_lid = 0;
@@ -180,7 +203,8 @@ HnswIndex::find_top_k(uint32_t k, const std::vector<float>& value, uint32_t expl
      * read guard is not taken here.
      */
     TopKResult result;
-    TypedCells typed_cells(&value[0], CellType::FLOAT, value.size());
+    std::vector<float> normalized_value;
+    auto typed_cells = get_typed_cells(value, normalized_value);
     auto raw_result = _nearest_neighbor_index->find_top_k(k, typed_cells, explore_k, std::numeric_limits<double>::max());
     result.reserve(raw_result.size());
     switch (_hnsw_index_params.distance_metric()) {
@@ -207,13 +231,14 @@ PYBIND11_MODULE(vespa_ann_benchmark, m) {
 
     py::enum_<DistanceMetric>(m, "DistanceMetric")
         .value("Euclidean", DistanceMetric::Euclidean)
-        .value("Angular", DistanceMetric::Angular);
+        .value("Angular", DistanceMetric::Angular)
+        .value("InnerProduct", DistanceMetric::InnerProduct);
 
     py::class_<HnswIndexParams>(m, "HnswIndexParams")
         .def(py::init<uint32_t, uint32_t, DistanceMetric, bool>());
 
     py::class_<HnswIndex>(m, "HnswIndex")
-        .def(py::init<uint32_t, const HnswIndexParams&>())
+        .def(py::init<uint32_t, const HnswIndexParams&, bool>())
         .def("set_vector", &HnswIndex::set_vector)
         .def("get_vector", &HnswIndex::get_vector)
         .def("clear_vector", &HnswIndex::clear_vector)
