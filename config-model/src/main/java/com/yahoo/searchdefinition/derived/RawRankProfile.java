@@ -432,7 +432,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 name = phase;
 
             if (useExternalExpressionFiles && (fileName != null)) {
-                properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));
+                properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + rankProfile.getUniqueExpressionName(name) + ")"));
             } else if (expression.getRoot() instanceof ReferenceNode) {
                 properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
             } else {

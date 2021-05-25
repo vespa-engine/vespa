@@ -374,7 +374,7 @@ public class RankProfile implements Cloneable {
         this.firstPhaseRanking = rankingExpression;
     }
 
-    private String getUniqueExpressionName(String name) {
+    public String getUniqueExpressionName(String name) {
         return getName() + "." + name;
     }
     public String getFirstPhaseFile() {
