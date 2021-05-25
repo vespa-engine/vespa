@@ -37,6 +37,7 @@ import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -281,6 +282,7 @@ public class ModelContextImpl implements ModelContext {
         private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
         private final boolean allowDisableMtls;
+        private final List<X509Certificate> operatorCertificates;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -294,7 +296,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
-                          SecretStore secretStore) {
+                          SecretStore secretStore,
+                          List<X509Certificate> operatorCertificates) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -317,6 +320,7 @@ public class ModelContextImpl implements ModelContext {
                                                                  .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.operatorCertificates = operatorCertificates;
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -383,6 +387,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean allowDisableMtls() {
             return allowDisableMtls;
+        }
+
+        @Override
+        public List<X509Certificate> operatorCertificates() {
+            return operatorCertificates;
         }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
