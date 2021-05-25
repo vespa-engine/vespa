@@ -30,7 +30,7 @@ class VespaQuorumPeer extends QuorumPeerMain implements QuorumPeer {
     @Override
     public void shutdown(Duration timeout) {
         if (quorumPeer != null) {
-            log.log(Level.INFO, "Shutting down ZooKeeper server");
+            log.log(Level.FINE, "Shutting down ZooKeeper server");
             try {
                 quorumPeer.shutdown();
                 quorumPeer.join(timeout.toMillis()); // Wait for shutdown to complete
@@ -43,7 +43,7 @@ class VespaQuorumPeer extends QuorumPeerMain implements QuorumPeer {
                 // server with the new config, this will fail until the old server is deconstructed. If the old server
                 // fails to deconstruct/shut down, the new one will never start and if that happens forcing a restart is
                 // the better option.
-                Process.logAndDie("Failed to shut down ZooKeeper properly, forcing shutdown", e);
+                Process.logAndDie("Failed to shut down ZooKeeper server properly, forcing shutdown", e);
             }
         }
     }
