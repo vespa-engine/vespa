@@ -13,13 +13,13 @@ import java.util.Properties;
  *
  * @author bjorncs
  */
-class CliClient {
+public class CliClient {
 
     private final PrintStream systemOut;
     private final PrintStream systemError;
     private final Properties systemProperties;
 
-    CliClient(PrintStream systemOut, PrintStream systemError, Properties systemProperties) {
+    private CliClient(PrintStream systemOut, PrintStream systemError, Properties systemProperties) {
         this.systemOut = systemOut;
         this.systemError = systemError;
         this.systemProperties = systemProperties;
@@ -31,7 +31,7 @@ class CliClient {
         System.exit(exitCode);
     }
 
-    int run(String[] rawArgs) {
+    private int run(String[] rawArgs) {
         try {
             CliArguments cliArgs = CliArguments.fromRawArgs(rawArgs);
             if (cliArgs.helpSpecified()) {
