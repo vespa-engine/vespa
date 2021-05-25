@@ -58,7 +58,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
 
     /** Returns the number of hosts of given type that can be rebuilt concurrently */
     private int rebuildLimit(NodeType hostType, NodeList hostsOfType) {
-        if (hostsOfType.stream().anyMatch(host -> host.type() != hostType)) illegal("All hosts must a " + hostType);
+        if (hostsOfType.stream().anyMatch(host -> host.type() != hostType)) illegal("All hosts must be a " + hostType);
         int limit = hostType == NodeType.host ? maxRebuilds.value() : 1;
         return Math.max(0, limit - hostsOfType.rebuilding().size());
     }

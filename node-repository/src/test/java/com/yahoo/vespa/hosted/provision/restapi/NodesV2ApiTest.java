@@ -500,7 +500,7 @@ public class NodesV2ApiTest {
         // Attempt to DELETE allocated node
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                           new byte[0], Request.Method.DELETE),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"active child node host4.yahoo.com allocated to tenant3.application3.instance3 as 'content/id3/0/0/stateful' is currently allocated and cannot be removed\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"active child node host4.yahoo.com allocated to tenant3.application3.instance3 as 'content/id3/0/0/stateful' is currently allocated and cannot be removed while in active\"}");
 
         // PUT current restart generation with string instead of long
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
