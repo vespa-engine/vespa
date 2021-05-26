@@ -22,9 +22,10 @@ public class ConvergenceSummary {
     private final long restarting;
     private final long services;
     private final long needNewConfig;
+    private final long retiring;
 
     public ConvergenceSummary(long nodes, long down, long upgradingOs, long upgradingFirmware, long needPlatformUpgrade, long upgradingPlatform,
-                              long needReboot, long rebooting, long needRestart, long restarting, long services, long needNewConfig) {
+                              long needReboot, long rebooting, long needRestart, long restarting, long services, long needNewConfig, long retiring) {
         this.nodes = nodes;
         this.down = down;
         this.upgradingOs = upgradingOs;
@@ -37,6 +38,7 @@ public class ConvergenceSummary {
         this.restarting = restarting;
         this.services = services;
         this.needNewConfig = needNewConfig;
+        this.retiring = retiring;
     }
 
     /** Number of nodes in the application. */
@@ -99,6 +101,11 @@ public class ConvergenceSummary {
         return needNewConfig;
     }
 
+    /** Number of nodes that are retiring. */
+    public long retiring() {
+        return retiring;
+    }
+
     /** Whether the convergence is done. */
     public boolean converged() {
         return     nodes > 0
@@ -125,12 +132,13 @@ public class ConvergenceSummary {
                needRestart == that.needRestart &&
                restarting == that.restarting &&
                services == that.services &&
-               needNewConfig == that.needNewConfig;
+               needNewConfig == that.needNewConfig &&
+               retiring == that.retiring;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodes, down, upgradingOs, upgradingFirmware, needPlatformUpgrade, upgradingPlatform, needReboot, rebooting, needRestart, restarting, services, needNewConfig);
+        return Objects.hash(nodes, down, upgradingOs, upgradingFirmware, needPlatformUpgrade, upgradingPlatform, needReboot, rebooting, needRestart, restarting, services, needNewConfig, retiring);
     }
 
 }

@@ -87,6 +87,12 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
         return matching(NodeWithServices::needsNewConfig);
     }
 
+    /** The nodes that are retiring. */
+    public NodeList retiring() {
+        return matching(node -> node.node().retired());
+    }
+
+
     /** Returns a summary of the convergence status of the nodes in this list. */
     public ConvergenceSummary summary() {
         NodeList allowedDown = expectedDown();
@@ -101,7 +107,8 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
                                       needsRestart().size(),
                                       allowedDown.needsRestart().size(),
                                       asList().stream().mapToLong(node -> node.services().size()).sum(),
-                                      asList().stream().mapToLong(node -> node.services().stream().filter(service -> wantedConfigGeneration > service.currentGeneration()).count()).sum());
+                                      asList().stream().mapToLong(node -> node.services().stream().filter(service -> wantedConfigGeneration > service.currentGeneration()).count()).sum(),
+                                      retiring().size());
     }
 
 }

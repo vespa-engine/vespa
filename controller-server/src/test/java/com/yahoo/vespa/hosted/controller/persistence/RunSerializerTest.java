@@ -19,12 +19,14 @@ import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -101,7 +103,7 @@ public class RunSerializerTest {
                                                                 "badb17"),
                                              122),
                      run.versions().sourceApplication().get());
-        assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144)),
+        assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)),
                      run.convergenceSummary());
         assertEquals(X509CertificateUtils.fromPem("-----BEGIN CERTIFICATE-----\n" +
                                                   "MIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\n" +
@@ -151,6 +153,20 @@ public class RunSerializerTest {
 
         Run initial = Run.initial(id, run.versions(), run.start(), JobProfile.production);
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
+    }
+
+    @Test
+    public void convergenceSummaryMigrationTest() throws IOException {
+        String data = Files.readString(runFile);
+        BiConsumer<String, ConvergenceSummary> replaceAndAssert = (replace, convergenceSummaryOrNull) -> {
+            byte[] newData = data.replace("\"convergenceSummaryV2\": [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233],", replace).getBytes(StandardCharsets.UTF_8);
+            assertEquals(convergenceSummaryOrNull, serializer.runsFromSlime(SlimeUtils.jsonToSlime(newData)).get(id).convergenceSummary().orElse(null));
+        };
+
+        replaceAndAssert.accept("", null);
+        replaceAndAssert.accept("\"convergenceSummary\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],", new ConvergenceSummary(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0));
+        replaceAndAssert.accept("\"convergenceSummaryV2\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],\n" +
+                                "\"convergenceSummary\": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],", new ConvergenceSummary(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13));
     }
 
 }
