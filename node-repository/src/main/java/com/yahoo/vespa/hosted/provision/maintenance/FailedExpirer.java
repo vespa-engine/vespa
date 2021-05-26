@@ -42,8 +42,8 @@ import java.util.stream.Collectors;
 public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
-    // We will stop giving the nodes back to Openstack for break-fix, setting this to number a high value, we might
-    // eventually remove this counter and recycling nodes forever
+    // Try recycling nodes until reaching this many failures
+    // TODO: Consider removing this altogether as this effectively always recycles nodes
     private static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
