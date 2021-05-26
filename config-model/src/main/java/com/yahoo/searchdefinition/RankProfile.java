@@ -721,8 +721,10 @@ public class RankProfile implements Cloneable {
             throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
                                                "' in subdirectory, which is not supported.");
 
+        /* TODO balder: Disabled until end-2-end verified
         rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
         externalFileExpressions.add(expName);
+        */
         return search.getRankingExpression(fileName);
     }
 
