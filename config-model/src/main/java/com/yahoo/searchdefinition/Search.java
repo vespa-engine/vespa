@@ -2,6 +2,8 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -43,7 +46,6 @@ import java.util.stream.Stream;
 // Ensure that after the processing step, all implicit instances of the above types are explicitly represented
 public class Search implements ImmutableSearch {
 
-    private static final Logger log = Logger.getLogger(Search.class.getName());
     private static final String SD_DOC_FIELD_NAME = "sddocname";
     private static final List<String> RESERVED_NAMES = Arrays.asList(
             "index", "index_url", "summary", "attribute", "select_input", "host", SummaryClass.DOCUMENT_ID_FIELD,
@@ -60,7 +62,7 @@ public class Search implements ImmutableSearch {
     private String name;
 
     /** True if this doesn't define a search, just a document type */
-    private boolean documentsOnly = false;
+    private final boolean documentsOnly;
 
     private boolean rawAsBase64 = false;
 
@@ -92,24 +94,31 @@ public class Search implements ImmutableSearch {
     private Optional<ImportedFields> importedFields = Optional.empty();
 
     private final ApplicationPackage applicationPackage;
+    private final DeployLogger deployLogger;
 
-    /**
-     * Creates a search definition which just holds a set of documents which should not (here, directly) be searchable
-     */
-    protected Search() {
-        applicationPackage = null;
-        documentsOnly = true;
+    /** Testin only */
+    public Search(String name) {
+        this(name, null, new BaseDeployLogger());
     }
-
     /**
      * Creates a proper search definition
      *
      * @param name of the the searchdefinition
      * @param applicationPackage the application containing this
      */
-    public Search(String name, ApplicationPackage applicationPackage) {
-        this.applicationPackage = applicationPackage;
+    public Search(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger) {
+        this(applicationPackage, deployLogger, false);
         this.name = name;
+    }
+
+    protected Search(ApplicationPackage applicationPackage, DeployLogger deployLogger) {
+        this(applicationPackage, deployLogger, true);
+    }
+
+    private Search(ApplicationPackage applicationPackage, DeployLogger deployLogger, boolean documentsOnly) {
+        this.applicationPackage = applicationPackage;
+        this.deployLogger = deployLogger;
+        this.documentsOnly = documentsOnly;
     }
 
     protected void setName(String name) {
@@ -323,7 +332,7 @@ public class Search implements ImmutableSearch {
      */
     public void addExtraField(SDField field) {
         if (fields.containsKey(field.getName())) {
-            log.warning("Duplicate field " + field.getName() + " in search definition " + getName());
+            deployLogger.logApplicationPackage(Level.WARNING, "Duplicate field " + field.getName() + " in search definition " + getName());
         } else {
             field.setIsExtraField(true);
             fields.put(field.getName(), field);
@@ -435,7 +444,7 @@ public class Search implements ImmutableSearch {
                 if (current.getRankType() != null &&
                     !consolidated.getRankType().equals(current.getRankType()))
                 {
-                    log.warning("Conflicting rank type settings for " +
+                    deployLogger.logApplicationPackage(Level.WARNING, "Conflicting rank type settings for " +
                                 first.getName() + " in " + this + ", using " +
                                 consolidated.getRankType());
                 }

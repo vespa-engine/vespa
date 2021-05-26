@@ -25,7 +25,7 @@ public class TypeConversionTestCase extends SchemaTestCase {
     /** Tests that exact-string stuff is not spilled over to the default index */
     @Test
     public void testExactStringToStringTypeConversion() {
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType document = new SDDocumentType("test");
         search.addDocument(document);

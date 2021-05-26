@@ -425,7 +425,7 @@ Search rootSchema(String dir) :
     Search search;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app);
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, deployLogger);
                                      rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
                                      rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
@@ -466,7 +466,7 @@ Object rootSchemaItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch();
+    Search search = new DocumentOnlySearch(app, deployLogger);
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )

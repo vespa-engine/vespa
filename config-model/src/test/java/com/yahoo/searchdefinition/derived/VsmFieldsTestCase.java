@@ -20,7 +20,7 @@ public class VsmFieldsTestCase {
 
     @Test
     public void reference_type_field_is_unsearchable() {
-        Search search = new Search("test", MockApplicationPackage.createEmpty());
+        Search search = new Search("test", MockApplicationPackage.createEmpty(), new TestableDeployLogger());
         search.addDocument(new SDDocumentType("test"));
         SDField refField = new TemporarySDField("ref_field", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("parent_type")));
         refField.parseIndexingScript("{ summary }");

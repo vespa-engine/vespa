@@ -38,7 +38,7 @@ public class RankProfileTestCase extends SchemaTestCase {
 
     @Test
     public void testRankProfileInheritance() {
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType document = new SDDocumentType("test");
         SDField a = document.addField("a", DataType.STRING);
