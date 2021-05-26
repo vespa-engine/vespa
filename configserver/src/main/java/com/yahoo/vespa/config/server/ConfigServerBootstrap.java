@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -227,22 +226,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
                                                                 new DaemonThreadFactory("redeploy-apps-"));
         // Keep track of deployment status per application
-        Map<ApplicationId, Future<DeploymentStatus>> deployments = new HashMap<>();
+        Map<ApplicationId, Future<?>> deployments = new HashMap<>();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
         applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
             log.log(Level.INFO, () -> "Starting redeployment of " + appId);
-            Optional<Deployment> deployment = applicationRepository.deployFromLocalActive(appId, true /* bootstrap */);
-            if (deployment.isPresent()) {
-                deployment.get().activate();
-                log.log(Level.INFO, () -> appId + " redeployed");
-                return DeploymentStatus.done;
-            } else {
-                // For some reason a deployment is not present, which should not be possible when bootstrapping
-                log.log(Level.WARNING, () -> "Deployment failed for " + appId +
-                                             ", unable to get a deployment, active local session is " +
-                                             applicationRepository.getActiveLocalSession(appId));
-                return DeploymentStatus.failed;
-            }
+            applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
+                                 .ifPresent(Deployment::activate);
+            log.log(Level.INFO, () -> appId + " redeployed");
         })));
 
         List<ApplicationId> failedDeployments = checkDeployments(deployments);
@@ -255,7 +245,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private enum DeploymentStatus { inProgress, done, failed};
 
-    private List<ApplicationId> checkDeployments(Map<ApplicationId, Future<DeploymentStatus>> deployments) {
+    private List<ApplicationId> checkDeployments(Map<ApplicationId, Future<?>> deployments) {
         int applicationCount = deployments.size();
         Set<ApplicationId> failedDeployments = new LinkedHashSet<>();
         Set<ApplicationId> finishedDeployments = new LinkedHashSet<>();
@@ -289,9 +279,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return new ArrayList<>(failedDeployments);
     }
 
-    private DeploymentStatus getDeploymentStatus(ApplicationId applicationId, Future<DeploymentStatus> future) {
+    private DeploymentStatus getDeploymentStatus(ApplicationId applicationId, Future<?> future) {
         try {
-            return future.get(1, TimeUnit.MILLISECONDS);
+            future.get(1, TimeUnit.MILLISECONDS);
+            return DeploymentStatus.done;
         } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof TransientException) {
                 log.log(Level.INFO, "Redeploying " + applicationId +
