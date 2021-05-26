@@ -408,7 +408,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
-        Session activeSession = getActiveLocalSession(tenant, application);
+        Session activeSession = getActiveLocalSession(application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
@@ -1061,6 +1061,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return tenant.getSessionRepository().getLocalSession(applicationRepo.requireActiveSessionOf(applicationId));
         }
         return null;
+    }
+
+    public Session getActiveLocalSession(ApplicationId applicationId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        if (tenant == null) throw new IllegalArgumentException("Unknown tenant " + applicationId.tenant());
+        return getActiveLocalSession(tenant, applicationId);
     }
 
     public double getQuotaUsageRate(ApplicationId applicationId) {
