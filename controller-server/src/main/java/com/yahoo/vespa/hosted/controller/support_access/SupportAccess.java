@@ -31,12 +31,12 @@ public class SupportAccess {
     }
 
     public CurrentStatus currentStatus(Instant now) {
-        Optional<SupportAccessChange> allowingChange = changeHistory.stream().findFirst()
-                .filter(change -> change.accessAllowedUntil().map(i -> i.isAfter(now)).orElse(false));
+        Optional<SupportAccessChange> latestChange = changeHistory.stream().findFirst();
 
-        return allowingChange
-                .map(change -> new CurrentStatus(State.ALLOWED, change.accessAllowedUntil(), Optional.of(change.madeBy())))
-                .orElseGet(() -> new CurrentStatus(State.NOT_ALLOWED, Optional.empty(), Optional.empty()));
+        if(latestChange.isEmpty() || latestChange.get().accessAllowedUntil().isEmpty() || now.isAfter(latestChange.get().accessAllowedUntil().get()))
+            return new CurrentStatus(State.NOT_ALLOWED, Optional.empty(), Optional.empty());
+
+        return new CurrentStatus(State.ALLOWED, latestChange.get().accessAllowedUntil(), Optional.of(latestChange.get().madeBy()));
     }
 
     public SupportAccess withAllowedUntil(Instant until, String changedBy, Instant changeTime) {

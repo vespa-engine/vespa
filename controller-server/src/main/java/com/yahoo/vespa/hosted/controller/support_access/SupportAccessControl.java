@@ -40,7 +40,7 @@ public class SupportAccessControl {
             } else {
                 var disallowed = supportAccess.withDisallowed(by, now);
                 controller.curator().writeSupportAccess(deployment, disallowed);
-                return supportAccess;
+                return disallowed;
             }
         }
     }
