@@ -213,6 +213,7 @@ class JobControllerApiHandlerHelper {
         summaryObject.setLong("upgradingFirmware", summary.upgradingFirmware());
         summaryObject.setLong("services", summary.services());
         summaryObject.setLong("needNewConfig", summary.needNewConfig());
+        summaryObject.setLong("retiring", summary.retiring());
     }
 
     private static void toSlime(Cursor entryArray, List<LogEntry> entries) {
