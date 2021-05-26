@@ -948,6 +948,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"bcpStatus\":{\"rotationStatus\":\"UNKNOWN\"}}",
                               200);
+
+        // GET support access status returns no history
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/access/support", GET)
+                .userIdentity(HOSTED_VESPA_OPERATOR),
+                "lol", 200
+        );
     }
 
     @Test

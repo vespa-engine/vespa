@@ -1,0 +1,35 @@
+package com.yahoo.vespa.hosted.controller.support_access;
+
+import java.security.cert.X509Certificate;
+import java.util.Objects;
+
+public class SupportAccessGrant {
+    private final String requestor;
+    private final X509Certificate certificate;
+
+    public SupportAccessGrant(String requestor, X509Certificate certificate) {
+        this.requestor = Objects.requireNonNull(requestor);
+        this.certificate = Objects.requireNonNull(certificate);
+    }
+
+    public String requestor() {
+        return requestor;
+    }
+
+    public X509Certificate certificate() {
+        return certificate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SupportAccessGrant that = (SupportAccessGrant) o;
+        return requestor.equals(that.requestor) && certificate.equals(that.certificate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(requestor, certificate);
+    }
+}
