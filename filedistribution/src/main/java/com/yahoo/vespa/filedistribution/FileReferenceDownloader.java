@@ -131,9 +131,9 @@ public class FileReferenceDownloader {
                 return false;
             }
         } else {
-            log.log(logLevel, () -> "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
-            ", error code: " + request.errorCode() + ", will use another spec for next request" +
-            ", retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds());
+            log.log(logLevel, () -> "Downloading file " + fileReference + " from " + connection.getAddress() + " failed: " +
+                                    request + ", error: " + request.errorMessage() + ", will use another config server for next request" +
+                                    " (retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds() + ")");
             connectionPool.setError(connection, request.errorCode());
             return false;
         }
