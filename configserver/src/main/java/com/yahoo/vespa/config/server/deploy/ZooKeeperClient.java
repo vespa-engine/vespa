@@ -28,7 +28,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.config.application.api.ApplicationPackage.*;
 import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.META_ZK_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
 import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
 
@@ -113,38 +115,34 @@ public class ZooKeeperClient {
      */
     private void writeSomeOf(ApplicationPackage app) throws IOException {
         // TODO: We should have a way of doing this which doesn't require repeating all the content
-        writeFile(app.getFile(Path.fromString(ApplicationPackage.SERVICES)),
-                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
-        writeFile(app.getFile(Path.fromString(ApplicationPackage.HOSTS)),
-                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
-        writeFile(app.getFile(Path.fromString(ApplicationPackage.DEPLOYMENT_FILE.getName())),
-                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
-        writeFile(app.getFile(Path.fromString(ApplicationPackage.VALIDATION_OVERRIDES.getName())),
-                  getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
-        writeDir(app.getFile(ApplicationPackage.RULES_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.RULES_DIR),
+        writeFile(app.getFile(Path.fromString(SERVICES)), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(HOSTS)), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(DEPLOYMENT_FILE.getName())), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
+        writeFile(app.getFile(Path.fromString(VALIDATION_OVERRIDES.getName())), getZooKeeperAppPath(USERAPP_ZK_SUBPATH));
+        writeDir(app.getFile(RULES_DIR),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(RULES_DIR),
                  (path) -> path.getName().endsWith(ApplicationPackage.RULES_NAME_SUFFIX),
                  true);
-        writeDir(app.getFile(ApplicationPackage.QUERY_PROFILES_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.QUERY_PROFILES_DIR),
+        writeDir(app.getFile(QUERY_PROFILES_DIR),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(QUERY_PROFILES_DIR),
                  xmlFilter, true);
-        writeDir(app.getFile(ApplicationPackage.PAGE_TEMPLATES_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.PAGE_TEMPLATES_DIR),
+        writeDir(app.getFile(PAGE_TEMPLATES_DIR),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(PAGE_TEMPLATES_DIR),
                  xmlFilter, true);
-        writeDir(app.getFile(Path.fromString(ApplicationPackage.SEARCHCHAINS_DIR)),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCHCHAINS_DIR),
+        writeDir(app.getFile(Path.fromString(SEARCHCHAINS_DIR)),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SEARCHCHAINS_DIR),
                  xmlFilter, true);
-        writeDir(app.getFile(Path.fromString(ApplicationPackage.DOCPROCCHAINS_DIR)),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.DOCPROCCHAINS_DIR),
+        writeDir(app.getFile(Path.fromString(DOCPROCCHAINS_DIR)),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(DOCPROCCHAINS_DIR),
                  xmlFilter, true);
-        writeDir(app.getFile(Path.fromString(ApplicationPackage.ROUTINGTABLES_DIR)),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.ROUTINGTABLES_DIR),
+        writeDir(app.getFile(Path.fromString(ROUTINGTABLES_DIR)),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ROUTINGTABLES_DIR),
                  xmlFilter, true);
-        writeDir(app.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR),
+        writeDir(app.getFile(MODELS_GENERATED_REPLICATED_DIR),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(MODELS_GENERATED_REPLICATED_DIR),
                  true);
-        writeDir(app.getFile(ApplicationPackage.SECURITY_DIR),
-                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.SECURITY_DIR),
+        writeDir(app.getFile(SECURITY_DIR),
+                 getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SECURITY_DIR),
                  true);
     }
 
@@ -249,7 +247,7 @@ public class ZooKeeperClient {
      * @param metaData The application metadata.
      */
     private void write(ApplicationMetaData metaData) {
-        configCurator.putData(getZooKeeperAppPath(ConfigCurator.META_ZK_PATH).getAbsolute(), metaData.asJsonBytes());
+        configCurator.putData(getZooKeeperAppPath(META_ZK_PATH).getAbsolute(), metaData.asJsonBytes());
     }
 
     void cleanupZooKeeper() {
@@ -270,11 +268,9 @@ public class ZooKeeperClient {
      * @return a String with the full ZK application path including trailing path, if set
      */
     private Path getZooKeeperAppPath(String trailingPath) {
-        if (trailingPath != null) {
-            return sessionPath.append(trailingPath);
-        } else {
-            return sessionPath;
-        }
+        if (trailingPath == null) return sessionPath;
+
+        return sessionPath.append(trailingPath);
     }
 
     public void write(AllocatedHosts hosts) throws IOException {
