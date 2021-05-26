@@ -31,6 +31,7 @@ class CliArguments {
 
     private static final Options optionsDefinition = createOptions();
 
+    private static final String BENCHMARK_OPTION = "benchmark";
     private static final String CA_CERTIFICATES_OPTION = "ca-certificates";
     private static final String CERTIFICATE_OPTION = "certificate";
     private static final String CONNECTIONS_OPTION = "connections";
@@ -113,6 +114,8 @@ class CliArguments {
 
     boolean sslHostnameVerificationDisabled() { return has(DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION); }
 
+    boolean benchmarkModeEnabled() { return has(BENCHMARK_OPTION); }
+
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
             Number number = (Number) arguments.getParsedOptionValue(option);
@@ -135,6 +138,7 @@ class CliArguments {
     private boolean has(String option) { return arguments.hasOption(option); }
 
     private static Options createOptions() {
+        // TODO Add description to each option
         return new Options()
                 .addOption(Option.builder()
                         .longOpt(HELP_OPTION)
@@ -188,6 +192,9 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(BENCHMARK_OPTION)
                         .build());
     }
 
