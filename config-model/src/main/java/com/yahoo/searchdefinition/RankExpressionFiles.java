@@ -30,6 +30,7 @@ public class RankExpressionFiles {
 
     /** Initiate sending of these constants to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        expressions.values().forEach(constant -> constant.sendTo(services));
+        // TODO Disabled until issues resolved
+        // expressions.values().forEach(constant -> constant.sendTo(services));
     }
 }
