@@ -250,7 +250,11 @@ public class BillingApiHandler extends LoggingRequestHandler {
 
         var invoiceId = billingController.createInvoiceForPeriod(tenantName, startTime, endTime, userId);
 
-        return new MessageResponse("Created invoice with ID " + invoiceId.value());
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("message", "Created invoice with ID " + invoiceId.value());
+        root.setString("id", invoiceId.value());
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse getInstruments(String tenant, String userId) {
