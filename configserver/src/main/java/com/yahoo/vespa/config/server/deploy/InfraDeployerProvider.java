@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -50,10 +50,7 @@ public class InfraDeployerProvider {
 
     /** Creates either an empty provider or a provider having the given infrastructure deployer */
     public static InfraDeployerProvider from(Optional<InfraDeployer> infraDeployer) {
-        if (infraDeployer.isPresent())
-            return withInfraDeployer(infraDeployer.get());
-        else
-            return empty();
+        return infraDeployer.map(InfraDeployerProvider::withInfraDeployer).orElseGet(InfraDeployerProvider::empty);
     }
 
 }
