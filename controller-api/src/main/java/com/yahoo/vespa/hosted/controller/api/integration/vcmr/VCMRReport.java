@@ -30,6 +30,7 @@ public class VCMRReport {
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
+    @JsonProperty("upcoming")
     private Set<VCMR> vcmrs;
 
     public VCMRReport() {
@@ -73,9 +74,7 @@ public class VCMRReport {
         if (serialized == null)
             return new VCMRReport();
 
-        var typeRef = new TypeReference<Set<VCMR>>() {};
-        var vcmrs = uncheck(() -> objectMapper.readValue(objectMapper.treeAsTokens(serialized), typeRef));
-        return new VCMRReport(vcmrs);
+        return uncheck(() -> objectMapper.treeToValue(serialized, VCMRReport.class));
     }
 
     /**
@@ -85,7 +84,7 @@ public class VCMRReport {
     public Map<String, JsonNode> toNodeReports() {
         Map<String, JsonNode> reports = new HashMap<>();
         JsonNode jsonNode = vcmrs.isEmpty() ?
-                null : uncheck(() -> objectMapper.valueToTree(vcmrs));
+                null : uncheck(() -> objectMapper.valueToTree(this));
         reports.put(REPORT_ID, jsonNode);
         return reports;
     }
