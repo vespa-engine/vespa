@@ -132,7 +132,7 @@ public class FileReferenceDownloader {
             }
         } else {
             log.log(logLevel, () -> "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
-            ", error code: " + request.errorCode() + ", will use another spec for next request" +
+            ", error code: " + request.errorMessage() + ", will use another spec for next request" +
             ", retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds());
             connectionPool.setError(connection, request.errorCode());
             return false;
