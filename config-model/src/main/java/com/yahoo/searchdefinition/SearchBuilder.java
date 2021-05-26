@@ -41,12 +41,12 @@ import java.util.List;
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private List<Search> searchList = new LinkedList<>();
-    private ApplicationPackage app;
-    private boolean isBuilt = false;
-    private DocumentModel model = new DocumentModel();
+    private final ApplicationPackage app;
+    private final DocumentModel model = new DocumentModel();
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
+    private List<Search> searchList = new LinkedList<>();
+    private boolean isBuilt = false;
 
     /** True to build the document aspect only, skipping instantiation of rank profiles */
     private final boolean documentsOnly;
@@ -131,15 +131,6 @@ public class SearchBuilder {
      */
     public String importReader(NamedReader reader, String searchDefDir, DeployLogger deployLogger) throws IOException, ParseException {
         return importString(IOUtils.readAll(reader), searchDefDir, deployLogger);
-    }
-
-    /**
-     * See #{@link #importReader}
-     *
-     * Convenience, should only be used for testing as logs will be swallowed.
-     */
-    public String importReader(NamedReader reader, String searchDefDir) throws IOException, ParseException {
-        return importString(IOUtils.readAll(reader), searchDefDir, new BaseDeployLogger());
     }
 
     /**

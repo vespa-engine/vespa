@@ -79,16 +79,6 @@ public class SDParser {
     private RankProfileRegistry rankProfileRegistry;
     private boolean documentsOnly;
 
-    /** For testing only */
-    public SDParser(String input, DeployLogger deployLogger) {
-        this(new SimpleCharStream(input), deployLogger);
-    }
-
-    /** For testing only */
-    public SDParser(SimpleCharStream stream, DeployLogger deployLogger) {
-        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry(), false);
-    }
-
     /**
      * Creates a parser
      *
