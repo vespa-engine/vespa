@@ -31,17 +31,17 @@ class CliArguments {
 
     private static final Options optionsDefinition = createOptions();
 
-    private static final String HELP_OPTION = "help";
-    private static final String VERSION_OPTION = "version";
+    private static final String CA_CERTIFICATES_OPTION = "ca-certificates";
+    private static final String CERTIFICATE_OPTION = "certificate";
+    private static final String CONNECTIONS_OPTION = "connections";
+    private static final String DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION = "disable-ssl-hostname-verification";
     private static final String ENDPOINT_OPTION = "endpoint";
     private static final String FILE_OPTION = "file";
-    private static final String CONNECTIONS_OPTION = "connections";
-    private static final String MAX_STREAMS_PER_CONNECTION = "max-streams-per-connection";
-    private static final String CERTIFICATE_OPTION = "certificate";
-    private static final String PRIVATE_KEY_OPTION = "private-key";
-    private static final String CA_CERTIFICATES_OPTION = "ca-certificates";
-    private static final String DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION = "disable-ssl-hostname-verification";
     private static final String HEADER_OPTION = "header";
+    private static final String HELP_OPTION = "help";
+    private static final String MAX_STREAMS_PER_CONNECTION = "max-streams-per-connection";
+    private static final String PRIVATE_KEY_OPTION = "private-key";
+    private static final String VERSION_OPTION = "version";
 
     private final CommandLine arguments;
 
