@@ -134,15 +134,6 @@ public class SearchBuilder {
     }
 
     /**
-     * See #{@link #importReader}
-     *
-     * Convenience, should only be used for testing as logs will be swallowed.
-     */
-    public String importReader(NamedReader reader, String searchDefDir) throws IOException, ParseException {
-        return importString(IOUtils.readAll(reader), searchDefDir, new BaseDeployLogger());
-    }
-
-    /**
      * Import search definition.
      *
      * @param str the string to parse.
