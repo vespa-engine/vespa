@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
@@ -43,26 +42,26 @@ import java.util.stream.Collectors;
 public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
-    // We will stop giving the nodes back to Openstack for break-fix, setting this to number a high value, we might
-    // eventually remove this counter and recycling nodes forever
+    // Try recycling nodes until reaching this many failures
+    // TODO: Consider removing this altogether as this effectively always recycles nodes
     private static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
-    private final Duration defaultExpiry; // Grace period to allow recovery of data
-    private final Duration containerExpiry; // Stateless nodes, no data to recover
+    private final Duration statefulExpiry; // Stateful nodes: Grace period to allow recovery of data
+    private final Duration statelessExpiry; // Stateless nodes: No data to recover
 
     FailedExpirer(NodeRepository nodeRepository, Zone zone, Duration interval, Metric metric) {
         super(nodeRepository, interval, metric);
         this.nodeRepository = nodeRepository;
         if (zone.system().isCd()) {
-            defaultExpiry = containerExpiry = Duration.ofMinutes(30);
+            statefulExpiry = statelessExpiry = Duration.ofMinutes(30);
         } else {
             if (zone.environment() == Environment.staging || zone.environment() == Environment.test) {
-                defaultExpiry = Duration.ofHours(1);
+                statefulExpiry = Duration.ofHours(1);
             } else {
-                defaultExpiry = Duration.ofDays(4);
+                statefulExpiry = Duration.ofDays(4);
             }
-            containerExpiry = Duration.ofHours(1);
+            statelessExpiry = Duration.ofHours(1);
         }
     }
 
@@ -74,10 +73,11 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
         recycleIf(remainingNodes, node -> node.allocation().isEmpty());
         recycleIf(remainingNodes, node ->
-                node.allocation().get().membership().cluster().type() == ClusterSpec.Type.container &&
-                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(containerExpiry)));
+                !node.allocation().get().membership().cluster().isStateful() &&
+                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)));
         recycleIf(remainingNodes, node ->
-                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(defaultExpiry)));
+                node.allocation().get().membership().cluster().isStateful() &&
+                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statefulExpiry)));
         return true;
     }
 
