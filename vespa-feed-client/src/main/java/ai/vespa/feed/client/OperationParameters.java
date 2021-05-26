@@ -2,6 +2,7 @@
 package ai.vespa.feed.client;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -66,5 +67,29 @@ public class OperationParameters {
     public Optional<Duration> timeout() { return Optional.ofNullable(timeout); }
     public Optional<String> route() { return Optional.ofNullable(route); }
     public OptionalInt tracelevel() { return tracelevel == 0 ? OptionalInt.empty() : OptionalInt.of(tracelevel); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OperationParameters that = (OperationParameters) o;
+        return create == that.create && tracelevel == that.tracelevel && Objects.equals(condition, that.condition) && Objects.equals(timeout, that.timeout) && Objects.equals(route, that.route);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(create, condition, timeout, route, tracelevel);
+    }
+
+    @Override
+    public String toString() {
+        return "OperationParameters{" +
+               "create=" + create +
+               ", condition='" + condition + '\'' +
+               ", timeout=" + timeout +
+               ", route='" + route + '\'' +
+               ", tracelevel=" + tracelevel +
+               '}';
+    }
 
 }
