@@ -1,5 +1,6 @@
 usage: vespa-feed-client <options>
 Vespa feed client
+    --benchmark
     --ca-certificates <arg>
     --certificate <arg>
     --connections <arg>

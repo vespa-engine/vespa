@@ -4,6 +4,7 @@ package ai.vespa.feed.client;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -17,16 +18,18 @@ public class CliClient {
 
     private final PrintStream systemOut;
     private final PrintStream systemError;
+    private final InputStream systemIn;
     private final Properties systemProperties;
 
-    private CliClient(PrintStream systemOut, PrintStream systemError, Properties systemProperties) {
+    private CliClient(PrintStream systemOut, PrintStream systemError, InputStream systemIn, Properties systemProperties) {
         this.systemOut = systemOut;
         this.systemError = systemError;
+        this.systemIn = systemIn;
         this.systemProperties = systemProperties;
     }
 
     public static void main(String[] args) {
-        CliClient client = new CliClient(System.out, System.err, System.getProperties());
+        CliClient client = new CliClient(System.out, System.err, System.in, System.getProperties());
         int exitCode = client.run(args);
         System.exit(exitCode);
     }
