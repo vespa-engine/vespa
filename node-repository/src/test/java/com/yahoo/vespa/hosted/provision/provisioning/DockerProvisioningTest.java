@@ -338,7 +338,8 @@ public class DockerProvisioningTest {
             tester.makeReadyHosts(2, hostFlavor.resources()).activateTenantHosts();
 
             ApplicationId app1 = ProvisioningTester.applicationId("app1");
-            ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+            ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content,
+                                                       new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
             // 5 Gb requested memory becomes 5-3=2 Gb real memory, which is an illegally small amount
             var resources = new NodeResources(1, 5, 10, 1);
@@ -346,7 +347,34 @@ public class DockerProvisioningTest {
                                                           new ClusterResources(4, 1, resources)));
         }
         catch (IllegalArgumentException e) {
-            assertEquals("No allocation possible within limits: from 2 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps] to 4 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps]",
+            assertEquals("No allocation possible within limits: " +
+                         "from 2 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps] " +
+                         "to 4 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps]",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void exclusive_resources_not_matching_host_causes_failure() {
+        try {
+            Flavor hostFlavor1 = new Flavor(new NodeResources(20, 40, 100, 4));
+            Flavor hostFlavor2 = new Flavor(new NodeResources(30, 40, 100, 4));
+            ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                        .flavors(List.of(hostFlavor1, hostFlavor2))
+                                                                        .build();
+            ApplicationId app1 = ProvisioningTester.applicationId("app1");
+            ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content,
+                                                       new ClusterSpec.Id("cluster1")).exclusive(true).vespaVersion("7").build();
+
+            var resources = new NodeResources(20, 37, 100, 1);
+            tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, resources),
+                                                          new ClusterResources(4, 1, resources)));
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("No allocation possible within limits: " +
+                         "from 2 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps] " +
+                         "to 4 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps]. " +
+                         "Nearest allowed node resources: [vcpu: 20.0, memory: 40.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote]",
                          e.getMessage());
         }
     }

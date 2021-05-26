@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
