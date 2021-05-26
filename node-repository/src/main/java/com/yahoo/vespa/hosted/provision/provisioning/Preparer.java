@@ -45,8 +45,7 @@ class Preparer {
         catch (OutOfCapacityException e) {
             throw new OutOfCapacityException("Could not satisfy " + requestedNodes +
                                              ( wantedGroups > 1 ? " (in " + wantedGroups + " groups)" : "") +
-                                             " in " + application + " " + cluster +
-                                             ": " + e.getMessage());
+                                             " in " + application + " " + cluster + ": " + e.getMessage());
         }
     }
 

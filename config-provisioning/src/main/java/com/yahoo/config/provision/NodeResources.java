@@ -280,6 +280,17 @@ public class NodeResources {
 
     public boolean isUnspecified() { return this.equals(unspecified); }
 
+    // Returns squared euclidean distance of the relevant numerical values of two node resources
+    public double distanceTo(NodeResources other) {
+        if ( ! this.diskSpeed().compatibleWith(other.diskSpeed())) return Double.MAX_VALUE;
+        if ( ! this.storageType().compatibleWith(other.storageType())) return Double.MAX_VALUE;
+
+        double distance =  Math.pow(this.vcpu() - other.vcpu(), 2) + Math.pow(this.memoryGb() - other.memoryGb(), 2);
+        if (this.storageType() == StorageType.local || other.storageType() == StorageType.local)
+            distance += Math.pow(this.diskGb() - other.diskGb(), 2);
+        return distance;
+    }
+
     /** Returns this.isUnspecified() ? Optional.empty() : Optional.of(this) */
     public Optional<NodeResources> asOptional() {
         return this.isUnspecified() ? Optional.empty() : Optional.of(this);
