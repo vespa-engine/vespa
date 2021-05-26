@@ -46,7 +46,7 @@ public class EndpointCertificateMetadataSerializer {
         object.setString(certNameField, metadata.certName());
         object.setLong(versionField, metadata.version());
         object.setLong(lastRequestedField, metadata.lastRequested());
-        object.setString(requestIdField, metadata.request_id());
+        object.setString(requestIdField, metadata.requestId());
         var cursor = object.setArray(requestedDnsSansField);
         metadata.requestedDnsSans().forEach(cursor::addString);
         object.setString(issuerField, metadata.issuer());

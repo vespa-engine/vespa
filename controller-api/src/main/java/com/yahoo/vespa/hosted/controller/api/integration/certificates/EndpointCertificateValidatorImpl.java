@@ -16,6 +16,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * @author andreer
+ */
 public class EndpointCertificateValidatorImpl implements EndpointCertificateValidator {
     private final SecretStore secretStore;
     private final Clock clock;
