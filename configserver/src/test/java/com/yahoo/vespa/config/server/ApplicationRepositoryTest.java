@@ -154,7 +154,8 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getReindexActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        Session session = applicationRepository.getActiveLocalSession(applicationId());
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
         session.getAllocatedHosts();
     }
 
@@ -226,7 +227,8 @@ public class ApplicationRepositoryTest {
         long secondSessionId = result2.sessionId();
         assertNotEquals(firstSessionId, secondSessionId);
 
-        Session session = applicationRepository.getActiveLocalSession(applicationId());
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
         assertEquals(firstSessionId, session.getMetaData().getPreviousActiveGeneration());
     }
 
@@ -529,7 +531,8 @@ public class ApplicationRepositoryTest {
     public void require_that_provision_info_can_be_read() {
         prepareAndActivate(testAppJdiscOnly);
 
-        Session session = applicationRepository.getActiveLocalSession(applicationId());
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
 
         List<NetworkPorts.Allocation> list = new ArrayList<>();
         list.add(new NetworkPorts.Allocation(8080, "container", "container/container.0", "http"));

@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.Before;
@@ -104,7 +105,8 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
 
     @Test
     public void require_that_get_does_not_set_write_flag() throws IOException {
-        Session session = applicationRepository.getActiveLocalSession(appId1);
+        Tenant tenant1 = applicationRepository.getTenant(appId1);
+        Session session = applicationRepository.getActiveLocalSession(tenant1, appId1);
         assertContent("/test.txt", "foo\n");
         assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
     }

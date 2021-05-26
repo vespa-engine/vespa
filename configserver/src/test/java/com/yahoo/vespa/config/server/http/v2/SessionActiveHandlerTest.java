@@ -20,6 +20,7 @@ import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -137,7 +138,8 @@ public class SessionActiveHandlerTest {
                                                                  testApp);
             applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
-            Session session = applicationRepository.getActiveLocalSession(applicationId());
+            Tenant tenant = applicationRepository.getTenant(applicationId());
+            Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
             metaData = session.getMetaData();
             this.sessionId = sessionId;
         }

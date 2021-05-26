@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.Before;
@@ -68,7 +69,8 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
-        sessionId = applicationRepository.getActiveLocalSession(applicationId()).getSessionId();
+        Tenant tenant = applicationRepository.getTenant(applicationId());
+        sessionId = applicationRepository.getActiveLocalSession(tenant, applicationId()).getSessionId();
 
         handler = createHandler();
         pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
