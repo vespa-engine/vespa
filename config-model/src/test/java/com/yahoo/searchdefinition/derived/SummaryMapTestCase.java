@@ -72,7 +72,7 @@ public class SummaryMapTestCase extends SchemaTestCase {
     }
     @Test
     public void testPositionDeriving() {
-        Search search = new Search("store", null);
+        Search search = new Search("store");
         SDDocumentType document = new SDDocumentType("store");
         search.addDocument(document);
         String fieldName = "location";

@@ -62,7 +62,7 @@ public class SearchOrdererTestCase extends SchemaTestCase {
     }
 
     private static Search createSchema(String name, Map<String, Search> schemas) {
-        Search search = new Search(name, null);
+        Search search = new Search(name);
         SDDocumentType document = new SDDocumentType(name);
         document.setDocumentReferences(new DocumentReferences(emptyMap()));
         search.addDocument(document);

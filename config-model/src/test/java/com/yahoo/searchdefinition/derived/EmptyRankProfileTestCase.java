@@ -21,7 +21,7 @@ public class EmptyRankProfileTestCase extends SchemaTestCase {
 
     @Test
     public void testDeriving() {
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType doc = new SDDocumentType("test");
         search.addDocument(doc);

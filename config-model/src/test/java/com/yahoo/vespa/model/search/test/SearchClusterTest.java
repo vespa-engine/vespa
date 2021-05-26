@@ -40,7 +40,7 @@ public class SearchClusterTest {
     public void testSdConfigLogical() {
         // sd1
         SDDocumentType sdt1 = new SDDocumentType("s1");
-        Search search1 = new Search("s1", null);
+        Search search1 = new Search("s1");
         SDField f1 = new SDField("f1", DataType.STRING);
         f1.addAttribute(new Attribute("f1", DataType.STRING));
         f1.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f1"))));
@@ -49,7 +49,7 @@ public class SearchClusterTest {
 
         // sd2
         SDDocumentType sdt2 = new SDDocumentType("s2");
-        Search search2 = new Search("s2", null);
+        Search search2 = new Search("s2");
         SDField f2=new SDField("f2", DataType.STRING);
         f2.addAttribute(new Attribute("f2", DataType.STRING));
         f2.setIndexingScript(new ScriptExpression(new StatementExpression(new AttributeExpression("f2"))));

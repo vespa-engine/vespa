@@ -143,7 +143,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void testIndexSettingInheritance() {
         SDDocumentType parent = new SDDocumentType("parent");
-        Search parentSearch = new Search("parent", null);
+        Search parentSearch = new Search("parent");
         parentSearch.addDocument(parent);
         SDField prefixed = parent.addField("prefixed", DataType.STRING);
         prefixed.parseIndexingScript("{ index }");
@@ -151,7 +151,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
 
         SDDocumentType child = new SDDocumentType("child");
         child.inherit(parent);
-        Search childSearch = new Search("child", null);
+        Search childSearch = new Search("child");
         childSearch.addDocument(child);
 
         prefixed = (SDField)child.getField("prefixed");
