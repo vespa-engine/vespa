@@ -357,8 +357,7 @@ public class TenantRepository {
                                                                     zone,
                                                                     clock,
                                                                     modelFactoryRegistry,
-                                                                    configDefinitionRepo,
-                                                                    tenantListener);
+                                                                    configDefinitionRepo);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, Instant.now()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);

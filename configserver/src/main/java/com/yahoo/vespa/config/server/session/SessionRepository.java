@@ -121,7 +121,6 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final TenantListener tenantListener;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -139,8 +138,7 @@ public class SessionRepository {
                              Zone zone,
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
-                             ConfigDefinitionRepo configDefinitionRepo,
-                             TenantListener tenantListener) {
+                             ConfigDefinitionRepo configDefinitionRepo) {
         this.tenantName = tenantName;
         this.configCurator = configCurator;
         sessionCounter = new SessionCounter(configCurator, tenantName);
@@ -163,7 +161,6 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.tenantListener = tenantListener;
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -502,8 +499,7 @@ public class SessionRepository {
                                                                     configserverConfig,
                                                                     zone,
                                                                     modelFactoryRegistry,
-                                                                    configDefinitionRepo,
-                                                                    tenantListener);
+                                                                    configDefinitionRepo);
         // Read hosts allocated on the config server instance which created this
         SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
 
