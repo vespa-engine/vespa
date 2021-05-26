@@ -79,6 +79,7 @@ StateChecker::Context::Context(const DistributorNodeContext& node_ctx_in,
       db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker)
 {
+    // TODO STRIPE use existing cache for computing ideal storage nodes for bucket
     idealState = distribution.getIdealStorageNodes(systemState, bucket.getBucketId());
     unorderedIdealState.insert(idealState.begin(), idealState.end());
 }

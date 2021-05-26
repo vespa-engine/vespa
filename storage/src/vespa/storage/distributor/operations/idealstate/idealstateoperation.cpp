@@ -185,6 +185,9 @@ public:
     }
 };
 
+// TODO STRIPE replace with check for pending cluster state transition.
+//   Null-bucket messages are not intercepted nor observeable by stripes,
+//   only by the top-level distributor.
 bool
 checkNullBucketRequestBucketInfoMessage(uint16_t node,
                                         document::BucketSpace bucketSpace,
