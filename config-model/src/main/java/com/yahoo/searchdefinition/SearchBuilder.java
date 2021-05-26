@@ -41,12 +41,12 @@ import java.util.List;
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private List<Search> searchList = new LinkedList<>();
-    private ApplicationPackage app;
-    private boolean isBuilt = false;
-    private DocumentModel model = new DocumentModel();
+    private final ApplicationPackage app;
+    private final DocumentModel model = new DocumentModel();
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
+    private List<Search> searchList = new LinkedList<>();
+    private boolean isBuilt = false;
 
     /** True to build the document aspect only, skipping instantiation of rank profiles */
     private final boolean documentsOnly;
