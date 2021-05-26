@@ -184,7 +184,7 @@ public class Flags {
             CLUSTER_TYPE);
 
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
-            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-05-25",
+            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-08-25",
             "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
             "Takes effect immediately, for subsequent provisioning",
             APPLICATION_ID);
