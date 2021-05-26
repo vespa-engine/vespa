@@ -238,9 +238,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 return DeploymentStatus.done;
             } else {
                 // For some reason a deployment is not present, which should not be possible when bootstrapping
-                log.log(Level.INFO, () -> "Deployment failed for " + appId +
-                                          ", unable to get a deployment, active local session is " +
-                                          applicationRepository.getActiveLocalSession(appId));
+                log.log(Level.WARNING, () -> "Deployment failed for " + appId +
+                                             ", unable to get a deployment, active local session is " +
+                                             applicationRepository.getActiveLocalSession(appId));
                 return DeploymentStatus.failed;
             }
         })));
