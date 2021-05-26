@@ -181,7 +181,7 @@ public class RoutingController {
                              .on(Port.tls());
             Endpoint endpoint = builder.in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
-            if (controller.system().isPublic() && vespaAppDomainInCertificate.value()) {
+            if (controller.system().isPublic() && vespaAppDomainInCertificate.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value()) {
                 Endpoint legacyEndpoint = builder.legacy().in(controller.system());
                 endpointDnsNames.add(legacyEndpoint.dnsName());
             }
