@@ -76,8 +76,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   ConfigserverConfig configserverConfig,
                                   Zone zone,
                                   ModelFactoryRegistry modelFactoryRegistry,
-                                  ConfigDefinitionRepo configDefinitionRepo,
-                                  TenantListener tenantListener) {
+                                  ConfigDefinitionRepo configDefinitionRepo) {
         super(modelFactoryRegistry,
               configserverConfig,
               zone,
