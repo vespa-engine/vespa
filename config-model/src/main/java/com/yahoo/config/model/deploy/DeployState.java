@@ -432,7 +432,7 @@ public class DeployState implements ConfigDefinitionStore {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validationParameters);
+            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, queryProfiles, validationParameters);
             return new DeployState(applicationPackage,
                                    searchDocumentModel,
                                    rankProfileRegistry,
@@ -458,16 +458,15 @@ public class DeployState implements ConfigDefinitionStore {
         }
 
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
-                                                              DeployLogger logger,
                                                               QueryProfiles queryProfiles,
                                                               ValidationParameters validationParameters) {
             Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
             Map<String, String> names = new LinkedHashMap<>();
-            SearchBuilder builder = new SearchBuilder(applicationPackage, rankProfileRegistry, queryProfiles.getRegistry());
+            SearchBuilder builder = new SearchBuilder(applicationPackage, logger, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();
-                    String topLevelName = builder.importReader(reader, readerName, logger);
+                    String topLevelName = builder.importReader(reader, readerName);
                     String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
                     names.put(topLevelName, sdName);
                     if ( ! sdName.equals(topLevelName)) {
@@ -483,7 +482,7 @@ public class DeployState implements ConfigDefinitionStore {
                     closeIgnoreException(reader.getReader());
                 }
             }
-            builder.build(! validationParameters.ignoreValidationErrors(), logger);
+            builder.build(! validationParameters.ignoreValidationErrors());
             return SearchDocumentModel.fromBuilderAndNames(builder, names);
         }
 

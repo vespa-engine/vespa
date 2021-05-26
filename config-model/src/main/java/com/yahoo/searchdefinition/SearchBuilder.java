@@ -41,10 +41,11 @@ import java.util.List;
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private final ApplicationPackage app;
     private final DocumentModel model = new DocumentModel();
+    private final ApplicationPackage app;
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
+    private final DeployLogger deployLogger;
     private List<Search> searchList = new LinkedList<>();
     private boolean isBuilt = false;
 
@@ -53,41 +54,59 @@ public class SearchBuilder {
 
     /** For testing only */
     public SearchBuilder() {
-        this(MockApplicationPackage.createEmpty(), new RankProfileRegistry(), new QueryProfileRegistry());
+        this(new RankProfileRegistry(), new QueryProfileRegistry());
+    }
+
+    /** For testing only */
+    public SearchBuilder(DeployLogger deployLogger) {
+        this(MockApplicationPackage.createEmpty(), deployLogger);
+    }
+
+    /** For testing only */
+    public SearchBuilder(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+        this(MockApplicationPackage.createEmpty(), deployLogger, rankProfileRegistry);
     }
 
     /** Used for generating documents for typed access to document fields in Java */
     public SearchBuilder(boolean documentsOnly) {
-        this(MockApplicationPackage.createEmpty(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
+        this(MockApplicationPackage.createEmpty(), new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
     }
 
     /** For testing only */
-    public SearchBuilder(ApplicationPackage app) {
-        this(app, new RankProfileRegistry(), new QueryProfileRegistry());
+    public SearchBuilder(ApplicationPackage app, DeployLogger deployLogger) {
+        this(app, deployLogger, new RankProfileRegistry(), new QueryProfileRegistry());
+    }
+
+    /** For testing only */
+    public SearchBuilder(ApplicationPackage app, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+        this(app, deployLogger, rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
     public SearchBuilder(RankProfileRegistry rankProfileRegistry) {
-        this(MockApplicationPackage.createEmpty(), rankProfileRegistry, new QueryProfileRegistry());
+        this(rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
     public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
-        this(MockApplicationPackage.createEmpty(), rankProfileRegistry, queryProfileRegistry);
+        this(MockApplicationPackage.createEmpty(), new BaseDeployLogger(), rankProfileRegistry, queryProfileRegistry);
     }
 
     public SearchBuilder(ApplicationPackage app,
+                         DeployLogger deployLogger,
                          RankProfileRegistry rankProfileRegistry,
                          QueryProfileRegistry queryProfileRegistry) {
-        this(app, rankProfileRegistry, queryProfileRegistry, false);
+        this(app, deployLogger, rankProfileRegistry, queryProfileRegistry, false);
     }
-    public SearchBuilder(ApplicationPackage app,
-                         RankProfileRegistry rankProfileRegistry,
-                         QueryProfileRegistry queryProfileRegistry,
-                         boolean documentsOnly) {
+    private SearchBuilder(ApplicationPackage app,
+                          DeployLogger deployLogger,
+                          RankProfileRegistry rankProfileRegistry,
+                          QueryProfileRegistry queryProfileRegistry,
+                          boolean documentsOnly) {
         this.app = app;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
+        this.deployLogger = deployLogger;
         this.documentsOnly = documentsOnly;
     }
 
@@ -95,29 +114,17 @@ public class SearchBuilder {
      * Import search definition.
      *
      * @param fileName The name of the file to import.
-     * @param deployLogger Logger for deploy messages.
      * @return The name of the imported object.
      * @throws IOException    Thrown if the file can not be read for some reason.
      * @throws ParseException Thrown if the file does not contain a valid search definition.       ```
      */
-    public String importFile(String fileName, DeployLogger deployLogger) throws IOException, ParseException {
+    public String importFile(String fileName) throws IOException, ParseException {
         File file = new File(fileName);
-        return importString(IOUtils.readFile(file), file.getAbsoluteFile().getParent(), deployLogger);
+        return importString(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
     }
 
-    /**
-     * Import search definition.
-     *
-     * @param fileName The name of the file to import.
-     * @return The name of the imported object.
-     * @throws IOException    Thrown if the file can not be read for some reason.
-     * @throws ParseException Thrown if the file does not contain a valid search definition.
-     */
-    public String importFile(String fileName) throws IOException, ParseException {
-        return importFile(fileName, new BaseDeployLogger());
-    }
-    public String importFile(Path file) throws IOException, ParseException {
-        return importFile(file.toString(), new BaseDeployLogger());
+    private String importFile(Path file) throws IOException, ParseException {
+        return importFile(file.toString());
     }
 
     /**
@@ -129,8 +136,8 @@ public class SearchBuilder {
      * @return The name of the imported object.
      * @throws ParseException Thrown if the file does not contain a valid search definition.
      */
-    public String importReader(NamedReader reader, String searchDefDir, DeployLogger deployLogger) throws IOException, ParseException {
-        return importString(IOUtils.readAll(reader), searchDefDir, deployLogger);
+    public String importReader(NamedReader reader, String searchDefDir) throws IOException, ParseException {
+        return importString(IOUtils.readAll(reader), searchDefDir);
     }
 
     /**
@@ -141,21 +148,10 @@ public class SearchBuilder {
      * @throws ParseException thrown if the file does not contain a valid search definition.
      */
     public String importString(String str) throws ParseException {
-        return importString(str, null, new BaseDeployLogger());
+        return importString(str, null);
     }
 
-    /**
-     * Import search definition.
-     *
-     * @param str the string to parse.
-     * @return the name of the imported object.
-     * @throws ParseException thrown if the file does not contain a valid search definition.
-     */
-    public String importString(String str, DeployLogger logger) throws ParseException {
-        return importString(str, null, logger);
-    }
-
-    private String importString(String str, String searchDefDir, DeployLogger deployLogger) throws ParseException {
+    private String importString(String str, String searchDefDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
             return importRawSearch(new SDParser(stream, deployLogger, app, rankProfileRegistry, documentsOnly)
@@ -199,7 +195,7 @@ public class SearchBuilder {
      * @throws IllegalStateException Thrown if this method has already been called.
      */
     public void build() {
-        build(true, new BaseDeployLogger());
+        build(true);
     }
 
     /**
@@ -207,9 +203,8 @@ public class SearchBuilder {
      * #getSearch(String)} method.
      *
      * @throws IllegalStateException Thrown if this method has already been called.
-     * @param deployLogger The logger to use during build
      */
-    public void build(boolean validate, DeployLogger deployLogger) {
+    public void build(boolean validate) {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
         List<Search> built = new ArrayList<>();
@@ -316,9 +311,9 @@ public class SearchBuilder {
     }
 
     public static SearchBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty());
-        builder.importString(sd, logger);
-        builder.build(true, logger);
+        SearchBuilder builder = new SearchBuilder(logger);
+        builder.importString(sd);
+        builder.build(true);
         return builder;
     }
 
@@ -377,12 +372,13 @@ public class SearchBuilder {
                                                 QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+                                                  deployLogger,
                                                   rankProfileRegistry,
                                                   queryprofileRegistry);
         for (String fileName : fileNames) {
             builder.importFile(fileName);
         }
-        builder.build(true, deployLogger);
+        builder.build(true);
         return builder;
     }
 
@@ -404,15 +400,16 @@ public class SearchBuilder {
     public static SearchBuilder createFromDirectory(String dir,
                                                     RankProfileRegistry rankProfileRegistry,
                                                     QueryProfileRegistry queryProfileRegistry,
-                                                    DeployLogger logger,
+                                                    DeployLogger deployLogger,
                                                     ApplicationPackage applicationPackage) throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(applicationPackage,
+                                                  deployLogger,
                                                   rankProfileRegistry,
                                                   queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.importFile(i.next());
         }
-        builder.build(true, logger);
+        builder.build(true);
         return builder;
     }
 

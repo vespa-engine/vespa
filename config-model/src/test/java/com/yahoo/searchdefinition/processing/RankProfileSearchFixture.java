@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.ApplicationPackage;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -62,7 +63,7 @@ class RankProfileSearchFixture {
                              String rankProfiles, String constant, String field)
             throws ParseException {
         this.queryProfileRegistry = queryProfileRegistry;
-        SearchBuilder builder = new SearchBuilder(applicationpackage, rankProfileRegistry, queryProfileRegistry);
+        SearchBuilder builder = new SearchBuilder(applicationpackage, new BaseDeployLogger(), rankProfileRegistry, queryProfileRegistry);
         String sdContent = "search test {\n" +
                            "  " + (constant != null ? constant : "") + "\n" +
                            "  document test {\n" +
