@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -223,6 +224,16 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the hostnames of nodes in this */
     public Set<String> hostnames() {
         return stream().map(Node::hostname).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** Returns the stateful clusters on nodes in this */
+    public Set<ClusterId> statefulClusters() {
+        return stream().filter(node -> node.allocation().isPresent() &&
+                                       node.allocation().get().membership().cluster().isStateful())
+                       .map(node -> new ClusterId(node.allocation().get().owner(),
+                                                  node.allocation().get().membership().cluster().id()))
+                       .collect(Collectors.toUnmodifiableSet());
+
     }
 
     /**

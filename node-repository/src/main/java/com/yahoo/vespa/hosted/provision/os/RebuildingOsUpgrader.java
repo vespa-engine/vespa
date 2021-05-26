@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
@@ -69,8 +68,8 @@ public class RebuildingOsUpgrader implements OsUpgrader {
 
         // Find stateful clusters with retiring nodes
         NodeList activeNodes = allNodes.state(Node.State.active);
-        Set<ClusterId> retiringClusters = statefulClustersOf(activeNodes.nodeType(target.nodeType().childNodeType())
-                                                                        .retiring());
+        Set<ClusterId> retiringClusters = new HashSet<>(activeNodes.nodeType(target.nodeType().childNodeType())
+                                                                   .retiring().statefulClusters());
 
         // Rebuild hosts not containing stateful clusters with retiring nodes, up to rebuild limit
         List<Node> hostsToRebuild = new ArrayList<>(rebuildLimit);
@@ -80,7 +79,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
                                                .byIncreasingOsVersion();
         for (Node host : candidates) {
             if (hostsToRebuild.size() == rebuildLimit) break;
-            Set<ClusterId> clustersOnHost = statefulClustersOf(activeNodes.childrenOf(host));
+            Set<ClusterId> clustersOnHost = activeNodes.childrenOf(host).statefulClusters();
             boolean canRebuild = Collections.disjoint(retiringClusters, clustersOnHost);
             if (canRebuild) {
                 hostsToRebuild.add(host);
@@ -96,18 +95,6 @@ public class RebuildingOsUpgrader implements OsUpgrader {
                  ", want " + target);
         nodeRepository.nodes().rebuild(host.hostname(), Agent.RebuildingOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-    }
-
-    private static Set<ClusterId> statefulClustersOf(NodeList nodes) {
-        Set<ClusterId> clusters = new HashSet<>();
-        for (Node node : nodes) {
-            if (node.type().isHost()) illegal("All nodes must be children, got host " + node);
-            if (node.allocation().isEmpty()) continue;
-            Allocation allocation = node.allocation().get();
-            if (!allocation.membership().cluster().isStateful()) continue;
-            clusters.add(new ClusterId(allocation.owner(), allocation.membership().cluster().id()));
-        }
-        return clusters;
     }
 
     private static void illegal(String msg) {
