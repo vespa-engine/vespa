@@ -3,9 +3,11 @@ package ai.vespa.feed.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
@@ -45,7 +47,9 @@ public class CliClient {
                 systemOut.println(Vespa.VERSION);
                 return 0;
             }
-            FeedClient feedClient = createFeedClient(cliArgs);
+            try (InputStream in = createFeedInputStream(cliArgs); JsonStreamFeeder feeder = createJsonFeeder(cliArgs)) {
+                feeder.feed(in);
+            }
             return 0;
         } catch (CliArguments.CliArgumentsException | IOException e) {
             return handleException(e);
@@ -73,6 +77,20 @@ public class CliClient {
         }
         cliArgs.headers().forEach(builder::addRequestHeader);
         return builder.build();
+    }
+
+    private static JsonStreamFeeder createJsonFeeder(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
+        FeedClient feedClient = createFeedClient(cliArgs);
+        JsonStreamFeeder.Builder builder = JsonStreamFeeder.builder(feedClient);
+        cliArgs.timeout().ifPresent(builder::withTimeout);
+        cliArgs.route().ifPresent(builder::withRoute);
+        cliArgs.traceLevel().ifPresent(builder::withTracelevel);
+        return builder.build();
+    }
+
+    private InputStream createFeedInputStream(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
+        return new BufferedInputStream(
+                cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get()));
     }
 
     private int handleException(Exception e) { return handleException(e.getMessage(), e); }
