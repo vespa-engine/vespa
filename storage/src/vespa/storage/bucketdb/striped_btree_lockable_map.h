@@ -27,7 +27,6 @@ public:
     using Decision     = typename ParentType::Decision;
     using BucketId     = document::BucketId;
 
-    constexpr static uint8_t MaxStripeBits = 8;
 private:
     using StripedDBType = BTreeLockableMap<T>;
     uint8_t _n_stripe_bits;
