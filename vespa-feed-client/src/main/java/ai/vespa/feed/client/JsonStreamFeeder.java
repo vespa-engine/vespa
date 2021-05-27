@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -28,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author jonmv
  */
-public class JsonStreamFeeder {
+public class JsonStreamFeeder implements Closeable {
 
     private final FeedClient client;
     private final OperationParameters protoParameters;
@@ -90,6 +91,8 @@ public class JsonStreamFeeder {
     static <T extends Throwable> void sneakyThrow(Throwable thrown) throws T { throw (T) thrown; }
 
     private static final JsonFactory factory = new JsonFactory();
+
+    @Override public void close() throws IOException { client.close(); }
 
     private class RingBufferStream extends InputStream {
 
