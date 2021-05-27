@@ -44,7 +44,7 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
             FeatureArguments arguments = asFeatureArguments(feature.getArguments());
             ConvertedModel convertedModel =
                     convertedOnnxModels.computeIfAbsent(arguments.path(),
-                                                        path -> ConvertedModel.fromSourceOrStore(path, true, context, true));
+                                                        path -> ConvertedModel.fromSourceOrStore(path, true, context));
             return convertedModel.expression(arguments, context);
         }
         catch (IllegalArgumentException | UncheckedIOException e) {

@@ -138,8 +138,16 @@ public class ModelEvaluationTest {
         assertEquals(2, add_mul.functions().size());
         assertNotNull(add_mul.evaluatorOf("output1"));
         assertNotNull(add_mul.evaluatorOf("output2"));
+        assertNotNull(add_mul.evaluatorOf("default.output1"));
+        assertNotNull(add_mul.evaluatorOf("default.output2"));
+        assertNotNull(add_mul.evaluatorOf("default", "output1"));
+        assertNotNull(add_mul.evaluatorOf("default", "output2"));
         assertNotNull(evaluator.evaluatorOf("add_mul", "output1"));
         assertNotNull(evaluator.evaluatorOf("add_mul", "output2"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default.output1"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default.output2"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default", "output1"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default", "output2"));
         assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).argumentTypes().get("input1"));
         assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).argumentTypes().get("input2"));
 

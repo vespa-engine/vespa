@@ -73,10 +73,6 @@ public class ConvertedModel {
         this.sourceModel = sourceModel;
     }
 
-    public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
-        return fromSourceOrStore(modelPath, pathIsFile, context, false);
-    }
-
     /**
      * Create and store a converted model for a rank profile given from either an imported model,
      * or (if unavailable) from stored application package data.
@@ -84,12 +80,10 @@ public class ConvertedModel {
      * @param modelPath the path to the model
      * @param pathIsFile true if that path (this kind of model) is stored in a file, false if it is in a directory
      * @param context the transform context
-     * @param convertToNative force conversion to native Vespa expressions (if applicable)
      */
     public static ConvertedModel fromSourceOrStore(Path modelPath,
                                                    boolean pathIsFile,
-                                                   RankProfileTransformContext context,
-                                                   boolean convertToNative) {
+                                                   RankProfileTransformContext context) {
         ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
                 context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
@@ -99,7 +93,7 @@ public class ConvertedModel {
                                                context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
 
         if (sourceModel != null) {
-            if (convertToNative && ! sourceModel.isNative()) {
+            if ( ! sourceModel.isNative()) {
                 sourceModel = sourceModel.asNative();
             }
             return fromSource(modelName,

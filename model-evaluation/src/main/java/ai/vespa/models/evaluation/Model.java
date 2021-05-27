@@ -216,6 +216,11 @@ public class Model {
                 return evaluatorOf("default" + name.substring("serving_default".length()));
             }
 
+            // To handle backward compatibility with ONNX conversion to native Vespa rank expressions
+            if (name.startsWith("default.")) {
+                return evaluatorOf(name.substring("default.".length()));
+            }
+
             throwUndeterminedFunction("No function '" + name + "' in " + this);
         }
         else if (names.length == 2) {
