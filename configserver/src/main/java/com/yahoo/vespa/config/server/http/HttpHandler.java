@@ -50,12 +50,12 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.notFoundError(getMessage(e, request));
         } catch (ActivationConflictException e) {
             return HttpErrorResponse.conflictWhenActivating(getMessage(e, request));
-        } catch (BadRequestException | IllegalArgumentException | IllegalStateException e) {
+        } catch (InvalidApplicationException e) {
+            return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
+        } catch (IllegalArgumentException e) {
             return HttpErrorResponse.badRequest(getMessage(e, request));
         } catch (OutOfCapacityException e) {
             return HttpErrorResponse.outOfCapacity(getMessage(e, request));
-        } catch (InvalidApplicationException e) {
-            return HttpErrorResponse.invalidApplicationPackage(getMessage(e, request));
         } catch (InternalServerException e) {
             return HttpErrorResponse.internalServerError(getMessage(e, request));
         } catch (UnknownVespaVersionException e) {

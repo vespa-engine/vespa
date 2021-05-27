@@ -7,7 +7,6 @@ package com.yahoo.config.provision;
  * having too few nodes (of the specified flavor)
  * 
  * @author hmusum
- *
  */
 public class OutOfCapacityException extends RuntimeException {
 

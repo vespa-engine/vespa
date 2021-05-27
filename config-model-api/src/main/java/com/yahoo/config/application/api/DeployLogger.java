@@ -20,4 +20,5 @@ public interface DeployLogger {
     default void logApplicationPackage(Level level, String message) {
         log(level, message);
     }
+
 }

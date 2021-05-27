@@ -242,7 +242,7 @@ public class HostedDeployTest {
      * Tests that we create the minimal set of models and that version 7.x is created
      * if creating version 8.x fails (to support upgrades to new major version for applications
      * that are still using features that do not work on version 8.x)
-     **/
+     */
     @Test
     public void testCreateLatestMajorOnPreviousMajorIfItFailsOnMajorVersion8() throws IOException {
         deployWithModelForLatestMajorVersionFailing(8);
@@ -252,7 +252,7 @@ public class HostedDeployTest {
      * Tests that we fail deployment for version 7.x if creating version 7.x fails (i.e. that we do not skip
      * building 7.x and only build version 6.x). Skipping creation of models for a major version is only supported
      * for major version >= 8 (see test above) or when major-version=6 is set in application package.
-     **/
+     */
     @Test(expected = InvalidApplicationException.class)
     public void testFailingToCreateModelVersion7FailsDeployment() throws IOException {
         deployWithModelForLatestMajorVersionFailing(7);
@@ -286,7 +286,7 @@ public class HostedDeployTest {
 
     /**
      * Tests that we fail deployment if a needed model version fails to be created
-     **/
+     */
     @Test(expected = InvalidApplicationException.class)
     public void testDeploymentFailsIfNeededModelVersionFails() throws IOException {
         List<Host> hosts = createHosts(7, "7.0.0");
@@ -302,7 +302,7 @@ public class HostedDeployTest {
      * Test that deploying an application works when there are no allocated hosts in the system
      * (the bootstrap a new zone case, so deploying the routing app since that is the first deployment
      * that will be done)
-     **/
+     */
     @Test
     public void testCreateOnlyNeededModelVersionsWhenNoHostsAllocated() throws IOException {
         CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
