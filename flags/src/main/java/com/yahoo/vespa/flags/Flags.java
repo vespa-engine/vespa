@@ -231,6 +231,13 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DISTRIBUTE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
+            "distribute-external-rank-expression", false,
+            List.of("baldersheim"), "2021-05-27", "2021-07-01",
+            "Whether to use distributed external rank expression files by filedistribution",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
             "enable-routing-core-dumps", false,
             List.of("tokle"), "2021-04-16", "2021-08-01",

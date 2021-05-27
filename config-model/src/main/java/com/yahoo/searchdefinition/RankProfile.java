@@ -713,18 +713,18 @@ public class RankProfile implements Cloneable {
     }
 
     private Reader openRankingExpressionReader(String expName, String expression) {
-        if ( ! expression.startsWith("file:")) return new StringReader(expression);
+        if (!expression.startsWith("file:")) return new StringReader(expression);
 
         String fileName = extractFileName(expression);
         File file = new File(fileName);
-        if ( ! file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
-            throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
-                                               "' in subdirectory, which is not supported.");
+        if (!file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
+            throw new IllegalArgumentException("In " + getName() + ", " + expName + ", ranking references file '" + file +
+                    "' in subdirectory, which is not supported.");
 
-        /* TODO balder: Disabled until end-2-end verified
-        rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
-        externalFileExpressions.add(expName);
-        */
+        if (search.getDeployProperties().featureFlags().distributeExternalRankExpressions()) {
+            rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
+            externalFileExpressions.add(expName);
+        }
         return search.getRankingExpression(fileName);
     }
 
