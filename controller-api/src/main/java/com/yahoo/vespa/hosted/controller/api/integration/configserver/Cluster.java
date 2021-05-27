@@ -77,29 +77,35 @@ public class Cluster {
 
     public static class Utilization {
 
-        private final double cpu, idealCpu, memory, idealMemory, disk, idealDisk;
+        private final double cpu, idealCpu, currentCpu, memory, idealMemory, currentMemory, disk, idealDisk, currentDisk;
 
-        public Utilization(double cpu, double idealCpu,
-                           double memory, double idealMemory,
-                           double disk, double idealDisk) {
+        public Utilization(double cpu, double idealCpu, double currentCpu,
+                           double memory, double idealMemory, double currentMemory,
+                           double disk, double idealDisk, double currentDisk) {
             this.cpu = cpu;
             this.idealCpu = idealCpu;
+            this.currentCpu = currentCpu;
             this.memory = memory;
             this.idealMemory = idealMemory;
+            this.currentMemory = currentMemory;
             this.disk = disk;
             this.idealDisk = idealDisk;
+            this.currentDisk = currentDisk;
         }
 
         public double cpu() { return cpu; }
         public double idealCpu() { return idealCpu; }
+        public double currentCpu() { return currentCpu; }
 
         public double memory() { return memory; }
         public double idealMemory() { return idealMemory; }
+        public double currentMemory() { return currentMemory; }
 
         public double disk() { return disk; }
         public double idealDisk() { return idealDisk; }
+        public double currentDisk() { return currentDisk; }
 
-        public static Utilization empty() { return new Utilization(0, 0, 0, 0, 0, 0); }
+        public static Utilization empty() { return new Utilization(0, 0, 0, 0, 0, 0, 0, 0, 0); }
 
     }
 
