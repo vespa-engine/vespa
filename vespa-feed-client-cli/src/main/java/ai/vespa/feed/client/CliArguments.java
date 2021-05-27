@@ -48,6 +48,7 @@ class CliArguments {
     private static final String TIMEOUT_OPTION = "timeout";
     private static final String TRACE_OPTION = "trace";
     private static final String VERSION_OPTION = "version";
+    private static final String STDIN_OPTION = "stdin";
 
     private final CommandLine arguments;
 
@@ -70,8 +71,8 @@ class CliArguments {
             if (!args.hasOption(ENDPOINT_OPTION)) {
                 throw new CliArgumentsException("Endpoint must be specified");
             }
-            if (!args.hasOption(FILE_OPTION)) {
-                throw new CliArgumentsException("Feed file must be specified");
+            if (args.hasOption(FILE_OPTION) == args.hasOption(STDIN_OPTION)) {
+                throw new CliArgumentsException(String.format("Either option '%s' or '%s' must be specified", FILE_OPTION, STDIN_OPTION));
             }
             if (args.hasOption(CERTIFICATE_OPTION) != args.hasOption(PRIVATE_KEY_OPTION)) {
                 throw new CliArgumentsException(
@@ -107,7 +108,9 @@ class CliArguments {
 
     Optional<Path> caCertificates() throws CliArgumentsException { return fileValue(CA_CERTIFICATES_OPTION); }
 
-    Path inputFile() throws CliArgumentsException {  return fileValue(FILE_OPTION).get(); }
+    Optional<Path> inputFile() throws CliArgumentsException {
+        return fileValue(FILE_OPTION);
+    }
 
     Map<String, String> headers() throws CliArgumentsException {
         String[] rawArguments = arguments.getOptionValues(HEADER_OPTION);
@@ -141,6 +144,8 @@ class CliArguments {
                 ? Optional.of(Duration.ofMillis((long)(timeout.getAsDouble()*1000)))
                 : Optional.empty();
     }
+
+    boolean readFeedFromStandardInput() { return has(STDIN_OPTION); }
 
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
@@ -245,6 +250,9 @@ class CliArguments {
                         .longOpt(TRACE_OPTION)
                         .hasArg()
                         .type(Number.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(STDIN_OPTION)
                         .build());
     }
 

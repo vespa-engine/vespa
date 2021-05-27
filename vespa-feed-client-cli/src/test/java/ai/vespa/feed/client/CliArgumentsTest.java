@@ -25,7 +25,7 @@ class CliArgumentsTest {
                 "--header=\"My-Header: my-value\"", "--header", "Another-Header: another-value", "--benchmark",
                 "--route=myroute", "--timeout=0.125", "--trace=9"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
-        assertEquals(Paths.get("feed.json"), args.inputFile());
+        assertEquals(Paths.get("feed.json"), args.inputFile().get());
         assertEquals(10, args.connections().getAsInt());
         assertEquals(128, args.maxStreamsPerConnection().getAsInt());
         assertEquals(Paths.get("cert.pem"), args.certificateAndKey().get().certificateFile);
@@ -47,12 +47,21 @@ class CliArgumentsTest {
     void fails_on_missing_parameters() {
         CliArguments.CliArgumentsException exception =  assertThrows(
                 CliArguments.CliArgumentsException.class,
-                () -> CliArguments.fromRawArgs(new String[] {"--file=/path/to/file"}));
+                () -> CliArguments.fromRawArgs(new String[] {"--file=/path/to/file", "--stdin"}));
         assertEquals("Endpoint must be specified", exception.getMessage());
-        exception =  assertThrows(
+    }
+
+    @Test
+    void fails_on_conflicting_parameters() {
+        CliArguments.CliArgumentsException exception = assertThrows(
+                CliArguments.CliArgumentsException.class,
+                () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint", "--file=/path/to/file", "--stdin"}));
+        assertEquals("Either option 'file' or 'stdin' must be specified", exception.getMessage());
+
+        exception = assertThrows(
                 CliArguments.CliArgumentsException.class,
                 () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint"}));
-        assertEquals("Feed file must be specified", exception.getMessage());
+        assertEquals("Either option 'file' or 'stdin' must be specified", exception.getMessage());
     }
 
     @Test
