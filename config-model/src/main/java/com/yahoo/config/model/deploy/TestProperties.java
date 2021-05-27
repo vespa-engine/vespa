@@ -100,6 +100,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
+    @Override public boolean distributeExternalRankExpressions() { return useExternalRankExpression; }
 
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;

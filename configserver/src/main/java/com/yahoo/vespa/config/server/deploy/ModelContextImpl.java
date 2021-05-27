@@ -176,6 +176,7 @@ public class ModelContextImpl implements ModelContext {
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
         private final boolean enableCustomAclMapping;
         private final boolean useExternalRankExpression;
+        private final boolean distributeExternalRankExpressions;
         private final int numDistributorStripes;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -199,7 +200,8 @@ public class ModelContextImpl implements ModelContext {
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
             this.enableCustomAclMapping = flagValue(source, appId, Flags.ENABLE_CUSTOM_ACL_MAPPING);
             this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
-            this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);;
+            this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);
+            this.distributeExternalRankExpressions = flagValue(source, appId, Flags.DISTRIBUTE_EXTERNAL_RANK_EXPRESSION);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -225,6 +227,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableCustomAclMapping() { return enableCustomAclMapping; }
         @Override public int numDistributorStripes() { return numDistributorStripes; }
         @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
+        @Override public boolean distributeExternalRankExpressions() { return distributeExternalRankExpressions; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
