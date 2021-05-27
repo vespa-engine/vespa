@@ -1,6 +1,9 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import java.io.BufferedInputStream;
@@ -47,17 +50,25 @@ public class CliClient {
                 systemOut.println(Vespa.VERSION);
                 return 0;
             }
-            try (InputStream in = createFeedInputStream(cliArgs); JsonStreamFeeder feeder = createJsonFeeder(cliArgs)) {
-                feeder.feed(in);
+            try (InputStream in = createFeedInputStream(cliArgs);
+                 JsonStreamFeeder feeder = createJsonFeeder(cliArgs)) {
+                if (cliArgs.benchmarkModeEnabled()) {
+                    printBenchmarkResult(feeder.benchmark(in));
+                } else {
+                    feeder.feed(in);
+                }
             }
             return 0;
         } catch (CliArguments.CliArgumentsException | IOException e) {
             boolean verbose = cliArgs != null && cliArgs.verboseSpecified();
             return handleException(verbose, e);
+        } catch (Exception e) {
+            boolean verbose = cliArgs != null && cliArgs.verboseSpecified();
+            return handleException(verbose, "Unknown failure: " + e.getMessage(), e);
         }
     }
 
-    private static FeedClient createFeedClient(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
+    private static FeedClient createFeedClient(CliArguments cliArgs) throws CliArguments.CliArgumentsException {
         FeedClientBuilder builder = FeedClientBuilder.create(cliArgs.endpoint());
         cliArgs.connections().ifPresent(builder::setMaxConnections);
         cliArgs.maxStreamsPerConnection().ifPresent(builder::setMaxConnections);
@@ -82,6 +93,18 @@ public class CliClient {
     private InputStream createFeedInputStream(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
         return new BufferedInputStream(
                 cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get()));
+    }
+
+    private void printBenchmarkResult(JsonStreamFeeder.BenchmarkResult result) throws IOException {
+        JsonFactory factory = new JsonFactory();
+        try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
+            generator.writeStartObject();
+            generator.writeNumberField("feeder.runtime", result.duration.toMillis());
+            generator.writeNumberField("feeder.okcount", result.okCount);
+            generator.writeNumberField("feeder.errorcount", result.errorCount);
+            generator.writeNumberField("feeder.throughput", result.throughput);
+            generator.writeEndObject();
+        }
     }
 
     private int handleException(boolean verbose, Exception e) { return handleException(verbose, e.getMessage(), e); }
