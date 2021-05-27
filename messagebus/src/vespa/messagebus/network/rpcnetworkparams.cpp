@@ -6,7 +6,7 @@
 namespace mbus {
 
 RPCNetworkParams::RPCNetworkParams()
-    : RPCNetworkParams("admin/slobrok.0")
+    : RPCNetworkParams("client")
 { }
 
 RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :

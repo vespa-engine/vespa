@@ -61,7 +61,7 @@ public:
         int retCode = 0;
         fnet::frt::StandaloneFRT supervisor;
 
-        slobrok::ConfiguratorFactory sbcfg("admin/slobrok.0");
+        slobrok::ConfiguratorFactory sbcfg("client");
         slobrok::api::MirrorAPI mirror(supervisor.supervisor(), sbcfg);
 
         while (!mirror.ready()) {

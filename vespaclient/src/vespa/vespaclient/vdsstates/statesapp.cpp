@@ -209,8 +209,8 @@ Options::Options(Mode mode)
     }
     addOptionHeader("Advanced options. Not needed for most usecases");
     addOption("l slobrokconfig", _slobrokConfigId,
-              std::string("admin/slobrok.0"),
-              "Config id of slobrok. Will use the default config id of admin/slobrok.0 if not specified.");
+              std::string("client"),
+              "Config id of slobrok. Will use the default config id of client if not specified.");
     addOption("p slobrokspec", _slobrokConnectionSpec, std::string(""),
               "Slobrok connection spec. By setting this, this application "
               "will not need config at all, but will use the given "
