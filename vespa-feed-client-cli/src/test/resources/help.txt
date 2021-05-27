@@ -15,4 +15,5 @@ Vespa feed client
     --stdin
     --timeout <arg>
     --trace <arg>
+    --verbose
     --version

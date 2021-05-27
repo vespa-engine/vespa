@@ -37,8 +37,9 @@ public class CliClient {
     }
 
     private int run(String[] rawArgs) {
+        CliArguments cliArgs = null;
         try {
-            CliArguments cliArgs = CliArguments.fromRawArgs(rawArgs);
+            cliArgs = CliArguments.fromRawArgs(rawArgs);
             if (cliArgs.helpSpecified()) {
                 cliArgs.printHelp(systemOut);
                 return 0;
@@ -52,7 +53,8 @@ public class CliClient {
             }
             return 0;
         } catch (CliArguments.CliArgumentsException | IOException e) {
-            return handleException(e);
+            boolean verbose = cliArgs != null && cliArgs.verboseSpecified();
+            return handleException(verbose, e);
         }
     }
 
@@ -93,11 +95,11 @@ public class CliClient {
                 cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get()));
     }
 
-    private int handleException(Exception e) { return handleException(e.getMessage(), e); }
+    private int handleException(boolean verbose, Exception e) { return handleException(verbose, e.getMessage(), e); }
 
-    private int handleException(String message, Exception exception) {
+    private int handleException(boolean verbose, String message, Exception exception) {
         systemError.println(message);
-        if (debugMode()) {
+        if (debugMode() || verbose) {
             exception.printStackTrace(systemError);
         }
         return 1;

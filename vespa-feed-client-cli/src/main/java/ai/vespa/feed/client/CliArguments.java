@@ -47,6 +47,7 @@ class CliArguments {
     private static final String ROUTE_OPTION = "route";
     private static final String TIMEOUT_OPTION = "timeout";
     private static final String TRACE_OPTION = "trace";
+    private static final String VERBOSE_OPTION = "verbose";
     private static final String VERSION_OPTION = "version";
     private static final String STDIN_OPTION = "stdin";
 
@@ -144,6 +145,8 @@ class CliArguments {
                 ? Optional.of(Duration.ofMillis((long)(timeout.getAsDouble()*1000)))
                 : Optional.empty();
     }
+
+    boolean verboseSpecified() { return has(VERBOSE_OPTION); }
 
     boolean readFeedFromStandardInput() { return has(STDIN_OPTION); }
 
@@ -253,6 +256,9 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(STDIN_OPTION)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(VERBOSE_OPTION)
                         .build());
     }
 
