@@ -838,15 +838,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void validateThatSessionIsNotActive(Tenant tenant, long sessionId) {
         Session session = getRemoteSession(tenant, sessionId);
-        if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalStateException("Session is active: " + sessionId);
-        }
+        if (Session.Status.ACTIVATE == session.getStatus())
+            throw new IllegalArgumentException("Session is active: " + sessionId);
     }
 
     public void validateThatSessionIsPrepared(Tenant tenant, long sessionId) {
         Session session = getRemoteSession(tenant, sessionId);
-        if ( ! Session.Status.PREPARE.equals(session.getStatus()))
-            throw new IllegalStateException("Session not prepared: " + sessionId);
+        if ( Session.Status.PREPARE != session.getStatus())
+            throw new IllegalArgumentException("Session not prepared: " + sessionId);
     }
 
     public long createSessionFromExisting(ApplicationId applicationId, boolean internalRedeploy, TimeoutBudget timeoutBudget) {

@@ -5,11 +5,11 @@ package com.yahoo.vespa.config.server.http;
  * Exception that will create a http response with BAD_REQUEST response code (400)
  *
  * @author hmusum
- * @since 5.1.17
  */
-public class BadRequestException extends RuntimeException {
+public class BadRequestException extends IllegalArgumentException {
 
     public BadRequestException(String message) {
         super(message);
     }
+
 }

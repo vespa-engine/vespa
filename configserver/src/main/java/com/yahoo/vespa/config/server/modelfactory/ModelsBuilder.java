@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.Provisioned;
@@ -18,10 +19,12 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.vespa.config.server.http.InternalServerException;
+import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.provision.ProvisionerAdapter;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,17 +59,25 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     private final HostProvisionerProvider hostProvisionerProvider;
 
-    ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig,
-                  Zone zone, HostProvisionerProvider hostProvisionerProvider) {
+    private final DeployLogger deployLogger;
+
+    ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
+                  ConfigserverConfig configserverConfig,
+                  Zone zone,
+                  HostProvisionerProvider hostProvisionerProvider,
+                  DeployLogger deployLogger) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configserverConfig = configserverConfig;
         this.hosted = configserverConfig.hostedVespa();
         this.zone = zone;
         this.hostProvisionerProvider = hostProvisionerProvider;
+        this.deployLogger = deployLogger;
     }
 
     /** Returns the zone this is running in */
     protected Zone zone() { return zone; }
+
+    protected DeployLogger  deployLogger() { return deployLogger; }
 
     /**
      * Builds all applicable model versions
@@ -122,23 +133,26 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             catch (RuntimeException e) {
                 if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion)) {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersion, e);
-                } else  {
-                    if (e instanceof NullPointerException || e instanceof NoSuchElementException | e instanceof UncheckedTimeoutException) {
-                        log.log(Level.WARNING, "Unexpected error when building model ", e);
-                        throw new InternalServerException(applicationId + ": Error loading model", e);
-                    } else {
-                        log.log(Level.WARNING, "Input error when building model ", e);
-                        throw new IllegalArgumentException(applicationId + ": Error loading model", e);
+                }
+                else {
+                    if (e instanceof IllegalArgumentException) {
+                        var wrapped = new InvalidApplicationException("Error loading " + applicationId, e);
+                        deployLogger.logApplicationPackage(Level.SEVERE, Exceptions.toMessageString(wrapped));
+                        throw wrapped;
+                    }
+                    else {
+                        log.log(Level.WARNING, "Unexpected error building " + applicationId, e);
+                        throw new InternalServerException("Unexpected error building " + applicationId, e);
                     }
                 }
             }
         }
         log.log(Level.FINE, () -> "Done building models for " + applicationId + ". Built models for versions " +
-                            allApplicationModels.stream()
-                                                .map(result -> result.getModel().version())
-                                                .map(Version::toFullString)
-                                                .collect(Collectors.toSet()) +
-                            " in " + Duration.between(start, Instant.now()));
+                                  allApplicationModels.stream()
+                                                      .map(result -> result.getModel().version())
+                                                      .map(Version::toFullString)
+                                                      .collect(Collectors.toSet()) +
+                                  " in " + Duration.between(start, Instant.now()));
         return allApplicationModels;
     }
 

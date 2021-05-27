@@ -52,7 +52,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final HostValidator<ApplicationId> hostValidator;
-    private final DeployLogger logger;
     private final PrepareParams params;
     private final FileDistributionProvider fileDistributionProvider;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
@@ -66,18 +65,17 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,
                                  HostValidator<ApplicationId> hostValidator,
-                                 DeployLogger logger,
+                                 DeployLogger deployLogger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                  ModelContext.Properties properties,
                                  ConfigserverConfig configserverConfig) {
-        super(modelFactoryRegistry, configserverConfig, properties.zone(), hostProvisionerProvider);
+        super(modelFactoryRegistry, configserverConfig, properties.zone(), hostProvisionerProvider, deployLogger);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileDistributionProvider = fileDistributionProvider;
         this.hostValidator = hostValidator;
         this.curator = curator;
-        this.logger = logger;
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
         this.properties = properties;
@@ -99,7 +97,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 applicationPackage,
                 modelOf(modelVersion),
                 permanentApplicationPackage.applicationPackage(),
-                logger,
+                deployLogger(),
                 configDefinitionRepo,
                 fileDistributionProvider.getFileRegistry(),
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator).readReindexingStatus(applicationId),
