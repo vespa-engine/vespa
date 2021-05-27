@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/** Immutable state of support access, keeping history of all changes/grants. */
 public class SupportAccess {
 
     public static final SupportAccess DISALLOWED_NO_HISTORY = new SupportAccess(List.of(), List.of());
@@ -16,9 +17,7 @@ public class SupportAccess {
     private final List<SupportAccessChange> changeHistory;
     private final List<SupportAccessGrant> grantHistory;
 
-    /**
-     * public for serializer - do not use
-     */
+    /** public for serializer - do not use */
     public SupportAccess(List<SupportAccessChange> changeHistory, List<SupportAccessGrant> grantHistory) {
         this.changeHistory = Collections.unmodifiableList(changeHistory);
         this.grantHistory = Collections.unmodifiableList(grantHistory);
@@ -35,7 +34,7 @@ public class SupportAccess {
     public CurrentStatus currentStatus(Instant now) {
         Optional<SupportAccessChange> latestChange = changeHistory.stream().findFirst();
 
-        if(latestChange.isEmpty() || latestChange.get().accessAllowedUntil().isEmpty() || now.isAfter(latestChange.get().accessAllowedUntil().get()))
+        if (latestChange.isEmpty() || latestChange.get().accessAllowedUntil().isEmpty() || now.isAfter(latestChange.get().accessAllowedUntil().get()))
             return new CurrentStatus(State.NOT_ALLOWED, Optional.empty(), Optional.empty());
 
         return new CurrentStatus(State.ALLOWED, latestChange.get().accessAllowedUntil(), Optional.of(latestChange.get().madeBy()));

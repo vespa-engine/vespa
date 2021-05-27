@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+/** An (immutable) change in support access, recording what change was made, when, and by whom. */
 public class SupportAccessChange {
     private final Instant madeAt;
     private final Optional<Instant> accessAllowedUntil;
