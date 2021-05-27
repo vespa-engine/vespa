@@ -8,6 +8,8 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.node.ClusterId;
+import com.yahoo.vespa.hosted.provision.node.Report;
 
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -213,6 +215,18 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                              n.allocation().get().membership().cluster().group().equals(Optional.of(ClusterSpec.Group.from(index))));
     }
 
+    // TODO(mpolden): Remove these when HostEncrypter is removed
+    /** Returns the subset of nodes which are being encrypted */
+    public NodeList encrypting() {
+        return matching(node -> node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent() &&
+                                node.reports().getReport(Report.DISK_ENCRYPTED_ID).isEmpty());
+    }
+
+    /** Returns the subset of nodes which are encrypted */
+    public NodeList encrypted() {
+        return matching(node -> node.reports().getReport(Report.DISK_ENCRYPTED_ID).isPresent());
+    }
+
     /** Returns the parent node of the given child node */
     public Optional<Node> parentOf(Node child) {
         return child.parentHostname()
@@ -223,6 +237,16 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the hostnames of nodes in this */
     public Set<String> hostnames() {
         return stream().map(Node::hostname).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** Returns the stateful clusters on nodes in this */
+    public Set<ClusterId> statefulClusters() {
+        return stream().filter(node -> node.allocation().isPresent() &&
+                                       node.allocation().get().membership().cluster().isStateful())
+                       .map(node -> new ClusterId(node.allocation().get().owner(),
+                                                  node.allocation().get().membership().cluster().id()))
+                       .collect(Collectors.toUnmodifiableSet());
+
     }
 
     /**

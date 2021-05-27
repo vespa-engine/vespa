@@ -50,6 +50,7 @@ public class NodeHistory {
         RebuildingOsUpgrader,
         SpareCapacityMaintainer,
         SwitchRebalancer,
+        HostEncrypter,
     }
 
 }

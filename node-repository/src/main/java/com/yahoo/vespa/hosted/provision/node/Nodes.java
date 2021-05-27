@@ -611,29 +611,39 @@ public class Nodes {
 
     /** Retire and deprovision given host and all of its children */
     public List<Node> deprovision(String hostname, Agent agent, Instant instant) {
-        return decomission(hostname, DecommisionOperation.deprovision, agent, instant);
+        return decommission(hostname, DecommissionOperation.deprovision, agent, instant);
     }
 
     /** Retire and rebuild given host and all of its children */
     public List<Node> rebuild(String hostname, Agent agent, Instant instant) {
-        return decomission(hostname, DecommisionOperation.rebuild, agent, instant);
+        return decommission(hostname, DecommissionOperation.rebuild, agent, instant);
     }
 
-    private List<Node> decomission(String hostname, DecommisionOperation op, Agent agent, Instant instant) {
+    /** Retire and encrypt given host and all of its children */
+    public List<Node> encrypt(String hostname, Agent agent, Instant instant) {
+        return decommission(hostname, DecommissionOperation.encrypt, agent, instant);
+    }
+
+    private List<Node> decommission(String hostname, DecommissionOperation op, Agent agent, Instant instant) {
         Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
         Node host = nodeMutex.get().node();
         if (!host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
         List<Node> result;
-        boolean wantToDeprovision = op == DecommisionOperation.deprovision;
-        boolean wantToRebuild = op == DecommisionOperation.rebuild;
+        boolean wantToDeprovision = op == DecommissionOperation.deprovision;
+        boolean wantToRebuild = op == DecommissionOperation.rebuild;
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
             result = performOn(list(allocationLock).childrenOf(host),
                                (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
                                                          nodeLock));
-            result.add(write(host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant), lock));
+            Node newHost = host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
+            if (op == DecommissionOperation.encrypt) {
+                Report report = Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, "");
+                newHost = newHost.with(newHost.reports().withReport(report));
+            }
+            result.add(write(newHost, lock));
         }
         return result;
     }
@@ -806,10 +816,11 @@ public class Nodes {
                retirementRequestedByOperator;
     }
 
-    /** The different ways a host can be decomissioned */
-    private enum DecommisionOperation {
+    /** The different ways a host can be decommissioned */
+    private enum DecommissionOperation {
         deprovision,
         rebuild,
+        encrypt,
     }
 
 }
