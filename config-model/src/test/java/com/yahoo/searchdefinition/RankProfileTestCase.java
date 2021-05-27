@@ -173,7 +173,7 @@ public class RankProfileTestCase extends SchemaTestCase {
                 "  rank-profile p1 {}\n" +
                 "  rank-profile p2 {}\n" +
                 "}");
-        builder.build(true, new BaseDeployLogger());
+        builder.build(true);
         Search search = builder.getSearch();
 
         assertEquals(4, registry.all().size());

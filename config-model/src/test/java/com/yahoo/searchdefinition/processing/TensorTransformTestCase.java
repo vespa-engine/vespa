@@ -195,7 +195,7 @@ public class TensorTransformTestCase extends SchemaTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build(true, new BaseDeployLogger());
+        builder.build(true);
         Search s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,

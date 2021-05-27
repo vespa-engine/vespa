@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.component.Version;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -116,6 +117,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     public List<NamedReader> getSearchDefinitions() {
         ArrayList<NamedReader> readers = new ArrayList<>();
         SearchBuilder searchBuilder = new SearchBuilder(this,
+                                                        new BaseDeployLogger(),
                                                         new RankProfileRegistry(),
                                                         queryProfileRegistry);
         for (String sd : schemas) {

@@ -21,7 +21,7 @@ public class ReservedRankingExpressionFunctionNamesTestCase {
     public void requireThatFunctionsWithReservedNamesIssueAWarning() throws ParseException {
         TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SearchBuilder builder = new SearchBuilder(deployLogger, rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -50,7 +50,7 @@ public class ReservedRankingExpressionFunctionNamesTestCase {
                         "        }\n" +
                         "    }\n" +
                         "}\n");
-        builder.build(true, deployLogger);
+        builder.build(true);
 
         assertTrue(deployLogger.log.contains("sigmoid") && deployLogger.log.contains("test_rank_profile"));
         assertTrue(deployLogger.log.contains("sigmoid") && deployLogger.log.contains("test_rank_profile_2"));
