@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.net.URI;
@@ -85,12 +86,19 @@ public class ApplicationSerializer {
     }
 
     private static void clusterUtilizationToSlime(ClusterModel clusterModel, Cursor utilizationObject) {
-        utilizationObject.setDouble("cpu", clusterModel.averageLoad().cpu());
-        utilizationObject.setDouble("idealCpu", clusterModel.idealLoad().cpu());
-        utilizationObject.setDouble("memory", clusterModel.averageLoad().memory());
-        utilizationObject.setDouble("idealMemory", clusterModel.idealLoad().memory());
-        utilizationObject.setDouble("disk", clusterModel.averageLoad().disk());
-        utilizationObject.setDouble("idealDisk", clusterModel.idealLoad().disk());
+        Load idealLoad = clusterModel.idealLoad();
+        Load averageLoad = clusterModel.averageLoad();
+        Load currentLoad = clusterModel.currentLoad();
+
+        utilizationObject.setDouble("cpu", averageLoad.cpu());
+        utilizationObject.setDouble("idealCpu", idealLoad.cpu());
+        utilizationObject.setDouble("currentCpu", currentLoad.cpu());
+        utilizationObject.setDouble("memory", averageLoad.memory());
+        utilizationObject.setDouble("idealMemory", idealLoad.memory());
+        utilizationObject.setDouble("currentMemory", currentLoad.memory());
+        utilizationObject.setDouble("disk", averageLoad.disk());
+        utilizationObject.setDouble("idealDisk", idealLoad.disk());
+        utilizationObject.setDouble("currentDisk", currentLoad.disk());
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

@@ -19,6 +19,8 @@ import java.util.OptionalDouble;
  */
 public class ClusterModel {
 
+    private static final Duration CURRENT_LOAD_DURATION = Duration.ofMinutes(5);
+
     static final double idealQueryCpuLoad = 0.8;
     static final double idealWriteCpuLoad = 0.95;
     static final double idealMemoryLoad = 0.7;
@@ -96,7 +98,11 @@ public class ClusterModel {
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
     }
 
-    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
+    /** Returns average load during the last {@link #CURRENT_LOAD_DURATION} */
+    public Load currentLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(CURRENT_LOAD_DURATION)); }
+
+    /** Returns average load during the last {@link #scalingDuration()} */
+    public Load averageLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(scalingDuration())); }
 
     public Load idealLoad() {
         return new Load(idealCpuLoad(), idealMemoryLoad, idealDiskLoad);

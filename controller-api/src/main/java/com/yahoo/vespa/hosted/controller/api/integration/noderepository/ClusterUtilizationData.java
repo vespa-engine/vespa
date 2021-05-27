@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 
-import java.time.Instant;
-
 /**
  * Utilization ratios
  *
@@ -21,19 +19,25 @@ public class ClusterUtilizationData {
     public Double cpu;
     @JsonProperty("idealCpu")
     public Double idealCpu;
+    @JsonProperty("currentCpu")
+    public Double currentCpu;
 
     @JsonProperty("memory")
     public Double memory;
     @JsonProperty("idealMemory")
     public Double idealMemory;
+    @JsonProperty("currentMemory")
+    public Double currentMemory;
 
     @JsonProperty("disk")
     public Double disk;
     @JsonProperty("idealDisk")
     public Double idealDisk;
+    @JsonProperty("currentDisk")
+    public Double currentDisk;
 
     public Cluster.Utilization toClusterUtilization() {
-        return new Cluster.Utilization(cpu, idealCpu, memory, idealMemory, disk, idealDisk);
+        return new Cluster.Utilization(cpu, idealCpu, currentCpu, memory, idealMemory, currentMemory, disk, idealDisk, currentDisk);
     }
 
 }
