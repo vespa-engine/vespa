@@ -256,7 +256,7 @@ public class Flags {
             "max-encrypting-hosts", 0,
             List.of("mpolden", "hakonhall"), "2021-05-27", "2021-10-01",
             "The maximum number of hosts allowed to encrypt their disk concurrently",
-            "Takes effect immediately, but any currently encrypting hosts will not be cancelled when reducing the limit");
+            "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

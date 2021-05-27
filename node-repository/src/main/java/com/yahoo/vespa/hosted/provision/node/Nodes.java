@@ -640,7 +640,7 @@ public class Nodes {
                                                          nodeLock));
             Node newHost = host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
             if (op == DecommissionOperation.encrypt) {
-                Report report = Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, "Host should be encrypted");
+                Report report = Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, "");
                 newHost = newHost.with(newHost.reports().withReport(report));
             }
             result.add(write(newHost, lock));
