@@ -51,7 +51,8 @@ class CliArguments {
 
     private final CommandLine arguments;
 
-    private CliArguments(CommandLine arguments) {
+    private CliArguments(CommandLine arguments) throws CliArgumentsException {
+        validateArgumentCombination(arguments);
         this.arguments = arguments;
     }
 
@@ -64,11 +65,26 @@ class CliArguments {
         }
     }
 
+    private static void validateArgumentCombination(CommandLine args) throws CliArgumentsException {
+        if (!args.hasOption(HELP_OPTION) && !args.hasOption(VERSION_OPTION)) {
+            if (!args.hasOption(ENDPOINT_OPTION)) {
+                throw new CliArgumentsException("Endpoint must be specified");
+            }
+            if (!args.hasOption(FILE_OPTION)) {
+                throw new CliArgumentsException("Feed file must be specified");
+            }
+            if (args.hasOption(CERTIFICATE_OPTION) != args.hasOption(PRIVATE_KEY_OPTION)) {
+                throw new CliArgumentsException(
+                        String.format("Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
+            }
+        } else if (args.hasOption(HELP_OPTION) && args.hasOption(VERSION_OPTION)) {
+            throw new CliArgumentsException(String.format("Cannot specify both '%s' and '%s'", HELP_OPTION, VERSION_OPTION));
+        }
+    }
+
     URI endpoint() throws CliArgumentsException {
         try {
-            URL url = (URL) arguments.getParsedOptionValue(ENDPOINT_OPTION);
-            if (url == null) throw new CliArgumentsException("Endpoint must be specified");
-            return url.toURI();
+            return ((URL) arguments.getParsedOptionValue(ENDPOINT_OPTION)).toURI();
         } catch (ParseException | URISyntaxException e) {
             throw new CliArgumentsException("Invalid endpoint: " + e.getMessage(), e);
         }
@@ -85,19 +101,13 @@ class CliArguments {
     Optional<CertificateAndKey> certificateAndKey() throws CliArgumentsException {
         Path certificateFile = fileValue(CERTIFICATE_OPTION).orElse(null);
         Path privateKeyFile = fileValue(PRIVATE_KEY_OPTION).orElse(null);
-        if ((certificateFile == null) != (privateKeyFile == null)) {
-            throw new CliArgumentsException(String.format("Both '%s' and '%s' must be specified together", CERTIFICATE_OPTION, PRIVATE_KEY_OPTION));
-        }
         if (privateKeyFile == null && certificateFile == null) return Optional.empty();
         return Optional.of(new CertificateAndKey(certificateFile, privateKeyFile));
     }
 
     Optional<Path> caCertificates() throws CliArgumentsException { return fileValue(CA_CERTIFICATES_OPTION); }
 
-    Path inputFile() throws CliArgumentsException {
-        return fileValue(FILE_OPTION)
-            .orElseThrow(() -> new CliArgumentsException("Feed file must be specified"));
-    }
+    Path inputFile() throws CliArgumentsException {  return fileValue(FILE_OPTION).get(); }
 
     Map<String, String> headers() throws CliArgumentsException {
         String[] rawArguments = arguments.getOptionValues(HEADER_OPTION);

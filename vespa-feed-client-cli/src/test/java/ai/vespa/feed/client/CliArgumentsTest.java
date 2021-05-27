@@ -44,11 +44,14 @@ class CliArgumentsTest {
     }
 
     @Test
-    void fails_on_missing_parameters() throws CliArguments.CliArgumentsException {
-        CliArguments cliArguments = CliArguments.fromRawArgs(new String[0]);
-        CliArguments.CliArgumentsException exception =  assertThrows(CliArguments.CliArgumentsException.class, cliArguments::endpoint);
+    void fails_on_missing_parameters() {
+        CliArguments.CliArgumentsException exception =  assertThrows(
+                CliArguments.CliArgumentsException.class,
+                () -> CliArguments.fromRawArgs(new String[] {"--file=/path/to/file"}));
         assertEquals("Endpoint must be specified", exception.getMessage());
-        exception =  assertThrows(CliArguments.CliArgumentsException.class, cliArguments::inputFile);
+        exception =  assertThrows(
+                CliArguments.CliArgumentsException.class,
+                () -> CliArguments.fromRawArgs(new String[] {"--endpoint=https://endpoint"}));
         assertEquals("Feed file must be specified", exception.getMessage());
     }
 
