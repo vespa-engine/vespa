@@ -16,8 +16,9 @@ import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -135,9 +136,11 @@ class HttpFeedClient implements FeedClient {
             if (thrown != null) {
                 if (requestStrategy.hasFailed()) {
                     try { close(); }
-                    catch (IOException exception) { throw new UncheckedIOException(exception); }
+                    catch (IOException exception) { thrown.addSuppressed(exception); }
                 }
-                return new Result(Result.Type.failure, documentId, thrown.getMessage(), null);
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                thrown.printStackTrace(new PrintStream(buffer));
+                return new Result(Result.Type.failure, documentId, buffer.toString(), null);
             }
             return toResult(response, documentId);
         });
