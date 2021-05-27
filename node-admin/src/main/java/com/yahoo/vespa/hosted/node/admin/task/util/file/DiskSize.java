@@ -7,7 +7,7 @@ import java.util.Objects;
 /**
  * @author freva
  */
-public class DiskSize {
+public class DiskSize implements Comparable<DiskSize> {
 
     public static final DiskSize ZERO = DiskSize.of(0);
     private static final char[] UNITS = "kMGTPE".toCharArray();
@@ -44,6 +44,11 @@ public class DiskSize {
         double remaining = bytes;
         for (; remaining >= 1000; unit++) remaining /= 1000;
         return String.format(Locale.ENGLISH, "%." + decimals + "f %sB", remaining, UNITS[unit]);
+    }
+
+    @Override
+    public int compareTo(DiskSize rhs) {
+        return Long.compare(this.bytes, rhs.bytes);
     }
 
     @Override
