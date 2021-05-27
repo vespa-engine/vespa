@@ -45,7 +45,6 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
     private final Optional<AllocatedHosts> allocatedHosts;
-    private static final Version legacyVersion = new Version(0, 0, 0);
 
     public static final String fileRegistryNode = "fileregistry";
     public static final String allocatedHostsNode = "allocatedHosts";
@@ -78,14 +77,11 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     private void importFileRegistries() {
-        List<String> fileRegistryNodes = zkApplication.getChildren(fileRegistryNode);
-        if (fileRegistryNodes.isEmpty()) {
-            fileRegistryMap.put(legacyVersion, importFileRegistry(fileRegistryNode));
-        } else {
-            fileRegistryNodes.forEach(version ->
-                        fileRegistryMap.put(Version.fromString(version),
-                                            importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
-        }
+        List<String> perVersionFileRegistryNodes = zkApplication.getChildren(fileRegistryNode);
+        perVersionFileRegistryNodes
+                .forEach(version ->
+                                 fileRegistryMap.put(Version.fromString(version),
+                                                     importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
     }
 
     private PreGeneratedFileRegistry importFileRegistry(String fileRegistryNode) {
@@ -266,9 +262,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     @Override
     public Reader getRankingExpression(String name) {
         Optional<Reader> reader = zkApplication.getOptionalDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, name);
-        if (reader.isPresent())
-            return reader.get();
-        return zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, name);
+        return reader.orElseGet(() -> zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, name));
     }
 
     @Override
