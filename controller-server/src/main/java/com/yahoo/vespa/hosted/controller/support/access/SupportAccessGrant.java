@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.support_access;
+package com.yahoo.vespa.hosted.controller.support.access;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;

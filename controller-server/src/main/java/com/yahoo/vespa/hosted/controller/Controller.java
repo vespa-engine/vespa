@@ -26,7 +26,7 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
-import com.yahoo.vespa.hosted.controller.support_access.SupportAccessControl;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;

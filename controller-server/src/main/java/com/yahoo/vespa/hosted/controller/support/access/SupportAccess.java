@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.support_access;
+package com.yahoo.vespa.hosted.controller.support.access;
 
 import java.time.Instant;
 import java.util.List;

@@ -5,9 +5,9 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.support_access.SupportAccess;
-import com.yahoo.vespa.hosted.controller.support_access.SupportAccessChange;
-import com.yahoo.vespa.hosted.controller.support_access.SupportAccessGrant;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessChange;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;

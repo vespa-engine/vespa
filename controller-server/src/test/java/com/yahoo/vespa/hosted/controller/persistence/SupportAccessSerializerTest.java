@@ -7,8 +7,8 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.support_access.SupportAccess;
-import com.yahoo.vespa.hosted.controller.support_access.SupportAccessGrant;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import org.intellij.lang.annotations.Language;
 import org.junit.Test;
 

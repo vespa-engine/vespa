@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.support_access;
+package com.yahoo.vespa.hosted.controller.support.access;
 
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -10,7 +10,7 @@ import java.time.Period;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.support_access.SupportAccess.State.NOT_ALLOWED;
+import static com.yahoo.vespa.hosted.controller.support.access.SupportAccess.State.NOT_ALLOWED;
 
 /**
  * Which application endpoints should Vespa support be allowed to access for debugging?
