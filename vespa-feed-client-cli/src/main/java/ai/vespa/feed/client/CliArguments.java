@@ -16,10 +16,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 /**
@@ -42,6 +44,9 @@ class CliArguments {
     private static final String HELP_OPTION = "help";
     private static final String MAX_STREAMS_PER_CONNECTION = "max-streams-per-connection";
     private static final String PRIVATE_KEY_OPTION = "private-key";
+    private static final String ROUTE_OPTION = "route";
+    private static final String TIMEOUT_OPTION = "timeout";
+    private static final String TRACE_OPTION = "trace";
     private static final String VERSION_OPTION = "version";
 
     private final CommandLine arguments;
@@ -116,12 +121,23 @@ class CliArguments {
 
     boolean benchmarkModeEnabled() { return has(BENCHMARK_OPTION); }
 
+    Optional<String> route() { return stringValue(ROUTE_OPTION); }
+
+    OptionalInt traceLevel() throws CliArgumentsException { return intValue(TRACE_OPTION); }
+
+    Optional<Duration> timeout() throws CliArgumentsException {
+        OptionalDouble timeout = doubleValue(TIMEOUT_OPTION);
+        return timeout.isPresent()
+                ? Optional.of(Duration.ofMillis((long)(timeout.getAsDouble()*1000)))
+                : Optional.empty();
+    }
+
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
             Number number = (Number) arguments.getParsedOptionValue(option);
             return number != null ? OptionalInt.of(number.intValue()) : OptionalInt.empty();
         } catch (ParseException e) {
-            throw new CliArgumentsException(String.format("Invalid value for '%s': %s", option, e.getMessage()), e);
+            throw newInvalidValueException(option, e);
         }
     }
 
@@ -131,11 +147,26 @@ class CliArguments {
             if (certificateFile == null) return Optional.empty();
             return Optional.of(certificateFile.toPath());
         } catch (ParseException e) {
-            throw new CliArgumentsException(String.format("Invalid value for '%s': %s", option, e.getMessage()), e);
+            throw newInvalidValueException(option, e);
+        }
+    }
+
+    private Optional<String> stringValue(String option) { return Optional.ofNullable(arguments.getOptionValue(option)); }
+
+    private OptionalDouble doubleValue(String option) throws CliArgumentsException {
+        try {
+            Number number = (Number) arguments.getParsedOptionValue(option);
+            return number != null ? OptionalDouble.of(number.doubleValue()) : OptionalDouble.empty();
+        } catch (ParseException e) {
+            throw newInvalidValueException(option, e);
         }
     }
 
     private boolean has(String option) { return arguments.hasOption(option); }
+
+    private static CliArgumentsException newInvalidValueException(String option, ParseException cause) {
+        return new CliArgumentsException(String.format("Invalid value for '%s': %s", option, cause.getMessage()), cause);
+    }
 
     private static Options createOptions() {
         // TODO Add description to each option
@@ -190,6 +221,20 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(BENCHMARK_OPTION)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(ROUTE_OPTION)
+                        .hasArg()
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(TIMEOUT_OPTION)
+                        .hasArg()
+                        .type(Number.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(TRACE_OPTION)
+                        .hasArg()
+                        .type(Number.class)
                         .build());
     }
 
