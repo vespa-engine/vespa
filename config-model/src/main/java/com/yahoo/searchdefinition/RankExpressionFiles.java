@@ -12,7 +12,7 @@ import java.util.logging.Level;
 public class RankExpressionFiles {
     private final Map<String, RankExpressionFile> expressions = new HashMap<>();
 
-    //TODO Deploy logger should not be necessary, as redefinition is illegal, but legacy prevents enforment starting now.
+    //TODO Deploy logger should not be necessary, as redefinition is illegal, but legacy prevents enforcement starting now.
     public void add(RankExpressionFile expression, DeployLogger deployLogger) {
         expression.validate();
         String name = expression.getName();
