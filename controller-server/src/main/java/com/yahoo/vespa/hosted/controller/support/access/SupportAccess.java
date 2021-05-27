@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.support.access;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,8 +20,8 @@ public class SupportAccess {
      * public for serializer - do not use
      */
     public SupportAccess(List<SupportAccessChange> changeHistory, List<SupportAccessGrant> grantHistory) {
-        this.changeHistory = changeHistory;
-        this.grantHistory = grantHistory;
+        this.changeHistory = Collections.unmodifiableList(changeHistory);
+        this.grantHistory = Collections.unmodifiableList(grantHistory);
     }
 
     public List<SupportAccessChange> changeHistory() {
