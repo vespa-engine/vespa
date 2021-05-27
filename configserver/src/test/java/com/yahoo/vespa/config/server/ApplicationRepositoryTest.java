@@ -575,7 +575,7 @@ public class ApplicationRepositoryTest {
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
-        exceptionRule.expect(IllegalStateException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
 
@@ -624,11 +624,11 @@ public class ApplicationRepositoryTest {
         PrepareResult result = deployApp(testAppJdiscOnly);
         long sessionId = result.sessionId();
 
-        exceptionRule.expect(IllegalStateException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(containsString("Session is active: 2"));
         applicationRepository.prepare(sessionId, prepareParams());
 
-        exceptionRule.expect(IllegalStateException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
     }

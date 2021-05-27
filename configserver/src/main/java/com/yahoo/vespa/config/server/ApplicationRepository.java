@@ -994,7 +994,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Session validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         Session session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalStateException("Session is active: " + sessionId);
+            throw new IllegalArgumentException("Session is active: " + sessionId);
         }
         return session;
     }
