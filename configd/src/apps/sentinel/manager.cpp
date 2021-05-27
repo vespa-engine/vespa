@@ -15,36 +15,11 @@ LOG_SETUP(".manager");
 
 namespace config::sentinel {
 
-void
-Manager::configure_port(int port)
+Manager::Manager(Env &env)
+  : _env(env),
+    _services(),
+    _outputConnections()
 {
-    if (port == 0) {
-        port = 19098;
-        const char *portString = getenv("VESPA_SENTINEL_PORT");
-        if (portString) {
-            port = strtoul(portString, nullptr, 10);
-        }
-    }
-    if (port <= 0 || port > 65535) {
-        throw vespalib::FatalException("Bad port " + std::to_string(port) + ", expected range [1, 65535]", VESPA_STRLOC);
-    }
-    if (port != _boundPort) {
-        LOG(debug, "Config-sentinel accepts connections on port %d", port);
-        _stateServer = std::make_unique<vespalib::StateServer>(
-            port, _stateApi.myHealth, _startMetrics.producer, _stateApi.myComponents);
-        _boundPort = port;
-    }
-}
-
-Manager::Manager()
-    : _subscriber(),
-      _services(),
-      _outputConnections(),
-      _boundPort(0),
-      _startMetrics(),
-      _stateApi()
-{
-    _startMetrics.startedTime = vespalib::steady_clock::now();
 }
 
 Manager::~Manager()
@@ -98,24 +73,13 @@ Manager::terminate()
 }
 
 void
-Manager::subscribe(const std::string & configId, std::chrono::milliseconds timeout)
-{
-    _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeout);
-}
-
-void
 Manager::doConfigure()
 {
-    std::unique_ptr<SentinelConfig> cfg(_sentinelHandle->getConfig());
-    const SentinelConfig& config(*cfg);
+    LOG_ASSERT(_env.configOwner().hasConfig());
+    const SentinelConfig& config(_env.configOwner().getConfig());
 
-    if (config.port.telnet != _boundPort) {
-        configure_port(config.port.telnet);
-    }
-
-    if (!_rpcServer || config.port.rpc != _rpcServer->getPort()) {
-        _rpcServer = std::make_unique<RpcServer>(config.port.rpc, _cmdQ);
-    }
+    _env.rpcPort(config.port.rpc);
+    _env.statePort(config.port.telnet);
 
     LOG(debug, "Manager::configure() %d config elements, tenant(%s), application(%s), instance(%s)",
         (int)config.service.size(), config.application.tenant.c_str(), config.application.name.c_str(),
@@ -126,7 +90,7 @@ Manager::doConfigure()
         const vespalib::string name(serviceConfig.name);
         auto found(_services.find(name));
         if (found == _services.end()) {
-            services[name] = std::make_unique<Service>(serviceConfig, config.application, _outputConnections, _startMetrics);
+            services[name] = std::make_unique<Service>(serviceConfig, config.application, _outputConnections, _env.metrics());
         } else {
             found->second->reconfigure(serviceConfig);
             services[name] = std::move(found->second);
@@ -140,8 +104,7 @@ Manager::doConfigure()
             _orphans[entry.first] = std::move(svc);
         }
     }
-    vespalib::ComponentConfigProducer::Config current("sentinel", _subscriber.getGeneration(), "ok");
-    _stateApi.myComponents.addConfig(current);
+    _env.notifyConfigUpdated();
 }
 
 
@@ -149,15 +112,14 @@ int
 Manager::doWork()
 {
     // Return true if there are any running services, false if not.
-
-    if (_subscriber.nextGenerationNow()) {
+    if (_env.configOwner().checkForConfigUpdate()) {
         doConfigure();
     }
     handleRestarts();
     handleCommands();
     handleOutputs();
     handleChildDeaths();
-    _startMetrics.maybeLog();
+    _env.metrics().maybeLog();
 
     // Check for active services.
     for (const auto & service : _services) {
@@ -244,7 +206,7 @@ void
 Manager::handleCommands()
 {
     // handle RPC commands
-    std::vector<Cmd::UP> got = _cmdQ.drain();
+    std::vector<Cmd::UP> got = _env.commandQueue().drain();
     for (const Cmd::UP & cmd : got) {
         handleCmd(*cmd);
     }
@@ -355,7 +317,7 @@ Manager::handleCmd(const Cmd& cmd)
 void
 Manager::updateMetrics()
 {
-    _startMetrics.maybeLog();
+    _env.metrics().maybeLog();
 }
 
 }
