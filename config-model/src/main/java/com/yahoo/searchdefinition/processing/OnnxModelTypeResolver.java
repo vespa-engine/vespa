@@ -28,23 +28,8 @@ public class OnnxModelTypeResolver extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
-
         for (OnnxModel onnxModel : search.onnxModels().asMap().values()) {
             OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(onnxModel.getFileName(), search.applicationPackage());
-
-            // Temporary, to disregard type information when model info is not available
-            if (onnxModelInfo == null) {
-                continue;
-            }
-
-            // Add any missing input and output fields that were not specified in the onnx-model configuration
-            for (String onnxName : onnxModelInfo.getInputs()) {
-                onnxModel.addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
-            }
-            for (String onnxName : onnxModelInfo.getOutputs()) {
-                onnxModel.addOutputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
-            }
-
             onnxModel.setModelInfo(onnxModelInfo);
         }
     }

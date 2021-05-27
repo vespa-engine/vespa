@@ -81,6 +81,12 @@ public class OnnxModel {
 
     public void setModelInfo(OnnxModelInfo modelInfo) {
         Objects.requireNonNull(modelInfo, "Onnx model info cannot be null");
+        for (String onnxName : modelInfo.getInputs()) {
+            addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
+        }
+        for (String onnxName : modelInfo.getOutputs()) {
+            addOutputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
+        }
         this.modelInfo = modelInfo;
     }
 

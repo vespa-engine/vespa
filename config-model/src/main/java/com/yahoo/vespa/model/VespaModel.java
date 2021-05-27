@@ -321,7 +321,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             if (path.startsWith(applicationPath)) {
                 path = path.substring(applicationPath.length() + 1);
             }
-            loadModelInfo(onnxModels, model.name(), path);
+            loadOnnxModelInfo(onnxModels, model.name(), path);
         }
         return onnxModels;
     }
@@ -329,11 +329,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private OnnxModels onnxModelInfoFromStore(String modelName) {
         OnnxModels onnxModels = new OnnxModels();
         String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
-        loadModelInfo(onnxModels, modelName, path);
+        loadOnnxModelInfo(onnxModels, modelName, path);
         return onnxModels;
     }
 
-    private void loadModelInfo(OnnxModels onnModels, String name, String path) {
+    private void loadOnnxModelInfo(OnnxModels onnxModels, String name, String path) {
         boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
         if ( ! modelExists) {
             path = ApplicationPackage.MODELS_DIR.append(path).toString();
@@ -343,14 +343,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage);
             if (onnxModelInfo.getModelPath() != null) {
                 OnnxModel onnxModel = new OnnxModel(name, onnxModelInfo.getModelPath());
-                for (String onnxName : onnxModelInfo.getInputs()) {
-                    onnxModel.addInputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
-                }
-                for (String onnxName : onnxModelInfo.getOutputs()) {
-                    onnxModel.addOutputNameMapping(onnxName, OnnxModelInfo.asValidIdentifier(onnxName), false);
-                }
                 onnxModel.setModelInfo(onnxModelInfo);
-                onnModels.add(onnxModel);
+                onnxModels.add(onnxModel);
             }
         }
     }
