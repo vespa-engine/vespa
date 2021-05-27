@@ -180,7 +180,7 @@ RPCHooksBase::initRPC()
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident,
                              uint32_t transportThreads, uint32_t executorThreads)
     : proton(parent),
-      slobrok_config(config::ConfigUri("admin/slobrok.0")),
+      slobrok_config(config::ConfigUri("client")),
       identity(ident),
       rtcPort(port),
       numTranportThreads(transportThreads),

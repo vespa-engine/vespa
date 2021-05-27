@@ -17,7 +17,7 @@ public class ConfigSentinelDummy {
                     + "searchnode2 state=RUNNING mode=AUTO pid=6527 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c0/r1\"\n"
                     + "clustercontroller2 state=RUNNING mode=AUTO pid=6523 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/rtx/1\"\n"
                     + "clustercontroller state=RUNNING mode=AUTO pid=6522 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/rtx/0\"\n"
-                    + "slobrok state=RUNNING mode=AUTO pid=6519 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/slobrok.0\"\n"
+                    + "slobrok state=RUNNING mode=AUTO pid=6519 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"client\"\n"
                     + "searchnode3 state=RUNNING mode=AUTO pid=6529 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c1/r0\"\n"
                     + "searchnode state=RUNNING mode=AUTO pid=6526 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c0/r0\"\n"
                     + "qrserver state=RUNNING mode=AUTO pid=6520 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"container/qrserver.0\"\n"
@@ -43,7 +43,7 @@ public class ConfigSentinelDummy {
                 + "searchnode2 state=RUNNING mode=AUTO pid=6527 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c0/r1\"\n"
                 + "clustercontroller2 state=RUNNING mode=AUTO pid=6523 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/rtx/1\"\n"
                 + "clustercontroller state=RUNNING mode=AUTO pid=6522 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/rtx/0\"\n"
-                + "slobrok state=RUNNING mode=AUTO pid=6519 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/slobrok.0\"\n"
+                + "slobrok state=RUNNING mode=AUTO pid=6519 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"client\"\n"
                 + "searchnode3 state=RUNNING mode=AUTO pid=6529 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c1/r0\"\n"
                 + "searchnode state=RUNNING mode=AUTO pid=6526 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/cluster.x/g0/c0/r0\"\n"
                 + "\n";

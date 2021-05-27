@@ -71,7 +71,7 @@ public class ConfigSentinelClientTest {
                 "logserver state=RUNNING mode=AUTO pid=25018 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/logserver\"\n" +
                 "metricsproxy state=RUNNING mode=AUTO pid=13107 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/vespa19.dev.gq1.yahoo.com/metricsproxy\"\n" +
                 "searchnode state=RUNNING mode=AUTO pid=25023 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/search/cluster.search/0\"\n" +
-                "slobrok state=RUNNING mode=AUTO pid=25019 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/slobrok.0\"\n" +
+                "slobrok state=RUNNING mode=AUTO pid=25019 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"client\"\n" +
                 "\n";
 
         ConfigSentinelDummy configsentinel = new ConfigSentinelDummy(response);

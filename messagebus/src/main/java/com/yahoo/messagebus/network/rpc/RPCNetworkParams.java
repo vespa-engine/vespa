@@ -13,7 +13,7 @@ import com.yahoo.cloud.config.SlobroksConfig;
 public class RPCNetworkParams {
 
     private Identity identity = new Identity("");
-    private String slobrokConfigId = "admin/slobrok.0";
+    private String slobrokConfigId = "client";
     private SlobroksConfig slobroksConfig = null;
     private int listenPort = 0;
     private int maxInputBufferSize = 256 * 1024;
