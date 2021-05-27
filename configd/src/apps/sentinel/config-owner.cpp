@@ -26,7 +26,7 @@ ConfigOwner::doConfigure()
     _currGeneration = _subscriber.getGeneration();
     const SentinelConfig& config(*_currConfig);
     const auto & app = config.application;
-    LOG(info, "ConfigOwner got %zd service elements [tenant(%s), application(%s), instance(%s)] for config generation %zd",
+    LOG(config, "Sentinel got %zd service elements [tenant(%s), application(%s), instance(%s)] for config generation %zd",
         config.service.size(), app.tenant.c_str(), app.name.c_str(), app.instance.c_str(), _currGeneration);
 }
 
