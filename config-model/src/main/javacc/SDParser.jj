@@ -55,7 +55,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
@@ -76,6 +76,7 @@ public class SDParser {
     private DocumentTypeManager docMan = null;
     private ApplicationPackage app;
     private DeployLogger deployLogger;
+    private ModelContext.Properties properties;
     private RankProfileRegistry rankProfileRegistry;
     private boolean documentsOnly;
 
@@ -86,11 +87,13 @@ public class SDParser {
      */
     public SDParser(SimpleCharStream stream,
                     DeployLogger deployLogger,
+                    ModelContext.Properties properties,
                     ApplicationPackage applicationPackage,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
         this.deployLogger = deployLogger;
+        this.properties = properties;
         this.app = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
         this.documentsOnly = documentsOnly;
@@ -425,7 +428,7 @@ Search rootSchema(String dir) :
     Search search;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, deployLogger);
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, deployLogger, properties);
                                      rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
                                      rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
@@ -466,7 +469,7 @@ Object rootSchemaItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch(app, deployLogger);
+    Search search = new DocumentOnlySearch(app, deployLogger, properties);
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )

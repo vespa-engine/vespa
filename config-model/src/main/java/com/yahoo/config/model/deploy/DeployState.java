@@ -462,7 +462,7 @@ public class DeployState implements ConfigDefinitionStore {
                                                               ValidationParameters validationParameters) {
             Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
             Map<String, String> names = new LinkedHashMap<>();
-            SearchBuilder builder = new SearchBuilder(applicationPackage, logger, rankProfileRegistry, queryProfiles.getRegistry());
+            SearchBuilder builder = new SearchBuilder(applicationPackage, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();

@@ -32,8 +32,9 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     public void testFunctions() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressionfunction",
-                                                          rankProfileRegistry,
-                                                          new TestableDeployLogger()).getSearch();
+                                                          new TestableDeployLogger(),
+                                                          new TestProperties(),
+                                                          rankProfileRegistry).getSearch();
         RankProfile functionsRankProfile = rankProfileRegistry.get(search, "macros");
         Map<String, RankProfile.RankingExpressionFunction> functions = functionsRankProfile.getFunctions();
         assertEquals(2, functions.get("titlematch$").function().arguments().size());
@@ -72,8 +73,9 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile",
-                                                          registry,
-                                                          new TestableDeployLogger()).getSearch();
+                                                          new TestableDeployLogger(),
+                                                          new TestProperties(),
+                                                          registry).getSearch();
         new DerivedConfiguration(search, new BaseDeployLogger(), new TestProperties(), registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
     }
 

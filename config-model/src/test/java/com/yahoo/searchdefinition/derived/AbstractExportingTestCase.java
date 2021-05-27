@@ -34,7 +34,7 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
         toDir.mkdirs();
         deleteContent(toDir);
 
-        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", logger);
+        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", logger, properties);
         return derive(dirName, searchDefinitionName, properties, builder, logger);
     }
 

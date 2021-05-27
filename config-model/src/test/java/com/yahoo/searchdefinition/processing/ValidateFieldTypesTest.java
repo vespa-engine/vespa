@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
@@ -46,14 +47,14 @@ public class ValidateFieldTypesTest {
     }
 
     private static Search createSearchWithDocument(String documentName) {
-        Search search = new Search(documentName, MockApplicationPackage.createEmpty(), new TestableDeployLogger());
+        Search search = new Search(documentName, MockApplicationPackage.createEmpty(), new TestableDeployLogger(), new TestProperties());
         SDDocumentType document = new SDDocumentType(documentName, search);
         search.addDocument(document);
         return search;
     }
 
     private static ImportedFields createSingleImportedField(String fieldName, DataType dataType) {
-        Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty(), new TestableDeployLogger());
+        Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty(), new TestableDeployLogger(), new TestProperties());
         SDField targetField = new SDField("target_field", dataType);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
