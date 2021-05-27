@@ -189,9 +189,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private void validateSessionStatus(Session session) {
         long sessionId = session.getSessionId();
         if (Session.Status.NEW.equals(session.getStatus())) {
-            throw new IllegalStateException(session.logPre() + "Session " + sessionId + " is not prepared");
+            throw new IllegalArgumentException(session.logPre() + "Session " + sessionId + " is not prepared");
         } else if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalStateException(session.logPre() + "Session " + sessionId + " is already active");
+            throw new IllegalArgumentException(session.logPre() + "Session " + sessionId + " is already active");
         }
     }
 
