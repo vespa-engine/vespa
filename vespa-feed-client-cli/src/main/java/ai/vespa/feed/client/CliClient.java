@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Properties;
 
 /**
@@ -65,18 +64,8 @@ public class CliClient {
         if (cliArgs.sslHostnameVerificationDisabled()) {
             builder.setHostnameVerifier(AcceptAllHostnameVerifier.INSTANCE);
         }
-        CliArguments.CertificateAndKey certificateAndKey = cliArgs.certificateAndKey().orElse(null);
-        Path caCertificates = cliArgs.caCertificates().orElse(null);
-        if (certificateAndKey != null || caCertificates != null) {
-            SslContextBuilder sslContextBuilder = new SslContextBuilder();
-            if (certificateAndKey != null) {
-                sslContextBuilder.withCertificateAndKey(certificateAndKey.certificateFile, certificateAndKey.privateKeyFile);
-            }
-            if (caCertificates != null) {
-                sslContextBuilder.withCaCertificates(caCertificates);
-            }
-            builder.setSslContext(sslContextBuilder.build());
-        }
+        cliArgs.certificateAndKey().ifPresent(c -> builder.setCertificate(c.certificateFile, c.privateKeyFile));
+        cliArgs.caCertificates().ifPresent(builder::setCaCertificates);
         cliArgs.headers().forEach(builder::addRequestHeader);
         return builder.build();
     }
