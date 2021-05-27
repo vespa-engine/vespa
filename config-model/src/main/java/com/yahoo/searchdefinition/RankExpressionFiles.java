@@ -20,7 +20,7 @@ public class RankExpressionFiles {
             if ( expressions.get(name).getFileName().equals(expression.getFileName()) ) {
                 //TODO Throw instead, No later than Vespa 8
                 deployLogger.logApplicationPackage(Level.WARNING, "Rank expression file '" + name +
-                        "' defined twice with identical expression (illegal and will be enfoced soon) '" + expression.getFileName() + "'.");
+                        "' defined twice with identical expression (illegal and will be enforced soon) '" + expression.getFileName() + "'.");
             } else {
                 throw new IllegalArgumentException("Rank expression file '" + name +
                         "' defined twice (illegal but not enforced), but redefinition is not matching (illegal and enforced), " +
