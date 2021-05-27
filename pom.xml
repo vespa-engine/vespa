@@ -133,6 +133,7 @@
         <module>vespa-athenz</module>
         <module>vespa-documentgen-plugin</module>
         <module>vespa-feed-client</module>
+        <module>vespa-feed-client-cli</module>
         <module>vespa-hadoop</module>
         <module>vespa-http-client</module>
         <module>vespa-maven-plugin</module>

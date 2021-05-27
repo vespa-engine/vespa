@@ -111,6 +111,8 @@ public final class DocumentProtocol implements Protocol,
             addSelector(cluster.getConfigId(), cluster.getRoutingSelector(), clusterBuilder);
             if (cluster.getSearch().hasIndexedCluster())
                 addRoutes(getDirectRouteName(cluster.getConfigId()), getIndexedRouteName(cluster.getConfigId()), clusterBuilder);
+            else
+                clusterBuilder.defaultRoute(cluster.getConfigId());
 
             builder.cluster(cluster.getConfigId(), clusterBuilder);
         }

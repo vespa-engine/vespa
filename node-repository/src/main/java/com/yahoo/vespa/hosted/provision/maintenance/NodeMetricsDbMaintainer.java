@@ -6,7 +6,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsResponse;
 import com.yahoo.yolean.Exceptions;
 
@@ -51,6 +50,10 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                 if (++done < applications.size())
                     Thread.sleep(pauseMs);
             }
+
+            if (nodeRepository().metricsDb().getNullRecordsCount() > 0)
+                log.warning(nodeRepository().metricsDb().getNullRecordsCount() + " records returned null");
+
             nodeRepository().metricsDb().gc();
 
             // Suppress failures for manual zones for now to avoid noise

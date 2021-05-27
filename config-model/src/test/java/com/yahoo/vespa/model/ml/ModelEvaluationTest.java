@@ -14,6 +14,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.Test;
@@ -95,6 +96,10 @@ public class ModelEvaluationTest {
         RankingConstantsConfig.Builder cb = new RankingConstantsConfig.Builder();
         cluster.getConfig(cb);
         RankingConstantsConfig constantsConfig = new RankingConstantsConfig(cb);
+
+        RankingExpressionsConfig.Builder ce = new RankingExpressionsConfig.Builder();
+        cluster.getConfig(ce);
+        RankingExpressionsConfig expressionsConfig = ce.build();
 
         OnnxModelsConfig.Builder ob = new OnnxModelsConfig.Builder();
         cluster.getConfig(ob);

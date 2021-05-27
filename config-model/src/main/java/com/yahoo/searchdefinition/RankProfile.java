@@ -52,6 +52,8 @@ import java.util.stream.Stream;
  */
 public class RankProfile implements Cloneable {
 
+    public final static String FIRST_PHASE = "firstphase";
+    public final static String SECOND_PHASE = "secondphase";
     /** The search definition-unique name of this rank profile */
     private final String name;
 
@@ -75,6 +77,8 @@ public class RankProfile implements Cloneable {
 
     /** The ranking expression to be used for second phase */
     private RankingExpression secondPhaseRanking = null;
+
+    private Set<String> externalFileExpressions = new HashSet<>();
 
     /** Number of hits to be reranked in second phase, -1 means use default */
     private int rerankCount = -1;
@@ -163,6 +167,10 @@ public class RankProfile implements Cloneable {
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
+    }
+
+    public RankExpressionFiles rankExpressionFiles() {
+        return search != null ? search.rankExpressionFiles() : model.rankExpressionFiles();
     }
 
     public Map<String, OnnxModel> onnxModels() {
@@ -316,7 +324,7 @@ public class RankProfile implements Cloneable {
 
     public void addConstant(String name, Value value) {
         if (value instanceof TensorValue) {
-            TensorType type = ((TensorValue)value).type();
+            TensorType type = value.type();
             if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
                 throw new IllegalArgumentException("Illegal type of constant " + name + " type " + type +
                                                    ": Dense tensor dimensions must have a size");
@@ -370,9 +378,44 @@ public class RankProfile implements Cloneable {
         this.firstPhaseRanking = rankingExpression;
     }
 
+    public String getUniqueExpressionName(String name) {
+        return getName() + "_" + name;
+    }
+    public String getFirstPhaseFile() {
+        String name = FIRST_PHASE;
+        if (externalFileExpressions.contains(name)) {
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
+        }
+        if ((firstPhaseRanking == null) && (getInherited() != null)) {
+            return getInherited().getFirstPhaseFile();
+        }
+        return null;
+    }
+
+    public String getSecondPhaseFile() {
+        String name = SECOND_PHASE;
+        if (externalFileExpressions.contains(name)) {
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
+        }
+        if ((secondPhaseRanking == null) && (getInherited() != null)) {
+            return getInherited().getSecondPhaseFile();
+        }
+        return null;
+    }
+
+    public String getExpressionFile(String name) {
+        if (externalFileExpressions.contains(name)) {
+            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
+        }
+        if (getInherited() != null) {
+            return getInherited().getExpressionFile(name);
+        }
+        return null;
+    }
+
     public void setFirstPhaseRanking(String expression) {
         try {
-            this.firstPhaseRanking = parseRankingExpression("firstphase", expression);
+            this.firstPhaseRanking = parseRankingExpression(FIRST_PHASE, expression);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal first phase ranking function", e);
@@ -389,13 +432,9 @@ public class RankProfile implements Cloneable {
         return null;
     }
 
-    public void setSecondPhaseRanking(RankingExpression rankingExpression) {
-        this.secondPhaseRanking = rankingExpression;
-    }
-
     public void setSecondPhaseRanking(String expression) {
         try {
-            this.secondPhaseRanking = parseRankingExpression("secondphase", expression);
+            this.secondPhaseRanking = parseRankingExpression(SECOND_PHASE, expression);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal second phase ranking function", e);
@@ -436,7 +475,6 @@ public class RankProfile implements Cloneable {
      * the final (with inheritance included) summary features of the given parent.
      * The profile must be the profile which is directly inherited by this.
      *
-     * @param parentProfile
      */
     public void setInheritedSummaryFeatures(String parentProfile) {
         if ( ! parentProfile.equals(inheritedName))
@@ -496,12 +534,7 @@ public class RankProfile implements Cloneable {
 
     private void addRankProperty(RankProperty rankProperty) {
         // Just the usual multimap semantics here
-        List<RankProperty> properties = rankProperties.get(rankProperty.getName());
-        if (properties == null) {
-            properties = new ArrayList<>(1);
-            rankProperties.put(rankProperty.getName(), properties);
-        }
-        properties.add(rankProperty);
+        rankProperties.computeIfAbsent(rankProperty.getName(), (String key) -> new ArrayList<>(1)).add(rankProperty);
     }
 
     @Override
@@ -675,18 +708,27 @@ public class RankProfile implements Cloneable {
         }
     }
 
-    private Reader openRankingExpressionReader(String expName, String expression) {
-        if ( ! expression.startsWith("file:")) return new StringReader(expression);
-
+    private static String extractFileName(String expression) {
         String fileName = expression.substring("file:".length()).trim();
         if ( ! fileName.endsWith(ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX))
             fileName = fileName + ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX;
 
+        return fileName;
+    }
+
+    private Reader openRankingExpressionReader(String expName, String expression) {
+        if ( ! expression.startsWith("file:")) return new StringReader(expression);
+
+        String fileName = extractFileName(expression);
         File file = new File(fileName);
-        if ( ! (file.isAbsolute()) && file.getPath().contains("/")) // See ticket 4102122
+        if ( ! file.isAbsolute() && file.getPath().contains("/")) // See ticket 4102122
             throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
                                                "' in subdirectory, which is not supported.");
 
+        /* TODO balder: Disabled until end-2-end verified
+        rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
+        externalFileExpressions.add(expName);
+        */
         return search.getRankingExpression(fileName);
     }
 
@@ -918,12 +960,12 @@ public class RankProfile implements Cloneable {
      */
     public static class RankSetting implements Serializable {
 
-        private String fieldName;
+        private final String fieldName;
 
-        private Type type;
+        private final Type type;
 
         /** The rank value */
-        private Object value;
+        private final Object value;
 
         public enum Type {
 
@@ -932,10 +974,10 @@ public class RankProfile implements Cloneable {
             WEIGHT("weight"),
             PREFERBITVECTOR("preferbitvector",true);
 
-            private String name;
+            private final String name;
 
             /** True if this setting really pertains to an index, not a field within an index */
-            private boolean isIndexLevel;
+            private final boolean isIndexLevel;
 
             Type(String name) {
                 this(name,false);
@@ -1008,8 +1050,8 @@ public class RankProfile implements Cloneable {
     /** A rank property. Rank properties are Value Objects */
     public static class RankProperty implements Serializable {
 
-        private String name;
-        private String value;
+        private final String name;
+        private final String value;
 
         public RankProperty(String name, String value) {
             this.name = name;
@@ -1084,7 +1126,6 @@ public class RankProfile implements Cloneable {
         public void setMinGroups(int value) { minGroups = value; }
         public void setCutoffFactor(double value) { cutoffFactor = value; }
         public void setCutoffStrategy(Diversity.CutoffStrategy strategy) { cutoffStrategy = strategy; }
-        public void setCutoffStrategy(String strategy) { cutoffStrategy = Diversity.CutoffStrategy.valueOf(strategy); }
         public String getAttribute() { return attribute; }
         public int getMinGroups() { return minGroups; }
         public double getCutoffFactor() { return cutoffFactor; }

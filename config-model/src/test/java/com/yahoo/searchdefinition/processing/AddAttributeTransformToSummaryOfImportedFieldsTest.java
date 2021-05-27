@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.ImportedSimpleField;
@@ -44,14 +45,14 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
     }
 
     private static Search createSearchWithDocument(String documentName) {
-        Search search = new Search(documentName, MockApplicationPackage.createEmpty());
+        Search search = new Search(documentName, MockApplicationPackage.createEmpty(), new TestableDeployLogger());
         SDDocumentType document = new SDDocumentType(documentName, search);
         search.addDocument(document);
         return search;
     }
 
     private static ImportedFields createSingleImportedField(String fieldName) {
-        Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty());
+        Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty(), new TestableDeployLogger());
         SDField targetField = new SDField("target_field", DataType.INT);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);

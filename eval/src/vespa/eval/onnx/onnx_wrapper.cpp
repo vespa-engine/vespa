@@ -414,7 +414,7 @@ struct Onnx::EvalContext::SelectConvertResult {
 Onnx::EvalContext::EvalContext(const Onnx &model, const WireInfo &wire_info)
     : _model(model),
       _wire_info(wire_info),
-      _cpu_memory(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault)),
+      _cpu_memory(Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeDefault)),
       _param_values(),
       _result_values(),
       _results(),
@@ -535,6 +535,7 @@ Onnx::Onnx(const vespalib::string &model_file, Optimize optimize)
     _options.SetIntraOpNumThreads(1);
     _options.SetInterOpNumThreads(1);
     _options.SetGraphOptimizationLevel(convert_optimize(optimize));
+    _options.DisableCpuMemArena();
     _session = Ort::Session(_shared.env(), model_file.c_str(), _options);
     extract_meta_data();
 }

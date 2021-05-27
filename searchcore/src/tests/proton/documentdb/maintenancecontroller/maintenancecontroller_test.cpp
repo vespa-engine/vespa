@@ -908,7 +908,6 @@ TEST_F("require that document pruner is active", MaintenanceControllerFixture)
     f._builder.createDocs(3, 6, 8); // 2 docs
     f._builder.createDocs(4, 8, 11); // 3 docs
     test::UserDocuments removeDocs(f._builder.getDocs());
-    BucketId bucketId3(removeDocs.getBucket(3));
     f.removeDocs(removeDocs, remTime);
     f.notifyClusterStateChanged();
     EXPECT_TRUE(f._executor.isIdle());

@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.DomResourceLimitsBuilder;
 
@@ -35,26 +36,29 @@ public class ClusterResourceLimits {
     public static class Builder {
 
         private final boolean enableFeedBlockInDistributor;
+        private final boolean hostedVespa;
+        private final DeployLogger deployLogger;
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
-        public Builder(boolean enableFeedBlockInDistributor) {
+        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa, DeployLogger deployLogger) {
             this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
+            this.hostedVespa = hostedVespa;
+            this.deployLogger = deployLogger;
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
-            ModelElement tuningElem = clusterElem.childByPath("tuning");
-            if (tuningElem != null) {
-                ctrlBuilder = DomResourceLimitsBuilder.createBuilder(tuningElem);
-            }
-
-            ModelElement protonElem = clusterElem.childByPath("engine.proton");
-            if (protonElem != null) {
-                nodeBuilder = DomResourceLimitsBuilder.createBuilder(protonElem);
-            }
+            ctrlBuilder = createBuilder(clusterElem.childByPath("tuning"));
+            nodeBuilder = createBuilder(clusterElem.childByPath("engine.proton"));
 
             deriveLimits();
             return new ClusterResourceLimits(this);
+        }
+
+        private ResourceLimits.Builder createBuilder(ModelElement element) {
+            return element == null
+                    ? new ResourceLimits.Builder()
+                    : DomResourceLimitsBuilder.createBuilder(element, hostedVespa, deployLogger);
         }
 
         public void setClusterControllerBuilder(ResourceLimits.Builder builder) {
@@ -88,7 +92,7 @@ public class ClusterResourceLimits {
                                                                   Optional<Double> contentNodeLimit,
                                                                   Consumer<Double> setter) {
             // TODO: remove this when feed block in distributor is default enabled.
-            if (!clusterControllerLimit.isPresent() && !contentNodeLimit.isPresent()) {
+            if (clusterControllerLimit.isEmpty() && contentNodeLimit.isEmpty()) {
                 setter.accept(0.8);
             }
         }
@@ -96,7 +100,7 @@ public class ClusterResourceLimits {
         private void deriveClusterControllerLimit(Optional<Double> clusterControllerLimit,
                                                   Optional<Double> contentNodeLimit,
                                                   Consumer<Double> setter) {
-            if (!clusterControllerLimit.isPresent()) {
+            if (clusterControllerLimit.isEmpty()) {
                 contentNodeLimit.ifPresent(limit ->
                         // TODO: emit warning when feed block in distributor is default enabled.
                         setter.accept(Double.max(0.0, (limit - 0.01))));
@@ -106,7 +110,7 @@ public class ClusterResourceLimits {
         private void deriveContentNodeLimit(Optional<Double> contentNodeLimit,
                                             Optional<Double> clusterControllerLimit,
                                             Consumer<Double> setter) {
-            if (!contentNodeLimit.isPresent()) {
+            if (contentNodeLimit.isEmpty()) {
                 clusterControllerLimit.ifPresent(limit ->
                         setter.accept(calcContentNodeLimit(limit)));
             }

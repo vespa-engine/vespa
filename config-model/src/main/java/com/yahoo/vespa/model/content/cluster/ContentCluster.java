@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
@@ -134,7 +133,10 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
             boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
-            var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor).build(contentElement);
+            var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
+                                                                   stateIsHosted(deployState),
+                                                                   deployState.getDeployLogger())
+                    .build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
                     contentElement,
                     resourceLimits.getClusterControllerLimits()).build(deployState, c, contentElement.getXml());

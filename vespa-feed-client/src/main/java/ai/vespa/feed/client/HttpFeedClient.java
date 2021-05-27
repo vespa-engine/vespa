@@ -5,19 +5,17 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIBuilder;
-import org.apache.hc.core5.pool.PoolConcurrencyPolicy;
 import org.apache.hc.core5.reactor.IOReactorConfig;
-import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -47,7 +45,7 @@ class HttpFeedClient implements FeedClient {
     private final CloseableHttpAsyncClient httpClient;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    HttpFeedClient(FeedClientBuilder builder) {
+    HttpFeedClient(FeedClientBuilder builder) throws IOException {
         this.endpoint = builder.endpoint;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
 
@@ -56,45 +54,47 @@ class HttpFeedClient implements FeedClient {
         this.httpClient.start();
     }
 
-    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) {
-        HttpAsyncClientBuilder httpClientBuilder = HttpAsyncClientBuilder.create()
-                .setUserAgent(String.format("vespa-feed-client/%s", Vespa.VERSION))
-                .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
-                .disableCookieManagement()
-                .disableRedirectHandling()
-                .disableConnectionState()
-                .setRetryStrategy(retryStrategy)
-                .setIOReactorConfig(IOReactorConfig.custom()
-                        .setSoTimeout(Timeout.ofSeconds(10))
-                        .build())
-                .setDefaultRequestConfig(
-                        RequestConfig.custom()
-                                .setConnectTimeout(Timeout.ofSeconds(10))
-                                .setConnectionRequestTimeout(Timeout.DISABLED)
-                                .setResponseTimeout(Timeout.ofMinutes(5))
-                                .build())
-                .setH2Config(H2Config.custom()
-                        .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
-                        .setCompressionEnabled(true)
-                        .setPushEnabled(false)
-                        .build());
+    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) throws IOException {
+        H2AsyncClientBuilder httpClientBuilder = H2AsyncClientBuilder.create()
+                                                                     .setUserAgent(String.format("vespa-feed-client/%s", Vespa.VERSION))
+                                                                     .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
+                                                                     .disableCookieManagement()
+                                                                     .disableRedirectHandling()
+                                                                     .setRetryStrategy(retryStrategy)
+                                                                     .setIOReactorConfig(IOReactorConfig.custom()
+                                                                                                        .setSoTimeout(Timeout.ofSeconds(10))
+                                                                                                        .build())
+                                                                     .setDefaultRequestConfig(
+                                                                             RequestConfig.custom()
+                                                                                          .setConnectTimeout(Timeout.ofSeconds(10))
+                                                                                          .setConnectionRequestTimeout(Timeout.DISABLED)
+                                                                                          .setResponseTimeout(Timeout.ofMinutes(5))
+                                                                                          .build())
+                                                                     .setH2Config(H2Config.initial()
+                                                                                          .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
+                                                                                          .setCompressionEnabled(true)
+                                                                                          .setPushEnabled(false)
+                                                                                          .build());
 
-        int maxConnections = builder.maxConnections;
-        PoolingAsyncClientConnectionManagerBuilder connectionManagerBuilder = PoolingAsyncClientConnectionManagerBuilder.create()
-                .setConnectionTimeToLive(TimeValue.ofMinutes(10))
-                .setMaxConnTotal(maxConnections)
-                .setMaxConnPerRoute(maxConnections)
-                .setPoolConcurrencyPolicy(PoolConcurrencyPolicy.LAX);
-        if (builder.sslContext != null) {
-            ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                    .setSslContext(builder.sslContext);
-            if (builder.hostnameVerifier != null) {
-                tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
-            }
-            connectionManagerBuilder.setTlsStrategy(tlsStrategyBuilder.build());
+        ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
+                                                                              .setSslContext(constructSslContext(builder));
+        if (builder.hostnameVerifier != null) {
+            tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
         }
-        httpClientBuilder.setConnectionManager(connectionManagerBuilder.build());
-        return httpClientBuilder.build();
+        return httpClientBuilder.setTlsStrategy(tlsStrategyBuilder.build())
+                                .build();
+    }
+
+    private static SSLContext constructSslContext(FeedClientBuilder builder) throws IOException {
+        if (builder.sslContext != null) return builder.sslContext;
+        SslContextBuilder sslContextBuilder = new SslContextBuilder();
+        if (builder.certificate != null && builder.privateKey != null) {
+            sslContextBuilder.withCertificateAndKey(builder.certificate, builder.privateKey);
+        }
+        if (builder.caCertificates != null) {
+            sslContextBuilder.withCaCertificates(builder.caCertificates);
+        }
+        return sslContextBuilder.build();
     }
 
     @Override

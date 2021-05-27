@@ -10,6 +10,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import org.junit.Test;
 
 import java.io.File;
@@ -54,6 +55,8 @@ public class OnnxEvaluatorTest {
                                                        RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                                                                     RankingConstantsConfig.class).getConfig("");
+        RankingExpressionsConfig expressionsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-expressions.cfg").toFile()),
+                                                                        RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
                                                                OnnxModelsConfig.class).getConfig("");
 
@@ -63,7 +66,7 @@ public class OnnxEvaluatorTest {
         }
         FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
 
-        return new ModelsEvaluator(config, constantsConfig, onnxModelsConfig, fileAcquirer);
+        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer);
     }
 
 }

@@ -325,11 +325,10 @@ StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid,
 }
 
 void
-StoreOnlyFeedView::putSummaryNoop(SerialNum serialNum, Lid lid,
-                                  FutureStream futureStream, OnOperationDoneType onDone)
+StoreOnlyFeedView::putSummaryNoop(FutureStream futureStream, OnOperationDoneType onDone)
 {
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, lid, futureStream = std::move(futureStream), onDone] () mutable {
+            makeLambdaTask([futureStream = std::move(futureStream), onDone] () mutable {
                 (void) onDone;
                 vespalib::nbostream os = futureStream.get();
                 (void) os;
@@ -427,7 +426,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         if (useDocStore) {
             putSummary(serialNum, lid, std::move(futureStream), onWriteDone);
         } else {
-            putSummaryNoop(serialNum, lid, std::move(futureStream), onWriteDone);
+            putSummaryNoop(std::move(futureStream), onWriteDone);
         }
         _writeService.shared().execute(makeLambdaTask(
                          [upd = updOp.getUpdate(), useDocStore, lid, onWriteDone, promisedDoc = std::move(promisedDoc),

@@ -20,7 +20,8 @@ class CliArgumentsTest {
         CliArguments args = CliArguments.fromRawArgs(new String[]{
                 "--endpoint=https://vespa.ai:4443/", "--file=feed.json", "--connections=10",
                 "--max-streams-per-connection=128", "--certificate=cert.pem", "--private-key=key.pem",
-                "--ca-certificates=ca-certs.pem", "--disable-ssl-hostname-verification"});
+                "--ca-certificates=ca-certs.pem", "--disable-ssl-hostname-verification",
+                "--header=\"My-Header: my-value\"", "--header", "Another-Header: another-value", "--benchmark"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
         assertEquals(Paths.get("feed.json"), args.inputFile());
         assertEquals(10, args.connections().getAsInt());
@@ -30,6 +31,11 @@ class CliArgumentsTest {
         assertEquals(Paths.get("ca-certs.pem"), args.caCertificates().get());
         assertTrue(args.sslHostnameVerificationDisabled());
         assertFalse(args.helpSpecified());
+        assertFalse(args.versionSpecified());
+        assertEquals(2, args.headers().size());
+        assertEquals("my-value", args.headers().get("My-Header"));
+        assertEquals("another-value", args.headers().get("Another-Header"));
+        assertTrue(args.benchmarkModeEnabled());
     }
 
     @Test

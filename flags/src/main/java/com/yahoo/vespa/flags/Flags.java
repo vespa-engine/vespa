@@ -152,7 +152,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
-            List.of("hakon"), "2021-01-22", "2021-05-22",
+            List.of("hakon"), "2021-01-22", "2021-06-22",
             "Allow all content nodes in a hierarchical group to suspend at the same time",
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
@@ -184,7 +184,7 @@ public class Flags {
             CLUSTER_TYPE);
 
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
-            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-05-25",
+            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-08-25",
             "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
             "Takes effect immediately, for subsequent provisioning",
             APPLICATION_ID);
@@ -210,13 +210,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_JDISC_HTTP2 = defineFeatureFlag(
-            "enable-jdisc-http2", false,
-            List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
-            "Whether jdisc HTTPS connectors should allow HTTP/2",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
             "enable-custom-acl-mapping", false,
             List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
@@ -231,6 +224,13 @@ public class Flags {
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
+            "use-external-rank-expression", false,
+            List.of("baldersheim"), "2021-05-24", "2021-07-01",
+            "Whether to use distributed external rank expression or inline in rankproperties",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
             "enable-routing-core-dumps", false,
             List.of("tokle"), "2021-04-16", "2021-08-01",
@@ -241,8 +241,15 @@ public class Flags {
     public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
             "cfg-deploy-multipart", false,
             List.of("tokle"), "2021-05-19", "2021-08-01",
-            "Wheter to deploy applications using multipart form data (instead of url params)",
+            "Whether to deploy applications using multipart form data (instead of url params)",
             "Takes effect immediately",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag VESPA_APP_DOMAIN_IN_CERTIFICATE = defineFeatureFlag(
+            "new-domain-in-certificate", false,
+            List.of("mpolden"), "2021-05-25", "2021-09-01",
+            "Whether to include the vespa-app.cloud names in certificate requests",
+            "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

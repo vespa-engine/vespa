@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
@@ -84,7 +85,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
                 "  document test {}\n" +
                 "  rank-profile my_profile inherits default {}\n" +
                 "}";
-        SearchBuilder searchBuilder = new SearchBuilder(application, rankProfileRegistry, queryProfileRegistry);
+        SearchBuilder searchBuilder = new SearchBuilder(application, new BaseDeployLogger(), rankProfileRegistry, queryProfileRegistry);
         searchBuilder.importString(sdContent);
         searchBuilder.build();
         Search search = searchBuilder.getSearch();

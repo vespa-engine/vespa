@@ -49,7 +49,6 @@ public class AllocationOptimizer {
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
         else
             limits = atLeast(minimumNodes,  limits);
-
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         NodeList hosts = nodeRepository.nodes().list().hosts();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
@@ -67,8 +66,8 @@ public class AllocationOptimizer {
                                                              nodeResourcesWith(nodesAdjustedForRedundancy,
                                                                                groupsAdjustedForRedundancy,
                                                                                limits, target, current, clusterModel));
-
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, hosts, nodeRepository);
+
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;

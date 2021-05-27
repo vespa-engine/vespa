@@ -548,6 +548,11 @@ public class Node {
             return this;
         }
 
+        public Builder reports(Map<String, JsonNode> reports) {
+            this.reports = reports;
+            return this;
+        }
+
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,

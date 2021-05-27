@@ -14,6 +14,7 @@ private:
     int64_t _generation;
     DocumentDBConfig::RankProfilesConfigSP _rankProfiles;
     DocumentDBConfig::RankingConstants::SP _rankingConstants;
+    DocumentDBConfig::RankingExpressions::SP _rankingExpressions;
     DocumentDBConfig::OnnxModels::SP _onnxModels;
     DocumentDBConfig::IndexschemaConfigSP _indexschema;
     DocumentDBConfig::AttributesConfigSP _attributes;
@@ -55,6 +56,10 @@ public:
     }
     DocumentDBConfigBuilder &rankingConstants(const DocumentDBConfig::RankingConstants::SP &rankingConstants_in) {
         _rankingConstants = rankingConstants_in;
+        return *this;
+    }
+    DocumentDBConfigBuilder &rankingExpressions(const DocumentDBConfig::RankingExpressions::SP &rankingExpressions_in) {
+        _rankingExpressions = rankingExpressions_in;
         return *this;
     }
     DocumentDBConfigBuilder &onnxModels(const DocumentDBConfig::OnnxModels::SP &onnxModels_in) {

@@ -153,7 +153,7 @@ public class IndexingScriptRewriterTestCase extends SchemaTestCase {
     private static ScriptExpression processField(SDField unprocessedField) {
         SDDocumentType sdoc = new SDDocumentType("test");
         sdoc.addField(unprocessedField);
-        Search search = new Search("test", null);
+        Search search = new Search("test");
         search.addDocument(sdoc);
         new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
         return unprocessedField.getIndexingScript();

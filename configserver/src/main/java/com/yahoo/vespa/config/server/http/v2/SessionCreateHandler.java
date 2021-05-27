@@ -9,6 +9,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -16,6 +17,8 @@ import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
+import com.yahoo.vespa.model.content.Content;
+import org.apache.hc.core5.http.ContentType;
 
 import java.net.URI;
 import java.time.Duration;
@@ -93,9 +96,12 @@ public class SessionCreateHandler extends SessionHandler {
         String header = request.getHeader(ApplicationApiHandler.contentTypeHeader);
         if (header == null) {
             throw new BadRequestException("Request contains no " + ApplicationApiHandler.contentTypeHeader + " header");
-        } else if (!supportedContentTypes.contains(header)) {
-            throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header, only '["
-                                          + String.join(", ", supportedContentTypes) + "' are supported");
+        } else {
+            ContentType contentType = ContentType.parse(header);
+            if (!supportedContentTypes.contains(contentType.getMimeType())) {
+                throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header (" + contentType.getMimeType() + "), only '["
+                                              + String.join(", ", supportedContentTypes) + "]' are supported");
+            }
         }
     }
 }

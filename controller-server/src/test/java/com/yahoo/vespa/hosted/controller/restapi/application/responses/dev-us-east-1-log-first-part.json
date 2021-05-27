@@ -70,7 +70,8 @@
         "upgradingOs": 0,
         "upgradingFirmware": 0,
         "services": 1,
-        "needNewConfig": 1
+        "needNewConfig": 1,
+        "retiring": 0
       }
     },
     "copyVespaLogs": {

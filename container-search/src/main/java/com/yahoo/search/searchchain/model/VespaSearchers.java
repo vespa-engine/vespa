@@ -60,8 +60,9 @@ public class VespaSearchers {
 
     private static FederationSearcherModel federationSearcherModel() {
         return new FederationSearcherModel(new ComponentSpecification("federation"),
-                Dependencies.emptyDependencies(),
-                Collections.emptyList(), true);
+                                           Dependencies.emptyDependencies(),
+                                           Collections.emptyList(),
+                                           true);
     }
 
     private static boolean allAdded(Collection<ChainedComponentModel> searcherModels, Set<ComponentId> componentIds) {

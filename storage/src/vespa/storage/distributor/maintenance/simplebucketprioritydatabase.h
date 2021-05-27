@@ -5,14 +5,13 @@
 #include <set>
 #include <map>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class SimpleBucketPriorityDatabase : public BucketPriorityDatabase
 {
 public:
     virtual ~SimpleBucketPriorityDatabase();
-    typedef PrioritizedBucket::Priority Priority;
+    using Priority = PrioritizedBucket::Priority;
 
     virtual void setPriority(const PrioritizedBucket&) override;
     virtual const_iterator begin() const override;
@@ -21,8 +20,8 @@ public:
     std::string toString() const;
 
 private:
-    typedef std::set<document::Bucket> BucketSet;
-    typedef std::map<Priority, BucketSet> PriorityMap;
+    using BucketSet   = std::set<document::Bucket>;
+    using PriorityMap = std::map<Priority, BucketSet>;
 
     class SimpleConstIteratorImpl : public ConstIteratorImpl
     {
@@ -61,5 +60,4 @@ private:
     PriorityMap _prioritizedBuckets;
 };
 
-}
 }

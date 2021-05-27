@@ -123,6 +123,11 @@ public:
     virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const vespalib::string &name) const = 0;
 
     /**
+     * Returns the ranking expression with the given name or empty string if not found.
+     **/
+    virtual vespalib::string getRankingExpression(const vespalib::string &name) const = 0;
+
+    /**
      * Get configuration for the given onnx model.
      **/
     virtual const OnnxModel *getOnnxModel(const vespalib::string &name) const = 0;

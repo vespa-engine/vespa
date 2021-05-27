@@ -40,5 +40,4 @@ public class RankingConstants {
     public void sendTo(Collection<? extends AbstractService> services) {
         constants.values().forEach(constant -> constant.sendTo(services));
     }
-
 }

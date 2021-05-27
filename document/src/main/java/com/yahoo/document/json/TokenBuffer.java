@@ -29,7 +29,7 @@ public class TokenBuffer {
         }
     }
 
-    private Deque<Token> buffer;
+    private final Deque<Token> buffer;
     private int nesting = 0;
 
     public TokenBuffer() {

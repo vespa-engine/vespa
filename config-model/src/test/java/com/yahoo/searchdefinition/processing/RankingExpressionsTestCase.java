@@ -2,16 +2,22 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.*;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import org.junit.Test;
 
 import java.io.IOException;

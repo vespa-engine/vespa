@@ -9,9 +9,10 @@ import com.yahoo.vespa.model.PortAllocBridge;
 /**
  * Represents a Slobrok service.
  *
- * @author  gjoranv
+ * @author gjoranv
  */
 public class Slobrok extends AbstractService implements StateserverConfig.Producer {
+
     private static final long serialVersionUID = 1L;
 
     public final static int BASEPORT = 19099;
@@ -25,7 +26,7 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
      * @param parent the parent ConfigProducer.
      * @param index  unique index for all slobroks
      */
-    public Slobrok(AbstractConfigProducer parent, int index) {
+    public Slobrok(AbstractConfigProducer<?> parent, int index) {
         super(parent, "slobrok." + index);
         portsMeta.on(0).tag("rpc").tag("admin").tag("status");
         portsMeta.on(1).tag("http").tag("state");

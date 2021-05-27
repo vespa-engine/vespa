@@ -280,7 +280,7 @@ struct MyWorld {
     }
 
     Matcher::SP createMatcher() {
-        return std::make_shared<Matcher>(schema, config, clock, queryLimiter, constantValueRepo, OnnxModels(), 0);
+        return std::make_shared<Matcher>(schema, config, clock, queryLimiter, constantValueRepo, RankingExpressions(), OnnxModels(), 0);
     }
 
     struct MySearchHandler : ISearchHandler {

@@ -33,7 +33,7 @@ public class RankProfileRegistryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testRankProfileDuplicateNameIsIllegal() {
-        Search search = new Search("foo", null);
+        Search search = new Search("foo");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         RankProfile barRankProfile = new RankProfile("bar", search, rankProfileRegistry);
         rankProfileRegistry.add(barRankProfile);
@@ -42,7 +42,7 @@ public class RankProfileRegistryTest {
 
     @Test
     public void testRankProfileDuplicateNameLegalForOverridableRankProfiles() {
-        Search search = new Search("foo", null);
+        Search search = new Search("foo");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {

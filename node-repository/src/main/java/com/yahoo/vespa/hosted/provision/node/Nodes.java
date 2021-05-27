@@ -520,32 +520,34 @@ public class Nodes {
 
     /**
      * Throws if the given node cannot be removed. Removal is allowed if:
-     *  - Tenant node: node is unallocated
+     *  - Tenant node:
+     *    - non-recursively: node is unallocated
+     *    - recursively: node is unallocated or node is in failed|parked
      *  - Host node: iff in state provisioned|failed|parked
      *  - Child node:
-     *      If only removing the container node: node in state ready
-     *      If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
+     *    - non-recursively: node in state ready
+     *    - recursively: child is in state provisioned|failed|parked|dirty|ready
      */
-    private void requireRemovable(Node node, boolean removingAsChild, boolean force) {
+    private void requireRemovable(Node node, boolean removingRecursively, boolean force) {
         if (force) return;
 
-        if (node.type() == NodeType.tenant && node.allocation().isPresent())
-            illegal(node + " is currently allocated and cannot be removed");
+        if (node.type() == NodeType.tenant && node.allocation().isPresent()) {
+            EnumSet<Node.State> removableStates = EnumSet.of(Node.State.failed, Node.State.parked);
+            if (!removingRecursively || !removableStates.contains(node.state()))
+                illegal(node + " is currently allocated and cannot be removed while in " + node.state());
+        }
 
-        if (!node.type().isHost() && !removingAsChild) {
-            if (node.state() != Node.State.ready)
-                illegal(node + " can not be removed as it is not in the state " + Node.State.ready);
+        final Set<Node.State> removableStates;
+        if (node.type().isHost()) {
+            removableStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked);
+        } else {
+            removableStates = removingRecursively
+                    ? EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty, Node.State.ready)
+                    // When not removing recursively, we can only remove children in state ready
+                    : EnumSet.of(Node.State.ready);
         }
-        else if (!node.type().isHost()) { // removing a child node
-            Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked, Node.State.dirty, Node.State.ready);
-            if ( ! legalStates.contains(node.state()))
-                illegal(node + " can not be removed as it is not in the states " + legalStates);
-        }
-        else { // a host
-            Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked);
-            if (! legalStates.contains(node.state()))
-                illegal(node + " can not be removed as it is not in the states " + legalStates);
-        }
+        if (!removableStates.contains(node.state()))
+            illegal(node + " can not be removed while in " + node.state());
     }
 
     /**

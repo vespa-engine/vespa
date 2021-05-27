@@ -15,6 +15,7 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,11 +52,12 @@ public class RankProfilesConfigImporter {
      */
     public Map<String, Model> importFrom(RankProfilesConfig config,
                                          RankingConstantsConfig constantsConfig,
+                                         RankingExpressionsConfig expressionsConfig,
                                          OnnxModelsConfig onnxModelsConfig) {
         try {
             Map<String, Model> models = new HashMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
-                Model model = importProfile(profile, constantsConfig, onnxModelsConfig);
+                Model model = importProfile(profile, constantsConfig, expressionsConfig, onnxModelsConfig);
                 models.put(model.name(), model);
             }
             return models;
@@ -65,8 +67,16 @@ public class RankProfilesConfigImporter {
         }
     }
 
+    @Deprecated
+    public Map<String, Model> importFrom(RankProfilesConfig config,
+                                         RankingConstantsConfig constantsConfig,
+                                         OnnxModelsConfig onnxModelsConfig) {
+        return importFrom(config, constantsConfig, new RankingExpressionsConfig.Builder().build(), onnxModelsConfig);
+    }
+
     private Model importProfile(RankProfilesConfig.Rankprofile profile,
                                 RankingConstantsConfig constantsConfig,
+                                RankingExpressionsConfig expressionsConfig,
                                 OnnxModelsConfig onnxModelsConfig)
             throws ParseException {
 

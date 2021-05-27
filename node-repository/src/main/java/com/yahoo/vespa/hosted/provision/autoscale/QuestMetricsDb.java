@@ -59,6 +59,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private long highestTimestampAdded = 0;
 
+    private volatile int nullRecords = 0;
+
     @Inject
     public QuestMetricsDb() {
         this(Defaults.getDefaults().underVespaHome("var/db/vespa/autoscaling"), Clock.systemUTC());
@@ -80,9 +82,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         // silence Questdb's custom logging system
         IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
-        System.setProperty("questdbLog", dataDir + "/quest-log.conf");
-        System.setProperty("org.jooq.no-logo", "true");
-
+        System.setProperty("out", dataDir + "/quest-log.conf");
         CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
         engine = new CairoEngine(configuration);
         sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine));
@@ -183,8 +183,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
+    public int getNullRecordsCount() { return nullRecords; }
+
     @Override
     public void gc() {
+        nullRecords = 0;
         gc(nodeTable);
         gc(clusterTable);
     }
@@ -344,7 +347,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
         String from = formatter.format(startTime).substring(0, 19) + ".000000Z";
         String to = formatter.format(clock.instant()).substring(0, 19) + ".000000Z";
-        String sql = "select * from " + nodeTable + " where at in('" + from + "', '" + to + "');";
+        String sql = "select * from " + nodeTable + " where at between('" + from + "', '" + to + "');";
 
         // WHERE clauses does not work:
         // String sql = "select * from " + tableName + " where hostname in('host1', 'host2', 'host3');";
@@ -354,6 +357,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
+                    if (record == null || record.getStr(0) == null) { // Observed to happen. QuestDb bug?
+                        nullRecords++;
+                        continue;
+                    }
                     String hostname = record.getStr(0).toString();
                     if (hostnames.isEmpty() || hostnames.contains(hostname)) {
                         snapshots.put(hostname,

@@ -6,8 +6,7 @@
 #include <stdint.h>
 #include <vespa/document/bucket/bucketspace.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 struct NodeMaintenanceStats
 {
@@ -17,12 +16,15 @@ struct NodeMaintenanceStats
     uint64_t copyingOut;
     uint64_t total;
 
-    NodeMaintenanceStats()
+    constexpr NodeMaintenanceStats() noexcept
         : movingOut(0), syncing(0), copyingIn(0), copyingOut(0), total(0)
     {}
 
-    NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_, uint64_t copyingOut_, uint64_t total_)
-        : movingOut(movingOut_), syncing(syncing_), copyingIn(copyingIn_), copyingOut(copyingOut_), total(total_)
+    constexpr NodeMaintenanceStats(uint64_t movingOut_, uint64_t syncing_, uint64_t copyingIn_,
+                                   uint64_t copyingOut_, uint64_t total_) noexcept
+        : movingOut(movingOut_), syncing(syncing_),
+          copyingIn(copyingIn_), copyingOut(copyingOut_),
+          total(total_)
     {}
 
     bool operator==(const NodeMaintenanceStats& other) const noexcept {
@@ -52,6 +54,7 @@ private:
 public:
     NodeMaintenanceStatsTracker();
     ~NodeMaintenanceStatsTracker();
+
     void incMovingOut(uint16_t node, document::BucketSpace bucketSpace) {
         ++_stats[node][bucketSpace].movingOut;
     }
@@ -92,6 +95,4 @@ public:
     }
 };
 
-} // distributor
-} // storage
-
+} // storage::distributor

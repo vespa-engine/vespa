@@ -6,8 +6,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.processing.request.Properties;
 
 /**
- * TODO: What's this?
- *
  * @author Tony Vaagenes
  */
 public abstract class Target extends AbstractComponent {

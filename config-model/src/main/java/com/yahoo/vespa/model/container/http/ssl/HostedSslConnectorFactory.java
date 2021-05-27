@@ -29,32 +29,32 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
      * Create connector factory that uses a certificate provided by the config-model / configserver and default hosted Vespa truststore.
      */
     public static HostedSslConnectorFactory withProvidedCertificate(
-            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth, boolean enableHttp2) {
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth);
-        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, enableHttp2);
+        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth);
     }
 
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and a truststore configured by the application.
      */
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
-            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates, boolean enableHttp2) {
+            String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false);
-        return new HostedSslConnectorFactory(sslProvider, true, false, enableHttp2);
+        return new HostedSslConnectorFactory(sslProvider, true, false);
     }
 
     /**
      * Create connector factory that uses the default certificate and truststore provided by Vespa (through Vespa-global TLS configuration).
      */
-    public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName, boolean enableHttp2) {
-        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, enableHttp2);
+    public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName) {
+        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false);
     }
 
     private HostedSslConnectorFactory(SslProvider sslProvider, boolean enforceClientAuth,
-                                      boolean enforceHandshakeClientAuth, boolean enableHttp2) {
-        super(new Builder("tls4443", 4443).sslProvider(sslProvider).enableHttp2(enableHttp2));
+                                      boolean enforceHandshakeClientAuth) {
+        super(new Builder("tls4443", 4443).sslProvider(sslProvider));
         this.enforceClientAuth = enforceClientAuth;
         this.enforceHandshakeClientAuth = enforceHandshakeClientAuth;
     }

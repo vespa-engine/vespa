@@ -4,13 +4,12 @@
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenanceScanner
 {
 public:
-    virtual ~MaintenanceScanner() {}
+    virtual ~MaintenanceScanner() = default;
 
     class ScanResult {
         bool _done;
@@ -38,5 +37,3 @@ public:
 };
 
 }
-}
-

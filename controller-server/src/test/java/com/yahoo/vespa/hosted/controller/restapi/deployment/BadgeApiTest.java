@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 
 /**
  * @author jonmv
@@ -45,7 +46,7 @@ public class BadgeApiTest extends ControllerContainerTest {
         application.submit(applicationPackage)
                    .runJob(JobType.systemTest)
                    .runJob(JobType.stagingTest);
-        for (int i = 0; i < 32; i++)
+        for (int i = 0; i < 31; i++)
             application.failDeployment(JobType.productionUsWest1);
         application.triggerJobs();
         tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.testEuWest1);
@@ -54,6 +55,17 @@ public class BadgeApiTest extends ControllerContainerTest {
                               Files.readString(Paths.get(responseFiles + "overview.svg")), 200);
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
                               Files.readString(Paths.get(responseFiles + "history.svg")), 200);
+
+        // New change not reflected before cache entry expires.
+        tester.serviceRegistry().clock().advance(Duration.ofSeconds(59));
+        application.runJob(JobType.productionUsWest1);
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
+                              Files.readString(Paths.get(responseFiles + "history.svg")), 200);
+
+        // Cached entry refreshed after a minute.
+        tester.serviceRegistry().clock().advance(Duration.ofSeconds(1));
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
+                              Files.readString(Paths.get(responseFiles + "history2.svg")), 200);
     }
 
 }

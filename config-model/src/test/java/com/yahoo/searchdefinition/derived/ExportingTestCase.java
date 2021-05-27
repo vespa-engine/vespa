@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -103,7 +104,8 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testRankExpression() throws IOException, ParseException {
-        assertCorrectDeriving("rankexpression");
+        assertCorrectDeriving("rankexpression", null,
+                new TestProperties().useExternalRankExpression(true), new TestableDeployLogger());
     }
 
     @Test

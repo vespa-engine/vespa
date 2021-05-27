@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -27,7 +28,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -184,7 +184,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                       current,
                                                       clusterModel,
                                                       limits)
-                                  .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
+                                  .orElseThrow(() -> newNoAllocationPossible(current.clusterSpec(), limits))
                                   .advertisedResources();
     }
 
@@ -222,6 +222,39 @@ public class NodeRepositoryProvisioner implements Provisioner {
             if (host.membership().get().cluster().group().isEmpty())
                 throw new IllegalArgumentException("Hosts must be assigned a group when activating, but got " + host);
         }
+    }
+
+    private IllegalArgumentException newNoAllocationPossible(ClusterSpec spec, Limits limits) {
+        StringBuilder message = new StringBuilder("No allocation possible within ").append(limits);
+
+        boolean exclusiveHosts = spec.isExclusive() || nodeRepository.zone().getCloud().dynamicProvisioning();
+        if (exclusiveHosts)
+            message.append(". Nearest allowed node resources: ").append(findNearestNodeResources(limits));
+
+        return new IllegalArgumentException(message.toString());
+    }
+
+    private NodeResources findNearestNodeResources(Limits limits) {
+        NodeResources nearestMin = nearestFlavorResources(limits.min().nodeResources());
+        NodeResources nearestMax = nearestFlavorResources(limits.max().nodeResources());
+        if (limits.min().nodeResources().distanceTo(nearestMin) < limits.max().nodeResources().distanceTo(nearestMax))
+            return nearestMin;
+        else
+            return nearestMax;
+    }
+
+    /** Returns the advertised flavor resources which are nearest to the given resources */
+    private NodeResources nearestFlavorResources(NodeResources requestedResources) {
+        NodeResources nearestHostResources = nodeRepository.flavors().getFlavors().stream()
+                                                           .map(flavor -> nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor))
+                                                           .filter(resources -> resources.diskSpeed().compatibleWith(requestedResources.diskSpeed()))
+                                                           .filter(resources -> resources.storageType().compatibleWith(requestedResources.storageType()))
+                                                           .min(Comparator.comparingDouble(resources -> resources.distanceTo(requestedResources)))
+                                                           .orElseThrow()
+                                                           .withBandwidthGbps(requestedResources.bandwidthGbps());
+        if ( nearestHostResources.storageType() == NodeResources.StorageType.remote)
+            nearestHostResources = nearestHostResources.withDiskGb(requestedResources.diskGb());
+        return nearestHostResources;
     }
 
 }

@@ -5,8 +5,7 @@
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/operationstarter.h>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MaintenanceOperationGenerator;
 class BucketPriorityDatabase;
@@ -19,7 +18,7 @@ public:
         NORMAL_SCHEDULING_MODE
     };
 
-    typedef int WaitTimeMs;
+    using WaitTimeMs = int;
 
     MaintenanceScheduler(MaintenanceOperationGenerator& operationGenerator,
                          BucketPriorityDatabase& priorityDb,
@@ -31,7 +30,6 @@ private:
     MaintenanceScheduler(const MaintenanceScheduler&);
     MaintenanceScheduler& operator=(const MaintenanceScheduler&);
 
-    //void scanNextBucket();
     PrioritizedBucket getMostImportantBucket();
     bool possibleToSchedule(const PrioritizedBucket& bucket, SchedulingMode currentMode) const;
     bool possibleToScheduleInEmergency(const PrioritizedBucket& bucket) const;
@@ -46,5 +44,3 @@ private:
 };
 
 }
-}
-

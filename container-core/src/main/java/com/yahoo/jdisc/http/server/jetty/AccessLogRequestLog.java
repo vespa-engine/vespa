@@ -8,6 +8,10 @@ import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
+import org.eclipse.jetty.http2.HTTP2Stream;
+import org.eclipse.jetty.http2.server.HttpTransportOverHTTP2;
+import org.eclipse.jetty.server.HttpChannel;
+import org.eclipse.jetty.server.HttpTransport;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
@@ -117,6 +121,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                 addNonNullValue(builder, accessLogEntry.getHitCounts(), RequestLogEntry.Builder::hitCounts);
                 addNonNullValue(builder, accessLogEntry.getTrace(), RequestLogEntry.Builder::traceNode);
             }
+            http2StreamId(request).ifPresent(streamId -> builder.addExtraAttribute("http2-stream-id", Integer.toString(streamId)));
 
             requestLog.log(builder.build());
         } catch (Exception e) {
@@ -156,6 +161,15 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
         } catch (IllegalArgumentException e) {
             return OptionalInt.empty();
         }
+    }
+
+    private static OptionalInt http2StreamId(Request request) {
+        HttpChannel httpChannel = request.getHttpChannel();
+        if (httpChannel == null) return OptionalInt.empty();
+        HttpTransport transport = httpChannel.getHttpTransport();
+        if (!(transport instanceof HttpTransportOverHTTP2)) return OptionalInt.empty();
+        HTTP2Stream stream = (HTTP2Stream) ((HttpTransportOverHTTP2) transport).getStream();
+        return OptionalInt.of(stream.getId());
     }
 
     private static <T> void addNonNullValue(

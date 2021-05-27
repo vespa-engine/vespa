@@ -384,7 +384,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void undeclaredQueryFeaturesAreAccepted() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        SearchBuilder builder = new SearchBuilder();
+        SearchBuilder builder = new SearchBuilder(logger);
         builder.importString(joinLines(
                 "search test {",
                 "  document test { ",
@@ -401,8 +401,8 @@ public class RankingExpressionTypeResolverTestCase {
                 "    }",
                 "  }",
                 "}"
-        ), logger);
-        builder.build(true, logger);
+        ));
+        builder.build(true);
         String message = logger.findMessage("The following query features");
         assertNull(message);
     }
@@ -410,7 +410,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void undeclaredQueryFeaturesAreAcceptedWithWarningWhenUsingTensors() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        SearchBuilder builder = new SearchBuilder();
+        SearchBuilder builder = new SearchBuilder(logger);
         builder.importString(joinLines(
                 "search test {",
                 "  document test { ",
@@ -427,8 +427,8 @@ public class RankingExpressionTypeResolverTestCase {
                 "    }",
                 "  }",
                 "}"
-        ), logger);
-        builder.build(true, logger);
+        ));
+        builder.build(true);
         String message = logger.findMessage("The following query features");
         assertNotNull(message);
         assertEquals("WARNING: The following query features used in 'my_rank_profile' are not declared in query profile types and " +
@@ -439,7 +439,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void noWarningWhenUsingTensorsWhenQueryFeaturesAreDeclared() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        SearchBuilder builder = new SearchBuilder();
+        SearchBuilder builder = new SearchBuilder(logger);
         QueryProfileType myType = new QueryProfileType("mytype");
         myType.addField(new FieldDescription("rank.feature.query(foo)",
                                              new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),
@@ -467,8 +467,8 @@ public class RankingExpressionTypeResolverTestCase {
                 "    }",
                 "  }",
                 "}"
-        ), logger);
-        builder.build(true, logger);
+        ));
+        builder.build(true);
         String message = logger.findMessage("The following query features");
         assertNull(message);
     }

@@ -30,7 +30,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testLiteralBoost() {
-        Search search=new Search("literalboost", null);
+        Search search=new Search("literalboost");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType document=new SDDocumentType("literalboost");
         search.addDocument(document);
@@ -62,7 +62,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testNonDefaultRankLiteralBoost() {
-        Search search=new Search("literalboost", null);
+        Search search=new Search("literalboost");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType document=new SDDocumentType("literalboost");
         search.addDocument(document);
@@ -88,7 +88,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
     /** Tests literal boosts in two fields going to the same index */
     @Test
     public void testTwoLiteralBoostFields() {
-        Search search=new Search("msb", null);
+        Search search=new Search("msb");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
         SDDocumentType document=new SDDocumentType("msb");
         search.addDocument(document);

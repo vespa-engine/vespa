@@ -16,6 +16,8 @@ import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.model.content.Content;
+import org.apache.hc.core5.http.ContentType;
 import org.eclipse.jetty.http.MultiPartFormInputStream;
 
 import javax.servlet.http.Part;
@@ -70,7 +72,8 @@ public class ApplicationApiHandler extends SessionHandler {
         PrepareParams prepareParams;
         CompressedApplicationInputStream compressedStream;
         boolean multipartRequest = Optional.ofNullable(request.getHeader(HttpHeaders.Names.CONTENT_TYPE))
-                .map(val -> val.equalsIgnoreCase(MULTIPART_FORM_DATA))
+                .map(ContentType::parse)
+                .map(contentType -> contentType.getMimeType().equalsIgnoreCase(MULTIPART_FORM_DATA))
                 .orElse(false);
         if(multipartRequest) {
             try {

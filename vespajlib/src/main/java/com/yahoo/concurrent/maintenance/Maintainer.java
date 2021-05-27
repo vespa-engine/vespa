@@ -75,6 +75,11 @@ public abstract class Maintainer implements Runnable {
         }
     }
 
+    /** Returns whether this is being shut down */
+    public final boolean shuttingDown() {
+        return shutDown.get();
+    }
+
     @Override
     public final String toString() { return name(); }
 

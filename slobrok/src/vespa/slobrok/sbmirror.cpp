@@ -3,6 +3,7 @@
 #include "sbmirror.h"
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.mirror");
@@ -30,7 +31,9 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
       _req(0)
 {
     _configurator->poll();
-    LOG_ASSERT(_slobrokSpecs.ok());
+    if (!_slobrokSpecs.ok()) {
+        throw vespalib::IllegalStateException("Not able to initialize MirrorAPI due to missing or bad slobrok specs");
+    }
     ScheduleNow();
 }
 

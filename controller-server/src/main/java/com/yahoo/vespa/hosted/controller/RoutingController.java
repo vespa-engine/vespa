@@ -3,12 +3,16 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -34,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,6 +72,7 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag hideSharedRoutingEndpoint;
+    private final BooleanFlag vespaAppDomainInCertificate;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -74,6 +80,7 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
+        this.vespaAppDomainInCertificate = Flags.VESPA_APP_DOMAIN_IN_CERTIFICATE.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -147,6 +154,39 @@ public class RoutingController {
             }
         }
         return Collections.unmodifiableMap(endpoints);
+    }
+
+    /** Returns certificate DNS names (CN and SAN values) for given deployment */
+    public List<String> certificateDnsNames(DeploymentId deployment) {
+        List<String> endpointDnsNames = new ArrayList<>();
+
+        // We add first an endpoint name based on a hash of the application ID,
+        // as the certificate provider requires the first CN to be < 64 characters long.
+        endpointDnsNames.add(commonNameHashOf(deployment.applicationId(), controller.system()));
+
+        // Add wildcard names for global endpoints when deploying to production
+        List<Endpoint.EndpointBuilder> builders = new ArrayList<>();
+        if (deployment.zoneId().environment().isProduction()) {
+            builders.add(Endpoint.of(deployment.applicationId()).target(EndpointId.defaultId()));
+            builders.add(Endpoint.of(deployment.applicationId()).wildcard());
+        }
+
+        // Add wildcard names for zone endpoints
+        builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment.zoneId()));
+        builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment.zoneId()));
+
+        // Build all endpoints
+        for (var builder : builders) {
+            builder = builder.routingMethod(RoutingMethod.exclusive)
+                             .on(Port.tls());
+            Endpoint endpoint = builder.in(controller.system());
+            endpointDnsNames.add(endpoint.dnsName());
+            if (controller.system().isPublic() && vespaAppDomainInCertificate.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value()) {
+                Endpoint legacyEndpoint = builder.legacy().in(controller.system());
+                endpointDnsNames.add(legacyEndpoint.dnsName());
+            }
+        }
+        return Collections.unmodifiableList(endpointDnsNames);
     }
 
     /** Change status of all global endpoints for given deployment */
@@ -347,6 +387,13 @@ public class RoutingController {
         return application.deploymentSpec().instance(instanceName)
                           .flatMap(DeploymentInstanceSpec::globalServiceId)
                           .isPresent();
+    }
+
+    /** Create a common name based on a hash of given application. This must be less than 64 characters long. */
+    private static String commonNameHashOf(ApplicationId application, SystemName system) {
+        HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
+        String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
+        return 'v' + base32 + Endpoint.dnsSuffix(system);
     }
 
     /** Returns direct routing endpoints if any exist and feature flag is set for given application */

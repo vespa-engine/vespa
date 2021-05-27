@@ -67,7 +67,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                            admin,
                            allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
         }
-        else { // TODO: Remove
+        else { // These will be removed later, if an admin cluster (for cluster controllers) is assigned
             createSlobroks(deployLogger,
                            admin,
                            pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
@@ -153,8 +153,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         List<HostResource> picked = sortedContainerHostsFrom(model, count, !retired);
 
         // if we can return multiple hosts, include retired nodes which would have been picked before
-        // (probably - assuming all previous nodes were retired, which is always true for a single cluster
-        // at the moment (Sept 2015)) to ensure a smoother transition between the old and new topology
+        // (probably - assuming all previous nodes were retired, which is always true for a single cluster,
+        // to ensure a smoother transition between the old and new topology
         // by including both new and old nodes during the retirement period
         picked.addAll(sortedContainerHostsFrom(model, count, retired));
 
@@ -166,6 +166,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         List<HostResource> hosts = model.getCluster().getContainers().stream()
                                                                      .filter(container -> retired == container.isRetired())
                                                                      .map(Container::getHostResource)
+                                                                     .sorted(HostResource::comparePrimarilyByIndexTo)
                                                                      .collect(Collectors.toList());
         return hosts.subList(0, Math.min(count, hosts.size()));
     }

@@ -1,5 +1,4 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -75,8 +74,8 @@ public class Configurator {
         sb.append("dataDir=").append(getDefaults().underVespaHome(config.dataDir())).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
-        // See http://zookeeper.apache.org/doc/r3.5.5/zookeeperAdmin.html#sc_zkCommands
-        // Includes all available commands in 3.5, except 'wchc' and 'wchp'
+        // See http://zookeeper.apache.org/doc/r3.6.3/zookeeperAdmin.html#sc_zkCommands
+        // Includes all available commands in 3.6, except 'wchc' and 'wchp'
         sb.append("4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
         sb.append("admin.enableServer=false").append("\n");
         // Use custom connection factory for TLS on client port - see class' Javadoc for rationale
@@ -107,7 +106,7 @@ public class Configurator {
             }
         }
         if (!found) {
-            throw new RuntimeException("No id in zookeeper server list that corresponds to my id(" + myid + ")");
+            throw new RuntimeException("No id in zookeeper server list that corresponds to my id (" + myid + ")");
         }
     }
 
@@ -125,7 +124,7 @@ public class Configurator {
             // actually make the server an observer, but prevent it from forming an ensemble independently of the
             // existing cluster.
             //
-            // See https://zookeeper.apache.org/doc/r3.6.2/zookeeperReconfig.html#sc_reconfig_modifying
+            // See https://zookeeper.apache.org/doc/r3.6.3/zookeeperReconfig.html#sc_reconfig_modifying
             sb.append(":")
               .append("observer");
         }

@@ -3,6 +3,7 @@
 
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
+#include <vespa/searchcore/proton/matching/ranking_expressions.h>
 
 using namespace proton::matching;
 using search::fef::FieldInfo;
@@ -14,6 +15,21 @@ using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 using vespalib::eval::ConstantValue;
 using SIAF = Schema::ImportedAttributeField;
+
+const vespalib::string my_expr_ref(
+    "this is my reference ranking expression.\n"
+    "this is my reference ranking expression.\n"
+    "it will not compile into a function.\n"
+    "it will not compile into a function.\n"
+    "it is just some text, that can also be compressed...\n"
+    "it is just some text, that can also be compressed...\n");
+
+RankingExpressions make_expressions() {
+    RankingExpressions expr_list;
+    expr_list.add("expr1", TEST_PATH("my_expr"));
+    expr_list.add("expr2", TEST_PATH("my_expr.lz4"));
+    return expr_list;
+}
 
 OnnxModels make_models() {
     OnnxModels::Vector list;
@@ -50,7 +66,7 @@ struct Fixture {
     Fixture(Schema::UP schema_)
         : repo(),
           schema(std::move(schema_)),
-          env(7, *schema, Properties(), repo, make_models())
+          env(7, *schema, Properties(), repo, make_expressions(), make_models())
     {
     }
     const FieldInfo *assertField(size_t idx,
@@ -121,6 +137,15 @@ TEST_F("require that onnx model config can be obtained", Fixture(buildEmptySchem
         EXPECT_FALSE(model->output_name("output1").has_value());
     }
     EXPECT_TRUE(f1.env.getOnnxModel("model3") == nullptr);
+}
+
+TEST_F("require that external ranking expressions can be obtained", Fixture(buildEmptySchema())) {
+    auto expr1 = f1.env.getRankingExpression("expr1");
+    auto expr2 = f1.env.getRankingExpression("expr2");
+    auto expr3 = f1.env.getRankingExpression("expr3");
+    EXPECT_EQUAL(expr1, my_expr_ref);
+    EXPECT_EQUAL(expr2, my_expr_ref);
+    EXPECT_TRUE(expr3.empty());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

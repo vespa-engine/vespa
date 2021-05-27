@@ -45,7 +45,6 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
     private final Optional<AllocatedHosts> allocatedHosts;
-    private static final Version legacyVersion = new Version(0, 0, 0);
 
     public static final String fileRegistryNode = "fileregistry";
     public static final String allocatedHostsNode = "allocatedHosts";
@@ -60,7 +59,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     private Optional<AllocatedHosts> importAllocatedHosts() {
-        if ( ! zkApplication.exists(ZKApplicationPackage.allocatedHostsNode)) return Optional.empty();
+        if ( ! zkApplication.exists(allocatedHostsNode)) return Optional.empty();
         return Optional.of(readAllocatedHosts());
     }
 
@@ -71,21 +70,18 @@ public class ZKApplicationPackage implements ApplicationPackage {
      */
     private AllocatedHosts readAllocatedHosts() {
         try {
-            return AllocatedHostsSerializer.fromJson(zkApplication.getBytes(ZKApplicationPackage.allocatedHostsNode));
+            return AllocatedHostsSerializer.fromJson(zkApplication.getBytes(allocatedHostsNode));
         } catch (Exception e) {
             throw new RuntimeException("Unable to read allocated hosts", e);
         }
     }
 
     private void importFileRegistries() {
-        List<String> fileRegistryNodes = zkApplication.getChildren(ZKApplicationPackage.fileRegistryNode);
-        if (fileRegistryNodes.isEmpty()) {
-            fileRegistryMap.put(legacyVersion, importFileRegistry(ZKApplicationPackage.fileRegistryNode));
-        } else {
-            fileRegistryNodes.forEach(version ->
-                        fileRegistryMap.put(Version.fromString(version),
-                                            importFileRegistry(Joiner.on("/").join(ZKApplicationPackage.fileRegistryNode, version))));
-        }
+        List<String> perVersionFileRegistryNodes = zkApplication.getChildren(fileRegistryNode);
+        perVersionFileRegistryNodes
+                .forEach(version ->
+                                 fileRegistryMap.put(Version.fromString(version),
+                                                     importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
     }
 
     private PreGeneratedFileRegistry importFileRegistry(String fileRegistryNode) {
@@ -139,11 +135,11 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public List<NamedReader> searchDefinitionContents() {
         List<NamedReader> schemas = new ArrayList<>();
         for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR)) {
-            if (sd.endsWith(ApplicationPackage.SD_NAME_SUFFIX))
+            if (sd.endsWith(SD_NAME_SUFFIX))
                 schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, sd))));
         }
         for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR)) {
-            if (sd.endsWith(ApplicationPackage.SD_NAME_SUFFIX))
+            if (sd.endsWith(SD_NAME_SUFFIX))
                 schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, sd))));
         }
         return schemas;
@@ -251,7 +247,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
         List<ComponentInfo> components = new ArrayList<>();
         PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
         for (String path : fileRegistry.getPaths()) {
-            if (path.startsWith(ApplicationPackage.COMPONENT_DIR + File.separator) && path.endsWith(".jar")) {
+            if (path.startsWith(COMPONENT_DIR + File.separator) && path.endsWith(".jar")) {
                 ComponentInfo component = new ComponentInfo(path);
                 components.add(component);
             }
@@ -266,9 +262,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     @Override
     public Reader getRankingExpression(String name) {
         Optional<Reader> reader = zkApplication.getOptionalDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, name);
-        if (reader.isPresent())
-            return reader.get();
-        return zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, name);
+        return reader.orElseGet(() -> zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, name));
     }
 
     @Override

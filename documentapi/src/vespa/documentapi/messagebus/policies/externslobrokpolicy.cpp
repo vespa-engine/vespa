@@ -55,10 +55,11 @@ ExternSlobrokPolicy::~ExternSlobrokPolicy()
     }
 }
 
-string ExternSlobrokPolicy::init() {
+string
+ExternSlobrokPolicy::init() {
     if (_slobroks.size() != 0) {
         slobrok::ConfiguratorFactory config(_slobroks);
-        _mirror.reset(new MirrorAPI(*_orb, config));
+        _mirror = std::make_unique<MirrorAPI>(*_orb, config);
     } else if (_configSources.size() != 0) {
         slobrok::ConfiguratorFactory config(
             config::ConfigUri(_slobrokConfigId,

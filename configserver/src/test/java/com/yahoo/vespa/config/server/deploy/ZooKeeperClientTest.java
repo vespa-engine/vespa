@@ -63,7 +63,7 @@ public class ZooKeeperClientTest {
                                                                                                2L));
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
-        zkc.setupZooKeeper();
+        zkc.initialize();
         zkc.write(app);
         zkc.write(fileRegistries);
     }
@@ -85,7 +85,7 @@ public class ZooKeeperClientTest {
         BaseDeployLogger logger = new BaseDeployLogger();
         long generation = 1L;
         ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, Path.fromString("/1"));
-        zooKeeperClient.setupZooKeeper();
+        zooKeeperClient.initialize();
         String appPath = "/";
         assertThat(zk.getChildren(appPath).size(), is(1));
         assertTrue(zk.exists("/" + generation));
@@ -157,7 +157,7 @@ public class ZooKeeperClientTest {
         BaseDeployLogger logger = new BaseDeployLogger();
         Path app = Path.fromString("/1");
         ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, app);
-        zooKeeperClient.setupZooKeeper();
+        zooKeeperClient.initialize();
         HostSpec host1 = new HostSpec("host1.yahoo.com", Collections.emptyList(), Optional.empty());
         HostSpec host2 = new HostSpec("host2.yahoo.com", Collections.emptyList(), Optional.empty());
         ImmutableSet<HostSpec> hosts = ImmutableSet.of(host1, host2);

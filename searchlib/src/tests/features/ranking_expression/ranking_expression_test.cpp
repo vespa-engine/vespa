@@ -67,28 +67,38 @@ struct SetupResult {
     RankingExpressionBlueprint rank;
     DummyDependencyHandler deps;
     bool setup_ok;
-    SetupResult(const TypeMap &object_inputs, const vespalib::string &expression);
+    SetupResult(const TypeMap &object_inputs, const vespalib::string &expression,
+                bool external_expression = false);
     ~SetupResult();
 };
 
 SetupResult::SetupResult(const TypeMap &object_inputs,
-                         const vespalib::string &expression)
+                         const vespalib::string &expression,
+                         bool external_expression)
     : stash(), index_env(), query_env(&index_env), rank(make_replacer()), deps(rank), setup_ok(false)
 {
     rank.setName("self");
-    index_env.getProperties().add("self.rankingScript", expression);
     for (const auto &input: object_inputs) {
         deps.define_object_input(input.first, ValueType::from_spec(input.second));
     }
-    setup_ok = rank.setup(index_env, {});
+    std::vector<vespalib::string> params;
+    if (external_expression) {
+        params.push_back("my_expr");
+        index_env.addRankingExpression("my_expr", expression);
+    } else {
+        index_env.getProperties().add("self.rankingScript", expression);
+    }
+    Blueprint &bp = rank;
+    setup_ok = bp.setup(index_env, params);
     EXPECT_TRUE(!deps.accept_type_mismatch);
 }
 SetupResult::~SetupResult() = default;
 
 void verify_output_type(const TypeMap &object_inputs,
-                        const vespalib::string &expression, const FeatureType &expect)
+                        const vespalib::string &expression, const FeatureType &expect,
+                        bool external_expression = false)
 {
-    SetupResult result(object_inputs, expression);
+    SetupResult result(object_inputs, expression, external_expression);
     EXPECT_TRUE(result.setup_ok);
     EXPECT_EQUAL(1u, result.deps.output.size());
     ASSERT_EQUAL(1u, result.deps.output_type.size());
@@ -124,6 +134,13 @@ TEST("require that expression with object input produces object output (interpre
 TEST("require that ranking expression can resolve to concrete complex type") {
     TEST_DO(verify_output_type({{"a", "tensor(x{},y{})"}, {"b", "tensor(y{},z{})"}}, "a*b",
                                FeatureType::object(ValueType::from_spec("tensor(x{},y{},z{})"))));
+}
+
+TEST("require that ranking expression can be external") {
+    TEST_DO(verify_output_type({}, "a*b", FeatureType::number(), true));
+    TEST_DO(verify_output_type({{"b", "double"}}, "a*b", FeatureType::object(ValueType::double_type()), true));
+    TEST_DO(verify_output_type({{"a", "tensor(x{},y{})"}, {"b", "tensor(y{},z{})"}}, "a*b",
+                               FeatureType::object(ValueType::from_spec("tensor(x{},y{},z{})")), true));
 }
 
 TEST("require that setup fails for incompatible types") {
