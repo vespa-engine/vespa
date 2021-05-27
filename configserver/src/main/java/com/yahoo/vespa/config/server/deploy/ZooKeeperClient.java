@@ -66,7 +66,7 @@ public class ZooKeeperClient {
                                             USERAPP_ZK_SUBPATH,
                                             ZKApplicationPackage.fileRegistryNode)) {
             // TODO: The replaceFirst below is hackish.
-            configCurator.createNode(getZooKeeperAppPath(null).getAbsolute(),
+            configCurator.createNode(getZooKeeperAppPath().getAbsolute(),
                                      subPath.replaceFirst("/", ""));
         }
     }
@@ -234,8 +234,7 @@ public class ZooKeeperClient {
 
     private void write(Version vespaVersion, FileRegistry fileRegistry) {
         String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
-
-        configCurator.putData(getZooKeeperAppPath(null).append(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
+        configCurator.putData(getZooKeeperAppPath(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
                               vespaVersion.toFullString(),
                               exportedRegistry);
     }
@@ -261,8 +260,16 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Gets a full ZK app path based on id set in Admin object
+     * Gets a full ZK application path
      *
+     * @return a String with the full ZK application path
+     */
+    private Path getZooKeeperAppPath() {
+        return getZooKeeperAppPath(null);
+    }
+
+    /**
+     * Gets a full ZK application path
      *
      * @param trailingPath trailing part of path to be appended to ZK app path
      * @return a String with the full ZK application path including trailing path, if set
