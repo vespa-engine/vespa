@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 
 /**
@@ -13,8 +14,8 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
  */
 public class DocumentOnlySearch extends Search {
 
-    public DocumentOnlySearch(ApplicationPackage applicationPackage, DeployLogger deployLogger) {
-        super(applicationPackage, deployLogger);
+    public DocumentOnlySearch(ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties) {
+        super(applicationPackage, deployLogger, properties);
     }
 
     @Override

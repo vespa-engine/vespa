@@ -2,6 +2,8 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -27,6 +29,8 @@ public interface ImmutableSearch {
     List<Index> getExplicitIndices();
     Reader getRankingExpression(String fileName);
     ApplicationPackage applicationPackage();
+    DeployLogger getDeployLogger();
+    ModelContext.Properties getDeployProperties();
     RankingConstants rankingConstants();
     RankExpressionFiles rankExpressionFiles();
     OnnxModels onnxModels();

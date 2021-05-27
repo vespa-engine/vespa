@@ -3,7 +3,9 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -31,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -95,10 +96,11 @@ public class Search implements ImmutableSearch {
 
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
+    private final ModelContext.Properties properties;
 
     /** Testin only */
     public Search(String name) {
-        this(name, null, new BaseDeployLogger());
+        this(name, null, new BaseDeployLogger(), new TestProperties());
     }
     /**
      * Creates a proper search definition
@@ -106,18 +108,19 @@ public class Search implements ImmutableSearch {
      * @param name of the the searchdefinition
      * @param applicationPackage the application containing this
      */
-    public Search(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger) {
-        this(applicationPackage, deployLogger, false);
+    public Search(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(applicationPackage, deployLogger, properties, false);
         this.name = name;
     }
 
-    protected Search(ApplicationPackage applicationPackage, DeployLogger deployLogger) {
-        this(applicationPackage, deployLogger, true);
+    protected Search(ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(applicationPackage, deployLogger, properties, true);
     }
 
-    private Search(ApplicationPackage applicationPackage, DeployLogger deployLogger, boolean documentsOnly) {
+    private Search(ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties, boolean documentsOnly) {
         this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
+        this.properties = properties;
         this.documentsOnly = documentsOnly;
     }
 
@@ -297,6 +300,12 @@ public class Search implements ImmutableSearch {
 
     @Override
     public ApplicationPackage applicationPackage() { return applicationPackage; }
+
+    @Override
+    public DeployLogger getDeployLogger() { return deployLogger; }
+
+    @Override
+    public ModelContext.Properties getDeployProperties() { return properties; }
 
     /**
      * Returns a field defined in this search definition or one if its documents. Fields in this search definition takes
