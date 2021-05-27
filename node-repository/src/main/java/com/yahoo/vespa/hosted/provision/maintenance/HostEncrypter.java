@@ -57,7 +57,7 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
     private List<Node> unencryptedHosts(NodeList allNodes, NodeType hostType) {
         if (!hostType.isHost()) throw new IllegalArgumentException("Expected host type, got " + hostType);
         NodeList hostsOfTargetType =  allNodes.nodeType(hostType);
-        int hostLimit = hostLimit(hostsOfTargetType);
+        int hostLimit = hostLimit(hostsOfTargetType, hostType);
 
         // Find stateful clusters with retiring nodes
         NodeList activeNodes = allNodes.state(Node.State.active);
@@ -88,8 +88,11 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
     }
 
     /** Returns the number of hosts that can encrypt concurrently */
-    private int hostLimit(NodeList hosts) {
-        return Math.max(0, maxEncryptingHosts.value() - hosts.encrypting().size());
+    private int hostLimit(NodeList hosts, NodeType hostType) {
+        if (hosts.stream().anyMatch(host -> host.type() != hostType)) throw new IllegalArgumentException("All hosts must be a " + hostType);
+        if (maxEncryptingHosts.value() < 1) return 0; // 0 or negative value effectively stops encryption of all hosts
+        int limit = hostType == NodeType.host ? maxEncryptingHosts.value() : 1;
+        return Math.max(0, limit - hosts.encrypting().size());
     }
 
     private void encrypt(Node host, Instant now) {
