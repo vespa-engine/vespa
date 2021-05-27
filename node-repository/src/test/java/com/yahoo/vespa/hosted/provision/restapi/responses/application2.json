@@ -43,10 +43,13 @@
       "utilization" : {
         "cpu" : 0.0,
         "idealCpu": 0.2664285714285714,
+        "currentCpu": 0.0,
         "memory" : 0.0,
         "idealMemory": 0.7,
+        "currentMemory": 0.0,
         "disk" : 0.0,
-        "idealDisk": 0.6
+        "idealDisk": 0.6,
+        "currentDisk": 0.0
       },
       "scalingEvents" : [
         {

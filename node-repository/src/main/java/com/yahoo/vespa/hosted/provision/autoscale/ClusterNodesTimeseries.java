@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,12 +43,13 @@ public class ClusterNodesTimeseries {
     /** Returns the number of nodes measured in this */
     public int nodesMeasured() { return timeseries.size(); }
 
-    /** Returns the average load in this */
-    public Load averageLoad() {
+    /** Returns the average load after the given instant */
+    public Load averageLoad(Instant start) {
         Load total = Load.zero();
         int count = 0;
         for (var nodeTimeseries : timeseries) {
             for (var snapshot : nodeTimeseries.asList()) {
+                if (snapshot.at().isBefore(start)) continue;
                 total = total.add(snapshot.load());
                 count++;
             }
