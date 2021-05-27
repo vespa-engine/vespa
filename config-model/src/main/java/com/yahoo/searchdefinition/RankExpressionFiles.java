@@ -1,20 +1,32 @@
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class RankExpressionFiles {
     private final Map<String, RankExpressionFile> expressions = new HashMap<>();
 
-    public void add(RankExpressionFile expression) {
+    //TODO Deploy logger should not be necessary, as redefinition is illegal, but legacy prevents enforcement starting now.
+    public void add(RankExpressionFile expression, DeployLogger deployLogger) {
         expression.validate();
         String name = expression.getName();
-        if (expressions.containsKey(name))
-            throw new IllegalArgumentException("Rank expression file '" + name + "' defined twice");
+        if (expressions.containsKey(name)) {
+            if ( expressions.get(name).getFileName().equals(expression.getFileName()) ) {
+                //TODO Throw instead, No later than Vespa 8
+                deployLogger.logApplicationPackage(Level.WARNING, "Rank expression file '" + name +
+                        "' defined twice with identical expression (illegal and will be enforced soon) '" + expression.getFileName() + "'.");
+            } else {
+                throw new IllegalArgumentException("Rank expression file '" + name +
+                        "' defined twice (illegal but not enforced), but redefinition is not matching (illegal and enforced), " +
+                        "previous = '" + expressions.get(name).getFileName() + "', new = '" + expression.getFileName() + "'.");
+            }
+        }
         expressions.put(name, expression);
     }
 
