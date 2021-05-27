@@ -22,7 +22,7 @@ namespace config::sentinel {
 
 class OutputConnection;
 
-class ConfigHandler {
+class Manager {
 private:
     typedef std::map<vespalib::string, Service::UP> ServiceMap;
 
@@ -38,8 +38,8 @@ private:
     StateApi _stateApi;
     std::unique_ptr<vespalib::StateServer> _stateServer;
 
-    ConfigHandler(const ConfigHandler&);
-    ConfigHandler& operator =(const ConfigHandler&);
+    Manager(const Manager&);
+    Manager& operator =(const Manager&);
 
     Service *serviceByPid(pid_t pid);
     Service *serviceByName(const vespalib::string & name);
@@ -59,8 +59,8 @@ private:
     void doConfigure();
 
 public:
-    ConfigHandler();
-    virtual ~ConfigHandler();
+    Manager();
+    virtual ~Manager();
     void subscribe(const std::string & configId, std::chrono::milliseconds timeout);
     bool terminate();
     int doWork();

@@ -3,7 +3,7 @@ vespa_add_executable(configd_config-sentinel_app
     SOURCES
     sentinel.cpp
     service.cpp
-    config-handler.cpp
+    manager.cpp
     line-splitter.cpp
     output-connection.cpp
     metrics.cpp

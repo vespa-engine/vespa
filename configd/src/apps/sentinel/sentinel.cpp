@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config-handler.h"
+#include "manager.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -61,7 +61,7 @@ main(int argc, char **argv)
     }
     setlocale(LC_ALL, "C");
 
-    sentinel::ConfigHandler handler;
+    sentinel::Manager handler;
 
     LOG(debug, "Reading configuration");
     try {
