@@ -207,6 +207,9 @@ DenseTensorAttribute::onLoad()
                 // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
                 setCommittedDocIdLimit(lid + 1);
                 _index->add_document(lid);
+                if ((lid % 256) == 0) {
+                    commit();
+                }
             }
         } else {
             _refVector.push_back(EntryRef());
