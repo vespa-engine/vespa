@@ -75,10 +75,9 @@ public class SupportAccessSerializer {
             grantObject.setString(requestorFieldName, grant.requestor());
             if (includeCertificates) {
                 grantObject.setString(certificateFieldName, X509CertificateUtils.toPem(grant.certificate()));
-            } else {
-                grantObject.setString(notBeforeFieldName, serializeInstant(grant.certificate().getNotBefore().toInstant()));
-                grantObject.setString(notAfterFieldName, serializeInstant(grant.certificate().getNotAfter().toInstant()));
             }
+            grantObject.setString(notBeforeFieldName, serializeInstant(grant.certificate().getNotBefore().toInstant()));
+            grantObject.setString(notAfterFieldName, serializeInstant(grant.certificate().getNotAfter().toInstant()));
         }
 
         return slime;

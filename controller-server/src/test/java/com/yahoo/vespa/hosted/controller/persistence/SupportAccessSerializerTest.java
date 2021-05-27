@@ -61,11 +61,15 @@ public class SupportAccessSerializerTest {
             " \"grants\": [\n" +
             "  {\n" +
             "   \"requestor\": \"mortent\",\n" +
-            "   \"certificate\": \"" + toPem(cert_7_to_19) + "\"\n" +
+            "   \"certificate\": \"" + toPem(cert_7_to_19) + "\",\n" +
+            "   \"notBefore\": \"1970-01-01T07:00:00Z\",\n" +
+            "   \"notAfter\": \"1970-01-01T19:00:00Z\"\n" +
             "  },\n" +
             "  {\n" +
             "   \"requestor\": \"mortent\",\n" +
-            "   \"certificate\": \"" + toPem(cert_3_to_4) + "\"\n" +
+            "   \"certificate\": \"" + toPem(cert_3_to_4) + "\",\n" +
+            "   \"notBefore\": \"1970-01-01T03:00:00Z\",\n" +
+            "   \"notAfter\": \"1970-01-01T04:00:00Z\"\n" +
             "  }\n" +
             " ]\n" +
             "}\n";
