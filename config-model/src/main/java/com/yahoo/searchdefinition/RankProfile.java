@@ -722,7 +722,7 @@ public class RankProfile implements Cloneable {
                     "' in subdirectory, which is not supported.");
 
         if (search.getDeployProperties().featureFlags().distributeExternalRankExpressions()) {
-            rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName));
+            rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName), search.getDeployLogger());
             externalFileExpressions.add(expName);
         }
         return search.getRankingExpression(fileName);
