@@ -16,8 +16,9 @@ import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -42,16 +44,21 @@ class HttpFeedClient implements FeedClient {
     private final URI endpoint;
     private final Map<String, Supplier<String>> requestHeaders;
     private final HttpRequestStrategy requestStrategy;
-    private final CloseableHttpAsyncClient httpClient;
+    private final List<CloseableHttpAsyncClient> httpClients = new ArrayList<>();
+    private final List<AtomicInteger> inflight = new ArrayList<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
     HttpFeedClient(FeedClientBuilder builder) throws IOException {
         this.endpoint = builder.endpoint;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
-
         this.requestStrategy = new HttpRequestStrategy(builder);
-        this.httpClient = createHttpClient(builder, requestStrategy);
-        this.httpClient.start();
+
+        for (int i = 0; i < builder.maxConnections; i++) {
+            CloseableHttpAsyncClient hc = createHttpClient(builder, requestStrategy);
+            hc.start();
+            httpClients.add(hc);
+            inflight.add(new AtomicInteger());
+        }
     }
 
     private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) throws IOException {
@@ -115,7 +122,8 @@ class HttpFeedClient implements FeedClient {
     @Override
     public void close() throws IOException {
         if ( ! closed.getAndSet(true))
-            httpClient.close();
+            for (CloseableHttpAsyncClient hc : httpClients)
+                hc.close();
     }
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
@@ -124,20 +132,34 @@ class HttpFeedClient implements FeedClient {
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
+        int index = 0;
+        int min = Integer.MAX_VALUE;
+        for (int i = 0; i < httpClients.size(); i++)
+            if (inflight.get(i).get() < min) {
+                min = inflight.get(i).get();
+                index = i;
+            }
+
+        CloseableHttpAsyncClient client = httpClients.get(index);
+        AtomicInteger counter = inflight.get(index);
+        counter.incrementAndGet();
         return requestStrategy.enqueue(documentId, future -> {
-            httpClient.execute(request,
-                               new FutureCallback<SimpleHttpResponse>() {
-                                   @Override public void completed(SimpleHttpResponse response) { future.complete(response); }
-                                   @Override public void failed(Exception ex) { future.completeExceptionally(ex); }
-                                   @Override public void cancelled() { future.cancel(false); }
-                               });
+            client.execute(request,
+                           new FutureCallback<SimpleHttpResponse>() {
+                               @Override public void completed(SimpleHttpResponse response) { future.complete(response); }
+                               @Override public void failed(Exception ex) { future.completeExceptionally(ex); }
+                               @Override public void cancelled() { future.cancel(false); }
+                           });
         }).handle((response, thrown) -> {
+            counter.decrementAndGet();
             if (thrown != null) {
                 if (requestStrategy.hasFailed()) {
                     try { close(); }
-                    catch (IOException exception) { throw new UncheckedIOException(exception); }
+                    catch (IOException exception) { thrown.addSuppressed(exception); }
                 }
-                return new Result(Result.Type.failure, documentId, thrown.getMessage(), null);
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                thrown.printStackTrace(new PrintStream(buffer));
+                return new Result(Result.Type.failure, documentId, buffer.toString(), null);
             }
             return toResult(response, documentId);
         });
