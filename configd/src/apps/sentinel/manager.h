@@ -22,6 +22,11 @@ namespace config::sentinel {
 
 class OutputConnection;
 
+/**
+ *  Management of services.
+ *  Handles requests from RPC, service events,
+ *  and service configuration updates.
+ **/
 class Manager {
 private:
     typedef std::map<vespalib::string, Service::UP> ServiceMap;
