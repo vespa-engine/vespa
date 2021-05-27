@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <string>
 
 class FRT_RPCRequest;
 
@@ -13,14 +14,16 @@ namespace config::sentinel {
 class Cmd {
 public:
     using UP = std::unique_ptr<Cmd>;
-    enum CmdType { LIST, RESTART, START, STOP };
+    enum CmdType { LIST, RESTART, START, STOP, CHECK_CONNECTIVITY };
 
-    Cmd(FRT_RPCRequest *req, CmdType cmdType, const char *service = "")
-      : _req(req), _cmdType(cmdType), _serviceName(service)
+    Cmd(FRT_RPCRequest *req, CmdType cmdType, std::string name = "", int portnum = 0)
+      : _req(req), _cmdType(cmdType), _name(name), _port(portnum)
     {}
 
     CmdType type() const { return _cmdType; }
-    const char *serviceName() const { return _serviceName; }
+    // the service name or host name:
+    const std::string & name() const { return _name; }
+    int portNumber() const { return _port; }
 
     void retError(const char *errorString) const;
     void retValue(const char *valueString) const;
@@ -29,7 +32,8 @@ public:
 private:
     FRT_RPCRequest *_req;
     CmdType _cmdType;
-    const char *_serviceName;
+    std::string _name;
+    int _port;
 };
 
 class CommandQueue

@@ -271,7 +271,7 @@ Manager::handleCmd(const Cmd& cmd)
         break;
     case Cmd::RESTART:
         {
-            Service *service = serviceByName(cmd.serviceName());
+            Service *service = serviceByName(cmd.name());
             if (service == nullptr) {
                 cmd.retError("Cannot find named service");
                 return;
@@ -287,7 +287,7 @@ Manager::handleCmd(const Cmd& cmd)
         break;
     case Cmd::START:
         {
-            Service *service = serviceByName(cmd.serviceName());
+            Service *service = serviceByName(cmd.name());
             if (service == nullptr) {
                 cmd.retError("Cannot find named service");
                 return;
@@ -301,7 +301,7 @@ Manager::handleCmd(const Cmd& cmd)
         break;
     case Cmd::STOP:
         {
-            Service *service = serviceByName(cmd.serviceName());
+            Service *service = serviceByName(cmd.name());
             if (service == nullptr) {
                 cmd.retError("Cannot find named service");
                 return;
@@ -311,6 +311,10 @@ Manager::handleCmd(const Cmd& cmd)
                 service->terminate(true, false);
             }
         }
+        break;
+    case Cmd::CHECK_CONNECTIVITY:
+        // XXX placeholder:
+        cmd.retValue("unknown");
         break;
     }
 }
