@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -82,6 +83,7 @@ public class Controller extends AbstractComponent {
     private final SecretStore secretStore;
     private final CuratorArchiveBucketDb archiveBucketDb;
     private final NotificationsDb notificationsDb;
+    private final SupportAccessControl supportAccessControl;
 
     /**
      * Creates a controller 
@@ -120,6 +122,7 @@ public class Controller extends AbstractComponent {
         notificationsDb = new NotificationsDb(this);
         this.controllerConfig = controllerConfig;
         this.secretStore = secretStore;
+        this.supportAccessControl = new SupportAccessControl(this);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), ControllerVersion.CURRENT);
@@ -304,6 +307,10 @@ public class Controller extends AbstractComponent {
 
     public NotificationsDb notificationsDb() {
         return notificationsDb;
+    }
+
+    public SupportAccessControl supportAccess() {
+        return supportAccessControl;
     }
 
 }

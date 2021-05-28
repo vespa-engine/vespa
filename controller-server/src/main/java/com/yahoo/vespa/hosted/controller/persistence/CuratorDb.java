@@ -15,6 +15,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -30,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -91,6 +93,7 @@ public class CuratorDb {
     private static final Path archiveBucketsRoot = root.append("archiveBuckets");
     private static final Path changeRequestsRoot = root.append("changeRequests");
     private static final Path notificationsRoot = root.append("notifications");
+    private static final Path supportAccessRoot = root.append("supportAccess");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -212,6 +215,10 @@ public class CuratorDb {
 
     public Lock lockNotifications(TenantName tenantName) {
         return curator.lock(lockRoot.append("notifications").append(tenantName.value()), defaultLockTimeout);
+    }
+
+    public Lock lockSupportAccess(DeploymentId deploymentId) {
+        return curator.lock(lockRoot.append("supportAccess").append(deploymentId.dottedString()), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -595,7 +602,7 @@ public class CuratorDb {
         curator.delete(changeRequestPath(changeRequest.getId()));
     }
 
-    // -------------- Notifications ---------------------------------------------------
+    // -------------- Notifications -------------------------------------------
 
     public List<Notification> readNotifications(TenantName tenantName) {
         return readSlime(notificationsPath(tenantName))
@@ -615,6 +622,17 @@ public class CuratorDb {
 
     public void deleteNotifications(TenantName tenantName) {
         curator.delete(notificationsPath(tenantName));
+    }
+
+    // -------------- Endpoint Support Access ---------------------------------
+
+    public SupportAccess readSupportAccess(DeploymentId deploymentId) {
+        return readSlime(supportAccessPath(deploymentId)).map(SupportAccessSerializer::fromSlime).orElse(SupportAccess.DISALLOWED_NO_HISTORY);
+    }
+
+    /** Take lock before reading before writing */
+    public void writeSupportAccess(DeploymentId deploymentId, SupportAccess supportAccess) {
+        curator.set(supportAccessPath(deploymentId), asJson(SupportAccessSerializer.toSlime(supportAccess, true, Optional.empty())));
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -748,6 +766,10 @@ public class CuratorDb {
 
     private static Path notificationsPath(TenantName tenantName) {
         return notificationsRoot.append(tenantName.value());
+    }
+
+    private static Path supportAccessPath(DeploymentId deploymentId) {
+        return supportAccessRoot.append(deploymentId.dottedString());
     }
 
 }

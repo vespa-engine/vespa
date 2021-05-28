@@ -14,6 +14,10 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -73,9 +77,13 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.File;
+import java.math.BigInteger;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -1485,6 +1493,73 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
                               new File("deployment-without-shared-endpoints.json"));
+    }
+
+    @Test
+    public void support_access() {
+        var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
+        var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
+        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
+                List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
+                .instances("instance1")
+                .region(zone.region().value())
+                .build();
+        app.submit(applicationPackage).deploy();
+
+        // GET support access status returns no history
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", GET)
+                        .userIdentity(USER_ID),
+                "{\"state\":{\"supportAccess\":\"NOT_ALLOWED\"},\"history\":[],\"grants\":[]}", 200
+        );
+
+        // POST allowing support access adds to history
+        Instant now = tester.controller().clock().instant().truncatedTo(ChronoUnit.SECONDS);
+        String allowedResponse = "{\"state\":{\"supportAccess\":\"ALLOWED\",\"until\":\"" + serializeInstant(now.plus(7, ChronoUnit.DAYS))
+                + "\",\"by\":\"user.myuser\"},\"history\":[{\"state\":\"allowed\",\"at\":\"" + serializeInstant(now)
+                + "\",\"until\":\"" + serializeInstant(now.plus(7, ChronoUnit.DAYS))
+                + "\",\"by\":\"user.myuser\"}],\"grants\":[]}";
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", POST)
+                        .userIdentity(USER_ID),
+                allowedResponse, 200
+        );
+
+        // Grant access to support user
+        X509Certificate support_cert = grantCertificate(now, now.plusSeconds(3600));
+        tester.controller().supportAccess().registerGrant(app.deploymentIdIn(zone), "user.andreer", support_cert);
+
+        // GET shows grant
+        String grantResponse = allowedResponse.replaceAll("\"grants\":\\[]",
+                "\"grants\":[{\"requestor\":\"user.andreer\",\"notBefore\":\"" + serializeInstant(now) + "\",\"notAfter\":\"" + serializeInstant(now.plusSeconds(3600)) + "\"}]");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", GET)
+                        .userIdentity(USER_ID),
+                grantResponse, 200
+        );
+
+        // DELETE removes access
+        System.out.println("grantresponse:\n"+grantResponse+"\n");
+        String disallowedResponse = grantResponse
+                .replaceAll("ALLOWED\".*?}", "NOT_ALLOWED\"}")
+                .replace("history\":[", "history\":[{\"state\":\"disallowed\",\"at\":\""+ serializeInstant(now) +"\",\"by\":\"user.myuser\"},");
+        System.out.println("disallowedResponse:\n"+disallowedResponse+"\n");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", DELETE)
+                        .userIdentity(USER_ID),
+                disallowedResponse, 200
+        );
+    }
+
+    private static String serializeInstant(Instant i) {
+        return DateTimeFormatter.ISO_INSTANT.format(i.truncatedTo(ChronoUnit.SECONDS));
+    }
+
+    static X509Certificate grantCertificate(Instant notBefore, Instant notAfter) {
+        return X509CertificateBuilder
+                .fromKeypair(
+                        KeyUtils.generateKeypair(KeyAlgorithm.EC, 256), new X500Principal("CN=mysubject"),
+                        notBefore, notAfter, SignatureAlgorithm.SHA256_WITH_ECDSA, BigInteger.valueOf(1))
+                .build();
     }
 
     private MultiPartStreamer createApplicationDeployData(ApplicationPackage applicationPackage, boolean deployDirectly) {
