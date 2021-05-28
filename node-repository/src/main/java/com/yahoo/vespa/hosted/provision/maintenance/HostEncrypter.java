@@ -99,7 +99,11 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
 
     /** Trigger restart of encrypting nodes to allow disk encryption to happen */
     private void triggerRestart(NodeList allNodes, NodeType nodeType) {
-        NodeList hostsReadyToEncrypt = allNodes.nodeType(nodeType).state(Node.State.parked).encrypting();
+        NodeList hostsReadyToEncrypt = allNodes.nodeType(nodeType)
+                                               .state(Node.State.parked)
+                                               .encrypting()
+                                               .not().matching(node -> node.allocation().isPresent() &&
+                                                                       node.allocation().get().restartGeneration().pending());
         nodeRepository().nodes().restart(NodeListFilter.from(hostsReadyToEncrypt.asList()));
     }
 
