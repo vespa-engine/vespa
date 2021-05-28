@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributor_stripe_pool.h"
 #include "distributor_stripe_thread.h"
+#include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
@@ -8,6 +9,7 @@ namespace storage::distributor {
 
 DistributorStripePool::DistributorStripePool()
     : _thread_pool(512_Ki),
+      _n_stripe_bits(0),
       _stripes(),
       _threads(),
       _mutex(),
@@ -48,6 +50,14 @@ void DistributorStripePool::unpark_all_threads() noexcept {
     _parker_cond.wait(lock, [this]{ return (_parked_threads == 0); });
 }
 
+const TickableStripe& DistributorStripePool::stripe_of_key(uint64_t key) const noexcept {
+    return stripe_thread(stripe_of_bucket_key(key, _n_stripe_bits)).stripe();
+}
+
+TickableStripe& DistributorStripePool::stripe_of_key(uint64_t key) noexcept {
+    return stripe_thread(stripe_of_bucket_key(key, _n_stripe_bits)).stripe();
+}
+
 void DistributorStripePool::park_thread_until_released(DistributorStripeThread& thread) noexcept {
     std::unique_lock lock(_mutex);
     assert(_parked_threads < _threads.size());
@@ -67,6 +77,8 @@ void DistributorStripePool::park_thread_until_released(DistributorStripeThread& 
 void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
     assert(!stripes.empty());
     assert(_stripes.empty() && _threads.empty());
+    // Note: This also asserts that the number of stripes is valid (power of 2 and within MaxStripes boundary).
+    _n_stripe_bits = calc_num_stripe_bits(stripes.size());
     _stripes.reserve(stripes.size());
     _threads.reserve(stripes.size());
 

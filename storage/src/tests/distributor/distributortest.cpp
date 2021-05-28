@@ -1283,11 +1283,11 @@ TEST_F(DistributorTest, host_info_sent_immediately_once_all_stripes_first_report
 
 // TODO STRIPE make delay configurable instead of hardcoded
 TEST_F(DistributorTest, non_bootstrap_host_info_send_request_delays_sending) {
-    set_num_distributor_stripes(3);
+    set_num_distributor_stripes(4);
     createLinks();
     getClock().setAbsoluteTimeInSeconds(1000);
 
-    for (uint16_t i = 0; i < 3; ++i) {
+    for (uint16_t i = 0; i < 4; ++i) {
         getDistributor().notify_stripe_wants_to_send_host_info(i);
     }
     tickDistributorNTimes(1);
