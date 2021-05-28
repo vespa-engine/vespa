@@ -20,6 +20,7 @@ Manager::Manager(Env &env)
     _services(),
     _outputConnections()
 {
+    doConfigure();
 }
 
 Manager::~Manager()

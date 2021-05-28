@@ -80,7 +80,6 @@ main(int argc, char **argv)
     }
 
     sentinel::Manager manager(environment);
-    manager.doConfigure();
     vespalib::steady_time lastTime = vespalib::steady_clock::now();
     while (!stop()) {
         try {
