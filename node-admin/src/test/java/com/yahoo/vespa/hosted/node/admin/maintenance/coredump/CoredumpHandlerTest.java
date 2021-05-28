@@ -159,7 +159,7 @@ public class CoredumpHandlerTest {
                 "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
                 "\"vespa_version\":\"6.48.4\"," +
                 "\"bin_path\":\"/bin/bash\"," +
-                "\"coredump_path\":\"/home/docker/dumps/container-123/id-123\"," +
+                "\"coredump_path\":\"/home/docker/dumps/container-123/id-123/dump_core.456\"," +
                 "\"docker_image\":\"vespa/ci:6.48.4\"" +
                 "}}";
 

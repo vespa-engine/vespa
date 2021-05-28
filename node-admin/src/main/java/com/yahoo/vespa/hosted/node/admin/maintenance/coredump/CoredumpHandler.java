@@ -174,7 +174,10 @@ public class CoredumpHandler {
             Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
             Map<String, Object> metadata = new HashMap<>(coreCollector.collect(context, coredumpFilePathInContainer));
             metadata.putAll(nodeAttributesSupplier.get());
-            metadata.put("coredump_path", doneCoredumpsPath.resolve(context.containerName().asString()).resolve(coredumpDirectory.getFileName()).toString());
+            metadata.put("coredump_path", doneCoredumpsPath
+                    .resolve(context.containerName().asString())
+                    .resolve(coredumpDirectory.getFileName())
+                    .resolve(coredumpFilePathOnHost.getFileName()).toString());
 
             String metadataFields = objectMapper.writeValueAsString(Map.of("fields", metadata));
             metadataPath.writeUtf8File(metadataFields);
