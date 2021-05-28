@@ -6,7 +6,7 @@ if (( ${#BASH_SOURCE[@]} == 1 )); then
     exit 1
 fi
 
-if [[ -z $SD_PULL_REQUEST == false ]]; then
+if [[ $SD_PULL_REQUEST == false ]]; then
     export SHOULD_BUILD=all
     return 0
 fi
