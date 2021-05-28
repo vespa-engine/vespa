@@ -188,6 +188,10 @@ public class StorageMaintainer {
             attributes.put("application", owner.application().value());
             attributes.put("instance", owner.instance().value());
         });
+        context.node().membership().ifPresent(membership -> {
+            attributes.put("cluster_id", membership.clusterId());
+            attributes.put("cluster_type", membership.type().value());
+        });
         return Collections.unmodifiableMap(attributes);
     }
 
