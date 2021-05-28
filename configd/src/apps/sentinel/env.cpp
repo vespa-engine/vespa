@@ -30,11 +30,9 @@ Env::~Env() = default;
 void Env::boot(const std::string &configId) {
     LOG(debug, "Reading configuration for ID: %s", configId.c_str());
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
-    if (_cfgOwner.checkForConfigUpdate()) {
-        LOG_ASSERT(_cfgOwner.hasConfig());
-    } else {
-        throw InvalidConfigException("checkForConfigUpdate() failed");
-    }
+    bool ok = _cfgOwner.checkForConfigUpdate();
+    // subscribe() should throw if something is not OK
+    LOG_ASSERT(ok && _cfgOwner.hasConfig());
     const auto & cfg = _cfgOwner.getConfig();
     LOG(config, "Booting sentinel '%s' with [stateserver port %d] and [rpc port %d]",
         configId.c_str(), cfg.port.telnet, cfg.port.rpc);
