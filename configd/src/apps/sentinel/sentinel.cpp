@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config-handler.h"
+#include "manager.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -61,11 +61,10 @@ main(int argc, char **argv)
     }
     setlocale(LC_ALL, "C");
 
-    sentinel::ConfigHandler handler;
-
+    sentinel::Env environment;
     LOG(debug, "Reading configuration");
     try {
-        handler.subscribe(configId, CONFIG_TIMEOUT_MS);
+        environment.boot(configId);
     } catch (ConfigTimeoutException & ex) {
         LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
         EV_STOPPING("config-sentinel", ex.what());
@@ -80,11 +79,13 @@ main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
+    sentinel::Manager manager(environment);
+    manager.doConfigure();
     vespalib::steady_time lastTime = vespalib::steady_clock::now();
     while (!stop()) {
         try {
             vespalib::SignalHandler::CHLD.clear();
-            handler.doWork();       // Check for child procs & commands
+            manager.doWork();       // Check for child procs & commands
         } catch (InvalidConfigException& ex) {
             LOG(warning, "Configuration problem: (ignoring): %s", ex.what());
         } catch (vespalib::PortListenException& ex) {
@@ -102,7 +103,7 @@ main(int argc, char **argv)
         int maxNum = 0;
         fd_set fds;
         FD_ZERO(&fds);
-        handler.updateActiveFdset(&fds, &maxNum);
+        manager.updateActiveFdset(&fds, &maxNum);
 
         struct timeval tv;
         tv.tv_sec = 0;
@@ -118,6 +119,6 @@ main(int argc, char **argv)
     }
 
     EV_STOPPING("config-sentinel", "normal exit");
-    int rv = handler.terminate();
+    int rv = manager.terminate();
     return rv;
 }

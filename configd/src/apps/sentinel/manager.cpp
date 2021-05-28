@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "config-handler.h"
+#include "manager.h"
 #include "output-connection.h"
 
 #include <vespa/vespalib/net/socket_address.h>
@@ -11,43 +11,18 @@
 #include <sys/wait.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".config-handler");
+LOG_SETUP(".manager");
 
 namespace config::sentinel {
 
-void
-ConfigHandler::configure_port(int port)
+Manager::Manager(Env &env)
+  : _env(env),
+    _services(),
+    _outputConnections()
 {
-    if (port == 0) {
-        port = 19098;
-        const char *portString = getenv("VESPA_SENTINEL_PORT");
-        if (portString) {
-            port = strtoul(portString, nullptr, 10);
-        }
-    }
-    if (port <= 0 || port > 65535) {
-        throw vespalib::FatalException("Bad port " + std::to_string(port) + ", expected range [1, 65535]", VESPA_STRLOC);
-    }
-    if (port != _boundPort) {
-        LOG(debug, "Config-sentinel accepts connections on port %d", port);
-        _stateServer = std::make_unique<vespalib::StateServer>(
-            port, _stateApi.myHealth, _startMetrics.producer, _stateApi.myComponents);
-        _boundPort = port;
-    }
 }
 
-ConfigHandler::ConfigHandler()
-    : _subscriber(),
-      _services(),
-      _outputConnections(),
-      _boundPort(0),
-      _startMetrics(),
-      _stateApi()
-{
-    _startMetrics.startedTime = vespalib::steady_clock::now();
-}
-
-ConfigHandler::~ConfigHandler()
+Manager::~Manager()
 {
     terminateServices(false);
     for (OutputConnection * conn : _outputConnections) {
@@ -56,7 +31,7 @@ ConfigHandler::~ConfigHandler()
 }
 
 void
-ConfigHandler::terminateServices(bool catchable, bool printDebug)
+Manager::terminateServices(bool catchable, bool printDebug)
 {
     for (const auto & entry : _services) {
         Service *service = entry.second.get();
@@ -74,7 +49,7 @@ ConfigHandler::terminateServices(bool catchable, bool printDebug)
 
 
 bool
-ConfigHandler::terminate()
+Manager::terminate()
 {
     // Call terminate(true) for all services.
     // Give them 58 seconds to exit cleanly, then terminate(false) all
@@ -98,26 +73,15 @@ ConfigHandler::terminate()
 }
 
 void
-ConfigHandler::subscribe(const std::string & configId, std::chrono::milliseconds timeout)
+Manager::doConfigure()
 {
-    _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeout);
-}
+    LOG_ASSERT(_env.configOwner().hasConfig());
+    const SentinelConfig& config(_env.configOwner().getConfig());
 
-void
-ConfigHandler::doConfigure()
-{
-    std::unique_ptr<SentinelConfig> cfg(_sentinelHandle->getConfig());
-    const SentinelConfig& config(*cfg);
+    _env.rpcPort(config.port.rpc);
+    _env.statePort(config.port.telnet);
 
-    if (config.port.telnet != _boundPort) {
-        configure_port(config.port.telnet);
-    }
-
-    if (!_rpcServer || config.port.rpc != _rpcServer->getPort()) {
-        _rpcServer = std::make_unique<RpcServer>(config.port.rpc, _cmdQ);
-    }
-
-    LOG(debug, "ConfigHandler::configure() %d config elements, tenant(%s), application(%s), instance(%s)",
+    LOG(debug, "Manager::configure() %d config elements, tenant(%s), application(%s), instance(%s)",
         (int)config.service.size(), config.application.tenant.c_str(), config.application.name.c_str(),
         config.application.instance.c_str());
     ServiceMap services;
@@ -126,7 +90,7 @@ ConfigHandler::doConfigure()
         const vespalib::string name(serviceConfig.name);
         auto found(_services.find(name));
         if (found == _services.end()) {
-            services[name] = std::make_unique<Service>(serviceConfig, config.application, _outputConnections, _startMetrics);
+            services[name] = std::make_unique<Service>(serviceConfig, config.application, _outputConnections, _env.metrics());
         } else {
             found->second->reconfigure(serviceConfig);
             services[name] = std::move(found->second);
@@ -140,24 +104,22 @@ ConfigHandler::doConfigure()
             _orphans[entry.first] = std::move(svc);
         }
     }
-    vespalib::ComponentConfigProducer::Config current("sentinel", _subscriber.getGeneration(), "ok");
-    _stateApi.myComponents.addConfig(current);
+    _env.notifyConfigUpdated();
 }
 
 
 int
-ConfigHandler::doWork()
+Manager::doWork()
 {
     // Return true if there are any running services, false if not.
-
-    if (_subscriber.nextGenerationNow()) {
+    if (_env.configOwner().checkForConfigUpdate()) {
         doConfigure();
     }
     handleRestarts();
     handleCommands();
     handleOutputs();
     handleChildDeaths();
-    _startMetrics.maybeLog();
+    _env.metrics().maybeLog();
 
     // Check for active services.
     for (const auto & service : _services) {
@@ -169,7 +131,7 @@ ConfigHandler::doWork()
 }
 
 void
-ConfigHandler::handleRestarts()
+Manager::handleRestarts()
 {
     for (const auto & entry : _services) {
         Service & svc = *(entry.second);
@@ -180,7 +142,7 @@ ConfigHandler::handleRestarts()
 }
 
 void
-ConfigHandler::handleChildDeaths()
+Manager::handleChildDeaths()
 {
     // See if any of our child processes have exited, and take
     // the appropriate action.
@@ -203,7 +165,7 @@ ConfigHandler::handleChildDeaths()
 }
 
 void
-ConfigHandler::updateActiveFdset(fd_set *fds, int *maxNum)
+Manager::updateActiveFdset(fd_set *fds, int *maxNum)
 {
     // ### _Possibly put an assert here if fd is > 1023???
     for (OutputConnection *c : _outputConnections) {
@@ -218,7 +180,7 @@ ConfigHandler::updateActiveFdset(fd_set *fds, int *maxNum)
 }
 
 void
-ConfigHandler::handleOutputs()
+Manager::handleOutputs()
 {
     std::list<OutputConnection *>::iterator dst;
     std::list<OutputConnection *>::const_iterator src;
@@ -241,10 +203,10 @@ ConfigHandler::handleOutputs()
 }
 
 void
-ConfigHandler::handleCommands()
+Manager::handleCommands()
 {
     // handle RPC commands
-    std::vector<Cmd::UP> got = _cmdQ.drain();
+    std::vector<Cmd::UP> got = _env.commandQueue().drain();
     for (const Cmd::UP & cmd : got) {
         handleCmd(*cmd);
     }
@@ -252,7 +214,7 @@ ConfigHandler::handleCommands()
 }
 
 Service *
-ConfigHandler::serviceByPid(pid_t pid)
+Manager::serviceByPid(pid_t pid)
 {
     for (const auto & service : _services) {
         if (service.second->pid() == pid) {
@@ -269,7 +231,7 @@ ConfigHandler::serviceByPid(pid_t pid)
 }
 
 Service *
-ConfigHandler::serviceByName(const vespalib::string & name)
+Manager::serviceByName(const vespalib::string & name)
 {
     auto found(_services.find(name));
     if (found != _services.end()) {
@@ -280,7 +242,7 @@ ConfigHandler::serviceByName(const vespalib::string & name)
 
 
 void
-ConfigHandler::handleCmd(const Cmd& cmd)
+Manager::handleCmd(const Cmd& cmd)
 {
     switch (cmd.type()) {
     case Cmd::LIST:
@@ -353,9 +315,9 @@ ConfigHandler::handleCmd(const Cmd& cmd)
 }
 
 void
-ConfigHandler::updateMetrics()
+Manager::updateMetrics()
 {
-    _startMetrics.maybeLog();
+    _env.metrics().maybeLog();
 }
 
 }
