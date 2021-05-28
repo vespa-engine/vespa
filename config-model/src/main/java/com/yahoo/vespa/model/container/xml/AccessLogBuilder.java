@@ -62,7 +62,9 @@ public class AccessLogBuilder {
                     rotationInterval(spec),
                     compressOnRotation(spec),
                     isHostedVespa,
-                    symlinkName(spec));
+                    symlinkName(spec),
+                    queueSize(spec),
+                    bufferSize(spec));
         }
 
         private String symlinkName(Element spec) {
@@ -72,6 +74,16 @@ public class AccessLogBuilder {
         private Boolean compressOnRotation(Element spec) {
             String compress = spec.getAttribute("compressOnRotation");
             return (compress.isEmpty() ? null : Boolean.parseBoolean(compress));
+        }
+
+        private Integer bufferSize(Element spec) {
+            String value = spec.getAttribute("bufferSize");
+            return (value.isEmpty() ? null : Integer.parseInt(value));
+        }
+
+        private Integer queueSize(Element spec) {
+            String value = spec.getAttribute("queueSize");
+            return (value.isEmpty() ? null : Integer.parseInt(value));
         }
 
         private String rotationInterval(Element spec) {

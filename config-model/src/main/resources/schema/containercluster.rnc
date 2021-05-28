@@ -81,7 +81,8 @@ AccessLog = element accesslog {
     attribute compressOnRotation { xsd:boolean }? &
     attribute symlinkName { string }? &
     attribute compressionType { string "gzip" | string "zstd" }? &
-
+    attribute queueSize { xsd:nonNegativeInteger }? &
+    attribute bufferSize { xsd:nonNegativeInteger }? &
     attribute rotationInterval { string }?
 }
 

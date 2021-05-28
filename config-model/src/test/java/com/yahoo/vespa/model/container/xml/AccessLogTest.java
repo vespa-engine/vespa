@@ -69,7 +69,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 "  <accesslog type='vespa' ",
                 "             fileNamePattern='pattern' rotationInterval='interval' />",
                 "  <accesslog type='json' ",
-                "             fileNamePattern='pattern' rotationInterval='interval' />",
+                "             fileNamePattern='pattern' rotationInterval='interval' queueSize='17' bufferSize='65536'/>",
                 nodesXml,
                 "</container>" );
 
@@ -85,8 +85,8 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
-            assertEquals(10000, fileHandlerConfig.queueSize());
-            assertEquals(4*1024*1024, fileHandlerConfig.bufferSize());
+            assertEquals(256, fileHandlerConfig.queueSize());
+            assertEquals(256*1024, fileHandlerConfig.bufferSize());
         }
 
         { // json
@@ -97,8 +97,8 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
-            assertEquals(10000, fileHandlerConfig.queueSize());
-            assertEquals(4*1024*1024, fileHandlerConfig.bufferSize());
+            assertEquals(17, fileHandlerConfig.queueSize());
+            assertEquals(65536, fileHandlerConfig.bufferSize());
         }
     }
 
