@@ -984,8 +984,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse allowSupportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
-        SupportAccess allowed = controller.supportAccess().allow(deployment, Instant.now().plus(7, ChronoUnit.DAYS), principal.getName());
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(allowed, false, Optional.ofNullable(controller.clock().instant())));
+        Instant now = controller.clock().instant();
+        SupportAccess allowed = controller.supportAccess().allow(deployment, now.plus(7, ChronoUnit.DAYS), principal.getName());
+        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(allowed, false, Optional.ofNullable(now)));
     }
 
     private HttpResponse disallowSupportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
