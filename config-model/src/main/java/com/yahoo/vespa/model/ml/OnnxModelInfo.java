@@ -36,15 +36,21 @@ import java.util.stream.Collectors;
  */
 public class OnnxModelInfo {
 
+    private final String modelPath;
     private final String defaultOutput;
     private final Map<String, OnnxTypeInfo> inputs;
     private final Map<String, OnnxTypeInfo> outputs;
     private final Map<String, TensorType> vespaTypes = new HashMap<>();
 
-    private OnnxModelInfo(Map<String, OnnxTypeInfo> inputs, Map<String, OnnxTypeInfo> outputs, String defaultOutput) {
+    private OnnxModelInfo(String path, Map<String, OnnxTypeInfo> inputs, Map<String, OnnxTypeInfo> outputs, String defaultOutput) {
+        this.modelPath = path;
         this.inputs = Collections.unmodifiableMap(inputs);
         this.outputs = Collections.unmodifiableMap(outputs);
         this.defaultOutput = defaultOutput;
+    }
+
+    public String getModelPath() {
+        return modelPath;
     }
 
     public Set<String> getInputs() {
@@ -125,12 +131,7 @@ public class OnnxModelInfo {
         if (app.getFile(generatedModelInfoPath(pathInApplicationPackage)).exists()) {
             return loadFromGeneratedInfo(pathInApplicationPackage, app);
         }
-
-        // Temporary:
-        return null;
-
-        // This is the correct behaviour after we've gotten applications through.
-        // throw new IllegalArgumentException("Unable to find ONNX model file or generated ONNX info file");
+        throw new IllegalArgumentException("Unable to find ONNX model file or generated ONNX info file");
     }
 
     static public boolean modelExists(String path, ApplicationPackage app) {
@@ -147,7 +148,7 @@ public class OnnxModelInfo {
     static private OnnxModelInfo loadFromFile(Path path, ApplicationPackage app) {
         try (InputStream inputStream = app.getFile(path).createInputStream()) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
-            String json = onnxModelToJson(model);
+            String json = onnxModelToJson(model, path);
             storeGeneratedInfo(json, path, app);
             return jsonToModelInfo(json);
         } catch (IOException e) {
@@ -178,11 +179,12 @@ public class OnnxModelInfo {
         return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(fileName);
     }
 
-    static private String onnxModelToJson(Onnx.ModelProto model) throws IOException {
+    static private String onnxModelToJson(Onnx.ModelProto model, Path path) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonGenerator g = new JsonFactory().createGenerator(out, JsonEncoding.UTF8);
         g.writeStartObject();
 
+        g.writeStringField("path", path.toString());
         g.writeArrayFieldStart("inputs");
         for (Onnx.ValueInfoProto valueInfo : model.getGraph().getInputList()) {
             onnxTypeToJson(g, valueInfo);
@@ -207,6 +209,10 @@ public class OnnxModelInfo {
         Map<String, OnnxTypeInfo> outputs = new HashMap<>();
         String defaultOutput = "";
 
+        String path = null;
+        if (root.has("path")) {
+            path = root.get("path").textValue();
+        }
         for (JsonNode input : root.get("inputs")) {
             inputs.put(input.get("name").textValue(), jsonToTypeInfo(input));
         }
@@ -216,7 +222,7 @@ public class OnnxModelInfo {
         if (root.get("outputs").has(0)) {
             defaultOutput = root.get("outputs").get(0).get("name").textValue();
         }
-        return new OnnxModelInfo(inputs, outputs, defaultOutput);
+        return new OnnxModelInfo(path, inputs, outputs, defaultOutput);
     }
 
     static private void onnxTypeToJson(JsonGenerator g, Onnx.ValueInfoProto valueInfo) throws IOException {

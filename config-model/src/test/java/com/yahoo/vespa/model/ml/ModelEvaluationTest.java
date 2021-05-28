@@ -3,16 +3,13 @@ package com.yahoo.vespa.model.ml;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
-import ai.vespa.models.evaluation.RankProfilesConfigImporter;
 import ai.vespa.models.handler.ModelsEvaluationHandler;
 import com.yahoo.component.ComponentId;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -22,7 +19,10 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -65,7 +65,7 @@ public class ModelEvaluationTest {
         Path storedAppDir = appDir.append("copy");
         try {
             ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
-            assertHasMlModels(tester.createVespaModel());
+            assertHasMlModels(tester.createVespaModel(), appDir);
 
             // At this point the expression is stored - copy application to another location which do not have a models dir
             storedAppDir.toFile().mkdirs();
@@ -73,7 +73,7 @@ public class ModelEvaluationTest {
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             ImportedModelTester storedTester = new ImportedModelTester("ml_serving", storedAppDir);
-            assertHasMlModels(storedTester.createVespaModel());
+            assertHasMlModels(storedTester.createVespaModel(), appDir);
         }
         finally {
             IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
@@ -81,7 +81,7 @@ public class ModelEvaluationTest {
         }
     }
 
-    private void assertHasMlModels(VespaModel model) {
+    private void assertHasMlModels(VespaModel model, Path appDir) {
         ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
 
@@ -105,12 +105,13 @@ public class ModelEvaluationTest {
         cluster.getConfig(ob);
         OnnxModelsConfig onnxModelsConfig = new OnnxModelsConfig(ob);
 
-        assertEquals(4, config.rankprofile().size());
+        assertEquals(5, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
         assertTrue(modelNames.contains("lightgbm_regression"));
-        assertTrue(modelNames.contains("mnist_softmax"));
+        assertTrue(modelNames.contains("add_mul"));
         assertTrue(modelNames.contains("small_constants_and_functions"));
+        assertTrue(modelNames.contains("sqrt"));
 
         // Compare profile content in a denser format than config:
         StringBuilder sb = new StringBuilder();
@@ -118,10 +119,14 @@ public class ModelEvaluationTest {
             sb.append(p.name()).append(": ").append(p.value()).append("\n");
         assertEquals(profile, sb.toString());
 
-        ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter(MockFileAcquirer.returnFile(null))
-                                                                .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
+        Map<String, File> fileMap = new HashMap<>();
+        for (OnnxModelsConfig.Model onnxModel : onnxModelsConfig.model()) {
+            fileMap.put(onnxModel.fileref().value(), appDir.append(onnxModel.fileref().value()).toFile());
+        }
+        FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
+        ModelsEvaluator evaluator = new ModelsEvaluator(config, constantsConfig, onnxModelsConfig, fileAcquirer);
 
-        assertEquals(4, evaluator.models().size());
+        assertEquals(5, evaluator.models().size());
 
         Model xgboost = evaluator.models().get("xgboost_2_2");
         assertNotNull(xgboost);
@@ -133,31 +138,37 @@ public class ModelEvaluationTest {
         assertNotNull(lightgbm.evaluatorOf());
         assertNotNull(lightgbm.evaluatorOf("lightgbm_regression"));
 
-        Model onnx_mnist_softmax = evaluator.models().get("mnist_softmax");
-        assertNotNull(onnx_mnist_softmax);
-        assertEquals(1, onnx_mnist_softmax.functions().size());
-        assertNotNull(onnx_mnist_softmax.evaluatorOf());
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("default"));
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("default", "add"));
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("default.add"));
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("add"));
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("serving_default"));
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("serving_default", "add"));
-        assertNotNull(onnx_mnist_softmax.evaluatorOf("serving_default.add"));
-        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default.add"));
-        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default", "add"));
-        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "add"));
-        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "serving_default.add"));
-        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "serving_default", "add"));
-        assertEquals(TensorType.fromSpec("tensor<float>(d0[],d1[784])"), onnx_mnist_softmax.functions().get(0).argumentTypes().get("Placeholder"));
+        Model add_mul = evaluator.models().get("add_mul");
+        assertNotNull(add_mul);
+        assertEquals(2, add_mul.functions().size());
+        assertNotNull(add_mul.evaluatorOf("output1"));
+        assertNotNull(add_mul.evaluatorOf("output2"));
+        assertNotNull(add_mul.evaluatorOf("default.output1"));
+        assertNotNull(add_mul.evaluatorOf("default.output2"));
+        assertNotNull(add_mul.evaluatorOf("default", "output1"));
+        assertNotNull(add_mul.evaluatorOf("default", "output2"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "output1"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "output2"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default.output1"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default.output2"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default", "output1"));
+        assertNotNull(evaluator.evaluatorOf("add_mul", "default", "output2"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).argumentTypes().get("input1"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), add_mul.functions().get(0).argumentTypes().get("input2"));
+
+        Model sqrt = evaluator.models().get("sqrt");
+        assertNotNull(sqrt);
+        assertEquals(1, sqrt.functions().size());
+        assertNotNull(sqrt.evaluatorOf());
+        assertNotNull(sqrt.evaluatorOf("out_layer_1_1"));  // converted from "out/layer/1:1"
+        assertNotNull(evaluator.evaluatorOf("sqrt"));
+        assertNotNull(evaluator.evaluatorOf("sqrt", "out_layer_1_1"));
+        assertEquals(TensorType.fromSpec("tensor<float>(d0[1])"), sqrt.functions().get(0).argumentTypes().get("input"));
     }
 
     private final String profile =
-            "rankingExpression(imported_ml_function_small_constants_and_functions_exp_output).rankingScript: map(input, f(a)(exp(a)))\n" +
-            "rankingExpression(imported_ml_function_small_constants_and_functions_exp_output).type: tensor<float>(d0[3])\n" +
-            "rankingExpression(default.output).rankingScript: join(rankingExpression(imported_ml_function_small_constants_and_functions_exp_output), reduce(join(join(reduce(rankingExpression(imported_ml_function_small_constants_and_functions_exp_output), sum, d0), tensor<float>(d0[1])(1.0), f(a,b)(a * b)), 9.999999974752427E-7, f(a,b)(a + b)), sum, d0), f(a,b)(a / b))\n" +
-            "rankingExpression(default.output).input.type: tensor<float>(d0[3])\n" +
-            "rankingExpression(default.output).type: tensor<float>(d0[3])\n";
+            "rankingExpression(output).rankingScript: onnxModel(small_constants_and_functions).output\n" +
+            "rankingExpression(output).type: tensor<float>(d0[3])\n";
 
     private RankProfilesConfig.Rankprofile.Fef findProfile(String name, RankProfilesConfig config) {
         for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
@@ -165,19 +176,6 @@ public class ModelEvaluationTest {
                 return profile.fef();
         }
         throw new IllegalArgumentException("No profile named " + name);
-    }
-
-    // We don't have function file distribution so just return empty tensor constants
-    private static class ToleratingMissingConstantFilesRankProfilesConfigImporter extends RankProfilesConfigImporter {
-
-        public ToleratingMissingConstantFilesRankProfilesConfigImporter(FileAcquirer fileAcquirer) {
-            super(fileAcquirer);
-        }
-
-        protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
-            return Tensor.from(type, "{}");
-        }
-
     }
 
 }

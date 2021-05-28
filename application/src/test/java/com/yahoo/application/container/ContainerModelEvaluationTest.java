@@ -60,8 +60,10 @@ public class ContainerModelEvaluationTest {
         }
 
         {
-            String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":0.3006095290184021},{\"address\":{\"d0\":\"1\"},\"value\":0.33222490549087524},{\"address\":{\"d0\":\"2\"},\"value\":0.36716532707214355}]}";
+            String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":0.3006095290184021},{\"address\":{\"d0\":\"1\"},\"value\":0.33222490549087524},{\"address\":{\"d0\":\"2\"},\"value\":0.3671652674674988}]}";
+            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/output/eval?input=" + inputTensor(), expected, jdisc);
             assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default.output/eval?input=" + inputTensor(), expected, jdisc);
+            assertResponse("http://localhost/model-evaluation/v1/onnx_softmax_func/default/output/eval?input=" + inputTensor(), expected, jdisc);
         }
     }
 

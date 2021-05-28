@@ -44,30 +44,6 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testGlobalOnnxModel() throws IOException {
-        ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
-        VespaModel model = tester.createVespaModel();
-        tester.assertLargeConstant(name + "_layer_Variable_1", model, Optional.of(10L));
-        tester.assertLargeConstant(name + "_layer_Variable", model, Optional.of(7840L));
-
-        // At this point the expression is stored - copy application to another location which do not have a models dir
-        Path storedAppDir = applicationDir.append("copy");
-        try {
-            storedAppDir.toFile().mkdirs();
-            IOUtils.copy(applicationDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
-            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            ImportedModelTester storedTester = new ImportedModelTester(name, storedAppDir);
-            VespaModel storedModel = storedTester.createVespaModel();
-            tester.assertLargeConstant(name + "_layer_Variable_1", storedModel, Optional.of(10L));
-            tester.assertLargeConstant(name + "_layer_Variable", storedModel, Optional.of(7840L));
-        }
-        finally {
-            IOUtils.recursiveDeleteDir(storedAppDir.toFile());
-        }
-    }
-
-    @Test
     public void testOnnxReferenceWithConstantFeature() {
         RankProfileSearchFixture search = fixtureWith("constant(mytensor)",
                 "onnx_vespa('mnist_softmax.onnx')",

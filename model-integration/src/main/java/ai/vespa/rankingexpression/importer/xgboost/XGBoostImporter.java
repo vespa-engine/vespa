@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.xgboost;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import ai.vespa.rankingexpression.importer.ImportedModel;
@@ -50,7 +51,7 @@ public class XGBoostImporter extends ModelImporter {
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {
         try {
-            ImportedModel model = new ImportedModel(modelName, modelPath);
+            ImportedModel model = new ImportedModel(modelName, modelPath, ImportedMlModel.ModelType.XGBOOST);
             XGBoostParser parser = new XGBoostParser(modelPath);
             RankingExpression expression = new RankingExpression(parser.toRankingExpression());
             model.expression(modelName, expression);

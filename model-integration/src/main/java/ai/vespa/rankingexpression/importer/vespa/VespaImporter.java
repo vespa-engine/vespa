@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.vespa;
 
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import ai.vespa.rankingexpression.importer.ModelImporter;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.vespa.parser.ModelParser;
 
 import ai.vespa.rankingexpression.importer.vespa.parser.ParseException;
@@ -28,7 +29,7 @@ public class VespaImporter extends ModelImporter {
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {
         try {
-            ImportedModel model = new ImportedModel(modelName, modelPath);
+            ImportedModel model = new ImportedModel(modelName, modelPath, ImportedMlModel.ModelType.VESPA);
             new ModelParser(new SimpleCharStream(IOUtils.readFile(new File(modelPath))), model).model();
             return model;
         }

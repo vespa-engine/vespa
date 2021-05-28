@@ -24,7 +24,7 @@ public class OnnxMnistSoftmaxImportTestCase {
 
     @Test
     public void testMnistSoftmaxImport() {
-        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/mnist_softmax/mnist_softmax.onnx");
+        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/mnist_softmax/mnist_softmax.onnx").asNative();
 
         // Check constants
         assertEquals(2, model.largeConstants().size());

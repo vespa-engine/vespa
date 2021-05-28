@@ -14,6 +14,8 @@ import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author lesters
@@ -23,6 +25,10 @@ public class SimpleImportTestCase {
     @Test
     public void testSimpleOnnxModelImport() {
         ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/simple/simple.onnx");
+
+        assertFalse(model.isNative());
+        model = model.asNative();
+        assertTrue(model.isNative());
 
         MapContext context = new MapContext();
         context.put("query_tensor", new TensorValue(Tensor.from("tensor(d0[1],d1[4]):[0.1, 0.2, 0.3, 0.4]")));
@@ -35,7 +41,7 @@ public class SimpleImportTestCase {
 
     @Test
     public void testGather() {
-        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/simple/gather.onnx");
+        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/simple/gather.onnx").asNative();
 
         MapContext context = new MapContext();
         context.put("data", new TensorValue(Tensor.from("tensor(d0[3],d1[2]):[1, 2, 3, 4, 5, 6]")));
@@ -49,7 +55,7 @@ public class SimpleImportTestCase {
 
     @Test
     public void testConcat() {
-        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/simple/concat.onnx");
+        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/onnx/simple/concat.onnx").asNative();
 
         MapContext context = new MapContext();
         context.put("i", new TensorValue(Tensor.from("tensor(d0[1]):[1]")));

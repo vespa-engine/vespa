@@ -14,7 +14,7 @@ public class PyTorchImportTestCase extends TestableModel {
 
     @Test
     public void testPyTorchExport() {
-        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/pytorch/pytorch.onnx");
+        ImportedModel model = new OnnxImporter().importModel("test", "src/test/models/pytorch/pytorch.onnx").asNative();
         Tensor onnxResult = evaluateVespa(model, "output", model.inputs());
         assertEquals(Tensor.from("tensor(d0[1],d1[2]):[[0.28258783057229725, -0.0685615853647904]]"), onnxResult);
     }

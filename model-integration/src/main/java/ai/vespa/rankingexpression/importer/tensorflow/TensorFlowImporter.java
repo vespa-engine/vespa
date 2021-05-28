@@ -4,6 +4,7 @@ package ai.vespa.rankingexpression.importer.tensorflow;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.ModelImporter;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import com.yahoo.collections.Pair;
 import com.yahoo.io.IOUtils;
@@ -59,7 +60,7 @@ public class TensorFlowImporter extends ModelImporter {
     public ImportedModel importModel(String modelName, String modelDir, SavedModelBundle model) {
         try {
             IntermediateGraph graph = GraphImporter.importGraph(modelName, model);
-            return convertIntermediateGraphToModel(graph, modelDir);
+            return convertIntermediateGraphToModel(graph, modelDir, ImportedMlModel.ModelType.TENSORFLOW);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);
@@ -77,7 +78,13 @@ public class TensorFlowImporter extends ModelImporter {
                 Pair<Integer, String> res = convertToOnnx(modelDir, convertedPath, opset);
                 if (res.getFirst() == 0) {
                     log.info("Conversion to ONNX with opset " + opset + " successful.");
-                    return onnxImporter.importModel(modelName, convertedPath);
+
+                    /*
+                     * For now we have to import tensorflow models as native Vespa expressions.
+                     * The temporary ONNX file that is created by conversion needs to be put
+                     * in the application package so it can be file distributed.
+                     */
+                    return onnxImporter.importModelAsNative(modelName, convertedPath, ImportedMlModel.ModelType.TENSORFLOW);
                 }
                 log.fine("Conversion to ONNX with opset " + opset + " failed. Reason: " + res.getSecond());
                 outputOfLastConversionAttempt = res.getSecond();

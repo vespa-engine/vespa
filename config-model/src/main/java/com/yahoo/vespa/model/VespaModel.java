@@ -30,6 +30,9 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
+import com.yahoo.path.Path;
+import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.OnnxModels;
 import com.yahoo.searchdefinition.RankExpressionFiles;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -58,6 +61,7 @@ import com.yahoo.vespa.model.filedistribution.FileDistributor;
 import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
+import com.yahoo.vespa.model.ml.OnnxModelInfo;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
@@ -294,7 +298,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                           QueryProfiles queryProfiles) {
         if ( ! importedModels.all().isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels.all()) {
-                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
+                OnnxModels onnxModels = onnxModelInfoFromSource(model);
+                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry, onnxModels);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
                                                                           model.name(), profile, queryProfiles.getRegistry(), model);
@@ -306,13 +311,50 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
                 String modelName = generatedModelDir.getPath().last();
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
-                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
+                OnnxModels onnxModels = onnxModelInfoFromStore(modelName);
+                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry, onnxModels);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
                 convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
             }
         }
         new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
+    }
+
+    private OnnxModels onnxModelInfoFromSource(ImportedMlModel model) {
+        OnnxModels onnxModels = new OnnxModels();
+        if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
+            String path = model.source();
+            String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
+            if (path.startsWith(applicationPath)) {
+                path = path.substring(applicationPath.length() + 1);
+            }
+            loadOnnxModelInfo(onnxModels, model.name(), path);
+        }
+        return onnxModels;
+    }
+
+    private OnnxModels onnxModelInfoFromStore(String modelName) {
+        OnnxModels onnxModels = new OnnxModels();
+        String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
+        loadOnnxModelInfo(onnxModels, modelName, path);
+        return onnxModels;
+    }
+
+    private void loadOnnxModelInfo(OnnxModels onnxModels, String name, String path) {
+        boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
+        if ( ! modelExists) {
+            path = ApplicationPackage.MODELS_DIR.append(path).toString();
+            modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
+        }
+        if (modelExists) {
+            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage);
+            if (onnxModelInfo.getModelPath() != null) {
+                OnnxModel onnxModel = new OnnxModel(name, onnxModelInfo.getModelPath());
+                onnxModel.setModelInfo(onnxModelInfo);
+                onnxModels.add(onnxModel);
+            }
+        }
     }
 
     /** Returns the global rank profiles as a rank profile list */
