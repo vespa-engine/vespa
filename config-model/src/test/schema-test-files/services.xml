@@ -147,7 +147,7 @@
     </http>
 
     <accesslog type='json'
-           fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd'/>
+           fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd' queueSize='13' bufferSize='65536'/>
     <accesslog type='vespa'
            fileNamePattern='logs/vespa/qrs/access-vespa.%Y%m%d%H%M%S' />
 
