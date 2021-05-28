@@ -305,10 +305,12 @@ public class Nodes {
     }
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
-        if (parkOnDeallocationOf(node, agent))
-            return park(node.hostname(), false, agent, reason, transaction);
-        else
+        if (parkOnDeallocationOf(node, agent)) {
+            boolean keepAllocation = node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent();
+            return park(node.hostname(), keepAllocation, agent, reason, transaction);
+        } else {
             return db.writeTo(Node.State.dirty, List.of(node), agent, Optional.of(reason), transaction).get(0);
+        }
     }
 
     /**
@@ -367,7 +369,7 @@ public class Nodes {
         return parked;
     }
 
-    public Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
+    private Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
         return move(hostname, Node.State.parked, agent, keepAllocation, Optional.of(reason), transaction);
     }
 
@@ -573,14 +575,22 @@ public class Nodes {
     }
 
     /**
-     * Increases the restart generation of the active nodes matching the filter.
+     * Increases the restart generation of the active nodes matching given filter.
+     *
+     * @return the nodes in their new state
+     */
+    public List<Node> restartActive(Predicate<Node> filter) {
+        return restart(StateFilter.from(Node.State.active).and(filter));
+    }
+
+    /**
+     * Increases the restart generation of the any nodes matching given filter.
      *
      * @return the nodes in their new state
      */
     public List<Node> restart(Predicate<Node> filter) {
-        return performOn(StateFilter.from(Node.State.active).and(filter),
-                         (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
-                                               lock));
+        return performOn(filter, (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
+                                                       lock));
     }
 
     /**
@@ -813,6 +823,7 @@ public class Nodes {
                                                     .orElse(false);
         return node.status().wantToDeprovision() ||
                node.status().wantToRebuild() ||
+               node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent() ||
                retirementRequestedByOperator;
     }
 

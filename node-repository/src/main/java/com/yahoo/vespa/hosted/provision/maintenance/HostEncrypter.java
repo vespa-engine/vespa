@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
+import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,6 +50,7 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
         for (var nodeType : NodeType.values()) {
             if (!nodeType.isHost()) continue;
             unencryptedHosts(allNodes, nodeType).forEach(host -> encrypt(host, now));
+            triggerRestart(allNodes, nodeType);
         }
         return true;
     }
@@ -93,6 +95,12 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
         if (maxEncryptingHosts.value() < 1) return 0; // 0 or negative value effectively stops encryption of all hosts
         int limit = hostType == NodeType.host ? maxEncryptingHosts.value() : 1;
         return Math.max(0, limit - hosts.encrypting().size());
+    }
+
+    /** Trigger restart of encrypting nodes to allow disk encryption to happen */
+    private void triggerRestart(NodeList allNodes, NodeType nodeType) {
+        NodeList hostsReadyToEncrypt = allNodes.nodeType(nodeType).state(Node.State.parked).encrypting();
+        nodeRepository().nodes().restart(NodeListFilter.from(hostsReadyToEncrypt.asList()));
     }
 
     private void encrypt(Node host, Instant now) {
