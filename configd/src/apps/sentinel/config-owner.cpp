@@ -16,18 +16,22 @@ ConfigOwner::~ConfigOwner() = default;
 void
 ConfigOwner::subscribe(const std::string & configId, std::chrono::milliseconds timeout) {
     _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeout);
+    _modelHandle = _subscriber.subscribe<ModelConfig>("admin/model", timeout);
 }
 
 void
 ConfigOwner::doConfigure()
 {
     _currConfig = _sentinelHandle->getConfig();
+    _modelConfig = _modelHandle->getConfig();
     LOG_ASSERT(_currConfig);
+    LOG_ASSERT(_modelConfig);
     _currGeneration = _subscriber.getGeneration();
     const SentinelConfig& config(*_currConfig);
     const auto & app = config.application;
     LOG(config, "Sentinel got %zd service elements [tenant(%s), application(%s), instance(%s)] for config generation %zd",
         config.service.size(), app.tenant.c_str(), app.name.c_str(), app.instance.c_str(), _currGeneration);
+    LOG(config, "Sentinel got model info [version %s] for %zd hosts", _modelConfig->vespaVersion.c_str(), _modelConfig->hosts.size());
 }
 
 
