@@ -16,6 +16,7 @@
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
@@ -88,6 +89,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (!_use_legacy_mode) {
+        assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
         LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
         _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
         _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,

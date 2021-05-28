@@ -77,7 +77,7 @@ void DistributorStripePool::park_thread_until_released(DistributorStripeThread& 
 void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
     assert(!stripes.empty());
     assert(_stripes.empty() && _threads.empty());
-    // Note: This also asserts that the number of stripes is valid (power of 2 and within MaxStripes boundary).
+    assert(stripes.size() == adjusted_num_stripes(stripes.size()));
     _n_stripe_bits = calc_num_stripe_bits(stripes.size());
     _stripes.reserve(stripes.size());
     _threads.reserve(stripes.size());

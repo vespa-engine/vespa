@@ -7,6 +7,7 @@
 using document::BucketId;
 using storage::calc_num_stripe_bits;
 using storage::stripe_of_bucket_key;
+using storage::adjusted_num_stripes;
 constexpr uint8_t MUB = storage::spi::BucketLimits::MinUsedBits;
 
 TEST(BucketStripeUtilsTest, stripe_of_bucket_key)
@@ -27,6 +28,17 @@ TEST(BucketStripeUtilsTest, calc_num_stripe_bits)
     EXPECT_EQ(2, calc_num_stripe_bits(4));
     EXPECT_EQ(7, calc_num_stripe_bits(128));
     EXPECT_EQ(8, calc_num_stripe_bits(256));
+}
+
+TEST(BucketStripeUtilsTest, adjusted_num_stripes)
+{
+    EXPECT_EQ(0, adjusted_num_stripes(0));
+    EXPECT_EQ(1, adjusted_num_stripes(1));
+    EXPECT_EQ(2, adjusted_num_stripes(2));
+    EXPECT_EQ(4, adjusted_num_stripes(3));
+    EXPECT_EQ(256, adjusted_num_stripes(255));
+    EXPECT_EQ(256, adjusted_num_stripes(256));
+    EXPECT_EQ(256, adjusted_num_stripes(257));
 }
 
 TEST(BucketStripeUtilsTest, max_stripe_values)
