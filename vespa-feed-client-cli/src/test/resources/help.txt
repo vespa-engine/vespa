@@ -11,4 +11,9 @@ Vespa feed client
     --help
     --max-streams-per-connection <arg>
     --private-key <arg>
+    --route <arg>
+    --stdin
+    --timeout <arg>
+    --trace <arg>
+    --verbose
     --version

@@ -6,12 +6,15 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static ai.vespa.feed.client.FeedClient.OperationType.put;
@@ -28,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author jonmv
  */
-public class JsonStreamFeeder {
+public class JsonStreamFeeder implements Closeable {
 
     private final FeedClient client;
     private final OperationParameters protoParameters;
@@ -66,30 +69,44 @@ public class JsonStreamFeeder {
      * Note that {@code "id"} is an alias for the document put operation.
      */
     public void feed(InputStream jsonStream) throws IOException {
-        feed(jsonStream, 1 << 26);
+        feed(jsonStream, 1 << 26, false);
     }
 
-    void feed(InputStream jsonStream, int size) throws IOException {
+    BenchmarkResult benchmark(InputStream jsonStream) throws IOException {
+        return feed(jsonStream, 1 << 26, true).get();
+    }
+
+    Optional<BenchmarkResult> feed(InputStream jsonStream, int size, boolean benchmark) throws IOException {
         RingBufferStream buffer = new RingBufferStream(jsonStream, size);
         buffer.expect(JsonToken.START_ARRAY);
+        AtomicInteger okCount = new AtomicInteger();
+        AtomicInteger failedCount = new AtomicInteger();
+        long startTime = System.nanoTime();
         CompletableFuture<Result> result;
         AtomicReference<Throwable> thrown = new AtomicReference<>();
         while ((result = buffer.next()) != null) {
             result.whenComplete((r, t) -> {
-                if (t != null)
-                    thrown.set(t);
-                else
-                    ; // Aggregate stats.
+                if (t != null) {
+                    failedCount.incrementAndGet();
+                    if (!benchmark) thrown.set(t);
+                } else
+                    okCount.incrementAndGet();
             });
             if (thrown.get() != null)
                 sneakyThrow(thrown.get());
         }
+        if (!benchmark) return Optional.empty();
+        Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
+        double throughPut = (double)okCount.get() / duration.toMillis() * 1000D;
+        return Optional.of(new BenchmarkResult(okCount.get(), failedCount.get(), duration, throughPut));
     }
 
     @SuppressWarnings("unchecked")
     static <T extends Throwable> void sneakyThrow(Throwable thrown) throws T { throw (T) thrown; }
 
     private static final JsonFactory factory = new JsonFactory();
+
+    @Override public void close() throws IOException { client.close(); }
 
     private class RingBufferStream extends InputStream {
 
@@ -328,6 +345,20 @@ public class JsonStreamFeeder {
             return new JsonStreamFeeder(client, parameters);
         }
 
+    }
+
+    static class BenchmarkResult {
+        final int okCount;
+        final int errorCount;
+        final Duration duration;
+        final double throughput;
+
+        BenchmarkResult(int okCount, int errorCount, Duration duration, double throughput) {
+            this.okCount = okCount;
+            this.errorCount = errorCount;
+            this.duration = duration;
+            this.throughput = throughput;
+        }
     }
 
 }

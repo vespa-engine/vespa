@@ -60,7 +60,7 @@ class JsonStreamFeederTest {
             public void close() throws IOException {
 
             }
-        }).build().feed(in, 1 << 7); // TODO: hangs on 1 << 6.
+        }).build().feed(in, 1 << 7, false); // TODO: hangs on 1 << 6.
         assertEquals(docs + 1, ids.size());
     }
 
