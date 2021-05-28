@@ -91,8 +91,7 @@ public class CliClient {
     }
 
     private InputStream createFeedInputStream(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
-        return new BufferedInputStream(
-                cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get()));
+        return cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get());
     }
 
     private void printBenchmarkResult(JsonStreamFeeder.BenchmarkResult result) throws IOException {
