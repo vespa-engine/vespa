@@ -49,13 +49,11 @@ private:
     void handleRestarts();
 
     void updateMetrics();
-
     void terminateServices(bool catchable, bool printDebug = false);
-
+    void doConfigure();
 public:
     Manager(Env &env);
     virtual ~Manager();
-    void doConfigure();
     bool terminate();
     int doWork();
     void updateActiveFdset(fd_set *fds, int *maxNum);
