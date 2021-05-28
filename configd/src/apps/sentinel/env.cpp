@@ -61,10 +61,6 @@ void Env::statePort(int port) {
     }
     if (port == 0) {
         port = 19098;
-        const char *portString = getenv("VESPA_SENTINEL_PORT");
-        if (portString) {
-            port = strtoul(portString, nullptr, 10);
-        }
     }
     if (_stateServer && port == _statePort) {
         return; // ok already
