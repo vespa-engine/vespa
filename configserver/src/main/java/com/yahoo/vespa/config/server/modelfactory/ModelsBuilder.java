@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -224,8 +222,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
-        if (configserverConfig.buildMinimalSetOfConfigModels())
-            versions = keepThoseUsedOn(allocatedHosts, versions);
+        versions = keepThoseUsedOn(allocatedHosts, versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
         // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
