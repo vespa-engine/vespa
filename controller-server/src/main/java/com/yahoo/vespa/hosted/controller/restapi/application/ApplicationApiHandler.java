@@ -976,7 +976,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse supportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         SupportAccess supportAccess = controller.supportAccess().forDeployment(deployment);
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(supportAccess, false, Optional.ofNullable(controller.clock().instant())));
+        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(supportAccess, false, Optional.of(controller.clock().instant())));
     }
 
     // TODO support access: only let tenants (not operators!) allow access
@@ -984,15 +984,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse allowSupportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
-        SupportAccess allowed = controller.supportAccess().allow(deployment, Instant.now().plus(7, ChronoUnit.DAYS), principal.getName());
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(allowed, false, Optional.ofNullable(controller.clock().instant())));
+        Instant now = controller.clock().instant();
+        SupportAccess allowed = controller.supportAccess().allow(deployment, now.plus(7, ChronoUnit.DAYS), principal.getName());
+        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(allowed, false, Optional.of(now)));
     }
 
     private HttpResponse disallowSupportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
         SupportAccess disallowed = controller.supportAccess().disallow(deployment, principal.getName());
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(disallowed, false, Optional.ofNullable(controller.clock().instant())));
+        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(disallowed, false, Optional.of(controller.clock().instant())));
     }
 
     private HttpResponse metrics(String tenantName, String applicationName, String instanceName, String environment, String region) {

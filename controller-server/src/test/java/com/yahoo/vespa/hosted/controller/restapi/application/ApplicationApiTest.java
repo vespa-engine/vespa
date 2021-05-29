@@ -1497,7 +1497,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    @Ignore // TODO: unstable test, something not using a stable clock
     public void support_access() {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
