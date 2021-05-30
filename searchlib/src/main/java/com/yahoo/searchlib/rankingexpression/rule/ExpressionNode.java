@@ -32,6 +32,9 @@ public abstract class ExpressionNode implements Serializable {
     public final String toString() {
         return toString(new StringBuilder(), new SerializationContext(), null, null).toString();
     }
+    public final String toString(SerializationContext context) {
+        return toString(new StringBuilder(), context, null, null).toString();
+    }
 
     /**
      * Returns a script instance of this based on the supplied script functions.

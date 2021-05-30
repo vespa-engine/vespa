@@ -370,7 +370,8 @@ public class RankProfile implements Cloneable {
      */
     public RankingExpression getFirstPhaseRanking() {
         if (firstPhaseRanking != null) return firstPhaseRanking;
-        if (getInherited() != null) return getInherited().getFirstPhaseRanking();
+        RankProfile inherited = getInherited();
+        if (inherited != null) return inherited.getFirstPhaseRanking();
         return null;
     }
 
@@ -379,15 +380,30 @@ public class RankProfile implements Cloneable {
     }
 
     public String getUniqueExpressionName(String name) {
-        return getName() + "_" + name;
+        return getName().replace('-', '_') + "_" + name;
+    }
+    public String resolveExpressionName(String name) {
+        if (externalFileExpressions.contains(name)) {
+            return getUniqueExpressionName(name);
+        }
+        if (functions.get(name) == null) {
+            RankProfile inherited = getInherited();
+            if (inherited != null) {
+                return inherited.resolveExpressionName(name);
+            }
+        }
+        return name;
     }
     public String getFirstPhaseFile() {
         String name = FIRST_PHASE;
         if (externalFileExpressions.contains(name)) {
             return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
         }
-        if ((firstPhaseRanking == null) && (getInherited() != null)) {
-            return getInherited().getFirstPhaseFile();
+        if (firstPhaseRanking == null) {
+            RankProfile inherited = getInherited();
+            if (inherited != null) {
+                return getInherited().getFirstPhaseFile();
+            }
         }
         return null;
     }
@@ -397,8 +413,11 @@ public class RankProfile implements Cloneable {
         if (externalFileExpressions.contains(name)) {
             return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
         }
-        if ((secondPhaseRanking == null) && (getInherited() != null)) {
-            return getInherited().getSecondPhaseFile();
+        if (secondPhaseRanking == null) {
+            RankProfile inherited = getInherited();
+            if (inherited != null) {
+                return getInherited().getSecondPhaseFile();
+            }
         }
         return null;
     }
@@ -407,8 +426,11 @@ public class RankProfile implements Cloneable {
         if (externalFileExpressions.contains(name)) {
             return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
         }
-        if (getInherited() != null) {
-            return getInherited().getExpressionFile(name);
+        if (functions.get(name) == null) {
+            RankProfile inherited = getInherited();
+            if (inherited != null) {
+                return inherited.getExpressionFile(name);
+            }
         }
         return null;
     }
@@ -428,7 +450,8 @@ public class RankProfile implements Cloneable {
      */
     public RankingExpression getSecondPhaseRanking() {
         if (secondPhaseRanking != null) return secondPhaseRanking;
-        if (getInherited() != null) return getInherited().getSecondPhaseRanking();
+        RankProfile inherited = getInherited();
+        if (inherited != null) return inherited.getSecondPhaseRanking();
         return null;
     }
 
@@ -746,6 +769,7 @@ public class RankProfile implements Cloneable {
             clone.functions = new LinkedHashMap<>(this.functions);
             clone.filterFields = new HashSet<>(this.filterFields);
             clone.constants = new HashMap<>(this.constants);
+            clone.externalFileExpressions = new HashSet(this.externalFileExpressions);
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -781,6 +805,7 @@ public class RankProfile implements Cloneable {
         secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
 
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
+        // TODO This merges all functions from inherited profiles too and erases inheritance information. Not good.
         functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
 
     }
