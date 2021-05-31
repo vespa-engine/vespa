@@ -4,24 +4,21 @@
 
 #include "status-callback.h"
 #include "peer-check.h"
-#include "cmdq.h"
 
 namespace config::sentinel {
 
 /**
  * Handles a checkConnectivity request by making an outgoing
  * ping request.  When the ping finishes, fills an answer
- * into the parent request and deletes itself.
+ * into the parent request and send the answer back.
  **/
 class CheckCompletionHandler : public StatusCallback {
+private:
+    FRT_RPCRequest *_parentRequest;
 public:
-    static void create(Cmd::UP request, FRT_Supervisor &orb);
+    CheckCompletionHandler(FRT_RPCRequest *parentRequest);
     virtual ~CheckCompletionHandler();
     void returnStatus(bool ok) override;
-private:
-    CheckCompletionHandler(Cmd::UP request, FRT_Supervisor &orb);
-    Cmd::UP _parentRequest;
-    std::unique_ptr<PeerCheck> _peerCheck;
 };
 
 }

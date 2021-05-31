@@ -3,6 +3,4 @@
 #include "status-callback.h"
 namespace config::sentinel {
 
-StatusCallback::~StatusCallback() = default;
-
 }

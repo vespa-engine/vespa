@@ -30,7 +30,7 @@ public:
     void statePort(int portnum);
 
     void notifyConfigUpdated();
-
+    void handleCmd(Cmd::UP cmd);
 private:
     ConfigOwner _cfgOwner;
     CommandQueue _rpcCommandQueue;

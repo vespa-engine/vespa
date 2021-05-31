@@ -25,9 +25,8 @@ PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port
 }
 
 PeerCheck::~PeerCheck() {
-    if (_req != nullptr) {
-        _req->Abort();
-    }
+    LOG_ASSERT(_req == nullptr);
+    LOG_ASSERT(_target == nullptr);
 }
 
 void PeerCheck::RequestDone(FRT_RPCRequest *req) {
