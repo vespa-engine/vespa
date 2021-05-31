@@ -13,6 +13,7 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
+import org.apache.hc.core5.reactor.ssl.TlsDetails;
 import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
@@ -84,7 +85,8 @@ class HttpFeedClient implements FeedClient {
                                                                                           .build());
 
         ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                                                                              .setSslContext(constructSslContext(builder));
+                .setTlsDetailsFactory(sslEngine -> new TlsDetails(sslEngine.getSession(), sslEngine.getApplicationProtocol()))
+                .setSslContext(constructSslContext(builder));
         if (builder.hostnameVerifier != null) {
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
         }
