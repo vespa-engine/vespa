@@ -95,7 +95,6 @@ class RunSerializer {
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
     private static final String noNodesDownSinceField = "noNodesDownSince";
-    private static final String oldConvergenceSummaryField = "convergenceSummary"; // TODO (freva): Remove after 7.410
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
 
@@ -137,8 +136,7 @@ class RunSerializer {
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
                        Serializers.optionalInstant(runObject.field(noNodesDownSinceField)),
-                       convergenceSummaryFrom(runObject.field(convergenceSummaryField))
-                               .or(() ->convergenceSummaryFrom(runObject.field(oldConvergenceSummaryField))),
+                       convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
@@ -223,10 +221,7 @@ class RunSerializer {
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
         run.noNodesDownSince().ifPresent(noNodesDownSince -> runObject.setLong(noNodesDownSinceField, noNodesDownSince.toEpochMilli()));
-        run.convergenceSummary().ifPresent(convergenceSummary -> {
-            toSlime(convergenceSummary, runObject.setArray(convergenceSummaryField), false);
-            toSlime(convergenceSummary, runObject.setArray(oldConvergenceSummaryField), true);
-        });
+        run.convergenceSummary().ifPresent(convergenceSummary -> toSlime(convergenceSummary, runObject.setArray(convergenceSummaryField)));
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);
@@ -263,7 +258,7 @@ class RunSerializer {
     }
 
     // Don't change this - introduce a separate array with new values if needed.
-    private void toSlime(ConvergenceSummary summary, Cursor summaryArray, boolean oldFormat) {
+    private void toSlime(ConvergenceSummary summary, Cursor summaryArray) {
         summaryArray.addLong(summary.nodes());
         summaryArray.addLong(summary.down());
         summaryArray.addLong(summary.upgradingOs());
@@ -276,8 +271,7 @@ class RunSerializer {
         summaryArray.addLong(summary.restarting());
         summaryArray.addLong(summary.services());
         summaryArray.addLong(summary.needNewConfig());
-        if (!oldFormat)
-            summaryArray.addLong(summary.retiring());
+        summaryArray.addLong(summary.retiring());
     }
 
     static String valueOf(Step step) {

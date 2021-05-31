@@ -53,7 +53,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         this.zones = system.isPublic() ?
                 List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
                         ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                        ZoneApiMock.fromId("prod.aws-us-east-1c")) :
+                        ZoneApiMock.fromId("prod.aws-us-east-1c"),
+                        ZoneApiMock.fromId("prod.aws-eu-west-1a")) :
                 List.of(ZoneApiMock.fromId("test.us-east-1"),
                         ZoneApiMock.fromId("staging.us-east-3"),
                         ZoneApiMock.fromId("dev.us-east-1"),

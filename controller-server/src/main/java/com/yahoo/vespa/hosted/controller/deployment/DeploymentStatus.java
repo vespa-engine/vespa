@@ -246,7 +246,8 @@ public class DeploymentStatus {
                                                                             existing.at(),
                                                                             existing.metrics(),
                                                                             existing.activity(),
-                                                                            existing.quota())
+                                                                            existing.quota(),
+                                                                            existing.cost())
                                                            : existing);
             if (   job.application().instance().equals(instance)
                 && job.type().isProduction()

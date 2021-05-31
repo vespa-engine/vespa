@@ -53,6 +53,10 @@ public class ResourceSnapshot {
         return applicationId;
     }
 
+    public ResourceAllocation allocation() {
+        return resourceAllocation;
+    }
+
     public double getCpuCores() {
         return resourceAllocation.getCpuCores();
     }
