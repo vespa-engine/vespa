@@ -315,7 +315,7 @@ TEST_F(MergeOperationTest, allow_deleting_active_source_only_replica) {
               _sender.getLastCommand(true));
 }
 
-TEST_F(MergeOperationTest, MarkRedundantTrustedCopiesAsSourceOnly) {
+TEST_F(MergeOperationTest, mark_redundant_trusted_copies_as_source_only) {
     // This test uses the same distribution as testGenerateNodeList(), i.e.
     // an ideal state sequence of [3, 5, 7, 6, 8, 0, 9, 2, 1, 4]
 
@@ -413,6 +413,21 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_any_busy_target_node) {
     // Should block on other operation nodes than the first listed as well
     _pendingTracker->getNodeInfo().setBusy(1, std::chrono::seconds(10));
     EXPECT_TRUE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+}
+
+
+TEST_F(MergeOperationTest, global_bucket_merges_are_not_blocked_by_busy_nodes) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    document::BucketId bucket_id(16, 1);
+    addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enableDistributorClusterState("distributor:1 storage:3");
+    document::Bucket global_bucket(document::FixedBucketSpaces::global_space(), bucket_id);
+    MergeOperation op(BucketAndNodes(global_bucket, toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    // Node 1 is included in operation node set but should not cause a block of global bucket merge
+    _pendingTracker->getNodeInfo().setBusy(0, std::chrono::seconds(10));
+    EXPECT_FALSE(op.isBlocked(*_pendingTracker, _operation_sequencer));
 }
 
 TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
