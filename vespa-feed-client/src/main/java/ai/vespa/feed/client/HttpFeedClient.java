@@ -85,8 +85,7 @@ class HttpFeedClient implements FeedClient {
                                                                                           .build());
 
         ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                .setTlsDetailsFactory(sslEngine -> new TlsDetails(sslEngine.getSession(), sslEngine.getApplicationProtocol()))
-                .setSslContext(constructSslContext(builder));
+                                                                              .setSslContext(constructSslContext(builder));
         if (builder.hostnameVerifier != null) {
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
         }
