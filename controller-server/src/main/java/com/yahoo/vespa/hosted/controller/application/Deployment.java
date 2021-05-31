@@ -7,6 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.OptionalDouble;
 
 /**
  * A deployment of an application in a particular zone.
@@ -23,9 +24,10 @@ public class Deployment {
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
     private final QuotaUsage quota;
+    private final OptionalDouble cost;
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
-                      DeploymentMetrics metrics,  DeploymentActivity activity, QuotaUsage quota) {
+                      DeploymentMetrics metrics,  DeploymentActivity activity, QuotaUsage quota, OptionalDouble cost) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
@@ -33,6 +35,7 @@ public class Deployment {
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
         this.quota = Objects.requireNonNull(quota, "usage cannot be null");
+        this.cost = Objects.requireNonNull(cost, "cost cannot be null");
     }
 
     /** Returns the zone this was deployed to */
@@ -58,17 +61,28 @@ public class Deployment {
     /** Returns quota usage for this */
     public QuotaUsage quota() { return quota; }
 
+    /** Returns cost, in dollars per hour, for this */
+    public OptionalDouble cost() { return cost; }
+
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, applicationVersion, version, deployTime, metrics,
-                              activity.recordAt(instant, metrics), quota);
+                              activity.recordAt(instant, metrics), quota, cost);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota);
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, cost);
     }
 
     public Deployment withQuota(QuotaUsage quota) {
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota);
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, cost);
+    }
+
+    public Deployment withCost(double cost) {
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, OptionalDouble.of(cost));
+    }
+
+    public Deployment withoutCost() {
+        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, OptionalDouble.empty());
     }
 
     @Override

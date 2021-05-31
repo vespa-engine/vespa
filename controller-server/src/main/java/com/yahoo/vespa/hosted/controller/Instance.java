@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
@@ -69,11 +70,13 @@ public class Instance {
                                                                                       version, instant,
                                                                                       DeploymentMetrics.none,
                                                                                       DeploymentActivity.none,
-                                                                                      QuotaUsage.none));
+                                                                                      QuotaUsage.none,
+                                                                                      OptionalDouble.empty()));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity(),
-                                                  quotaUsage);
+                                                  quotaUsage,
+                                                  previousDeployment.cost());
         return with(newDeployment);
     }
 
