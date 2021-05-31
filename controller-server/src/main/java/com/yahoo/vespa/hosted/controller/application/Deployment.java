@@ -78,10 +78,12 @@ public class Deployment {
     }
 
     public Deployment withCost(double cost) {
+        if (this.cost.isPresent() && Double.compare(this.cost.getAsDouble(), cost) == 0) return this;
         return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, OptionalDouble.of(cost));
     }
 
     public Deployment withoutCost() {
+        if (cost.isEmpty()) return this;
         return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, OptionalDouble.empty());
     }
 
@@ -96,12 +98,13 @@ public class Deployment {
                deployTime.equals(that.deployTime) &&
                metrics.equals(that.metrics) &&
                activity.equals(that.activity) &&
-               quota.equals(that.quota);
+               quota.equals(that.quota) &&
+               cost.equals(that.cost);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(zone, applicationVersion, version, deployTime, metrics, activity, quota);
+        return Objects.hash(zone, applicationVersion, version, deployTime, metrics, activity, quota, cost);
     }
 
     @Override

@@ -102,6 +102,15 @@ public class Instance {
         return with(deployment.withMetrics(deploymentMetrics));
     }
 
+    public Instance withDeploymentCosts(Map<ZoneId, Double> costByZone) {
+        Map<ZoneId, Deployment> deployments = this.deployments.entrySet().stream()
+                .map(entry -> Optional.ofNullable(costByZone.get(entry.getKey()))
+                        .map(entry.getValue()::withCost)
+                        .orElseGet(entry.getValue()::withoutCost))
+                .collect(Collectors.toUnmodifiableMap(Deployment::zone, deployment -> deployment));
+        return with(deployments);
+    }
+
     public Instance withoutDeploymentIn(ZoneId zone) {
         Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
         deployments.remove(zone);
