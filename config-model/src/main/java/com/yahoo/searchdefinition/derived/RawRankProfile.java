@@ -187,7 +187,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
             List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
             Map<String, String> functionProperties = new LinkedHashMap<>();
-            SerializationContext functionSerializationContext = new FunctionSerializationContext(unCompiledRankProfile, functionExpressions, functionProperties);
+            SerializationContext functionSerializationContext = useExternalExpressionFiles
+                    ? new FunctionSerializationContext(unCompiledRankProfile, functionExpressions, functionProperties)
+                    : new SerializationContext(functionExpressions);
 
             if (firstPhaseRanking != null) {
                 functionProperties.putAll(firstPhaseRanking.getRankProperties(functionSerializationContext));
@@ -247,9 +249,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                                               Map<String, String> functionProperties,
                                               SerializationContext context) {
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
-                if (useExternalExpressionFiles && unCompiledRankProfile.getExpressionFile(e.getKey()) != null) {
-                    continue;
-                }
+                if (useExternalExpressionFiles && unCompiledRankProfile.getExpressionFile(e.getKey()) != null) continue;
                 String propertyName = RankingExpression.propertyName(e.getKey());
                 if (context.serializedFunctions().containsKey(propertyName)) continue;
 
