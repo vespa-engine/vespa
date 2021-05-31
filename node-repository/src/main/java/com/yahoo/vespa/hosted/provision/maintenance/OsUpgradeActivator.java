@@ -38,7 +38,6 @@ public class OsUpgradeActivator extends NodeRepositoryMaintainer {
                                .list(Node.State.ready, Node.State.active)
                                .nodeType(type)
                                .changingVersion()
-                               .asList()
                                .isEmpty();
     }
 
