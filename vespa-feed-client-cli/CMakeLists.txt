@@ -2,3 +2,4 @@
 install_java_artifact(vespa-feed-client-cli)
 
 vespa_install_script(src/main/sh/vespa-feed-client.sh vespa-feed-client bin)
+configure_file(src/main/resources/logging.properties conf/vespa-feed-client/logging.properties @ONLY)

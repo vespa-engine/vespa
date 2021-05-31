@@ -724,9 +724,12 @@ fi
 %defattr(-,%{_vespa_user},%{_vespa_group},-)
 %endif
 %dir %{_prefix}
+%dir %{_prefix}/conf
+%dir %{_prefix}/conf/vespa-feed-client
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/bin/vespa-feed-client
+%{_prefix}/conf/vespa-feed-client/logging.properties
 %{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-feed-client-cli.jar
 
