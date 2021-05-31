@@ -725,7 +725,7 @@ public class InternalStepRunner implements StepRunner {
                 updater.accept("invalid application configuration, or timeout of other deployments of the same application");
                 return;
             case installationFailed:
-                updater.accept("nodes were not able to start the new Java containers");
+                updater.accept("nodes were not able to upgrade to the new configuration");
                 return;
             case testFailure:
                 updater.accept("one or more verification tests against the deployment failed");
