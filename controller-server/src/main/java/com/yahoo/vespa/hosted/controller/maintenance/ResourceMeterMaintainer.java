@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -33,8 +34,16 @@ import java.util.stream.Collectors;
  */
 public class ResourceMeterMaintainer extends ControllerMaintainer {
 
-    private final Clock clock;
-    private final Metric metric;
+    /**
+     * Checks if the node is in some state where it is in active use by the tenant,
+     * and not transitioning out of use, in a failed state, etc.
+     */
+    private static final Set<Node.State> METERABLE_NODE_STATES = EnumSet.of(
+            Node.State.reserved,   // an application will soon use this node
+            Node.State.active,     // an application is currently using this node
+            Node.State.inactive    // an application is not using it, but it is reserved for being re-introduced or decommissioned
+    );
+
     private final NodeRepository nodeRepository;
     private final MeteringClient meteringClient;
     private final CuratorDb curator;
@@ -89,9 +98,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         }
     }
 
-    private Collection<ResourceSnapshot> getAllResourceSnapshots() {
+    private List<ResourceSnapshot> getAllResourceSnapshots() {
         return controller().zoneRegistry().zones()
-                .ofCloud(CloudName.from("aws"))
                 .reachable().zones().stream()
                 .map(ZoneApi::getId)
                 .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, false)))
@@ -120,21 +128,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                    .orElse(false);
     }
 
-    /**
-     * Checks if the node is in some state where it is in active use by the tenant,
-     * and not transitioning out of use, in a failed state, etc.
-     */
-    private static final Set<Node.State> METERABLE_NODE_STATES = Set.of(
-            Node.State.reserved,   // an application will soon use this node
-            Node.State.active,     // an application is currently using this node
-            Node.State.inactive    // an application is not using it, but it is reserved for being re-introduced or decommissioned
-    );
-
     private boolean isNodeStateMeterable(Node node) {
         return METERABLE_NODE_STATES.contains(node.state());
     }
 
-    private boolean isNodeTypeMeterable(Node node) {
+    private boolean isClusterTypeMeterable(Node node) {
         return node.clusterType() != Node.ClusterType.admin; // log servers and shared cluster controllers
     }
 
