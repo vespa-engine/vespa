@@ -253,7 +253,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 String propertyName = RankingExpression.propertyName(e.getKey());
                 if (context.serializedFunctions().containsKey(propertyName)) continue;
 
-                String expressionString = e.getValue().function().getBody().getRoot().toString(context);
+                String expressionString = e.getValue().function().getBody().getRoot().toString(context).toString();
 
                 context.addFunctionSerialization(propertyName, expressionString);
                 for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
@@ -275,7 +275,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 ExpressionFunction function = context.getFunction(referenceNode.getName());
                 if (function != null) {
                     String propertyName = RankingExpression.propertyName(referenceNode.getName());
-                    String expressionString = function.getBody().getRoot().toString(context);
+                    String expressionString = function.getBody().getRoot().toString(context).toString();
                     context.addFunctionSerialization(propertyName, expressionString);
                     ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
                     functionSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
