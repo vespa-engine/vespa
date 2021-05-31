@@ -19,7 +19,6 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -251,16 +250,20 @@ public class RankingExpression implements Serializable {
     /**
      * Creates the necessary rank properties required to implement this expression.
      *
-     * @param functions the expression functions to expand
+     * @param context context for serialization
      * @return a list of named rank properties required to implement this expression
      */
-    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
+    public Map<String, String> getRankProperties(SerializationContext context) {
         Deque<String> path = new LinkedList<>();
-        SerializationContext context = new SerializationContext(functions);
         String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();
         serializedExpressions.put(propertyName(name), serializedRoot);
         return serializedExpressions;
+    }
+
+    @Deprecated
+    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
+        return getRankProperties(new SerializationContext(functions));
     }
 
     /**
