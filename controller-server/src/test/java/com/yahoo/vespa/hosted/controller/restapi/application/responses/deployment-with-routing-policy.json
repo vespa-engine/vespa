@@ -44,6 +44,7 @@
     "commit": "commit1"
   },
   "status": "complete",
+  "quota": "(ignore)",
   "activity": {},
   "metrics": {
     "queriesPerSecond": 0.0,

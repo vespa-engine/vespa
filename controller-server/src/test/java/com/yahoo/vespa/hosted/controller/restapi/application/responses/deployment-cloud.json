@@ -36,6 +36,7 @@
     "commit": "commit1"
   },
   "status": "complete",
+  "quota": "(ignore)",
   "archiveUri": "s3://bucketName/scoober/",
   "activity": {},
   "metrics": {
