@@ -968,7 +968,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) throws IOException {
-                logStream.transferTo(outputStream);
+                try (logStream) {
+                    logStream.transferTo(outputStream);
+                }
             }
         };
     }
