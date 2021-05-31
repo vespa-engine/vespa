@@ -35,8 +35,8 @@ public class DeploymentFailureMails {
 
     public Mail installationFailure(RunId id, Collection<String> recipients) {
         return mail(id, recipients, "installation",
-                    "as nodes were not able to start the new Java containers. " +
-                    "This is very often due to a misconfiguration of the components of an " +
+                    "as nodes were not able to upgrade to the new configuration. " +
+                    "This is often due to a misconfiguration of the components of an " +
                     "application, where one or more of these can not be instantiated.");
     }
 
