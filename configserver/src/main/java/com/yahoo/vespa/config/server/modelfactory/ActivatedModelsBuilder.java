@@ -38,7 +38,9 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
+import java.security.cert.X509Certificate;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -164,7 +166,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                        .readApplicationRoles(applicationId),
                                                zkClient.readQuota(),
                                                zkClient.readTenantSecretStores(),
-                                               secretStore);
+                                               secretStore,
+                                               zkClient.readOperatorCertificates());
     }
 
 }
