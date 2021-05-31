@@ -13,7 +13,6 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
-import org.apache.hc.core5.reactor.ssl.TlsDetails;
 import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
@@ -33,6 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeH2Blacklisted;
+import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 
 /**
  * HTTP implementation of {@link FeedClient}
@@ -84,8 +85,14 @@ class HttpFeedClient implements FeedClient {
                                                                                           .setPushEnabled(false)
                                                                                           .build());
 
+        SSLContext sslContext = constructSslContext(builder);
+        String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
+        if (allowedCiphers.length == 0)
+            throw new IllegalStateException("No adequate SSL cipher suites supported by the JVM");
+
         ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                                                                              .setSslContext(constructSslContext(builder));
+                                                                              .setCiphers(allowedCiphers)
+                                                                              .setSslContext(sslContext);
         if (builder.hostnameVerifier != null) {
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
         }
