@@ -109,14 +109,14 @@ public:
      *
      * @return list of FRTConnection pointers
      */
-    const std::vector<FRTConnection*> & getReadySources(std::vector<FRTConnection*> & readySources) const;
+    std::vector<FRTConnection*> getReadySources() const;
 
     /**
      * Gets list of sources that are suspended.
      *
      * @param suspendedSources is list of FRTConnection pointers
      */
-    const std::vector<FRTConnection*> & getSuspendedSources(std::vector<FRTConnection*> & suspendedSources) const;
+    std::vector<FRTConnection*> getSuspendedSources() const;
 
     /**
      * Implementation of the Java hashCode function for the String class.
