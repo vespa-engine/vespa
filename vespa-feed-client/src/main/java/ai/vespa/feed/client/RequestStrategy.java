@@ -14,10 +14,10 @@ import java.util.function.BiConsumer;
  */
 public interface RequestStrategy {
 
-    /** Whether this has failed, and we should stop. */
+    /** Whether this has failed fatally, and we should cease sending further operations. */
     boolean hasFailed();
 
-    /** Enqueue the given operation, which is dispatched to a vessel future when ready. */
+    /** Enqueue the given operation, returning its future result. This may block if the client send queue is full. */
     CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request,
                                                   BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch);
 
