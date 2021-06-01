@@ -136,6 +136,13 @@ struct CryptoSocket {
      **/
     virtual ssize_t half_close() = 0;
 
+    /**
+     * This function can be called at any time to drop any currently
+     * empty internal buffers. Typically called after drain or flush
+     * indicates that no further progress can be made.
+     **/
+    virtual void drop_empty_buffers() = 0;
+
     virtual ~CryptoSocket();
 };
 
