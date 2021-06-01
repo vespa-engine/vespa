@@ -248,7 +248,7 @@ public class Nodes {
     public List<Node> fail(List<Node> nodes, Agent agent, String reason) {
         NestedTransaction transaction = new NestedTransaction();
         nodes = fail(nodes, agent, reason, transaction);
-        transaction.commit();;
+        transaction.commit();
         return nodes;
     }
 
@@ -642,16 +642,22 @@ public class Nodes {
         List<Node> result;
         boolean wantToDeprovision = op == DecommissionOperation.deprovision;
         boolean wantToRebuild = op == DecommissionOperation.rebuild;
+        Optional<Report> wantToEncryptReport = op == DecommissionOperation.encrypt
+                ? Optional.of(Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, ""))
+                : Optional.empty();
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
-            result = performOn(list(allocationLock).childrenOf(host),
-                               (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
-                                                         nodeLock));
+            result = performOn(list(allocationLock).childrenOf(host), (node, nodeLock) -> {
+                Node newNode = node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
+                if (wantToEncryptReport.isPresent()) {
+                    newNode = newNode.with(newNode.reports().withReport(wantToEncryptReport.get()));
+                }
+                return write(newNode, nodeLock);
+            });
             Node newHost = host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
-            if (op == DecommissionOperation.encrypt) {
-                Report report = Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, "");
-                newHost = newHost.with(newHost.reports().withReport(report));
+            if (wantToEncryptReport.isPresent()) {
+                newHost = newHost.with(newHost.reports().withReport(wantToEncryptReport.get()));
             }
             result.add(write(newHost, lock));
         }
