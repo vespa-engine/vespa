@@ -56,9 +56,9 @@ public class ClusterData {
                            scalingEvents == null ? List.of()
                                                  : scalingEvents.stream().map(data -> data.toScalingEvent()).collect(Collectors.toList()),
                            autoscalingStatus,
-                           Duration.ofMillis(scalingDuration),
-                           maxQueryGrowthRate,
-                           currentQueryFractionOfMax);
+                           scalingDuration == null ? Duration.ofMillis(0) : Duration.ofMillis(scalingDuration),
+                           maxQueryGrowthRate == null ? -1 : maxQueryGrowthRate,
+                           currentQueryFractionOfMax == null ? -1 : currentQueryFractionOfMax);
     }
 
 }
