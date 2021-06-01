@@ -646,7 +646,9 @@ public class Nodes {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
             result = performOn(list(allocationLock).childrenOf(host),
-                               (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
+                               (node, nodeLock) -> write(node.withWantToRetire(true,
+                                                                               wantToDeprovision || op == DecommissionOperation.encrypt,
+                                                                               wantToRebuild, agent, instant),
                                                          nodeLock));
             Node newHost = host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
             if (op == DecommissionOperation.encrypt) {
