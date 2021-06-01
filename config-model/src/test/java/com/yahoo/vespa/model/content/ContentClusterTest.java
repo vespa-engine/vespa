@@ -26,6 +26,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -531,7 +533,6 @@ public class ContentClusterTest extends ContentBaseTest {
         ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(stagingNot16Bits, 8);
     }
-
     @Test
     public void testGenerateSearchNodes()
     {
@@ -1075,6 +1076,7 @@ public class ContentClusterTest extends ContentBaseTest {
                                                           "    </documents>" +
                                                           "  </content>" +
                                                           " </services>");
+        assertNull("No own cluster controller for content", oneContentModel.getContentClusters().get("storage").getClusterControllers());
         assertNotNull("Shared cluster controller with content", oneContentModel.getAdmin().getClusterControllers());
 
         String twoContentServices = "<?xml version='1.0' encoding='UTF-8' ?>" +
@@ -1106,6 +1108,8 @@ public class ContentClusterTest extends ContentBaseTest {
         VespaModel twoContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                               .setMultitenant(true),
                                                           twoContentServices);
+        assertNull("No own cluster controller for content", twoContentModel.getContentClusters().get("storage").getClusterControllers());
+        assertNull("No own cluster controller for content", twoContentModel.getContentClusters().get("dev-null").getClusterControllers());
         assertNotNull("Shared cluster controller with content", twoContentModel.getAdmin().getClusterControllers());
 
         ClusterControllerContainerCluster clusterControllers = twoContentModel.getAdmin().getClusterControllers();

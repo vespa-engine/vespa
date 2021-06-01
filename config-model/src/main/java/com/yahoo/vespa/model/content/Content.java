@@ -177,7 +177,7 @@ public class Content extends ConfigModel {
                 s.setVespaMallocDebugStackTrace(cluster.getRootGroup().getVespaMallocDebugStackTrace().get());
             }
         }
-        cluster.prepare();
+        cluster.prepare(deployState);
     }
 
     private void setCpuSocketAffinity() {
