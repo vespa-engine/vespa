@@ -42,14 +42,11 @@ public class TenantController {
     private final Controller controller;
     private final CuratorDb curator;
     private final AccessControl accessControl;
-    private final BooleanFlag provisionTenantRoles;
-
 
     public TenantController(Controller controller, CuratorDb curator, AccessControl accessControl, FlagSource flagSource) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
         this.accessControl = accessControl;
-        this.provisionTenantRoles = Flags.PROVISION_TENANT_ROLES.bindTo(flagSource);
 
 
         // Update serialization format of all tenants
@@ -116,15 +113,11 @@ public class TenantController {
             TenantId.validate(tenantSpec.tenant().value());
             curator.writeTenant(accessControl.createTenant(tenantSpec, controller.clock().instant(), credentials, asList()));
 
-            // Provision tenant role if enabled
-            if (provisionTenantRoles.with(FetchVector.Dimension.TENANT_ID, tenantSpec.tenant().value()).value()) {
-                try {
-                    controller.serviceRegistry().roleService().createTenantRole(tenantSpec.tenant());
-                } catch (Exception e) {
-                    throw new RuntimeException("Unable to create tenant role for tenant: " + tenantSpec.tenant());
-                }
+            try {
+                controller.serviceRegistry().roleService().createTenantRole(tenantSpec.tenant());
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to create tenant role for tenant: " + tenantSpec.tenant());
             }
-
         }
     }
 

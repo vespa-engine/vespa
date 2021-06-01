@@ -107,16 +107,10 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
-            "provision-tenant-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-06-01",
-            "Whether tenant roles should be provisioned",
-            "Takes effect on next deployment (controller)",
-            TENANT_ID);
-
+    // TODO: Remove when models referring to this are gone in all systems
     public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
             "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-06-01",
+            List.of("tokle"), "2020-12-02", "2021-08-01",
             "Allow separate iam roles when provisioning/assigning hosts",
             "Takes effect immediately on new hosts, on next redeploy for applications",
             TENANT_ID);
