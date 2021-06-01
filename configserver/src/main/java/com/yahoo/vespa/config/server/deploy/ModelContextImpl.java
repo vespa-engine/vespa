@@ -168,7 +168,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
-        private final boolean useBucketExecutorForPruneRemoved;
         private final boolean enableFeedBlockInDistributor;
         private final ToIntFunction<ClusterSpec.Type> metricsProxyMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
@@ -192,7 +191,6 @@ public class ModelContextImpl implements ModelContext {
             this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
-            this.useBucketExecutorForPruneRemoved = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.metricsProxyMaxHeapSizeInMb = type -> Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB.bindTo(source).with(CLUSTER_TYPE, type.name()).value();
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
@@ -216,7 +214,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
-        @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb.applyAsInt(type); }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
