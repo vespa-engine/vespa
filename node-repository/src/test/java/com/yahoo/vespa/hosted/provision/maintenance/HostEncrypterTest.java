@@ -70,7 +70,7 @@ public class HostEncrypterTest {
         assertEquals(owners.size(), hostsEncrypting.size());
         for (int i = 0; i < hostsEncrypting.size(); i++) {
             Optional<ApplicationId> owner = owners.get(i);
-            List<Node> retiringChildren = allNodes.childrenOf(hostsEncrypting.get(i)).retiring().encrypting().asList();
+            List<Node> retiringChildren = allNodes.childrenOf(hostsEncrypting.get(i)).retiring().asList();
             assertEquals(owner.isPresent() ? 1 : 0, retiringChildren.size());
             assertEquals("Encrypting host of " + owner.map(ApplicationId::toString)
                                                       .orElse("no application"),
