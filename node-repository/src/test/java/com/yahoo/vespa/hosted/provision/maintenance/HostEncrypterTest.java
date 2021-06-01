@@ -122,21 +122,12 @@ public class HostEncrypterTest {
         tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
     }
 
-    private void parkRetiredHosts() {
-        // Redeploy to park retired hosts
-        replaceNodes(infraApplication, (application) -> tester.prepareAndActivateInfraApplication(application, NodeType.host));
-        // Trigger restart of parked nodes
-        encrypter.maintain();
-        encrypter.maintain(); // Trigger restart only once
-    }
-
     private void completeEncryptionOf(List<Node> nodes) {
         Instant now = tester.clock().instant();
-        parkRetiredHosts();
+        // Redeploy to park retired hosts
+        replaceNodes(infraApplication, (application) -> tester.prepareAndActivateInfraApplication(application, NodeType.host));
         List<Node> patchedNodes = tester.patchNodes(nodes, (node) -> {
             assertSame(Node.State.parked, node.state());
-            assertEquals(node + " has restart pending", 1,
-                         node.allocation().get().restartGeneration().wanted() - node.allocation().get().restartGeneration().current());
             assertTrue(node + " wants to encrypt", node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent());
             return node.with(node.reports().withReport(Report.basicReport(Report.DISK_ENCRYPTED_ID,
                                                                           Report.Type.UNSPECIFIED,
