@@ -47,4 +47,15 @@ public interface ContentChannel {
      */
     void close(CompletionHandler handler);
 
+
+    /**
+     * Invoked when an error occurs during processing of request content. Signals that the caller was
+     * unable to write all data to this ContentChannel.
+     *
+     * This method can be invoked at any time after the content channel is created, but it's never invoked after {@link #close(CompletionHandler)}.
+     * {@link #close(CompletionHandler)} will be invoked immediately after this method returning
+     * (no intermediate calls to #{@link #write(ByteBuffer, CompletionHandler)}).
+     */
+    default void onError(Throwable error) {}
+
 }
