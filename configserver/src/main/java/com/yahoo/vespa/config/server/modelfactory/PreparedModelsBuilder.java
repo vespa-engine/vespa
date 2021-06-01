@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -87,7 +88,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     ApplicationId applicationId,
                                                     Optional<DockerImage> wantedDockerImageRepository,
                                                     Version wantedNodeVespaVersion,
-                                                    Optional<AllocatedHosts> allocatedHosts) {
+                                                    Optional<AllocatedHosts> allocatedHosts,
+                                                    IgnorableExceptionId ignorableExceptionId) {
         Version modelVersion = modelFactory.version();
         log.log(Level.FINE, () -> "Building model " + modelVersion + " for " + applicationId);
 

@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -75,7 +76,8 @@ public class ModelContextImplTest {
                         Optional.empty(),
                         List.of(),
                         new SecretStoreProvider().get(),
-                        List.of()),
+                        List.of(),
+                        IgnorableExceptionId.none()),
                 Optional.empty(),
                 Optional.empty(),
                 new Version(7),

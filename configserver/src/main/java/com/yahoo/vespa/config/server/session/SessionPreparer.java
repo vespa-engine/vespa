@@ -15,6 +15,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
@@ -204,7 +205,8 @@ public class SessionPreparer {
                                                               params.quota(),
                                                               params.tenantSecretStores(),
                                                               secretStore,
-                                                              params.operatorCertificates());
+                                                              params.operatorCertificates(),
+                                                              IgnorableExceptionId.none());
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,

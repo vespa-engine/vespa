@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Provisioned;
@@ -289,6 +290,7 @@ public class ModelContextImpl implements ModelContext {
         private final StringFlag jvmGCOptionsFlag;
         private final boolean allowDisableMtls;
         private final List<X509Certificate> operatorCertificates;
+        private final IgnorableExceptionId ignorableExceptionId;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -303,7 +305,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
-                          List<X509Certificate> operatorCertificates) {
+                          List<X509Certificate> operatorCertificates,
+                          IgnorableExceptionId ignorableExceptionId) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -327,6 +330,7 @@ public class ModelContextImpl implements ModelContext {
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.operatorCertificates = operatorCertificates;
+            this.ignorableExceptionId = ignorableExceptionId;
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -399,6 +403,8 @@ public class ModelContextImpl implements ModelContext {
         public List<X509Certificate> operatorCertificates() {
             return operatorCertificates;
         }
+
+        public IgnorableExceptionId ignorableIllegalArgumentId() { return ignorableExceptionId; }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
             return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))

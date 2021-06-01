@@ -6,6 +6,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.IgnorableIllegalArgumentException;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
@@ -177,12 +179,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (buildLatestModelForThisMajor) {
             latest = Optional.of(findLatest(versions));
             // load latest application version
-            MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
-                                                               applicationPackage,
-                                                               applicationId,
-                                                               wantedDockerImageRepository,
-                                                               wantedNodeVespaVersion,
-                                                               allocatedHosts.asOptional());
+            MODELRESULT latestModelVersion = buildModel(latest.get(),
+                                                        applicationId,
+                                                        wantedDockerImageRepository,
+                                                        wantedNodeVespaVersion,
+                                                        applicationPackage,
+                                                        allocatedHosts);
             allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
             builtModelVersions.add(latestModelVersion);
         }
@@ -198,12 +200,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
 
             try {
-                MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
-                                                             applicationPackage,
-                                                             applicationId,
-                                                             wantedDockerImageRepository,
-                                                             wantedNodeVespaVersion,
-                                                             allocatedHosts.asOptional());
+                MODELRESULT modelVersion = buildModel(version,
+                                                      applicationId,
+                                                      wantedDockerImageRepository,
+                                                      wantedNodeVespaVersion,
+                                                      applicationPackage,
+                                                      allocatedHosts);
                 allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
                 builtModelVersions.add(modelVersion);
             } catch (RuntimeException e) {
@@ -219,6 +221,37 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             }
         }
         return builtModelVersions;
+    }
+
+    private MODELRESULT buildModel(Version versionToBuild,
+                                   ApplicationId applicationId,
+                                   Optional<DockerImage> wantedDockerImageRepository,
+                                   Version wantedNodeVespaVersion,
+                                   ApplicationPackage applicationPackage,
+                                   SettableOptional<AllocatedHosts> allocatedHosts) {
+        ModelFactory modelFactory = modelFactoryRegistry.getFactory(versionToBuild);
+        try {
+            return buildModelVersion(modelFactory,
+                                     applicationPackage,
+                                     applicationId,
+                                     wantedDockerImageRepository,
+                                     wantedNodeVespaVersion,
+                                     allocatedHosts.asOptional(),
+                                     IgnorableExceptionId.none());
+        } catch (IgnorableIllegalArgumentException e) {
+            deployLogger.logApplicationPackage(Level.WARNING, e.getMessage());
+            // Retry with the id of the exception caught, the calling site
+            // will allow this in this case
+            log.log(Level.INFO, "Caught IgnorableIllegalArgumentException (" + e.id() +
+                                "), retrying and building without throwing exception");
+            return buildModelVersion(modelFactory,
+                                     applicationPackage,
+                                     applicationId,
+                                     wantedDockerImageRepository,
+                                     wantedNodeVespaVersion,
+                                     allocatedHosts.asOptional(),
+                                     e.id());
+        }
     }
 
     private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
@@ -258,7 +291,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
-                                                     Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts);
+                                                     Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts,
+                                                     IgnorableExceptionId ignorableExceptionId);
 
     /**
      * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,

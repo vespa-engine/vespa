@@ -1,12 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -26,7 +26,7 @@ public class FleetControllerClusterTest {
                                                    clusterElement,
                                                    new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
                                                                                      false,
-                                                                                     new BaseDeployLogger())
+                                                                                     IgnorableExceptionId.none())
                                                            .build(clusterElement).getClusterControllerLimits())
                 .build(root.getDeployState(), root, clusterElement.getXml());
     }

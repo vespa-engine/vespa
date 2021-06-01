@@ -36,7 +36,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;

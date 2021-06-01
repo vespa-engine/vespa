@@ -140,6 +140,8 @@ public interface ModelContext {
         default boolean allowDisableMtls() { return true; }
 
         default List<X509Certificate> operatorCertificates() { return List.of(); }
+
+        default IgnorableExceptionId ignorableIllegalArgumentId() { return IgnorableExceptionId.none(); };
     }
 
     @Retention(RetentionPolicy.RUNTIME)

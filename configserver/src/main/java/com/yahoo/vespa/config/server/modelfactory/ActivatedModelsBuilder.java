@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.IgnorableExceptionId;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
@@ -33,14 +33,11 @@ import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
-import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
-import java.security.cert.X509Certificate;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -103,11 +100,11 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationId applicationId,
                                             Optional<DockerImage> wantedDockerImageRepository,
                                             Version wantedNodeVespaVersion,
-                                            Optional<AllocatedHosts> ignored // Ignored since we have this in the app package for activated models
-    ) {
+                                            Optional<AllocatedHosts> ignored, // Ignored since we have this in the app package for activated models
+                                            IgnorableExceptionId ignorableExceptionId) {
         log.log(Level.FINE, () -> String.format("Loading model version %s for session %s application %s",
                                                 modelFactory.version(), applicationGeneration, applicationId));
-        ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
+        ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, ignorableExceptionId);
         Provisioned provisioned = new Provisioned();
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
@@ -150,7 +147,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         return Optional.of(value);
     }
 
-    private ModelContext.Properties createModelContextProperties(ApplicationId applicationId) {
+    private ModelContext.Properties createModelContextProperties(ApplicationId applicationId,
+                                                                 IgnorableExceptionId ignorableExceptionId) {
         return new ModelContextImpl.Properties(applicationId,
                                                configserverConfig,
                                                zone(),
@@ -167,7 +165,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readQuota(),
                                                zkClient.readTenantSecretStores(),
                                                secretStore,
-                                               zkClient.readOperatorCertificates());
+                                               zkClient.readOperatorCertificates(),
+                                               ignorableExceptionId);
     }
 
 }

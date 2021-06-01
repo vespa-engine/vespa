@@ -2,12 +2,10 @@
 package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -47,7 +45,6 @@ import com.yahoo.vespa.model.content.IndexedHierarchicDistributionValidator;
 import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.ReservedDocumentTypeNameValidator;
 import com.yahoo.vespa.model.content.StorageGroup;
-import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
@@ -64,7 +61,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -135,7 +131,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
             var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
                                                                    stateIsHosted(deployState),
-                                                                   deployState.getDeployLogger())
+                                                                   deployState.getProperties().ignorableIllegalArgumentId())
                     .build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
                     contentElement,
