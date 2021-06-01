@@ -1255,7 +1255,7 @@ TEST_F(DistributorTest, wanted_split_bit_count_is_lower_bounded) {
 }
 
 TEST_F(DistributorTest, host_info_sent_immediately_once_all_stripes_first_reported) {
-    set_num_distributor_stripes(3);
+    set_num_distributor_stripes(4);
     createLinks();
     getClock().setAbsoluteTimeInSeconds(1000);
     // TODO STRIPE can't call this currently since it touches the bucket DB updater directly:
@@ -1265,6 +1265,7 @@ TEST_F(DistributorTest, host_info_sent_immediately_once_all_stripes_first_report
     EXPECT_EQ(0, explicit_node_state_reply_send_invocations()); // Nothing yet
     getDistributor().notify_stripe_wants_to_send_host_info(1);
     getDistributor().notify_stripe_wants_to_send_host_info(2);
+    getDistributor().notify_stripe_wants_to_send_host_info(3);
 
     tickDistributorNTimes(1);
     // Still nothing. Missing initial report from stripe 0

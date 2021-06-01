@@ -26,18 +26,28 @@ stripe_of_bucket_key(uint64_t key, uint8_t n_stripe_bits) noexcept
 }
 
 uint8_t
-calc_num_stripe_bits(size_t n_stripes) noexcept
+calc_num_stripe_bits(uint32_t n_stripes) noexcept
 {
     assert(n_stripes > 0);
     if (n_stripes == 1) {
         return 0;
     }
-    assert(n_stripes <= MaxStripes);
-    assert(n_stripes == vespalib::roundUp2inN(n_stripes));
+    assert(n_stripes == adjusted_num_stripes(n_stripes));
 
     auto result = vespalib::Optimized::msbIdx(n_stripes);
     assert(result <= MaxStripeBits);
     return result;
+}
+
+uint32_t adjusted_num_stripes(uint32_t n_stripes) noexcept
+{
+    if (n_stripes > 1) {
+        if (n_stripes > MaxStripes) {
+            return MaxStripes;
+        }
+        return vespalib::roundUp2inN(n_stripes);
+    }
+    return n_stripes;
 }
 
 }
