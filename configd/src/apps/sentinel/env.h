@@ -30,8 +30,9 @@ public:
     void statePort(int portnum);
 
     void notifyConfigUpdated();
-    void handleCmd(Cmd::UP cmd);
 private:
+    void respondAsEmpty();
+    void waitForConnectivity(const ModelConfig &model);
     ConfigOwner _cfgOwner;
     CommandQueue _rpcCommandQueue;
     std::unique_ptr<RpcServer> _rpcServer;

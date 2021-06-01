@@ -2,6 +2,8 @@
 
 #include "env.h"
 #include "check-completion-handler.h"
+#include "outward-check.h"
+#include <vespa/defaults.h>
 #include <vespa/log/log.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -43,21 +45,7 @@ void Env::boot(const std::string &configId) {
     rpcPort(cfg.port.rpc);
     statePort(cfg.port.telnet);
     if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
-        const ModelConfig &model = *up;
-        for (const auto & h : model.hosts) {
-            LOG(info, "- Model for host %s with %zd services", h.name.c_str(), h.services.size());
-            for (const auto & s : h.services) {       
-                if (s.name == "config-sentinel") { 
-                    LOG(info, "  - Model for service %s type %s configid %s with %zd ports",
-                        s.name.c_str(), s.type.c_str(), s.configid.c_str(), s.ports.size());
-                    for (const auto & p : s.ports) {
-                        if (p.tags.find("rpc") != p.tags.npos) {
-                            LOG(info, "    - Model for port %d has tags %s", p.number, p.tags.c_str());
-                        }
-                    }
-                }
-            }
-        }
+        waitForConnectivity(*up);
     }
 }
 
@@ -79,12 +67,12 @@ void Env::statePort(int port) {
         throw vespalib::FatalException("Bad port " + std::to_string(port) + ", expected range [1, 65535]", VESPA_STRLOC);
     }
     if (port == 0) {
-        port = 19098;
+        port = 19098; // default in config
     }
     if (_stateServer && port == _statePort) {
         return; // ok already
     }
-    LOG(debug, "Config-sentinel accepts connections on port %d", port);
+    LOG(debug, "Config-sentinel accepts state connections on port %d", port);
     _stateServer = std::make_unique<vespalib::StateServer>(
         port, _stateApi.myHealth, _startMetrics.producer, _stateApi.myComponents);
     _statePort = port;
@@ -96,8 +84,73 @@ void Env::notifyConfigUpdated() {
 
 }
 
-void Env::handleCmd(Cmd::UP cmd) {
-    cmd->retError("still booting, not ready for all RPC commands");
+void Env::respondAsEmpty() {
+    auto commands = _rpcCommandQueue.drain();
+    for (Cmd::UP &cmd : commands) {
+        cmd->retError("still booting, not ready for all RPC commands");
+    }
+}
+
+void Env::waitForConnectivity(const ModelConfig &model) {
+    std::map<std::string, OutwardCheck> connectivityMap;
+    for (const auto & h : model.hosts) {
+        bool foundSentinelPort = false;
+        for (const auto & s : h.services) {       
+            if (s.name == "config-sentinel") { 
+                for (const auto & p : s.ports) {
+                    if (p.tags.find("rpc") != p.tags.npos) {
+                        connectivityMap.try_emplace(h.name, h.name, p.number, _rpcServer->orb());
+                        foundSentinelPort = true;
+                    }
+                }
+            }
+        }
+        if (! foundSentinelPort) {
+            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
+                h.name.c_str(), h.services.size());
+        }
+    }
+    size_t cntOk = 0;
+    size_t cntBad = 0;
+    for (int retry = 1; retry <= 100; ++retry) {
+        cntOk = 0;
+        cntBad = 0;
+        for (const auto & [hostname, check] : connectivityMap) {
+            if (check.ok()) {
+                ++cntOk;
+            } else if (check.bad()) {
+                ++cntBad;
+            }
+        }
+        if (cntOk + cntBad == connectivityMap.size()) break;
+        respondAsEmpty();
+        std::this_thread::sleep_for(15ms);
+        if ((retry % 20) == 0) {
+            LOG(warning, "still waiting for connectivity checks after %d retries", retry);
+        }
+    }
+    for (const auto & [hostname, check] : connectivityMap) {
+        const char *s = "unknown";
+        if (check.ok()) { s = "ok"; }
+        if (check.bad()) { s = "bad"; }
+        LOG(info, "outward check status for host %s is: %s",
+            hostname.c_str(), s);
+    }
+    LOG_ASSERT(cntOk + cntBad == connectivityMap.size());
+    const char *myName = vespa::Defaults::vespaHostname();
+    int myPort = _rpcServer->getPort();
+    OutwardCheck selfCheck(myName, myPort, _rpcServer->orb());
+    for (int retry = 0; retry < 1000; ++retry) {
+        if (selfCheck.bad()) {
+            LOG(error, "Could not connect to '%s' (myself) at port %d", myName, myPort);
+            throw InvalidConfigException("failed to self-connect");
+        }
+        if (selfCheck.ok()) {
+            break;
+        }
+        std::this_thread::sleep_for(5ms);
+    }
+    LOG_ASSERT(selfCheck.ok());
 }
 
 }

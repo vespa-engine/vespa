@@ -25,7 +25,6 @@ public:
 
     /** from FRT_IRequestWait **/
     void RequestDone(FRT_RPCRequest *req) override;
-
 private:
     StatusCallback &_callback;
     std::string     _hostname;
