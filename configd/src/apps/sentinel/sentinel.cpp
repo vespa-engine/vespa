@@ -118,6 +118,6 @@ main(int argc, char **argv)
     }
 
     EV_STOPPING("config-sentinel", "normal exit");
-    int rv = manager.terminate();
-    return rv;
+    bool rv = manager.terminate();
+    return rv ? EXIT_SUCCESS : EXIT_FAILURE;
 }

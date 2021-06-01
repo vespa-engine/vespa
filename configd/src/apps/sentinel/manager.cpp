@@ -109,7 +109,7 @@ Manager::doConfigure()
 }
 
 
-int
+bool
 Manager::doWork()
 {
     // Return true if there are any running services, false if not.

@@ -55,7 +55,7 @@ public:
     Manager(Env &env);
     virtual ~Manager();
     bool terminate();
-    int doWork();
+    bool doWork();
     void updateActiveFdset(fd_set *fds, int *maxNum);
 };
 
