@@ -66,20 +66,18 @@ FRTConnectionPool::getCurrent()
 FRTConnection *
 FRTConnectionPool::getNextRoundRobin()
 {
-    std::vector<FRTConnection *> readySources;
-    getReadySources(readySources);
-    std::vector<FRTConnection *> suspendedSources;
-    getSuspendedSources(suspendedSources);
+    auto ready = getReadySources();
+    auto suspended = getSuspendedSources();
     FRTConnection* nextFRTConnection = nullptr;
 
-    if (!readySources.empty()) {
-        int sel = _selectIdx % (int)readySources.size();
+    if ( ! ready.empty()) {
+        int sel = _selectIdx % (int)ready.size();
         _selectIdx = sel + 1;
-        nextFRTConnection = readySources[sel];
-    } else if (!suspendedSources.empty()) {
-        int sel = _selectIdx % (int)suspendedSources.size();
+        nextFRTConnection = ready[sel];
+    } else if ( ! suspended.empty()) {
+        int sel = _selectIdx % (int)suspended.size();
         _selectIdx = sel + 1;
-        nextFRTConnection = suspendedSources[sel];
+        nextFRTConnection = suspended[sel];
     }
     return nextFRTConnection;
 }
@@ -87,28 +85,26 @@ FRTConnectionPool::getNextRoundRobin()
 FRTConnection *
 FRTConnectionPool::getNextHashBased()
 {
-    std::vector<FRTConnection*> readySources;
-    getReadySources(readySources);
-    std::vector<FRTConnection*> suspendedSources;
-    getSuspendedSources(suspendedSources);
+    auto ready = getReadySources();
+    auto suspended = getSuspendedSources();
     FRTConnection* nextFRTConnection = nullptr;
 
-    if (!readySources.empty()) {
-        int sel = std::abs(hashCode(_hostname) % (int)readySources.size());
-        nextFRTConnection = readySources[sel];
-    } else {
-        int sel = std::abs(hashCode(_hostname) % (int)suspendedSources.size());
-        nextFRTConnection = suspendedSources[sel];
+    if ( ! ready.empty()) {
+        int sel = std::abs(hashCode(_hostname) % (int)ready.size());
+        nextFRTConnection = ready[sel];
+    } else if ( ! suspended.empty() ){
+        int sel = std::abs(hashCode(_hostname) % (int)suspended.size());
+        nextFRTConnection = suspended[sel];
     }
     return nextFRTConnection;
 }
 
 
 
-const std::vector<FRTConnection *> &
-FRTConnectionPool::getReadySources(std::vector<FRTConnection*> & readySources) const
+std::vector<FRTConnection *>
+FRTConnectionPool::getReadySources() const
 {
-    readySources.clear();
+    std::vector<FRTConnection*> readySources;
     for (const auto & entry : _connections) {
         FRTConnection* source = entry.second.get();
         int64_t tnow = FRTConnection::milliSecsSinceEpoch();
@@ -120,10 +116,10 @@ FRTConnectionPool::getReadySources(std::vector<FRTConnection*> & readySources) c
     return readySources;
 }
 
-const std::vector<FRTConnection *> &
-FRTConnectionPool::getSuspendedSources(std::vector<FRTConnection*> & suspendedSources) const
+std::vector<FRTConnection *>
+FRTConnectionPool::getSuspendedSources() const
 {
-    suspendedSources.clear();
+    std::vector<FRTConnection*> suspendedSources;
     for (const auto & entry : _connections) {
         FRTConnection* source = entry.second.get();
         int64_t tnow = FRTConnection::milliSecsSinceEpoch();
