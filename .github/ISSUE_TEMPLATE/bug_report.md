@@ -24,7 +24,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
  - OS: [e.g. iOS]
- - Infrastruture: Kubernetes, Azure, AWS, self-hosted
+ - Infrastructure: Kubernetes, Azure, AWS, self-hosted
  - Versions [e.g. 22]
 
 **Vespa version**
