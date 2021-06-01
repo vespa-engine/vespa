@@ -92,6 +92,16 @@ DenseTensorAttribute::consider_remove_from_index(DocId docid)
 }
 
 vespalib::MemoryUsage
+DenseTensorAttribute::update_stat()
+{
+    vespalib::MemoryUsage result = TensorAttribute::update_stat();
+    if (_index) {
+        result.merge(_index->memory_usage());
+    }
+    return result;
+}
+
+vespalib::MemoryUsage
 DenseTensorAttribute::memory_usage() const
 {
     vespalib::MemoryUsage result = TensorAttribute::memory_usage();
