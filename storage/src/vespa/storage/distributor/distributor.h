@@ -201,6 +201,7 @@ private:
     ChainedMessageSender*                 _messageSender;
     const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
+    uint8_t                               _n_stripe_bits;
     std::unique_ptr<DistributorStripe>    _stripe;
     DistributorStripePool&                _stripe_pool;
     std::vector<std::unique_ptr<DistributorStripe>> _stripes;

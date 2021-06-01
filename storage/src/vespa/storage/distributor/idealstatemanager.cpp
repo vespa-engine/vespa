@@ -28,13 +28,17 @@ IdealStateManager::IdealStateManager(
         DistributorStripeInterface& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-        DistributorComponentRegister& compReg)
+        DistributorComponentRegister& compReg,
+        uint32_t stripe_index)
     : _metrics(new IdealStateMetricSet),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
       _bucketSpaceRepo(bucketSpaceRepo),
       _has_logged_phantom_replica_warning(false)
 {
-    _distributorComponent.registerMetric(*_metrics);
+    if (stripe_index == 0) {
+        // TODO STRIPE: Add proper handling of metrics across distributor stripes
+        _distributorComponent.registerMetric(*_metrics);
+    }
 
     LOG(debug, "Adding BucketStateStateChecker to state checkers");
     _stateCheckers.push_back(StateChecker::SP(new BucketStateStateChecker()));
