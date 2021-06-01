@@ -24,9 +24,7 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
@@ -46,28 +44,24 @@ import static org.junit.Assert.assertTrue;
  */
 public class RoutingTestCase {
 
-    static Slobrok slobrok;
-    static TestServer srcServer, dstServer;
-    static RetryTransientErrorsPolicy retryPolicy;
+    Slobrok slobrok;
+    TestServer srcServer, dstServer;
     SourceSession srcSession;
     DestinationSession dstSession;
+    RetryTransientErrorsPolicy retryPolicy;
 
-    @BeforeClass
-    public static void setUpClass() throws ListenFailedException {
+    @Before
+    public void setUp() throws ListenFailedException, UnknownHostException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(
                                            TestServer.getSlobrokConfig(slobrok)));
+        dstSession = dstServer.mb.createDestinationSession(
+                new DestinationSessionParams().setName("session").setMessageHandler(new Receptor()));
         retryPolicy = new RetryTransientErrorsPolicy();
         retryPolicy.setBaseDelay(0);
         srcServer = new TestServer(new MessageBusParams().setRetryPolicy(retryPolicy).addProtocol(new SimpleProtocol()),
                                    new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
-    }
-
-    @Before
-    public void setUp() throws UnknownHostException {
-        dstSession = dstServer.mb.createDestinationSession(
-                new DestinationSessionParams().setName("session").setMessageHandler(new Receptor()));
         srcSession = srcServer.mb.createSourceSession(
                 new SourceSessionParams().setTimeout(600.0).setThrottlePolicy(null).setReplyHandler(new Receptor()));
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
@@ -75,14 +69,10 @@ public class RoutingTestCase {
 
     @After
     public void tearDown() {
-        dstSession.destroy();
-        srcSession.destroy();
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
         slobrok.stop();
+        dstSession.destroy();
         dstServer.destroy();
+        srcSession.destroy();
         srcServer.destroy();
     }
 
@@ -248,11 +238,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatTransientErrorsAreRetried() throws Exception {
-        tearDownClass();
-        setUpClass();
-        setUp();
-
+    public void requireThatTransientErrorsAreRetried() {
         assertTrue(srcSession.send(createMessage("msg"), Route.parse("dst/session")).isAccepted());
         Message msg = ((Receptor)dstSession.getMessageHandler()).getMessage(60);
         assertNotNull(msg);
@@ -278,11 +264,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatTransientErrorsAreRetriedWithPolicy() throws Exception {
-        tearDownClass();
-        setUpClass();
-        setUp();
-
+    public void requireThatTransientErrorsAreRetriedWithPolicy() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory());
         srcServer.mb.putProtocol(protocol);
@@ -773,11 +755,7 @@ public class RoutingTestCase {
     }
 
     @Test
-    public void requireThatOnlyActiveNodesAreAborted() throws Exception {
-        tearDownClass();
-        setUpClass();
-        setUp();
-
+    public void requireThatOnlyActiveNodesAreAborted() {
         SimpleProtocol protocol = new SimpleProtocol();
         protocol.addPolicyFactory("Custom", new CustomPolicyFactory(false));
         protocol.addPolicyFactory("SetReply", new SimpleProtocol.PolicyFactory() {
