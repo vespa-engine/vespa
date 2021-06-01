@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "env.h"
+#include "check-completion-handler.h"
 #include <vespa/log/log.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -73,6 +74,10 @@ void Env::notifyConfigUpdated() {
     vespalib::ComponentConfigProducer::Config current("sentinel", _cfgOwner.getGeneration(), "ok");
     _stateApi.myComponents.addConfig(current);
 
+}
+
+void Env::handleCmd(Cmd::UP cmd) {
+    cmd->retError("still booting, not ready for all RPC commands");
 }
 
 }
