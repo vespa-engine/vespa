@@ -9,8 +9,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation");
 
-using namespace storage;
-using namespace storage::distributor;
+namespace storage::distributor {
+
 using document::BucketSpace;
 
 const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
@@ -85,7 +85,7 @@ IdealStateOperation::setIdealStateManager(IdealStateManager* manager) {
 void
 IdealStateOperation::done()
 {
-    if (_manager != NULL) {
+    if (_manager) {
         if (ok()) {
             _manager->getMetrics().operations[getType()]->ok.inc(1);
         } else {
@@ -105,35 +105,6 @@ IdealStateOperation::setCommandMeta(api::MaintenanceCommand& cmd) const
 {
     cmd.setPriority(_priority);
     cmd.setReason(_detailedReason);
-}
-
-std::string
-IdealStateOperation::toXML(framework::Clock& clock) const
-{
-    std::ostringstream ost;
-
-    ost << "<operation bucketid=\"" << getBucketId()
-        << "\" reason=\"" << _detailedReason << "\" operations=\"";
-
-    ost << getName() << "[";
-    for (uint32_t j = 0; j < getNodes().size(); j++) {
-        if (j != 0) {
-            ost << ",";
-        }
-        ost << getNodes()[j];
-    }
-    ost << "]";
-
-    if (getStartTime().isSet()) {
-        uint64_t timeSpent(
-                (clock.getTimeInMillis() - getStartTime()).getTime());
-        ost << "\" runtime_secs=\"" << timeSpent << "\"";
-    } else {
-        ost << "\"";
-    }
-
-    ost << "/>";
-    return ost.str();
 }
 
 namespace {
@@ -276,4 +247,6 @@ IdealStateOperation::shouldBlockThisOperation(uint32_t messageType,
     }
 
     return false;
+}
+
 }
