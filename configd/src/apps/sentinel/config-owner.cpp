@@ -2,6 +2,7 @@
 
 #include "config-owner.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/config/common/exceptions.h>
 #include <string>
 
 #include <vespa/log/log.h>
@@ -39,6 +40,31 @@ ConfigOwner::checkForConfigUpdate() {
         return true;
     }
     return false;
+}
+
+std::unique_ptr<ModelConfig>
+ConfigOwner::fetchModelConfig(std::chrono::milliseconds timeout)
+{
+    std::unique_ptr<ModelConfig> modelConfig;
+    ConfigSubscriber tempSubscriber;
+    try {
+        ConfigHandle<ModelConfig>::UP modelHandle =
+            tempSubscriber.subscribe<ModelConfig>("admin/model", timeout);
+        if (tempSubscriber.nextGenerationNow()) {
+            modelConfig = modelHandle->getConfig();
+            LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %zd",
+                modelConfig->vespaVersion.c_str(), modelConfig->hosts.size(),
+                tempSubscriber.getGeneration());
+        }
+    } catch (ConfigTimeoutException & ex) {
+        LOG(warning, "Timeout getting model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
+    } catch (InvalidConfigException& ex) {
+        LOG(warning, "Invalid model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
+    } catch (ConfigRuntimeException& ex) {
+        LOG(warning, "Runtime exception getting model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
+
+    }
+    return modelConfig;
 }
 
 }

@@ -10,9 +10,12 @@
 
 LOG_SETUP(".env");
 
+using namespace std::chrono_literals;
+
 namespace config::sentinel {
 
-constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS(3 * 60 * 1000);
+constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS = 3min;
+constexpr std::chrono::milliseconds MODEL_TIMEOUT_MS = 1500ms;
 
 Env::Env()
   : _cfgOwner(),
@@ -39,6 +42,23 @@ void Env::boot(const std::string &configId) {
         configId.c_str(), cfg.port.telnet, cfg.port.rpc);
     rpcPort(cfg.port.rpc);
     statePort(cfg.port.telnet);
+    if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
+        const ModelConfig &model = *up;
+        for (const auto & h : model.hosts) {
+            LOG(info, "- Model for host %s with %zd services", h.name.c_str(), h.services.size());
+            for (const auto & s : h.services) {       
+                if (s.name == "config-sentinel") { 
+                    LOG(info, "  - Model for service %s type %s configid %s with %zd ports",
+                        s.name.c_str(), s.type.c_str(), s.configid.c_str(), s.ports.size());
+                    for (const auto & p : s.ports) {
+                        if (p.tags.find("rpc") != p.tags.npos) {
+                            LOG(info, "    - Model for port %d has tags %s", p.number, p.tags.c_str());
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Env::rpcPort(int port) {
