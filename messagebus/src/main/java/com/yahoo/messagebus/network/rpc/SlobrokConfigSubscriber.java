@@ -12,13 +12,13 @@ import com.yahoo.cloud.config.SlobroksConfig;
  */
 public class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscriber<SlobroksConfig>{
 
-    private SlobrokList slobroks = new SlobrokList();
+    private final SlobrokList slobroks = new SlobrokList();
     private ConfigSubscriber subscriber;
 
     /**
      * Constructs a new config subscriber for a given config id.
      *
-     * @param configId The id of the config to subscribe to.
+     * @param configId the id of the config to subscribe to
      */
     public SlobrokConfigSubscriber(String configId) {
         subscriber = new ConfigSubscriber();
@@ -55,4 +55,5 @@ public class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscribe
             subscriber.close();
         }
     }
+
 }
