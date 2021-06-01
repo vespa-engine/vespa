@@ -807,7 +807,6 @@ public class RankProfile implements Cloneable {
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
         // TODO This merges all functions from inherited profiles too and erases inheritance information. Not good.
         functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
-
     }
 
     private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Value> constants) {
@@ -843,8 +842,8 @@ public class RankProfile implements Cloneable {
         return compiledFunctions;
     }
 
-    private Map.Entry<String, RankingExpressionFunction> findUncompiledFunction(Map<String, RankingExpressionFunction> functions,
-                                                                                Set<String> compiledFunctionNames) {
+    private static Map.Entry<String, RankingExpressionFunction> findUncompiledFunction(Map<String, RankingExpressionFunction> functions,
+                                                                                       Set<String> compiledFunctionNames) {
         for (Map.Entry<String, RankingExpressionFunction> entry : functions.entrySet()) {
             if ( ! compiledFunctionNames.contains(entry.getKey()))
                 return entry;

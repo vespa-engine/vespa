@@ -51,7 +51,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
-    private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
     private boolean useExternalRankExpression = false;
     private int clusterControllerMaxHeapSizeInMb = 128;
@@ -92,7 +91,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
-    @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
@@ -198,11 +196,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties useAccessControlTlsHandshakeClientAuth(boolean useAccessControlTlsHandshakeClientAuth) {
         this.useAccessControlTlsHandshakeClientAuth = useAccessControlTlsHandshakeClientAuth;
-        return this;
-    }
-
-    public TestProperties useBucketExecutorForPruneRemoved(boolean enabled) {
-        useBucketExecutorForPruneRemoved = enabled;
         return this;
     }
 
