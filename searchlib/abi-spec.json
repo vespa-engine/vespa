@@ -1583,7 +1583,6 @@
       "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withBindings(java.util.Map)",
       "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withoutBindings()",
       "public java.util.Map serializedFunctions()",
-      "public java.lang.String uniqueName(java.lang.String)",
       "public boolean needSerialization(java.lang.String)",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withoutBindings()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"

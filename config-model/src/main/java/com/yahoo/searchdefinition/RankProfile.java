@@ -94,8 +94,6 @@ public class RankProfile implements Cloneable {
      */
     private RankingExpressionFunction secondPhaseRanking = null;
 
-    private Set<String> externalFileExpressions = new HashSet<>();
-
     /**
      * Number of hits to be reranked in second phase, -1 means use default
      */
@@ -205,10 +203,6 @@ public class RankProfile implements Cloneable {
      */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
-    }
-
-    public RankExpressionFiles rankExpressionFiles() {
-        return search != null ? search.rankExpressionFiles() : model.rankExpressionFiles();
     }
 
     public Map<String, OnnxModel> onnxModels() {
@@ -427,64 +421,6 @@ public class RankProfile implements Cloneable {
 
     void setFirstPhaseRanking(RankingExpression rankingExpression) {
         this.firstPhaseRanking = new RankingExpressionFunction(new ExpressionFunction(FIRST_PHASE, Collections.emptyList(), rankingExpression), false);
-    }
-
-    public String getUniqueExpressionName(String name) {
-        return getName().replace('-', '_') + "_" + name;
-    }
-
-    public String resolveExpressionName(String name) {
-        if (externalFileExpressions.contains(name)) {
-            return getUniqueExpressionName(name);
-        }
-        if (functions.get(name) == null) {
-            RankProfile inherited = getInherited();
-            if (inherited != null) {
-                return inherited.resolveExpressionName(name);
-            }
-        }
-        return name;
-    }
-
-    public String getFirstPhaseFile() {
-        String name = FIRST_PHASE;
-        if (externalFileExpressions.contains(name)) {
-            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
-        }
-        if (firstPhaseRanking == null) {
-            RankProfile inherited = getInherited();
-            if (inherited != null) {
-                return getInherited().getFirstPhaseFile();
-            }
-        }
-        return null;
-    }
-
-    public String getSecondPhaseFile() {
-        String name = SECOND_PHASE;
-        if (externalFileExpressions.contains(name)) {
-            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
-        }
-        if (secondPhaseRanking == null) {
-            RankProfile inherited = getInherited();
-            if (inherited != null) {
-                return getInherited().getSecondPhaseFile();
-            }
-        }
-        return null;
-    }
-
-    public String getExpressionFile(String name) {
-        if (externalFileExpressions.contains(name)) {
-            return rankExpressionFiles().get(getUniqueExpressionName(name)).getFileName();
-        }
-        if (functions.get(name) == null) {
-            RankProfile inherited = getInherited();
-            if (inherited != null) {
-                return inherited.getExpressionFile(name);
-            }
-        }
-        return null;
     }
 
     public void setFirstPhaseRanking(String expression) {
@@ -805,10 +741,6 @@ public class RankProfile implements Cloneable {
             throw new IllegalArgumentException("In " + getName() + ", " + expName + ", ranking references file '" + file +
                     "' in subdirectory, which is not supported.");
 
-        if (search.getDeployProperties().featureFlags().distributeExternalRankExpressions()) {
-            rankExpressionFiles().add(new RankExpressionFile(getUniqueExpressionName(expName), fileName), search.getDeployLogger());
-            externalFileExpressions.add(expName);
-        }
         return search.getRankingExpression(fileName);
     }
 
@@ -826,7 +758,6 @@ public class RankProfile implements Cloneable {
             clone.functions = new LinkedHashMap<>(this.functions);
             clone.filterFields = new HashSet<>(this.filterFields);
             clone.constants = new HashMap<>(this.constants);
-            clone.externalFileExpressions = new HashSet(this.externalFileExpressions);
             return clone;
         }
         catch (CloneNotSupportedException e) {
