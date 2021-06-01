@@ -832,6 +832,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         private final ReadableContentChannel delegate = new ReadableContentChannel();
         private final Consumer<InputStream> reader;
+        private volatile boolean errorReported = false;
 
         public ForwardingContentChannel(Consumer<InputStream> reader) {
             this.reader = reader;
@@ -854,7 +855,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         public void close(CompletionHandler handler) {
             try {
                 delegate.close(logException);
-                reader.accept(new UnsafeContentInputStream(delegate));
+                if (!errorReported) {
+                    reader.accept(new UnsafeContentInputStream(delegate));
+                }
                 handler.completed();
             }
             catch (Exception e) {
@@ -862,6 +865,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
         }
 
+        @Override
+        public void onError(Throwable error) {
+            // Jdisc will automatically generate an error response in this scenario
+            log.log(FINE, error, () -> "ContentChannel.onError(): " + error.getMessage());
+            errorReported = true;
+        }
     }
 
     static class DocumentOperationParser {
