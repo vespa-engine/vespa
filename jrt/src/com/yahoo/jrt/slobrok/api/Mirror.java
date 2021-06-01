@@ -31,16 +31,16 @@ import java.util.logging.Level;
  */
 public class Mirror implements IMirror {
 
-    private static Logger log = Logger.getLogger(Mirror.class.getName());
+    private static final Logger log = Logger.getLogger(Mirror.class.getName());
 
     private final Supervisor  orb;
     private final SlobrokList slobroks;
-    private String            currSlobrok;
-    private final BackOffPolicy     backOff;
-    private volatile int      updates    = 0;
+    private String currSlobrok;
+    private final BackOffPolicy backOff;
+    private volatile int updates = 0;
     private boolean requestDone = false;
     private boolean logOnSuccess = true;
-    private AtomicReference<Entry[]>  specs = new AtomicReference<>(new Entry[0]);
+    private final AtomicReference<Entry[]> specs = new AtomicReference<>(new Entry[0]);
     private int specsGeneration = 0;
     private final TransportThread transportThread;
     private final Task updateTask;
@@ -55,7 +55,7 @@ public class Mirror implements IMirror {
      * @param orb the Supervisor to use
      * @param slobroks slobrok connect spec list
      * @param bop custom backoff policy, mostly useful for testing
-     **/
+     */
     public Mirror(Supervisor orb, SlobrokList slobroks, BackOffPolicy bop) {
         this.orb = orb;
         this.slobroks = slobroks;

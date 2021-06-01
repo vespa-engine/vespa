@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 public class SlobrokClient implements NodeLookup {
 
-    public static Logger log = Logger.getLogger(SlobrokClient.class.getName());
+    public static final Logger log = Logger.getLogger(SlobrokClient.class.getName());
 
     private final Timer timer;
     private String[] connectionSpecs;
