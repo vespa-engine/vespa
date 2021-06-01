@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -45,16 +46,15 @@ class HttpRequestStrategy implements RequestStrategy {
     HttpRequestStrategy(FeedClientBuilder builder) {
         this.wrapped = builder.retryStrategy;
         this.maxInflight = builder.maxConnections * (long) builder.maxStreamsPerConnection;
-        this.minInflight = builder.maxConnections * (long) Math.min(16, builder.maxStreamsPerConnection);
+        this.minInflight = builder.maxConnections * (long) min(16, builder.maxStreamsPerConnection);
         this.targetInflight = Math.sqrt(maxInflight) * (Math.sqrt(minInflight));
     }
 
     private boolean retry(SimpleHttpRequest request, int attempt) {
         if (attempt >= wrapped.retries())
             return false;
-        
-        switch (request.getMethod().toUpperCase()) {
 
+        switch (request.getMethod().toUpperCase()) {
             case "POST":   return wrapped.retry(FeedClient.OperationType.put);
             case "PUT":    return wrapped.retry(FeedClient.OperationType.update);
             case "DELETE": return wrapped.retry(FeedClient.OperationType.remove);
@@ -81,6 +81,7 @@ class HttpRequestStrategy implements RequestStrategy {
         synchronized (lock) {
             ++consecutiveSuccesses;
             lastSuccess = now;
+            targetInflight = min(targetInflight + 0.1, maxInflight);
         }
     }
 

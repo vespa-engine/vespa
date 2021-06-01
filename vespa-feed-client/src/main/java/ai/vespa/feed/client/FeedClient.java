@@ -20,7 +20,7 @@ public interface FeedClient extends Closeable {
         default boolean retry(OperationType type) { return true; }
 
         /** Number of retries per operation for non-backpressure problems. */
-        default int retries() { return 5; }
+        default int retries() { return 32; }
 
     }
 
