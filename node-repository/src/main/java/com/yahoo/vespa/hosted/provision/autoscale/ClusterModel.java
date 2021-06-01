@@ -9,7 +9,10 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A cluster with its associated metrics which allows prediction about its future behavior.
@@ -18,6 +21,8 @@ import java.util.OptionalDouble;
  * @author bratseth
  */
 public class ClusterModel {
+
+    private static final Logger log = Logger.getLogger(ClusterModel.class.getName());
 
     private static final Duration CURRENT_LOAD_DURATION = Duration.ofMinutes(5);
 
@@ -186,6 +191,26 @@ public class ClusterModel {
         if ( ! duration.minus(largestAllowed).isNegative())
             return largestAllowed;
         return duration;
+    }
+
+    /**
+     * Create a cluster model if possible and logs a warning and returns empty otherwise.
+     * This is useful in cases where it's possible to continue without the cluser model,
+     * as QuestDb is known to temporarily fail during reading of data.
+     */
+    public static Optional<ClusterModel> create(Application application,
+                                                Cluster cluster,
+                                                ClusterSpec clusterSpec,
+                                                NodeList clusterNodes,
+                                                MetricsDb metricsDb,
+                                                Clock clock) {
+        try {
+            return Optional.of(new ClusterModel(application, cluster, clusterSpec, clusterNodes, metricsDb, clock));
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);
+            return Optional.empty();
+        }
     }
 
 }
