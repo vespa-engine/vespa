@@ -56,9 +56,9 @@ class HttpFeedClient implements FeedClient {
         this.requestStrategy = new HttpRequestStrategy(builder);
 
         for (int i = 0; i < builder.maxConnections; i++) {
-            CloseableHttpAsyncClient hc = createHttpClient(builder, requestStrategy);
-            hc.start();
-            httpClients.add(hc);
+            CloseableHttpAsyncClient client = createHttpClient(builder, requestStrategy);
+            client.start();
+            httpClients.add(client);
             inflight.add(new AtomicInteger());
         }
     }
@@ -69,7 +69,7 @@ class HttpFeedClient implements FeedClient {
                                                                      .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
                                                                      .disableCookieManagement()
                                                                      .disableRedirectHandling()
-                                                                     .setRetryStrategy(retryStrategy)
+                                                                     .disableAutomaticRetries()
                                                                      .setIOReactorConfig(IOReactorConfig.custom()
                                                                                                         .setSoTimeout(Timeout.ofSeconds(10))
                                                                                                         .build())
@@ -140,6 +140,23 @@ class HttpFeedClient implements FeedClient {
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
+        return requestStrategy.enqueue(documentId, request, this::send)
+                              .handle((response, thrown) -> {
+                                  if (thrown != null) {
+                                      if (requestStrategy.hasFailed()) {
+                                          try { close(); }
+                                          catch (IOException exception) { thrown.addSuppressed(exception); }
+                                      }
+                                      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                                      thrown.printStackTrace(new PrintStream(buffer));
+                                      return new Result(Result.Type.failure, documentId, buffer.toString(), null);
+                                  }
+                                  return toResult(response, documentId);
+                              });
+    }
+
+    /** Sends the given request to the client with the least current inflight requests, completing the given vessel when done. */
+    private void send(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel) {
         int index = 0;
         int min = Integer.MAX_VALUE;
         for (int i = 0; i < httpClients.size(); i++)
@@ -148,29 +165,19 @@ class HttpFeedClient implements FeedClient {
                 index = i;
             }
 
-        CloseableHttpAsyncClient client = httpClients.get(index);
-        AtomicInteger counter = inflight.get(index);
-        counter.incrementAndGet();
-        return requestStrategy.enqueue(documentId, future -> {
-            client.execute(request,
-                           new FutureCallback<SimpleHttpResponse>() {
-                               @Override public void completed(SimpleHttpResponse response) { future.complete(response); }
-                               @Override public void failed(Exception ex) { future.completeExceptionally(ex); }
-                               @Override public void cancelled() { future.cancel(false); }
-                           });
-        }).handle((response, thrown) -> {
-            counter.decrementAndGet();
-            if (thrown != null) {
-                if (requestStrategy.hasFailed()) {
-                    try { close(); }
-                    catch (IOException exception) { thrown.addSuppressed(exception); }
-                }
-                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                thrown.printStackTrace(new PrintStream(buffer));
-                return new Result(Result.Type.failure, documentId, buffer.toString(), null);
-            }
-            return toResult(response, documentId);
-        });
+        inflight.get(index).incrementAndGet();
+        try {
+            httpClients.get(index).execute(request,
+                                           new FutureCallback<SimpleHttpResponse>() {
+                                               @Override public void completed(SimpleHttpResponse response) { vessel.complete(response); }
+                                               @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
+                                               @Override public void cancelled() { vessel.cancel(false); }
+                                           });
+        }
+        catch (Throwable thrown) {
+            vessel.completeExceptionally(thrown);
+        }
+        vessel.thenRun(inflight.get(index)::decrementAndGet);
     }
 
     static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
@@ -180,7 +187,7 @@ class HttpFeedClient implements FeedClient {
             case 412: type = Result.Type.conditionNotMet; break;
             default:  type = Result.Type.failure;
         }
-        Map<String, String> responseJson = null; // TODO: parse JSON.
+        Map<String, String> responseJson = null; // TODO: parse JSON on error.
         return new Result(type, documentId, response.getBodyText(), "trace");
     }
 

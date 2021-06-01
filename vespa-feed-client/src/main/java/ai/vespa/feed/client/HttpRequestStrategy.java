@@ -1,68 +1,71 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
-import org.apache.hc.client5.http.HttpRequestRetryStrategy;
+import ai.vespa.feed.client.FeedClient.RetryStrategy;
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
-import org.apache.hc.core5.http.HttpRequest;
-import org.apache.hc.core5.http.HttpResponse;
-import org.apache.hc.core5.http.protocol.HttpContext;
-import org.apache.hc.core5.util.TimeValue;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static java.util.logging.Level.INFO;
 
 /**
  * Controls request execution and retries:
  * <ul>
  *     <li>Retry all IO exceptions; however</li>
  *     <li>abort everything if more than 10% of requests result in an exception for some time.</li>
- *     <li>Whenever throttled, limit inflight to 99% of current; and</li>
+ *     <li>Whenever throttled, limit inflight to one less than the current; and</li>
  *     <li>on every successful response, increase inflight limit by 0.1.</li>
  * </ul>
  *
  * @author jonmv
  */
-class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRequestRetryStrategy {
+class HttpRequestStrategy implements RequestStrategy {
 
-    private final Map<DocumentId, CompletableFuture<SimpleHttpResponse>> byId = new ConcurrentHashMap<>();
-    private final FeedClient.RetryStrategy wrapped;
+    private static Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
+    private static final double errorThreshold = 0.1;
+
+    private final Map<DocumentId, CompletableFuture<Void>> inflightById = new HashMap<>();
+    private final Object lock = new Object();
+    private final RetryStrategy wrapped;
     private final long maxInflight;
+    private final long minInflight;
     private double targetInflight;
-    private long inflight;
-    private final AtomicReference<Double> errorRate;
-    private final double errorThreshold;
-    private final Lock lock;
-    private final Condition available;
+    private long inflight = 0;
+    private double errorRate = 0;
+    private long consecutiveSuccesses = 0;
+    private boolean failed = false;
 
     HttpRequestStrategy(FeedClientBuilder builder) {
         this.wrapped = builder.retryStrategy;
         this.maxInflight = builder.maxConnections * (long) builder.maxStreamsPerConnection;
-        this.targetInflight = maxInflight;
-        this.inflight = 0;
-        this.errorRate = new AtomicReference<>(0.0);
-        this.errorThreshold = 0.1;
-        this.lock = new ReentrantLock(true);
-        this.available = lock.newCondition();
+        this.minInflight = builder.maxConnections * (long) Math.min(16, builder.maxStreamsPerConnection);
+        this.targetInflight = Math.sqrt(maxInflight) * (Math.sqrt(minInflight));
     }
 
-    private double cycle() {
-        return targetInflight; // TODO: tune this--could start way too high if limit is set too high.
-    }
+    /**
+     * Retries all IOExceptions, unless error rate has converged to a value higher than the threshold,
+     * or the user has turned off retries for this type of operation.
+     */
+    private boolean retry(SimpleHttpRequest request, Throwable thrown, int attempt) {
+        failure();
+        log.log(INFO, thrown, () -> "Failed attempt " + attempt + " at " + request +
+                                    ", error rate is " + errorRate + ", " + consecutiveSuccesses + " successes since last error");
 
-    @Override
-    public boolean retryRequest(HttpRequest request, IOException exception, int execCount, HttpContext context) {
-        if (errorRate.updateAndGet(rate -> rate + (1 - rate) / cycle()) > errorThreshold)
+        if ( ! (thrown instanceof IOException))
             return false;
 
-        if (execCount > wrapped.retries())
+        if (attempt > wrapped.retries())
             return false;
+
 
         switch (request.getMethod().toUpperCase()) {
             case "POST":   return wrapped.retry(FeedClient.OperationType.put);
@@ -73,83 +76,129 @@ class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRe
     }
 
     /**
-     * Called when a response is successfully obtained.
+     * Called when a response is successfully obtained. In conjunction with IOException reports, this makes the
+     * error rate converge towards the true error rate, at a speed inversely proportional to the target number
+     * of inflight requests, per reported success/error, i.e., hopefully at a rate independent of transport width.
      */
     void success() {
-        errorRate.updateAndGet(rate -> rate - rate / cycle());
-        lock.lock();
-        targetInflight = Math.min(targetInflight + 0.1, maxInflight);
-        lock.unlock();
+        synchronized (lock) {
+            errorRate -= errorRate / targetInflight; // Converges towards true error rate, in conjunction with failure updates.
+            targetInflight = min(targetInflight + 0.1, maxInflight);
+            ++consecutiveSuccesses;
+        }
     }
 
-    @Override
-    public boolean retryRequest(HttpResponse response, int execCount, HttpContext context) {
-        if (response.getCode() == 429 || response.getCode() == 503) {
-            lock.lock();
-            targetInflight = Math.max(100, 99 * inflight / 100);
-            lock.unlock();
+    /**
+     * Called whenever a failure to get a successful response is recorded.
+     */
+    void failure() {
+        synchronized (lock) {
+            errorRate += (1 - errorRate) / targetInflight; // Converges towards true error rate, in conjunction with success updates.
+            if (errorRate > errorThreshold)
+                failed = true;
+
+            consecutiveSuccesses = 0;
+        }
+    }
+
+    /** Retries throttled requests (429, 503), adjusting the target inflight count, and server errors (500, 502). */
+    private boolean retry(SimpleHttpRequest request, SimpleHttpResponse response, int attempt) {
+        if (response.getCode() / 100 == 2) {
+            success();
+            return false;
+        }
+
+        log.log(INFO, () -> "Status code " + response.getCode() + " (" + response.getBodyText() + ") on attempt " + attempt +
+                            " at " + request + ", " + consecutiveSuccesses + " successes since last error");
+
+        if (response.getCode() == 429 || response.getCode() == 503) { // Throttling; reduce target inflight.
+            synchronized (lock) {
+                targetInflight = max(inflight * 0.9, minInflight);
+            }
             return true;
         }
-        return false;
+
+        failure();
+        return attempt <= wrapped.retries() && (response.getCode() == 500 || response.getCode() == 502); // Hopefully temporary errors.
     }
 
-    @Override
-    public TimeValue getRetryInterval(HttpResponse response, int execCount, HttpContext context) {
-        return TimeValue.ofMilliseconds(100);
-    }
-
-    void acquireSlot() {
-        lock.lock();
+    // Must hold lock.
+    private void acquireSlot() {
         try {
             while (inflight >= targetInflight)
-                available.awaitUninterruptibly();
+                lock.wait();
 
             ++inflight;
         }
-        finally {
-            lock.unlock();
+        catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    void releaseSlot() {
-        lock.lock();
-        try {
-            --inflight;
-
-            if (inflight < targetInflight)
-                available.signal();
-        }
-        finally {
-            lock.unlock();
-        }
+    // Must hold lock.
+    private void releaseSlot() {
+        for (long i = --inflight; i < targetInflight; i++)
+            lock.notify();
     }
 
     @Override
     public boolean hasFailed() {
-        return errorRate.get() > errorThreshold;
+        synchronized (lock) {
+            return failed;
+        }
     }
 
     @Override
-    public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, Consumer<CompletableFuture<SimpleHttpResponse>> dispatch) {
-        acquireSlot();
+    public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request,
+                                                         BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch) {
+        CompletableFuture<SimpleHttpResponse> result = new CompletableFuture<>(); // Carries the aggregate result of the operation, including retries.
+        CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
+        CompletableFuture<Void> blocker = new CompletableFuture<>();              // Blocks the next operation with same doc-id, then triggers it when complete.
 
-        Consumer<CompletableFuture<SimpleHttpResponse>> safeDispatch = vessel -> {
-            try { dispatch.accept(vessel); }
-            catch (Throwable t) { vessel.completeExceptionally(t); }
-        };
-        CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>();
-        byId.compute(documentId, (id, previous) -> {
-            if (previous == null) safeDispatch.accept(vessel);
-            else previous.whenComplete((__, ___) -> safeDispatch.accept(vessel));
-            return vessel;
-        });
+        // Get the previous inflight operation for this doc-id, or acquire a send slot.
+        CompletableFuture<Void> previous;
+        synchronized (lock) {
+            previous = inflightById.put(documentId, blocker);
+            if (previous == null)
+                acquireSlot();
+        }
+        if (previous == null)   // Send immediately if none inflight ...
+            dispatch.accept(request, vessel);
+        else                    // ... or send when the previous inflight is done.
+            previous.thenRun(() -> dispatch.accept(request, vessel));
 
-        return vessel.whenComplete((__, thrown) -> {
-            releaseSlot();
-            if (thrown == null)
-                success();
+        handleAttempt(vessel, dispatch, blocker, request, result, documentId, 1);
+        return result;
+    }
 
-            byId.compute(documentId, (id, current) -> current == vessel ? null : current);
+    /** Handles the result of one attempt at the given operation, retrying if necessary. */
+    private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch,
+                               CompletableFuture<Void> blocker, SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result,
+                               DocumentId documentId, int attempt) {
+        vessel.whenComplete((response, thrown) -> {
+            // Retry the operation if it failed with a transient error ...
+            if ( ! failed && (thrown != null ? retry(request, thrown, attempt)
+                                             : retry(request, response, attempt))) {
+                    CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
+                    dispatch.accept(request, retry);
+                    handleAttempt(retry, dispatch, blocker, request, result, documentId, attempt + 1);
+                    return;
+                }
+
+            // ... or accept the outcome and mark the operation as complete.
+            CompletableFuture<Void> current;
+            synchronized (lock) {
+                current = inflightById.get(documentId);
+                if (current == blocker) {   // Release slot and clear map if no other operations enqueued for this doc-id ...
+                    releaseSlot();
+                    inflightById.put(documentId, null);
+                }
+            }
+            if (current != blocker)         // ... or trigger sending the next enqueued operation.
+                blocker.complete(null);
+
+            if (thrown == null) result.complete(response);
+            else result.completeExceptionally(thrown);
         });
     }
 
