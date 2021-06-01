@@ -94,9 +94,7 @@ public class ZooKeeperClient {
         Collection<NamedReader> sds = app.getSearchDefinitions();
         if (sds.isEmpty()) return;
 
-        // TODO: Change to SCHEMAS_DIR after March 2020
-        // TODO: When it does also check RankExpressionFile.sendTo
-        Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCH_DEFINITIONS_DIR);
+        Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);
         configCurator.createNode(zkPath.getAbsolute());
         // Ensures that ranking expressions and other files are also written
         writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
