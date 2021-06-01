@@ -6,15 +6,14 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -30,8 +29,7 @@ import static java.util.logging.Level.INFO;
  */
 class HttpRequestStrategy implements RequestStrategy {
 
-    private static Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
-    private static final double errorThreshold = 0.1;
+    private static final Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
 
     private final Map<DocumentId, CompletableFuture<Void>> inflightById = new HashMap<>();
     private final Object lock = new Object();
@@ -40,9 +38,9 @@ class HttpRequestStrategy implements RequestStrategy {
     private final long minInflight;
     private double targetInflight;
     private long inflight = 0;
-    private double errorRate = 0;
     private long consecutiveSuccesses = 0;
     private boolean failed = false;
+    private Instant lastSuccess = Instant.MAX;
 
     HttpRequestStrategy(FeedClientBuilder builder) {
         this.wrapped = builder.retryStrategy;
@@ -51,23 +49,12 @@ class HttpRequestStrategy implements RequestStrategy {
         this.targetInflight = Math.sqrt(maxInflight) * (Math.sqrt(minInflight));
     }
 
-    /**
-     * Retries all IOExceptions, unless error rate has converged to a value higher than the threshold,
-     * or the user has turned off retries for this type of operation.
-     */
-    private boolean retry(SimpleHttpRequest request, Throwable thrown, int attempt) {
-        failure();
-        log.log(INFO, thrown, () -> "Failed attempt " + attempt + " at " + request +
-                                    ", error rate is " + errorRate + ", " + consecutiveSuccesses + " successes since last error");
-
-        if ( ! (thrown instanceof IOException))
+    private boolean retry(SimpleHttpRequest request, int attempt) {
+        if (attempt >= wrapped.retries())
             return false;
-
-        if (attempt > wrapped.retries())
-            return false;
-
-
+        
         switch (request.getMethod().toUpperCase()) {
+
             case "POST":   return wrapped.retry(FeedClient.OperationType.put);
             case "PUT":    return wrapped.retry(FeedClient.OperationType.update);
             case "DELETE": return wrapped.retry(FeedClient.OperationType.remove);
@@ -76,28 +63,33 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /**
-     * Called when a response is successfully obtained. In conjunction with IOException reports, this makes the
-     * error rate converge towards the true error rate, at a speed inversely proportional to the target number
-     * of inflight requests, per reported success/error, i.e., hopefully at a rate independent of transport width.
+     * Retries all IOExceptions, unless error rate has converged to a value higher than the threshold,
+     * or the user has turned off retries for this type of operation.
      */
+    private boolean retry(SimpleHttpRequest request, Throwable thrown, int attempt) {
+        failure();
+        log.log(INFO, thrown, () -> "Failed attempt " + attempt + " at " + request + ", " + consecutiveSuccesses + " successes since last error");
+
+        if ( ! (thrown instanceof IOException))
+            return false;
+
+        return retry(request, attempt);
+    }
+
     void success() {
+        Instant now = Instant.now();
         synchronized (lock) {
-            errorRate -= errorRate / targetInflight; // Converges towards true error rate, in conjunction with failure updates.
-            targetInflight = min(targetInflight + 0.1, maxInflight);
             ++consecutiveSuccesses;
+            lastSuccess = now;
         }
     }
 
-    /**
-     * Called whenever a failure to get a successful response is recorded.
-     */
     void failure() {
+        Instant threshold = Instant.now().minusSeconds(300);
         synchronized (lock) {
-            errorRate += (1 - errorRate) / targetInflight; // Converges towards true error rate, in conjunction with success updates.
-            if (errorRate > errorThreshold)
-                failed = true;
-
             consecutiveSuccesses = 0;
+            if (lastSuccess.isBefore(threshold))
+                failed = true;
         }
     }
 
@@ -119,7 +111,10 @@ class HttpRequestStrategy implements RequestStrategy {
         }
 
         failure();
-        return attempt <= wrapped.retries() && (response.getCode() == 500 || response.getCode() == 502); // Hopefully temporary errors.
+        if (response.getCode() != 500 && response.getCode() != 502)
+            return false;
+
+        return retry(request, attempt); // Hopefully temporary errors.
     }
 
     // Must hold lock.

@@ -45,7 +45,7 @@ class HttpFeedClient implements FeedClient {
 
     private final URI endpoint;
     private final Map<String, Supplier<String>> requestHeaders;
-    private final HttpRequestStrategy requestStrategy;
+    private final RequestStrategy requestStrategy;
     private final List<CloseableHttpAsyncClient> httpClients = new ArrayList<>();
     private final List<AtomicInteger> inflight = new ArrayList<>();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -56,14 +56,14 @@ class HttpFeedClient implements FeedClient {
         this.requestStrategy = new HttpRequestStrategy(builder);
 
         for (int i = 0; i < builder.maxConnections; i++) {
-            CloseableHttpAsyncClient client = createHttpClient(builder, requestStrategy);
+            CloseableHttpAsyncClient client = createHttpClient(builder);
             client.start();
             httpClients.add(client);
             inflight.add(new AtomicInteger());
         }
     }
 
-    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) throws IOException {
+    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder) throws IOException {
         H2AsyncClientBuilder httpClientBuilder = H2AsyncClientBuilder.create()
                                                                      .setUserAgent(String.format("vespa-feed-client/%s", Vespa.VERSION))
                                                                      .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
