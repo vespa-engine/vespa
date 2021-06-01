@@ -219,7 +219,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if(deployState.isHosted()) {
             cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("jdisc-cloud-aws"));
         }
-        if (deployState.featureFlags().tenantIamRole()) {
+        if (deployState.zone().system().isPublic()) {
             BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
             Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                     new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, "jdisc-cloud-aws", null));
