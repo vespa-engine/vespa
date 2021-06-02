@@ -11,6 +11,9 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
@@ -29,7 +32,7 @@ import static java.util.logging.Level.INFO;
  *
  * @author jonmv
  */
-class HttpRequestStrategy implements RequestStrategy {
+class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
 
@@ -37,6 +40,7 @@ class HttpRequestStrategy implements RequestStrategy {
     private final Object monitor = new Object();
     private final Clock clock;
     private final RetryStrategy wrapped;
+    private final ScheduledExecutorService delayer = Executors.newScheduledThreadPool(1);
     private final long maxInflight;
     private final long minInflight;
     private double targetInflight;
@@ -183,7 +187,10 @@ class HttpRequestStrategy implements RequestStrategy {
             if ( ! failed && (thrown != null ? retry(request, thrown, attempt)
                                              : retry(request, response, attempt))) {
                     CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
-                    dispatch.accept(request, retry);
+                    if (hasFailed())
+                        delayer.schedule(() -> dispatch.accept(request, retry), 1, TimeUnit.SECONDS);
+                    else
+                        dispatch.accept(request, retry);
                     handleAttempt(retry, dispatch, blocker, request, result, documentId, attempt + 1);
                     return;
                 }
@@ -203,6 +210,11 @@ class HttpRequestStrategy implements RequestStrategy {
             if (thrown == null) result.complete(response);
             else result.completeExceptionally(thrown);
         });
+    }
+
+    @Override
+    public void close() {
+        delayer.shutdown();
     }
 
 }
