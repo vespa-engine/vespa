@@ -23,6 +23,7 @@ public class Supervisor {
     private final AtomicReference<HashMap<String, Method>> methodMap = new AtomicReference<>(new HashMap<>());
     private int                     maxInputBufferSize  = 0;
     private int                     maxOutputBufferSize = 0;
+    private boolean                 dropEmptyBuffers = false;
 
     /**
      * Create a new Supervisor based on the given {@link Transport}
@@ -42,6 +43,18 @@ public class Supervisor {
     public Supervisor useSmallBuffers() {
         setMaxInputBufferSize(SMALL_INPUT_BUFFER_SIZE);
         setMaxOutputBufferSize(SMALL_OUTPUT_BUFFER_SIZE);
+        return this;
+    }
+
+    /**
+     * Drop empty buffers. This will reduce memory footprint for idle
+     * connections at the cost of extra allocations when buffer space
+     * is needed again.
+     *
+     * @param value true means drop empty buffers
+     **/
+    public Supervisor setDropEmptyBuffers(boolean value) {
+        dropEmptyBuffers = value;
         return this;
     }
 
@@ -193,6 +206,7 @@ public class Supervisor {
             Connection conn = (Connection) target;
             conn.setMaxInputSize(maxInputBufferSize);
             conn.setMaxOutputSize(maxOutputBufferSize);
+            conn.setDropEmptyBuffers(dropEmptyBuffers);
         }
         SessionHandler handler = sessionHandler;
         if (handler != null) {

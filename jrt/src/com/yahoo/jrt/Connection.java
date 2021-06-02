@@ -36,6 +36,7 @@ class Connection extends Target {
     private final Buffer output  = new Buffer(0x1000); // Start off with small buffer.
     private int maxInputSize  = 64*1024;
     private int maxOutputSize = 64*1024;
+    private boolean dropEmptyBuffers = false;
     private final boolean tcpNoDelay;
     private final Map<Integer, ReplyHandler> replyMap = new HashMap<>();
     private final Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
@@ -117,6 +118,10 @@ class Connection extends Target {
 
     public void setMaxOutputSize(int bytes) {
         maxOutputSize = bytes;
+    }
+
+    public void setDropEmptyBuffers(boolean value) {
+        dropEmptyBuffers = value;
     }
 
     public TransportThread transportThread() {
@@ -307,6 +312,10 @@ class Connection extends Target {
         while (socket.drain(input.getChannelWritable(readSize)) > 0) {
             handlePackets();
         }
+        if (dropEmptyBuffers) {
+            socket.dropEmptyBuffers();
+            input.shrink(0);
+        }
         if (maxInputSize > 0) {
             input.shrink(maxInputSize);
         }
@@ -362,6 +371,10 @@ class Connection extends Target {
         }
         if (disableWrite) {
             disableWrite();
+        }
+        if (dropEmptyBuffers) {
+            socket.dropEmptyBuffers();
+            output.shrink(0);
         }
         if (maxOutputSize > 0) {
             output.shrink(maxOutputSize);
