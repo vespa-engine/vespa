@@ -9,7 +9,6 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.container.QrConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.change.ChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.ClusterSizeReductionValidator;
@@ -25,8 +24,6 @@ import com.yahoo.vespa.model.application.validation.change.ResourcesReductionVal
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.Container;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -43,7 +40,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * Executor of validators. This defines the right order of validator execution.
@@ -63,6 +59,7 @@ public class Validation {
             new RoutingValidator().validate(model, deployState);
             new RoutingSelectorValidator().validate(model, deployState);
         }
+        new SchemasDirValidator().validate(model, deployState);
         new ComponentValidator().validate(model, deployState);
         new SearchDataTypeValidator().validate(model, deployState);
         new ComplexAttributeFieldsValidator().validate(model, deployState);
