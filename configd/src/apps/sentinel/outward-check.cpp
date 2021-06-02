@@ -35,7 +35,8 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
             _result = CcResult::REVERSE_FAIL;
         }
     } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD ||
-               req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS)
+               req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS ||
+               req->GetErrorCode() == FRTE_RPC_WRONG_RETURN)
     {
         LOG(debug, "Connected OK to %s but no reverse connectivity check available", _spec.c_str());
         _result = CcResult::REVERSE_UNAVAIL;
@@ -43,7 +44,6 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
         LOG(debug, "error on request to %s : %s (%d)", _spec.c_str(),
             req->GetErrorMessage(), req->GetErrorCode());
         _result = CcResult::CONN_FAIL;
-        
     }
     _req->SubRef();
     _req = nullptr;

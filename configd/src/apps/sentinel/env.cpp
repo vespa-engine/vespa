@@ -111,8 +111,8 @@ std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
     std::map<std::string, std::string> checkSpecs;
     for (const auto & h : model.hosts) {
         bool foundSentinelPort = false;
-        for (const auto & s : h.services) {       
-            if (s.name == "config-sentinel") { 
+        for (const auto & s : h.services) {
+            if (s.name == "config-sentinel") {
                 for (const auto & p : s.ports) {
                     if (p.tags.find("rpc") != p.tags.npos) {
                         auto spec = fmt("tcp/%s:%d", h.name.c_str(), p.number);
