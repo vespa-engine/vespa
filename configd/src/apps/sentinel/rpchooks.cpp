@@ -45,11 +45,12 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
                     FRT_METHOD(RPCHooks::rpc_startService), this);
     rb.MethodDesc("start a service");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("sentinel.check.connectivity", "si", "s",
+    rb.DefineMethod("sentinel.check.connectivity", "sii", "s",
                     FRT_METHOD(RPCHooks::rpc_checkConnectivity), this);
     rb.MethodDesc("check connectivity for peer sentinel");
     rb.ParamDesc("name", "Hostname of peer sentinel");
     rb.ParamDesc("port", "Port number of peer sentinel");
+    rb.ParamDesc("timeout", "Timeout for check in milliseconds");
     rb.ReturnDesc("status", "Status (ok, bad, or unknown) for peer");
     //-------------------------------------------------------------------------
 }
@@ -97,11 +98,12 @@ RPCHooks::rpc_checkConnectivity(FRT_RPCRequest *req)
 {
     FRT_Values &args  = *req->GetParams();
     const char *hostname = args[0]._string._str;
-    uint32_t portnum = args[1]._intval32;
-    LOG(debug, "got checkConnectivity %s [port %d]", hostname, portnum);
+    int portnum = args[1]._intval32;
+    int timeout = args[2]._intval32;
+    LOG(debug, "got checkConnectivity %s [port %d] timeout %d", hostname, portnum, timeout);
     req->Detach();
     auto & completionHandler = req->getStash().create<CheckCompletionHandler>(req);
-    req->getStash().create<PeerCheck>(completionHandler, hostname, portnum, _orb);
+    req->getStash().create<PeerCheck>(completionHandler, hostname, portnum, _orb, timeout);
 }
 
 } // namespace slobrok

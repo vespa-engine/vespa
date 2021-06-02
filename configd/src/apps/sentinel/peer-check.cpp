@@ -10,7 +10,7 @@ using vespalib::make_string_short::fmt;
 
 namespace config::sentinel {
 
-PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port, FRT_Supervisor &orb)
+PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port, FRT_Supervisor &orb, int timeout_ms)
   : _callback(callback),
     _hostname(host),
     _portnum(port),
@@ -21,7 +21,7 @@ PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port
     _target = orb.GetTarget(spec.c_str());
     _req = orb.AllocRPCRequest();
     _req->SetMethodName("frt.rpc.ping");
-    _target->InvokeAsync(_req, 0.500, this);
+    _target->InvokeAsync(_req, timeout_ms * 0.001, this);
 }
 
 PeerCheck::~PeerCheck() {
