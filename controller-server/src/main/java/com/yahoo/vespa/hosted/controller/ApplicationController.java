@@ -63,6 +63,7 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -70,6 +71,7 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -88,6 +90,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -501,11 +504,14 @@ public class ApplicationController {
                     .filter(tenant-> tenant instanceof CloudTenant)
                     .map(tenant -> ((CloudTenant) tenant).tenantSecretStores())
                     .orElse(List.of());
+            List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(new DeploymentId(application, zone)).stream()
+                    .map(SupportAccessGrant::certificate)
+                    .collect(toList());
 
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           tenantRoles, deploymentQuota, tenantSecretStores));
+                                                           tenantRoles, deploymentQuota, tenantSecretStores, operatorCertificates));
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
