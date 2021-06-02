@@ -98,7 +98,9 @@ struct Setup {
         property(fmt("rankingExpression(%s).rankingScript", name.c_str()), expr);
     }
     void ext_rank_expr(const std::string &name, const std::string &file) {
-        ranking_expressions.insert_or_assign(name, TEST_PATH(file));
+        auto expr_name = fmt("my_expr_%s", name.c_str());
+        property(fmt("rankingExpression(%s).expressionName", name.c_str()), expr_name);
+        ranking_expressions.insert_or_assign(expr_name, TEST_PATH(file));
     }
     void first_phase(const std::string &feature) {
         property(rank::FirstPhase::NAME, feature);
