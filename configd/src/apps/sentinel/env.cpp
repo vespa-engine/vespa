@@ -7,11 +7,13 @@
 #include <vespa/log/log.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 #include <chrono>
 
 LOG_SETUP(".env");
 
+using vespalib::make_string_short::fmt;
 using namespace std::chrono_literals;
 
 namespace config::sentinel {
@@ -92,14 +94,15 @@ void Env::respondAsEmpty() {
 }
 
 void Env::waitForConnectivity(const ModelConfig &model) {
-    std::map<std::string, OutwardCheck> connectivityMap;
+    std::map<std::string, std::string> checkSpecs;
     for (const auto & h : model.hosts) {
         bool foundSentinelPort = false;
         for (const auto & s : h.services) {       
             if (s.name == "config-sentinel") { 
                 for (const auto & p : s.ports) {
                     if (p.tags.find("rpc") != p.tags.npos) {
-                        connectivityMap.try_emplace(h.name, h.name, p.number, _rpcServer->orb());
+                        auto spec = fmt("tcp/%s:%d", h.name.c_str(), p.number);
+                        checkSpecs[h.name] = spec;
                         foundSentinelPort = true;
                     }
                 }
@@ -110,25 +113,14 @@ void Env::waitForConnectivity(const ModelConfig &model) {
                 h.name.c_str(), h.services.size());
         }
     }
-    size_t cntOk = 0;
-    size_t cntBad = 0;
-    for (int retry = 1; retry <= 100; ++retry) {
-        cntOk = 0;
-        cntBad = 0;
-        for (const auto & [hostname, check] : connectivityMap) {
-            if (check.ok()) {
-                ++cntOk;
-            } else if (check.bad()) {
-                ++cntBad;
-            }
-        }
-        if (cntOk + cntBad == connectivityMap.size()) break;
-        respondAsEmpty();
-        std::this_thread::sleep_for(15ms);
-        if ((retry % 20) == 0) {
-            LOG(warning, "still waiting for connectivity checks after %d retries", retry);
-        }
+    vespalib::CountDownLatch latch(checkSpecs.size());
+    const char *myName = vespa::Defaults::vespaHostname();
+    int myPort = _rpcServer->getPort();
+    std::map<std::string, OutwardCheck> connectivityMap;
+    for (const auto & [ hn, spec ] : checkSpecs) {
+        connectivityMap.try_emplace(hn, spec, myName, myPort, _rpcServer->orb(), latch);
     }
+    latch.await();
     for (const auto & [hostname, check] : connectivityMap) {
         const char *s = "unknown";
         if (check.ok()) { s = "ok"; }
@@ -136,21 +128,6 @@ void Env::waitForConnectivity(const ModelConfig &model) {
         LOG(info, "outward check status for host %s is: %s",
             hostname.c_str(), s);
     }
-    LOG_ASSERT(cntOk + cntBad == connectivityMap.size());
-    const char *myName = vespa::Defaults::vespaHostname();
-    int myPort = _rpcServer->getPort();
-    OutwardCheck selfCheck(myName, myPort, _rpcServer->orb());
-    for (int retry = 0; retry < 1000; ++retry) {
-        if (selfCheck.bad()) {
-            LOG(error, "Could not connect to '%s' (myself) at port %d", myName, myPort);
-            throw InvalidConfigException("failed to self-connect");
-        }
-        if (selfCheck.ok()) {
-            break;
-        }
-        std::this_thread::sleep_for(5ms);
-    }
-    LOG_ASSERT(selfCheck.ok());
 }
 
 }
