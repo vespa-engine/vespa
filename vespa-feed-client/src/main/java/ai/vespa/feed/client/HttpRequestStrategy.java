@@ -190,29 +190,9 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
         else                    // ... or send when the previous inflight is done.
             previous.thenRun(() -> dispatch.accept(request, vessel));
 
-        handleAttempt(vessel, dispatch, blocker, request, result, documentId, 1);
-        return result;
-    }
+        handleAttempt(vessel, dispatch, request, result, 1);
 
-    /** Handles the result of one attempt at the given operation, retrying if necessary. */
-    private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch,
-                               CompletableFuture<Void> blocker, SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result,
-                               DocumentId documentId, int attempt) {
-        vessel.whenComplete((response, thrown) -> {
-            // Retry the operation if it failed with a transient error ...
-            if (thrown != null ? retry(request, thrown, attempt)
-                               : retry(request, response, attempt)) {
-                CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
-                boolean hasFailed = hasFailed();
-                if (hasFailed)
-                    delayed.add(new CompletableFuture<>().thenRun(() -> dispatch.accept(request, retry)));
-                else
-                    dispatch.accept(request, retry);
-                handleAttempt(retry, dispatch, blocker, request, result, documentId, attempt + (hasFailed ? 0 : 1));
-                return;
-            }
-
-            // ... or accept the outcome and mark the operation as complete.
+        result.thenRun(() -> {
             CompletableFuture<Void> current;
             synchronized (monitor) {
                 current = inflightById.get(documentId);
@@ -223,7 +203,29 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
             }
             if (current != blocker)         // ... or trigger sending the next enqueued operation.
                 blocker.complete(null);
+        });
 
+        return result;
+    }
+
+    /** Handles the result of one attempt at the given operation, retrying if necessary. */
+    private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch,
+                               SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result, int attempt) {
+        vessel.whenComplete((response, thrown) -> {
+            // Retry the operation if it failed with a transient error ...
+            if (thrown != null ? retry(request, thrown, attempt)
+                               : retry(request, response, attempt)) {
+                CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
+                boolean hasFailed = hasFailed();
+                if (hasFailed)
+                    delayed.add(new CompletableFuture<>().thenRun(() -> dispatch.accept(request, retry)));
+                else
+                    dispatch.accept(request, retry);
+                handleAttempt(retry, dispatch, request, result, attempt + (hasFailed ? 0 : 1));
+                return;
+            }
+
+            // ... or accept the outcome and mark the operation as complete.
             if (thrown == null) result.complete(response);
             else result.completeExceptionally(thrown);
         });
