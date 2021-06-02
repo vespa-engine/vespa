@@ -23,6 +23,15 @@ SmartBuffer::ensure_free(size_t bytes)
     _read_pos = 0;
 }
 
+void
+SmartBuffer::drop()
+{
+    alloc::Alloc empty_buf;
+    _data.swap(empty_buf);
+    _read_pos = 0;
+    _write_pos = 0;
+}
+
 SmartBuffer::SmartBuffer(size_t initial_size)
     : _data(alloc::Alloc::alloc(initial_size)),
       _read_pos(0),

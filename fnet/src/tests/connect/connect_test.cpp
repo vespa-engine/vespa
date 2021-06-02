@@ -65,6 +65,7 @@ struct BlockingCryptoSocket : public CryptoSocket {
     ssize_t write(const char *buf, size_t len) override { return socket.write(buf, len); }
     ssize_t flush() override { return 0; }
     ssize_t half_close() override { return socket.half_close(); }
+    void drop_empty_buffers() override {}
 };
 
 struct BlockingCryptoEngine : public CryptoEngine {

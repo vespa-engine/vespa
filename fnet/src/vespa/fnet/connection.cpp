@@ -347,6 +347,10 @@ done_read:
     }
 
     UpdateTimeOut();
+    if (_flags._drop_empty_buffers) {
+        _socket->drop_empty_buffers();
+        _input.Shrink(0);
+    }
     uint32_t maxSize = getConfig()._maxInputBufferSize;
     if (maxSize > 0 && _input.GetBufSize() > maxSize)
     {
@@ -430,6 +434,10 @@ FNET_Connection::Write()
         }
     }
 
+    if (_flags._drop_empty_buffers) {
+        _socket->drop_empty_buffers();
+        _output.Shrink(0);
+    }
     uint32_t maxSize = getConfig()._maxOutputBufferSize;
     if (maxSize > 0 && _output.GetBufSize() > maxSize) {
         _output.Shrink(maxSize);
@@ -477,7 +485,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _resolve_handler(nullptr),
       _context(),
       _state(FNET_CONNECTING),
-      _flags(),
+      _flags(owner->owner().getConfig()),
       _packetLength(0),
       _packetCode(0),
       _packetCHID(0),
@@ -511,7 +519,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _resolve_handler(nullptr),
       _context(context),
       _state(FNET_CONNECTING),
-      _flags(),
+      _flags(owner->owner().getConfig()),
       _packetLength(0),
       _packetCode(0),
       _packetCHID(0),
