@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -33,6 +34,7 @@ public class FeedClientBuilder {
     Path certificate;
     Path privateKey;
     Path caCertificates;
+    Clock clock;
 
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(endpoint); }
 

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,7 +54,7 @@ class HttpFeedClient implements FeedClient {
     HttpFeedClient(FeedClientBuilder builder) throws IOException {
         this.endpoint = builder.endpoint;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
-        this.requestStrategy = new HttpRequestStrategy(builder);
+        this.requestStrategy = new HttpRequestStrategy(builder, Clock.systemUTC());
 
         for (int i = 0; i < builder.maxConnections; i++) {
             CloseableHttpAsyncClient client = createHttpClient(builder);
