@@ -131,11 +131,13 @@ public class MetricsResponse {
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                List<Double> valueList = values.get("content.proton.resource_usage.memory.average"); // prefer over mem.util
-                if (valueList.isEmpty())
-                    valueList = values.get("mem.util");
-                if (valueList.isEmpty()) return 0;
-                return valueList.stream().mapToDouble(v -> v).sum() / 100; // convert % to ratio
+                var valueList = values.get("content.proton.resource_usage.memory.average"); // prefer over mem.util
+                if ( ! valueList.isEmpty()) return valueList.get(0);
+
+                valueList = values.get("mem.util");
+                if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
+
+                return 0;
             }
 
         },
@@ -148,12 +150,13 @@ public class MetricsResponse {
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                List<Double> valueList = values.get("content.proton.resource_usage.disk.average"); // prefer over disk.util
-                if (valueList.isEmpty())
-                    valueList = values.get("disk.util");
-                if (valueList.isEmpty()) return 0;
+                var valueList = values.get("content.proton.resource_usage.disk.average"); // prefer over mem.util
+                if ( ! valueList.isEmpty()) return valueList.get(0);
 
-                return valueList.stream().mapToDouble(v -> v).sum() / 100; // convert % to ratio
+                valueList = values.get("disk.util");
+                if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
+
+                return 0;
             }
 
         },
