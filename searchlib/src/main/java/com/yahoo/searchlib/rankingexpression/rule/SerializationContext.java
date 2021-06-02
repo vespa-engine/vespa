@@ -104,10 +104,6 @@ public class SerializationContext extends FunctionReferenceContext {
 
     public Map<String, String> serializedFunctions() { return serializedFunctions; }
 
-    public String uniqueName(String functionName) {
-        return functionName;
-    }
-
     public boolean needSerialization(String functionName) {
         return ! serializedFunctions().containsKey(RankingExpression.propertyName(functionName));
     }

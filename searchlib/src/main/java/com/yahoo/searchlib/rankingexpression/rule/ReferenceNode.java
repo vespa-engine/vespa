@@ -87,7 +87,7 @@ public final class ReferenceNode extends CompositeNode {
             String functionName = getName();
             boolean needSerialization = (getArguments().size() > 0) || context.needSerialization(functionName);
 
-            if ( needSerialization) {
+            if ( needSerialization ) {
                 ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
                 functionName = instance.getName();
 
@@ -98,7 +98,7 @@ public final class ReferenceNode extends CompositeNode {
                     context.addFunctionTypeSerialization(functionName, function.returnType().get());
             }
             path.removeLast();
-            return string.append("rankingExpression(").append(context.uniqueName(functionName)).append(')');
+            return string.append("rankingExpression(").append(functionName).append(')');
         }
 
         // Not resolved in this context: output as-is
