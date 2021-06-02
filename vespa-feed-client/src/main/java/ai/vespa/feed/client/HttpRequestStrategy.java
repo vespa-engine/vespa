@@ -39,7 +39,7 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
     private final Object monitor = new Object();
     private final Clock clock;
     private final RetryStrategy wrapped;
-    private final Thread delayer = new Thread(this::drainDelayed);
+    private final Thread delayer = new Thread(this::drainDelayed, "feed-client-retry-delayer");
     private final BlockingQueue<CompletableFuture<Void>> delayed = new LinkedBlockingQueue<>();
     private final long maxInflight;
     private final long minInflight;
