@@ -6,7 +6,6 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.register");
