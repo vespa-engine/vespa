@@ -80,6 +80,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         IOUtils.createDirectory(dataDir + "/" + nodeTable);
         IOUtils.createDirectory(dataDir + "/" + clusterTable);
 
+        // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
+        new File(dataDir + "/" + nodeTable + "/_txn_scoreboard").delete();
+        new File(dataDir + "/" + clusterTable + "/_txn_scoreboard").delete();
+
         // silence Questdb's custom logging system
         IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
         System.setProperty("out", dataDir + "/quest-log.conf");
