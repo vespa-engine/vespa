@@ -96,6 +96,13 @@ public interface CryptoSocket {
     public FlushResult flush() throws IOException;
 
     /**
+     * This function can be called at any time to drop any currently
+     * empty internal buffers. Typically called after drain or flush
+     * indicates that no further progress can be made.
+     **/
+    public void dropEmptyBuffers();
+
+    /**
      * Returns the security context for the current connection (given handshake completed),
      * or empty if the current connection is not secure.
      */

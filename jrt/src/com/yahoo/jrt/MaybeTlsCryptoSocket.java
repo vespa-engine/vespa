@@ -129,5 +129,6 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
     @Override public int drain(ByteBuffer dst) throws IOException { return socket.drain(dst); }
     @Override public int write(ByteBuffer src) throws IOException { return socket.write(src); }
     @Override public FlushResult flush() throws IOException { return socket.flush(); }
+    @Override public void dropEmptyBuffers() { socket.dropEmptyBuffers(); }
     @Override public Optional<SecurityContext> getSecurityContext() { return Optional.ofNullable(socket).flatMap(CryptoSocket::getSecurityContext); }
 }
