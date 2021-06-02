@@ -64,7 +64,8 @@ public:
                       DoneInitializeHandler&,
                       ChainedMessageSender& messageSender,
                       StripeHostInfoNotifier& stripe_host_info_notifier,
-                      bool use_legacy_mode);
+                      bool use_legacy_mode,
+                      uint32_t stripe_index = 0);
 
     ~DistributorStripe() override;
 
@@ -363,6 +364,7 @@ private:
     size_t _inhibited_maintenance_tick_count;
     bool _must_send_updated_host_info;
     bool _use_legacy_mode;
+    uint32_t _stripe_index;
 };
 
 }
