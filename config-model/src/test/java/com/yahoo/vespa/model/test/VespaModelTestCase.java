@@ -216,7 +216,7 @@ public class VespaModelTestCase {
                         "</hosts>");
     }
 
-    class MyLogger implements DeployLogger {
+    static class MyLogger implements DeployLogger {
         List<Pair<Level, String>> msgs = new ArrayList<>();
         @Override
         public void log(Level level, String message) {
@@ -303,6 +303,23 @@ public class VespaModelTestCase {
         assertThat(model.getContainerClusters().size(), is(0));
         model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
         assertThat(model.getContainerClusters().size(), is(1));
+    }
+
+    @Test
+    public void testThatDeployLogContainsWarninnWhenUsingSearchdefinitionsDir() throws IOException, SAXException {
+        ApplicationPackage app = FilesApplicationPackage.fromFile(
+                new File("src/test/cfg/application/app_qrserverandgw/"));
+        MyLogger logger = new MyLogger();
+        DeployState deployState = new DeployState.Builder()
+                .applicationPackage(app)
+                .deployLogger(logger)
+                .build();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+        Validation.validate(model, new ValidationParameters(), deployState);
+
+        assertEquals(3, logger.msgs.size());
+        assertEquals("WARNING", logger.msgs.get(1).getFirst().getName());
+        assertEquals("Directory searchdefinitions/ should not be used for schemas, use schemas/ instead", logger.msgs.get(1).getSecond());
     }
 
 }
