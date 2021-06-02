@@ -134,13 +134,14 @@ public class ZKApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> searchDefinitionContents() {
         List<NamedReader> schemas = new ArrayList<>();
-        for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR)) {
-            if (sd.endsWith(SD_NAME_SUFFIX))
-                schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, sd))));
-        }
         for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR)) {
             if (sd.endsWith(SD_NAME_SUFFIX))
                 schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, sd))));
+        }
+        // TODO: Remove when everything is written to SCHEMAS_DIR (July 2021)
+        for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR)) {
+            if (sd.endsWith(SD_NAME_SUFFIX))
+                schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, sd))));
         }
         return schemas;
     }

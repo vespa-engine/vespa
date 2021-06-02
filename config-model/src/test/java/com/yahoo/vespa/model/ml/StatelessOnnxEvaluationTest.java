@@ -4,17 +4,13 @@ package com.yahoo.vespa.model.ml;
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
-import ai.vespa.models.evaluation.RankProfilesConfigImporter;
-import ai.vespa.models.handler.ModelsEvaluationHandler;
 import com.yahoo.component.ComponentId;
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -31,7 +27,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -55,8 +50,8 @@ public class StatelessOnnxEvaluationTest {
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            IOUtils.copyDirectory(appDir.append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).toFile(),
-                    storedAppDir.append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).toFile());
+            IOUtils.copyDirectory(appDir.append(ApplicationPackage.SCHEMAS_DIR).toFile(),
+                    storedAppDir.append(ApplicationPackage.SCHEMAS_DIR).toFile());
             ImportedModelTester storedTester = new ImportedModelTester("onnx_rt", storedAppDir);
             assertModelEvaluation(storedTester.createVespaModel(), appDir);
 

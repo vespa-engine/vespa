@@ -32,8 +32,8 @@ public class MlModelsTest {
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            IOUtils.copyDirectory(appDir.append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.SEARCH_DEFINITIONS_DIR).toFile());
+            IOUtils.copyDirectory(appDir.append(ApplicationPackage.SCHEMAS_DIR).toFile(),
+                                  storedAppDir.append(ApplicationPackage.SCHEMAS_DIR).toFile());
             ImportedModelTester storedTester = new ImportedModelTester("ml_models", storedAppDir);
             verify(storedTester.createVespaModel());
         }
@@ -61,7 +61,7 @@ public class MlModelsTest {
         assertEquals(testProfile, b.toString());
     }
 
-    private final String testProfile =
+    private static final String testProfile =
             "rankingExpression(Placeholder).rankingScript: attribute(argument)\n" +
             "rankingExpression(Placeholder).type: tensor<float>(d0[1],d1[784])\n" +
             "rankingExpression(mnist_softmax_onnx).rankingScript: join(reduce(join(rename(rankingExpression(Placeholder), (d0, d1), (d0, d2)), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b))\n" +
