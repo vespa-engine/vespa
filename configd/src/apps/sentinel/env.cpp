@@ -93,7 +93,21 @@ void Env::respondAsEmpty() {
     }
 }
 
-void Env::waitForConnectivity(const ModelConfig &model) {
+namespace {
+
+const char *toString(CcResult value) {
+    switch (value) {
+        case CcResult::UNKNOWN: return "unknown";
+        case CcResult::CONN_FAIL: return "failed to connect";
+        case CcResult::REVERSE_FAIL: return "connect OK, but reverse check FAILED";
+        case CcResult::REVERSE_UNAVAIL: return "connect OK, but reverse check unavailable";
+        case CcResult::ALL_OK: return "both ways connectivity OK";
+    }
+    LOG(error, "Unknown CcResult enum value: %d", (int)value);
+    LOG_ABORT("Unknown CcResult enum value");
+}
+
+std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
     std::map<std::string, std::string> checkSpecs;
     for (const auto & h : model.hosts) {
         bool foundSentinelPort = false;
@@ -113,20 +127,25 @@ void Env::waitForConnectivity(const ModelConfig &model) {
                 h.name.c_str(), h.services.size());
         }
     }
-    vespalib::CountDownLatch latch(checkSpecs.size());
-    const char *myName = vespa::Defaults::vespaHostname();
-    int myPort = _rpcServer->getPort();
+    return checkSpecs;
+}
+
+}
+
+void Env::waitForConnectivity(const ModelConfig &model) {
+    auto checkSpecs = specsFrom(model);
+    OutwardCheckContext checkContext(checkSpecs.size(),
+                                     vespa::Defaults::vespaHostname(),
+                                     _rpcServer->getPort(),
+                                     _rpcServer->orb());
     std::map<std::string, OutwardCheck> connectivityMap;
     for (const auto & [ hn, spec ] : checkSpecs) {
-        connectivityMap.try_emplace(hn, spec, myName, myPort, _rpcServer->orb(), latch);
+        connectivityMap.try_emplace(hn, spec, checkContext);
     }
-    latch.await();
+    checkContext.latch.await();
     for (const auto & [hostname, check] : connectivityMap) {
-        const char *s = "unknown";
-        if (check.ok()) { s = "ok"; }
-        if (check.bad()) { s = "bad"; }
         LOG(info, "outward check status for host %s is: %s",
-            hostname.c_str(), s);
+            hostname.c_str(), toString(check.result()));
     }
 }
 

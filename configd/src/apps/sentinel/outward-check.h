@@ -10,21 +10,37 @@
 
 namespace config::sentinel {
 
+struct OutwardCheckContext {
+    vespalib::CountDownLatch latch;
+    const char * myHostname;
+    int myPortnum;
+    FRT_Supervisor &orb;
+    OutwardCheckContext(size_t count,
+                        const char * hostname,
+                        int portnumber,
+                        FRT_Supervisor &supervisor)
+      : latch(count),
+        myHostname(hostname),
+        myPortnum(portnumber),
+        orb(supervisor)
+    {}
+};
+
+enum class CcResult { UNKNOWN, CONN_FAIL, REVERSE_FAIL, REVERSE_UNAVAIL, ALL_OK };
+
 class OutwardCheck  : public FRT_IRequestWait {
 private:
-    bool _wasOk = false;
-    bool _wasBad = false;
+    CcResult _result = CcResult::UNKNOWN;
     FRT_Target *_target = nullptr;
     FRT_RPCRequest *_req = nullptr;
     std::string _spec;
-    vespalib::CountDownLatch &_countDownLatch;
+    OutwardCheckContext &_context;
 public:
-    OutwardCheck(const std::string &spec, const char * myHostname, int myPortnum,
-                 FRT_Supervisor &orb, vespalib::CountDownLatch &latch);
+    OutwardCheck(const std::string &spec, OutwardCheckContext &context);
     virtual ~OutwardCheck();
     void RequestDone(FRT_RPCRequest *req) override;
-    bool ok() const { return _wasOk; }
-    bool bad() const { return _wasBad; }
+    bool ok() const { return _result == CcResult::ALL_OK; }
+    CcResult result() const { return _result; }
 };
 
 }
