@@ -38,12 +38,12 @@ public class ClusterModel {
     private final MetricsDb metricsDb;
     private final Clock clock;
     private final Duration scalingDuration;
+    private final ClusterTimeseries clusterTimeseries;
+    private final ClusterNodesTimeseries nodeTimeseries;
 
     // Lazily initialized members
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
-    private ClusterNodesTimeseries nodeTimeseries = null;
-    private ClusterTimeseries clusterTimeseries = null;
 
     public ClusterModel(Application application,
                         Cluster cluster,
@@ -57,6 +57,8 @@ public class ClusterModel {
         this.metricsDb = metricsDb;
         this.clock = clock;
         this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
+        this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
+        this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
     }
 
     /** For testing */
@@ -64,7 +66,8 @@ public class ClusterModel {
                  Cluster cluster,
                  Clock clock,
                  Duration scalingDuration,
-                 ClusterTimeseries clusterTimeseries) {
+                 ClusterTimeseries clusterTimeseries,
+                 ClusterNodesTimeseries nodeTimeseries) {
         this.application = application;
         this.cluster = cluster;
         this.nodes = null;
@@ -73,20 +76,15 @@ public class ClusterModel {
 
         this.scalingDuration = scalingDuration;
         this.clusterTimeseries = clusterTimeseries;
+        this.nodeTimeseries = nodeTimeseries;
     }
 
     /** Returns the predicted duration of a rescaling of this cluster */
     public Duration scalingDuration() { return scalingDuration; }
 
-    public ClusterNodesTimeseries nodeTimeseries() {
-        if (nodeTimeseries != null) return nodeTimeseries;
-        return nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
-    }
+    public ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
 
-    public ClusterTimeseries clusterTimeseries() {
-        if (clusterTimeseries != null) return clusterTimeseries;
-        return clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
-    }
+    public ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 
     /**
      * Returns the predicted max query growth rate per minute as a fraction of the average traffic
