@@ -222,8 +222,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzUser.getFullName()));
-        // TODO provide the shortest expiry of what is provided and requested (or verify this is done by ZMS)
-        MembershipEntity membership = new MembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), null);
+        MembershipEntity membership = new MembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(membership))

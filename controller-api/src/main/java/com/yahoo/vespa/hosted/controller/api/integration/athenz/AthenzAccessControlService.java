@@ -7,6 +7,7 @@ import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -23,11 +24,10 @@ public class AthenzAccessControlService implements AccessControlService {
     }
 
     @Override
-    public boolean approveDataPlaneAccess(AthenzUser user) {
+    public boolean approveDataPlaneAccess(AthenzUser user, Instant expiry) {
         List<AthenzUser> users = zmsClient.listPendingRoleApprovals(dataPlaneAccessRole);
         if (users.contains(user)) {
-            // TODO (mortent): Handle expiry
-            zmsClient.approvePendingRoleMembership(dataPlaneAccessRole, user, null);
+            zmsClient.approvePendingRoleMembership(dataPlaneAccessRole, user, expiry);
             return true;
         }
         return false;

@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -12,8 +15,8 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
@@ -85,7 +88,11 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse approveMembership(HttpRequest request, String user) {
         AthenzUser athenzUser = AthenzUser.fromUserId(user);
-        boolean approved = controller.serviceRegistry().accessControlService().approveDataPlaneAccess(athenzUser);
+        byte[] jsonBytes = toJsonBytes(request.getData());
+        Inspector inspector = SlimeUtils.jsonToSlime(jsonBytes).get();
+        ApplicationId applicationId = ApplicationId.fromSerializedForm(inspector.field("applicationId").asString());
+        ZoneId zone = ZoneId.from(inspector.field("zone").asString());
+        controller.supportAccess().allowDataplaneMembership(athenzUser, new DeploymentId(applicationId, zone));
         return new AccessRequestResponse(controller.serviceRegistry().accessControlService().listMembers());
     }
 

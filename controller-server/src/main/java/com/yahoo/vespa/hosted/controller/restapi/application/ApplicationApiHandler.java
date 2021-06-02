@@ -31,6 +31,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonParseException;
@@ -122,6 +123,7 @@ import java.net.URISyntaxException;
 import java.security.DigestInputStream;
 import java.security.Principal;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
@@ -307,6 +309,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspend")) return suspend(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return allowSupportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support/grant")) return grantAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -990,6 +993,26 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Instant now = controller.clock().instant();
         SupportAccess allowed = controller.supportAccess().allow(deployment, now.plus(7, ChronoUnit.DAYS), principal.getName());
         return new SlimeJsonResponse(SupportAccessSerializer.toSlime(allowed, false, Optional.of(now)));
+    }
+
+    private HttpResponse grantAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
+        Principal principal = requireUserPrincipal(request);
+        Instant now = controller.clock().instant();
+
+        Inspector requestObject = toSlime(request.getData()).get();
+        X509Certificate certificate = X509CertificateUtils.fromPem(requestObject.field("certificate").asString());
+
+        // Register grant
+        SupportAccess supportAccess = controller.supportAccess().registerGrant(deployment, principal.getName(), certificate);
+
+        // Trigger deployment to include operator cert
+        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
+                .orElseThrow(() -> new IllegalStateException("No job found to trigger for " + deployment.toUserFriendlyString()));
+
+        String jobName = controller.applications().deploymentTrigger()
+                .reTrigger(deployment.applicationId(), jobType).type().jobName();
+        return new MessageResponse(String.format("Operator %s granted access and job %s triggered", principal.getName(), jobName));
     }
 
     private HttpResponse disallowSupportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {

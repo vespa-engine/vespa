@@ -18,6 +18,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -82,6 +83,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -1501,6 +1503,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
                 List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
@@ -1528,11 +1531,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Grant access to support user
         X509Certificate support_cert = grantCertificate(now, now.plusSeconds(3600));
-        tester.controller().supportAccess().registerGrant(app.deploymentIdIn(zone), "user.andreer", support_cert);
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support/grant", POST)
+                                      .data("{\"certificate\":\""+X509CertificateUtils.toPem(support_cert)+"\"}")
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"message\":\"Operator user.johnoperator granted access and job production-us-west-1 triggered\"}");
+
+        //tester.controller().supportAccess().registerGrant(app.deploymentIdIn(zone), "user.andreer", support_cert);
 
         // GET shows grant
         String grantResponse = allowedResponse.replaceAll("\"grants\":\\[]",
-                "\"grants\":[{\"requestor\":\"user.andreer\",\"notBefore\":\"" + serializeInstant(now) + "\",\"notAfter\":\"" + serializeInstant(now.plusSeconds(3600)) + "\"}]");
+                "\"grants\":[{\"requestor\":\"user.johnoperator\",\"notBefore\":\"" + serializeInstant(now) + "\",\"notAfter\":\"" + serializeInstant(now.plusSeconds(3600)) + "\"}]");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", GET)
                         .userIdentity(USER_ID),
                 grantResponse, 200

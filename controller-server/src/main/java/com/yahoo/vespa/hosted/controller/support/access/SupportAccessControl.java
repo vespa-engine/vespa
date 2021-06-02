@@ -1,16 +1,20 @@
 // Copyright 2021 Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.support.access;
 
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.Period;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.controller.support.access.SupportAccess.State.ALLOWED;
 import static com.yahoo.vespa.hosted.controller.support.access.SupportAccess.State.NOT_ALLOWED;
 
 /**
@@ -86,5 +90,16 @@ public class SupportAccessControl {
                 .filter(grant -> !grant.certificate().getNotBefore().toInstant().isBefore(now))
                 .filter(grant -> !grant.certificate().getNotAfter().toInstant().isAfter(now))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void allowDataplaneMembership(AthenzUser identity, DeploymentId deploymentId) {
+        Instant instant = controller.clock().instant();
+        SupportAccess supportAccess = forDeployment(deploymentId);
+        SupportAccess.CurrentStatus currentStatus = supportAccess.currentStatus(instant);
+        if(currentStatus.state() == ALLOWED) {
+            controller.serviceRegistry().accessControlService().approveDataPlaneAccess(identity, currentStatus.allowedUntil().orElse(instant.plus(MAX_SUPPORT_ACCESS_TIME)));
+        } else {
+            throw new IllegalStateException("Not allowed");
+        }
     }
 }

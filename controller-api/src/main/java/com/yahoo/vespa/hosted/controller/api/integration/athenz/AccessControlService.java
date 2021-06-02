@@ -4,9 +4,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzUser;
 
+import java.time.Instant;
 import java.util.Collection;
 
 public interface AccessControlService {
-    public boolean approveDataPlaneAccess(AthenzUser user);
-    public Collection<AthenzUser> listMembers();
+    boolean approveDataPlaneAccess(AthenzUser user, Instant expiry);
+    Collection<AthenzUser> listMembers();
 }
