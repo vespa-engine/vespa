@@ -54,54 +54,34 @@ public class RankProfile implements Cloneable {
 
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
-    /**
-     * The search definition-unique name of this rank profile
-     */
+    /** The search definition-unique name of this rank profile */
     private final String name;
 
-    /**
-     * The search definition owning this profile, or null if global (owned by a model)
-     */
+    /** The search definition owning this profile, or null if global (owned by a model) */
     private final ImmutableSearch search;
 
-    /**
-     * The model owning this profile if it is global, or null if it is owned by a search definition
-     */
+    /** The model owning this profile if it is global, or null if it is owned by a search definition */
     private final VespaModel model;
 
-    /**
-     * The name of the rank profile inherited by this
-     */
+    /** The name of the rank profile inherited by this */
     private String inheritedName = null;
 
-    /**
-     * The match settings of this profile
-     */
+    /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
 
-    /**
-     * The rank settings of this profile
-     */
+    /** The rank settings of this profile */
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
-    /**
-     * The ranking expression to be used for first phase
-     */
+    /** The ranking expression to be used for first phase */
     private RankingExpressionFunction firstPhaseRanking = null;
 
-    /**
-     * The ranking expression to be used for second phase
-     */
+    /** The ranking expression to be used for second phase */
     private RankingExpressionFunction secondPhaseRanking = null;
 
-    /**
-     * Number of hits to be reranked in second phase, -1 means use default
-     */
+    /** Number of hits to be reranked in second phase, -1 means use default */
     private int rerankCount = -1;
 
-    /**
-     * Mysterious attribute
-     */
+    /** Mysterious attribute */
     private int keepRankCount = -1;
 
     private int numThreadsPerSearch = -1;
@@ -110,9 +90,7 @@ public class RankProfile implements Cloneable {
 
     private Double termwiseLimit = null;
 
-    /**
-     * The drop limit used to drop hits with rank score less than or equal to this value
-     */
+    /** The drop limit used to drop hits with rank score less than or equal to this value */
     private double rankScoreDropLimit = -Double.MAX_VALUE;
 
     private Set<ReferenceNode> summaryFeatures;
@@ -120,9 +98,7 @@ public class RankProfile implements Cloneable {
 
     private Set<ReferenceNode> rankFeatures;
 
-    /**
-     * The properties of this - a multimap
-     */
+    /** The properties of this - a multimap */
     private Map<String, List<RankProperty>> rankProperties = new LinkedHashMap<>();
 
     private Boolean ignoreDefaultRankFeatures = null;
@@ -135,9 +111,7 @@ public class RankProfile implements Cloneable {
 
     private final RankProfileRegistry rankProfileRegistry;
 
-    /**
-     * Constants in ranking expressions
-     */
+    /** Constants in ranking expressions */
     private Map<String, Value> constants = new HashMap<>();
 
     private final TypeSettings attributeTypes = new TypeSettings();
@@ -146,9 +120,7 @@ public class RankProfile implements Cloneable {
 
     private List<ImmutableSDField> allFieldsList;
 
-    /**
-     * Global onnx models not tied to a search definition
-     */
+    /** Global onnx models not tied to a search definition */
     private OnnxModels onnxModels = new OnnxModels();
 
     /**
@@ -180,27 +152,17 @@ public class RankProfile implements Cloneable {
         this.onnxModels = onnxModels;
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    /**
-     * Returns the search definition owning this, or null if it is global
-     */
-    public ImmutableSearch getSearch() {
-        return search;
-    }
+    /** Returns the search definition owning this, or null if it is global */
+    public ImmutableSearch getSearch() { return search; }
 
-    /**
-     * Returns the application this is part of
-     */
+    /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
         return search != null ? search.applicationPackage() : model.applicationPackage();
     }
 
-    /**
-     * Returns the ranking constants of the owner of this
-     */
+    /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
     }
@@ -229,16 +191,10 @@ public class RankProfile implements Cloneable {
         this.inheritedName = inheritedName;
     }
 
-    /**
-     * Returns the name of the profile this one inherits, or null if none is inherited
-     */
-    public String getInheritedName() {
-        return inheritedName;
-    }
+    /** Returns the name of the profile this one inherits, or null if none is inherited */
+    public String getInheritedName() { return inheritedName; }
 
-    /**
-     * Returns the inherited rank profile, or null if there is none
-     */
+    /** Returns the inherited rank profile, or null if there is none */
     public RankProfile getInherited() {
         if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
 
@@ -303,7 +259,7 @@ public class RankProfile implements Cloneable {
         for (Iterator<RankSetting> i = declaredRankSettingIterator(); i.hasNext(); ) {
             RankSetting setting = i.next();
             if (setting.getFieldName().equals(field) &&
-                    setting.getType().equals(type)) {
+                setting.getType().equals(type)) {
                 return setting;
             }
         }
@@ -363,7 +319,7 @@ public class RankProfile implements Cloneable {
             TensorType type = value.type();
             if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
                 throw new IllegalArgumentException("Illegal type of constant " + name + " type " + type +
-                        ": Dense tensor dimensions must have a size");
+                                                   ": Dense tensor dimensions must have a size");
         }
         constants.put(name, value.freeze());
     }
@@ -372,9 +328,7 @@ public class RankProfile implements Cloneable {
         addConstant(name, value);
     }
 
-    /**
-     * Returns an unmodifiable view of the constants available in this
-     */
+    /** Returns an unmodifiable view of the constants available in this */
     public Map<String, Value> getConstants() {
         if (constants.isEmpty())
             return getInherited() != null ? getInherited().getConstants() : Collections.emptyMap();
