@@ -34,6 +34,11 @@ public class ClusterNodesTimeseries {
         this.timeseries = timeseries;
     }
 
+    private ClusterNodesTimeseries(NodeList clusterNodes, List<NodeTimeseries> timeseries) {
+        this.clusterNodes = clusterNodes;
+        this.timeseries = timeseries;
+    }
+
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {
         int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
@@ -59,6 +64,10 @@ public class ClusterNodesTimeseries {
 
     private List<NodeTimeseries> filter(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {
         return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.filter(filter)).collect(Collectors.toList());
+    }
+
+    public static ClusterNodesTimeseries empty() {
+        return new ClusterNodesTimeseries(NodeList.of(), List.of());
     }
 
 }
