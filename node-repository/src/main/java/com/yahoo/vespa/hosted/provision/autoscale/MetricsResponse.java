@@ -112,64 +112,112 @@ public class MetricsResponse {
     private enum Metric {
 
         cpu { // a node resource
+
+            @Override
             public List<String> metricResponseNames() { return List.of("cpu.util"); }
-            double computeFinal(List<Double> values) {
-                return values.stream().mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+
+            @Override
+            double computeFinal(ListMap<String, Double> values) {
+                return values.values().stream().flatMap(List::stream).mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
             }
+
         },
         memory { // a node resource
-            public List<String> metricResponseNames() { return List.of("mem.util"); }
-            double computeFinal(List<Double> values) {
-                return values.stream().mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+
+            @Override
+            public List<String> metricResponseNames() {
+                return List.of("content.proton.resource_usage.memory.average", "mem.util");
             }
+
+            @Override
+            double computeFinal(ListMap<String, Double> values) {
+                var valueList = values.get("content.proton.resource_usage.memory.average"); // prefer over mem.util
+                if ( ! valueList.isEmpty()) return valueList.get(0);
+
+                valueList = values.get("mem.util");
+                if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
+
+                return 0;
+            }
+
         },
         disk { // a node resource
-            public List<String> metricResponseNames() { return List.of("disk.util"); }
-            double computeFinal(List<Double> values) {
-                return values.stream().mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+
+            @Override
+            public List<String> metricResponseNames() {
+                return List.of("content.proton.resource_usage.disk.average", "disk.util");
             }
+
+            @Override
+            double computeFinal(ListMap<String, Double> values) {
+                var valueList = values.get("content.proton.resource_usage.disk.average"); // prefer over mem.util
+                if ( ! valueList.isEmpty()) return valueList.get(0);
+
+                valueList = values.get("disk.util");
+                if ( ! valueList.isEmpty()) return valueList.get(0) / 100; // % to ratio
+
+                return 0;
+            }
+
         },
         generation { // application config generation active on the node
+
+            @Override
             public List<String> metricResponseNames() { return List.of("application_generation"); }
-            double computeFinal(List<Double> values) {
-                return values.stream().mapToDouble(v -> v).min().orElse(-1);
+
+            @Override
+            double computeFinal(ListMap<String, Double> values) {
+                return values.values().stream().flatMap(List::stream).mapToDouble(v -> v).min().orElse(-1);
             }
+
         },
         inService {
+
+            @Override
             public List<String> metricResponseNames() { return List.of("in_service"); }
-            double computeFinal(List<Double> values) {
+
+            @Override
+            double computeFinal(ListMap<String, Double> values) {
                 // Really a boolean. Default true. If any is oos -> oos.
-                return values.stream().anyMatch(v -> v == 0) ? 0 : 1;
+                return values.values().stream().flatMap(List::stream).anyMatch(v -> v == 0) ? 0 : 1;
             }
+
         },
         queryRate { // queries per second
+
+            @Override
             public List<String> metricResponseNames() {
                 return List.of("queries.rate",
                                "content.proton.documentdb.matching.queries.rate");
             }
+
         },
         writeRate { // writes per second
+
+            @Override
             public List<String> metricResponseNames() {
                 return List.of("feed.http-requests.rate",
                                "vds.filestor.alldisks.allthreads.put.sum.count.rate",
                                "vds.filestor.alldisks.allthreads.remove.sum.count.rate",
                                "vds.filestor.alldisks.allthreads.update.sum.count.rate"); }
+
         };
 
-        /** The name of this metric as emitted from its source */
+        /**
+         * The names of this metric as emitted from its source.
+         * A map of the values of these names which were present in the response will
+         * be provided to computeFinal to decide on a single value.
+         */
         public abstract List<String> metricResponseNames();
 
-        double computeFinal(List<Double> values) { return values.stream().mapToDouble(v -> v).sum(); }
+        /** Computes the final metric value */
+        double computeFinal(ListMap<String, Double> values) {
+            return values.values().stream().flatMap(List::stream).mapToDouble(v -> v).sum();
+        }
 
         public double from(ListMap<String, Double> metricValues) {
-            // Multiple metric names may contribute to the same logical metric.
-            // Usually one per service, but we aggregate here to not require that.
-            List<Double> values = new ArrayList<>(1);
-            for (String metricName : metricResponseNames()) {
-                List<Double> valuesForName = metricValues.get(metricName);
-                if (valuesForName == null) continue;
-                values.addAll(valuesForName);
-            }
+            ListMap<String, Double> values = new ListMap<>(metricValues);
+            values.keySet().retainAll(metricResponseNames());
             return computeFinal(values);
         }
 
