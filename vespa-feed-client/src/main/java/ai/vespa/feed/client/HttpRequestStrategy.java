@@ -6,6 +6,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
     private final Map<DocumentId, CompletableFuture<Void>> inflightById = new HashMap<>();
     private final Object lock = new Object();
+    private final Clock clock;
     private final RetryStrategy wrapped;
     private final long maxInflight;
     private final long minInflight;
@@ -41,13 +43,15 @@ class HttpRequestStrategy implements RequestStrategy {
     private long inflight = 0;
     private long consecutiveSuccesses = 0;
     private boolean failed = false;
-    private Instant lastSuccess = Instant.MAX;
+    private Instant lastSuccess;
 
-    HttpRequestStrategy(FeedClientBuilder builder) {
+    HttpRequestStrategy(FeedClientBuilder builder, Clock clock) {
         this.wrapped = builder.retryStrategy;
         this.maxInflight = builder.maxConnections * (long) builder.maxStreamsPerConnection;
         this.minInflight = builder.maxConnections * (long) min(16, builder.maxStreamsPerConnection);
         this.targetInflight = Math.sqrt(maxInflight) * (Math.sqrt(minInflight));
+        this.clock = clock;
+        lastSuccess = clock.instant();
     }
 
     private boolean retry(SimpleHttpRequest request, int attempt) {
@@ -77,7 +81,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     void success() {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         synchronized (lock) {
             ++consecutiveSuccesses;
             lastSuccess = now;
@@ -86,7 +90,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     void failure() {
-        Instant threshold = Instant.now().minusSeconds(300);
+        Instant threshold = clock.instant().minusSeconds(300);
         synchronized (lock) {
             consecutiveSuccesses = 0;
             if (lastSuccess.isBefore(threshold))
