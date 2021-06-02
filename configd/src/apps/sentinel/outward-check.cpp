@@ -27,20 +27,20 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
     if (req->CheckReturnTypes("s")) {
         std::string answer = _req->GetReturn()->GetValue(0)._string._str;
         if (answer == "ok") {
-            LOG(info, "ping to %s with reverse connectivity OK", _spec.c_str());
+            LOG(debug, "ping to %s with reverse connectivity OK", _spec.c_str());
             _result = CcResult::ALL_OK;
         } else {
-            LOG(warning, "connected to %s, but reverse connectivity fails: %s",
+            LOG(debug, "connected to %s, but reverse connectivity fails: %s",
                 _spec.c_str(), answer.c_str());
             _result = CcResult::REVERSE_FAIL;
         }
     } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD ||
                req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS)
     {
-        LOG(info, "Connected OK to %s but no reverse connectivity check available", _spec.c_str());
+        LOG(debug, "Connected OK to %s but no reverse connectivity check available", _spec.c_str());
         _result = CcResult::REVERSE_UNAVAIL;
     } else {
-        LOG(warning, "error on request to %s : %s (%d)", _spec.c_str(),
+        LOG(debug, "error on request to %s : %s (%d)", _spec.c_str(),
             req->GetErrorMessage(), req->GetErrorCode());
         _result = CcResult::CONN_FAIL;
         
