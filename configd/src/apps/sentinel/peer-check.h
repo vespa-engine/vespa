@@ -4,7 +4,6 @@
 
 #include "status-callback.h"
 #include <string>
-#include <vespa/fnet/task.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -15,7 +14,7 @@ namespace config::sentinel {
 class PeerCheck : public FRT_IRequestWait
 {
 public:
-    PeerCheck(StatusCallback &callback, const std::string &host, int portnum, FRT_Supervisor &orb);
+    PeerCheck(StatusCallback &callback, const std::string &host, int portnum, FRT_Supervisor &orb, int timeout_ms);
     ~PeerCheck();
 
     PeerCheck(const PeerCheck &) = delete;
@@ -25,7 +24,6 @@ public:
 
     /** from FRT_IRequestWait **/
     void RequestDone(FRT_RPCRequest *req) override;
-
 private:
     StatusCallback &_callback;
     std::string     _hostname;
