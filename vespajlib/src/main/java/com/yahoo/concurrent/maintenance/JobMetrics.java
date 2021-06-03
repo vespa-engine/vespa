@@ -9,15 +9,9 @@ import java.util.function.BiConsumer;
  *
  * @author mpolden
  */
-public class JobMetrics {
-
-    private final BiConsumer<String, Long> metricConsumer;
+public abstract class JobMetrics {
 
     private final ConcurrentHashMap<String, Long> incompleteRuns = new ConcurrentHashMap<>();
-
-    public JobMetrics(BiConsumer<String, Long> metricConsumer) {
-        this.metricConsumer = metricConsumer;
-    }
 
     /** Record a run for given job */
     public void recordRunOf(String job) {
@@ -33,8 +27,10 @@ public class JobMetrics {
     public void forward(String job) {
         Long incompleteRuns = this.incompleteRuns.get(job);
         if (incompleteRuns != null) {
-            metricConsumer.accept(job, incompleteRuns);
+            consume(job, incompleteRuns);
         }
     }
+
+    protected abstract void consume(String job, Long incompleteRuns);
 
 }
