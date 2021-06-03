@@ -141,9 +141,9 @@ public class CompressedApplicationInputStreamTest {
         assertTrue(files.contains(new File(outApp, "services.xml")));
         assertTrue(files.contains(new File(outApp, "hosts.xml")));
         assertTrue(files.contains(new File(outApp, "deployment.xml")));
-        assertTrue(files.contains(new File(outApp, "searchdefinitions")));
+        assertTrue(files.contains(new File(outApp, "schemas")));
         assertTrue(files.contains(new File(outApp, "external")));
-        File sd = files.get(files.indexOf(new File(outApp, "searchdefinitions")));
+        File sd = files.get(files.indexOf(new File(outApp, "schemas")));
         assertTrue(sd.isDirectory());
         assertThat(sd.listFiles().length, is(1));
         assertThat(sd.listFiles()[0].getAbsolutePath(), is(new File(sd, "keyvalue.sd").getAbsolutePath()));
