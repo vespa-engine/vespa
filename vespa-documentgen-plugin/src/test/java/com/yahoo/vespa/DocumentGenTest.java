@@ -1,11 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Search;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -16,13 +15,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DocumentGenTest {
+    private static final File schemasDir = new File("src/test/resources/schemas/");
+    private static final File musicSchemaDir = new File(schemasDir, "music/");
+    private static final File complexSchemaDir = new File(schemasDir, "complex/");
+    private static final File localappSchemaDir = new File(schemasDir, "localapp/");
 
     @Test
     public void testMusic() {
         DocumentGenMojo mojo = new DocumentGenMojo();
-        mojo.execute(new File("etc/music/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
+        mojo.execute(musicSchemaDir, new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
-        assertEquals(searches.size(),1);
+        assertEquals(searches.size(), 1);
         assertEquals(searches.get("music").getDocument("music").getField("title").getDataType(), DataType.STRING);
         assertEquals(searches.get("music").getDocument("music").getField("eitheror").getDataType(), DataType.BOOL);
     }
@@ -30,7 +33,7 @@ public class DocumentGenTest {
     @Test
     public void testComplex() {
         DocumentGenMojo mojo = new DocumentGenMojo();
-        mojo.execute(new File("etc/complex/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
+        mojo.execute(complexSchemaDir, new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
         assertEquals(searches.get("video").getDocument("video").getField("weight").getDataType(), DataType.FLOAT);
         assertEquals(searches.get("book").getDocument("book").getField("sw1").getDataType(), DataType.FLOAT);
@@ -44,7 +47,7 @@ public class DocumentGenTest {
     @Test
     public void testLocalApp() {
         DocumentGenMojo mojo = new DocumentGenMojo();
-        mojo.execute(new File("etc/localapp/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
+        mojo.execute(localappSchemaDir, new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
         assertEquals(searches.get("video").getDocument("video").getField("weight").getDataType(), DataType.FLOAT);
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
