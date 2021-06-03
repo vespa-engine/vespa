@@ -4,6 +4,7 @@ package ai.vespa.feed.client;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
+import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -16,6 +17,12 @@ public interface RequestStrategy {
 
     /** Whether this has failed fatally, and we should cease sending further operations. */
     boolean hasFailed();
+
+    /** Forcibly terminates this, causing all inflight operations to complete immediately. */
+    void destroy();
+
+    /** Wait for all inflight requests to complete. */
+    void await();
 
     /** Enqueue the given operation, returning its future result. This may block if the client send queue is full. */
     CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request,

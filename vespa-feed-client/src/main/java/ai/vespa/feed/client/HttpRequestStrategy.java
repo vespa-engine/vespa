@@ -1,26 +1,29 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
+import ai.vespa.feed.client.FeedClient.CircuitBreaker;
 import ai.vespa.feed.client.FeedClient.RetryStrategy;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.IOException;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
+import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
+import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
 
+// TODO: update doc
 /**
  * Controls request execution and retries:
  * <ul>
@@ -31,57 +34,73 @@ import static java.util.logging.Level.INFO;
  *
  * @author jonmv
  */
-class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
+class HttpRequestStrategy implements RequestStrategy {
 
     private static final Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
 
-    private final Map<DocumentId, CompletableFuture<Void>> inflightById = new HashMap<>();
-    private final Object monitor = new Object();
-    private final Clock clock;
-    private final RetryStrategy wrapped;
-    private final Thread delayer = new Thread(this::drainDelayed, "feed-client-retry-delayer");
-    private final BlockingQueue<CompletableFuture<Void>> delayed = new LinkedBlockingQueue<>();
+    private final Map<DocumentId, CompletableFuture<?>> inflightById = new ConcurrentHashMap<>();
+    private final RetryStrategy strategy;
+    private final CircuitBreaker breaker;
+    private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
     private final long maxInflight;
     private final long minInflight;
-    private double targetInflight;
-    private long inflight = 0;
-    private long consecutiveSuccesses = 0;
-    private Instant lastSuccess;
-    private boolean failed = false;
-    private boolean closed = false;
+    private final AtomicLong targetInflightX10; // 10x target, so we can increment one every tenth success.
+    private final AtomicLong inflight = new AtomicLong(0);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final AtomicLong delayedCount = new AtomicLong(0);
+    private final AtomicLong retries = new AtomicLong(0);
 
-    HttpRequestStrategy(FeedClientBuilder builder, Clock clock) {
-        this.wrapped = builder.retryStrategy;
-        this.maxInflight = builder.maxConnections * (long) builder.maxStreamsPerConnection;
-        this.minInflight = builder.maxConnections * (long) min(16, builder.maxStreamsPerConnection);
-        this.targetInflight = Math.sqrt(maxInflight) * (Math.sqrt(minInflight));
-        this.clock = clock;
-        this.lastSuccess = clock.instant();
-        this.delayer.start();
+    HttpRequestStrategy(FeedClientBuilder builder) {
+        this.strategy = builder.retryStrategy;
+        this.breaker = builder.circuitBreaker;
+        this.maxInflight = builder.connectionsPerEndpoint * (long) builder.maxStreamsPerConnection;
+        this.minInflight = builder.connectionsPerEndpoint * (long) min(16, builder.maxStreamsPerConnection);
+        this.targetInflightX10 = new AtomicLong(10 * (long) (Math.sqrt(minInflight) * Math.sqrt(maxInflight)));
+        new Thread(this::dispatch, "feed-client-dispatcher").start();
     }
 
-    private void drainDelayed() {
+    private void dispatch() {
         try {
-            while (true) {
-                do delayed.take().complete(null);
-                while ( ! hasFailed());
+            while ( ! destroyed.get()) {
+                CircuitBreaker.State state = breaker.state();
+                if (state == OPEN) destroy();
+                else while ( ! isInExcess())
+                    if ( ! poll() || breaker.state() == HALF_OPEN) break;
 
-                Thread.sleep(1000);
+                // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
+                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
             }
         }
         catch (InterruptedException e) {
-            delayed.forEach(action -> action.cancel(true));
+            destroy();
         }
     }
 
+    private void offer(Runnable task) {
+        delayedCount.incrementAndGet();
+        queue.offer(task);
+    }
+
+    private boolean poll() {
+        Runnable task = queue.poll();
+        if (task == null) return false;
+        delayedCount.decrementAndGet();
+        task.run();
+        return true;
+    }
+
+    private boolean isInExcess() {
+        return inflight.get() - delayedCount.get() > targetInflight();
+    }
+
     private boolean retry(SimpleHttpRequest request, int attempt) {
-        if (attempt >= wrapped.retries())
+        if (attempt >= strategy.retries())
             return false;
 
         switch (request.getMethod().toUpperCase()) {
-            case "POST":   return wrapped.retry(FeedClient.OperationType.put);
-            case "PUT":    return wrapped.retry(FeedClient.OperationType.update);
-            case "DELETE": return wrapped.retry(FeedClient.OperationType.remove);
+            case "POST":   return strategy.retry(FeedClient.OperationType.PUT);
+            case "PUT":    return strategy.retry(FeedClient.OperationType.UPDATE);
+            case "DELETE": return strategy.retry(FeedClient.OperationType.REMOVE);
             default: throw new IllegalStateException("Unexpected HTTP method: " + request.getMethod());
         }
     }
@@ -91,8 +110,8 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
      * or the user has turned off retries for this type of operation.
      */
     private boolean retry(SimpleHttpRequest request, Throwable thrown, int attempt) {
-        failure();
-        log.log(INFO, thrown, () -> "Failed attempt " + attempt + " at " + request + ", " + consecutiveSuccesses + " successes since last error");
+        breaker.failure();
+        log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
 
         if ( ! (thrown instanceof IOException))
             return false;
@@ -100,74 +119,69 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
         return retry(request, attempt);
     }
 
-    void success() {
-        Instant now = clock.instant();
-        synchronized (monitor) {
-            ++consecutiveSuccesses;
-            lastSuccess = now;
-            targetInflight = min(targetInflight + 0.1, maxInflight);
-        }
+    private void incrementTargetInflight() {
+        targetInflightX10.incrementAndGet();
     }
 
-    void failure() {
-        Instant threshold = clock.instant().minusSeconds(300);
-        synchronized (monitor) {
-            consecutiveSuccesses = 0;
-            if (lastSuccess.isBefore(threshold))
-                failed = true;
-        }
+    private void decreaseTargetInflight() {
+        targetInflightX10.set(max((inflight.get() - delayedCount.get()) * 9, minInflight * 10));
+    }
+
+    private long targetInflight() {
+        return min(targetInflightX10.get() / 10, maxInflight);
     }
 
     /** Retries throttled requests (429, 503), adjusting the target inflight count, and server errors (500, 502). */
     private boolean retry(SimpleHttpRequest request, SimpleHttpResponse response, int attempt) {
         if (response.getCode() / 100 == 2) {
-            success();
+            breaker.success();
+            incrementTargetInflight();
             return false;
         }
 
-        if (response.getCode() == 429 || response.getCode() == 503) { // Throttling; reduce target inflight.
-            synchronized (monitor) {
-                targetInflight = max(inflight * 0.9, minInflight);
-            }
-            log.log(FINE, () -> "Status code " + response.getCode() + " (" + response.getBodyText() + ") on attempt " + attempt +
-                                " at " + request + ", " + consecutiveSuccesses + " successes since last error");
+        log.log(FINE, () -> "Status code " + response.getCode() + " (" + response.getBodyText() +
+                            ") on attempt " + attempt + " at " + request);
 
+        if (response.getCode() == 429 || response.getCode() == 503) { // Throttling; reduce target inflight.
+            decreaseTargetInflight();
             return true;
         }
 
-        log.log(INFO, () -> "Status code " + response.getCode() + " (" + response.getBodyText() + ") on attempt " + attempt +
-                            " at " + request + ", " + consecutiveSuccesses + " successes since last error");
+        breaker.failure();
+        if (response.getCode() == 500 || response.getCode() == 502 || response.getCode() == 504) // Hopefully temporary errors.
+            return retry(request, attempt);
 
-        failure();
-        if (response.getCode() != 500 && response.getCode() != 502)
-            return false;
-
-        return retry(request, attempt); // Hopefully temporary errors.
+        return false;
     }
 
-    // Must hold lock.
     private void acquireSlot() {
         try {
-            while (inflight >= targetInflight)
-                monitor.wait();
+            while (inflight.get() >= targetInflight())
+                Thread.sleep(1);
 
-            ++inflight;
+            inflight.incrementAndGet();
         }
         catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    // Must hold lock.
     private void releaseSlot() {
-        for (long i = --inflight; i < targetInflight; i++)
-            monitor.notify();
+        inflight.decrementAndGet();
     }
 
     @Override
     public boolean hasFailed() {
-        synchronized (monitor) {
-            return failed;
+        return breaker.state() == OPEN;
+    }
+
+    public void await() {
+        try {
+            while (inflight.get() > 0)
+                Thread.sleep(10);
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -176,33 +190,24 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
                                                          BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch) {
         CompletableFuture<SimpleHttpResponse> result = new CompletableFuture<>(); // Carries the aggregate result of the operation, including retries.
         CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
-        CompletableFuture<Void> blocker = new CompletableFuture<>();              // Blocks the next operation with same doc-id, then triggers it when complete.
-
-        // Get the previous inflight operation for this doc-id, or acquire a send slot.
-        CompletableFuture<Void> previous;
-        synchronized (monitor) {
-            previous = inflightById.put(documentId, blocker);
-            if (previous == null)
-                acquireSlot();
+        CompletableFuture<?> previous = inflightById.put(documentId, result);
+        if (destroyed.get()) {
+            result.cancel(true);
+            return result;
         }
-        if (previous == null)   // Send immediately if none inflight ...
+
+        if (previous == null) {
+            acquireSlot();
             dispatch.accept(request, vessel);
-        else                    // ... or send when the previous inflight is done.
-            previous.thenRun(() -> dispatch.accept(request, vessel));
+        }
+        else
+            previous.whenComplete((__, ___) -> offer(() -> dispatch.accept(request, vessel)));
 
         handleAttempt(vessel, dispatch, request, result, 1);
 
-        result.thenRun(() -> {
-            CompletableFuture<Void> current;
-            synchronized (monitor) {
-                current = inflightById.get(documentId);
-                if (current == blocker) {   // Release slot and clear map if no other operations enqueued for this doc-id ...
-                    releaseSlot();
-                    inflightById.put(documentId, null);
-                }
-            }
-            if (current != blocker)         // ... or trigger sending the next enqueued operation.
-                blocker.complete(null);
+        result.whenComplete((__, ___) -> {
+            if (inflightById.compute(documentId, (____, current) -> current == result ? null : current) == null)
+                releaseSlot();
         });
 
         return result;
@@ -215,33 +220,24 @@ class HttpRequestStrategy implements RequestStrategy, AutoCloseable {
             // Retry the operation if it failed with a transient error ...
             if (thrown != null ? retry(request, thrown, attempt)
                                : retry(request, response, attempt)) {
+                retries.incrementAndGet();
+                CircuitBreaker.State state = breaker.state();
                 CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
-                boolean hasFailed = hasFailed();
-                if (hasFailed)
-                    delayed.add(new CompletableFuture<>().thenRun(() -> dispatch.accept(request, retry)));
-                else
-                    dispatch.accept(request, retry);
-                handleAttempt(retry, dispatch, request, result, attempt + (hasFailed ? 0 : 1));
-                return;
+                offer(() -> dispatch.accept(request, retry));
+                handleAttempt(retry, dispatch, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
             }
-
             // ... or accept the outcome and mark the operation as complete.
-            if (thrown == null) result.complete(response);
-            else result.completeExceptionally(thrown);
+            else {
+                if (thrown == null) result.complete(response);
+                else result.completeExceptionally(thrown);
+            }
         });
     }
 
     @Override
-    public void close() {
-        synchronized (monitor) {
-            if (closed)
-                return;
-
-            closed = true;
-        }
-        delayer.interrupt();
-        try { delayer.join(); }
-        catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+    public void destroy() {
+        if ( ! destroyed.getAndSet(true))
+            inflightById.values().forEach(result -> result.cancel(true));
     }
 
 }
