@@ -532,12 +532,13 @@ public class SearchHandler extends LoggingRequestHandler {
 
         if (query.getHits() > maxHits) {
             return new Result(query, ErrorMessage.createIllegalQuery(query.getHits() +
-                              " hits requested, configured limit: " + maxHits + "."));
+                              " hits requested, configured limit: " + maxHits +
+                              ". See https://docs.vespa.ai/en/reference/query-api-reference.html#native-execution-parameters"));
 
         } else if (query.getOffset() > maxOffset) {
-            return new Result(query,
-                    ErrorMessage.createIllegalQuery("Offset of " + query.getOffset() +
-                                                    " requested, configured limit: " + maxOffset + "."));
+            return new Result(query, ErrorMessage.createIllegalQuery("Offset of " + query.getOffset() +
+                              " requested, configured limit: " + maxOffset +
+                              ". See https://docs.vespa.ai/en/reference/query-api-reference.html#native-execution-parameters"));
         }
         return null;
     }
