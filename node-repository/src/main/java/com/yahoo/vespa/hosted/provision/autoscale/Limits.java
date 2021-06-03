@@ -60,12 +60,11 @@ public class Limits {
     }
 
     public Limits fullySpecified(ClusterSpec.Type type, NodeRepository nodeRepository) {
-        if (this.isEmpty()) return this;
-        CapacityPolicies capacityPolicies = new CapacityPolicies(nodeRepository);
-        var specifiedMin = min.with(min.nodeResources().isUnspecified() ?
-                                    capacityPolicies.defaultNodeResources(type) : min.nodeResources());
-        var specifiedMax = max.with(max.nodeResources().isUnspecified() ?
-                                    capacityPolicies.defaultNodeResources(type) : max.nodeResources());
+        if (this.isEmpty()) throw new IllegalStateException("Unspecified limits can not be made fully specified");
+
+        var defaultResources = new CapacityPolicies(nodeRepository).defaultNodeResources(type);
+        var specifiedMin = min.nodeResources().isUnspecified() ? min.with(defaultResources) : min;
+        var specifiedMax = max.nodeResources().isUnspecified() ? max.with(defaultResources) : max;
         return new Limits(specifiedMin, specifiedMax);
     }
 
