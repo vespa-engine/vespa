@@ -306,9 +306,9 @@ public class VespaModelTestCase {
     }
 
     @Test
-    public void testThatDeployLogContainsWarninnWhenUsingSearchdefinitionsDir() throws IOException, SAXException {
+    public void testThatDeployLogContainsWarningWhenUsingSearchdefinitionsDir() throws IOException, SAXException {
         ApplicationPackage app = FilesApplicationPackage.fromFile(
-                new File("src/test/cfg/application/app_qrserverandgw/"));
+                new File("src/test/cfg/application/deprecated_features_app/"));
         MyLogger logger = new MyLogger();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
