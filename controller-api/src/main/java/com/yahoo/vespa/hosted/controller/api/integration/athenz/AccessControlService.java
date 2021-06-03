@@ -7,6 +7,11 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import java.time.Instant;
 import java.util.Collection;
 
+/**
+ * Manage operator data plane access control
+ *
+ * @author mortent
+ */
 public interface AccessControlService {
     boolean approveDataPlaneAccess(AthenzUser user, Instant expiry);
     Collection<AthenzUser> listMembers();

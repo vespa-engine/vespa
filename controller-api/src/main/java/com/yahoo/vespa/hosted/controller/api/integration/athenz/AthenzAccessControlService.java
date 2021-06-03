@@ -35,6 +35,6 @@ public class AthenzAccessControlService implements AccessControlService {
 
     @Override
     public Collection<AthenzUser> listMembers() {
-        return null;
+        throw new UnsupportedOperationException("Not implemented");
     }
 }

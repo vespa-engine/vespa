@@ -36,6 +36,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
@@ -99,8 +100,8 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         AthenzUser athenzUser = AthenzUser.fromUserId(user);
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector inspector = SlimeUtils.jsonToSlime(jsonBytes).get();
-        ApplicationId applicationId = ApplicationId.fromSerializedForm(inspector.field("applicationId").asString());
-        ZoneId zone = ZoneId.from(inspector.field("zone").asString());
+        ApplicationId applicationId = requireField(inspector, "applicationId", ApplicationId::fromSerializedForm);
+        ZoneId zone = requireField(inspector, "zone", ZoneId::from);
         if(controller.supportAccess().allowDataplaneMembership(athenzUser, new DeploymentId(applicationId, zone))) {
             return new AccessRequestResponse(controller.serviceRegistry().accessControlService().listMembers());
         } else {
@@ -114,9 +115,9 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector requestObject = SlimeUtils.jsonToSlime(jsonBytes).get();
-        X509Certificate certificate = X509CertificateUtils.fromPem(requestObject.field("certificate").asString());
-        ApplicationId applicationId = ApplicationId.fromSerializedForm(requestObject.field("applicationId").asString());
-        ZoneId zone = ZoneId.from(requestObject.field("zone").asString());
+        X509Certificate certificate = requireField(requestObject, "certificate", X509CertificateUtils::fromPem);
+        ApplicationId applicationId = requireField(requestObject, "applicationId", ApplicationId::fromSerializedForm);
+        ZoneId zone = requireField(requestObject, "zone", ZoneId::from);
         DeploymentId deployment = new DeploymentId(applicationId, zone);
 
         // Register grant
@@ -129,6 +130,12 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         String jobName = controller.applications().deploymentTrigger()
                 .reTrigger(deployment.applicationId(), jobType).type().jobName();
         return new MessageResponse(String.format("Operator %s granted access and job %s triggered", principal.getName(), jobName));
+    }
+
+    private <T> T requireField(Inspector inspector, String field, Function<String, T> mapper) {
+        return SlimeUtils.optionalString(inspector.field(field))
+                .map(mapper::apply)
+                .orElseThrow(() -> new IllegalArgumentException("Expected field \"" + field + "\" in request"));
     }
 
     private HttpResponse delete(HttpRequest request) {
