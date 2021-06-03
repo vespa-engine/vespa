@@ -17,9 +17,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static ai.vespa.feed.client.FeedClient.OperationType.put;
-import static ai.vespa.feed.client.FeedClient.OperationType.remove;
-import static ai.vespa.feed.client.FeedClient.OperationType.update;
+import static ai.vespa.feed.client.FeedClient.OperationType.PUT;
+import static ai.vespa.feed.client.FeedClient.OperationType.REMOVE;
+import static ai.vespa.feed.client.FeedClient.OperationType.UPDATE;
 import static com.fasterxml.jackson.core.JsonToken.START_OBJECT;
 import static com.fasterxml.jackson.core.JsonToken.VALUE_FALSE;
 import static com.fasterxml.jackson.core.JsonToken.VALUE_STRING;
@@ -187,9 +187,9 @@ public class JsonStreamFeeder implements Closeable {
                     case FIELD_NAME:
                         switch (parser.getText()) {
                             case "id":
-                            case "put":    type = put;    id = readId(); break;
-                            case "update": type = update; id = readId(); break;
-                            case "remove": type = remove; id = readId(); break;
+                            case "put":    type = PUT;    id = readId(); break;
+                            case "update": type = UPDATE; id = readId(); break;
+                            case "remove": type = REMOVE; id = readId(); break;
                             case "condition": parameters = parameters.testAndSetCondition(readString()); break;
                             case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
                             case "fields": {
@@ -230,9 +230,9 @@ public class JsonStreamFeeder implements Closeable {
             }
 
             switch (type) {
-                case put:    return client.put   (id, payload, parameters);
-                case update: return client.update(id, payload, parameters);
-                case remove: return client.remove(id,          parameters);
+                case PUT:    return client.put   (id, payload, parameters);
+                case UPDATE: return client.update(id, payload, parameters);
+                case REMOVE: return client.remove(id, parameters);
                 default: throw new IllegalStateException("Unexpected operation type '" + type + "'");
             }
         }

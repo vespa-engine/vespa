@@ -1,6 +1,9 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -11,6 +14,7 @@ import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
+import org.apache.hc.core5.net.URIAuthority;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
@@ -19,9 +23,9 @@ import javax.net.ssl.SSLContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,24 +48,32 @@ import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
  */
 class HttpFeedClient implements FeedClient {
 
-    private final URI endpoint;
     private final Map<String, Supplier<String>> requestHeaders;
     private final RequestStrategy requestStrategy;
-    private final List<CloseableHttpAsyncClient> httpClients = new ArrayList<>();
-    private final List<AtomicInteger> inflight = new ArrayList<>();
+    private final List<Endpoint> endpoints = new ArrayList<>();
     private final AtomicBoolean closed = new AtomicBoolean();
 
     HttpFeedClient(FeedClientBuilder builder) throws IOException {
-        this.endpoint = builder.endpoint;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
-        this.requestStrategy = new HttpRequestStrategy(builder, Clock.systemUTC());
+        this.requestStrategy = new HttpRequestStrategy(builder);
+        for (URI endpoint : builder.endpoints)
+            for (int i = 0; i < builder.connectionsPerEndpoint; i++)
+                endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
+    }
 
-        for (int i = 0; i < builder.maxConnections; i++) {
-            CloseableHttpAsyncClient client = createHttpClient(builder);
-            client.start();
-            httpClients.add(client);
-            inflight.add(new AtomicInteger());
+    private static class Endpoint {
+
+        private final CloseableHttpAsyncClient client;
+        private final AtomicInteger inflight = new AtomicInteger(0);
+        private final URI url;
+
+        private Endpoint(CloseableHttpAsyncClient client, URI url) {
+            this.client = client;
+            this.url = url;
+
+            this.client.start();
         }
+
     }
 
     private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder) throws IOException {
@@ -129,14 +141,37 @@ class HttpFeedClient implements FeedClient {
     }
 
     @Override
-    public void close() throws IOException {
-        if ( ! closed.getAndSet(true))
-            for (CloseableHttpAsyncClient hc : httpClients)
-                hc.close();
+    public void close(boolean graceful) {
+        closed.set(true);
+        if (graceful)
+            requestStrategy.await();
+
+        requestStrategy.destroy();
+        Throwable thrown = null;
+        for (Endpoint endpoint : endpoints)
+            try {
+                endpoint.client.close();
+            }
+            catch (Throwable t) {
+                if (thrown == null) thrown = t;
+                else thrown.addSuppressed(t);
+            }
+        if (thrown != null) throw new RuntimeException(thrown);
+    }
+
+    private void ensureOpen() {
+        if (requestStrategy.hasFailed())
+            close();
+
+        if (closed.get())
+            throw new IllegalStateException("Client is closed, no further operations may be sent");
     }
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
-        SimpleHttpRequest request = new SimpleHttpRequest(method, operationUrl(endpoint, documentId, params));
+        ensureOpen();
+
+        String path = operationPath(documentId, params).toString();
+        SimpleHttpRequest request = new SimpleHttpRequest(method, path);
         requestHeaders.forEach((name, value) -> request.setHeader(name, value.get()));
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
@@ -144,10 +179,7 @@ class HttpFeedClient implements FeedClient {
         return requestStrategy.enqueue(documentId, request, this::send)
                               .handle((response, thrown) -> {
                                   if (thrown != null) {
-                                      if (requestStrategy.hasFailed()) {
-                                          try { close(); }
-                                          catch (IOException exception) { thrown.addSuppressed(exception); }
-                                      }
+                                      // TODO: What to do with exceptions here? Ex on 400, 401, 403, etc, and wrap and throw?
                                       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                                       thrown.printStackTrace(new PrintStream(buffer));
                                       return new Result(Result.Type.failure, documentId, buffer.toString(), null);
@@ -160,26 +192,31 @@ class HttpFeedClient implements FeedClient {
     private void send(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel) {
         int index = 0;
         int min = Integer.MAX_VALUE;
-        for (int i = 0; i < httpClients.size(); i++)
-            if (inflight.get(i).get() < min) {
-                min = inflight.get(i).get();
+        for (int i = 0; i < endpoints.size(); i++)
+            if (endpoints.get(i).inflight.get() < min) {
                 index = i;
+                min = endpoints.get(i).inflight.get();
             }
 
-        inflight.get(index).incrementAndGet();
+        Endpoint endpoint = endpoints.get(index);
+        endpoint.inflight.incrementAndGet();
         try {
-            httpClients.get(index).execute(request,
-                                           new FutureCallback<SimpleHttpResponse>() {
-                                               @Override public void completed(SimpleHttpResponse response) { vessel.complete(response); }
-                                               @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
-                                               @Override public void cancelled() { vessel.cancel(false); }
-                                           });
+            request.setScheme(endpoint.url.getScheme());
+            request.setAuthority(new URIAuthority(endpoint.url.getHost(), endpoint.url.getPort()));
+            endpoint.client.execute(request,
+                                    new FutureCallback<SimpleHttpResponse>() {
+                                        @Override public void completed(SimpleHttpResponse response) { vessel.complete(response); }
+                                        @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
+                                        @Override public void cancelled() { vessel.cancel(false); }
+                                    });
         }
         catch (Throwable thrown) {
             vessel.completeExceptionally(thrown);
         }
-        vessel.thenRun(inflight.get(index)::decrementAndGet);
+        vessel.whenComplete((__, ___) -> endpoint.inflight.decrementAndGet());
     }
+
+    private static final JsonFactory factory = new JsonFactory();
 
     static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
         Result.Type type;
@@ -188,8 +225,31 @@ class HttpFeedClient implements FeedClient {
             case 412: type = Result.Type.conditionNotMet; break;
             default:  type = Result.Type.failure;
         }
-        Map<String, String> responseJson = null; // TODO: parse JSON on error.
-        return new Result(type, documentId, response.getBodyText(), "trace");
+
+        String message = null;
+        String trace = null;
+        try {
+            JsonParser parser = factory.createParser(response.getBodyText());
+            if (parser.nextToken() != JsonToken.START_OBJECT)
+                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+
+            String name;
+            while ((name = parser.nextFieldName()) != null) {
+                switch (name) {
+                    case "message": message = parser.nextTextValue(); break;
+                    case "trace": trace = parser.nextTextValue(); break;
+                    default: parser.nextToken();
+                }
+            }
+
+            if (parser.currentToken() != JsonToken.END_OBJECT)
+                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        return new Result(type, documentId, message, trace);
     }
 
     static List<String> toPath(DocumentId documentId) {
@@ -214,8 +274,8 @@ class HttpFeedClient implements FeedClient {
         return path;
     }
 
-    static URI operationUrl(URI endpoint, DocumentId documentId, OperationParameters params) {
-        URIBuilder url = new URIBuilder(endpoint);
+    static URI operationPath(DocumentId documentId, OperationParameters params) {
+        URIBuilder url = new URIBuilder();
         url.setPathSegments(toPath(documentId));
 
         if (params.createIfNonExistent()) url.addParameter("create", "true");

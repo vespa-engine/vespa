@@ -57,9 +57,8 @@ class JsonStreamFeederTest {
             }
 
             @Override
-            public void close() throws IOException {
+            public void close(boolean graceful) { }
 
-            }
         }).build().feed(in, 1 << 7, false); // TODO: hangs on 1 << 6.
         assertEquals(docs + 1, ids.size());
     }

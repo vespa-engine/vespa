@@ -74,7 +74,7 @@ public class CliClient {
 
     private static FeedClient createFeedClient(CliArguments cliArgs) throws CliArguments.CliArgumentsException {
         FeedClientBuilder builder = FeedClientBuilder.create(cliArgs.endpoint());
-        cliArgs.connections().ifPresent(builder::setMaxConnections);
+        cliArgs.connections().ifPresent(builder::setConnectionsPerEndpoint);
         cliArgs.maxStreamsPerConnection().ifPresent(builder::setMaxStreamPerConnection);
         if (cliArgs.sslHostnameVerificationDisabled()) {
             builder.setHostnameVerifier(AcceptAllHostnameVerifier.INSTANCE);
