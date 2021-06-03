@@ -2,17 +2,24 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/attribute/changevector.hpp>
-
+#include <vespa/vespalib/stllike/hash_set.h>
 using namespace search;
 
 template <typename T>
 void verifyStrictOrdering(const T & v) {
-    long count(0);
-    for (const auto & c : v) {
-        count++;
-        EXPECT_EQUAL(count, c._data.get());
+    vespalib::hash_set<uint32_t> complete;
+    uint32_t prev_doc(0);
+    uint32_t prev_value;
+    for (const auto & c : v.getDocIdInsertOrder()) {
+        if (prev_doc != c._doc) {
+            complete.insert(prev_doc);
+            EXPECT_FALSE(complete.contains(c._doc));
+            prev_doc = c._doc;
+        } else {
+            EXPECT_GREATER(c._data, prev_value);
+        }
+        prev_value = c._data;
     }
-    EXPECT_EQUAL(v.size(), size_t(count));
 }
 
 class Accessor {

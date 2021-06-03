@@ -25,7 +25,7 @@ template <typename B, typename M>
 bool
 MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & idx)
 {
-    if (c._enumScratchPad == Change::UNSET_ENUM) {
+    if ( ! c.isEnumValid() ) {
         return this->_enumStore.find_index(c._data.raw(), idx);
     }
     idx = EnumIndex(vespalib::datastore::EntryRef(c._enumScratchPad));

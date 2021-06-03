@@ -20,7 +20,6 @@ protected:
     typedef typename B::DocId                             DocId;
     typedef typename B::Change                            Change;
     typedef typename B::ChangeVector                      ChangeVector;
-    typedef typename B::ChangeVector::const_iterator      ChangeVectorIterator;
 
     using MultiValueType = M;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;

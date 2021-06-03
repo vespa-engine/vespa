@@ -89,40 +89,36 @@ AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> >& changes, DocId
 
 template<typename T>
 bool
-AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v,
+AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T &,
                                  const ArithmeticValueUpdate & arithm)
 {
-    (void) v;
-    bool retval(!hasMultiValue() && (doc < getNumDocs()));
-    if (retval) {
-        size_t oldSz(changes.size());
-        ArithmeticValueUpdate::Operator op(arithm.getOperator());
-        double aop = arithm.getOperand();
-        if (op == ArithmeticValueUpdate::Add) {
-            changes.push_back(ChangeTemplate<T>(ChangeBase::ADD, doc, 0, 0));
-        } else if (op == ArithmeticValueUpdate::Sub) {
-            changes.push_back(ChangeTemplate<T>(ChangeBase::SUB, doc, 0, 0));
-        } else if (op == ArithmeticValueUpdate::Mul) {
-            changes.push_back(ChangeTemplate<T>(ChangeBase::MUL, doc, 0, 0));
-        } else if (op == ArithmeticValueUpdate::Div) {
-            if (this->getClass().inherits(IntegerAttribute::classId) && aop == 0) {
-                divideByZeroWarning();
-            } else {
-                changes.push_back(ChangeTemplate<T>(ChangeBase::DIV, doc, 0, 0));
-            }
+    if (hasMultiValue() || (doc >= getNumDocs())) return false;
+
+    size_t oldSz(changes.size());
+    ArithmeticValueUpdate::Operator op(arithm.getOperator());
+    double aop = arithm.getOperand();
+    if (op == ArithmeticValueUpdate::Add) {
+        changes.push_back(ChangeTemplate<T>(ChangeBase::ADD, doc, 0, 0));
+    } else if (op == ArithmeticValueUpdate::Sub) {
+        changes.push_back(ChangeTemplate<T>(ChangeBase::SUB, doc, 0, 0));
+    } else if (op == ArithmeticValueUpdate::Mul) {
+        changes.push_back(ChangeTemplate<T>(ChangeBase::MUL, doc, 0, 0));
+    } else if (op == ArithmeticValueUpdate::Div) {
+        if (this->getClass().inherits(IntegerAttribute::classId) && aop == 0) {
+            divideByZeroWarning();
         } else {
-            retval = false;
+            changes.push_back(ChangeTemplate<T>(ChangeBase::DIV, doc, 0, 0));
         }
-        if (retval) {
-            const size_t diff = changes.size() - oldSz;
-            _status.incNonIdempotentUpdates(diff);
-            _status.incUpdates(diff);
-            if (diff > 0) {
-                changes.back()._arithOperand = aop;
-            }
-        }
+    } else {
+        return false;
     }
-    return retval;
+    const size_t diff = changes.size() - oldSz;
+    _status.incNonIdempotentUpdates(diff);
+    _status.incUpdates(diff);
+    if (diff > 0) {
+        changes.back()._arithOperand = aop;
+    }
+    return true;
 }
 
 template<typename T>
