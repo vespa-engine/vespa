@@ -92,14 +92,13 @@ CachingRpcTargetResolver::insert_new_target_mapping(const api::StorageMessageAdd
 }
 
 std::shared_ptr<RpcTarget>
-CachingRpcTargetResolver::resolve_rpc_target(const api::StorageMessageAddress& address,
-                                             uint64_t bucket_id) {
+CachingRpcTargetResolver::resolve_rpc_target(const api::StorageMessageAddress& address, uint64_t bucket_id) {
     const uint32_t curr_slobrok_gen = _slobrok_mirror.updates();
     if (auto result = lookup_target(address, bucket_id, curr_slobrok_gen)) {
         return result;
     }
     auto slobrok_id = address_to_slobrok_id(address);
-    auto specs = _slobrok_mirror.lookup(slobrok_id); // FIXME string type mismatch; implicit conv!
+    auto specs = _slobrok_mirror.lookup(slobrok_id);
     if (specs.empty()) {
         LOG(debug, "Found no mapping for '%s'", slobrok_id.c_str());
         // TODO return potentially stale existing target if no longer existing in SB?
