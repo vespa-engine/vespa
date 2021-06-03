@@ -92,14 +92,14 @@ public class SupportAccessControl {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void allowDataplaneMembership(AthenzUser identity, DeploymentId deploymentId) {
+    public boolean allowDataplaneMembership(AthenzUser identity, DeploymentId deploymentId) {
         Instant instant = controller.clock().instant();
         SupportAccess supportAccess = forDeployment(deploymentId);
         SupportAccess.CurrentStatus currentStatus = supportAccess.currentStatus(instant);
         if(currentStatus.state() == ALLOWED) {
-            controller.serviceRegistry().accessControlService().approveDataPlaneAccess(identity, currentStatus.allowedUntil().orElse(instant.plus(MAX_SUPPORT_ACCESS_TIME)));
+            return controller.serviceRegistry().accessControlService().approveDataPlaneAccess(identity, currentStatus.allowedUntil().orElse(instant.plus(MAX_SUPPORT_ACCESS_TIME)));
         } else {
-            throw new IllegalStateException("Not allowed");
+            return false;
         }
     }
 }

@@ -10,22 +10,30 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
+import javax.ws.rs.InternalServerErrorException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -83,6 +91,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
         if (path.matches("/controller/v1/access/requests/{user}")) return approveMembership(request, path.get("user"));
+        if (path.matches("/controller/v1/access/grants/{user}")) return grantAccess(request, path.get("user"));
         return notFound(path);
     }
 
@@ -92,8 +101,34 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         Inspector inspector = SlimeUtils.jsonToSlime(jsonBytes).get();
         ApplicationId applicationId = ApplicationId.fromSerializedForm(inspector.field("applicationId").asString());
         ZoneId zone = ZoneId.from(inspector.field("zone").asString());
-        controller.supportAccess().allowDataplaneMembership(athenzUser, new DeploymentId(applicationId, zone));
-        return new AccessRequestResponse(controller.serviceRegistry().accessControlService().listMembers());
+        if(controller.supportAccess().allowDataplaneMembership(athenzUser, new DeploymentId(applicationId, zone))) {
+            return new AccessRequestResponse(controller.serviceRegistry().accessControlService().listMembers());
+        } else {
+            return new MessageResponse(400, "Unable to approve membership request");
+        }
+    }
+
+    private HttpResponse grantAccess(HttpRequest request, String user) {
+        Principal principal = requireUserPrincipal(request);
+        Instant now = controller.clock().instant();
+
+        byte[] jsonBytes = toJsonBytes(request.getData());
+        Inspector requestObject = SlimeUtils.jsonToSlime(jsonBytes).get();
+        X509Certificate certificate = X509CertificateUtils.fromPem(requestObject.field("certificate").asString());
+        ApplicationId applicationId = ApplicationId.fromSerializedForm(requestObject.field("applicationId").asString());
+        ZoneId zone = ZoneId.from(requestObject.field("zone").asString());
+        DeploymentId deployment = new DeploymentId(applicationId, zone);
+
+        // Register grant
+        SupportAccess supportAccess = controller.supportAccess().registerGrant(deployment, principal.getName(), certificate);
+
+        // Trigger deployment to include operator cert
+        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
+                .orElseThrow(() -> new IllegalStateException("No job found to trigger for " + deployment.toUserFriendlyString()));
+
+        String jobName = controller.applications().deploymentTrigger()
+                .reTrigger(deployment.applicationId(), jobType).type().jobName();
+        return new MessageResponse(String.format("Operator %s granted access and job %s triggered", principal.getName(), jobName));
     }
 
     private HttpResponse delete(HttpRequest request) {
@@ -161,4 +196,9 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
+    private static Principal requireUserPrincipal(HttpRequest request) {
+        Principal principal = request.getJDiscRequest().getUserPrincipal();
+        if (principal == null) throw new InternalServerErrorException("Expected a user principal");
+        return principal;
+    }
 }

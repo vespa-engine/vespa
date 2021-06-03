@@ -1531,12 +1531,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Grant access to support user
         X509Certificate support_cert = grantCertificate(now, now.plusSeconds(3600));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support/grant", POST)
-                                      .data("{\"certificate\":\""+X509CertificateUtils.toPem(support_cert)+"\"}")
+        String grantPayload= "{\n" +
+                             "  \"applicationId\": \"tenant1:application1:instance1\",\n" +
+                             "  \"zone\": \"prod.us-west-1\",\n" +
+                             "  \"certificate\":\""+X509CertificateUtils.toPem(support_cert)+ "\"\n" +
+                             "}";
+        tester.assertResponse(request("/controller/v1/access/grants/"+HOSTED_VESPA_OPERATOR.id(), POST)
+                                      .data(grantPayload)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"message\":\"Operator user.johnoperator granted access and job production-us-west-1 triggered\"}");
-
-        //tester.controller().supportAccess().registerGrant(app.deploymentIdIn(zone), "user.andreer", support_cert);
 
         // GET shows grant
         String grantResponse = allowedResponse.replaceAll("\"grants\":\\[]",
@@ -1547,11 +1550,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         );
 
         // DELETE removes access
-        System.out.println("grantresponse:\n"+grantResponse+"\n");
         String disallowedResponse = grantResponse
                 .replaceAll("ALLOWED\".*?}", "NOT_ALLOWED\"}")
                 .replace("history\":[", "history\":[{\"state\":\"disallowed\",\"at\":\""+ serializeInstant(now) +"\",\"by\":\"user.myuser\"},");
-        System.out.println("disallowedResponse:\n"+disallowedResponse+"\n");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", DELETE)
                         .userIdentity(USER_ID),
                 disallowedResponse, 200

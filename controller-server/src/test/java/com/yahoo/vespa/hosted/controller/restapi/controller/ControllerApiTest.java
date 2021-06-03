@@ -9,6 +9,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
@@ -169,13 +170,23 @@ public class ControllerApiTest extends ControllerContainerTest {
 
     @Test
     public void testApproveMembership() {
-        // TODO Migrate test to use MockZmsClient
+        ApplicationId applicationId = ApplicationId.from("tenant", "app", "instance");
+        DeploymentId deployment = new DeploymentId(applicationId, ZoneId.defaultId());
+        String requestBody = "{\n" +
+                             " \"applicationId\": \"" + deployment.applicationId().serializedForm() + "\",\n" +
+                             " \"zone\": \"" + deployment.zoneId().value() + "\"\n" +
+                             "}";
+
         MockAccessControlService accessControlService = (MockAccessControlService) tester.serviceRegistry().accessControlService();
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), "", Request.Method.POST),
-                              "{\"members\":[]}");
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
+                              "{\"message\":\"Unable to approve membership request\"}", 400);
 
         accessControlService.addPendingMember(hostedOperator);
-        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), "", Request.Method.POST),
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
+                              "{\"message\":\"Unable to approve membership request\"}", 400);
+
+        tester.controller().supportAccess().allow(deployment, Instant.now().plus(Duration.ofHours(1)), "tenantx");
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
                               "{\"members\":[\"user.alice\"]}");
     }
 }

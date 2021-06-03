@@ -36,8 +36,7 @@ enum PathGroup {
              "/routing/v1/status/environment/{*}",
              "/routing/v1/inactive/environment/{*}",
              "/state/v1/{*}",
-             "/changemanagement/v1/{*}",
-             "/application/v4/tenant/{*}/application/{*}/instance/{*}/environment/{*}/region/{*}/access/support/grant"),
+             "/changemanagement/v1/{*}"),
 
     /** Paths used for creating and reading user resources. */
     user("/application/v4/user",
