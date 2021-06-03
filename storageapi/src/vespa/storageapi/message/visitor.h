@@ -79,6 +79,7 @@ public:
     uint32_t getVisitorCmdId() const { return _visitorCmdId; }
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
+    document::BucketId super_bucket_id() const;
     const vespalib::string & getLibraryName() const { return _libName; }
     const vespalib::string & getInstanceId() const { return _instanceId; }
     const vespalib::string & getControlDestination() const { return _controlDestination; }
@@ -114,6 +115,7 @@ public:
  */
 class CreateVisitorReply : public StorageReply {
 private:
+    document::BucketId _super_bucket_id;
     document::BucketId _lastBucket;
     vdslib::VisitorStatistics _visitorStatistics;
 
@@ -124,6 +126,7 @@ public:
 
     void setLastBucket(const document::BucketId& lastBucket) { _lastBucket = lastBucket; }
 
+    const document::BucketId& super_bucket_id() const { return _super_bucket_id; }
     const document::BucketId& getLastBucket() const { return _lastBucket; }
 
     void setVisitorStatistics(const vdslib::VisitorStatistics& stats) { _visitorStatistics = stats; }
