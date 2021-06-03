@@ -1,6 +1,9 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -213,6 +216,8 @@ class HttpFeedClient implements FeedClient {
         vessel.whenComplete((__, ___) -> endpoint.inflight.decrementAndGet());
     }
 
+    private static final JsonFactory factory = new JsonFactory();
+
     static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
         Result.Type type;
         switch (response.getCode()) {
@@ -220,8 +225,31 @@ class HttpFeedClient implements FeedClient {
             case 412: type = Result.Type.conditionNotMet; break;
             default:  type = Result.Type.failure;
         }
-        Map<String, String> responseJson = null; // TODO: parse JSON on error.
-        return new Result(type, documentId, response.getBodyText(), "trace");
+
+        String message = null;
+        String trace = null;
+        try {
+            JsonParser parser = factory.createParser(response.getBodyText());
+            if (parser.nextToken() != JsonToken.START_OBJECT)
+                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+
+            String name;
+            while ((name = parser.nextFieldName()) != null) {
+                switch (name) {
+                    case "message": message = parser.nextTextValue(); break;
+                    case "trace": trace = parser.nextTextValue(); break;
+                    default: parser.nextToken();
+                }
+            }
+
+            if (parser.currentToken() != JsonToken.END_OBJECT)
+                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        return new Result(type, documentId, message, trace);
     }
 
     static List<String> toPath(DocumentId documentId) {
