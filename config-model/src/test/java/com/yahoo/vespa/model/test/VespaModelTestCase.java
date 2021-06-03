@@ -316,10 +316,18 @@ public class VespaModelTestCase {
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         Validation.validate(model, new ValidationParameters(), deployState);
+        assertContainsWarning(logger.msgs, "Directory searchdefinitions/ should not be used for schemas, use schemas/ instead");
+    }
 
-        assertEquals(3, logger.msgs.size());
-        assertEquals("WARNING", logger.msgs.get(1).getFirst().getName());
-        assertEquals("Directory searchdefinitions/ should not be used for schemas, use schemas/ instead", logger.msgs.get(1).getSecond());
+    private void assertContainsWarning(List<Pair<Level,String>> msgs, String text) {
+        boolean foundCorrectWarning = false;
+        for (var msg : msgs)
+            if (msg.getFirst().getName().equals("WARNING") && msg.getSecond().equals(text)) {
+                foundCorrectWarning = true;
+            }
+        if (! foundCorrectWarning) for (var msg : msgs) System.err.println("MSG: "+msg);
+        assertTrue(msgs.size() > 0);
+        assertTrue(foundCorrectWarning);
     }
 
 }
