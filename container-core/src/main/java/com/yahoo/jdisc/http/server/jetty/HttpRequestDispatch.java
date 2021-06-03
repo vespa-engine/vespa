@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -119,6 +120,10 @@ class HttpRequestDispatch {
                             error,
                             () -> "Network connection was unexpectedly terminated: " + parent.jettyRequest.getRequestURI());
                     parent.metricReporter.prematurelyClosed();
+                } else if (isErrorOfType(error, TimeoutException.class)) {
+                    log.log(Level.FINE,
+                            error,
+                            () -> "Request/stream was timed out by Jetty: " + parent.jettyRequest.getRequestURI());
                 } else if (!isErrorOfType(error, OverloadException.class, BindingNotFoundException.class, RequestException.class)) {
                     log.log(Level.WARNING, "Request failed: " + parent.jettyRequest.getRequestURI(), error);
                 }
