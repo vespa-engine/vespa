@@ -2,11 +2,12 @@
 
 #include "env.h"
 #include "check-completion-handler.h"
-#include "outward-check.h"
+#include "connectivity.h"
 #include <vespa/defaults.h>
 #include <vespa/log/log.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 #include <chrono>
@@ -18,8 +19,20 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
+namespace {
+
+void maybeStopNow() {
+    if (vespalib::SignalHandler::INT.check() ||
+        vespalib::SignalHandler::TERM.check())
+    {
+        throw vespalib::FatalException("got signal during boot()");
+    }
+}
+
 constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS = 3min;
 constexpr std::chrono::milliseconds MODEL_TIMEOUT_MS = 1500ms;
+
+} // namespace <unnamed>
 
 Env::Env()
   : _cfgOwner(),
@@ -31,6 +44,7 @@ Env::Env()
     _statePort(0)
 {
     _startMetrics.startedTime = vespalib::steady_clock::now();
+    _stateApi.myHealth.setFailed("initializing...");
 }
 
 Env::~Env() = default;
@@ -38,17 +52,23 @@ Env::~Env() = default;
 void Env::boot(const std::string &configId) {
     LOG(debug, "Reading configuration for ID: %s", configId.c_str());
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
-    bool ok = _cfgOwner.checkForConfigUpdate();
     // subscribe() should throw if something is not OK
-    LOG_ASSERT(ok && _cfgOwner.hasConfig());
-    const auto & cfg = _cfgOwner.getConfig();
-    LOG(config, "Booting sentinel '%s' with [stateserver port %d] and [rpc port %d]",
-        configId.c_str(), cfg.port.telnet, cfg.port.rpc);
-    rpcPort(cfg.port.rpc);
-    statePort(cfg.port.telnet);
-    if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
-        waitForConnectivity(*up);
+    for (int retry = 0; retry < maxRetryLoops; ++retry) {
+        _cfgOwner.checkForConfigUpdate();
+        LOG_ASSERT(_cfgOwner.hasConfig());
+        const auto & cfg = _cfgOwner.getConfig();
+        LOG(config, "Booting sentinel '%s' with [stateserver port %d] and [rpc port %d]",
+            configId.c_str(), cfg.port.telnet, cfg.port.rpc);
+        rpcPort(cfg.port.rpc);
+        statePort(cfg.port.telnet);
+        if (waitForConnectivity(retry)) {
+            _stateApi.myHealth.setOk();
+            return;
+        } else {
+            LOG(warning, "Bad network connectivity, retry from start");
+        }
     }
+    throw InvalidConfigException("Giving up - too many connectivity check failures");
 }
 
 void Env::rpcPort(int port) {
@@ -93,60 +113,40 @@ void Env::respondAsEmpty() {
     }
 }
 
-namespace {
-
-const char *toString(CcResult value) {
-    switch (value) {
-        case CcResult::UNKNOWN: return "unknown";
-        case CcResult::CONN_FAIL: return "failed to connect";
-        case CcResult::REVERSE_FAIL: return "connect OK, but reverse check FAILED";
-        case CcResult::REVERSE_UNAVAIL: return "connect OK, but reverse check unavailable";
-        case CcResult::ALL_OK: return "both ways connectivity OK";
+bool Env::waitForConnectivity(int outerRetry) {
+    Connectivity::CheckResult lastCheckResult;
+    auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS);
+    if (! up) {
+        LOG(warning, "could not get model config, skipping connectivity checks");
+        return true;
     }
-    LOG(error, "Unknown CcResult enum value: %d", (int)value);
-    LOG_ABORT("Unknown CcResult enum value");
-}
-
-std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
-    std::map<std::string, std::string> checkSpecs;
-    for (const auto & h : model.hosts) {
-        bool foundSentinelPort = false;
-        for (const auto & s : h.services) {
-            if (s.name == "config-sentinel") {
-                for (const auto & p : s.ports) {
-                    if (p.tags.find("rpc") != p.tags.npos) {
-                        auto spec = fmt("tcp/%s:%d", h.name.c_str(), p.number);
-                        checkSpecs[h.name] = spec;
-                        foundSentinelPort = true;
-                    }
+    Connectivity checker(_cfgOwner.getConfig().connectivity, *_rpcServer);
+    for (int retry = 0; retry < maxRetriesInsideLoop; ++retry) {
+        auto res = checker.checkConnectivity(*up);
+        if (res.enoughOk) {
+            LOG(info, "Connectivity check OK, proceeding with service startup");
+            if (! res.allOk) {
+                for (const std::string &detail : res.details) {
+                    LOG(info, "Connectivity check details: %s", detail.c_str());
                 }
             }
+            return true;
         }
-        if (! foundSentinelPort) {
-            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
-                h.name.c_str(), h.services.size());
+        LOG(warning, "Connectivity check FAILED (try %d)", 1 + retry + maxRetriesInsideLoop*outerRetry);
+        _stateApi.myHealth.setFailed("FAILED connectivity check");
+        if (lastCheckResult.details != res.details) {
+            for (const std::string &detail : res.details) {
+                LOG(info, "Connectivity check details: %s", detail.c_str());
+            }
+            lastCheckResult = std::move(res);
+        }
+        for (int i = 0; i <= outerRetry; ++i) {
+            respondAsEmpty();
+            maybeStopNow();
+            std::this_thread::sleep_for(1s);
         }
     }
-    return checkSpecs;
-}
-
-}
-
-void Env::waitForConnectivity(const ModelConfig &model) {
-    auto checkSpecs = specsFrom(model);
-    OutwardCheckContext checkContext(checkSpecs.size(),
-                                     vespa::Defaults::vespaHostname(),
-                                     _rpcServer->getPort(),
-                                     _rpcServer->orb());
-    std::map<std::string, OutwardCheck> connectivityMap;
-    for (const auto & [ hn, spec ] : checkSpecs) {
-        connectivityMap.try_emplace(hn, spec, checkContext);
-    }
-    checkContext.latch.await();
-    for (const auto & [hostname, check] : connectivityMap) {
-        LOG(info, "outward check status for host %s is: %s",
-            hostname.c_str(), toString(check.result()));
-    }
+    return false;
 }
 
 }
