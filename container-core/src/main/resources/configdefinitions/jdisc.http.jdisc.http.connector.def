@@ -128,3 +128,7 @@ maxConnectionLife              double  default=0.0
 
 # Enable HTTP/2 (in addition to HTTP/1.1 using ALPN)
 http2Enabled                   bool  default=true
+
+http2.streamIdleTimeout double default=600
+
+http2.maxConcurrentStreams int default=4096

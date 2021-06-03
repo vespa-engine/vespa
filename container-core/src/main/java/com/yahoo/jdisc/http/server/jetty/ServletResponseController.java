@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,6 +76,9 @@ public class ServletResponseController {
             return HttpServletResponse.SC_NOT_FOUND;
         } else if (t instanceof RequestException) {
             return ((RequestException)t).getResponseStatus();
+        } else if (t instanceof TimeoutException) {
+            // E.g stream idle timeout for HTTP/2
+            return HttpServletResponse.SC_SERVICE_UNAVAILABLE;
         } else {
             return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         }
