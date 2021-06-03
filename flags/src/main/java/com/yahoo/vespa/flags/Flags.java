@@ -252,6 +252,12 @@ public class Flags {
             "The maximum number of hosts allowed to encrypt their disk concurrently",
             "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
 
+    public static final UnboundBooleanFlag REQUIRE_CONNECTIVITY_CHECK = defineFeatureFlag(
+            "require-connectivity-check", false,
+            List.of("arnej"), "2021-06-03", "2021-09-01",
+            "Require that config-sentinel connectivity check passes with good quality before starting services",
+            "Takes effect on next restart");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
