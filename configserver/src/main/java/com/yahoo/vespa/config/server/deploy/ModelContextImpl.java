@@ -200,7 +200,7 @@ public class ModelContextImpl implements ModelContext {
             this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
             this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);
             this.distributeExternalRankExpressions = flagValue(source, appId, Flags.DISTRIBUTE_EXTERNAL_RANK_EXPRESSION);
-            this.requireConnectivityCheck = Flags.REQUIRE_CONNECTIVITY_CHECK.bindTo(source).boxedValue();
+            this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }

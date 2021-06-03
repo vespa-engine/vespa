@@ -256,7 +256,8 @@ public class Flags {
             "require-connectivity-check", false,
             List.of("arnej"), "2021-06-03", "2021-09-01",
             "Require that config-sentinel connectivity check passes with good quality before starting services",
-            "Takes effect on next restart");
+            "Takes effect on next restart",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
