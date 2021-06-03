@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
@@ -242,7 +243,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addCommonServices(HostResource host, DeployState deployState) {
-        addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone());
+        addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone(),
+                          deployState.featureFlags());
         addLogd(deployState.getDeployLogger(), host);
         addConfigProxy(deployState.getDeployLogger(), host);
         addFileDistribution(host);
@@ -262,8 +264,10 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         }
     }
 
-    private void addConfigSentinel(DeployLogger deployLogger, HostResource host, ApplicationId applicationId, Zone zone) {
-        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone);
+    private void addConfigSentinel(DeployLogger deployLogger, HostResource host,
+                                   ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags)
+    {
+        ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone, featureFlags);
         addAndInitializeService(deployLogger, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
     }
