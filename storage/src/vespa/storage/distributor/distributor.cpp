@@ -24,6 +24,7 @@
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -350,6 +351,12 @@ get_bucket_id_for_striping(const api::StorageMessage& msg, const DistributorNode
                     return reply.getBucketId();
                 }
             }
+            case api::MessageType::GET_ID:
+                return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::GetCommand&>(msg).getDocumentId());
+            case api::MessageType::VISITOR_CREATE_ID:
+                return dynamic_cast<const api::CreateVisitorCommand&>(msg).super_bucket_id();
+            case api::MessageType::VISITOR_CREATE_REPLY_ID:
+                return dynamic_cast<const api::CreateVisitorReply&>(msg).super_bucket_id();
             default:
                 return msg.getBucketId();
         }
