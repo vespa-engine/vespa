@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -228,6 +229,17 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setEntity(toJsonStringEntity(membership))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public List<AthenzIdentity> listMembers(AthenzRole athenzRole) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", athenzRole.domain().getName(), athenzRole.roleName()));
+        RoleEntity execute = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, RoleEntity.class));
+        return execute.roleMembers().stream()
+                .filter(member -> ! member.pendingApproval())
+                .map(RoleEntity.Member::memberName)
+                .map(AthenzIdentities::from)
+                .collect(Collectors.toList());
     }
 
     private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {

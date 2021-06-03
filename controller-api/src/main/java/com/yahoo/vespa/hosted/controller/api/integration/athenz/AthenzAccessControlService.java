@@ -10,6 +10,7 @@ import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AthenzAccessControlService implements AccessControlService {
 
@@ -34,7 +35,11 @@ public class AthenzAccessControlService implements AccessControlService {
     }
 
     @Override
+    // Return list of approved members (users, excluding services) of data plane role
     public Collection<AthenzUser> listMembers() {
-        throw new UnsupportedOperationException("Not implemented");
+        return zmsClient.listMembers(dataPlaneAccessRole)
+                .stream().filter(AthenzUser.class::isInstance)
+                .map(AthenzUser.class::cast)
+                .collect(Collectors.toList());
     }
 }

@@ -156,6 +156,10 @@ public class ZmsClientMock implements ZmsClient {
     public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry) {
     }
 
+    @Override
+    public List<AthenzIdentity> listMembers(AthenzRole athenzRole) {
+        return List.of();
+    }
 
     @Override
     public void close() {}

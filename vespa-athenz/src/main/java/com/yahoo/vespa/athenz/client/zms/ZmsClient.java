@@ -48,5 +48,7 @@ public interface ZmsClient extends AutoCloseable {
 
     void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry);
 
+    List<AthenzIdentity> listMembers(AthenzRole athenzRole);
+
     void close();
 }

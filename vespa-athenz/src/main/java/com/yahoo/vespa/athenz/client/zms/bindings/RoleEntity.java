@@ -8,6 +8,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+/**
+ * @author mortent
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RoleEntity {
     private final String roleName;
@@ -27,6 +30,7 @@ public class RoleEntity {
         return roleMembers;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class Member {
         private final String memberName;
         private final boolean active;
