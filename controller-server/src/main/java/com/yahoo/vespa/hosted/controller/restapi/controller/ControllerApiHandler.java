@@ -2,27 +2,41 @@
 package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
+import javax.ws.rs.InternalServerErrorException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.security.Principal;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
@@ -77,7 +91,51 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
+        if (path.matches("/controller/v1/access/requests/{user}")) return approveMembership(request, path.get("user"));
+        if (path.matches("/controller/v1/access/grants/{user}")) return grantAccess(request, path.get("user"));
         return notFound(path);
+    }
+
+    private HttpResponse approveMembership(HttpRequest request, String user) {
+        AthenzUser athenzUser = AthenzUser.fromUserId(user);
+        byte[] jsonBytes = toJsonBytes(request.getData());
+        Inspector inspector = SlimeUtils.jsonToSlime(jsonBytes).get();
+        ApplicationId applicationId = requireField(inspector, "applicationId", ApplicationId::fromSerializedForm);
+        ZoneId zone = requireField(inspector, "zone", ZoneId::from);
+        if(controller.supportAccess().allowDataplaneMembership(athenzUser, new DeploymentId(applicationId, zone))) {
+            return new AccessRequestResponse(controller.serviceRegistry().accessControlService().listMembers());
+        } else {
+            return new MessageResponse(400, "Unable to approve membership request");
+        }
+    }
+
+    private HttpResponse grantAccess(HttpRequest request, String user) {
+        Principal principal = requireUserPrincipal(request);
+        Instant now = controller.clock().instant();
+
+        byte[] jsonBytes = toJsonBytes(request.getData());
+        Inspector requestObject = SlimeUtils.jsonToSlime(jsonBytes).get();
+        X509Certificate certificate = requireField(requestObject, "certificate", X509CertificateUtils::fromPem);
+        ApplicationId applicationId = requireField(requestObject, "applicationId", ApplicationId::fromSerializedForm);
+        ZoneId zone = requireField(requestObject, "zone", ZoneId::from);
+        DeploymentId deployment = new DeploymentId(applicationId, zone);
+
+        // Register grant
+        SupportAccess supportAccess = controller.supportAccess().registerGrant(deployment, principal.getName(), certificate);
+
+        // Trigger deployment to include operator cert
+        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
+                .orElseThrow(() -> new IllegalStateException("No job found to trigger for " + deployment.toUserFriendlyString()));
+
+        String jobName = controller.applications().deploymentTrigger()
+                .reTrigger(deployment.applicationId(), jobType).type().jobName();
+        return new MessageResponse(String.format("Operator %s granted access and job %s triggered", principal.getName(), jobName));
+    }
+
+    private <T> T requireField(Inspector inspector, String field, Function<String, T> mapper) {
+        return SlimeUtils.optionalString(inspector.field(field))
+                .map(mapper::apply)
+                .orElseThrow(() -> new IllegalArgumentException("Expected field \"" + field + "\" in request"));
     }
 
     private HttpResponse delete(HttpRequest request) {
@@ -145,4 +203,9 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
+    private static Principal requireUserPrincipal(HttpRequest request) {
+        Principal principal = request.getJDiscRequest().getUserPrincipal();
+        if (principal == null) throw new InternalServerErrorException("Expected a user principal");
+        return principal;
+    }
 }

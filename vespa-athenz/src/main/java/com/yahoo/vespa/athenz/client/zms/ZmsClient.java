@@ -5,9 +5,11 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -41,6 +43,12 @@ public interface ZmsClient extends AutoCloseable {
     void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole);
 
     boolean deletePolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole);
+
+    List<AthenzUser> listPendingRoleApprovals(AthenzRole athenzRole);
+
+    void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry);
+
+    List<AthenzIdentity> listMembers(AthenzRole athenzRole);
 
     void close();
 }

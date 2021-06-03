@@ -9,11 +9,12 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.NoopRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
@@ -35,7 +36,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 
 /**
@@ -73,6 +73,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final ArchiveService archiveService = new MockArchiveService();
     private final MockChangeRequestClient changeRequestClient = new MockChangeRequestClient();
+    private final AccessControlService accessControlService = new MockAccessControlService();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -227,6 +228,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public MockChangeRequestClient changeRequestClient() {
         return changeRequestClient;
+    }
+
+    @Override
+    public AccessControlService accessControlService() {
+        return accessControlService;
     }
 
     public ConfigServerMock configServerMock() {

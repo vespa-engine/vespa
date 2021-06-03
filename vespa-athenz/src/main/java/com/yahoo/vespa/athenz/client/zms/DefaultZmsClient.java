@@ -5,6 +5,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.athenz.client.ErrorHandler;
@@ -12,23 +13,29 @@ import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.AssertionEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.DomainListResponseEntity;
-import com.yahoo.vespa.athenz.client.zms.bindings.MembershipResponseEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.MembershipEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.PolicyEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ProviderResourceGroupRolesRequestEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.RoleEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.TenancyRequestEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -105,7 +112,10 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void addRoleMember(AthenzRole role, AthenzIdentity member) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
-        HttpUriRequest request = RequestBuilder.put(uri).build();
+        MembershipEntity membership = new MembershipEntity(member.getFullName(), true, role.roleName(), null);
+        HttpUriRequest request = RequestBuilder.put(uri)
+                .setEntity(toJsonStringEntity(membership))
+                .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 
@@ -123,7 +133,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setUri(uri)
                 .build();
         return execute(request, response -> {
-            MembershipResponseEntity membership = readEntity(response, MembershipResponseEntity.class);
+            MembershipEntity membership = readEntity(response, MembershipEntity.class);
             return membership.isMember;
         });
     }
@@ -192,6 +202,44 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         execute(request, response -> readEntity(response, Void.class));
         return true;
+    }
+
+    @Override
+    public List<AthenzUser> listPendingRoleApprovals(AthenzRole athenzRole) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true", athenzRole.domain().getName(), athenzRole.roleName()));
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(uri)
+                .build();
+        RoleEntity roleEntity =  execute(request, response -> readEntity(response, RoleEntity.class));
+        return roleEntity.roleMembers().stream()
+                .filter(RoleEntity.Member::pendingApproval)
+                .map(RoleEntity.Member::memberName)
+                .map(AthenzIdentities::from)
+                .filter(identity -> AthenzIdentities.USER_PRINCIPAL_DOMAIN.equals(identity.getDomain()))
+                .map(AthenzUser.class::cast)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzUser.getFullName()));
+        MembershipEntity membership = new MembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
+        HttpUriRequest request = RequestBuilder.put()
+                .setUri(uri)
+                .setEntity(toJsonStringEntity(membership))
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public List<AthenzIdentity> listMembers(AthenzRole athenzRole) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", athenzRole.domain().getName(), athenzRole.roleName()));
+        RoleEntity execute = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, RoleEntity.class));
+        return execute.roleMembers().stream()
+                .filter(member -> ! member.pendingApproval())
+                .map(RoleEntity.Member::memberName)
+                .map(AthenzIdentities::from)
+                .collect(Collectors.toList());
     }
 
     private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {
