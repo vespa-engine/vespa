@@ -60,7 +60,7 @@ public class CapacityPolicies {
         return target;
     }
 
-    private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
+    public NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin) {
             if (zone.system() == SystemName.dev) {
                 // Use small logserver in dev system

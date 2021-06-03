@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.util.Optional;
 
@@ -48,7 +47,7 @@ public class AllocationOptimizer {
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
         else
-            limits = atLeast(minimumNodes,  limits);
+            limits = atLeast(minimumNodes, limits).fullySpecified(current.clusterSpec().type(), nodeRepository);
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
         NodeList hosts = nodeRepository.nodes().list().hosts();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
