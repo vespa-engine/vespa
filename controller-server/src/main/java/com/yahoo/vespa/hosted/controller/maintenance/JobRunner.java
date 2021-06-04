@@ -49,10 +49,10 @@ public class JobRunner extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         jobs.active().forEach(this::advance);
         jobs.collectGarbage();
-        return 1.0;
+        return true;
     }
 
     @Override

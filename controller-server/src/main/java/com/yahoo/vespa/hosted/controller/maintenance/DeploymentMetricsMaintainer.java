@@ -44,7 +44,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         AtomicInteger failures = new AtomicInteger(0);
         AtomicInteger attempts = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
@@ -92,7 +92,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return asSuccessFactor(attempts.get(), failures.get());
+        return lastException.get() == null;
     }
 
     static DeploymentMetrics updateDeploymentMetrics(DeploymentMetrics current, List<ClusterMetrics> metrics) {

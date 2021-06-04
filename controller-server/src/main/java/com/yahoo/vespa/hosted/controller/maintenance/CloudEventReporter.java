@@ -38,7 +38,7 @@ public class CloudEventReporter extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         for (var region : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(region);
             for (var event : events) {
@@ -48,7 +48,7 @@ public class CloudEventReporter extends ControllerMaintainer {
                 deprovisionAffectedHosts(region, event);
             }
         }
-        return 1.0;
+        return true;
     }
 
     /** Deprovision any host affected by given event */

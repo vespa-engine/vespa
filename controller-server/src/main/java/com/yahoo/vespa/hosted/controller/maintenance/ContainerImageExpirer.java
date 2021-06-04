@@ -34,7 +34,7 @@ public class ContainerImageExpirer extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         Instant now = controller().clock().instant();
         VersionStatus versionStatus = controller().readVersionStatus();
         List<ContainerImage> imagesToExpire = controller().serviceRegistry().containerRegistry().list().stream()
@@ -44,7 +44,7 @@ public class ContainerImageExpirer extends ControllerMaintainer {
             log.log(Level.INFO, "Expiring " + imagesToExpire.size() + " container images: " + imagesToExpire);
             controller().serviceRegistry().containerRegistry().deleteAll(imagesToExpire);
         }
-        return 1.0;
+        return true;
     }
 
     /** Returns whether given image is expired */

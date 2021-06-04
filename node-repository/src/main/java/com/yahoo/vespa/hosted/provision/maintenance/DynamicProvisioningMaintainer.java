@@ -74,13 +74,13 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
             NodeList nodes = nodeRepository().nodes().list();
             resumeProvisioning(nodes, lock);
             convergeToCapacity(nodes);
         }
-        return 1.0;
+        return true;
     }
 
     /** Resume provisioning of already provisioned hosts and their children */

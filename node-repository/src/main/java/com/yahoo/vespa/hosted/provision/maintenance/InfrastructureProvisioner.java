@@ -39,9 +39,9 @@ public class InfrastructureProvisioner extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         infraDeployer.activateAllSupportedInfraApplications(false);
-        return 1.0;
+        return true;
     }
 
 }

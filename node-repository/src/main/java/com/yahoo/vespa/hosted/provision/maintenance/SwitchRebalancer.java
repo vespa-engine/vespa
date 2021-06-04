@@ -33,14 +33,14 @@ public class SwitchRebalancer extends NodeMover<Move> {
     }
 
     @Override
-    protected double maintain() {
-        if (!nodeRepository().nodes().isWorking()) return 0.0;
-        if (!nodeRepository().zone().environment().isProduction()) return 1.0;
+    protected boolean maintain() {
+        if (!nodeRepository().nodes().isWorking()) return false;
+        if (!nodeRepository().zone().environment().isProduction()) return true;
         NodeList allNodes = nodeRepository().nodes().list(); // Lockless as strong consistency is not needed
-        if (!zoneIsStable(allNodes)) return 1.0;
+        if (!zoneIsStable(allNodes)) return true;
 
         findBestMove(allNodes).execute(false, Agent.SwitchRebalancer, deployer, metric, nodeRepository());
-        return 1.0;
+        return true;
     }
 
     @Override

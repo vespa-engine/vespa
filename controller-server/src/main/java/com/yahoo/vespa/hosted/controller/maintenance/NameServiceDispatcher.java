@@ -37,12 +37,13 @@ public class NameServiceDispatcher extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
+        boolean success = true;
         try (var lock = db.lockNameServiceQueue()) {
             var queue = db.readNameServiceQueue();
             var instant = clock.instant();
             var remaining = queue.dispatchTo(nameService, requestCount);
-            if (queue == remaining) return 1.0; // Queue unchanged
+            if (queue == remaining) return success; // Queue unchanged
 
             var dispatched = queue.first(requestCount);
             if (!dispatched.requests().isEmpty()) {
@@ -53,7 +54,7 @@ public class NameServiceDispatcher extends ControllerMaintainer {
             }
             db.writeNameServiceQueue(remaining);
         }
-        return 1.0;
+        return success;
     }
 
     private static int requestCount(SystemName system) {

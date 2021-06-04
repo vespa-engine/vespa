@@ -23,7 +23,7 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         var roleService = controller().serviceRegistry().roleService();
         var tenants = controller().tenants().asList();
         var tenantsWithRoles = tenants.stream()
@@ -31,7 +31,7 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
                 .filter(this::hasProductionDeployment)
                 .collect(Collectors.toList());
         roleService.maintainRoles(tenantsWithRoles);
-        return 1.0;
+        return true;
     }
 
     private boolean hasProductionDeployment(TenantName tenant) {

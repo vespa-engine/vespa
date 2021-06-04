@@ -42,45 +42,35 @@ public class MaintainerTest {
 
     @Test
     public void success_metric() {
-        TestJobMetrics jobMetrics = new TestJobMetrics();
+        AtomicLong consecutiveFailures = new AtomicLong();
+        JobMetrics jobMetrics = new JobMetrics((job, count) -> consecutiveFailures.set(count));
         TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics);
 
         // Maintainer fails twice in a row
         maintainer.successOnNextRun(false).run();
-        assertEquals(1, jobMetrics.consecutiveFailures.get());
+        assertEquals(1, consecutiveFailures.get());
         maintainer.successOnNextRun(false).run();
-        assertEquals(2, jobMetrics.consecutiveFailures.get());
+        assertEquals(2, consecutiveFailures.get());
 
         // Maintainer runs successfully
         maintainer.successOnNextRun(true).run();
-        assertEquals(0, jobMetrics.consecutiveFailures.get());
+        assertEquals(0, consecutiveFailures.get());
 
         // Maintainer runs successfully again
         maintainer.run();
-        assertEquals(0, jobMetrics.consecutiveFailures.get());
+        assertEquals(0, consecutiveFailures.get());
 
         // Maintainer throws
         maintainer.throwOnNextRun(new RuntimeException()).run();
-        assertEquals(1, jobMetrics.consecutiveFailures.get());
+        assertEquals(1, consecutiveFailures.get());
 
         // Maintainer recovers
         maintainer.throwOnNextRun(null).run();
-        assertEquals(0, jobMetrics.consecutiveFailures.get());
+        assertEquals(0, consecutiveFailures.get());
 
         // Lock exception is treated as a failure
         maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
-        assertEquals(1, jobMetrics.consecutiveFailures.get());
-    }
-
-    private static class TestJobMetrics extends JobMetrics {
-
-        AtomicLong consecutiveFailures = new AtomicLong();
-
-        @Override
-        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) {
-            consecutiveFailures.set(incompleteRuns);
-        }
-
+        assertEquals(1, consecutiveFailures.get());
     }
 
 }

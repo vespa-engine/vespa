@@ -17,9 +17,9 @@ public class ReadyJobsTrigger extends ControllerMaintainer {
     }
 
     @Override
-    public double maintain() {
+    public boolean maintain() {
         controller().applications().deploymentTrigger().triggerReadyJobs();
-        return 1.0;
+        return true;
     }
 
 }

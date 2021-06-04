@@ -48,9 +48,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected double maintain() {
-        int attempts = 0;
-        int failures = 0;
+    protected boolean maintain() {
+        boolean success = true;
 
         try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory)) {
             for (var applicationId : applicationRepository.listApplications()) {
@@ -63,12 +62,11 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 log.fine(() -> "Verifying application package file reference " + applicationPackage + " for session " + sessionId);
 
                 if (applicationPackage != null) {
-                    attempts++;
                     if (! fileReferenceExistsOnDisk(downloadDirectory, applicationPackage)) {
                         log.fine(() -> "Downloading missing application package for application " + applicationId + " - session " + sessionId);
 
                         if (fileDownloader.getFile(applicationPackage).isEmpty()) {
-                            failures++;
+                            success = false;
                             log.warning("Failed to download application package for application " + applicationId + " - session " + sessionId);
                             continue;
                         }
@@ -77,7 +75,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 }
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return success;
     }
 
     @Override

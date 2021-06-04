@@ -65,7 +65,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     @Override
-    public double maintain() {
+    public boolean maintain() {
         NodeList nodes = nodeRepository().nodes().list();
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
@@ -80,7 +80,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         updateRepairTicketMetrics(nodes);
         updateAllocationMetrics(nodes);
         updateExclusiveSwitchMetrics(nodes);
-        return 1.0;
+        return true;
     }
 
     private void updateAllocationMetrics(NodeList nodes) {
