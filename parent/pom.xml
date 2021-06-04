@@ -851,7 +851,7 @@
     <properties>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
-        <apache.httpclient.version>4.5.12</apache.httpclient.version>
+        <apache.httpclient.version>4.5.13</apache.httpclient.version>
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
         <apache.httpclient5.version>5.1</apache.httpclient5.version>
         <asm.version>9.1</asm.version>
