@@ -5,6 +5,7 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
+#include <cassert>
 
 namespace storage::lib {
 
