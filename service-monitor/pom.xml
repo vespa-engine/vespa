@@ -20,7 +20,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5</version>
+            <version>4.5.13</version>
             <!-- This is necessary to get 4.4's HostnameVerifier API of SSLConnectionSocketFactory::new -->
             <scope>compile</scope>
         </dependency>
