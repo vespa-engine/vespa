@@ -25,7 +25,6 @@ interface RequestStrategy {
     void await();
 
     /** Enqueue the given operation, returning its future result. This may block if the client send queue is full. */
-    CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request,
-                                                  BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch);
+    CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request);
 
 }

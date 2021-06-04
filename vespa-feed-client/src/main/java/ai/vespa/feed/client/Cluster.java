@@ -13,6 +13,6 @@ interface Cluster extends Closeable {
     void dispatch(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel);
 
     @Override
-    void close();
+    default void close() { }
 
 }

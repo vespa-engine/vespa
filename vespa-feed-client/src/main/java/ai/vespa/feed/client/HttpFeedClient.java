@@ -33,19 +33,19 @@ import static java.util.Objects.requireNonNull;
  */
 class HttpFeedClient implements FeedClient {
 
+    private static final JsonFactory factory = new JsonFactory();
+
     private final Map<String, Supplier<String>> requestHeaders;
     private final RequestStrategy requestStrategy;
-    private final Cluster cluster;
     private final AtomicBoolean closed = new AtomicBoolean();
 
     HttpFeedClient(FeedClientBuilder builder) throws IOException {
-        this(builder, new HttpRequestStrategy(builder), new HttpCluster(builder));
+        this(builder, new HttpRequestStrategy(builder));
     }
 
-    HttpFeedClient(FeedClientBuilder builder, RequestStrategy requestStrategy, Cluster cluster) {
+    HttpFeedClient(FeedClientBuilder builder, RequestStrategy requestStrategy) {
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
-        this.cluster = cluster;
     }
 
     @Override
@@ -70,7 +70,6 @@ class HttpFeedClient implements FeedClient {
             requestStrategy.await();
 
         requestStrategy.destroy();
-        cluster.close();
     }
 
     private void ensureOpen() {
@@ -90,7 +89,7 @@ class HttpFeedClient implements FeedClient {
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
-        return requestStrategy.enqueue(documentId, request, this::send)
+        return requestStrategy.enqueue(documentId, request)
                               .handle((response, thrown) -> {
                                   if (thrown != null) {
                                       // TODO: What to do with exceptions here? Ex on 400, 401, 403, etc, and wrap and throw?
@@ -101,13 +100,6 @@ class HttpFeedClient implements FeedClient {
                                   return toResult(response, documentId);
                               });
     }
-
-    /** Sends the given request to the client with the least current inflight requests, completing the given vessel when done. */
-    private void send(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel) {
-        cluster.dispatch(request, vessel);
-    }
-
-    private static final JsonFactory factory = new JsonFactory();
 
     static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
         Result.Type type;
