@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -28,11 +27,11 @@ class Preparer {
     private final GroupPreparer groupPreparer;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
-    public Preparer(NodeRepository nodeRepository, FlagSource flagSource, Optional<HostProvisioner> hostProvisioner,
+    public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, flagSource);
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner);
     }
 
     /** Prepare all required resources for the given application and cluster */

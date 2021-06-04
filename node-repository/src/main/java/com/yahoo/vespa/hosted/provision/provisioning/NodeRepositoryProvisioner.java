@@ -71,7 +71,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
-                                     flagSource,
                                      provisionServiceProvider.getHostProvisioner(),
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
