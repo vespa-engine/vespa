@@ -16,12 +16,9 @@ import java.time.Instant;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RoleCertificateResponseEntity {
     public final X509Certificate certificate;
-    public final Instant expiry;
 
     @JsonCreator
-    public RoleCertificateResponseEntity(@JsonProperty("token") @JsonDeserialize(using = X509CertificateDeserializer.class) X509Certificate certificate,
-                                         @JsonProperty("expiryTime") Instant expiry) {
+    public RoleCertificateResponseEntity(@JsonProperty("x509Certificate") @JsonDeserialize(using = X509CertificateDeserializer.class) X509Certificate certificate) {
         this.certificate = certificate;
-        this.expiry = expiry;
     }
 }
