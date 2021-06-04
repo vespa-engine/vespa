@@ -35,7 +35,9 @@ public class VespaOutputFormat extends OutputFormat {
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         VespaCounters counters = VespaCounters.get(context);
         VespaConfiguration configuration = VespaConfiguration.get(context.getConfiguration(), configOverride);
-        return new LegacyVespaRecordWriter(configuration, counters);
+        return configuration.useLegacyClient()
+                ? new LegacyVespaRecordWriter(configuration, counters)
+                : new VespaRecordWriter(configuration, counters);
     }
 
 
