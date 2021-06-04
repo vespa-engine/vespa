@@ -102,7 +102,7 @@ public class NodeAdminStateUpdaterTest {
             // At this point orchestrator will say its OK to suspend, but something goes wrong when we try to stop services
             final String exceptionMessage = "Failed to stop services";
             verify(orchestrator, times(0)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
-            doThrow(new RuntimeException(exceptionMessage)).doNothing().when(nodeAdmin).stopNodeAgentServices(eq(activeHostnames));
+            doThrow(new RuntimeException(exceptionMessage)).doNothing().when(nodeAdmin).stopNodeAgentServices();
             assertConvergeError(SUSPENDED, exceptionMessage);
             verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
             // Make sure we dont roll back if we fail to stop services - we will try to stop again next tick

@@ -150,7 +150,7 @@ public class NodeAdminStateUpdater {
 
                 // The node agent services are stopped by this thread, which is OK only
                 // because the node agents are frozen (see above).
-                nodeAdmin.stopNodeAgentServices(nodesInActiveState);
+                nodeAdmin.stopNodeAgentServices();
                 break;
             default:
                 throw new IllegalStateException("Unknown wanted state " + wantedState);
