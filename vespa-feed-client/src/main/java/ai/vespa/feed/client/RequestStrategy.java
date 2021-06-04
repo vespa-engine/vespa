@@ -13,7 +13,7 @@ import java.util.function.BiConsumer;
  *
  * @author jonmv
  */
-public interface RequestStrategy {
+interface RequestStrategy {
 
     /** Whether this has failed fatally, and we should cease sending further operations. */
     boolean hasFailed();

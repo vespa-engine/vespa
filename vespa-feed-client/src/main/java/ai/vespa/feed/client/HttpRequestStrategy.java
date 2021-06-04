@@ -17,11 +17,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
+import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.CLOSED;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.WARNING;
 
 // TODO: update doc
 /**
@@ -61,19 +63,17 @@ class HttpRequestStrategy implements RequestStrategy {
 
     private void dispatch() {
         try {
-            while ( ! destroyed.get()) {
-                CircuitBreaker.State state = breaker.state();
-                if (state == OPEN) destroy();
-                else while ( ! isInExcess())
-                    if ( ! poll() || breaker.state() == HALF_OPEN) break;
-
+            while (breaker.state() != OPEN) {
+                while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
                 Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
             }
         }
         catch (InterruptedException e) {
-            destroy();
+            Thread.currentThread().interrupt();
+            log.log(WARNING, "Dispatch thread interrupted; shutting down");
         }
+        destroy();
     }
 
     private void offer(Runnable task) {
