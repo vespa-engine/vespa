@@ -52,7 +52,7 @@ ConfigOwner::fetchModelConfig(std::chrono::milliseconds timeout)
             tempSubscriber.subscribe<ModelConfig>("admin/model", timeout);
         if (tempSubscriber.nextGenerationNow()) {
             modelConfig = modelHandle->getConfig();
-            LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %zd",
+            LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %zd]",
                 modelConfig->vespaVersion.c_str(), modelConfig->hosts.size(),
                 tempSubscriber.getGeneration());
         }
