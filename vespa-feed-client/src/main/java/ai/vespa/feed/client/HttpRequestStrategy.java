@@ -14,14 +14,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
+import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.CLOSED;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.WARNING;
 
 // TODO: update doc
 /**
@@ -38,6 +39,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
     private static final Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
 
+    private final Cluster cluster;
     private final Map<DocumentId, CompletableFuture<?>> inflightById = new ConcurrentHashMap<>();
     private final RetryStrategy strategy;
     private final CircuitBreaker breaker;
@@ -50,7 +52,12 @@ class HttpRequestStrategy implements RequestStrategy {
     private final AtomicLong delayedCount = new AtomicLong(0);
     private final AtomicLong retries = new AtomicLong(0);
 
-    HttpRequestStrategy(FeedClientBuilder builder) {
+    HttpRequestStrategy(FeedClientBuilder builder) throws IOException {
+        this(builder, new HttpCluster(builder));
+    }
+
+    HttpRequestStrategy(FeedClientBuilder builder, Cluster cluster) {
+        this.cluster = cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
         this.maxInflight = builder.connectionsPerEndpoint * (long) builder.maxStreamsPerConnection;
@@ -61,19 +68,17 @@ class HttpRequestStrategy implements RequestStrategy {
 
     private void dispatch() {
         try {
-            while ( ! destroyed.get()) {
-                CircuitBreaker.State state = breaker.state();
-                if (state == OPEN) destroy();
-                else while ( ! isInExcess())
-                    if ( ! poll() || breaker.state() == HALF_OPEN) break;
-
+            while (breaker.state() != OPEN) {
+                while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
                 Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
             }
         }
         catch (InterruptedException e) {
-            destroy();
+            Thread.currentThread().interrupt();
+            log.log(WARNING, "Dispatch thread interrupted; shutting down");
         }
+        destroy();
     }
 
     private void offer(Runnable task) {
@@ -186,8 +191,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     @Override
-    public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request,
-                                                         BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch) {
+    public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request) {
         CompletableFuture<SimpleHttpResponse> result = new CompletableFuture<>(); // Carries the aggregate result of the operation, including retries.
         CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
         CompletableFuture<?> previous = inflightById.put(documentId, result);
@@ -198,12 +202,12 @@ class HttpRequestStrategy implements RequestStrategy {
 
         if (previous == null) {
             acquireSlot();
-            dispatch.accept(request, vessel);
+            offer(() -> cluster.dispatch(request, vessel));
         }
         else
-            previous.whenComplete((__, ___) -> offer(() -> dispatch.accept(request, vessel)));
+            previous.whenComplete((__, ___) -> offer(() -> cluster.dispatch(request, vessel)));
 
-        handleAttempt(vessel, dispatch, request, result, 1);
+        handleAttempt(vessel, request, result, 1);
 
         result.whenComplete((__, ___) -> {
             if (inflightById.compute(documentId, (____, current) -> current == result ? null : current) == null)
@@ -214,8 +218,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
-    private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> dispatch,
-                               SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result, int attempt) {
+    private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result, int attempt) {
         vessel.whenComplete((response, thrown) -> {
             // Retry the operation if it failed with a transient error ...
             if (thrown != null ? retry(request, thrown, attempt)
@@ -223,8 +226,8 @@ class HttpRequestStrategy implements RequestStrategy {
                 retries.incrementAndGet();
                 CircuitBreaker.State state = breaker.state();
                 CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
-                offer(() -> dispatch.accept(request, retry));
-                handleAttempt(retry, dispatch, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
+                offer(() -> cluster.dispatch(request, retry));
+                handleAttempt(retry, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
             }
             // ... or accept the outcome and mark the operation as complete.
             else {
@@ -238,6 +241,8 @@ class HttpRequestStrategy implements RequestStrategy {
     public void destroy() {
         if ( ! destroyed.getAndSet(true))
             inflightById.values().forEach(result -> result.cancel(true));
+
+        cluster.close();
     }
 
 }
