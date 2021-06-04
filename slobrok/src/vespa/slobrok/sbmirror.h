@@ -101,7 +101,6 @@ private:
     Configurator::UP         _configurator;
     std::string              _currSlobrok;
     int                      _rpc_ms;
-    uint32_t                 _idx;
     BackOff                  _backOff;
     FRT_Target              *_target;
     FRT_RPCRequest          *_req;
