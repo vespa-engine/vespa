@@ -48,6 +48,13 @@ public class VespaStorageTest {
         assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig");
     }
 
+    @Test
+    public void requireThatPremadeOperationsWithJsonLoaderFeedAndNonLegacyClientSucceeds() throws Exception {
+        Configuration conf = new HdfsConfiguration();
+        conf.set(VespaConfiguration.USE_SSL, Boolean.TRUE.toString());
+        conf.set(VespaConfiguration.USE_LEGACY_CLIENT, Boolean.FALSE.toString());
+        assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig", conf);
+    }
 
     @Test
     public void requireThatCreateOperationsFeedSucceeds() throws Exception {
