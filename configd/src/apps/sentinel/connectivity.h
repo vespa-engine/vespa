@@ -29,7 +29,7 @@ public:
 
     CheckResult checkConnectivity(const ModelConfig &model);
 private:
-    const SentinelConfig::Connectivity & _config;
+    const SentinelConfig::Connectivity _config;
     RpcServer &_rpcServer;
 };
 

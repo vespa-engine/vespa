@@ -67,7 +67,6 @@ std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
 
 Connectivity::CheckResult
 Connectivity::checkConnectivity(const ModelConfig &model) {
-    CheckResult result{false, false, {}};
     const auto checkSpecs = specsFrom(model);
     size_t clusterSize = checkSpecs.size();
     OutwardCheckContext checkContext(clusterSize,
@@ -83,12 +82,9 @@ Connectivity::checkConnectivity(const ModelConfig &model) {
     size_t numFailedReverse = 0;
     bool allChecksOk = true;
     for (const auto & [hostname, check] : connectivityMap) {
+        LOG_ASSERT(check.result() != CcResult::UNKNOWN);
         if (check.result() == CcResult::CONN_FAIL) ++numFailedConns;
         if (check.result() == CcResult::REVERSE_FAIL) ++numFailedReverse;
-        if (check.result() == CcResult::UNKNOWN) {
-            LOG(error, "Missing ConnectivityCheck result from %s", hostname.c_str());
-            allChecksOk = false;
-        }
     }
     if (numFailedReverse > size_t(_config.maxBadReverseCount)) {
         LOG(warning, "%zu of %zu nodes report problems connecting to me (max is %d)",
@@ -96,17 +92,20 @@ Connectivity::checkConnectivity(const ModelConfig &model) {
         allChecksOk = false;
     }
     if (numFailedConns * 100.0 > _config.maxBadOutPercent * clusterSize) {
-        double pct = numFailedConns * 100ul / clusterSize;
+        double pct = numFailedConns * 100.0 / clusterSize;
         LOG(warning, "Problems connecting to %zu of %zu nodes, %.2f %% (max is %d)",
             numFailedConns, clusterSize, pct, _config.maxBadOutPercent);
         allChecksOk = false;
     }
+    std::vector<std::string> details;
     for (const auto & [hostname, check] : connectivityMap) {
         std::string detail = fmt("%s -> %s", hostname.c_str(), toString(check.result()));
-        result.details.push_back(detail);
+        details.push_back(detail);
     }
+    CheckResult result{false, false, {}};
     result.enoughOk = allChecksOk;
     result.allOk = (numFailedConns == 0) && (numFailedReverse == 0);
+    result.details = std::move(details);
     return result;
 }
 
