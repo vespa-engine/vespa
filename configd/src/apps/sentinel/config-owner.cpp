@@ -27,7 +27,7 @@ ConfigOwner::doConfigure()
     _currGeneration = _subscriber.getGeneration();
     const SentinelConfig& config(*_currConfig);
     const auto & app = config.application;
-    LOG(config, "Sentinel got %zd service elements [tenant(%s), application(%s), instance(%s)] for config generation %zd",
+    LOG(config, "Sentinel got %zd service elements [tenant(%s), application(%s), instance(%s)] for config generation %" PRId64,
         config.service.size(), app.tenant.c_str(), app.name.c_str(), app.instance.c_str(), _currGeneration);
 }
 
@@ -52,7 +52,7 @@ ConfigOwner::fetchModelConfig(std::chrono::milliseconds timeout)
             tempSubscriber.subscribe<ModelConfig>("admin/model", timeout);
         if (tempSubscriber.nextGenerationNow()) {
             modelConfig = modelHandle->getConfig();
-            LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %zd]",
+            LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %" PRId64 "]",
                 modelConfig->vespaVersion.c_str(), modelConfig->hosts.size(),
                 tempSubscriber.getGeneration());
         }
