@@ -134,6 +134,27 @@ TEST("require that hashtable<vector<int>> can be copied") {
     EXPECT_EQUAL(6, (*table.find(2))[2]);
 }
 
+/**
+ * Test to profile destruction and recreation of hash map.
+ * It revealed some unexpected behaviour. Results with 10k iterations on 2018 macbook pro 2.6 Ghz i7
+ * 1 - previous - 14.7s hash_node() : _node(), _next(invalid) {}
+ * 2 - test     -  6.6s hash_node() : _next(invalid) { memset(_node, 0, sizeof(node)); }
+ * 3 - current  -  2.3s hash_node() : _next(invalid) {}
+ */
+TEST("benchmark clear") {
+    vespalib::hash_map<uint32_t, uint32_t> m(1000000);
+    constexpr size_t NUM_ITER = 10; // Set to 1k-10k to get measurable numbers 10k ~= 2.3s
+    for (size_t i(0); i < NUM_ITER; i++) {
+        m[46] = 17;
+        EXPECT_FALSE(m.empty());
+        EXPECT_EQUAL(1u, m.size());
+        EXPECT_EQUAL(1048576u, m.capacity());
+        m.clear();
+        EXPECT_TRUE(m.empty());
+        EXPECT_EQUAL(1048576u, m.capacity());
+    }
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }
