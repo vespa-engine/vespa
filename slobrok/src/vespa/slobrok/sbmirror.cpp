@@ -26,7 +26,6 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
       _configurator(config.create(_slobrokSpecs)),
       _currSlobrok(""),
       _rpc_ms(100),
-      _idx(0),
       _backOff(),
       _target(0),
       _req(0)
