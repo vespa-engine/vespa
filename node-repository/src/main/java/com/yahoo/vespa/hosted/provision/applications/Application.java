@@ -62,7 +62,7 @@ public class Application {
     public Application withCluster(ClusterSpec.Id id, boolean exclusive, ClusterResources min, ClusterResources max) {
         Cluster cluster = clusters.get(id);
         if (cluster == null)
-            cluster = new Cluster(id, exclusive, min, max, Optional.empty(), Optional.empty(), List.of(), "");
+            cluster = new Cluster(id, exclusive, min, max, Optional.empty(), Optional.empty(), List.of(), AutoscalingStatus.empty());
         else
             cluster = cluster.withConfiguration(exclusive, min, max);
         return with(cluster);

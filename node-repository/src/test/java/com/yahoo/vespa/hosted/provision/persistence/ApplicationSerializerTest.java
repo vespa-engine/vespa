@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.applications.Status;
@@ -35,7 +36,7 @@ public class ApplicationSerializerTest {
                                  Optional.empty(),
                                  Optional.empty(),
                                  List.of(),
-                                 ""));
+                                 AutoscalingStatus.empty()));
         var minResources = new NodeResources(1, 2, 3, 4);
         clusters.add(new Cluster(ClusterSpec.Id.from("c2"),
                                  true,
@@ -50,7 +51,7 @@ public class ApplicationSerializerTest {
                                                           7L,
                                                           Instant.ofEpochMilli(12345L),
                                                           Optional.of(Instant.ofEpochMilli(67890L)))),
-                                 "Autoscaling status"));
+                                 new AutoscalingStatus(AutoscalingStatus.Status.insufficient, "Autoscaling status")));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
                                                Status.initial().withCurrentReadShare(0.3).withMaxReadShare(0.5),
                                                clusters);

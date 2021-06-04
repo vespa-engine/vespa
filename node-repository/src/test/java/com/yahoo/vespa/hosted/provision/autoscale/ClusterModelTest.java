@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.Status;
 import org.junit.Test;
@@ -79,7 +80,7 @@ public class ClusterModelTest {
                            Optional.empty(),
                            Optional.empty(),
                            List.of(),
-                           "");
+                           AutoscalingStatus.empty());
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */

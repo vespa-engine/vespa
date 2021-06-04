@@ -14,16 +14,13 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Maintainer making automatic scaling decisions
@@ -81,7 +78,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
                 // 1. Update cluster info
                 updatedCluster = updateCompletion(cluster.get(), clusterNodes)
-                                         .withAutoscalingStatus(advice.reason())
+                                         .with(advice.reason())
                                          .withTarget(advice.target());
                 applications().put(application.get().with(updatedCluster), lock);
                 if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {

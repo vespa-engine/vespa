@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,7 @@ public class Cluster {
 
     /** The maxScalingEvents last scaling events of this, sorted by increasing time (newest last) */
     private final List<ScalingEvent> scalingEvents;
-    private final String autoscalingStatus;
+    private final AutoscalingStatus autoscalingStatus;
 
     public Cluster(ClusterSpec.Id id,
                    boolean exclusive,
@@ -40,7 +39,7 @@ public class Cluster {
                    Optional<Suggestion> suggestedResources,
                    Optional<ClusterResources> targetResources,
                    List<ScalingEvent> scalingEvents,
-                   String autoscalingStatus) {
+                   AutoscalingStatus autoscalingStatus) {
         this.id = Objects.requireNonNull(id);
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
@@ -95,8 +94,8 @@ public class Cluster {
         return Optional.of(scalingEvents.get(scalingEvents.size() - 1));
     }
 
-    /** The latest autoscaling status of this cluster, or empty (never null) if none */
-    public String autoscalingStatus() { return autoscalingStatus; }
+    /** The latest autoscaling status of this cluster, or unknown (never null) if none */
+    public AutoscalingStatus autoscalingStatus() { return autoscalingStatus; }
 
     public Cluster withConfiguration(boolean exclusive, ClusterResources min, ClusterResources max) {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
@@ -124,7 +123,7 @@ public class Cluster {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
-    public Cluster withAutoscalingStatus(String autoscalingStatus) {
+    public Cluster with(AutoscalingStatus autoscalingStatus) {
         if (autoscalingStatus.equals(this.autoscalingStatus)) return this;
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }

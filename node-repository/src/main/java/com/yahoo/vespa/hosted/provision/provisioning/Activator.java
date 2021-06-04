@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -117,7 +118,8 @@ class Activator {
             }
             if (cluster.targetResources().isPresent()
                 && cluster.targetResources().get().justNumbers().equals(currentResources.justNumbers())) {
-                cluster = cluster.withAutoscalingStatus("Cluster is ideally scaled within configured limits");
+                cluster = cluster.with(new AutoscalingStatus(AutoscalingStatus.Status.ideal,
+                                                             "Cluster is ideally scaled within configured limits"));
             }
             if (cluster != modified.cluster(clusterEntry.getKey()).get())
                 modified = modified.with(cluster);
