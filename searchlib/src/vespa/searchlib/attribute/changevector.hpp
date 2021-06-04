@@ -8,15 +8,12 @@
 
 namespace search {
 
+using vespalib::roundUp2inN;
+
 namespace {
 
 // This number is selected to be large enough to hold bursts between commits
 constexpr size_t NUM_ELEMS_TO_RESERVE = 200;
-
-template <typename T>
-constexpr size_t roundUp2inN(size_t elems) {
-    return vespalib::roundUp2inN(elems, sizeof(T));
-}
 
 }
 
@@ -57,7 +54,7 @@ ChangeVectorT<T>::push_back(uint32_t doc, Accessor & ac)
 {
     if (ac.size() <= 0) { return; }
 
-    _v.reserve(vespalib::roundUp2inN(size() + ac.size(), sizeof(T)));
+    _v.reserve(roundUp2inN<T>(size() + ac.size()));
     for (size_t i(0), m(ac.size()); i < m; i++, ac.next()) {
         _v.push_back(T(ChangeBase::APPEND, doc, typename T::DataType(ac.value()), ac.weight()));
     }

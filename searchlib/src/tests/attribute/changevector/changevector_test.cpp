@@ -12,7 +12,7 @@ template <typename T>
 void verifyStrictOrdering(const T & v) {
     vespalib::hash_set<uint32_t> complete;
     uint32_t prev_doc(0);
-    uint32_t prev_value;
+    uint32_t prev_value(0);
     for (const auto & c : v.getDocIdInsertOrder()) {
         if (prev_doc != c._doc) {
             complete.insert(prev_doc);
