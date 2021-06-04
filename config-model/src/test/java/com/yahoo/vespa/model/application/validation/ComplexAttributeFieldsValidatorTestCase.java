@@ -15,6 +15,7 @@ import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
@@ -99,17 +100,17 @@ public class ComplexAttributeFieldsValidatorTestCase {
                 "}"));
     }
 
-    private static void createModelAndValidate(String searchDefinition) throws IOException, SAXException {
-        DeployState deployState = createDeployState(servicesXml(), searchDefinition);
+    private static void createModelAndValidate(String schema) throws IOException, SAXException {
+        DeployState deployState = createDeployState(servicesXml(), schema);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
         Validation.validate(model, validationParameters, deployState);
     }
 
-    private static DeployState createDeployState(String servicesXml, String searchDefinition) {
+    private static DeployState createDeployState(String servicesXml, String schema) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
-                .withSearchDefinition(searchDefinition)
+                .withSchemas(List.of(schema))
                 .build();
         return new DeployState.Builder().applicationPackage(app).build();
     }
