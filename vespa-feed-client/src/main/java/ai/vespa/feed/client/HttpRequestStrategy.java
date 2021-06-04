@@ -202,7 +202,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
         if (previous == null) {
             acquireSlot();
-            cluster.dispatch(request, vessel);
+            offer(() -> cluster.dispatch(request, vessel));
         }
         else
             previous.whenComplete((__, ___) -> offer(() -> cluster.dispatch(request, vessel)));
