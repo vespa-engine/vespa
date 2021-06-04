@@ -21,6 +21,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 
 import java.util.ArrayList;
@@ -29,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 
 /**
  * Helper class which sets up a system with multiple hosts.
@@ -169,7 +168,7 @@ public class VespaModelTester {
                                   boolean alwaysReturnOneNode,
                                   int startIndexForClusters, Optional<VespaModel> previousModel,
                                   DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
-        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, generateSchemas("type1"));
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
         provisioner = hosted ?        new ProvisionerAdapter(new InMemoryProvisioner(hostsByResources,
