@@ -82,7 +82,7 @@ public class ApplicationApiHandler extends SessionHandler {
                         .collect(Collectors.toMap(Part::getName, p -> p));
 
                 byte[] params = parts.get(MULTIPART_PARAMS).getInputStream().readAllBytes();
-                log.log(Level.FINE, "Deploy parameters: [{}]", new String(params, StandardCharsets.UTF_8));
+                log.log(Level.FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
                 Part appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.getInputStream(), appPackagePart.getContentType());
