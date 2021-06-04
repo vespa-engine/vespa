@@ -38,7 +38,7 @@ public class RoleCertificateRequestEntity {
         public void serialize(Duration duration,
                               JsonGenerator jsonGenerator,
                               SerializerProvider serializerProvider) throws IOException {
-            jsonGenerator.writeNumber(duration.getSeconds());
+            jsonGenerator.writeNumber(duration.toMinutes());
         }
     }
 }
