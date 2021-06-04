@@ -5,9 +5,9 @@
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <memory>
 #include <vector>
-#include <vespa/vespalib/stllike/hash_map.h>
 
 using vespalib::hashtable;
 using std::vector;
@@ -141,11 +141,37 @@ TEST("require that hashtable<vector<int>> can be copied") {
  * 2 - test     -  6.6s hash_node() : _next(invalid) { memset(_node, 0, sizeof(node)); }
  * 3 - current  -  2.3s hash_node() : _next(invalid) {}
  */
-TEST("benchmark clear") {
+TEST("benchmark hash table reconstruction with POD objects") {
     vespalib::hash_map<uint32_t, uint32_t> m(1000000);
     constexpr size_t NUM_ITER = 10; // Set to 1k-10k to get measurable numbers 10k ~= 2.3s
     for (size_t i(0); i < NUM_ITER; i++) {
         m[46] = 17;
+        EXPECT_FALSE(m.empty());
+        EXPECT_EQUAL(1u, m.size());
+        EXPECT_EQUAL(1048576u, m.capacity());
+        m.clear();
+        EXPECT_TRUE(m.empty());
+        EXPECT_EQUAL(1048576u, m.capacity());
+    }
+}
+
+class NonPOD {
+public:
+    NonPOD() : _v(rand()) {}
+    ~NonPOD() { _v = 0; }
+private:
+    uint32_t _v;
+};
+
+/**
+ * Performance is identical for NonPOD objects as with POD object.
+ * Object are are only constructed on insert, and destructed on erase/clear.
+ */
+TEST("benchmark hash table reconstruction with POD objects") {
+    vespalib::hash_map<uint32_t, NonPOD> m(1000000);
+    constexpr size_t NUM_ITER = 10; // Set to 1k-10k to get measurable numbers 10k ~= 2.3s
+    for (size_t i(0); i < NUM_ITER; i++) {
+        m[46] = NonPOD();
         EXPECT_FALSE(m.empty());
         EXPECT_EQUAL(1u, m.size());
         EXPECT_EQUAL(1048576u, m.capacity());
