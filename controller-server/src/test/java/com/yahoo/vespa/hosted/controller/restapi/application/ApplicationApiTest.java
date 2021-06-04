@@ -71,6 +71,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -1549,6 +1550,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 grantResponse, 200
         );
 
+        // Should be 1 available grant
+        List<SupportAccessGrant> activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
+        assertEquals(1, activeGrants.size());
+
         // DELETE removes access
         String disallowedResponse = grantResponse
                 .replaceAll("ALLOWED\".*?}", "NOT_ALLOWED\"}")
@@ -1557,6 +1562,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(USER_ID),
                 disallowedResponse, 200
         );
+
+        // Should be no available grant
+        activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
+        assertEquals(0, activeGrants.size());
     }
 
     private static String serializeInstant(Instant i) {

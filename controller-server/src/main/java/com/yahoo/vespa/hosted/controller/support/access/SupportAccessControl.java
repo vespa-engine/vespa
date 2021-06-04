@@ -87,8 +87,8 @@ public class SupportAccessControl {
         if (supportAccess.currentStatus(now).state() == NOT_ALLOWED) return List.of();
 
         return supportAccess.grantHistory().stream()
-                .filter(grant -> !grant.certificate().getNotBefore().toInstant().isBefore(now))
-                .filter(grant -> !grant.certificate().getNotAfter().toInstant().isAfter(now))
+                .filter(grant -> now.isAfter(grant.certificate().getNotBefore().toInstant()))
+                .filter(grant -> now.isBefore(grant.certificate().getNotAfter().toInstant()))
                 .collect(Collectors.toUnmodifiableList());
     }
 
