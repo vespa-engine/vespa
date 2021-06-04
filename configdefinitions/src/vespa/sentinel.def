@@ -17,6 +17,17 @@ application.environment string default="default"
 application.instance string default="default"
 application.region string default="default"
 
+# Connectivity checks run before starting services and measure how
+# many nodes in the Vespa cluster we can connect to and how many of
+# those that can connect back to us. We delay starting services
+# if we have more problems than the following limits allow:
+
+## Percentage we fail to talk to, maximum
+connectivity.maxBadOutPercent int default=100
+
+## Absolute number of nodes that fail to talk back to us, maximum
+connectivity.maxBadReverseCount int default=999999999
+
 ## The command to run. This will be run by sh -c, and the following
 ## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,
 ## $VESPA_CONFIG_ID
