@@ -73,7 +73,7 @@ public class MetricsReporter extends ControllerMaintainer {
     }
 
     @Override
-    public boolean maintain() {
+    public double maintain() {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
@@ -82,7 +82,7 @@ public class MetricsReporter extends ControllerMaintainer {
         reportAuditLog();
         reportBrokenSystemVersion(versionStatus);
         reportTenantMetrics();
-        return true;
+        return 1.0;
     }
 
     private void reportBrokenSystemVersion(VersionStatus versionStatus) {

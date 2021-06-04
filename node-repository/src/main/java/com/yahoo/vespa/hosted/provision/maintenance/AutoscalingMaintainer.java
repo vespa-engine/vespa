@@ -47,14 +47,13 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        if ( ! nodeRepository().nodes().isWorking()) return false;
+    protected double maintain() {
+        if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
-        boolean success = true;
-        if ( ! nodeRepository().zone().environment().isAnyOf(Environment.dev, Environment.prod)) return success;
+        if ( ! nodeRepository().zone().environment().isAnyOf(Environment.dev, Environment.prod)) return 1.0;
 
         activeNodesByApplication().forEach(this::autoscale);
-        return success;
+        return 1.0;
     }
 
     private void autoscale(ApplicationId application, NodeList applicationNodes) {

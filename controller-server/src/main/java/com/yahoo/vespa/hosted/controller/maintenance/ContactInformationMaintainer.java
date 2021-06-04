@@ -35,12 +35,14 @@ public class ContactInformationMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         TenantController tenants = controller().tenants();
-        boolean success = true;
+        int attempts = 0;
+        int failures = 0;
         for (Tenant tenant : tenants.asList()) {
             log.log(FINE, () -> "Updating contact information for " + tenant);
             try {
+                attempts++;
                 switch (tenant.type()) {
                     case athenz:
                         tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant -> {
@@ -56,13 +58,13 @@ public class ContactInformationMaintainer extends ControllerMaintainer {
                         throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
                 }
             } catch (Exception e) {
-                success = false;
+                failures++;
                 log.log(Level.WARNING, "Failed to update contact information for " + tenant + ": " +
                                        Exceptions.toMessageString(e) + ". Retrying in " +
                                        interval());
             }
         }
-        return success;
+        return asSuccessFactor(attempts, failures);
     }
 
 }

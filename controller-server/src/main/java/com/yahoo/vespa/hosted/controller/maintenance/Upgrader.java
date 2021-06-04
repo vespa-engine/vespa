@@ -51,7 +51,7 @@ public class Upgrader extends ControllerMaintainer {
      * Schedule application upgrades. Note that this implementation must be idempotent.
      */
     @Override
-    public boolean maintain() {
+    public double maintain() {
         // Determine target versions for each upgrade policy
         VersionStatus versionStatus = controller().readVersionStatus();
         Version canaryTarget = controller().systemVersion(versionStatus);
@@ -91,7 +91,7 @@ public class Upgrader extends ControllerMaintainer {
         upgrade(instances.with(UpgradePolicy.canary), canaryTarget, targetMajorVersion, instances.size());
         defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
         conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
-        return true;
+        return 1.0;
     }
 
     /** Returns the target versions for given confidence, one per major version in the system */

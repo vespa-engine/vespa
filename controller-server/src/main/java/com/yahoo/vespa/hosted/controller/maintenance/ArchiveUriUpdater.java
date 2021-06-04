@@ -38,7 +38,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         Map<ZoneId, Set<TenantName>> tenantsByZone = new HashMap<>();
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
@@ -63,7 +63,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
                     .forEach(tenant -> nodeRepository.removeArchiveUri(zone, tenant));
         });
 
-        return true;
+        return 1.0;
     }
 
 }

@@ -48,7 +48,10 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
+        int attempts = 0;
+        int successes = 0;
+
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
         Map<ApplicationId, NodeList> retiredNodesByApplication = activeNodes.retired().groupingBy(node -> node.allocation().get().owner());
         for (Map.Entry<ApplicationId, NodeList> entry : retiredNodesByApplication.entrySet()) {
@@ -57,17 +60,19 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
             List<Node> nodesToRemove = retiredNodes.stream().filter(n -> canRemove(n, activeNodes)).collect(Collectors.toList());
             if (nodesToRemove.isEmpty()) continue;
 
+            attempts++;
             try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
                 if ( ! deployment.isValid()) continue;
 
                 nodeRepository().nodes().setRemovable(application, nodesToRemove);
                 boolean success = deployment.activate().isPresent();
-                if ( ! success) return success;
+                if ( ! success) continue;
                 String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
                 log.info("Redeployed " + application + " to deactivate retired nodes: " +  nodeList);
+                successes++;
             }
         }
-        return true;
+        return attempts == 0 ? 1.0 : ((double)successes / attempts);
     }
 
     /**

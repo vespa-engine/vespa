@@ -28,8 +28,9 @@ public class DeploymentExpirer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        boolean success = true;
+    protected double maintain() {
+        int attempts = 0;
+        int failures = 0;
         for (Application application : controller().applications().readable()) {
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values()) {
@@ -37,16 +38,17 @@ public class DeploymentExpirer extends ControllerMaintainer {
 
                     try {
                         log.log(Level.INFO, "Expiring deployment of " + instance.id() + " in " + deployment.zone());
+                        attempts++;
                         controller().applications().deactivate(instance.id(), deployment.zone());
                     } catch (Exception e) {
-                        success = false;
+                        failures++;
                         log.log(Level.WARNING, "Could not expire " + deployment + " of " + instance +
                                                ": " + Exceptions.toMessageString(e) + ". Retrying in " +
                                                interval());
                     }
                 }
         }
-        return success;
+        return asSuccessFactor(attempts, failures);
     }
 
     /** Returns whether given deployment has expired according to its TTL */

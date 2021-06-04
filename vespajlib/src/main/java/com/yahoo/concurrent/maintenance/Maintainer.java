@@ -90,7 +90,12 @@ public abstract class Maintainer implements Runnable {
      *         Note that this indicates whether something is wrong, so e.g if the call did nothing because it should do
      *         nothing,  1.0 should be returned.
      */
-    protected abstract boolean maintain();
+    protected abstract double maintain();
+
+    /** Convenience methods to convert attempts and failures into a success factor */
+    protected final double asSuccessFactor(int attempts, int failures) {
+        return attempts == 0 ? 1.0 : 1 - (double)failures / attempts;
+    }
 
     /** Returns the interval at which this job is set to run */
     protected Duration interval() { return interval; }
@@ -102,7 +107,7 @@ public abstract class Maintainer implements Runnable {
         jobMetrics.starting(name());
         double successFactor = 0;
         try (var lock = jobControl.lockJob(name())) {
-            successFactor = maintain() ? 1.0 : 0.0;
+            successFactor = maintain();
             if (successFactor > 0.0)
                 jobMetrics.recordCompletionOf(name());
         } catch (UncheckedTimeoutException e) {

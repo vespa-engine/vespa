@@ -74,9 +74,9 @@ public class ControllerMaintainerTest {
         }
 
         @Override
-        protected boolean maintain() {
+        protected double maintain() {
             executions.incrementAndGet();
-            return success;
+            return success ? 1.0 : 0.0;
         }
 
     }
