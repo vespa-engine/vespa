@@ -1,17 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.mapreduce;
 
+import ai.vespa.feed.client.DocumentId;
+import ai.vespa.feed.client.DryrunResult;
 import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClientBuilder;
-<<<<<<< HEAD
-import ai.vespa.feed.client.JsonStreamFeeder;
-=======
 import ai.vespa.feed.client.JsonFeeder;
 import ai.vespa.feed.client.JsonParseException;
 import ai.vespa.feed.client.OperationParameters;
 import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.Result;
->>>>>>> fadb8fc527 (fixup! Add new record writer based on vespa-feed-client)
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
 import com.yahoo.vespa.http.client.config.FeedParams;
@@ -23,6 +21,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
@@ -100,9 +99,6 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
         if (!config.useSSL()) {
             throw new IllegalArgumentException("SSL is required for this feed client implementation");
         }
-        if (config.dryrun()) {
-            throw new IllegalArgumentException("Dryrun is not supported for this feed client implementation");
-        }
         if (config.dataFormat() != FeedParams.DataFormat.JSON_UTF8) {
             throw new IllegalArgumentException("Only JSON is support by this feed client implementation");
         }
@@ -112,7 +108,7 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
     }
 
     private void useRandomizedStartupDelayIfEnabled() {
-        if (config.randomStartupSleepMs() > 0) {
+        if (!config.dryrun() && config.randomStartupSleepMs() > 0) {
             int delay = ThreadLocalRandom.current().nextInt(config.randomStartupSleepMs());
             log.info("Delaying startup by " + delay + " ms");
             try {
@@ -121,20 +117,30 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
         }
     }
 
-    private JsonFeeder createJsonStreamFeeder() {
-        FeedClientBuilder feedClientBuilder = FeedClientBuilder.create(endpointUris(config))
-                .setConnectionsPerEndpoint(config.numConnections())
-                .setMaxStreamPerConnection(streamsPerConnection(config))
-                .setRetryStrategy(retryStrategy(config));
 
-        onFeedClientInitialization(feedClientBuilder);
-        FeedClient feedClient = feedClientBuilder.build();
-        JsonFeeder.Builder builder = JsonFeeder.builder(feedClient)
+    private JsonFeeder createJsonStreamFeeder() {
+        FeedClient feedClient = createFeedClient();
+            JsonFeeder.Builder builder = JsonFeeder.builder(feedClient)
                 .withTimeout(Duration.ofMinutes(10));
         if (config.route() != null) {
             builder.withRoute(config.route());
         }
         return builder.build();
+
+    }
+
+    private FeedClient createFeedClient() {
+        if (config.dryrun()) {
+            return new DryrunClient();
+        } else {
+            FeedClientBuilder feedClientBuilder = FeedClientBuilder.create(endpointUris(config))
+                    .setConnectionsPerEndpoint(config.numConnections())
+                    .setMaxStreamPerConnection(streamsPerConnection(config))
+                    .setRetryStrategy(retryStrategy(config));
+
+            onFeedClientInitialization(feedClientBuilder);
+            return feedClientBuilder.build();
+        }
     }
 
     private static FeedClient.RetryStrategy retryStrategy(VespaConfiguration config) {
@@ -152,5 +158,30 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
         return Arrays.stream(config.endpoint().split(","))
                 .map(hostname -> URI.create(String.format("https://%s:%d/", hostname, config.defaultPort())))
                 .collect(toList());
+    }
+
+    private static class DryrunClient implements FeedClient {
+
+        @Override
+        public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
+            return createSuccessResult(documentId);
+        }
+
+        @Override
+        public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
+            return createSuccessResult(documentId);
+        }
+
+        @Override
+        public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
+            return createSuccessResult(documentId);
+        }
+
+        @Override public OperationStats stats() { return null; }
+        @Override public void close(boolean graceful) {}
+
+        private static CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
+            return CompletableFuture.completedFuture(DryrunResult.create(Result.Type.success, documentId, "ok", null));
+        }
     }
 }
