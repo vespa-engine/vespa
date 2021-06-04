@@ -78,11 +78,12 @@ void
 MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docValues)
 {
     // compute new values for each document with changes
-    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
+    auto iterable = this->_changes.getDocIdInsertOrder();
+    for (auto current(iterable.begin()), end(iterable.end()); (current != end); ) {
         DocId doc = current->_doc;
         // find last clear doc
-        ChangeVectorIterator last_clear_doc = end;
-        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
+        auto last_clear_doc = end;
+        for (auto iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
             if (iter->_type == ChangeBase::CLEARDOC) {
                 last_clear_doc = iter;
             }
@@ -137,12 +138,13 @@ void
 MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docValues)
 {
     // compute new values for each document with changes
-    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
+    auto iterable = this->_changes.getDocIdInsertOrder();
+    for (auto current(iterable.begin()), end(iterable.end()); (current != end); ) {
         const DocId doc = current->_doc;
         // find last clear doc
-        ChangeVectorIterator last_clear_doc = end;
+        auto last_clear_doc = end;
         size_t max_elems_inserted = 0;
-        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
+        for (auto iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
             if (iter->_type == ChangeBase::CLEARDOC) {
                 last_clear_doc = iter;
             }

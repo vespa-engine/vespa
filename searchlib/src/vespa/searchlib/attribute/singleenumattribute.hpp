@@ -175,7 +175,7 @@ void
 SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
-    for (const auto& change : this->_changes) {
+    for (const auto& change : this->_changes.getInsertOrder()) {
         if (change._type == ChangeBase::UPDATE) {
             applyUpdateValueChange(change, updater);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {

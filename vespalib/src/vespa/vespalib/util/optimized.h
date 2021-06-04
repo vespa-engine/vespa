@@ -22,9 +22,9 @@ public:
     static int lsbIdx(unsigned int v);
     static int lsbIdx(unsigned long v);
     static int lsbIdx(unsigned long long v);
-    static int popCount(unsigned int v) { return __builtin_popcount(v); }
-    static int popCount(unsigned long v) { return __builtin_popcountl(v); }
-    static int popCount(unsigned long long v) { return __builtin_popcountll(v); }
+    static constexpr int popCount(unsigned int v) { return __builtin_popcount(v); }
+    static constexpr int popCount(unsigned long v) { return __builtin_popcountl(v); }
+    static constexpr int popCount(unsigned long long v) { return __builtin_popcountll(v); }
 };
 
 /**

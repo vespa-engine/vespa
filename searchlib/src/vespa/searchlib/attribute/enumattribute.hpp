@@ -63,7 +63,7 @@ void
 EnumAttribute<B>::insertNewUniqueValues(EnumStoreBatchUpdater& updater)
 {
     // find and insert new unique strings
-    for (const auto & data : this->_changes) {
+    for (const auto & data : this->_changes.getInsertOrder()) {
         considerAttributeChange(data, updater);
     }
 }

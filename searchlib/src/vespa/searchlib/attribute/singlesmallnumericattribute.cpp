@@ -53,7 +53,7 @@ SingleValueSmallNumericAttribute::onCommit()
     {
         // apply updates
         B::ValueModifier valueGuard(getValueModifier());
-        for (const auto & change : _changes) {
+        for (const auto & change : _changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
                 set(change._doc, change._data);
