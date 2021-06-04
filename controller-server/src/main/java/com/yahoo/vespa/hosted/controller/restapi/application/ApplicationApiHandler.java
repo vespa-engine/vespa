@@ -901,6 +901,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
             utilizationToSlime(cluster.utilization(), clusterObject.setObject("utilization"));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
+            clusterObject.setString("autoscalingStatusCode", cluster.autoscalingStatusCode());
             clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
             clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
             clusterObject.setDouble("maxQueryGrowthRate", cluster.maxQueryGrowthRate());
