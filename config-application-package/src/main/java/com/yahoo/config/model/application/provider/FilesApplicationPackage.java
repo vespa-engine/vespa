@@ -301,7 +301,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public Collection<NamedReader> getSchemas() {
+    public Collection<NamedReader> searchDefinitionContents() {
         Set<NamedReader> ret = new LinkedHashSet<>();
         try {
             for (File f : getSearchDefinitionFiles()) {
@@ -573,6 +573,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
     public void writeMetaData() throws IOException {
         File metaFile = new File(appDir, META_FILE_NAME);
         IOUtils.writeFile(metaFile, metaData.asJsonBytes());
+    }
+
+    @Override
+    public Collection<NamedReader> getSearchDefinitions() {
+        return searchDefinitionContents();
     }
 
     private void preprocessXML(File destination, File inputXml, Zone zone) throws IOException {

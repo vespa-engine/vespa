@@ -15,7 +15,9 @@ import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -177,7 +179,7 @@ public class ClusterTest {
                         "    </tuning>",
                         "  </content>",
                         "</services>"))
-                .withSchemas(ApplicationPackageUtils.generateSchemas("my_document"))
+                .withSchemas(ApplicationPackageUtils.generateSearchDefinition("my_document"))
                 .build();
         List<Content> contents = new TestDriver().buildModel(app).getConfigModels(Content.class);
         assertEquals(1, contents.size());

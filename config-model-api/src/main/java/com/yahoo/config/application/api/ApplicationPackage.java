@@ -79,7 +79,7 @@ public interface ApplicationPackage {
      * @return the name of the application (i.e the directory where the application package was deployed from)
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove in Vespa 8
+    @Deprecated // TODO: Remove on Vespa 8
     String getApplicationName();
 
     ApplicationId getApplicationId();
@@ -113,12 +113,9 @@ public interface ApplicationPackage {
 
     /**
      * Readers for all the search definition files for this.
-     * @deprecated use {@link #getSchemas()} instead
      * @return a list of readers for search definitions
      */
-    @Deprecated
-    // TODO: Remove in Vespa 8
-    default Collection<NamedReader> searchDefinitionContents() { return getSchemas(); }
+    Collection<NamedReader> searchDefinitionContents();
 
     /**
      * Returns all the config definitions available in this package as unparsed data.
@@ -238,18 +235,7 @@ public interface ApplicationPackage {
         return Collections.emptyMap();
     }
 
-    /**
-     * @deprecated use {@link #getSchemas()} instead
-     */
-    @Deprecated
-    // TODO: Remove in Vespa 8
-    default Collection<NamedReader> getSearchDefinitions() { return getSchemas(); }
-
-    /**
-     * Readers for all the schema files.
-     * @return a collection of readers for schemas
-     */
-    Collection<NamedReader> getSchemas();
+    Collection<NamedReader> getSearchDefinitions();
 
     /**
      * Preprocess an application for a given zone and return a new application package pointing to the preprocessed

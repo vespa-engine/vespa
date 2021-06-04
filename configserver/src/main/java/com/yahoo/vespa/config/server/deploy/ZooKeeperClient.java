@@ -80,7 +80,7 @@ public class ZooKeeperClient {
         try {
             writeUserDefs(app);
             writeSomeOf(app);
-            writeSchemas(app);
+            writeSearchDefinitions(app);
             writeUserIncludeDirs(app, app.getUserIncludeDirs());
             write(app.getMetaData());
         } catch (Exception e) {
@@ -90,8 +90,8 @@ public class ZooKeeperClient {
         }
     }
 
-    private void writeSchemas(ApplicationPackage app) throws IOException {
-        Collection<NamedReader> sds = app.getSchemas();
+    private void writeSearchDefinitions(ApplicationPackage app) throws IOException {
+        Collection<NamedReader> sds = app.getSearchDefinitions();
         if (sds.isEmpty()) return;
 
         Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);

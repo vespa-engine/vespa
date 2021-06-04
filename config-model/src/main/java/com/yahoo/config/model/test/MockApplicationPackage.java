@@ -115,7 +115,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<NamedReader> getSchemas() {
+    public List<NamedReader> getSearchDefinitions() {
         ArrayList<NamedReader> readers = new ArrayList<>();
         SearchBuilder searchBuilder = new SearchBuilder(this,
                                                         new BaseDeployLogger(),
@@ -131,6 +131,11 @@ public class MockApplicationPackage implements ApplicationPackage {
             }
         }
         return readers;
+    }
+
+    @Override
+    public List<NamedReader> searchDefinitionContents() {
+        return new ArrayList<>();
     }
 
     @Override
