@@ -36,14 +36,14 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 /**
- * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa endpoints.
+ * {@link LegacyVespaRecordWriter} sends the output &lt;key, value&gt; to one or more Vespa endpoints.
  *
  * @author lesters
  */
 @SuppressWarnings("rawtypes")
-public class VespaRecordWriter extends RecordWriter {
+public class LegacyVespaRecordWriter extends RecordWriter {
 
-    private final static Logger log = Logger.getLogger(VespaRecordWriter.class.getCanonicalName());
+    private final static Logger log = Logger.getLogger(LegacyVespaRecordWriter.class.getCanonicalName());
 
     private boolean initialized = false;
     private FeedClient feedClient;
@@ -52,7 +52,7 @@ public class VespaRecordWriter extends RecordWriter {
 
     final VespaConfiguration configuration;
 
-    VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters) {
+    LegacyVespaRecordWriter(VespaConfiguration configuration, VespaCounters counters) {
         this.counters = counters;
         this.configuration = configuration;
         this.progressInterval = configuration.progressInterval();
