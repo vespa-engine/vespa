@@ -5,6 +5,9 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 using namespace search;
 
+using Change = ChangeTemplate<NumericChangeData<long>>;
+using CV = ChangeVectorT<Change>;
+
 template <typename T>
 void verifyStrictOrdering(const T & v) {
     vespalib::hash_set<uint32_t> complete;
@@ -37,8 +40,6 @@ private:
 
 TEST("require insert ordering is preserved for same doc")
 {
-    typedef ChangeTemplate<NumericChangeData<long>> Change;
-    typedef ChangeVectorT<Change> CV;
     CV a;
     a.push_back(Change(Change::NOOP, 7, 1));
     EXPECT_EQUAL(1u, a.size());
@@ -49,8 +50,6 @@ TEST("require insert ordering is preserved for same doc")
 
 TEST("require insert ordering is preserved ")
 {
-    typedef ChangeTemplate<NumericChangeData<long>> Change;
-    typedef ChangeVectorT<Change> CV;
     CV a;
     a.push_back(Change(Change::NOOP, 7, 1));
     EXPECT_EQUAL(1u, a.size());
@@ -63,8 +62,6 @@ TEST("require insert ordering is preserved ")
 
 TEST("require insert ordering is preserved with mix")
 {
-    typedef ChangeTemplate<NumericChangeData<long>> Change;
-    typedef ChangeVectorT<Change> CV;
     CV a;
     a.push_back(Change(Change::NOOP, 7, 1));
     EXPECT_EQUAL(1u, a.size());
@@ -84,13 +81,49 @@ TEST("require insert ordering is preserved with mix")
 }
 
 TEST("require that inserting empty vector does not affect the vector.") {
-    typedef ChangeTemplate<NumericChangeData<long>> Change;
-    typedef ChangeVectorT<Change> CV;
     CV a;
     std::vector<long> v;
     Accessor ac(v);
     a.push_back(1, ac);
     EXPECT_EQUAL(0u, a.size());
+}
+
+TEST("require that we have control over buffer construction size") {
+    CV a;
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(256u, a.capacity());
+    a.clear();
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(256u, a.capacity());
+}
+
+TEST("require that buffer can grow some") {
+    CV a;
+    for (size_t i(0); i < 1024; i++) {
+        a.push_back(Change(Change::NOOP, i, i));
+    }
+    EXPECT_EQUAL(1024u, a.size());
+    EXPECT_EQUAL(1024u, a.capacity());
+    a.clear();
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(1024u, a.capacity());
+}
+
+TEST("require that buffer can grow some, but not unbound") {
+    CV a;
+    for (size_t i(0); i < 1025; i++) {
+        a.push_back(Change(Change::NOOP, i, i));
+    }
+    EXPECT_EQUAL(1025u, a.size());
+    EXPECT_EQUAL(2048u, a.capacity());
+    a.clear();
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(256u, a.capacity());
+}
+
+TEST("Control Change size") {
+    EXPECT_EQUAL(32u, sizeof(ChangeTemplate<NumericChangeData<long>>));
+    EXPECT_EQUAL(88u, sizeof(ChangeTemplate<StringChangeData>));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

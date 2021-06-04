@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
 
 namespace vespalib { class MemoryUsage; }
@@ -98,7 +99,7 @@ struct ChangeTemplate : public ChangeBase {
         ChangeBase(type, d, w), _data(v)
     { }
 
-    T          _data;
+    T _data;
 };
 
 template <>
@@ -129,7 +130,7 @@ NumericChangeData<double>::operator<(const NumericChangeData<double> &rhs) const
 template <typename T>
 class ChangeVectorT {
 private:
-    using Vector = std::vector<T>;
+    using Vector = std::vector<T, vespalib::allocator_large<T>>;
 public:
     using const_iterator = typename Vector::const_iterator;
     ChangeVectorT();
@@ -139,6 +140,7 @@ public:
     void push_back(uint32_t doc, Accessor & ac);
     T & back()                   { return _v.back(); }
     size_t size()          const { return _v.size(); }
+    size_t capacity()      const { return _v.capacity(); }
     bool empty()           const { return _v.empty(); }
     void clear();
     class InsertOrder {
@@ -150,7 +152,7 @@ public:
         const Vector &_v;
     };
     class DocIdInsertOrder {
-        using AdjacentDocIds = std::vector<uint64_t>;
+        using AdjacentDocIds = std::vector<uint64_t, vespalib::allocator_large<uint64_t>>;
     public:
         class const_iterator {
         public:
@@ -172,14 +174,14 @@ public:
         const_iterator begin() const { return const_iterator(_v, _adjacent, 0); }
         const_iterator end()   const { return const_iterator(_v, _adjacent, _v.size()); }
     private:
-        const Vector &_v;
-        AdjacentDocIds _adjacent;
+        const Vector   &_v;
+        AdjacentDocIds  _adjacent;
     };
     InsertOrder getInsertOrder() const { return InsertOrder(_v); }
     DocIdInsertOrder getDocIdInsertOrder() const { return DocIdInsertOrder(_v); }
     vespalib::MemoryUsage getMemoryUsage() const;
 private:
-    Vector   _v;
+    Vector _v;
 };
 
 } // namespace search

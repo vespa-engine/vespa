@@ -13,13 +13,18 @@ namespace {
 // This number is selected to be large enough to hold bursts between commits
 constexpr size_t NUM_ELEMS_TO_RESERVE = 200;
 
+template <typename T>
+constexpr size_t roundUp2inN(size_t elems) {
+    return vespalib::roundUp2inN(elems, sizeof(T));
+}
+
 }
 
 template <typename T>
 ChangeVectorT<T>::ChangeVectorT()
     : _v()
 {
-    _v.reserve(vespalib::roundUp2inN(NUM_ELEMS_TO_RESERVE, sizeof(T)));
+    _v.reserve(roundUp2inN<T>(NUM_ELEMS_TO_RESERVE));
 }
 
 template <typename T>
@@ -28,7 +33,14 @@ ChangeVectorT<T>::~ChangeVectorT() = default;
 template <typename T>
 void
 ChangeVectorT<T>::clear() {
-    _v.clear();
+    if (_v.capacity() > roundUp2inN<T>(NUM_ELEMS_TO_RESERVE * 5)) {
+        // Ensure we do not keep insanely large buffers over time, due to abnormal peaks
+        // caused by hickups else where.
+        _v = Vector();
+        _v.reserve(roundUp2inN<T>(NUM_ELEMS_TO_RESERVE));
+    } else {
+        _v.clear();
+    }
 }
 
 template <typename T>
