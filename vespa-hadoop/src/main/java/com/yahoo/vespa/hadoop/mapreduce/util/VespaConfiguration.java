@@ -27,6 +27,7 @@ public class VespaConfiguration {
     public static final String MAX_IN_FLIGHT_REQUESTS = "vespa.feed.max.in.flight.requests";
     public static final String RANDOM_STARTUP_SLEEP = "vespa.feed.random.startup.sleep.ms";
     public static final String NUM_RETRIES = "vespa.feed.num.retries";
+    public static final String USE_LEGACY_CLIENT = "vespa.feed.uselegacyclient";
 
     private final Configuration conf;
     private final Properties override;
@@ -130,6 +131,7 @@ public class VespaConfiguration {
         return getInt(PROGRESS_REPORT, 1000);
     }
 
+    public boolean useLegacyClient() { return getBoolean(USE_LEGACY_CLIENT, true); }
 
     public String getString(String name) {
         if (override != null && override.containsKey(name)) {
