@@ -8,11 +8,11 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
-import com.yahoo.vespa.http.client.core.Vtag;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.Encoder;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.ServerResponseException;
+import com.yahoo.vespa.http.client.core.Vtag;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -392,10 +392,12 @@ class ApacheGatewayConnection implements GatewayConnection {
      */
     public static class HttpClientFactory {
 
+        private final FeedParams feedParams;
         final ConnectionParams connectionParams;
         final boolean useSsl;
 
-        public HttpClientFactory(ConnectionParams connectionParams, boolean useSsl) {
+        public HttpClientFactory(FeedParams feedParams, ConnectionParams connectionParams, boolean useSsl) {
+            this.feedParams = feedParams;
             this.connectionParams = connectionParams;
             this.useSsl = useSsl;
         }
@@ -427,8 +429,10 @@ class ApacheGatewayConnection implements GatewayConnection {
             clientBuilder.setMaxConnTotal(1);
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.V_TAG_COMPONENT));
             clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.V_TAG_COMPONENT)));
-            RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
-            requestConfigBuilder.setSocketTimeout(0);
+            int millisTotalTimeout = (int) (feedParams.getClientTimeout(TimeUnit.MILLISECONDS) + feedParams.getServerTimeout(TimeUnit.MILLISECONDS));
+            RequestConfig.Builder requestConfigBuilder = RequestConfig.custom()
+                    .setSocketTimeout(millisTotalTimeout)
+                    .setConnectTimeout(millisTotalTimeout);
             if (connectionParams.getProxyHost() != null) {
                 requestConfigBuilder.setProxy(new HttpHost(connectionParams.getProxyHost(), connectionParams.getProxyPort()));
             }
