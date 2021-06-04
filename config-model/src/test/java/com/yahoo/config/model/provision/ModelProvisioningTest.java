@@ -49,6 +49,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
+import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -2015,7 +2016,7 @@ public class ModelProvisioningTest {
     }
 
     private VespaModel createNonProvisionedModel(boolean multitenant, String hosts, String services) {
-        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, generateSchemas("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
                 properties((new TestProperties()).setMultitenant(multitenant)).
@@ -2023,7 +2024,7 @@ public class ModelProvisioningTest {
         return modelCreatorWithMockPkg.create(false, deployState);
     }
 
-    private int physicalMemoryPercentage(ContainerCluster cluster) {
+    private int physicalMemoryPercentage(ContainerCluster<?> cluster) {
         QrStartConfig.Builder b = new QrStartConfig.Builder();
         cluster.getConfig(b);
         return b.build().jvm().heapSizeAsPercentageOfPhysicalMemory();

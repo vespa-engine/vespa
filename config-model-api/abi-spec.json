@@ -103,7 +103,7 @@
       "public abstract java.io.Reader getHosts()",
       "public java.util.List getUserIncludeDirs()",
       "public void validateIncludeDir(java.lang.String)",
-      "public abstract java.util.Collection searchDefinitionContents()",
+      "public java.util.Collection searchDefinitionContents()",
       "public abstract java.util.Map getAllExistingConfigDefs()",
       "public abstract java.util.List getFiles(com.yahoo.path.Path, java.lang.String, boolean)",
       "public java.util.List getFiles(com.yahoo.path.Path, java.lang.String)",
@@ -127,7 +127,8 @@
       "public void writeMetaData()",
       "public java.util.Optional getAllocatedHosts()",
       "public java.util.Map getFileRegistries()",
-      "public abstract java.util.Collection getSearchDefinitions()",
+      "public java.util.Collection getSearchDefinitions()",
+      "public abstract java.util.Collection getSchemas()",
       "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)"
     ],
     "fields": [
