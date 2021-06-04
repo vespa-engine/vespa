@@ -57,7 +57,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         var changeRequests = curator.readChangeRequests()
                 .stream()
                 .filter(shouldUpdate())
@@ -81,7 +81,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
                         });
             }
         });
-        return 1.0;
+        return true;
     }
 
     /**

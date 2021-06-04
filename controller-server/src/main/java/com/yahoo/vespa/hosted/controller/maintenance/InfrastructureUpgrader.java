@@ -39,28 +39,23 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
     }
 
     @Override
-    protected double maintain() {
-        if (targetVersion().isEmpty())  return 1.0;
-        return upgradeAll(targetVersion().get(), managedApplications);
+    protected boolean maintain() {
+        targetVersion().ifPresent(target -> upgradeAll(target, managedApplications));
+        return true;
     }
 
     /** Deploy a list of system applications until they converge on the given version */
-    private double upgradeAll(VERSION target, List<SystemApplication> applications) {
-        int attempts = 0;
-        int failures = 0;
+    private void upgradeAll(VERSION target, List<SystemApplication> applications) {
         for (List<ZoneApi> zones : upgradePolicy.asList()) {
             boolean converged = true;
             for (ZoneApi zone : zones) {
                 try {
-                    attempts++;
                     converged &= upgradeAll(target, applications, zone);
                 } catch (UnreachableNodeRepositoryException e) {
-                    failures++;
                     converged = false;
                     log.warning(String.format("%s: Failed to communicate with node repository in %s, continuing with next parallel zone: %s",
                                               this, zone, Exceptions.toMessageString(e)));
                 } catch (Exception e) {
-                    failures++;
                     converged = false;
                     log.warning(String.format("%s: Failed to upgrade zone: %s, continuing with next parallel zone: %s",
                                               this, zone, Exceptions.toMessageString(e)));
@@ -70,7 +65,6 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
                 break;
             }
         }
-        return asSuccessFactor(attempts, failures);
     }
 
     /** Returns whether all applications have converged to the target version in zone */

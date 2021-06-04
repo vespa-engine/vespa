@@ -54,7 +54,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         try {
             // In order of importance
             deployRefreshedCertificates();
@@ -62,10 +62,10 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
             deleteUnusedCertificates();
         } catch (Exception e) {
             log.log(LogLevel.ERROR, "Exception caught while maintaining endpoint certificates", e);
-            return 0.0;
+            return false;
         }
 
-        return 1.0;
+        return true;
     }
 
     private void updateRefreshedCertificates() {

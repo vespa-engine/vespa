@@ -35,24 +35,14 @@ public abstract class ConfigServerMaintainer extends Maintainer {
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Instant now, Duration interval) {
         super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource)),
-              new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), false);
+              jobMetrics(applicationRepository.metric()), cluster(curator), false);
         this.applicationRepository = applicationRepository;
     }
 
-    private static class ConfigServerJobMetrics extends JobMetrics {
-
-        private final Metric metric;
-
-        public ConfigServerJobMetrics(Metric metric) {
-            this.metric = metric;
-        }
-
-        @Override
-        protected void recordCompletion(String job, Long consecutiveFailures, double successFactor) {
+    private static JobMetrics jobMetrics(Metric metric) {
+        return new JobMetrics((job, consecutiveFailures) -> {
             metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
-            metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
-        }
-
+        });
     }
 
     private static class JobControlFlags implements JobControlState {

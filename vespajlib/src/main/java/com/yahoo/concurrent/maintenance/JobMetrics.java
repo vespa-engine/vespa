@@ -2,18 +2,25 @@
 package com.yahoo.concurrent.maintenance;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * Tracks and forwards maintenance job metrics.
  *
  * @author mpolden
  */
-public abstract class JobMetrics {
+public class JobMetrics {
+
+    private final BiConsumer<String, Long> metricConsumer;
 
     private final ConcurrentHashMap<String, Long> incompleteRuns = new ConcurrentHashMap<>();
 
-    /** Record starting of a run of a job */
-    public void starting(String job) {
+    public JobMetrics(BiConsumer<String, Long> metricConsumer) {
+        this.metricConsumer = metricConsumer;
+    }
+
+    /** Record a run for given job */
+    public void recordRunOf(String job) {
         incompleteRuns.merge(job, 1L, Long::sum);
     }
 
@@ -22,17 +29,12 @@ public abstract class JobMetrics {
         incompleteRuns.put(job, 0L);
     }
 
-    /**
-     * Records completion of a run of a job.
-     * This is guaranteed to always be called once whenever starting has been called.
-     */
-    public void completed(String job, double successFactor) {
+    /** Forward metrics for given job to metric consumer */
+    public void forward(String job) {
         Long incompleteRuns = this.incompleteRuns.get(job);
         if (incompleteRuns != null) {
-            recordCompletion(job, incompleteRuns, successFactor);
+            metricConsumer.accept(job, incompleteRuns);
         }
     }
-
-    protected abstract void recordCompletion(String job, Long incompleteRuns, double successFactor);
 
 }

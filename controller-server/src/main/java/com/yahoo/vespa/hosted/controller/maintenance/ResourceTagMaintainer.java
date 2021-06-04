@@ -28,7 +28,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    public double maintain() {
+    public boolean maintain() {
         controller().zoneRegistry().zones()
                 .ofCloud(CloudName.from("aws"))
                 .reachable()
@@ -38,7 +38,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
                     if (taggedResources > 0)
                         log.log(Level.INFO, "Tagged " + taggedResources + " resources in " + zone.getId());
         });
-        return 1.0;
+        return true;
     }
 
     private Map<HostName, Optional<ApplicationId>> getTenantOfParentHosts(ZoneId zoneId) {

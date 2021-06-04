@@ -33,18 +33,19 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
     }
 
     @Override
-    protected double maintain() {
-        if ( ! nodeRepository().nodes().isWorking()) return 0.0;
+    protected boolean maintain() {
+        if ( ! nodeRepository().nodes().isWorking()) return false;
 
-        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return 1.0; // Rebalancing not necessary
-        if (nodeRepository().zone().environment().isTest()) return 1.0; // Short lived deployments; no need to rebalance
+        boolean success = true;
+        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success; // Rebalancing not necessary
+        if (nodeRepository().zone().environment().isTest()) return success; // Short lived deployments; no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().nodes().list();
         updateSkewMetric(allNodes);
-        if ( ! zoneIsStable(allNodes)) return 1.0;
+        if ( ! zoneIsStable(allNodes)) return success;
         findBestMove(allNodes).execute(true, Agent.Rebalancer, deployer, metric, nodeRepository());
-        return 1.0;
+        return success;
    }
 
     @Override

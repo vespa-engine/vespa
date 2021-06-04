@@ -18,16 +18,16 @@ public class OsVersionStatusUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         try {
             OsVersionStatus newStatus = OsVersionStatus.compute(controller());
             controller().updateOsVersionStatus(newStatus);
-            return 1.0;
+            return true;
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to compute OS version status: " + Exceptions.toMessageString(e) +
                                    ". Retrying in " + interval());
         }
-        return 0.0;
+        return false;
     }
 
 }

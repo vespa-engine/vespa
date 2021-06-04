@@ -19,14 +19,14 @@ public class ApplicationMetaDataGarbageCollector extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         try {
             controller().applications().applicationStore().pruneMeta(controller().clock().instant().minus(Duration.ofDays(365)));
-            return 1.0;
+            return true;
         }
         catch (Exception e) {
             log.log(Level.WARNING, "Exception pruning old application meta data", e);
-            return 0.0;
+            return false;
         }
     }
 

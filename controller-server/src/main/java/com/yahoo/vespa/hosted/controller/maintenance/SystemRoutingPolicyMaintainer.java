@@ -21,14 +21,14 @@ public class SystemRoutingPolicyMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         for (var zone : controller().zoneRegistry().zones().all().ids()) {
             for (var application : SystemApplication.values()) {
                 if (!application.hasEndpoint()) continue;
                 controller().routing().policies().refresh(application.id(), DeploymentSpec.empty, zone);
             }
         }
-        return 1.0;
+        return true;
     }
 
 }

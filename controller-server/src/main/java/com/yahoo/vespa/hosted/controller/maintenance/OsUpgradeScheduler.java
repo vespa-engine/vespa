@@ -42,13 +42,13 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     @Override
-    protected double maintain() {
+    protected boolean maintain() {
         for (var cloud : supportedClouds()) {
             Optional<Version> newTarget = newTargetIn(cloud);
             if (newTarget.isEmpty()) continue;
             controller().upgradeOsIn(cloud, newTarget.get(), upgradeBudget(), false);
         }
-        return 1.0;
+        return true;
     }
 
     /** Returns the new target version for given cloud, if any */
