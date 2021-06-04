@@ -157,28 +157,54 @@ TEST("benchmark hash table reconstruction with POD objects") {
 
 class NonPOD {
 public:
-    NonPOD() : _v(rand()) {}
-    ~NonPOD() { _v = 0; }
-private:
-    uint32_t _v;
+    NonPOD() noexcept
+        : _v(rand())
+    {
+        construction_count++;
+    }
+    NonPOD(NonPOD && rhs) noexcept { _v = rhs._v; rhs._v = -1; }
+    NonPOD & operator =(NonPOD && rhs) noexcept { _v = rhs._v; rhs._v = -1; return *this; }
+    NonPOD(const NonPOD &) = delete;
+    NonPOD & operator =(const NonPOD &) = delete;
+    ~NonPOD() {
+        if (_v != -1) {
+            destruction_count++;
+        }
+    }
+    int32_t _v;
+    static size_t construction_count;
+    static size_t destruction_count;
 };
+
+size_t NonPOD::construction_count = 0;
+size_t NonPOD::destruction_count = 0;
 
 /**
  * Performance is identical for NonPOD objects as with POD object.
  * Object are are only constructed on insert, and destructed on erase/clear.
  */
-TEST("benchmark hash table reconstruction with POD objects") {
+TEST("benchmark hash table reconstruction with non POD objects") {
     vespalib::hash_map<uint32_t, NonPOD> m(1000000);
     constexpr size_t NUM_ITER = 10; // Set to 1k-10k to get measurable numbers 10k ~= 2.3s
+    NonPOD::construction_count = 0;
+    NonPOD::destruction_count = 0;
     for (size_t i(0); i < NUM_ITER; i++) {
-        m[46] = NonPOD();
+        EXPECT_EQUAL(i, NonPOD::construction_count);
+        EXPECT_EQUAL(i, NonPOD::destruction_count);
+        m.insert(std::make_pair(46, NonPOD()));
+        EXPECT_EQUAL(i+1, NonPOD::construction_count);
+        EXPECT_EQUAL(i, NonPOD::destruction_count);
         EXPECT_FALSE(m.empty());
         EXPECT_EQUAL(1u, m.size());
         EXPECT_EQUAL(1048576u, m.capacity());
         m.clear();
+        EXPECT_EQUAL(i+1, NonPOD::construction_count);
+        EXPECT_EQUAL(i+1, NonPOD::destruction_count);
         EXPECT_TRUE(m.empty());
         EXPECT_EQUAL(1048576u, m.capacity());
     }
+    EXPECT_EQUAL(NUM_ITER, NonPOD::construction_count);
+    EXPECT_EQUAL(NUM_ITER, NonPOD::destruction_count);
 }
 
 }  // namespace
