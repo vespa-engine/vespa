@@ -122,7 +122,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                        current,
                                                                        Instant.ofEpochMilli(1234),
                                                                        Optional.of(Instant.ofEpochMilli(2234)))),
-                                      "the autoscaling status",
+                                      "ideal",
+                                      "Cluster is ideally scaled",
                                       Duration.ofMinutes(6),
                                       0.7,
                                       0.3);
