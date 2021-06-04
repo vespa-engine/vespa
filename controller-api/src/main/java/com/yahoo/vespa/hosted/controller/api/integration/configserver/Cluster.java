@@ -23,6 +23,7 @@ public class Cluster {
     private final Optional<ClusterResources> suggested;
     private final Utilization utilization;
     private final List<ScalingEvent> scalingEvents;
+    private final String autoscalingStatusCode;
     private final String autoscalingStatus;
     private final Duration scalingDuration;
     private final double maxQueryGrowthRate;
@@ -37,6 +38,7 @@ public class Cluster {
                    Optional<ClusterResources> suggested,
                    Utilization utilization,
                    List<ScalingEvent> scalingEvents,
+                   String autoscalingStatusCode,
                    String autoscalingStatus,
                    Duration scalingDuration,
                    double maxQueryGrowthRate,
@@ -50,6 +52,7 @@ public class Cluster {
         this.suggested = suggested;
         this.utilization = utilization;
         this.scalingEvents = scalingEvents;
+        this.autoscalingStatusCode = autoscalingStatusCode;
         this.autoscalingStatus = autoscalingStatus;
         this.scalingDuration = scalingDuration;
         this.maxQueryGrowthRate = maxQueryGrowthRate;
@@ -65,6 +68,7 @@ public class Cluster {
     public Optional<ClusterResources> suggested() { return suggested; }
     public Utilization utilization() { return utilization; }
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
+    public String autoscalingStatusCode() { return autoscalingStatusCode; }
     public String autoscalingStatus() { return autoscalingStatus; }
     public Duration scalingDuration() { return scalingDuration; }
     public double maxQueryGrowthRate() { return maxQueryGrowthRate; }

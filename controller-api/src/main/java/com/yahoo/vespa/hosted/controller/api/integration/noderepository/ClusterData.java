@@ -35,6 +35,8 @@ public class ClusterData {
     public ClusterUtilizationData utilization;
     @JsonProperty("scalingEvents")
     public List<ScalingEventData> scalingEvents;
+    @JsonProperty("autoscalingStatusCode")
+    public String autoscalingStatusCode;
     @JsonProperty("autoscalingStatus")
     public String autoscalingStatus;
     @JsonProperty("scalingDuration")
@@ -55,6 +57,7 @@ public class ClusterData {
                            utilization == null ? Cluster.Utilization.empty() : utilization.toClusterUtilization(),
                            scalingEvents == null ? List.of()
                                                  : scalingEvents.stream().map(data -> data.toScalingEvent()).collect(Collectors.toList()),
+                           autoscalingStatusCode,
                            autoscalingStatus,
                            scalingDuration == null ? Duration.ofMillis(0) : Duration.ofMillis(scalingDuration),
                            maxQueryGrowthRate == null ? -1 : maxQueryGrowthRate,
