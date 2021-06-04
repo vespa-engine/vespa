@@ -132,7 +132,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<NamedReader> searchDefinitionContents() {
+    public List<NamedReader> getSchemas() {
         List<NamedReader> schemas = new ArrayList<>();
         for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR)) {
             if (sd.endsWith(SD_NAME_SUFFIX))
@@ -163,11 +163,6 @@ public class ZKApplicationPackage implements ApplicationPackage {
             fileRegistry = Optional.of(fileRegistryMap.values().iterator().next());
         }
         return fileRegistry;
-    }
-
-    @Override
-    public List<NamedReader> getSearchDefinitions() {
-        return searchDefinitionContents();
     }
 
     private Reader retrieveConfigDefReader(String def) {
