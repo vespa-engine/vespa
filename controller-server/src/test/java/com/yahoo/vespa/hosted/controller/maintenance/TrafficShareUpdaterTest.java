@@ -39,7 +39,7 @@ public class TrafficShareUpdaterTest {
         // Single zone
         setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
         deploymentMetricsMaintainer.maintain();
-        assertTrue(updater.maintain());
+        assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(1.0, 1.0, application.instanceId(), prod1, tester);
 
         // Two zones
@@ -48,14 +48,14 @@ public class TrafficShareUpdaterTest {
         setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(0.0, application.application().id().defaultInstance(), prod2, tester);
         deploymentMetricsMaintainer.maintain();
-        assertTrue(updater.maintain());
+        assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(1.0, 1.0, application.instanceId(), prod1, tester);
         assertTrafficFraction(0.0, 1.0, application.instanceId(), prod2, tester);
         // - both hot
         setQpsMetric(53.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(47.0, application.application().id().defaultInstance(), prod2, tester);
         deploymentMetricsMaintainer.maintain();
-        assertTrue(updater.maintain());
+        assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.53, 1.0, application.instanceId(), prod1, tester);
         assertTrafficFraction(0.47, 1.0, application.instanceId(), prod2, tester);
 
@@ -66,7 +66,7 @@ public class TrafficShareUpdaterTest {
         setQpsMetric(47.0, application.application().id().defaultInstance(), prod2, tester);
         setQpsMetric(0.0, application.application().id().defaultInstance(), prod3, tester);
         deploymentMetricsMaintainer.maintain();
-        assertTrue(updater.maintain());
+        assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.53, 0.53, application.instanceId(), prod1, tester);
         assertTrafficFraction(0.47, 0.50, application.instanceId(), prod2, tester);
         assertTrafficFraction(0.00, 0.50, application.instanceId(), prod3, tester);
@@ -75,7 +75,7 @@ public class TrafficShareUpdaterTest {
         setQpsMetric(25.0, application.application().id().defaultInstance(), prod2, tester);
         setQpsMetric(25.0, application.application().id().defaultInstance(), prod3, tester);
         deploymentMetricsMaintainer.maintain();
-        assertTrue(updater.maintain());
+        assertEquals(1.0, updater.maintain(), 0.0000001);
         assertTrafficFraction(0.50, 0.5, application.instanceId(), prod1, tester);
         assertTrafficFraction(0.25, 0.5, application.instanceId(), prod2, tester);
         assertTrafficFraction(0.25, 0.5, application.instanceId(), prod3, tester);

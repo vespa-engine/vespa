@@ -66,7 +66,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         List<Node> remainingNodes = new ArrayList<>(nodeRepository.nodes().list(Node.State.failed)
                                                                   .nodeType(NodeType.tenant, NodeType.host)
                                                                   .asList());
@@ -78,7 +78,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
         recycleIf(remainingNodes, node ->
                 node.allocation().get().membership().cluster().isStateful() &&
                 node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statefulExpiry)));
-        return true;
+        return 1.0;
     }
 
     /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */

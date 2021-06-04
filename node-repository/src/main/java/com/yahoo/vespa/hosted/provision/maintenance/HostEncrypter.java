@@ -43,7 +43,7 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         Instant now = nodeRepository().clock().instant();
         NodeList allNodes = nodeRepository().nodes().list();
         for (var nodeType : NodeType.values()) {
@@ -51,7 +51,7 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
             if (upgradingVespa(allNodes, nodeType)) continue;
             unencryptedHosts(allNodes, nodeType).forEach(host -> encrypt(host, now));
         }
-        return true;
+        return 1.0;
     }
 
     /** Returns whether any node of given type is currently upgrading its Vespa version */

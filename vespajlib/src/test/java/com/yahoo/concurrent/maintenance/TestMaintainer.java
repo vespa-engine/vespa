@@ -33,10 +33,10 @@ class TestMaintainer extends Maintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         if (exceptionToThrow != null) throw exceptionToThrow;
         totalRuns++;
-        return success;
+        return success ? 1.0 : 0.0;
     }
 
 }

@@ -3,6 +3,8 @@ package com.yahoo.concurrent.maintenance;
 
 import org.junit.Test;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -19,9 +21,8 @@ public class JobControlTest {
 
         String job1 = "Job1";
         String job2 = "Job2";
-        JobMetrics metrics = new JobMetrics((job, instant) -> {});
-        TestMaintainer maintainer1 = new TestMaintainer(job1, jobControl, metrics);
-        TestMaintainer maintainer2 = new TestMaintainer(job2, jobControl, metrics);
+        TestMaintainer maintainer1 = new TestMaintainer(job1, jobControl, new NoopJobMetrics());
+        TestMaintainer maintainer2 = new TestMaintainer(job2, jobControl, new NoopJobMetrics());
         assertEquals(2, jobControl.jobs().size());
         assertTrue(jobControl.jobs().contains(job1));
         assertTrue(jobControl.jobs().contains(job2));
@@ -62,7 +63,7 @@ public class JobControlTest {
     public void testJobControlMayDeactivateJobs() {
         JobControlStateMock state = new JobControlStateMock();
         JobControl jobControl = new JobControl(state);
-        TestMaintainer mockMaintainer = new TestMaintainer(null, jobControl, new JobMetrics((job, instant) -> {}));
+        TestMaintainer mockMaintainer = new TestMaintainer(null, jobControl, new NoopJobMetrics());
 
         assertTrue(jobControl.jobs().contains("TestMaintainer"));
 
@@ -78,6 +79,13 @@ public class JobControlTest {
         state.setActive("TestMaintainer", true);
         mockMaintainer.run();
         assertEquals(2, mockMaintainer.totalRuns());
+    }
+
+    private static class NoopJobMetrics extends JobMetrics {
+
+        @Override
+        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) { }
+
     }
 
 }

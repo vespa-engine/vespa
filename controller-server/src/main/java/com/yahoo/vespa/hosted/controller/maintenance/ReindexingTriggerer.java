@@ -40,7 +40,7 @@ public class ReindexingTriggerer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         try {
             Instant now = controller().clock().instant();
             for (Application application : controller().applications().asList())
@@ -51,11 +51,11 @@ public class ReindexingTriggerer extends ControllerMaintainer {
                             && reindexingIsReady(controller().applications().applicationReindexing(id, deployment.zone()), now))
                             controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true);
                 });
-            return true;
+            return 1.0;
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to trigger reindexing: " + Exceptions.toMessageString(e));
-            return false;
+            return 0.0;
         }
     }
 

@@ -43,14 +43,14 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
 
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         var currentChangeRequests = pruneOldChangeRequests();
         var changeRequests = changeRequestClient.getChangeRequests(currentChangeRequests);
 
         logger.fine(() -> "Found requests: " + changeRequests);
         storeChangeRequests(changeRequests);
 
-        return true;
+        return 1.0;
     }
 
     private void storeChangeRequests(List<ChangeRequest> changeRequests) {
