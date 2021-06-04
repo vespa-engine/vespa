@@ -4,10 +4,9 @@ package com.yahoo.vespa.hadoop.pig;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.vespa.hadoop.mapreduce.VespaOutputFormat;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
-import com.yahoo.vespa.hadoop.mapreduce.VespaOutputFormat;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -17,22 +16,25 @@ import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.test.PathUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.StringTokenizer;
 
-import java.io.*;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MapReduceTest {
 
@@ -44,7 +46,7 @@ public class MapReduceTest {
     protected static Path metricsJsonPath;
     protected static Path metricsCsvPath;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws IOException {
         hdfsBaseDir = new File(PathUtils.getTestDir(MapReduceTest.class).getCanonicalPath());
 
@@ -62,7 +64,7 @@ public class MapReduceTest {
         copyToHdfs("src/test/resources/tabular_data.csv", metricsCsvPath, "data");
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws IOException {
         Path testDir = new Path(hdfsBaseDir.getParent());
         hdfs.delete(testDir, true);
@@ -82,7 +84,7 @@ public class MapReduceTest {
         FileInputFormat.setInputPaths(job, metricsJsonPath);
 
         boolean success = job.waitForCompletion(true);
-        assertTrue("Job Failed", success);
+        assertTrue(success, "Job Failed");
 
         VespaCounters counters = VespaCounters.get(job);
         assertEquals(10, counters.getDocumentsSent());
@@ -103,7 +105,7 @@ public class MapReduceTest {
         FileInputFormat.setInputPaths(job, metricsJsonPath);
 
         boolean success = job.waitForCompletion(true);
-        assertTrue("Job Failed", success);
+        assertTrue(success, "Job Failed");
 
         VespaCounters counters = VespaCounters.get(job);
         assertEquals(10, counters.getDocumentsSent());
@@ -125,7 +127,7 @@ public class MapReduceTest {
         FileInputFormat.setInputPaths(job, metricsCsvPath);
 
         boolean success = job.waitForCompletion(true);
-        assertTrue("Job Failed", success);
+        assertTrue(success, "Job Failed");
 
         VespaCounters counters = VespaCounters.get(job);
         assertEquals(10, counters.getDocumentsSent());
