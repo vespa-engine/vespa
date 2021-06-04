@@ -16,6 +16,12 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
+void Connectivity::CheckResult::logDetails() const {
+    for (const std::string &detail : details) {
+        LOG(info, "Connectivity check details: %s", detail.c_str());
+    }
+}
+
 Connectivity::Connectivity(const SentinelConfig::Connectivity & config, RpcServer &rpcServer)
   : _config(config),
     _rpcServer(rpcServer)

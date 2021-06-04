@@ -25,6 +25,7 @@ public:
         bool enoughOk;
         bool allOk;
         std::vector<std::string> details;
+        void logDetails() const;
     };
 
     CheckResult checkConnectivity(const ModelConfig &model);

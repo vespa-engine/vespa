@@ -114,30 +114,26 @@ void Env::respondAsEmpty() {
 }
 
 bool Env::waitForConnectivity(int outerRetry) {
-    Connectivity::CheckResult lastCheckResult;
     auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS);
     if (! up) {
         LOG(warning, "could not get model config, skipping connectivity checks");
         return true;
     }
+    Connectivity::CheckResult lastCheckResult;
     Connectivity checker(_cfgOwner.getConfig().connectivity, *_rpcServer);
     for (int retry = 0; retry < maxRetriesInsideLoop; ++retry) {
         auto res = checker.checkConnectivity(*up);
         if (res.enoughOk) {
             LOG(info, "Connectivity check OK, proceeding with service startup");
-            if (! res.allOk) {
-                for (const std::string &detail : res.details) {
-                    LOG(info, "Connectivity check details: %s", detail.c_str());
-                }
+            if (retry > 0 || ! res.allOk) {
+                res.logDetails();
             }
             return true;
         }
         LOG(warning, "Connectivity check FAILED (try %d)", 1 + retry + maxRetriesInsideLoop*outerRetry);
         _stateApi.myHealth.setFailed("FAILED connectivity check");
         if (lastCheckResult.details != res.details) {
-            for (const std::string &detail : res.details) {
-                LOG(info, "Connectivity check details: %s", detail.c_str());
-            }
+            res.logDetails();
             lastCheckResult = std::move(res);
         }
         for (int i = 0; i <= outerRetry; ++i) {
