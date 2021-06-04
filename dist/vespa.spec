@@ -42,11 +42,11 @@ BuildRequires: maven
 %define _java_home /usr/lib/jvm/java-11-amazon-corretto.%{?_arch}
 BuildRequires: python3-pytest
 %else
-BuildRequires: devtoolset-9-gcc-c++
-BuildRequires: devtoolset-9-libatomic-devel
-BuildRequires: devtoolset-9-binutils
+BuildRequires: devtoolset-10-gcc-c++
+BuildRequires: devtoolset-10-libatomic-devel
+BuildRequires: devtoolset-10-binutils
 BuildRequires: rh-maven35
-%define _devtoolset_enable /opt/rh/devtoolset-9/enable
+%define _devtoolset_enable /opt/rh/devtoolset-10/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 BuildRequires: python36-pytest
 %endif
@@ -54,19 +54,10 @@ BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-devel
 %endif
 %if 0%{?el8}
-%if 0%{?centos}
-%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
-%endif
-%if 0%{?_centos_stream}
 BuildRequires: gcc-toolset-10-gcc-c++
 BuildRequires: gcc-toolset-10-binutils
 %define _devtoolset_enable /opt/rh/gcc-toolset-10/enable
-BuildRequires: vespa-boost-devel >= 1.75.0-1
-%else
-BuildRequires: gcc-toolset-9-gcc-c++
-BuildRequires: gcc-toolset-9-binutils
-%define _devtoolset_enable /opt/rh/gcc-toolset-9/enable
-%endif
+BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: maven
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
@@ -82,7 +73,7 @@ BuildRequires: python3-devel
 %if 0%{?el7}
 BuildRequires: cmake3
 BuildRequires: llvm7.0-devel
-BuildRequires: vespa-boost-devel >= 1.59.0-6
+BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
@@ -101,12 +92,12 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
-%if 0%{?_centos_stream}
-BuildRequires: llvm-devel >= 11.0.0
+%if 0%{?centos}
+BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
 %else
-BuildRequires: llvm-devel >= 10.0.1
+BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
 %endif
-BuildRequires: boost-devel >= 1.66
+BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
@@ -225,7 +216,7 @@ Requires: vespa-valgrind >= 3.17.0-1
 %endif
 %endif
 %if 0%{?el8}
-%if 0%{?_centos_stream}
+%if 0%{?centos}
 %define _vespa_llvm_version 11
 %else
 %define _vespa_llvm_version 10
@@ -353,10 +344,10 @@ Requires: libicu
 Requires: openssl-libs
 %endif
 %if 0%{?el8}
-%if 0%{?_centos_stream}
-Requires: llvm-libs >= 11.0.0
+%if 0%{?centos}
+Requires: (llvm-libs >= 11.0.0 and llvm-libs < 12)
 %else
-Requires: llvm-libs >= 10.0.1
+Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
 %endif
 Requires: vespa-protobuf = 3.7.0-5.el8
 %endif
