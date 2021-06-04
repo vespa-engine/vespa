@@ -77,7 +77,7 @@ public class MaintainerTest {
         AtomicLong consecutiveFailures = new AtomicLong();
 
         @Override
-        protected void consume(String job, Long incompleteRuns) {
+        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) {
             consecutiveFailures.set(incompleteRuns);
         }
 

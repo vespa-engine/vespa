@@ -48,8 +48,9 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         }
 
         @Override
-        protected void consume(String job, Long consecutiveFailures) {
+        protected void recordCompletion(String job, Long consecutiveFailures, double successFactor) {
             metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
+            metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
         }
 
     }

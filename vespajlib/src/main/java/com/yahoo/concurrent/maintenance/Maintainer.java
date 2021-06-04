@@ -83,7 +83,13 @@ public abstract class Maintainer implements Runnable {
     @Override
     public final String toString() { return name(); }
 
-    /** Called once each time this maintenance job should run. Returns whether the maintenance run was successful */
+    /**
+     * Called once each time this maintenance job should run.
+     *
+     * @return the degree to which the run was successful - a number between 0 (no success), to 1 (complete success).
+     *         Note that this indicates whether something is wrong, so e.g if the call did nothing because it should do
+     *         nothing,  1.0 should be returned.
+     */
     protected abstract boolean maintain();
 
     /** Returns the interval at which this job is set to run */
@@ -93,9 +99,12 @@ public abstract class Maintainer implements Runnable {
     public final void lockAndMaintain(boolean force) {
         if (!force && !jobControl.isActive(name())) return;
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
-        jobMetrics.recordRunOf(name());
+        jobMetrics.starting(name());
+        double successFactor = 0;
         try (var lock = jobControl.lockJob(name())) {
-            if (maintain()) jobMetrics.recordCompletionOf(name());
+            successFactor = maintain() ? 1.0 : 0.0;
+            if (successFactor > 0.0)
+                jobMetrics.recordCompletionOf(name());
         } catch (UncheckedTimeoutException e) {
             if (ignoreCollision) {
                 jobMetrics.recordCompletionOf(name());
@@ -105,7 +114,7 @@ public abstract class Maintainer implements Runnable {
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
         } finally {
-            jobMetrics.forward(name());
+            jobMetrics.completed(name(), successFactor);
         }
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
     }
