@@ -102,7 +102,9 @@ class hash_node {
 public:
     using next_t=hashtable_base::next_t;
     enum {npos=-1u, invalid=-2u};
-    hash_node() : _node(), _next(invalid) {}
+    hash_node()
+        : _next(invalid)
+    {}
     hash_node(const V & node, next_t next=npos)
         : _next(next)
     {
