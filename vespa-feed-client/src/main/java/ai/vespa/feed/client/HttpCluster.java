@@ -105,6 +105,8 @@ class HttpCluster implements Cluster {
                                                                      .disableRedirectHandling()
                                                                      .disableAutomaticRetries()
                                                                      .setIOReactorConfig(IOReactorConfig.custom()
+                                                                                                        .setIoThreadCount(1)
+                                                                                                        .setTcpNoDelay(true)
                                                                                                         .setSoTimeout(Timeout.ofSeconds(10))
                                                                                                         .build())
                                                                      .setDefaultRequestConfig(
