@@ -192,7 +192,7 @@ public class VespaModelTestCase {
                         "   </documents>" +
                         "</content>" +
                         "</services>",
-                ApplicationPackageUtils.generateSearchDefinition("music"))
+                ApplicationPackageUtils.generateSchemas("music"))
                 .create();
         MessagebusConfig.Builder mBusB = new MessagebusConfig.Builder();
         model.getConfig(mBusB, "client");

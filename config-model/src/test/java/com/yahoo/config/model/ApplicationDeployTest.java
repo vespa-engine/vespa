@@ -54,7 +54,7 @@ public class ApplicationDeployTest {
     @Test
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
-        VespaModel model = new VespaModel(tester.app());
+        new VespaModel(tester.app());
         List<NamedSchema> schemas = tester.getSchemas();
         assertEquals(schemas.size(), 5);
         for (NamedSchema searchDefinition : schemas) {
