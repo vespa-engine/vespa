@@ -22,7 +22,7 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
-import com.yahoo.config.model.provision.SingleNodeProvisioner;
+import com.yahoo.config.model.provision .SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
@@ -460,7 +460,7 @@ public class DeployState implements ConfigDefinitionStore {
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
                                                               QueryProfiles queryProfiles,
                                                               ValidationParameters validationParameters) {
-            Collection<NamedReader> readers = applicationPackage.getSearchDefinitions();
+            Collection<NamedReader> readers = applicationPackage.getSchemas();
             Map<String, String> names = new LinkedHashMap<>();
             SearchBuilder builder = new SearchBuilder(applicationPackage, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
@@ -470,14 +470,14 @@ public class DeployState implements ConfigDefinitionStore {
                     String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
                     names.put(topLevelName, sdName);
                     if ( ! sdName.equals(topLevelName)) {
-                        throw new IllegalArgumentException("Schema definition file name ('" + sdName + "') and name of " +
+                        throw new IllegalArgumentException("Schema file name ('" + sdName + "') and name of " +
                                                            "top level element ('" + topLevelName +
                                                            "') are not equal for file '" + readerName + "'");
                     }
                 } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse sd file '" + reader.getName() + "'", e);
+                    throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read sd file '" + reader.getName() + "'", e);
+                    throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
                 } finally {
                     closeIgnoreException(reader.getReader());
                 }

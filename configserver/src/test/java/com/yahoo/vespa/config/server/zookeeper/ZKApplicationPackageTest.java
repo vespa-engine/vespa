@@ -78,7 +78,7 @@ public class ZKApplicationPackageTest {
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
         DeployState deployState = new DeployState.Builder().applicationPackage(zkApp).build();
         assertEquals(deployState.getSchemas().size(), 5);
-        assertEquals(zkApp.searchDefinitionContents().size(), 5);
+        assertEquals(zkApp.getSchemas().size(), 5);
         assertEquals(IOUtils.readAll(zkApp.getRankingExpression("foo.expression")), "foo()+1\n");
         assertEquals(zkApp.getFiles(Path.fromString(""), "xml").size(), 3);
         assertEquals(zkApp.getFileReference(Path.fromString("components/file.txt")).getAbsolutePath(), "/home/vespa/test/file.txt");
