@@ -178,6 +178,8 @@ public class ModelContextImpl implements ModelContext {
         private final boolean distributeExternalRankExpressions;
         private final int numDistributorStripes;
         private final boolean requireConnectivityCheck;
+        private final int maxConcurrentMergesPerContentNode;
+        private final int maxMergeQueueSize;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -201,6 +203,8 @@ public class ModelContextImpl implements ModelContext {
             this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);
             this.distributeExternalRankExpressions = flagValue(source, appId, Flags.DISTRIBUTE_EXTERNAL_RANK_EXPRESSION);
             this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
+            this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
+            this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -226,6 +230,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
         @Override public boolean distributeExternalRankExpressions() { return distributeExternalRankExpressions; }
         @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
+        @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
+        @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

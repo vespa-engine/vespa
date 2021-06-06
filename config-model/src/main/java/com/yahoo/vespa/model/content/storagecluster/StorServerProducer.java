@@ -6,6 +6,8 @@ import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
+import java.util.Optional;
+
 /**
  * Serves config for stor-server for storage clusters (clusters of storage nodes).
  */
@@ -14,7 +16,7 @@ public class StorServerProducer implements StorServerConfig.Producer {
         StorServerProducer build(ModelContext.Properties properties, ModelElement element) {
             ModelElement tuning = element.child("tuning");
 
-            StorServerProducer producer = new StorServerProducer(ContentCluster.getClusterId(element));
+            StorServerProducer producer = new StorServerProducer(ContentCluster.getClusterId(element), properties.featureFlags());
             if (tuning == null) return producer;
 
             ModelElement merges = tuning.child("merges");
@@ -32,11 +34,15 @@ public class StorServerProducer implements StorServerConfig.Producer {
     private Integer bucketDBStripeBits;
 
     private StorServerProducer setMaxMergesPerNode(Integer value) {
-        maxMergesPerNode = value;
+        if (value != null) {
+            maxMergesPerNode = value;
+        }
         return this;
     }
     private StorServerProducer setMaxQueueSize(Integer value) {
-        queueSize = value;
+        if (value != null) {
+            queueSize = value;
+        }
         return this;
     }
     private StorServerProducer setBucketDBStripeBits(Integer value) {
@@ -44,8 +50,10 @@ public class StorServerProducer implements StorServerConfig.Producer {
         return this;
     }
 
-    public StorServerProducer(String clusterName) {
+    StorServerProducer(String clusterName, ModelContext.FeatureFlags featureFlags) {
         this.clusterName = clusterName;
+        maxMergesPerNode = featureFlags.maxConcurrentMergesPerNode();
+        queueSize = featureFlags.maxMergeQueueSize();
     }
 
     @Override

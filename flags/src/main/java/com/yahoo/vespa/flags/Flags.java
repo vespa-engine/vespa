@@ -204,6 +204,20 @@ public class Flags {
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
+            "max-concurrent-merges-per-node", 16,
+            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            "Specifies max concurrent merges per content node.",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
+            "max-merge-queue-size", 1024,
+            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            "Specifies max size of merge queue.",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "use-external-rank-expression", false,
             List.of("baldersheim"), "2021-05-24", "2021-07-01",

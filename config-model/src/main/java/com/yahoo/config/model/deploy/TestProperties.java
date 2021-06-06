@@ -59,6 +59,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
     private int numDistributorStripes = 0;
+    private int maxConcurrentMergesPerNode = 16;
+    private int maxMergeQueueSize = 1024;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
 
@@ -102,6 +104,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
     @Override public boolean distributeExternalRankExpressions() { return useExternalRankExpression; }
+    @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
+    @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
 
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
@@ -131,6 +135,15 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setResponseNumThreads(int numThreads) {
         responseNumThreads = numThreads;
+        return this;
+    }
+
+    public TestProperties setMaxConcurrentMergesPerNode(int maxConcurrentMergesPerNode) {
+        this.maxConcurrentMergesPerNode = maxConcurrentMergesPerNode;
+        return this;
+    }
+    public TestProperties setMaxMergeQueueSize(int maxMergeQueueSize) {
+        this.maxMergeQueueSize = maxMergeQueueSize;
         return this;
     }
 
