@@ -34,7 +34,7 @@ public abstract class ControllerMaintainer extends Maintainer {
 
     public ControllerMaintainer(Controller controller, Duration interval, String name, Set<SystemName> activeSystems) {
         super(name, interval, controller.clock().instant(), controller.jobControl(),
-              jobMetrics(controller.metric()), controller.curator().cluster(), true);
+              new ControllerJobMetrics(controller.metric()), controller.curator().cluster(), true);
         this.controller = controller;
         this.activeSystems = Set.copyOf(Objects.requireNonNull(activeSystems));
     }
@@ -47,10 +47,20 @@ public abstract class ControllerMaintainer extends Maintainer {
         super.run();
     }
 
-    private static JobMetrics jobMetrics(Metric metric) {
-        return new JobMetrics((job, consecutiveFailures) -> {
-            metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
-        });
+    private static class ControllerJobMetrics extends JobMetrics {
+
+        private final Metric metric;
+
+        public ControllerJobMetrics(Metric metric) {
+            this.metric = metric;
+        }
+
+        @Override
+        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) {
+            metric.set("maintenance.consecutiveFailures", incompleteRuns, metric.createContext(Map.of("job", job)));
+            metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
+        }
+
     }
 
 }

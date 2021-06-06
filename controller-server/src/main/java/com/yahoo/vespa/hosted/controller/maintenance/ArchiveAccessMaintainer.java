@@ -37,8 +37,7 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-
+    protected double maintain() {
         // Count buckets - so we can alert if we get close to the account limit of 1000
         zoneRegistry.zones().all().ids().forEach(zoneId ->
                 metric.set(bucketCountMetricName, archiveBucketDb.buckets(zoneId).size(),
@@ -59,6 +58,7 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
                 )
         );
 
-        return true;
+        return 1.0;
     }
+
 }

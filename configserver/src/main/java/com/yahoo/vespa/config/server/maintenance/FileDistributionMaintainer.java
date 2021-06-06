@@ -33,9 +33,9 @@ public class FileDistributionMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, maxUnusedFileReferenceAge);
-        return true;
+        return 1.0;
     }
 
 }

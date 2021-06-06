@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -51,8 +52,9 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        AtomicBoolean success = new AtomicBoolean(true);
+    protected double maintain() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
         for (Tenant tenant : applicationRepository.tenantRepository().getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications())
@@ -60,6 +62,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                      .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
                                      .ifPresent(application -> {
                                          try {
+                                             attempts.incrementAndGet();
                                              applicationRepository.modifyReindexing(id, reindexing -> {
                                                  reindexing = withNewReady(reindexing, lazyGeneration(application), clock.instant());
                                                  reindexing = withOnlyCurrentData(reindexing, application);
@@ -68,11 +71,11 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
                                          }
                                          catch (RuntimeException e) {
                                              log.log(Level.INFO, "Failed to update reindexing status for " + id + ": " + Exceptions.toMessageString(e));
-                                             success.set(false);
+                                             failures.incrementAndGet();
                                          }
                                      });
         }
-        return success.get();
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     private Supplier<Long> lazyGeneration(Application application) {

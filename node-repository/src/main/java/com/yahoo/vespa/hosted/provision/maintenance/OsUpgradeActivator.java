@@ -23,13 +23,13 @@ public class OsUpgradeActivator extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         for (var nodeType : NodeType.values()) {
             if (!nodeType.isHost()) continue;
             boolean resume = canUpgradeOsOf(nodeType);
             nodeRepository().osVersions().resumeUpgradeOf(nodeType, resume);
         }
-        return true;
+        return 1.0;
     }
 
     /** Returns whether to allow OS upgrade of nodes of given type */

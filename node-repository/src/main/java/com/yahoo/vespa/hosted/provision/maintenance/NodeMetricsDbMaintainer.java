@@ -33,19 +33,21 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
+        int attempts = 0;
+        var failures = new MutableInteger(0);
         try {
-            var warnings = new MutableInteger(0);
             Set<ApplicationId> applications = activeNodesByApplication().keySet();
-            if (applications.isEmpty()) return true;
+            if (applications.isEmpty()) return 1.0;
 
             long pauseMs = interval().toMillis() / applications.size() - 1; // spread requests over interval
             int done = 0;
             for (ApplicationId application : applications) {
+                attempts++;
                 metricsFetcher.fetchMetrics(application)
                               .whenComplete((metricsResponse, exception) -> handleResponse(metricsResponse,
                                                                                            exception,
-                                                                                           warnings,
+                                                                                           failures,
                                                                                            application));
                 if (++done < applications.size())
                     Thread.sleep(pauseMs);
@@ -56,23 +58,22 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
 
             nodeRepository().metricsDb().gc();
 
-            // Suppress failures for manual zones for now to avoid noise
-            return nodeRepository().zone().environment().isManuallyDeployed() || warnings.get() == 0;
+            return asSuccessFactor(attempts, failures.get());
         }
         catch (InterruptedException e) {
-            return false;
+            return asSuccessFactor(attempts, failures.get());
         }
     }
 
     private void handleResponse(MetricsResponse response,
                                 Throwable exception,
-                                MutableInteger warnings,
+                                MutableInteger failures,
                                 ApplicationId application) {
         if (exception != null) {
-            if (warnings.get() < maxWarningsPerInvocation)
+            if (failures.get() < maxWarningsPerInvocation)
                 log.log(Level.WARNING, "Could not update metrics for " + application + ": " +
                                        Exceptions.toMessageString(exception));
-            warnings.add(1);
+            failures.add(1);
         }
         else if (response != null) {
             nodeRepository().metricsDb().addNodeMetrics(response.nodeMetrics());

@@ -79,19 +79,19 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         Collection<ResourceSnapshot> resourceSnapshots;
         try {
             resourceSnapshots = getAllResourceSnapshots();
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to collect resource snapshots. Retrying in " + interval() + ". Error: " +
                                    Exceptions.toMessageString(e));
-            return false;
+            return 0.0;
         }
 
         if (systemName.isPublic()) reportResourceSnapshots(resourceSnapshots);
         updateDeploymentCost(resourceSnapshots);
-        return true;
+        return 1.0;
     }
 
     void updateDeploymentCost(Collection<ResourceSnapshot> resourceSnapshots) {
