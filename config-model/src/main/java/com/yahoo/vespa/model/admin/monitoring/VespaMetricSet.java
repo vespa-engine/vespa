@@ -765,6 +765,15 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("vds.bouncer.clock_skew_aborts.count"));
 
+        metrics.add(new Metric("vds.mergethrottler.averagequeuewaitingtime.max"));
+        metrics.add(new Metric("vds.mergethrottler.averagequeuewaitingtime.sum"));
+        metrics.add(new Metric("vds.mergethrottler.averagequeuewaitingtime.count"));
+        metrics.add(new Metric("vds.mergethrottler.queuesize.max"));
+        metrics.add(new Metric("vds.mergethrottler.queuesize.sum"));
+        metrics.add(new Metric("vds.mergethrottler.queuesize.count"));
+        metrics.add(new Metric("vds.mergethrottler.bounced_due_to_back_pressure.rate"));
+        metrics.add(new Metric("vds.mergethrottler.locallyexecutedmerges.ok.rate"));
+        metrics.add(new Metric("vds.mergethrottler.mergechains.ok.rate"));
         return metrics;
     }
 
