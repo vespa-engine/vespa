@@ -105,7 +105,7 @@ public:
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
 };
 
-typedef CountMetric<uint64_t, true> LongCountMetric;
+using LongCountMetric = CountMetric<uint64_t, true>;
 
 } // metrics
 

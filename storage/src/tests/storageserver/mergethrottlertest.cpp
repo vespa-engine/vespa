@@ -1233,6 +1233,7 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
 
     // Wait till we have maxPending replies and maxQueue queued
     _topLinks[0]->waitForMessages(maxPending, _messageWaitTime);
+    EXPECT_EQ(19, _throttlers[0]->getMetrics().queueSize.getMaximum());
     waitUntilMergeQueueIs(*_throttlers[0], maxQueue, _messageWaitTime);
 
     // Clear all forwarded merges
