@@ -696,7 +696,10 @@ PostingStore<DataT>::move(EntryRef ref)
             if (!_store.getCompacting(ref)) {
                 return ref;
             }
-            return allocBitVectorCopy(*bve).ref;
+            auto new_ref = allocBitVectorCopy(*bve).ref;
+            _bvs.erase(ref.ref());
+            _bvs.insert(new_ref.ref());
+            return new_ref;
         } else {
             if (!_store.getCompacting(ref)) {
                 return ref;
