@@ -72,17 +72,21 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        if ( ! nodeRepository().nodes().isWorking()) return false;
+    protected double maintain() {
+        if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
+        int attempts = 0;
+        int failures = 0;
         int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 
         // Ready nodes
         try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
+                attempts++;
                 Node node = entry.getKey();
                 if (throttle(node)) {
+                    failures++;
                     if (node.type().isHost())
                         throttledHostFailures++;
                     else
@@ -96,10 +100,12 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         // Active nodes
         for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason().entrySet()) {
+            attempts++;
             Node node = entry.getKey();
             if (!failAllowedFor(node.type())) continue;
 
             if (throttle(node)) {
+                failures++;
                 if (node.type().isHost())
                     throttledHostFailures++;
                 else
@@ -116,10 +122,14 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             if ( ! activeNodes.childrenOf(host).isEmpty()) continue;
             Optional<NodeMutex> locked = Optional.empty();
             try {
+                attempts++;
                 locked = nodeRepository().nodes().lockAndGet(host);
                 if (locked.isEmpty()) continue;
                 nodeRepository().nodes().fail(List.of(locked.get().node()), Agent.NodeFailer,
                                               "Host should be failed and have no tenant nodes");
+            }
+            catch (Exception e) {
+                failures++;
             }
             finally {
                 locked.ifPresent(NodeMutex::close);
@@ -130,7 +140,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         metric.set(throttlingActiveMetric, throttlingActive, null);
         metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
-        return throttlingActive == 0;
+        return asSuccessFactor(attempts, failures);
     }
 
     private Map<Node, String> getReadyNodesByFailureReason() {

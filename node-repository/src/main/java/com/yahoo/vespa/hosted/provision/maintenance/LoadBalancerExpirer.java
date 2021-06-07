@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.common.collect.Sets;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -54,9 +55,9 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         expireReserved();
-        return removeInactive() & pruneReals();
+        return ( removeInactive() + pruneReals() ) / 2;
     }
 
     /** Move reserved load balancer that have expired to inactive */
@@ -68,7 +69,8 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
     }
 
     /** Deprovision inactive load balancers that have expired */
-    private boolean removeInactive() {
+    private double removeInactive() {
+        MutableInteger attempts = new MutableInteger(0);
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
         var expiry = nodeRepository().clock().instant().minus(inactiveExpiry);
@@ -76,6 +78,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                  lb.changedAt().isBefore(expiry) &&
                                  allocatedNodes(lb.id()).isEmpty(), lb -> {
             try {
+                attempts.add(1);
                 log.log(Level.INFO, () -> "Removing expired inactive load balancer " + lb.id());
                 service.remove(lb.id().application(), lb.id().cluster());
                 db.removeLoadBalancer(lb.id());
@@ -92,11 +95,12 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                                                                   .collect(Collectors.joining(", ")),
                                                                             interval()));
         }
-        return lastException.get() == null;
+        return asSuccessFactor(attempts.get(), failed.size());
     }
 
     /** Remove reals from inactive load balancers */
-    private boolean pruneReals() {
+    private double pruneReals() {
+        var attempts = new MutableInteger(0);
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
         patchLoadBalancers(lb -> lb.state() == State.inactive, lb -> {
@@ -107,6 +111,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
             if (reals.equals(lb.instance().get().reals())) return; // Nothing to remove
             try {
+                attempts.add(1);
                 LOG.log(Level.INFO, () -> "Removing reals from inactive load balancer " + lb.id() + ": " + Sets.difference(lb.instance().get().reals(), reals));
                 service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals), true);
                 db.writeLoadBalancer(lb.with(lb.instance().map(instance -> instance.withReals(reals))));
@@ -124,7 +129,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                                  interval()),
                     lastException.get());
         }
-        return lastException.get() == null;
+        return asSuccessFactor(attempts.get(), failed.size());
     }
 
     /** Patch load balancers matching given filter, while holding lock */

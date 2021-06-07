@@ -37,7 +37,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         // Reboot candidates: Nodes in long-term states, where we know we can safely orchestrate a reboot
         List<Node> nodesToReboot = nodeRepository().nodes().list(Node.State.active, Node.State.ready).stream()
                 .filter(node -> node.type().isHost())
@@ -46,7 +46,7 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
 
         if (!nodesToReboot.isEmpty())
             nodeRepository().nodes().reboot(NodeListFilter.from(nodesToReboot));
-        return true;
+        return 1.0;
     }
     
     private boolean shouldReboot(Node node) {

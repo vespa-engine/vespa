@@ -41,9 +41,9 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected final boolean maintain() {
+    protected final double maintain() {
         applicationsNeedingMaintenance().forEach(this::deploy);
-        return true;
+        return 1.0;
     }
 
     /** Returns the number of deployments that are pending execution */

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -48,13 +49,11 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        updateReadyNodeLivenessEvents();
-        updateActiveNodeDownState();
-        return true;
+    protected double maintain() {
+        return ( updateReadyNodeLivenessEvents() + updateActiveNodeDownState() ) / 2;
     }
 
-    private void updateReadyNodeLivenessEvents() {
+    private double updateReadyNodeLivenessEvents() {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
         try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
@@ -69,13 +68,16 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 }
             }
         }
+        return 1.0;
     }
 
     /**
      * If the node is down (see {@link #allDown}), and there is no "down" history record, we add it.
      * Otherwise we remove any "down" history record.
      */
-    private void updateActiveNodeDownState() {
+    private double updateActiveNodeDownState() {
+        var attempts = new MutableInteger(0);
+        var failures = new MutableInteger(0);
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
         serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName().forEach((hostname, serviceInstances) -> {
             Optional<Node> node = activeNodes.node(hostname.toString());
@@ -90,6 +92,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
             try (var lock = nodeRepository().nodes().lock(owner)) {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
+                attempts.add(1);
                 if (isDown) {
                     recordAsDown(node.get(), lock);
                 } else {
@@ -98,8 +101,10 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
             } catch (ApplicationLockException e) {
                 // Fine, carry on with other nodes. We'll try updating this one in the next run
                 log.log(Level.WARNING, "Could not lock " + owner + ": " + Exceptions.toMessageString(e));
+                failures.add(1);
             }
         });
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     /**
