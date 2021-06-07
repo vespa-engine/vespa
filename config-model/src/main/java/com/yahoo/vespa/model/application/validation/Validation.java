@@ -20,7 +20,6 @@ import com.yahoo.vespa.model.application.validation.change.GlobalDocumentChangeV
 import com.yahoo.vespa.model.application.validation.change.IndexedSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.IndexingModeChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.NodeResourceChangeValidator;
-import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseValidator;
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
@@ -106,8 +105,7 @@ public class Validation {
                 new ClusterSizeReductionValidator(),
                 new ResourcesReductionValidator(),
                 new ContainerRestartValidator(),
-                new NodeResourceChangeValidator(),
-                new RedundancyIncreaseValidator()
+                new NodeResourceChangeValidator()
         };
         List<ConfigChangeAction> actions = Arrays.stream(validators)
                                                  .flatMap(v -> v.validate(currentModel, nextModel, overrides, now).stream())

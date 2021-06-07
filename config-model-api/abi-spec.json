@@ -538,8 +538,7 @@
       "public static final enum com.yahoo.config.application.api.ValidationId configModelVersionMismatch",
       "public static final enum com.yahoo.config.application.api.ValidationId skipOldConfigModels",
       "public static final enum com.yahoo.config.application.api.ValidationId accessControl",
-      "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange",
-      "public static final enum com.yahoo.config.application.api.ValidationId redundancyIncrease"
+      "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange"
     ]
   },
   "com.yahoo.config.application.api.ValidationOverrides$Allow": {

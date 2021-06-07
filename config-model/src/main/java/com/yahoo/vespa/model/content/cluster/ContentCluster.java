@@ -674,9 +674,4 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
         // TODO
     }
 
-    @Override
-    public String toString() {
-        return "content cluster '" + clusterId + "'";
-    }
-
 }
