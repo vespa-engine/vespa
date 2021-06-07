@@ -27,10 +27,12 @@ public class RedundancyOnFirstDeploymentValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
+        if ( ! deployState.isHosted()) return;
         if ( ! deployState.zone().environment().isProduction()) return;
 
         for (ContentCluster cluster : model.getContentClusters().values()) {
-            if (cluster.redundancy().finalRedundancy() == 1)
+            if (cluster.redundancy().finalRedundancy() == 1
+                && cluster.redundancy().totalNodes() > cluster.redundancy().groups())
                 deployState.validationOverrides().invalid(ValidationId.redundancyOne,
                                                           cluster + " has redundancy 1, which will cause it to lose data " +
                                                           "if a node fails. This requires an override on first deployment " +
