@@ -132,15 +132,16 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public List<NamedReader> searchDefinitionContents() {
+    public List<NamedReader> getSchemas() {
         List<NamedReader> schemas = new ArrayList<>();
-        for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR)) {
-            if (sd.endsWith(SD_NAME_SUFFIX))
-                schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, sd))));
-        }
         for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR)) {
             if (sd.endsWith(SD_NAME_SUFFIX))
                 schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, sd))));
+        }
+        // TODO: Remove when 7.414.19 is oldest version in use
+        for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR)) {
+            if (sd.endsWith(SD_NAME_SUFFIX))
+                schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, sd))));
         }
         return schemas;
     }
@@ -162,11 +163,6 @@ public class ZKApplicationPackage implements ApplicationPackage {
             fileRegistry = Optional.of(fileRegistryMap.values().iterator().next());
         }
         return fileRegistry;
-    }
-
-    @Override
-    public List<NamedReader> getSearchDefinitions() {
-        return searchDefinitionContents();
     }
 
     private Reader retrieveConfigDefReader(String def) {
@@ -262,6 +258,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     @Override
     public Reader getRankingExpression(String name) {
         Optional<Reader> reader = zkApplication.getOptionalDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, name);
+        // TODO: Remove when 7.414.19 is oldest version in use
         return reader.orElseGet(() -> zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, name));
     }
 

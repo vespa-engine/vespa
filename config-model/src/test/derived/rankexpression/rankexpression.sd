@@ -276,7 +276,7 @@ search rankexpression {
     
     second-phase {
       expression {
-        40000 * m2
+        40000 * m2 * m4
       }
     }
     
@@ -291,14 +291,9 @@ search rankexpression {
         )
       }
     }
-    macro m4() {
-      expression {
-         701 * fieldMatch(title).completeness
-       }
-    }
     second-phase {
       expression {
-        3000 * m2
+        3000 * m2 * m4
       }
     }
   }
@@ -323,5 +318,4 @@ search rankexpression {
   }
 
 }
-
 

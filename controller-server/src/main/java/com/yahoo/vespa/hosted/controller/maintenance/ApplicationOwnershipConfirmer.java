@@ -18,6 +18,7 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
@@ -39,15 +40,17 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        return confirmApplicationOwnerships() &
-               ensureConfirmationResponses() &
-               updateConfirmedApplicationOwners();
+    protected double maintain() {
+        return ( confirmApplicationOwnerships() +
+                 ensureConfirmationResponses() +
+                 updateConfirmedApplicationOwners() )
+                / 3;
     }
 
     /** File an ownership issue with the owners of all applications we know about. */
-    private boolean confirmApplicationOwnerships() {
-        AtomicBoolean success = new AtomicBoolean(true);
+    private double confirmApplicationOwnerships() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
         applications()
                        .withProjectId()
                        .withProductionDeployment()
@@ -56,6 +59,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                        .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
                        .forEach(application -> {
                            try {
+                               attempts.incrementAndGet();
                                // TODO jvenstad: Makes sense to require, and run this only in main?
                                tenantOf(application.id()).contact().flatMap(contact -> {
                                    return ownershipIssues.confirmOwnership(application.ownershipIssueId(),
@@ -65,17 +69,17 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                }).ifPresent(newIssueId -> store(newIssueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
-                               success.set(false);
+                               failures.incrementAndGet();
                                log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
                            }
                        });
-        return success.get();
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     private ApplicationSummary summaryOf(TenantAndApplicationId application) {
         var app = applications.requireApplication(application);
         var metrics = new HashMap<ZoneId, ApplicationSummary.Metric>();
-        for (Instance instance : app.instances().values())
+        for (Instance instance : app.instances().values()) {
             for (var kv : instance.deployments().entrySet()) {
                 var zone = kv.getKey();
                 var deploymentMetrics = kv.getValue().metrics();
@@ -83,28 +87,31 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                                                 deploymentMetrics.queriesPerSecond(),
                                                                 deploymentMetrics.writesPerSecond()));
             }
+        }
         return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(),
                                       app.latestVersion().flatMap(version -> version.buildTime()), metrics);
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
-    private boolean ensureConfirmationResponses() {
-        AtomicBoolean success = new AtomicBoolean(true);
+    private double ensureConfirmationResponses() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
         for (Application application : applications())
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
+                    attempts.incrementAndGet();
                     Tenant tenant = tenantOf(application.id());
                     ownershipIssues.ensureResponse(issueId, tenant.contact());
                 }
                 catch (RuntimeException e) {
-                    success.set(false);
+                    failures.incrementAndGet();
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                 }
             });
-        return success.get();
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
-    private boolean updateConfirmedApplicationOwners() {
+    private double updateConfirmedApplicationOwners() {
         applications()
                        .withProjectId()
                        .withProductionDeployment()
@@ -118,7 +125,7 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
                                        controller().applications().store(lockedApplication.withOwner(owner)));
                            });
                        });
-        return true;
+        return 1.0;
     }
 
     private ApplicationList applications() {

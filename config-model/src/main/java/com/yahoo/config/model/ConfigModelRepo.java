@@ -11,6 +11,16 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
@@ -29,7 +39,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.util.*;
 import java.util.logging.Logger;
 
 /**

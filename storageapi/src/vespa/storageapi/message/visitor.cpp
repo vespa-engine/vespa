@@ -74,6 +74,16 @@ CreateVisitorCommand::getBucket() const
     return document::Bucket(_bucketSpace, document::BucketId());
 }
 
+document::BucketId
+CreateVisitorCommand::super_bucket_id() const
+{
+    if (_buckets.empty()) {
+        // TODO STRIPE: Is this actually an error situation? Should be fixed elsewhere.
+        return document::BucketId();
+    }
+    return _buckets[0];
+}
+
 void
 CreateVisitorCommand::print(std::ostream& out, bool verbose,
                             const std::string& indent) const
@@ -120,6 +130,7 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
 
 CreateVisitorReply::CreateVisitorReply(const CreateVisitorCommand& cmd)
     : StorageReply(cmd),
+      _super_bucket_id(cmd.super_bucket_id()),
       _lastBucket(document::BucketId(INT_MAX))
 {
 }

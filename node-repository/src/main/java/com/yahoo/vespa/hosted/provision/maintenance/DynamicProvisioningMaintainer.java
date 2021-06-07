@@ -12,13 +12,10 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
@@ -64,7 +61,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     private final HostProvisioner hostProvisioner;
     private final ListFlag<ClusterCapacity> preprovisionCapacityFlag;
     private final JacksonFlag<SharedHost> sharedHostFlag;
-    private final StringFlag allocateOsRequirement;
 
     DynamicProvisioningMaintainer(NodeRepository nodeRepository,
                                   Duration interval,
@@ -75,17 +71,16 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         this.hostProvisioner = hostProvisioner;
         this.preprovisionCapacityFlag = PermanentFlags.PREPROVISION_CAPACITY.bindTo(flagSource);
         this.sharedHostFlag = PermanentFlags.SHARED_HOST.bindTo(flagSource);
-        this.allocateOsRequirement = Flags.ALLOCATE_OS_REQUIREMENT.bindTo(flagSource);
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
             NodeList nodes = nodeRepository().nodes().list();
             resumeProvisioning(nodes, lock);
             convergeToCapacity(nodes);
         }
-        return true;
+        return 1.0;
     }
 
     /** Resume provisioning of already provisioned hosts and their children */
@@ -301,12 +296,9 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true);
         int wantedGroups = 1;
 
-        String allocateOsRequirement = this.allocateOsRequirement
-                .with(FetchVector.Dimension.APPLICATION_ID, ApplicationId.defaultId().serializedForm())
-                .value();
         NodePrioritizer prioritizer = new NodePrioritizer(nodeList, applicationId, clusterSpec, nodeSpec, wantedGroups,
                 true, nodeRepository().nameResolver(), nodeRepository().resourcesCalculator(),
-                nodeRepository().spareCount(), allocateOsRequirement);
+                nodeRepository().spareCount());
         List<NodeCandidate> nodeCandidates = prioritizer.collect(List.of());
         MutableInteger index = new MutableInteger(0);
         return nodeCandidates

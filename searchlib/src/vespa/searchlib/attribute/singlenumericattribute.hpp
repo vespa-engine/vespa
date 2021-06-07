@@ -37,7 +37,7 @@ SingleValueNumericAttribute<B>::onCommit()
     {
         // apply updates
         typename B::ValueModifier valueGuard(this->getValueModifier());
-        for (const auto & change : this->_changes) {
+        for (const auto & change : this->_changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
                 _data[change._doc] = change._data;

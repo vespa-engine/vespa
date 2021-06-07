@@ -6,11 +6,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -24,16 +25,19 @@ public class CliClient {
     private final PrintStream systemError;
     private final InputStream systemIn;
     private final Properties systemProperties;
+    private final Map<String, String> environmentVariables;
 
-    private CliClient(PrintStream systemOut, PrintStream systemError, InputStream systemIn, Properties systemProperties) {
+    private CliClient(PrintStream systemOut, PrintStream systemError, InputStream systemIn,
+                      Properties systemProperties, Map<String, String> environmentVariables) {
         this.systemOut = systemOut;
         this.systemError = systemError;
         this.systemIn = systemIn;
         this.systemProperties = systemProperties;
+        this.environmentVariables = environmentVariables;
     }
 
     public static void main(String[] args) {
-        CliClient client = new CliClient(System.out, System.err, System.in, System.getProperties());
+        CliClient client = new CliClient(System.out, System.err, System.in, System.getProperties(), System.getenv());
         int exitCode = client.run(args);
         System.exit(exitCode);
     }
@@ -70,8 +74,8 @@ public class CliClient {
 
     private static FeedClient createFeedClient(CliArguments cliArgs) throws CliArguments.CliArgumentsException {
         FeedClientBuilder builder = FeedClientBuilder.create(cliArgs.endpoint());
-        cliArgs.connections().ifPresent(builder::setMaxConnections);
-        cliArgs.maxStreamsPerConnection().ifPresent(builder::setMaxConnections);
+        cliArgs.connections().ifPresent(builder::setConnectionsPerEndpoint);
+        cliArgs.maxStreamsPerConnection().ifPresent(builder::setMaxStreamPerConnection);
         if (cliArgs.sslHostnameVerificationDisabled()) {
             builder.setHostnameVerifier(AcceptAllHostnameVerifier.INSTANCE);
         }
@@ -117,7 +121,10 @@ public class CliClient {
     }
 
     private boolean debugMode() {
-        return Boolean.parseBoolean(systemProperties.getProperty("VESPA_DEBUG", Boolean.FALSE.toString()));
+        boolean enabledWithSystemProperty = Boolean.parseBoolean(systemProperties.getProperty("VESPA_DEBUG", Boolean.FALSE.toString()));
+        boolean enabledWithEnvironmentVariable = Optional.ofNullable(environmentVariables.get("VESPA_DEBUG"))
+                .map(Boolean::parseBoolean).orElse(false);
+        return enabledWithSystemProperty || enabledWithEnvironmentVariable;
     }
 
     private static class AcceptAllHostnameVerifier implements HostnameVerifier {

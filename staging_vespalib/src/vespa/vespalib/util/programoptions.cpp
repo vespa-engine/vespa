@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <boost/lexical_cast.hpp>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".programoptions");

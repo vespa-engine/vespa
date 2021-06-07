@@ -61,6 +61,7 @@ private:
 
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
                                DistributorStripeMessageSender& sender);
+    bool is_global_bucket_merge() const noexcept;
 };
 
 }

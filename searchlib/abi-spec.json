@@ -333,6 +333,7 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
+      "public java.util.Map getRankProperties(com.yahoo.searchlib.rankingexpression.rule.SerializationContext)",
       "public java.util.Map getRankProperties(java.util.List)",
       "public static java.lang.String propertyName(java.lang.String)",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
@@ -1330,6 +1331,7 @@
       "public int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public final java.lang.String toString()",
+      "public final java.lang.StringBuilder toString(com.yahoo.searchlib.rankingexpression.rule.SerializationContext)",
       "public abstract java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
       "public abstract com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public abstract com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)"
@@ -1581,6 +1583,7 @@
       "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withBindings(java.util.Map)",
       "public com.yahoo.searchlib.rankingexpression.rule.SerializationContext withoutBindings()",
       "public java.util.Map serializedFunctions()",
+      "public boolean needSerialization(java.lang.String)",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withoutBindings()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
     ],

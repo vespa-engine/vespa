@@ -24,17 +24,18 @@ class RPCHooks : public FRT_Invokable
 {
 private:
     CommandQueue &_commands;
-
+    FRT_Supervisor &_orb;
 public:
-    RPCHooks(CommandQueue &commands) : _commands(commands) {}
+    RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor);
     ~RPCHooks() override;
-
-    void initRPC(FRT_Supervisor *supervisor);
 private:
+    void initRPC(FRT_Supervisor *supervisor);
+
     void rpc_listServices(FRT_RPCRequest *req);
     void rpc_restartService(FRT_RPCRequest *req);
     void rpc_stopService(FRT_RPCRequest *req);
     void rpc_startService(FRT_RPCRequest *req);
+    void rpc_checkConnectivity(FRT_RPCRequest *req);
 };
 
 } // namespace config::sentinel

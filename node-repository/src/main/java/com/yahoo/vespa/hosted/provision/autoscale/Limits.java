@@ -3,8 +3,11 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 
 import java.util.Objects;
 
@@ -54,6 +57,15 @@ public class Limits {
         resources = resources.withMemoryGb(between(min.nodeResources().memoryGb(), max.nodeResources().memoryGb(), resources.memoryGb()));
         resources = resources.withDiskGb(between(min.nodeResources().diskGb(), max.nodeResources().diskGb(), resources.diskGb()));
         return resources;
+    }
+
+    public Limits fullySpecified(ClusterSpec.Type type, NodeRepository nodeRepository) {
+        if (this.isEmpty()) throw new IllegalStateException("Unspecified limits can not be made fully specified");
+
+        var defaultResources = new CapacityPolicies(nodeRepository).defaultNodeResources(type);
+        var specifiedMin = min.nodeResources().isUnspecified() ? min.with(defaultResources) : min;
+        var specifiedMax = max.nodeResources().isUnspecified() ? max.with(defaultResources) : max;
+        return new Limits(specifiedMin, specifiedMax);
     }
 
     private double between(double min, double max, double value) {

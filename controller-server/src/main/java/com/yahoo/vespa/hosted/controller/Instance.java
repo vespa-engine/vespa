@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
@@ -69,11 +70,13 @@ public class Instance {
                                                                                       version, instant,
                                                                                       DeploymentMetrics.none,
                                                                                       DeploymentActivity.none,
-                                                                                      QuotaUsage.none));
+                                                                                      QuotaUsage.none,
+                                                                                      OptionalDouble.empty()));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity(),
-                                                  quotaUsage);
+                                                  quotaUsage,
+                                                  previousDeployment.cost());
         return with(newDeployment);
     }
 
@@ -97,6 +100,15 @@ public class Instance {
         Deployment deployment = deployments.get(zone);
         if (deployment == null) return this;    // No longer deployed in this zone.
         return with(deployment.withMetrics(deploymentMetrics));
+    }
+
+    public Instance withDeploymentCosts(Map<ZoneId, Double> costByZone) {
+        Map<ZoneId, Deployment> deployments = this.deployments.entrySet().stream()
+                .map(entry -> Optional.ofNullable(costByZone.get(entry.getKey()))
+                        .map(entry.getValue()::withCost)
+                        .orElseGet(entry.getValue()::withoutCost))
+                .collect(Collectors.toUnmodifiableMap(Deployment::zone, deployment -> deployment));
+        return with(deployments);
     }
 
     public Instance withoutDeploymentIn(ZoneId zone) {

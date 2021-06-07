@@ -49,6 +49,7 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -202,7 +203,8 @@ public class SessionPreparer {
                                                               applicationRoles,
                                                               params.quota(),
                                                               params.tenantSecretStores(),
-                                                              secretStore);
+                                                              secretStore,
+                                                              params.operatorCertificates());
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
@@ -275,7 +277,8 @@ public class SessionPreparer {
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
                                   params.quota(),
-                                  params.tenantSecretStores());
+                                  params.tenantSecretStores(),
+                                  params.operatorCertificates());
             checkTimeout("write state to zookeeper");
         }
 
@@ -325,7 +328,8 @@ public class SessionPreparer {
                                        AllocatedHosts allocatedHosts,
                                        Optional<AthenzDomain> athenzDomain,
                                        Optional<Quota> quota,
-                                       List<TenantSecretStore> tenantSecretStores) {
+                                       List<TenantSecretStore> tenantSecretStores,
+                                       List<X509Certificate> operatorCertificates) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -337,6 +341,7 @@ public class SessionPreparer {
             zooKeeperClient.writeAthenzDomain(athenzDomain);
             zooKeeperClient.writeQuota(quota);
             zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
+            zooKeeperClient.writeOperatorCertificates(operatorCertificates);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

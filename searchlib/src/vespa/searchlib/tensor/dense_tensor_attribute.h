@@ -23,6 +23,7 @@ private:
 
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
+    vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
 
 public:

@@ -37,6 +37,7 @@ import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -167,17 +168,18 @@ public class ModelContextImpl implements ModelContext {
         private final boolean skipMbusReplyThread;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
-        private final boolean useBucketExecutorForPruneRemoved;
         private final boolean enableFeedBlockInDistributor;
         private final ToIntFunction<ClusterSpec.Type> metricsProxyMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
-        private final boolean tenantIamRole;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
         private final boolean enableCustomAclMapping;
         private final boolean useExternalRankExpression;
         private final boolean distributeExternalRankExpressions;
         private final int numDistributorStripes;
+        private final boolean requireConnectivityCheck;
+        private final int maxConcurrentMergesPerContentNode;
+        private final int maxMergeQueueSize;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -191,17 +193,18 @@ public class ModelContextImpl implements ModelContext {
             this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
-            this.useBucketExecutorForPruneRemoved = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.metricsProxyMaxHeapSizeInMb = type -> Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB.bindTo(source).with(CLUSTER_TYPE, type.name()).value();
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
-            this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
             this.enableCustomAclMapping = flagValue(source, appId, Flags.ENABLE_CUSTOM_ACL_MAPPING);
             this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
             this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);
             this.distributeExternalRankExpressions = flagValue(source, appId, Flags.DISTRIBUTE_EXTERNAL_RANK_EXPRESSION);
+            this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
+            this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
+            this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -215,11 +218,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
-        @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb.applyAsInt(type); }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
-        @Override public boolean tenantIamRole() { return tenantIamRole; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
             return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
@@ -228,6 +229,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public int numDistributorStripes() { return numDistributorStripes; }
         @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
         @Override public boolean distributeExternalRankExpressions() { return distributeExternalRankExpressions; }
+        @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
+        @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
+        @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -287,6 +291,7 @@ public class ModelContextImpl implements ModelContext {
         private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
         private final boolean allowDisableMtls;
+        private final List<X509Certificate> operatorCertificates;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -300,7 +305,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
-                          SecretStore secretStore) {
+                          SecretStore secretStore,
+                          List<X509Certificate> operatorCertificates) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -323,6 +329,7 @@ public class ModelContextImpl implements ModelContext {
                                                                  .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.operatorCertificates = operatorCertificates;
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -389,6 +396,11 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean allowDisableMtls() {
             return allowDisableMtls;
+        }
+
+        @Override
+        public List<X509Certificate> operatorCertificates() {
+            return operatorCertificates;
         }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {

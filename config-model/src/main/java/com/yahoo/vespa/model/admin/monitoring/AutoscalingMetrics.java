@@ -19,19 +19,31 @@ public class AutoscalingMetrics {
 
     private static MetricSet create() {
         List<String> metrics = new ArrayList<>();
+
         metrics.add("cpu.util");
-        metrics.add("mem.util");
-        metrics.add("disk.util");
+
+        // Memory util
+        metrics.add("mem.util"); // node level - default
+        metrics.add("content.proton.resource_usage.memory.average"); // better for content as it is the basis for blocking
+
+        // Disk util
+        metrics.add("disk.util"); // node level -default
+        metrics.add("content.proton.resource_usage.disk.average"); // better for content as it is the basis for blocking
+
         metrics.add("application_generation");
+
         metrics.add("in_service");
 
+        // Query rate
         metrics.add("queries.rate"); // container
         metrics.add("content.proton.documentdb.matching.queries.rate"); // content
 
+        // Write rate
         metrics.add("feed.http-requests.rate"); // container
         metrics.add("vds.filestor.alldisks.allthreads.put.sum.count.rate"); // content
         metrics.add("vds.filestor.alldisks.allthreads.remove.sum.count.rate"); // content
         metrics.add("vds.filestor.alldisks.allthreads.update.sum.count.rate"); // content
+
         return new MetricSet("autoscaling", toMetrics(metrics));
     }
 

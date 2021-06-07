@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -69,5 +70,19 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                     .map(History.Event::at)
                     .anyMatch(e -> lastDeployTime.get().isBefore(e));
     }
+
+    @Override
+    protected boolean canDeployNow(ApplicationId application) {
+        return activeNodesByApplication().get(application) != null;
+    }
+
+    @Override
+    protected Map<ApplicationId, NodeList> activeNodesByApplication() {
+        return nodeRepository().nodes()
+                               .list(Node.State.active)
+                               .not().tester()
+                               .groupingBy(node -> node.allocation().get().owner());
+    }
+
 
 }

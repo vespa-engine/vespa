@@ -84,9 +84,26 @@ MultiThreadedStripeAccessGuard::merge_entries_into_db(document::BucketSpace buck
                                                       const std::unordered_set<uint16_t>& outdated_nodes,
                                                       const std::vector<dbtransition::Entry>& entries)
 {
-    // TODO STRIPE multiple stripes
-    first_stripe().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
-                                         new_state, storage_up_states, outdated_nodes, entries);
+    if (entries.empty()) {
+        return;
+    }
+    std::vector<dbtransition::Entry> stripe_entries;
+    stripe_entries.reserve(entries.size() / _stripe_pool.stripe_count());
+    auto* curr_stripe = &_stripe_pool.stripe_of_key(entries[0].bucket_key);
+    stripe_entries.push_back(entries[0]);
+    for (size_t i = 1; i < entries.size(); ++i) {
+        const auto& entry = entries[i];
+        auto* next_stripe = &_stripe_pool.stripe_of_key(entry.bucket_key);
+        if (curr_stripe != next_stripe) {
+            curr_stripe->merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
+                                               new_state, storage_up_states, outdated_nodes, stripe_entries);
+            stripe_entries.clear();
+        }
+        curr_stripe = next_stripe;
+        stripe_entries.push_back(entry);
+    }
+    curr_stripe->merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
+                                       new_state, storage_up_states, outdated_nodes, stripe_entries);
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_before_db_pruning() {

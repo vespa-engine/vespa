@@ -96,14 +96,15 @@ public class ApplicationSerializerTest {
                       Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
-                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none));
+                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none, OptionalDouble.empty()));
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
                                                                  OptionalDouble.of(200), OptionalDouble.of(10)),
-                                       QuotaUsage.create(OptionalDouble.of(23.5))));
+                                       QuotaUsage.create(OptionalDouble.of(23.5)),
+                                       OptionalDouble.of(12.3)));
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                                                         new RotationStatus.Targets(

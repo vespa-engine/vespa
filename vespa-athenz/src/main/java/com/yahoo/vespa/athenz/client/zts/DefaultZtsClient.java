@@ -165,7 +165,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     @Override
     public X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr, Duration expiry) {
         RoleCertificateRequestEntity requestEntity = new RoleCertificateRequestEntity(csr, expiry);
-        URI uri = ztsUrl.resolve(String.format("domain/%s/role/%s/token", role.domain().getName(), role.roleName()));
+        URI uri = ztsUrl.resolve("rolecert");
         HttpUriRequest request = RequestBuilder.post(uri)
                 .setEntity(toJsonStringEntity(requestEntity))
                 .build();

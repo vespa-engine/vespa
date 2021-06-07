@@ -17,7 +17,7 @@ public:
     Mappings mappings;
     uint32_t gen;
     MockMirror() : mappings(), gen(1) {}
-    SpecList lookup(const std::string& pattern) const override {
+    SpecList lookup(vespalib::stringref pattern) const override {
         auto itr = mappings.find(pattern);
         if (itr != mappings.end()) {
             return itr->second;

@@ -56,9 +56,9 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals(0.820, values.get(0).getSecond().load().disk(), delta);
 
             assertEquals("host-2.yahoo.com", values.get(1).getFirst());
-            assertEquals(0.2, values.get(1).getSecond().load().cpu(), delta);
-            assertEquals(0.0, values.get(1).getSecond().load().memory(), delta);
-            assertEquals(0.4, values.get(1).getSecond().load().disk(), delta);
+            assertEquals(0.0,  values.get(1).getSecond().load().cpu(), delta);
+            assertEquals(0.35, values.get(1).getSecond().load().memory(), delta);
+            assertEquals(0.45,  values.get(1).getSecond().load().disk(), delta);
             assertEquals(45.0, values.get(1).getSecond().queryRate(), delta);
         }
 
@@ -134,7 +134,7 @@ public class MetricsV2MetricsFetcherTest {
             "        \"metrics\": [\n" +
             "          {\n" +
             "            \"values\": {\n" +
-            "              \"cpu.util\": 20,\n" +
+            "              \"mem.util\": 30,\n" +
             "              \"disk.util\": 40\n" +
             "            },\n" +
             "            \"dimensions\": {\n" +
@@ -157,6 +157,14 @@ public class MetricsV2MetricsFetcherTest {
             "              },\n" +
             "              \"dimensions\": {\n" +
             "                \"documentType\": \"music\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"values\": {\n" +
+            "                \"content.proton.resource_usage.memory.average\": 0.35,\n" +
+            "                \"content.proton.resource_usage.disk.average\": 0.45\n" +
+            "              },\n" +
+            "              \"dimensions\": {\n" +
             "              }\n" +
             "            },\n" +
             "            {\n" +

@@ -18,6 +18,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -70,6 +71,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
+import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -82,6 +84,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -1501,6 +1504,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
                 List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
@@ -1528,26 +1532,40 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Grant access to support user
         X509Certificate support_cert = grantCertificate(now, now.plusSeconds(3600));
-        tester.controller().supportAccess().registerGrant(app.deploymentIdIn(zone), "user.andreer", support_cert);
+        String grantPayload= "{\n" +
+                             "  \"applicationId\": \"tenant1:application1:instance1\",\n" +
+                             "  \"zone\": \"prod.us-west-1\",\n" +
+                             "  \"certificate\":\""+X509CertificateUtils.toPem(support_cert)+ "\"\n" +
+                             "}";
+        tester.assertResponse(request("/controller/v1/access/grants/"+HOSTED_VESPA_OPERATOR.id(), POST)
+                                      .data(grantPayload)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"message\":\"Operator user.johnoperator granted access and job production-us-west-1 triggered\"}");
 
         // GET shows grant
         String grantResponse = allowedResponse.replaceAll("\"grants\":\\[]",
-                "\"grants\":[{\"requestor\":\"user.andreer\",\"notBefore\":\"" + serializeInstant(now) + "\",\"notAfter\":\"" + serializeInstant(now.plusSeconds(3600)) + "\"}]");
+                "\"grants\":[{\"requestor\":\"user.johnoperator\",\"notBefore\":\"" + serializeInstant(now) + "\",\"notAfter\":\"" + serializeInstant(now.plusSeconds(3600)) + "\"}]");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", GET)
                         .userIdentity(USER_ID),
                 grantResponse, 200
         );
 
+        // Should be 1 available grant
+        List<SupportAccessGrant> activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
+        assertEquals(1, activeGrants.size());
+
         // DELETE removes access
-        System.out.println("grantresponse:\n"+grantResponse+"\n");
         String disallowedResponse = grantResponse
                 .replaceAll("ALLOWED\".*?}", "NOT_ALLOWED\"}")
                 .replace("history\":[", "history\":[{\"state\":\"disallowed\",\"at\":\""+ serializeInstant(now) +"\",\"by\":\"user.myuser\"},");
-        System.out.println("disallowedResponse:\n"+disallowedResponse+"\n");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/access/support", DELETE)
                         .userIdentity(USER_ID),
                 disallowedResponse, 200
         );
+
+        // Should be no available grant
+        activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
+        assertEquals(0, activeGrants.size());
     }
 
     private static String serializeInstant(Instant i) {

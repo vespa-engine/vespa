@@ -14,16 +14,13 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Maintainer making automatic scaling decisions
@@ -47,14 +44,13 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        if ( ! nodeRepository().nodes().isWorking()) return false;
+    protected double maintain() {
+        if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
-        boolean success = true;
-        if ( ! nodeRepository().zone().environment().isAnyOf(Environment.dev, Environment.prod)) return success;
+        if ( ! nodeRepository().zone().environment().isAnyOf(Environment.dev, Environment.prod)) return 1.0;
 
         activeNodesByApplication().forEach(this::autoscale);
-        return success;
+        return 1.0;
     }
 
     private void autoscale(ApplicationId application, NodeList applicationNodes) {
@@ -81,7 +77,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
                 // 1. Update cluster info
                 updatedCluster = updateCompletion(cluster.get(), clusterNodes)
-                                         .withAutoscalingStatus(advice.reason())
+                                         .with(advice.reason())
                                          .withTarget(advice.target());
                 applications().put(application.get().with(updatedCluster), lock);
                 if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {

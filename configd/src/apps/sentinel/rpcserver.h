@@ -22,6 +22,7 @@ public:
     ~RpcServer();
 
     int getPort() const { return _port; }
+    FRT_Supervisor &orb() { return _server.supervisor(); }
 };
 
 } // namespace config::sentinel

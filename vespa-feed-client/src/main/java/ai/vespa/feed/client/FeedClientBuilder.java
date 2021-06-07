@@ -7,7 +7,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -21,37 +26,45 @@ import static java.util.Objects.requireNonNull;
  */
 public class FeedClientBuilder {
 
-    FeedClient.RetryStrategy defaultRetryStrategy = new FeedClient.RetryStrategy() { };
+    static final FeedClient.RetryStrategy defaultRetryStrategy = new FeedClient.RetryStrategy() { };
 
-    final URI endpoint;
+    final List<URI> endpoints;
     final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
-    int maxConnections = 4;
-    int maxStreamsPerConnection = 1024;
+    int connectionsPerEndpoint = 4;
+    int maxStreamsPerConnection = 128;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
+    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Clock.systemUTC(), Duration.ofSeconds(1), Duration.ofMinutes(10));
     Path certificate;
     Path privateKey;
     Path caCertificates;
 
-    public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(endpoint); }
+    public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
 
-    private FeedClientBuilder(URI endpoint) {
-        requireNonNull(endpoint.getHost());
-        this.endpoint = endpoint;
+    public static FeedClientBuilder create(List<URI> endpoints) { return new FeedClientBuilder(endpoints); }
+
+    private FeedClientBuilder(List<URI> endpoints) {
+        if (endpoints.isEmpty())
+            throw new IllegalArgumentException("At least one endpoint must be provided");
+
+        for (URI endpoint : endpoints)
+            requireNonNull(endpoint.getHost());
+
+        this.endpoints = new ArrayList<>(endpoints);
     }
 
     /**
-     * Sets the maximum number of connections this client will use.
+     * Sets the number of connections this client will use per endpoint.
      *
      * A reasonable value here is a small multiple of the numbers of containers in the
      * cluster to feed, so load can be balanced across these.
      * In general, this value should be kept as low as possible, but poor connectivity
      * between feeder and cluster may also warrant a higher number of connections.
      */
-    public FeedClientBuilder setMaxConnections(int max) {
+    public FeedClientBuilder setConnectionsPerEndpoint(int max) {
         if (max < 1) throw new IllegalArgumentException("Max connections must be at least 1, but was " + max);
-        this.maxConnections = max;
+        this.connectionsPerEndpoint = max;
         return this;
     }
 
@@ -92,6 +105,11 @@ public class FeedClientBuilder {
 
     public FeedClientBuilder setRetryStrategy(FeedClient.RetryStrategy strategy) {
         this.retryStrategy = requireNonNull(strategy);
+        return this;
+    }
+
+    public FeedClientBuilder setCircuitBreaker(FeedClient.CircuitBreaker breaker) {
+        this.circuitBreaker = requireNonNull(breaker);
         return this;
     }
 

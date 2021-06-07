@@ -16,6 +16,7 @@ public:
     uint32_t  _maxInputBufferSize;
     uint32_t  _maxOutputBufferSize;
     bool      _tcpNoDelay;
+    bool      _drop_empty_buffers;
 
     FNET_Config();
 };

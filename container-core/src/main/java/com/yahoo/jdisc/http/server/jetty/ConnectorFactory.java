@@ -75,7 +75,7 @@ public class ConnectorFactory {
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
         connector.setReuseAddress(connectorConfig.reuseAddress());
-        connector.setIdleTimeout((long)(connectorConfig.idleTimeout() * 1000.0));
+        connector.setIdleTimeout(toMillis(connector.getIdleTimeout()));
         return connector;
     }
 
@@ -162,7 +162,8 @@ public class ConnectorFactory {
 
     private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
         HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
-        factory.setMaxConcurrentStreams(4096);
+        factory.setStreamIdleTimeout(toMillis(connectorConfig.http2().streamIdleTimeout()));
+        factory.setMaxConcurrentStreams(connectorConfig.http2().maxConcurrentStreams());
         return factory;
     }
 
@@ -192,5 +193,7 @@ public class ConnectorFactory {
         return config.ssl().enabled()
                 || (config.implicitTlsEnabled() && TransportSecurityUtils.isTransportSecurityEnabled());
     }
+
+    private static long toMillis(double seconds) { return (long)(seconds * 1000); }
 
 }

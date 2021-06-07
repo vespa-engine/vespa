@@ -53,6 +53,7 @@ public:
     ssize_t write(const char *buf, size_t len) override { return _socket.write(buf, len); }
     ssize_t flush() override { return 0; }
     ssize_t half_close() override { return _socket.half_close(); }
+    void drop_empty_buffers() override {}
 };
 
 class XorCryptoSocket : public CryptoSocket
@@ -185,6 +186,10 @@ public:
             return flush_res;
         }
         return _socket.half_close();
+    }
+    void drop_empty_buffers() override {
+        _input.drop_if_empty();
+        _output.drop_if_empty();
     }
 };
 

@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergeoperation.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
@@ -325,13 +326,30 @@ bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri)
 
 bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker,
                                const OperationSequencer& op_seq) const {
-    const auto& node_info = pending_tracker.getNodeInfo();
-    for (auto node : getNodes()) {
-        if (node_info.isBusy(node)) {
-            return true;
+    // To avoid starvation of high priority global bucket merges, we do not consider
+    // these for blocking due to a node being "busy" (usually caused by a full merge
+    // throttler queue).
+    //
+    // This is for two reasons:
+    //  1. When an ideal state op is blocked, it is still removed from the internal
+    //     maintenance priority queue. This means a blocked high pri operation will
+    //     not be retried until the next DB pass (at which point the node is likely
+    //     to still be marked as busy when there's heavy merge traffic).
+    //  2. Global bucket merges have high priority and will most likely be allowed
+    //     to enter the merge throttler queues, displacing lower priority merges.
+    if (!is_global_bucket_merge()) {
+        const auto& node_info = pending_tracker.getNodeInfo();
+        for (auto node : getNodes()) {
+            if (node_info.isBusy(node)) {
+                return true;
+            }
         }
     }
     return IdealStateOperation::isBlocked(pending_tracker, op_seq);
+}
+
+bool MergeOperation::is_global_bucket_merge() const noexcept {
+    return getBucket().getBucketSpace() == document::FixedBucketSpaces::global_space();
 }
 
 }

@@ -40,6 +40,11 @@ import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -53,6 +58,7 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.Rule;
@@ -61,8 +67,15 @@ import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +95,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -815,6 +829,48 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, deployState, null, clusterElem);
         assertEquals(Optional.of("I am a very nice certificate"), getContainerCluster("container").getTlsClientAuthority());
+    }
+
+    @Test
+    public void operator_certificates_are_joined_with_clients_pem() {
+        var applicationPackage = new MockApplicationPackage.Builder()
+                .withRoot(applicationFolder.getRoot())
+                .build();
+
+        var applicationTrustCert = X509CertificateUtils.toPem(
+                X509CertificateUtils.createSelfSigned("CN=application", Duration.ofDays(1)).certificate());
+        var operatorCert = X509CertificateUtils.createSelfSigned("CN=operator", Duration.ofDays(1)).certificate();
+
+        applicationPackage.getFile(Path.fromString("security")).createDirectory();
+        applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader(applicationTrustCert));
+
+        var deployState = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setOperatorCertificates(List.of(operatorCert))
+                        .setHostedVespa(true)
+                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
+                .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
+                .applicationPackage(applicationPackage)
+                .build();
+
+        Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
+
+        createModel(root, deployState, null, clusterElem);
+
+        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
+        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
+        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
+
+        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
+        tlsPort.getConfig(builder);
+
+        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
+        var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
+        assertEquals(2, caCerts.size());
+        List<String> certnames = caCerts.stream()
+                .map(cert -> cert.getSubjectX500Principal().getName())
+                .collect(Collectors.toList());
+        assertThat(certnames, containsInAnyOrder("CN=operator", "CN=application"));
     }
 
     @Test

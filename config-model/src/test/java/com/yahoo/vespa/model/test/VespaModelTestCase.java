@@ -192,7 +192,7 @@ public class VespaModelTestCase {
                         "   </documents>" +
                         "</content>" +
                         "</services>",
-                ApplicationPackageUtils.generateSearchDefinition("music"))
+                ApplicationPackageUtils.generateSchemas("music"))
                 .create();
         MessagebusConfig.Builder mBusB = new MessagebusConfig.Builder();
         model.getConfig(mBusB, "client");
@@ -216,7 +216,7 @@ public class VespaModelTestCase {
                         "</hosts>");
     }
 
-    class MyLogger implements DeployLogger {
+    static class MyLogger implements DeployLogger {
         List<Pair<Level, String>> msgs = new ArrayList<>();
         @Override
         public void log(Level level, String message) {
@@ -303,6 +303,31 @@ public class VespaModelTestCase {
         assertThat(model.getContainerClusters().size(), is(0));
         model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
         assertThat(model.getContainerClusters().size(), is(1));
+    }
+
+    @Test
+    public void testThatDeployLogContainsWarningWhenUsingSearchdefinitionsDir() throws IOException, SAXException {
+        ApplicationPackage app = FilesApplicationPackage.fromFile(
+                new File("src/test/cfg/application/deprecated_features_app/"));
+        MyLogger logger = new MyLogger();
+        DeployState deployState = new DeployState.Builder()
+                .applicationPackage(app)
+                .deployLogger(logger)
+                .build();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+        Validation.validate(model, new ValidationParameters(), deployState);
+        assertContainsWarning(logger.msgs, "Directory searchdefinitions/ should not be used for schemas, use schemas/ instead");
+    }
+
+    private void assertContainsWarning(List<Pair<Level,String>> msgs, String text) {
+        boolean foundCorrectWarning = false;
+        for (var msg : msgs)
+            if (msg.getFirst().getName().equals("WARNING") && msg.getSecond().equals(text)) {
+                foundCorrectWarning = true;
+            }
+        if (! foundCorrectWarning) for (var msg : msgs) System.err.println("MSG: "+msg);
+        assertTrue(msgs.size() > 0);
+        assertTrue(foundCorrectWarning);
     }
 
 }

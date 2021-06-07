@@ -61,9 +61,6 @@ maxDurationOfBootstrap long default=7200
 # Code uses backoff, so wait time will increase for every iteration
 sleepTimeWhenRedeployingFails long default=15
 
-# Features (to be overridden in configserver-config.xml if needed)
-buildMinimalSetOfConfigModels bool default=true
-
 # Unused, remove in Vespa 8
 throwIfActiveSessionCannotBeLoaded bool default=true
 

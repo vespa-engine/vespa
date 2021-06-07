@@ -43,7 +43,7 @@ public class NodeMetricsDbMaintainerTest {
                                                                          fetcher,
                                                                          Duration.ofHours(1),
                                                                          new TestMetric());
-        assertTrue(maintainer.maintain());
+        assertEquals(maintainer.maintain(), 1.0, 0.0000001);
         List<NodeTimeseries> timeseriesList = tester.nodeRepository().metricsDb().getNodeTimeseries(Duration.ofDays(1),
                                                                                                     Set.of("host-1.yahoo.com", "host-2.yahoo.com"));
         assertEquals(2, timeseriesList.size());

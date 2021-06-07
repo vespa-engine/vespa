@@ -7,6 +7,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
+import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus.Status;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
@@ -52,7 +54,8 @@ public class Autoscaler {
      * @return scaling advice for this cluster
      */
     public Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
-        if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is not enabled");
+        if (cluster.minResources().equals(cluster.maxResources()))
+            return Advice.none(Status.unavailable, "Autoscaling is not enabled");
         return autoscale(application, cluster, clusterNodes, Limits.of(cluster));
     }
 
@@ -65,17 +68,20 @@ public class Autoscaler {
                                                      nodeRepository.clock());
 
         if ( ! clusterIsStable(clusterNodes, nodeRepository))
-            return Advice.none("Cluster change in progress");
+            return Advice.none(Status.waiting, "Cluster change in progress");
 
         if (scaledIn(clusterModel.scalingDuration(), cluster))
-            return Advice.dontScale("Won't autoscale now: Less than " + clusterModel.scalingDuration() + " since last resource change");
+            return Advice.dontScale(Status.waiting,
+                                    "Won't autoscale now: Less than " + clusterModel.scalingDuration() + " since last resource change");
 
         if  (clusterModel.nodeTimeseries().measurementsPerNode() < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
-            return Advice.none("Collecting more data before making new scaling decisions: Need to measure for " +
+            return Advice.none(Status.waiting,
+                               "Collecting more data before making new scaling decisions: Need to measure for " +
                                clusterModel.scalingDuration() + " since the last resource change completed");
 
         if (clusterModel.nodeTimeseries().nodesMeasured() != clusterNodes.size())
-            return Advice.none("Collecting more data before making new scaling decisions: " +
+            return Advice.none(Status.waiting,
+                               "Collecting more data before making new scaling decisions: " +
                                "Have measurements from " + clusterModel.nodeTimeseries().nodesMeasured() +
                                " nodes, but require from " + clusterNodes.size());
 
@@ -85,13 +91,18 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
-            return Advice.dontScale("No allocation improvements are possible within configured limits");
+            return Advice.dontScale(Status.insufficient, "No allocations are possible within configured limits");
 
-        if (similar(bestAllocation.get().realResources(), currentAllocation.realResources()))
-            return Advice.dontScale("Cluster is ideally scaled within configured limits");
+        if (similar(bestAllocation.get().realResources(), currentAllocation.realResources())) {
+            if (bestAllocation.get().fulfilment() < 1)
+                return Advice.dontScale(Status.insufficient, "Configured limits prevents better scaling of this cluster");
+            else
+                return Advice.dontScale(Status.ideal, "Cluster is ideally scaled");
+        }
 
         if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(clusterModel.scalingDuration().multipliedBy(3), cluster))
-            return Advice.dontScale("Waiting " + clusterModel.scalingDuration().multipliedBy(3) +
+            return Advice.dontScale(Status.waiting,
+                                    "Waiting " + clusterModel.scalingDuration().multipliedBy(3) +
                                     " since the last change before reducing resources");
 
         return Advice.scaleTo(bestAllocation.get().advertisedResources());
@@ -154,9 +165,9 @@ public class Autoscaler {
 
         private final boolean present;
         private final Optional<ClusterResources> target;
-        private final String reason;
+        private final AutoscalingStatus reason;
 
-        private Advice(Optional<ClusterResources> target, boolean present, String reason) {
+        private Advice(Optional<ClusterResources> target, boolean present, AutoscalingStatus reason) {
             this.target = target;
             this.present = present;
             this.reason = Objects.requireNonNull(reason);
@@ -175,12 +186,20 @@ public class Autoscaler {
         public boolean isPresent() { return present; }
 
         /** The reason for this advice */
-        public String reason() { return reason; }
+        public AutoscalingStatus reason() { return reason; }
 
-        private static Advice none(String reason) { return new Advice(Optional.empty(), false, reason); }
-        private static Advice dontScale(String reason) { return new Advice(Optional.empty(), true, reason); }
+        private static Advice none(Status status, String description) {
+            return new Advice(Optional.empty(), false, new AutoscalingStatus(status, description));
+        }
+
+        private static Advice dontScale(Status status, String description) {
+            return new Advice(Optional.empty(), true, new AutoscalingStatus(status, description));
+        }
+
         private static Advice scaleTo(ClusterResources target) {
-            return new Advice(Optional.of(target), true, "Scheduled scaling to " + target + " due to load changes");
+            return new Advice(Optional.of(target), true,
+                              new AutoscalingStatus(AutoscalingStatus.Status.rescaling,
+                                                    "Scheduled scaling to " + target + " due to load changes"));
         }
 
         @Override

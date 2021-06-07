@@ -6,6 +6,7 @@
 #include "partialbitvector.h"
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
@@ -32,6 +33,9 @@ void verifyInclusiveStart(const search::BitVector & a, const search::BitVector &
     }
 }
 
+constexpr size_t MMAP_LIMIT = 32_Mi;
+constexpr size_t DIRECTIO_ALIGNMENT = 4_Ki;
+
 }
 
 /////////////////////////////////
@@ -49,7 +53,7 @@ BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity)
     uint32_t words = numActiveWords(start, capacity);
     words += (-words & 15); // Pad to 64 byte alignment
     const size_t sz(words * sizeof(Word));
-    Alloc alloc = Alloc::alloc(sz);
+    Alloc alloc = Alloc::alloc(sz, MMAP_LIMIT);
     assert(alloc.size()/sizeof(Word) >= words);
     // Clear padding
     size_t usedBytes = numBytes(end - start);
@@ -337,7 +341,7 @@ BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
         size_t vectorsize = getFileBytes(numberOfElements);
         file.DirectIOPadding(offset, vectorsize, padbefore, padafter);
         assert((padbefore & (getAlignment() - 1)) == 0);
-        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter, 0x1000000, 0x1000);
+        AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter, MMAP_LIMIT, DIRECTIO_ALIGNMENT);
         void * alignedBuffer = alloc.get();
         file.ReadBuf(alignedBuffer, alloc.size(), offset - padbefore);
         bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore);

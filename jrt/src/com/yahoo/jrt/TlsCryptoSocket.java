@@ -216,6 +216,11 @@ public class TlsCryptoSocket implements CryptoSocket {
         return wrapBuffer.bytes() > 0 ? FlushResult.NEED_WRITE : FlushResult.DONE;
     }
 
+    @Override public void dropEmptyBuffers() {
+        wrapBuffer.shrink(0);
+        unwrapBuffer.shrink(0);
+    }
+
     @Override
     public Optional<SecurityContext> getSecurityContext() {
         try {

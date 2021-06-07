@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collection;
@@ -102,5 +103,9 @@ public class SerializationContext extends FunctionReferenceContext {
     }
 
     public Map<String, String> serializedFunctions() { return serializedFunctions; }
+
+    public boolean needSerialization(String functionName) {
+        return ! serializedFunctions().containsKey(RankingExpression.propertyName(functionName));
+    }
 
 }

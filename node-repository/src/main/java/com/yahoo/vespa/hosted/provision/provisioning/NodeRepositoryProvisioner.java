@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -72,7 +71,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                                .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
-                                     flagSource,
                                      provisionServiceProvider.getHostProvisioner(),
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
@@ -122,7 +120,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
-        nodeRepository.nodes().restart(ApplicationFilter.from(application).and(NodeHostFilter.from(filter)));
+        nodeRepository.nodes().restartActive(ApplicationFilter.from(application).and(NodeHostFilter.from(filter)));
     }
 
     @Override

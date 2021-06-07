@@ -49,9 +49,9 @@ public class DocumentModelBuilderTestCase extends SchemaTestCase {
     @Test
     public void testMultipleInheritanceArray() throws IOException, ParseException {
         SearchBuilder search = new SearchBuilder();
-        search.importFile("src/test/cfg/search/data/travel/searchdefinitions/TTData.sd");
-        search.importFile("src/test/cfg/search/data/travel/searchdefinitions/TTEdge.sd");
-        search.importFile("src/test/cfg/search/data/travel/searchdefinitions/TTPOI.sd");
+        search.importFile("src/test/cfg/search/data/travel/schemas/TTData.sd");
+        search.importFile("src/test/cfg/search/data/travel/schemas/TTEdge.sd");
+        search.importFile("src/test/cfg/search/data/travel/schemas/TTPOI.sd");
         search.build();
     }
 

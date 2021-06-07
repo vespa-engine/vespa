@@ -3,19 +3,12 @@
 
 #include "striped_btree_lockable_map.h"
 #include "btree_lockable_map.hpp"
+#include <vespa/storage/common/bucket_stripe_utils.h>
 #include <algorithm>
 #include <cassert>
 #include <queue>
 
 namespace storage::bucketdb {
-
-namespace {
-
-constexpr uint8_t used_bits_of(uint64_t key) noexcept {
-    return static_cast<uint8_t>(key & 0b11'1111ULL);
-}
-
-}
 
 template <typename T>
 StripedBTreeLockableMap<T>::StripedBTreeLockableMap(uint8_t n_stripe_bits)
@@ -37,9 +30,7 @@ StripedBTreeLockableMap<T>::~StripedBTreeLockableMap() = default;
 
 template <typename T>
 size_t StripedBTreeLockableMap<T>::stripe_of(key_type key) const noexcept {
-    assert(used_bits_of(key) >= _n_stripe_bits);
-    // Since bucket keys have count-bits at the LSB positions, we want to look at the MSBs instead.
-    return (key >> (64 - _n_stripe_bits));
+    return stripe_of_bucket_key(key, _n_stripe_bits);
 }
 
 template <typename T>

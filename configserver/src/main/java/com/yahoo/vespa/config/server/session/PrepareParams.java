@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -11,6 +12,8 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -20,14 +23,18 @@ import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
+import org.eclipse.jetty.util.ssl.X509;
 
+import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Parameters for preparing an application. Immutable.
@@ -52,6 +59,7 @@ public final class PrepareParams {
     static final String TENANT_SECRET_STORES_PARAM_NAME = "tenantSecretStores";
     static final String FORCE_PARAM_NAME = "force";
     static final String WAIT_FOR_RESOURCES_IN_PREPARE = "waitForResourcesInPrepare";
+    static final String OPERATOR_CERTIFICATES = "operatorCertificates";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -69,6 +77,7 @@ public final class PrepareParams {
     private final Optional<ApplicationRoles> applicationRoles;
     private final Optional<Quota> quota;
     private final List<TenantSecretStore> tenantSecretStores;
+    private final List<X509Certificate> operatorCertificates;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
@@ -76,7 +85,7 @@ public final class PrepareParams {
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, List<TenantSecretStore> tenantSecretStores,
-                          boolean force, boolean waitForResourcesInPrepare) {
+                          boolean force, boolean waitForResourcesInPrepare, List<X509Certificate> operatorCertificates) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -93,6 +102,7 @@ public final class PrepareParams {
         this.tenantSecretStores = tenantSecretStores;
         this.force = force;
         this.waitForResourcesInPrepare = waitForResourcesInPrepare;
+        this.operatorCertificates = operatorCertificates;
     }
 
     public static class Builder {
@@ -113,6 +123,7 @@ public final class PrepareParams {
         private Optional<ApplicationRoles> applicationRoles = Optional.empty();
         private Optional<Quota> quota = Optional.empty();
         private List<TenantSecretStore> tenantSecretStores = List.of();
+        private List<X509Certificate> operatorCertificates = List.of();
 
         public Builder() { }
 
@@ -245,11 +256,17 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder withOperatorCertificates(List<X509Certificate> operatorCertificates) {
+            this.operatorCertificates = List.copyOf(operatorCertificates);
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints,
                                      endpointCertificateMetadata, dockerImageRepository, athenzDomain,
-                                     applicationRoles, quota, tenantSecretStores, force, waitForResourcesInPrepare);
+                                     applicationRoles, quota, tenantSecretStores, force, waitForResourcesInPrepare,
+                                     operatorCertificates);
         }
     }
 
@@ -289,9 +306,10 @@ public final class PrepareParams {
                 .athenzDomain(SlimeUtils.optionalString(params.field(ATHENZ_DOMAIN)).orElse(null))
                 .applicationRoles(ApplicationRoles.fromString(SlimeUtils.optionalString(params.field(APPLICATION_HOST_ROLE)).orElse(null), SlimeUtils.optionalString(params.field(APPLICATION_CONTAINER_ROLE)).orElse(null)))
                 .quota(deserialize(params.field(QUOTA_PARAM_NAME), Quota::fromSlime))
-                .tenantSecretStores(SlimeUtils.optionalString(params.field(TENANT_SECRET_STORES_PARAM_NAME)).orElse(null))
+                .tenantSecretStores(deserialize(params.field(TENANT_SECRET_STORES_PARAM_NAME), TenantSecretStoreSerializer::listFromSlime, List.of()))
                 .force(booleanValue(params, FORCE_PARAM_NAME))
                 .waitForResourcesInPrepare(booleanValue(params, WAIT_FOR_RESOURCES_IN_PREPARE))
+                .withOperatorCertificates(deserialize(params.field(OPERATOR_CERTIFICATES), PrepareParams::readOperatorCertificates, Collections.emptyList()))
                 .build();
     }
 
@@ -341,6 +359,13 @@ public final class PrepareParams {
 
     private static Optional<String> getProperty(HttpRequest request, String propertyName) {
         return Optional.ofNullable(request.getProperty(propertyName));
+    }
+
+    private static List<X509Certificate> readOperatorCertificates(Inspector array) {
+        return SlimeUtils.entriesStream(array)
+                .map(Inspector::asString)
+                .map(X509CertificateUtils::fromPem)
+                .collect(Collectors.toList());
     }
 
     public String getApplicationName() {
@@ -399,5 +424,9 @@ public final class PrepareParams {
 
     public List<TenantSecretStore> tenantSecretStores() {
         return tenantSecretStores;
+    }
+
+    public List<X509Certificate> operatorCertificates() {
+        return operatorCertificates;
     }
 }

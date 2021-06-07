@@ -15,6 +15,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
+import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
 
@@ -215,6 +216,32 @@ public class AutoscalingTest {
         tester.addMeasurements(0.05f, 0.05f, 0.05f,  0, 120, application1);
         tester.assertResources("Scaling down to limit since resource usage is low",
                                4, 1, 1.8,  7.4, 10.0,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+    }
+
+    @Test
+    public void autoscaling_with_unspecified_resources_use_defaults() {
+        NodeResources hostResources = new NodeResources(6, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 1, NodeResources.unspecified());
+        ClusterResources max = new ClusterResources( 6, 1, NodeResources.unspecified());
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        NodeResources defaultResources =
+                new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1.type());
+
+        // deploy
+        tester.deploy(application1, cluster1, Capacity.from(min, max));
+        tester.assertResources("Min number of nodes and default resources",
+                               2, 1, defaultResources,
+                               Optional.of(tester.nodeRepository().nodes().list().owner(application1).toResources()));
+        tester.addMeasurements(0.25f, 0.95f, 0.95f, 0, 120, application1);
+        tester.clock().advance(Duration.ofMinutes(-10 * 5));
+        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        tester.assertResources("Scaling up to limit since resource usage is too high",
+                               4, 1, defaultResources,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 

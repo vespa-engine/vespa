@@ -71,6 +71,7 @@ MergeThrottler::ChainedMergeState::~ChainedMergeState() = default;
 MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
     : metrics::MetricSet("mergethrottler", {}, "", owner),
       averageQueueWaitingTime("averagequeuewaitingtime", {}, "Average time a merge spends in the throttler queue", this),
+      queueSize("queuesize", {}, "Length of merge queue", this),
       bounced_due_to_back_pressure("bounced_due_to_back_pressure", {}, "Number of merges bounced due to resource exhaustion back-pressure", this),
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
@@ -415,6 +416,7 @@ MergeThrottler::enqueueMerge(
     if (!validateNewMerge(mergeCmd, nodeSeq, msgGuard)) {
         return;
     }
+    _metrics->queueSize.set(_queue.size());
     _queue.insert(MergePriorityQueue::value_type(msg, _queueSequence++));
 }
 

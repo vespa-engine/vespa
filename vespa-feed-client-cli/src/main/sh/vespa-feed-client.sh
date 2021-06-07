@@ -79,4 +79,6 @@ exec java \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
 -Djava.awt.headless=true \
 -Xms128m -Xmx2048m $(getJavaOptionsIPV46) \
+--add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
+-Djava.util.logging.config.file=${VESPA_HOME}/conf/vespa-feed-client/logging.properties \
 -cp ${VESPA_HOME}/lib/jars/vespa-feed-client-cli.jar ai.vespa.feed.client.CliClient "$@"

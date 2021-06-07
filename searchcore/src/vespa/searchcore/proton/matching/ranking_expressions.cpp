@@ -40,8 +40,7 @@ RankingExpressions::loadExpression(const vespalib::string &name) const
 {
     auto pos = _expressions.find(name);
     if (pos == _expressions.end()) {
-        // not warning about missing expression here since what we
-        // think is a name might be an expression itself.
+        LOG(warning, "no such ranking expression: '%s'", name.c_str());
         return {};
     }
     auto path = pos->second;

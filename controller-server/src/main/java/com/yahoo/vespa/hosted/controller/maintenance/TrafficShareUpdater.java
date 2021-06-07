@@ -36,30 +36,34 @@ public class TrafficShareUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        boolean success = false;
+    protected double maintain() {
         Exception lastException = null;
+        int attempts = 0;
+        int failures = 0;
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
                     if ( ! deployment.zone().environment().isProduction()) continue;
 
                     try {
-                        success |= updateTrafficFraction(instance, deployment);
+                        attempts++;
+                        updateTrafficFraction(instance, deployment);
                     }
                     catch (Exception e) {
                         // Some failures due to locked applications are expected and benign
+                        failures++;
                         lastException = e;
                     }
                 }
             }
         }
-        if ( ! success && lastException != null) // log on complete failure
+        double successFactor = asSuccessFactor(attempts, failures);
+        if ( successFactor == 0 )
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
-        return success;
+        return successFactor;
     }
 
-    private boolean updateTrafficFraction(Instance instance, Deployment deployment) {
+    private void updateTrafficFraction(Instance instance, Deployment deployment) {
         double qpsInZone = deployment.metrics().queriesPerSecond();
         double totalQps = instance.deployments().values().stream()
                                                          .filter(i -> i.zone().environment().isProduction())
@@ -73,7 +77,6 @@ public class TrafficShareUpdater extends ControllerMaintainer {
             maxReadShare = currentReadShare; // distribution can be incorrect
 
         nodeRepository.patchApplication(deployment.zone(), instance.id(), currentReadShare, maxReadShare);
-        return true;
     }
 
 }

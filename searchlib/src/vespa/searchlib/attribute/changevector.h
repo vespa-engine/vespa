@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
 
 namespace vespalib { class MemoryUsage; }
@@ -26,11 +26,10 @@ struct ChangeBase {
         DIV,
         CLEARDOC
     };
-    enum {TAIL=0, UNSET_ENUM = 0xffffffffu};
+    enum {UNSET_ENUM = 0xffffffffu};
 
     ChangeBase() :
         _type(NOOP),
-        _next(TAIL),
         _doc(0),
         _weight(1),
         _enumScratchPad(UNSET_ENUM),
@@ -39,7 +38,6 @@ struct ChangeBase {
 
     ChangeBase(Type type, uint32_t d, int32_t w = 1) :
         _type(type),
-        _next(TAIL),
         _doc(d),
         _weight(w),
         _enumScratchPad(UNSET_ENUM),
@@ -48,18 +46,11 @@ struct ChangeBase {
 
     int cmp(const ChangeBase &b) const { int diff(_doc - b._doc); return diff; }
     bool operator <(const ChangeBase & b) const { return cmp(b) < 0; }
-    bool isAtEnd() const { return _next == TAIL; }
-    uint32_t getNext() const { return _next; }
-    void setNext(uint32_t next) { _next = next; }
     uint32_t getEnum() const { return _enumScratchPad; }
     void setEnum(uint32_t value) const { _enumScratchPad = value; }
     bool isEnumValid() const { return _enumScratchPad != UNSET_ENUM; }
-    void invalidateEnum() const { _enumScratchPad = UNSET_ENUM; }
 
     Type               _type;
-private:
-    uint32_t           _next;
-public:
     uint32_t           _doc;
     int32_t            _weight;
     mutable uint32_t   _enumScratchPad;
@@ -108,7 +99,7 @@ struct ChangeTemplate : public ChangeBase {
         ChangeBase(type, d, w), _data(v)
     { }
 
-    T          _data;
+    T _data;
 };
 
 template <>
@@ -131,54 +122,66 @@ NumericChangeData<double>::operator<(const NumericChangeData<double> &rhs) const
     return _v < rhs._v;
 }
 
-class ChangeVectorBase {
-protected:
-};
-
 /**
- * Maintains a list of changes where changes to the same docid are adjacent, but ordered by insertion order.
- * Apart from that no ordering by docid.
+ * Maintains a list of changes.
+ * You can select to view the in insert order,
+ * or unordered, but changes to the same docid are adjacent and ordered by insertion order.
  */
 template <typename T>
-class ChangeVectorT : public ChangeVectorBase {
+class ChangeVectorT {
 private:
-    using Map = vespalib::hash_map<uint32_t, uint32_t>;
-    using Vector = std::vector<T>;
+    using Vector = std::vector<T, vespalib::allocator_large<T>>;
 public:
+    using const_iterator = typename Vector::const_iterator;
     ChangeVectorT();
     ~ChangeVectorT();
-    class const_iterator {
-    public:
-        const_iterator(const Vector & vector, uint32_t next) : _v(&vector), _next(next) { }
-        bool operator == (const const_iterator & rhs) const { return _v == rhs._v && _next == rhs._next; }
-        bool operator != (const const_iterator & rhs) const { return _v != rhs._v || _next != rhs._next; }
-        const_iterator& operator++()    { advance(); return *this; }
-        const_iterator  operator++(int) { const_iterator other(*this); advance(); return other; }
-        const T & operator *  ()  const { return v()[_next]; }
-        const T * operator -> ()  const { return &v()[_next]; }
-    private:
-        void  advance()          { _next = v()[_next].getNext(); }
-        const Vector & v() const { return *_v; }
-        const Vector * _v;
-        uint32_t       _next;
-    };
-
     void push_back(const T & c);
     template <typename Accessor>
     void push_back(uint32_t doc, Accessor & ac);
-    const T & back()       const { return _v.back(); }
     T & back()                   { return _v.back(); }
     size_t size()          const { return _v.size(); }
+    size_t capacity()      const { return _v.capacity(); }
     bool empty()           const { return _v.empty(); }
     void clear();
-    const_iterator begin() const { return const_iterator(_v, 0); }
-    const_iterator end()   const { return const_iterator(_v, size()); }
+    class InsertOrder {
+    public:
+        InsertOrder(const Vector & v) : _v(v) { }
+        const_iterator begin() const { return _v.begin(); }
+        const_iterator end()   const { return _v.end(); }
+    private:
+        const Vector &_v;
+    };
+    class DocIdInsertOrder {
+        using AdjacentDocIds = std::vector<uint64_t, vespalib::allocator_large<uint64_t>>;
+    public:
+        class const_iterator {
+        public:
+            const_iterator(const Vector & vector, const AdjacentDocIds & order,  uint32_t cur)
+                : _v(&vector), _o(&order), _cur(cur) { }
+            bool operator == (const const_iterator & rhs) const { return _v == rhs._v && _cur == rhs._cur; }
+            bool operator != (const const_iterator & rhs) const { return _v != rhs._v || _cur != rhs._cur; }
+            const_iterator& operator++()    { _cur++; return *this; }
+            const_iterator  operator++(int) { const_iterator other(*this); _cur++; return other; }
+            const T & operator *  ()  const { return v(); }
+            const T * operator -> ()  const { return &v(); }
+        private:
+            const T & v() const { return (*_v)[(*_o)[_cur] & 0xffffffff]; }
+            const Vector *         _v;
+            const AdjacentDocIds * _o;
+            uint32_t               _cur;
+        };
+        DocIdInsertOrder(const Vector & v);
+        const_iterator begin() const { return const_iterator(_v, _adjacent, 0); }
+        const_iterator end()   const { return const_iterator(_v, _adjacent, _v.size()); }
+    private:
+        const Vector   &_v;
+        AdjacentDocIds  _adjacent;
+    };
+    InsertOrder getInsertOrder() const { return InsertOrder(_v); }
+    DocIdInsertOrder getDocIdInsertOrder() const { return DocIdInsertOrder(_v); }
     vespalib::MemoryUsage getMemoryUsage() const;
 private:
-    void linkIn(uint32_t doc, size_t index, size_t last);
-    Vector   _v;
-    Map      _docs;
-    uint32_t _tail;
+    Vector _v;
 };
 
 } // namespace search

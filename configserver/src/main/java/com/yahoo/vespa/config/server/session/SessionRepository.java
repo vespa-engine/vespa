@@ -256,6 +256,7 @@ public class SessionRepository {
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
         session.setTenantSecretStores(existingSession.getTenantSecretStores());
+        session.setOperatorCertificates(existingSession.getOperatorCertificates());
         return session;
     }
 

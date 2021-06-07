@@ -47,15 +47,14 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     void checkName(String hostname) {
         // Give a warning if the host does not exist
         try {
-            @SuppressWarnings("unused")
-            Object ignore = java.net.InetAddress.getByName(hostname);
+            var inetAddr = java.net.InetAddress.getByName(hostname);
+            String canonical = inetAddr.getCanonicalHostName();
+            if (! hostname.equals(canonical)) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                                                   "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
+            }
         } catch (UnknownHostException e) {
             deployLogger.logApplicationPackage(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
-        }
-        if (! hostname.contains(".")) {
-            deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                            "since it is not a canonical hostname. " +
-                                            "Disregard this warning when testing in a Docker container.");
         }
     }
 

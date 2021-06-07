@@ -195,7 +195,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePOST(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/command/restart")) {
-            int restartCount = nodeRepository.nodes().restart(toNodeFilter(request)).size();
+            int restartCount = nodeRepository.nodes().restartActive(toNodeFilter(request)).size();
             return new MessageResponse("Scheduled restart of " + restartCount + " matching nodes");
         }
         if (path.matches("/nodes/v2/command/reboot")) {

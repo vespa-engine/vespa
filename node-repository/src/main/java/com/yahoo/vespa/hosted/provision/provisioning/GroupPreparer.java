@@ -7,10 +7,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -33,14 +29,10 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
-    private final StringFlag allocateOsRequirementFlag;
 
-    public GroupPreparer(NodeRepository nodeRepository,
-                         Optional<HostProvisioner> hostProvisioner,
-                         FlagSource flagSource) {
+    public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
-        this.allocateOsRequirementFlag = Flags.ALLOCATE_OS_REQUIREMENT.bindTo(flagSource);
     }
 
     /**
@@ -60,17 +52,11 @@ public class GroupPreparer {
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                               List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups) {
-
-        String allocateOsRequirement = allocateOsRequirementFlag
-                                               .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
-                                               .value();
-
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         {
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                               indices::probeNext, wantedGroups, PROBE_LOCK,
-                                                               allocateOsRequirement);
+                                                               indices::probeNext, wantedGroups, PROBE_LOCK);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);
@@ -85,21 +71,18 @@ public class GroupPreparer {
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
 
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                          indices::next, wantedGroups, allocationLock,
-                                                          allocateOsRequirement);
+                                                          indices::next, wantedGroups, allocationLock);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType)) {
                 HostSharing sharing = hostSharing(requestedNodes, hostType);
+                Version osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 List<ProvisionedHost> provisionedHosts = allocation.hostDeficit()
-                        .map(deficit ->
-                            hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.count()),
-                                                                 hostType,
-                                                                 deficit.resources(),
-                                                                 application,
-                                                                 decideOsVersion(allocateOsRequirement, hostType),
-                                                                 sharing)
-                        )
-                        .orElseGet(List::of);
+                                                                   .map(deficit -> hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.count()),
+                                                                                                                        hostType,
+                                                                                                                        deficit.resources(),
+                                                                                                                        application, osVersion,
+                                                                                                                        sharing))
+                                                                   .orElseGet(List::of);
 
                 // At this point we have started provisioning of the hosts, the first priority is to make sure that
                 // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
@@ -131,7 +114,7 @@ public class GroupPreparer {
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                              List<Node> surplusActiveNodes, Supplier<Integer> nextIndex, int wantedGroups,
-                                             Mutex allocationLock, String allocateOsRequirement) {
+                                             Mutex allocationLock) {
         LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes, nextIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
@@ -142,8 +125,7 @@ public class GroupPreparer {
                                                           nodeRepository.zone().getCloud().dynamicProvisioning(),
                                                           nodeRepository.nameResolver(),
                                                           nodeRepository.resourcesCalculator(),
-                                                          nodeRepository.spareCount(),
-                                                          allocateOsRequirement);
+                                                          nodeRepository.spareCount());
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
     }
@@ -159,15 +141,6 @@ public class GroupPreparer {
             throw new IllegalArgumentException(hostType + " does not support sharing requirement");
         }
         return sharing;
-    }
-
-    private Version decideOsVersion(String allocateOsRequirement, NodeType hostType) {
-        if (allocateOsRequirement.equals("rhel8"))
-            return new Version(8, Integer.MAX_VALUE /* always use latest 8 version */, 0);
-        else if (allocateOsRequirement.equals("rhel7"))
-            return new Version(7, Integer.MAX_VALUE /* always use latest 7 version */, 0);
-        else
-            return nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
     }
 
 }

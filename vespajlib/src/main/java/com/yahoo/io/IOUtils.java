@@ -12,10 +12,10 @@ import java.nio.ByteBuffer;
 
 
 /**
- * <p>Some static io convenience methods.</p>
+ * Some static io convenience methods.
  *
- * @author  bratseth
- * @author  Bjorn Borud
+ * @author bratseth
+ * @author Bjorn Borud
  */
 public abstract class IOUtils {
 

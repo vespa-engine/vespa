@@ -38,7 +38,6 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.io.StringReader;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +49,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
+import static com.yahoo.vespa.model.test.utils.ApplicationPackageUtils.generateSchemas;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -502,7 +502,6 @@ public class ModelProvisioningTest {
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertNull("No own cluster controllers when hosted", cluster.getClusterControllers());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(9, cluster.getRootGroup().getSubgroups().size());
         assertEquals("0", cluster.getRootGroup().getSubgroups().get(0).getIndex());
@@ -536,7 +535,6 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getSubgroups().get(8).getNodes().get(2).getConfigId(), is("bar/storage/26"));
 
         cluster = model.getContentClusters().get("baz");
-        assertNull("No own cluster controllers when hosted", cluster.getClusterControllers());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(27, cluster.getRootGroup().getSubgroups().size());
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
@@ -730,7 +728,6 @@ public class ModelProvisioningTest {
 
         // Check content cluster
         ContentCluster cluster = model.getContentClusters().get("bar");
-        assertNull(cluster.getClusterControllers());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(8, cluster.getRootGroup().getSubgroups().size());
         assertEquals(8, cluster.distributionBits());
@@ -865,8 +862,6 @@ public class ModelProvisioningTest {
         assertEquals(7, model.getRoot().hostSystem().getHosts().size());
 
         // Check cluster controllers
-        assertNull(model.getContentClusters().get("foo").getClusterControllers());
-        assertNull(model.getContentClusters().get("bar").getClusterControllers());
         ClusterControllerContainerCluster clusterControllers = model.getAdmin().getClusterControllers();
         assertEquals(3, clusterControllers.getContainers().size());
         assertEquals("cluster-controllers", clusterControllers.getName());
@@ -2021,7 +2016,7 @@ public class ModelProvisioningTest {
     }
 
     private VespaModel createNonProvisionedModel(boolean multitenant, String hosts, String services) {
-        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
+        VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, generateSchemas("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
         DeployState deployState = new DeployState.Builder().applicationPackage(appPkg).
                 properties((new TestProperties()).setMultitenant(multitenant)).
@@ -2029,7 +2024,7 @@ public class ModelProvisioningTest {
         return modelCreatorWithMockPkg.create(false, deployState);
     }
 
-    private int physicalMemoryPercentage(ContainerCluster cluster) {
+    private int physicalMemoryPercentage(ContainerCluster<?> cluster) {
         QrStartConfig.Builder b = new QrStartConfig.Builder();
         cluster.getConfig(b);
         return b.build().jvm().heapSizeAsPercentageOfPhysicalMemory();

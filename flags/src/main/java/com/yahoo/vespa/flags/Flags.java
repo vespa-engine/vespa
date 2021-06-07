@@ -41,15 +41,8 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
  * @author hakonhall
  */
 public class Flags {
-    private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundStringFlag ALLOCATE_OS_REQUIREMENT = defineStringFlag(
-            "allocate-os-requirement", "any",
-            List.of("hakonhall"), "2021-01-26", "2021-07-26",
-            "Allocations of new nodes are limited to the given host OS.  Must be one of 'rhel7', " +
-            "'rhel8', or 'any'",
-            "Takes effect on next (re)deployment.",
-            APPLICATION_ID);
+    private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
@@ -102,28 +95,22 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-06-01",
+            List.of("vekterli"), "2020-12-02", "2021-08-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
-            "provision-tenant-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-06-01",
-            "Whether tenant roles should be provisioned",
-            "Takes effect on next deployment (controller)",
-            TENANT_ID);
-
+    // TODO: Remove when models referring to this are gone in all systems
     public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
             "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-06-01",
+            List.of("tokle"), "2020-12-02", "2021-08-01",
             "Allow separate iam roles when provisioning/assigning hosts",
             "Takes effect immediately on new hosts, on next redeploy for applications",
             TENANT_ID);
 
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
-            List.of("tokle"), "2020-12-02", "2021-06-01",
+            List.of("tokle", "bjormel"), "2020-12-02", "2021-09-01",
             "Whether the controller should hide shared routing layer endpoint",
             "Takes effect immediately",
             APPLICATION_ID
@@ -143,13 +130,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED = defineFeatureFlag(
-            "use-bucket-executor-for-prune-removed", true,
-            List.of("baldersheim"), "2021-05-04", "2021-06-01",
-            "Wheter to use content-level bucket executor or legacy frozen buckets for prune removed",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
             List.of("hakon"), "2021-01-22", "2021-06-22",
@@ -159,14 +139,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
             "encrypt-disk", false,
-            List.of("hakonhall"), "2021-05-05", "2021-06-05",
+            List.of("hakonhall"), "2021-05-05", "2021-08-05",
             "Allow migrating an unencrypted data partition to being encrypted.",
             "Takes effect on next host-admin tick.");
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
-            List.of("hakonhall"), "2021-05-14", "2021-06-05",
-            "Allow migrating an unencrypted data partition to being encrypted when provisioned or dirty.",
+            List.of("hakonhall"), "2021-05-14", "2021-08-05",
+            "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
             "Takes effect on next host-admin tick.");
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
@@ -224,6 +204,20 @@ public class Flags {
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
+            "max-concurrent-merges-per-node", 16,
+            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            "Specifies max concurrent merges per content node.",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
+            "max-merge-queue-size", 1024,
+            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            "Specifies max size of merge queue.",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "use-external-rank-expression", false,
             List.of("baldersheim"), "2021-05-24", "2021-07-01",
@@ -264,6 +258,13 @@ public class Flags {
             List.of("mpolden", "hakonhall"), "2021-05-27", "2021-10-01",
             "The maximum number of hosts allowed to encrypt their disk concurrently",
             "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
+
+    public static final UnboundBooleanFlag REQUIRE_CONNECTIVITY_CHECK = defineFeatureFlag(
+            "require-connectivity-check", false,
+            List.of("arnej"), "2021-06-03", "2021-09-01",
+            "Require that config-sentinel connectivity check passes with good quality before starting services",
+            "Takes effect on next restart",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

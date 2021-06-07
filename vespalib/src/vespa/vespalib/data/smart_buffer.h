@@ -28,10 +28,17 @@ private:
     size_t unused() const { return (_data.size() - read_len()); }
     void ensure_free(size_t bytes);
 
+    void drop();
+
 public:
     SmartBuffer(size_t initial_size);
     ~SmartBuffer();
     size_t capacity() const { return _data.size(); }
+    void drop_if_empty() {
+        if ((read_len() == 0) && (_data.size() > 0)) {
+            drop();
+        }
+    }
     Memory obtain() override;
     Input &evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;

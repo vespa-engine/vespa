@@ -85,10 +85,9 @@ public final class ReferenceNode extends CompositeNode {
             path.addLast(myPath);
 
             String functionName = getName();
-            String functionPropertyName = RankingExpression.propertyName(functionName);
-            boolean alreadySerialized = context.serializedFunctions().containsKey(functionPropertyName);
+            boolean needSerialization = (getArguments().size() > 0) || context.needSerialization(functionName);
 
-            if ( ! alreadySerialized || getArguments().size() > 0) {
+            if ( needSerialization ) {
                 ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
                 functionName = instance.getName();
 

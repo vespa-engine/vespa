@@ -80,6 +80,7 @@
           "at" : 123
         }
       ],
+      "autoscalingStatusCode": "unavailable",
       "autoscalingStatus" : "",
       "scalingDuration": 43200000,
       "maxQueryGrowthRate": 0.1,

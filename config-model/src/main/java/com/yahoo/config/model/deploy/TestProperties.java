@@ -16,6 +16,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +51,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
-    private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
     private boolean useExternalRankExpression = false;
     private int clusterControllerMaxHeapSizeInMb = 128;
@@ -59,7 +59,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
     private int numDistributorStripes = 0;
+    private int maxConcurrentMergesPerNode = 16;
+    private int maxMergeQueueSize = 1024;
     private boolean allowDisableMtls = true;
+    private List<X509Certificate> operatorCertificates = Collections.emptyList();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -90,7 +93,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
-    @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
@@ -99,8 +101,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
     @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
+    @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
     @Override public boolean distributeExternalRankExpressions() { return useExternalRankExpression; }
+    @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
+    @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
 
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
@@ -130,6 +135,15 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setResponseNumThreads(int numThreads) {
         responseNumThreads = numThreads;
+        return this;
+    }
+
+    public TestProperties setMaxConcurrentMergesPerNode(int maxConcurrentMergesPerNode) {
+        this.maxConcurrentMergesPerNode = maxConcurrentMergesPerNode;
+        return this;
+    }
+    public TestProperties setMaxMergeQueueSize(int maxMergeQueueSize) {
+        this.maxMergeQueueSize = maxMergeQueueSize;
         return this;
     }
 
@@ -198,11 +212,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties useBucketExecutorForPruneRemoved(boolean enabled) {
-        useBucketExecutorForPruneRemoved = enabled;
-        return this;
-    }
-
     public TestProperties enableFeedBlockInDistributor(boolean enabled) {
         enableFeedBlockInDistributor = enabled;
         return this;
@@ -240,6 +249,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties allowDisableMtls(boolean value) {
         this.allowDisableMtls = value;
+        return this;
+    }
+
+    public TestProperties setOperatorCertificates(List<X509Certificate> operatorCertificates) {
+        this.operatorCertificates = List.copyOf(operatorCertificates);
         return this;
     }
 

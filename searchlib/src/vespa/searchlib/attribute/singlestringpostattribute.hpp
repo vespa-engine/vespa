@@ -85,7 +85,7 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
     // used to make sure several arithmetic operations on the same document in a single commit works
     std::map<DocId, EnumIndex> currEnumIndices;
 
-    for (const auto& change : this->_changes) {
+    for (const auto& change : this->_changes.getInsertOrder()) {
         auto enumIter = currEnumIndices.find(change._doc);
         EnumIndex oldIdx;
         if (enumIter != currEnumIndices.end()) {

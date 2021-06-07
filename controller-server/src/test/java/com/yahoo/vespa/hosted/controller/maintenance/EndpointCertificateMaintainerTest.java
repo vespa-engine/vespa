@@ -33,7 +33,7 @@ public class EndpointCertificateMaintainerTest {
     @Test
     public void old_and_unused_cert_is_deleted() {
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), exampleMetadata);
-        assertTrue(maintainer.maintain());
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
         assertTrue(tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()).isEmpty());
     }
 
@@ -41,7 +41,7 @@ public class EndpointCertificateMaintainerTest {
     public void unused_but_recently_used_cert_is_not_deleted() {
         EndpointCertificateMetadata recentlyRequestedCert = exampleMetadata.withLastRequested(tester.clock().instant().minusSeconds(3600).getEpochSecond());
         tester.curator().writeEndpointCertificateMetadata(ApplicationId.defaultId(), recentlyRequestedCert);
-        assertTrue(maintainer.maintain());
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
         assertEquals(Optional.of(recentlyRequestedCert), tester.curator().readEndpointCertificateMetadata(ApplicationId.defaultId()));
     }
 
@@ -53,7 +53,7 @@ public class EndpointCertificateMaintainerTest {
         secretStore.setSecret(exampleMetadata.keyName(), "foo", 1);
         secretStore.setSecret(exampleMetadata.certName(), "bar", 1);
 
-        assertTrue(maintainer.maintain());
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
 
         var updatedCert = Optional.of(recentlyRequestedCert.withLastRefreshed(tester.clock().instant().getEpochSecond()).withVersion(1));
 
@@ -77,7 +77,7 @@ public class EndpointCertificateMaintainerTest {
 
         tester.curator().writeEndpointCertificateMetadata(appId, exampleMetadata);
 
-        assertTrue(maintainer.maintain());
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
         assertTrue(tester.curator().readEndpointCertificateMetadata(appId).isPresent()); // cert should not be deleted, the app is deployed!
     }
 
@@ -97,7 +97,7 @@ public class EndpointCertificateMaintainerTest {
 
         tester.curator().writeEndpointCertificateMetadata(appId, exampleMetadata);
 
-        assertTrue(maintainer.maintain());
+        assertEquals(1.0, maintainer.maintain(), 0.0000001);
         assertTrue(tester.curator().readEndpointCertificateMetadata(appId).isPresent()); // cert should not be deleted, the app is deployed!
 
         tester.clock().advance(Duration.ofDays(3));

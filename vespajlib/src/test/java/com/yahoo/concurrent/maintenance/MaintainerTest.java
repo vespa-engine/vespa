@@ -42,35 +42,45 @@ public class MaintainerTest {
 
     @Test
     public void success_metric() {
-        AtomicLong consecutiveFailures = new AtomicLong();
-        JobMetrics jobMetrics = new JobMetrics((job, count) -> consecutiveFailures.set(count));
+        TestJobMetrics jobMetrics = new TestJobMetrics();
         TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics);
 
         // Maintainer fails twice in a row
         maintainer.successOnNextRun(false).run();
-        assertEquals(1, consecutiveFailures.get());
+        assertEquals(1, jobMetrics.consecutiveFailures.get());
         maintainer.successOnNextRun(false).run();
-        assertEquals(2, consecutiveFailures.get());
+        assertEquals(2, jobMetrics.consecutiveFailures.get());
 
         // Maintainer runs successfully
         maintainer.successOnNextRun(true).run();
-        assertEquals(0, consecutiveFailures.get());
+        assertEquals(0, jobMetrics.consecutiveFailures.get());
 
         // Maintainer runs successfully again
         maintainer.run();
-        assertEquals(0, consecutiveFailures.get());
+        assertEquals(0, jobMetrics.consecutiveFailures.get());
 
         // Maintainer throws
         maintainer.throwOnNextRun(new RuntimeException()).run();
-        assertEquals(1, consecutiveFailures.get());
+        assertEquals(1, jobMetrics.consecutiveFailures.get());
 
         // Maintainer recovers
         maintainer.throwOnNextRun(null).run();
-        assertEquals(0, consecutiveFailures.get());
+        assertEquals(0, jobMetrics.consecutiveFailures.get());
 
         // Lock exception is treated as a failure
         maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
-        assertEquals(1, consecutiveFailures.get());
+        assertEquals(1, jobMetrics.consecutiveFailures.get());
+    }
+
+    private static class TestJobMetrics extends JobMetrics {
+
+        AtomicLong consecutiveFailures = new AtomicLong();
+
+        @Override
+        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) {
+            consecutiveFailures.set(incompleteRuns);
+        }
+
     }
 
 }

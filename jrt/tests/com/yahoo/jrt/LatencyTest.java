@@ -17,12 +17,15 @@ public class LatencyTest {
         private final Supervisor server;
         private final Supervisor client;
         private final Acceptor acceptor;
-        public Network(CryptoEngine crypto, int threads) throws ListenFailedException {
+        public Network(CryptoEngine crypto, int threads, boolean dropEmpty) throws ListenFailedException {
             server = new Supervisor(new Transport("server", crypto, threads));
             client = new Supervisor(new Transport("client", crypto, threads));
+            server.setDropEmptyBuffers(dropEmpty);
+            client.setDropEmptyBuffers(dropEmpty);
             server.addMethod(new Method("inc", "i", "i", this::rpc_inc));
             acceptor = server.listen(new Spec(0));
         }
+        public Network(CryptoEngine crypto, int threads) throws ListenFailedException { this(crypto, threads, false); }
         public Target connect() {
             return client.connect(new Spec("localhost", acceptor.port()));
         }
@@ -184,6 +187,13 @@ public class LatencyTest {
         try (Network network = new Network(new TlsCryptoEngine(createTestTlsContext()), 1)) {
             new Client(false, network, 1).measureLatency("[tls crypto, no reconnect] ");
             new Client(true, network, 1).measureLatency("[tls crypto, reconnect] ");
+        }
+    }
+
+    @org.junit.Test
+    public void testTlsCryptoWithDropEmptyBuffersLatency() throws Throwable {
+        try (Network network = new Network(new TlsCryptoEngine(createTestTlsContext()), 1, true)) {
+            new Client(false, network, 1).measureLatency("[tls crypto, drop empty, no reconnect] ");
         }
     }
 

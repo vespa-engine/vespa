@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Serializes application information for nodes/v2/application responses
@@ -61,8 +62,7 @@ public class ApplicationSerializer {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
-        ClusterModel clusterModel = new ClusterModel(application, cluster, nodes.clusterSpec(), nodes, metricsDb, nodeRepository.clock());
-
+        Optional<ClusterModel> clusterModel = ClusterModel.create(application, cluster, nodes.clusterSpec(), nodes, metricsDb, nodeRepository.clock());
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
         toSlime(cluster.minResources(), clusterObject.setObject("min"));
@@ -71,12 +71,13 @@ public class ApplicationSerializer {
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        clusterUtilizationToSlime(clusterModel, clusterObject.setObject("utilization"));
+        clusterModel.ifPresent(model -> clusterUtilizationToSlime(model, clusterObject.setObject("utilization")));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
-        clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
-        clusterObject.setLong("scalingDuration", clusterModel.scalingDuration().toMillis());
-        clusterObject.setDouble("maxQueryGrowthRate", clusterModel.maxQueryGrowthRate());
-        clusterObject.setDouble("currentQueryFractionOfMax", clusterModel.queryFractionOfMax());
+        clusterObject.setString("autoscalingStatusCode", cluster.autoscalingStatus().status().name());
+        clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus().description());
+        clusterModel.ifPresent(model -> clusterObject.setLong("scalingDuration", model.scalingDuration().toMillis()));
+        clusterModel.ifPresent(model -> clusterObject.setDouble("maxQueryGrowthRate", model.maxQueryGrowthRate()));
+        clusterModel.ifPresent(model -> clusterObject.setDouble("currentQueryFractionOfMax", model.queryFractionOfMax()));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {

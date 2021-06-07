@@ -65,8 +65,8 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
      * Creates and initializes a new Vespa from the service config file
      * in the given application directory.
      *
-     * @param parent The parent, usually VespaModel
-     * @param name   The name, used as configId
+     * @param parent the parent, usually VespaModel
+     * @param name   the name, used as configId
      * @param documentModel DocumentModel to serve global document config from.
      */
     public ApplicationConfigProducerRoot(AbstractConfigProducer parent, String name, DocumentModel documentModel, Version vespaVersion, ApplicationId applicationId) {

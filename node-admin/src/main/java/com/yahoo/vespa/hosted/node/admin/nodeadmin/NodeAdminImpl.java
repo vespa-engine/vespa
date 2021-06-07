@@ -15,7 +15,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -157,12 +156,11 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void stopNodeAgentServices(List<String> hostnames) {
+    public void stopNodeAgentServices() {
         // Each container may spend 1-1:30 minutes stopping
-        hostnames.parallelStream()
-                 .filter(nodeAgentWithSchedulerByHostname::containsKey)
-                 .map(nodeAgentWithSchedulerByHostname::get)
-                 .forEach(NodeAgentWithScheduler::stopForHostSuspension);
+        nodeAgentWithSchedulerByHostname.values()
+                                        .parallelStream()
+                                        .forEach(NodeAgentWithScheduler::stopForHostSuspension);
     }
 
     @Override

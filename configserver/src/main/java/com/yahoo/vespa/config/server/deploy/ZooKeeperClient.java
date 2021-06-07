@@ -35,7 +35,7 @@ import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_S
 import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
 
 /**
- * A class used for reading and writing application data to zookeeper.
+ * Reads and writes application package to and from ZooKeeper.
  *
  * @author hmusum
  */
@@ -76,13 +76,13 @@ public class ZooKeeperClient {
      *
      * @param app the application package to feed to zookeeper
      */
-    void write(ApplicationPackage app) {
+    void writeApplicationPackage(ApplicationPackage app) {
         try {
             writeUserDefs(app);
             writeSomeOf(app);
-            writeSearchDefinitions(app);
+            writeSchemas(app);
             writeUserIncludeDirs(app, app.getUserIncludeDirs());
-            write(app.getMetaData());
+            writeMetadata(app.getMetaData());
         } catch (Exception e) {
             throw new IllegalStateException("Unable to write vespa model to config server(s) " + System.getProperty("configsources") + "\n" +
                                             "Please ensure that config server is started " +
@@ -90,13 +90,11 @@ public class ZooKeeperClient {
         }
     }
 
-    private void writeSearchDefinitions(ApplicationPackage app) throws IOException {
-        Collection<NamedReader> sds = app.getSearchDefinitions();
+    private void writeSchemas(ApplicationPackage app) throws IOException {
+        Collection<NamedReader> sds = app.getSchemas();
         if (sds.isEmpty()) return;
 
-        // TODO: Change to SCHEMAS_DIR after March 2020
-        // TODO: When it does also check RankExpressionFile.sendTo
-        Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(ApplicationPackage.SEARCH_DEFINITIONS_DIR);
+        Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);
         configCurator.createNode(zkPath.getAbsolute());
         // Ensures that ranking expressions and other files are also written
         writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
@@ -155,7 +153,6 @@ public class ZooKeeperClient {
         for (ApplicationFile file : listFiles(dir, filenameFilter)) {
             String name = file.getPath().getName();
             if (name.startsWith(".")) continue; //.svn , .git ...
-            if ("CVS".equals(name)) continue;
             if (file.isDirectory()) {
                 configCurator.createNode(path.append(name).getAbsolute());
                 if (recurse) {
@@ -200,7 +197,6 @@ public class ZooKeeperClient {
     }
 
     private void writeUserIncludeDirs(ApplicationPackage applicationPackage, List<String> userIncludeDirs) throws IOException {
-        // User defined include directories
         for (String userInclude : userIncludeDirs) {
             ApplicationFile dir = applicationPackage.getFile(Path.fromString(userInclude));
             final List<ApplicationFile> files = dir.listFiles();
@@ -240,12 +236,12 @@ public class ZooKeeperClient {
     }
 
     /**
-     * Feeds application metadata to zookeeper. Used by vespamodel to create config
-     * for application metadata (used by ApplicationStatusHandler)
+     * Feeds application metadata to zookeeper. Used by config model to create config
+     * for application metadata
      *
      * @param metaData The application metadata.
      */
-    private void write(ApplicationMetaData metaData) {
+    private void writeMetadata(ApplicationMetaData metaData) {
         configCurator.putData(getZooKeeperAppPath(META_ZK_PATH).getAbsolute(), metaData.asJsonBytes());
     }
 

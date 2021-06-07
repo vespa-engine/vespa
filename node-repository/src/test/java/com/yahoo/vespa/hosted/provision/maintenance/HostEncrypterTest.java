@@ -22,22 +22,26 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
  */
 public class HostEncrypterTest {
 
+    private final ApplicationId infraApplication = ApplicationId.from("hosted-vespa", "infra", "default");
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
+    private final HostEncrypter encrypter = new HostEncrypter(tester.nodeRepository(), Duration.ofDays(1), new MockMetric());
 
     @Test
     public void no_hosts_encrypted_with_default_flag_value() {
         provisionHosts(1);
-        HostEncrypter encrypter = new HostEncrypter(tester.nodeRepository(), Duration.ofDays(1), new MockMetric());
         encrypter.maintain();
         assertEquals(0, tester.nodeRepository().nodes().list().encrypting().size());
     }
@@ -46,7 +50,6 @@ public class HostEncrypterTest {
     public void encrypt_hosts() {
         tester.flagSource().withIntFlag(Flags.MAX_ENCRYPTING_HOSTS.id(), 3);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
-        HostEncrypter encrypter = new HostEncrypter(tester.nodeRepository(), Duration.ofDays(1), new MockMetric());
 
         // Provision hosts and deploy applications
         int hostCount = 5;
@@ -67,7 +70,7 @@ public class HostEncrypterTest {
         assertEquals(owners.size(), hostsEncrypting.size());
         for (int i = 0; i < hostsEncrypting.size(); i++) {
             Optional<ApplicationId> owner = owners.get(i);
-            List<Node> retiringChildren = allNodes.childrenOf(hostsEncrypting.get(i)).retiring().asList();
+            List<Node> retiringChildren = allNodes.childrenOf(hostsEncrypting.get(i)).retiring().encrypting().asList();
             assertEquals(owner.isPresent() ? 1 : 0, retiringChildren.size());
             assertEquals("Encrypting host of " + owner.map(ApplicationId::toString)
                                                       .orElse("no application"),
@@ -116,19 +119,24 @@ public class HostEncrypterTest {
         List<Node> provisionedHosts = tester.makeReadyNodes(hostCount, new NodeResources(48, 128, 2000, 10), NodeType.host, 10);
         // Set OS version supporting encryption
         tester.patchNodes(provisionedHosts, (host) -> host.with(host.status().withOsVersion(host.status().osVersion().withCurrent(Optional.of(Version.fromString("8.0"))))));
-        tester.activateTenantHosts();
+        tester.prepareAndActivateInfraApplication(infraApplication, NodeType.host);
     }
 
     private void completeEncryptionOf(List<Node> nodes) {
         Instant now = tester.clock().instant();
-        tester.patchNodes(nodes, (node) -> {
-            if (node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isEmpty()) throw new IllegalArgumentException(node + " is not requested to encrypt");
+        // Redeploy to park retired hosts
+        replaceNodes(infraApplication, (application) -> tester.prepareAndActivateInfraApplication(application, NodeType.host));
+        List<Node> patchedNodes = tester.patchNodes(nodes, (node) -> {
+            assertSame(Node.State.parked, node.state());
+            assertTrue(node + " wants to encrypt", node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent());
             return node.with(node.reports().withReport(Report.basicReport(Report.DISK_ENCRYPTED_ID,
                                                                           Report.Type.UNSPECIFIED,
                                                                           now,
-                                                                          "Host is encrypted")))
-                       .withWantToRetire(false, Agent.system, now);
+                                                                          "Host is encrypted")));
         });
+        patchedNodes = tester.nodeRepository().nodes().deallocate(patchedNodes, Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().nodes().setReady(patchedNodes, Agent.system, getClass().getSimpleName());
+        tester.activateTenantHosts();
     }
 
     private void deployApplication(ApplicationId application) {
@@ -138,14 +146,18 @@ public class HostEncrypterTest {
     }
 
     private void replaceNodes(ApplicationId application) {
+        replaceNodes(application, this::deployApplication);
+    }
+
+    private void replaceNodes(ApplicationId application, Consumer<ApplicationId> deployer) {
         // Deploy to retire nodes
-        deployApplication(application);
+        deployer.accept(application);
         List<Node> retired = tester.nodeRepository().nodes().list().owner(application).retired().asList();
         assertFalse("At least one node is retired", retired.isEmpty());
         tester.nodeRepository().nodes().setRemovable(application, retired);
 
         // Redeploy to deactivate removable nodes and allocate new ones
-        deployApplication(application);
+        deployer.accept(application);
         tester.nodeRepository().nodes().list(Node.State.inactive).owner(application)
               .forEach(node -> tester.nodeRepository().nodes().removeRecursively(node, true));
     }

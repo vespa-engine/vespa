@@ -52,7 +52,8 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  getGenerationHolder()),
       _tensorStore(tensorStore),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
-      _compactGeneration(0)
+      _compactGeneration(0),
+      _cached_tensor_store_memory_usage()
 {
 }
 
@@ -84,9 +85,8 @@ TensorAttribute::onCommit()
     incGeneration();
     if (getFirstUsedGeneration() > _compactGeneration) {
         // No data held from previous compact operation
-        Status &status = getStatus();
-        size_t used = status.getUsed();
-        size_t dead = status.getDead();
+        size_t used = _cached_tensor_store_memory_usage.usedBytes();
+        size_t dead = _cached_tensor_store_memory_usage.deadBytes();
         if (getConfig().getCompactionStrategy().should_compact_memory(used, dead)) {
             compactWorst();
         }
@@ -96,7 +96,7 @@ TensorAttribute::onCommit()
 void
 TensorAttribute::onUpdateStat()
 {
-    vespalib::MemoryUsage total = memory_usage();
+    vespalib::MemoryUsage total = update_stat();
     this->updateStatistics(_refVector.size(),
                            _refVector.size(),
                            total.allocatedBytes(),
@@ -158,6 +158,16 @@ TensorAttribute::setTensorRef(DocId docId, EntryRef ref)
     if (oldRef.valid()) {
         _tensorStore.holdTensor(oldRef);
     }
+}
+
+vespalib::MemoryUsage
+TensorAttribute::update_stat()
+{
+    vespalib::MemoryUsage result = _refVector.getMemoryUsage();
+    _cached_tensor_store_memory_usage = _tensorStore.getMemoryUsage();
+    result.merge(_cached_tensor_store_memory_usage);
+    result.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    return result;
 }
 
 vespalib::MemoryUsage

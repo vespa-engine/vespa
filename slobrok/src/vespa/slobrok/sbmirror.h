@@ -5,6 +5,7 @@
 #include "backoff.h"
 #include "sblist.h"
 #include <vespa/vespalib/util/gencnt.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/fnet/frt/invoker.h>
 
 class FRT_Target;
@@ -40,6 +41,8 @@ public:
      * @param config   how to get the connect spec list
      **/
     MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config);
+    MirrorAPI(const MirrorAPI &) = delete;
+    MirrorAPI &operator=(const MirrorAPI &) = delete;
 
     /**
      * @brief Clean up.
@@ -47,7 +50,7 @@ public:
     ~MirrorAPI();
 
     // Inherit doc from IMirrorAPI.
-    SpecList lookup(const std::string & pattern) const override;
+    SpecList lookup(vespalib::stringref pattern) const override;
 
     // Inherit doc from IMirrorAPI.
     uint32_t updates() const override { return _updates.getAsInt(); }
@@ -67,16 +70,14 @@ public:
     bool ready() const override;
 
 private:
-    MirrorAPI(const MirrorAPI &);
-    MirrorAPI &operator=(const MirrorAPI &);
-
+    using SpecMap = vespalib::hash_map<vespalib::string, vespalib::string>;
     /** from FNET_Task, polls slobrok **/
     void PerformTask() override;
 
     /** from FRT_IRequestWait **/
     void RequestDone(FRT_RPCRequest *req) override;
 
-    void updateTo(SpecList& newSpecs, uint32_t newGen);
+    void updateTo(SpecMap newSpecs, uint32_t newGen);
 
     bool handleIncrementalFetch();
 
@@ -93,14 +94,13 @@ private:
     bool                     _scheduled;
     bool                     _reqDone;
     bool                     _logOnSuccess;
-    SpecList                 _specs;
+    SpecMap                  _specs;
     vespalib::GenCnt         _specsGen;
     vespalib::GenCnt         _updates;
     SlobrokList              _slobrokSpecs;
     Configurator::UP         _configurator;
     std::string              _currSlobrok;
     int                      _rpc_ms;
-    uint32_t                 _idx;
     BackOff                  _backOff;
     FRT_Target              *_target;
     FRT_RPCRequest          *_req;

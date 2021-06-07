@@ -201,4 +201,11 @@ CryptoCodecAdapter::half_close()
     return _socket.half_close();
 }
 
+void
+CryptoCodecAdapter::drop_empty_buffers()
+{
+    _input.drop_if_empty();
+    _output.drop_if_empty();
+}
+
 } // namespace vespalib::net::tls

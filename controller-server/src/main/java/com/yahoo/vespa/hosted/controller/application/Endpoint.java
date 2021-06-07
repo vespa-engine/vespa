@@ -26,12 +26,10 @@ public class Endpoint {
 
     private static final String YAHOO_DNS_SUFFIX = ".vespa.yahooapis.com";
     private static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
-    private static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
-    private static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
-    // TODO(mpolden): New domain is considered "legacy" for the time being, until it's ready for use. Once it's ready
-    //                we'll make the vespa.oath.cloud variant legacy and this non-legacy.
-    private static final String PUBLIC_DNS_LEGACY_SUFFIX = ".vespa-app.cloud";
-    private static final String PUBLIC_CD_LEGACY_DNS_SUFFIX = ".cd.vespa-app.cloud";
+    private static final String PUBLIC_DNS_SUFFIX = ".vespa-app.cloud";
+    private static final String PUBLIC_CD_DNS_SUFFIX = ".cd.vespa-app.cloud";
+    private static final String PUBLIC_DNS_LEGACY_SUFFIX = ".public.vespa.oath.cloud";
+    private static final String PUBLIC_CD_LEGACY_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
     private final EndpointId id;
     private final ClusterSpec.Id cluster;
@@ -161,11 +159,6 @@ public class Endpoint {
         return String.format("endpoint %s [scope=%s, legacy=%s, routingMethod=%s]", url, scope, legacy, routingMethod);
     }
 
-    /** Returns the DNS suffix used for endpoints in given system */
-    public static String dnsSuffix(SystemName system) {
-        return dnsSuffix(system, false);
-    }
-
     private static String endpointOrClusterAsString(EndpointId id, ClusterSpec.Id cluster) {
         return id == null ? cluster.value() : id.id();
     }
@@ -206,7 +199,7 @@ public class Endpoint {
     }
 
     private static String scopePart(Scope scope, List<ZoneId> zones, boolean legacy, SystemName system) {
-        if (system.isPublic() && legacy) {
+        if (system.isPublic() && !legacy) {
             if (scope == Scope.global) return "g";
             var zone = zones.get(0);
             var region = zone.region().value();
@@ -218,7 +211,7 @@ public class Endpoint {
         var zone = zones.get(0);
         var region = zone.region().value();
         if (scope == Scope.region) region += "-w";
-        if (!legacy && zone.environment().isProduction()) return region; // Skip prod environment for non-legacy endpoints
+        if ((system.isPublic() || !legacy) && zone.environment().isProduction()) return region;
         return region + "." + zone.environment().value();
     }
 
@@ -229,11 +222,12 @@ public class Endpoint {
 
     private static String systemPart(SystemName system, String separator, boolean legacy) {
         if (!system.isCd()) return "";
-        if (system.isPublic() && legacy) return "";
+        if (system.isPublic() && !legacy) return "";
         return system.value() + separator;
     }
 
-    private static String dnsSuffix(SystemName system, boolean legacy) {
+    /** Returns the DNS suffix used for endpoints in given system */
+    public static String dnsSuffix(SystemName system, boolean legacy) {
         switch (system) {
             case cd:
             case main:

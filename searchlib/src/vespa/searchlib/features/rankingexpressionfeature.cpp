@@ -244,17 +244,15 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     // Retrieve and concatenate whatever config is available.
     vespalib::string script = "";
     fef::Property property = env.getProperties().lookup(getName(), "rankingScript");
+    fef::Property expr_name = env.getProperties().lookup(getName(), "expressionName");
     if (property.size() > 0) {
         for (uint32_t i = 0; i < property.size(); ++i) {
             script.append(property.getAt(i));
         }
-        //LOG(debug, "Script from config: '%s'\n", script.c_str());
+    } else if (expr_name.size() == 1) {
+        script = env.getRankingExpression(expr_name.get());
     } else if (params.size() == 1) {
-        script = env.getRankingExpression(params[0].getValue());
-        if (script.empty()) {
-            script = params[0].getValue();
-        }
-        //LOG(debug, "Script from param: '%s'\n", script.c_str());
+        script = params[0].getValue();
     } else {
         return fail("No expression given.");
     }

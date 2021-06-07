@@ -28,6 +28,7 @@ public class Report {
     public static final String DESCRIPTION_FIELD = "description";
 
     /** Known report IDs */
+    // TODO(mpolden): Remove together with HostEncrypter
     public static final String WANT_TO_ENCRYPT_ID = "wantToEncrypt";
     public static final String DISK_ENCRYPTED_ID = "diskEncrypted";
 

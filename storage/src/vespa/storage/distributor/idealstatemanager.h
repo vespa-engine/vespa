@@ -36,7 +36,8 @@ public:
     IdealStateManager(DistributorStripeInterface& owner,
                       DistributorBucketSpaceRepo& bucketSpaceRepo,
                       DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                      DistributorComponentRegister& compReg);
+                      DistributorComponentRegister& compReg,
+                      uint32_t stripe_index = 0);
 
     ~IdealStateManager() override;
 

@@ -1670,8 +1670,8 @@ AttributeTest::testStatus()
         AttributePtr ptr = createAttribute("as", cfg);
         addDocs(ptr, numDocs);
         auto & sa = *(static_cast<StringAttribute *>(ptr.get()));
-        const size_t numUniq(16);
-        const size_t numValuesPerDoc(16);
+        const size_t numValuesPerDoc(values.size());
+        const size_t numUniq(numValuesPerDoc);
         for (uint32_t i = 0; i < numDocs; ++i) {
             EXPECT_TRUE(appendToVector(sa, i, numValuesPerDoc, values));
         }
@@ -1680,11 +1680,11 @@ AttributeTest::testStatus()
         EXPECT_EQUAL(ptr->getStatus().getNumValues(), numDocs*numValuesPerDoc);
         EXPECT_EQUAL(ptr->getStatus().getNumUniqueValues(), numUniq);
         size_t expUsed = 0;
-        expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // enum store tree
-        expUsed += numUniq * 32; // enum store (16 unique values, 32 bytes per entry)
+        expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // Approximate enum store tree
+        expUsed += 272; // TODO Approximate... enum store (16 unique values, 17 bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex) +
-        // numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
-        expUsed += numDocs * sizeof(vespalib::datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(IEnumStore::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
+        // 32 + numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
+        expUsed += 32 + numDocs * sizeof(vespalib::datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(IEnumStore::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }

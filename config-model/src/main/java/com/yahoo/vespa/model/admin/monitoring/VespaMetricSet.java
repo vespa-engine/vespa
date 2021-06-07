@@ -256,8 +256,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("cluster-controller.node-event.count"));
 
         metrics.add(new Metric("cluster-controller.resource_usage.nodes_above_limit.last"));
+        metrics.add(new Metric("cluster-controller.resource_usage.nodes_above_limit.max"));
         metrics.add(new Metric("cluster-controller.resource_usage.max_memory_utilization.last"));
+        metrics.add(new Metric("cluster-controller.resource_usage.max_memory_utilization.max"));
         metrics.add(new Metric("cluster-controller.resource_usage.max_disk_utilization.last"));
+        metrics.add(new Metric("cluster-controller.resource_usage.max_disk_utilization.max"));
         metrics.add(new Metric("cluster-controller.resource_usage.disk_limit.last"));
         metrics.add(new Metric("cluster-controller.resource_usage.memory_limit.last"));
 
@@ -762,6 +765,15 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("vds.bouncer.clock_skew_aborts.count"));
 
+        metrics.add(new Metric("vds.mergethrottler.averagequeuewaitingtime.max"));
+        metrics.add(new Metric("vds.mergethrottler.averagequeuewaitingtime.sum"));
+        metrics.add(new Metric("vds.mergethrottler.averagequeuewaitingtime.count"));
+        metrics.add(new Metric("vds.mergethrottler.queuesize.max"));
+        metrics.add(new Metric("vds.mergethrottler.queuesize.sum"));
+        metrics.add(new Metric("vds.mergethrottler.queuesize.count"));
+        metrics.add(new Metric("vds.mergethrottler.bounced_due_to_back_pressure.rate"));
+        metrics.add(new Metric("vds.mergethrottler.locallyexecutedmerges.ok.rate"));
+        metrics.add(new Metric("vds.mergethrottler.mergechains.ok.rate"));
         return metrics;
     }
 

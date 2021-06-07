@@ -19,13 +19,13 @@ public class OutstandingChangeDeployer extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         for (Application application : ApplicationList.from(controller().applications().readable())
                                                       .withProductionDeployment()
                                                       .withDeploymentSpec()
                                                       .asList())
             controller().applications().deploymentTrigger().triggerNewRevision(application.id());
-        return true;
+        return 1.0;
     }
 
 }

@@ -25,7 +25,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         if (iteration % 10 == 0)
             log.log(Level.INFO, () -> "Running " + SessionsMaintainer.class.getSimpleName() + ", iteration "  + iteration);
 
@@ -38,7 +38,7 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
         }
 
         iteration++;
-        return true;
+        return 1.0;
     }
 
 }

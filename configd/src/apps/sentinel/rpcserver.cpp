@@ -9,10 +9,9 @@ namespace config::sentinel {
 
 RpcServer::RpcServer(int portNumber, CommandQueue &cmdQ)
     : _server(),
-      _rpcHooks(cmdQ),
+      _rpcHooks(cmdQ, _server.supervisor()),
       _port(portNumber)
 {
-    _rpcHooks.initRPC(&_server.supervisor());
     if (_server.supervisor().Listen(portNumber)) {
         LOG(config, "listening on port %d", portNumber);
     } else {

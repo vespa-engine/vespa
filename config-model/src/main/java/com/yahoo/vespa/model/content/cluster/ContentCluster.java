@@ -70,7 +70,7 @@ import static java.util.stream.Collectors.toList;
  * @author mostly somebody unknown
  * @author bratseth
  */
-public class ContentCluster extends AbstractConfigProducer implements
+public class ContentCluster extends AbstractConfigProducer<AbstractConfigProducer<?>> implements
                                                            DistributionConfig.Producer,
                                                            StorDistributionConfig.Producer,
                                                            StorDistributormanagerConfig.Producer,
@@ -93,14 +93,6 @@ public class ContentCluster extends AbstractConfigProducer implements
     private final String clusterId;
     private Integer maxNodesPerMerge;
     private final Zone zone;
-
-    /**
-     * If multitenant or a cluster controller was explicitly configured in this cluster:
-     * The cluster controller cluster of this particular content cluster.
-     *
-     * Otherwise: null - the cluster controller is shared by all content clusters and part of Admin.
-     */
-    private ClusterControllerContainerCluster clusterControllers;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
@@ -413,15 +405,9 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
 
-    public void prepare(DeployState deployState) {
+    public void prepare() {
         search.prepare();
-
-        if (clusterControllers != null)
-            clusterControllers.prepare(deployState);
     }
-
-    /** Returns cluster controllers if this is multitenant, null otherwise */
-    public ClusterControllerContainerCluster getClusterControllers() { return clusterControllers; }
 
     public DistributionMode getDistributionMode() {
         if (distributionMode != null) return distributionMode;

@@ -35,7 +35,9 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this(cluster, logType, compressionType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
                 null, null, isHostedVespa,
-                capitalize(logType.name()) + "." + clusterName);
+                capitalize(logType.name()) + "." + clusterName,
+                queueSize(cluster).orElse(-1),
+                ((cluster instanceof ApplicationContainerCluster) ? 4*1024*1024 : null));
     }
 
     private static String capitalize(String name) {
@@ -49,7 +51,9 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               String rotationInterval,
                               Boolean compressOnRotation,
                               boolean isHostedVespa,
-                              String symlinkName)
+                              String symlinkName,
+                              Integer queueSize,
+                              Integer bufferSize)
     {
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
         this.fileNamePattern = fileNamePattern;
@@ -58,10 +62,8 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.isHostedVespa = isHostedVespa;
         this.symlinkName = symlinkName;
         this.compressionType = compressionType;
-        this.queueSize = queueSize(cluster).orElse(-1);
-        bufferSize = (cluster instanceof ApplicationContainerCluster)
-                ? 4*1024*1024
-                : null;
+        this.queueSize = (queueSize == null) ? 256 : queueSize;
+        this.bufferSize = bufferSize;
 
         if (fileNamePattern == null)
             throw new RuntimeException("File name pattern required when configuring access log.");

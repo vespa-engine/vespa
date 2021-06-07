@@ -45,6 +45,7 @@ public:
     ssize_t write(const char *buf, size_t len) override;
     ssize_t flush() override;
     ssize_t half_close() override;
+    void drop_empty_buffers() override;
 };
 
 } // namespace vespalib::net::tls

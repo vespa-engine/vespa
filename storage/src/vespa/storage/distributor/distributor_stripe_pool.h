@@ -38,6 +38,7 @@ class DistributorStripePool {
     using NativeThreadVector = std::vector<FastOS_ThreadInterface*>;
 
     FastOS_ThreadPool       _thread_pool;
+    uint8_t                 _n_stripe_bits;
     StripeVector            _stripes;
     NativeThreadVector      _threads;
     std::mutex              _mutex;
@@ -57,7 +58,8 @@ public:
     // Set up the stripe pool with a 1-1 relationship between the provided
     // stripes and running threads. Can only be called once per pool.
     //
-    // Precondition: stripes.size() > 0
+    // Precondition: stripes.size() > 0 &&
+    //               when stripes.size() > 1: is a power of 2 and within storage::MaxStripes boundary
     void start(const std::vector<TickableStripe*>& stripes);
     void stop_and_join();
 
@@ -76,6 +78,8 @@ public:
     [[nodiscard]] DistributorStripeThread& stripe_thread(size_t idx) noexcept {
         return *_stripes[idx];
     }
+    [[nodiscard]] const TickableStripe& stripe_of_key(uint64_t key) const noexcept;
+    [[nodiscard]] TickableStripe& stripe_of_key(uint64_t key) noexcept;
     [[nodiscard]] size_t stripe_count() const noexcept { return _stripes.size(); }
     [[nodiscard]] bool is_stopped() const noexcept { return _stopped; }
 

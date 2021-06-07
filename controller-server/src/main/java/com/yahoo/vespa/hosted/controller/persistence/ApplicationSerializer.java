@@ -142,6 +142,8 @@ public class ApplicationSerializer {
     // Quota usage fields
     private static final String quotaUsageRateField = "quotaUsageRate";
 
+    private static final String deploymentCostField = "cost";
+
     // ------------------ Serialization
 
     public Slime toSlime(Application application) {
@@ -196,6 +198,7 @@ public class ApplicationSerializer {
         deployment.activity().lastQueriesPerSecond().ifPresent(value -> object.setDouble(lastQueriesPerSecondField, value));
         deployment.activity().lastWritesPerSecond().ifPresent(value -> object.setDouble(lastWritesPerSecondField, value));
         object.setDouble(quotaUsageRateField, deployment.quota().rate());
+        deployment.cost().ifPresent(cost -> object.setDouble(deploymentCostField, cost));
     }
 
     private void deploymentMetricsToSlime(DeploymentMetrics metrics, Cursor object) {
@@ -357,7 +360,8 @@ public class ApplicationSerializer {
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
                                                         Serializers.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
                                                         Serializers.optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
-                              QuotaUsage.create(Serializers.optionalDouble(deploymentObject.field(quotaUsageRateField))));
+                              QuotaUsage.create(Serializers.optionalDouble(deploymentObject.field(quotaUsageRateField))),
+                              Serializers.optionalDouble(deploymentObject.field(deploymentCostField)));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {

@@ -248,7 +248,7 @@ public class Nodes {
     public List<Node> fail(List<Node> nodes, Agent agent, String reason) {
         NestedTransaction transaction = new NestedTransaction();
         nodes = fail(nodes, agent, reason, transaction);
-        transaction.commit();;
+        transaction.commit();
         return nodes;
     }
 
@@ -305,10 +305,12 @@ public class Nodes {
     }
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
-        if (parkOnDeallocationOf(node, agent))
-            return park(node.hostname(), false, agent, reason, transaction);
-        else
+        if (parkOnDeallocationOf(node, agent)) {
+            boolean keepAllocation = node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent();
+            return park(node.hostname(), keepAllocation, agent, reason, transaction);
+        } else {
             return db.writeTo(Node.State.dirty, List.of(node), agent, Optional.of(reason), transaction).get(0);
+        }
     }
 
     /**
@@ -367,7 +369,7 @@ public class Nodes {
         return parked;
     }
 
-    public Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
+    private Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
         return move(hostname, Node.State.parked, agent, keepAllocation, Optional.of(reason), transaction);
     }
 
@@ -573,14 +575,22 @@ public class Nodes {
     }
 
     /**
-     * Increases the restart generation of the active nodes matching the filter.
+     * Increases the restart generation of the active nodes matching given filter.
+     *
+     * @return the nodes in their new state
+     */
+    public List<Node> restartActive(Predicate<Node> filter) {
+        return restart(StateFilter.from(Node.State.active).and(filter));
+    }
+
+    /**
+     * Increases the restart generation of the any nodes matching given filter.
      *
      * @return the nodes in their new state
      */
     public List<Node> restart(Predicate<Node> filter) {
-        return performOn(StateFilter.from(Node.State.active).and(filter),
-                         (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
-                                               lock));
+        return performOn(filter, (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
+                                                       lock));
     }
 
     /**
@@ -632,16 +642,22 @@ public class Nodes {
         List<Node> result;
         boolean wantToDeprovision = op == DecommissionOperation.deprovision;
         boolean wantToRebuild = op == DecommissionOperation.rebuild;
+        Optional<Report> wantToEncryptReport = op == DecommissionOperation.encrypt
+                ? Optional.of(Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, ""))
+                : Optional.empty();
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
-            result = performOn(list(allocationLock).childrenOf(host),
-                               (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
-                                                         nodeLock));
+            result = performOn(list(allocationLock).childrenOf(host), (node, nodeLock) -> {
+                Node newNode = node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
+                if (wantToEncryptReport.isPresent()) {
+                    newNode = newNode.with(newNode.reports().withReport(wantToEncryptReport.get()));
+                }
+                return write(newNode, nodeLock);
+            });
             Node newHost = host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant);
-            if (op == DecommissionOperation.encrypt) {
-                Report report = Report.basicReport(Report.WANT_TO_ENCRYPT_ID, Report.Type.UNSPECIFIED, instant, "");
-                newHost = newHost.with(newHost.reports().withReport(report));
+            if (wantToEncryptReport.isPresent()) {
+                newHost = newHost.with(newHost.reports().withReport(wantToEncryptReport.get()));
             }
             result.add(write(newHost, lock));
         }
@@ -813,6 +829,7 @@ public class Nodes {
                                                     .orElse(false);
         return node.status().wantToDeprovision() ||
                node.status().wantToRebuild() ||
+               node.reports().getReport(Report.WANT_TO_ENCRYPT_ID).isPresent() ||
                retirementRequestedByOperator;
     }
 

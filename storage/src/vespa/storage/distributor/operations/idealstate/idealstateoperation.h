@@ -208,8 +208,6 @@ public:
      */
     void setCommandMeta(api::MaintenanceCommand& cmd) const;
 
-    std::string toXML(framework::Clock& clock) const;
-
     std::string toString() const override;
 
     /**

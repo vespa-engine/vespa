@@ -2,6 +2,8 @@
 
 #include "rpchooks.h"
 #include "cmdq.h"
+#include "check-completion-handler.h"
+#include "peer-check.h"
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
@@ -9,6 +11,13 @@
 LOG_SETUP(".rpchooks");
 
 namespace config::sentinel {
+
+RPCHooks::RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor)
+  : _commands(commands),
+    _orb(supervisor)
+{
+    initRPC(&_orb);
+}
 
 RPCHooks::~RPCHooks() = default;
 
@@ -35,6 +44,14 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.DefineMethod("sentinel.service.start", "s", "",
                     FRT_METHOD(RPCHooks::rpc_startService), this);
     rb.MethodDesc("start a service");
+    //-------------------------------------------------------------------------
+    rb.DefineMethod("sentinel.check.connectivity", "sii", "s",
+                    FRT_METHOD(RPCHooks::rpc_checkConnectivity), this);
+    rb.MethodDesc("check connectivity for peer sentinel");
+    rb.ParamDesc("name", "Hostname of peer sentinel");
+    rb.ParamDesc("port", "Port number of peer sentinel");
+    rb.ParamDesc("timeout", "Timeout for check in milliseconds");
+    rb.ReturnDesc("status", "Status (ok, bad, or unknown) for peer");
     //-------------------------------------------------------------------------
 }
 
@@ -74,6 +91,19 @@ RPCHooks::rpc_startService(FRT_RPCRequest *req)
     LOG(debug, "got startservice '%s'", srvNM);
     req->Detach();
     _commands.enqueue(std::make_unique<Cmd>(req, Cmd::START, srvNM));
+}
+
+void
+RPCHooks::rpc_checkConnectivity(FRT_RPCRequest *req)
+{
+    FRT_Values &args  = *req->GetParams();
+    const char *hostname = args[0]._string._str;
+    int portnum = args[1]._intval32;
+    int timeout = args[2]._intval32;
+    LOG(debug, "got checkConnectivity %s [port %d] timeout %d", hostname, portnum, timeout);
+    req->Detach();
+    auto & completionHandler = req->getStash().create<CheckCompletionHandler>(req);
+    req->getStash().create<PeerCheck>(completionHandler, hostname, portnum, _orb, timeout);
 }
 
 } // namespace slobrok

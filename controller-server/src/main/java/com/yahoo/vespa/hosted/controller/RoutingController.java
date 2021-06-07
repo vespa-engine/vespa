@@ -180,11 +180,11 @@ public class RoutingController {
             builder = builder.routingMethod(RoutingMethod.exclusive)
                              .on(Port.tls());
             Endpoint endpoint = builder.in(controller.system());
-            endpointDnsNames.add(endpoint.dnsName());
             if (controller.system().isPublic() && vespaAppDomainInCertificate.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value()) {
                 Endpoint legacyEndpoint = builder.legacy().in(controller.system());
                 endpointDnsNames.add(legacyEndpoint.dnsName());
             }
+            endpointDnsNames.add(endpoint.dnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
@@ -393,7 +393,7 @@ public class RoutingController {
     private static String commonNameHashOf(ApplicationId application, SystemName system) {
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
-        return 'v' + base32 + Endpoint.dnsSuffix(system);
+        return 'v' + base32 + Endpoint.dnsSuffix(system, system.isPublic());
     }
 
     /** Returns direct routing endpoints if any exist and feature flag is set for given application */

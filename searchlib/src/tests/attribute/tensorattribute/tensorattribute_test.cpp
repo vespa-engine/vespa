@@ -572,12 +572,6 @@ Fixture::testSaveLoad()
 void
 Fixture::testCompaction()
 {
-    if ((_traits.use_dense_tensor_attribute && _denseTensors) ||
-         ! _traits.use_dense_tensor_attribute)
-    {
-        LOG(info, "Skipping compaction test for tensor '%s' which is using free-lists", _cfg.tensorType().to_spec().c_str());
-        return;
-    }
     ensureSpace(4);
     TensorSpec empty_xy_tensor(sparseSpec);
     TensorSpec simple_tensor = TensorSpec(sparseSpec)
@@ -596,11 +590,19 @@ Fixture::testCompaction()
     set_tensor(2, fill_tensor);
     search::attribute::Status oldStatus = getStatus();
     search::attribute::Status newStatus = oldStatus;
-    uint64_t iter = 0;
+    auto guard = _attr->makeReadGuard(false);
+    uint64_t iter = 2049;
     uint64_t iterLimit = 100000;
     for (; iter < iterLimit; ++iter) {
         clearTensor(2);
         set_tensor(2, fill_tensor);
+        if ((iter & (iter - 1)) == 0) {
+            // Temporarily drop read guard when iter crosses a power of 2.
+            guard.reset();
+            _attr->commit(true);
+            _attr->commit(true);
+            guard = _attr->makeReadGuard(false);
+        }
         newStatus = getStatus();
         if (newStatus.getUsed() < oldStatus.getUsed()) {
             break;
@@ -609,7 +611,7 @@ Fixture::testCompaction()
     }
     EXPECT_GREATER(iterLimit, iter);
     LOG(info,
-        "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
+        "iter = %" PRIu64 ", memory usage %" PRIu64 " -> %" PRIu64,
         iter, oldStatus.getUsed(), newStatus.getUsed());
     TEST_DO(assertGetNoTensor(1));
     TEST_DO(assertGetTensor(fill_tensor, 2));

@@ -267,7 +267,7 @@ class AutoscalingTester {
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
-                                                           ClusterResources min, ClusterResources max) {
+                                       ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
@@ -278,7 +278,7 @@ class AutoscalingTester {
     }
 
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
-                                                           ClusterResources min, ClusterResources max) {
+                                     ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
@@ -286,6 +286,15 @@ class AutoscalingTester {
         }
         return autoscaler.suggest(application, application.clusters().get(clusterId),
                                   nodeRepository().nodes().list(Node.State.active).owner(applicationId));
+    }
+
+    public ClusterResources assertResources(String message,
+                                            int nodeCount, int groupCount,
+                                            NodeResources expectedResources,
+                                            Optional<ClusterResources> resources) {
+        return assertResources(message, nodeCount, groupCount,
+                               expectedResources.vcpu(), expectedResources.memoryGb(), expectedResources.diskGb(),
+                               resources);
     }
 
     public ClusterResources assertResources(String message,

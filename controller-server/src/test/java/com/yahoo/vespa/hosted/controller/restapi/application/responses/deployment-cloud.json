@@ -8,7 +8,7 @@
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://albums.scoober.aws-us-east-1c.public.vespa.oath.cloud/",
+      "url": "https://albums.scoober.aws-us-east-1c.z.vespa-app.cloud/",
       "scope": "zone",
       "routingMethod": "exclusive",
       "legacy": false
@@ -36,6 +36,7 @@
     "commit": "commit1"
   },
   "status": "complete",
+  "quota": "(ignore)",
   "archiveUri": "s3://bucketName/scoober/",
   "activity": {},
   "metrics": {

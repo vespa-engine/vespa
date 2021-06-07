@@ -1,17 +1,23 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.CloudName;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.yolean.Exceptions;
 
@@ -20,7 +26,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -33,11 +41,23 @@ import java.util.stream.Collectors;
  */
 public class ResourceMeterMaintainer extends ControllerMaintainer {
 
-    private final Clock clock;
-    private final Metric metric;
+    /**
+     * Checks if the node is in some state where it is in active use by the tenant,
+     * and not transitioning out of use, in a failed state, etc.
+     */
+    private static final Set<Node.State> METERABLE_NODE_STATES = EnumSet.of(
+            Node.State.reserved,   // an application will soon use this node
+            Node.State.active,     // an application is currently using this node
+            Node.State.inactive    // an application is not using it, but it is reserved for being re-introduced or decommissioned
+    );
+
+    private final ApplicationController applications;
     private final NodeRepository nodeRepository;
     private final MeteringClient meteringClient;
     private final CuratorDb curator;
+    private final SystemName systemName;
+    private final Metric metric;
+    private final Clock clock;
 
     private static final String METERING_LAST_REPORTED = "metering_last_reported";
     private static final String METERING_TOTAL_REPORTED = "metering_total_reported";
@@ -48,28 +68,57 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                                    Duration interval,
                                    Metric metric,
                                    MeteringClient meteringClient) {
-        super(controller, interval, null, SystemName.allOf(SystemName::isPublic));
-        this.clock = controller.clock();
+        super(controller, interval);
+        this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-        this.metric = metric;
         this.meteringClient = meteringClient;
         this.curator = controller.curator();
+        this.systemName = controller.serviceRegistry().zoneRegistry().system();
+        this.metric = metric;
+        this.clock = controller.clock();
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
+        Collection<ResourceSnapshot> resourceSnapshots;
         try {
-            collectResourceSnapshots();
-            return true;
+            resourceSnapshots = getAllResourceSnapshots();
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to collect resource snapshots. Retrying in " + interval() + ". Error: " +
                                    Exceptions.toMessageString(e));
+            return 0.0;
         }
-        return false;
+
+        if (systemName.isPublic()) reportResourceSnapshots(resourceSnapshots);
+        updateDeploymentCost(resourceSnapshots);
+        return 1.0;
     }
 
-    private void collectResourceSnapshots() {
-        Collection<ResourceSnapshot> resourceSnapshots = getAllResourceSnapshots();
+    void updateDeploymentCost(Collection<ResourceSnapshot> resourceSnapshots) {
+        resourceSnapshots.stream()
+                .collect(Collectors.groupingBy(snapshot -> TenantAndApplicationId.from(snapshot.getApplicationId()),
+                         Collectors.groupingBy(snapshot -> snapshot.getApplicationId().instance())))
+                .forEach(this::updateDeploymentCost);
+    }
+
+    private void updateDeploymentCost(TenantAndApplicationId tenantAndApplication, Map<InstanceName, List<ResourceSnapshot>> snapshotsByInstance) {
+        try {
+            applications.lockApplicationIfPresent(tenantAndApplication, locked -> {
+                for (InstanceName instanceName : locked.get().instances().keySet()) {
+                    Map<ZoneId, Double> deploymentCosts = snapshotsByInstance.getOrDefault(instanceName, List.of()).stream()
+                            .collect(Collectors.toUnmodifiableMap(
+                                    ResourceSnapshot::getZoneId,
+                                    snapshot -> cost(snapshot.allocation(), systemName)));
+                    locked = locked.with(instanceName, i -> i.withDeploymentCosts(deploymentCosts));
+                }
+                applications.store(locked);
+            });
+        } catch (UncheckedTimeoutException ignored) {
+            // Will be retried on next maintenance, avoid throwing so we can update the other apps instead
+        }
+    }
+
+    private void reportResourceSnapshots(Collection<ResourceSnapshot> resourceSnapshots) {
         meteringClient.consume(resourceSnapshots);
 
         metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
@@ -89,9 +138,8 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         }
     }
 
-    private Collection<ResourceSnapshot> getAllResourceSnapshots() {
+    private List<ResourceSnapshot> getAllResourceSnapshots() {
         return controller().zoneRegistry().zones()
-                .ofCloud(CloudName.from("aws"))
                 .reachable().zones().stream()
                 .map(ZoneApi::getId)
                 .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, false)))
@@ -103,7 +151,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         return nodes.stream()
                 .filter(this::unlessNodeOwnerIsSystemApplication)
                 .filter(this::isNodeStateMeterable)
-                .filter(this::isNodeTypeMeterable)
+                .filter(this::isClusterTypeMeterable)
                 .collect(Collectors.groupingBy(node ->
                                 node.owner().get(),
                                 Collectors.collectingAndThen(Collectors.toList(),
@@ -120,21 +168,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                    .orElse(false);
     }
 
-    /**
-     * Checks if the node is in some state where it is in active use by the tenant,
-     * and not transitioning out of use, in a failed state, etc.
-     */
-    private static final Set<Node.State> METERABLE_NODE_STATES = Set.of(
-            Node.State.reserved,   // an application will soon use this node
-            Node.State.active,     // an application is currently using this node
-            Node.State.inactive    // an application is not using it, but it is reserved for being re-introduced or decommissioned
-    );
-
     private boolean isNodeStateMeterable(Node node) {
         return METERABLE_NODE_STATES.contains(node.state());
     }
 
-    private boolean isNodeTypeMeterable(Node node) {
+    private boolean isClusterTypeMeterable(Node node) {
         return node.clusterType() != Node.ClusterType.admin; // log servers and shared cluster controllers
     }
 
@@ -144,4 +182,15 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .isAfter(Instant.ofEpochMilli(lastRefreshTimestamp));
     }
 
+    public static double cost(ClusterResources clusterResources, SystemName systemName) {
+        NodeResources nr = clusterResources.nodeResources();
+        return cost(new ResourceAllocation(nr.vcpu(), nr.memoryGb(), nr.diskGb()).multiply(clusterResources.nodes()), systemName);
+    }
+
+    private static double cost(ResourceAllocation allocation, SystemName systemName) {
+        // Divide cost by 3 in non-public zones to show approx. AWS equivalent cost
+        double costDivisor = systemName.isPublic() ? 1.0 : 3.0;
+        double cost = new NodeResources(allocation.getCpuCores(), allocation.getMemoryGb(), allocation.getDiskGb(), 0).cost();
+        return Math.round(cost * 100.0 / costDivisor) / 100.0;
+    }
 }

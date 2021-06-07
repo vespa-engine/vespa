@@ -18,8 +18,8 @@ struct Rpc : FRT_Invokable {
     FastOS_ThreadPool thread_pool;
     FNET_Transport    transport;
     FRT_Supervisor    orb;
-    Rpc(CryptoEngine::SP crypto, size_t num_threads)
-        : thread_pool(128_Ki), transport(TransportConfig(num_threads).crypto(std::move(crypto))), orb(&transport) {}
+    Rpc(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty)
+        : thread_pool(128_Ki), transport(TransportConfig(num_threads).crypto(std::move(crypto)).drop_empty_buffers(drop_empty)), orb(&transport) {}
     void start() {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }
@@ -38,7 +38,7 @@ struct Rpc : FRT_Invokable {
 
 struct Server : Rpc {
     uint32_t port;
-    Server(CryptoEngine::SP crypto, size_t num_threads) : Rpc(std::move(crypto), num_threads), port(listen()) {
+    Server(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty = false) : Rpc(std::move(crypto), num_threads, drop_empty), port(listen()) {
         init_rpc();
         start();
     }
@@ -58,7 +58,7 @@ struct Server : Rpc {
 
 struct Client : Rpc {
     uint32_t port;
-    Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server) : Rpc(std::move(crypto), num_threads), port(server.port) {
+    Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server, bool drop_empty = false) : Rpc(std::move(crypto), num_threads, drop_empty), port(server.port) {
         start();
     }
     FRT_Target *connect() { return Rpc::connect(port); }
@@ -85,7 +85,16 @@ struct Result {
     }
 };
 
-void perform_test(size_t thread_id, Client &client, Result &result) {
+bool verbose = false;
+double budget = 1.5;
+
+void perform_test(size_t thread_id, Client &client, Result &result, bool vital = false) {
+    if (!vital && !verbose) {
+        if (thread_id == 0) {
+            fprintf(stderr, "... skipping non-vital test; run with 'verbose' to enable\n");
+        }
+        return;
+    }
     uint64_t seq = 0;
     FRT_Target *target = client.connect();
     FRT_RPCRequest *req = client.orb.AllocRPCRequest();
@@ -101,7 +110,7 @@ void perform_test(size_t thread_id, Client &client, Result &result) {
     };
     size_t loop_cnt = 8;
     BenchmarkTimer::benchmark(invoke, invoke, 0.5);
-    BenchmarkTimer timer(1.5);
+    BenchmarkTimer timer(budget);
     while (timer.has_budget()) {
         timer.before();
         for (size_t i = 0; i < loop_cnt; ++i) {
@@ -139,13 +148,29 @@ TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads 
 TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (tls encryption)",
             getNumThreads(), Server(tls_crypto, 1), Client(tls_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
+TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (tls encryption + drop empty buffers)",
+            getNumThreads(), Server(tls_crypto, 1, true), Client(tls_crypto, 1, f1, true), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
 TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (no encryption)",
-            getNumThreads(), Server(null_crypto, 8), Client(null_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+            getNumThreads(), Server(null_crypto, 8), Client(null_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3, true); }
 
 TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (xor encryption)",
             getNumThreads(), Server(xor_crypto, 8), Client(xor_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
 TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (tls encryption)",
-            getNumThreads(), Server(tls_crypto, 8), Client(tls_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+            getNumThreads(), Server(tls_crypto, 8), Client(tls_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3, true); }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (tls encryption + drop empty buffers)",
+            getNumThreads(), Server(tls_crypto, 8, true), Client(tls_crypto, 8, f1, true), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
+//-----------------------------------------------------------------------------
+
+int main(int argc, char **argv) {
+    TEST_MASTER.init(__FILE__);
+    if ((argc == 2) && (argv[1] == std::string("verbose"))) {
+        verbose = true;
+        budget = 10.0;
+    }
+    TEST_RUN_ALL();
+    return (TEST_MASTER.fini() ? 0 : 1);
+}

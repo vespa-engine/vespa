@@ -7,6 +7,7 @@ FNET_Config::FNET_Config()
       _events_before_wakeup(1),
       _maxInputBufferSize(0x10000),
       _maxOutputBufferSize(0x10000),
-      _tcpNoDelay(true)
+      _tcpNoDelay(true),
+      _drop_empty_buffers(false)
 {
 }

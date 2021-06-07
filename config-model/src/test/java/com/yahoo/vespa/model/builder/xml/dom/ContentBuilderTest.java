@@ -824,24 +824,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         verifyThatFeatureFlagControlsVisibilityDelayDefault(0.6, 0.6);
     }
 
-    private void verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(boolean flag) {
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForPruneRemoved(flag));
-        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                .withServices(singleNodeContentXml())
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
-                .build())
-                .create(deployStateBuilder);
-        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
-        assertEquals(flag, config.pruneremoveddocuments().usebucketexecutor());
-    }
-
-
-    @Test
-    public void verifyUseBucketExecutorForPruneRemoved() {
-        verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(true);
-        verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(false);
-    }
-
     @Test
     public void failWhenNoDocumentsElementSpecified() {
         expectedException.expect(IllegalArgumentException.class);

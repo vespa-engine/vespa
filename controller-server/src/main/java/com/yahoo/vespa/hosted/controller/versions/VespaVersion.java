@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -147,14 +147,15 @@ public class VespaVersion implements Comparable<VespaVersion> {
         }
 
         /** Returns true if this can be changed to target at given instant */
-        public boolean canChangeTo(Confidence target, Instant instant) {
+        public boolean canChangeTo(Confidence target, SystemName system, Instant instant) {
             if (this.equalOrHigherThan(normal)) return true; // Confidence can always change from >= normal
             if (!target.equalOrHigherThan(normal)) return true; // Confidence can always change to < normal
 
             var hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
             var dayOfWeek = instant.atZone(ZoneOffset.UTC).getDayOfWeek();
-            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC, and not during weekends or Friday.
-            return    hourOfDay >= 5 && hourOfDay <= 11
+            var hourEnd = system == SystemName.Public ? 13 : 11;
+            // Confidence can only be raised between 05:00:00 and 11:59:59Z (13:59:59Z for public), and not during weekends or Friday.
+            return    hourOfDay >= 5 && hourOfDay <= hourEnd
                    && dayOfWeek.getValue() < 5;
         }
 

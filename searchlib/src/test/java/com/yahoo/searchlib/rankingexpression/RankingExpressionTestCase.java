@@ -9,6 +9,7 @@ import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.functions.Reduce;
 import org.junit.Test;
@@ -92,7 +93,7 @@ public class RankingExpressionTestCase {
 
         RankingExpression exp = new RankingExpression("foo");
         try {
-            exp.getRankProperties(functions);
+            exp.getRankProperties(new SerializationContext(functions));
         } catch (RuntimeException e) {
             assertEquals("Cycle in ranking expression function: [foo[]]", e.getMessage());
         }
@@ -100,13 +101,13 @@ public class RankingExpressionTestCase {
 
     @Test
     public void testFunctionCycleSerialization() throws ParseException {
-        List<ExpressionFunction> funnctions = new ArrayList<>();
-        funnctions.add(new ExpressionFunction("foo", null, new RankingExpression("bar")));
-        funnctions.add(new ExpressionFunction("bar", null, new RankingExpression("foo")));
+        List<ExpressionFunction> functions = new ArrayList<>();
+        functions.add(new ExpressionFunction("foo", null, new RankingExpression("bar")));
+        functions.add(new ExpressionFunction("bar", null, new RankingExpression("foo")));
 
         RankingExpression exp = new RankingExpression("foo");
         try {
-            exp.getRankProperties(funnctions);
+            exp.getRankProperties(new SerializationContext(functions));
         } catch (RuntimeException e) {
             assertEquals("Cycle in ranking expression function: [foo[], bar[]]", e.getMessage());
         }
@@ -350,7 +351,7 @@ public class RankingExpressionTestCase {
         try {
             RankingExpression expression = new RankingExpression(expressionString);
             // No functions -> expect one rank property
-            serializedExpression = expression.getRankProperties(Collections.emptyList()).values().iterator().next();
+            serializedExpression = expression.getRankProperties(new SerializationContext()).values().iterator().next();
             assertEquals(expectedSerialization, serializedExpression);
         }
         catch (ParseException e) {
@@ -363,7 +364,7 @@ public class RankingExpressionTestCase {
             RankingExpression reparsedExpression = new RankingExpression(serializedExpression);
             // Serializing the primitivized expression should yield the same expression again
             String reserializedExpression = 
-                    reparsedExpression.getRankProperties(Collections.emptyList()).values().iterator().next();
+                    reparsedExpression.getRankProperties(new SerializationContext()).values().iterator().next();
             assertEquals(expectedSerialization, reserializedExpression);
         }
         catch (ParseException e) {
@@ -383,7 +384,7 @@ public class RankingExpressionTestCase {
                 System.out.println("Parsing expression '" + expressionString + "':");
 
             RankingExpression expression = new RankingExpression(expressionString);
-            Map<String, String> rankProperties = expression.getRankProperties(functions);
+            Map<String, String> rankProperties = expression.getRankProperties(new SerializationContext(functions));
             if (print) {
                 for (String key : rankProperties.keySet())
                     System.out.println(key + ": " + rankProperties.get(key));

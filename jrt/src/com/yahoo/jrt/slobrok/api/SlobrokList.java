@@ -27,7 +27,6 @@ public class SlobrokList {
         }
     }
 
-
     public String nextSlobrokSpec() {
         checkUpdate();
         if (idx < slobroks.length) {
@@ -90,4 +89,5 @@ public class SlobrokList {
             return Arrays.toString(slobroks);
         }
     }
+
 }

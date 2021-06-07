@@ -38,7 +38,7 @@ public class HostInfoUpdater extends ControllerMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
+    protected double maintain() {
         Map<String, NodeEntity> nodeEntities = controller().serviceRegistry().entityService().listNodes().stream()
                                                            .collect(Collectors.toMap(NodeEntity::hostname,
                                                                                      Function.identity()));
@@ -62,7 +62,7 @@ public class HostInfoUpdater extends ControllerMaintainer {
                 LOG.info("Updated information for " + hostsUpdated + " hosts(s)");
             }
         }
-        return true;
+        return 1.0;
     }
 
     private static Optional<String> buildModelName(NodeEntity nodeEntity) {

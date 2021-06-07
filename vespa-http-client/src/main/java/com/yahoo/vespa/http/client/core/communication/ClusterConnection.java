@@ -78,7 +78,7 @@ public class ClusterConnection implements AutoCloseable {
                                                                            feedParams,
                                                                            cluster.getRoute(),
                                                                            connectionParams,
-                                                                           new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
+                                                                           new ApacheGatewayConnection.HttpClientFactory(feedParams, connectionParams, endpoint.isUseSsl()),
                                                                            operationProcessor.getClientId(),
                                                                            clock
                     );

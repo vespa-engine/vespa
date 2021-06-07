@@ -53,6 +53,11 @@ public:
         _config._tcpNoDelay = v;
         return *this;
     }
+    TransportConfig &drop_empty_buffers(bool v) {
+        _config._drop_empty_buffers = v;
+        return *this;
+    }
+
 private:
     FNET_Config                 _config;
     vespalib::AsyncResolver::SP _resolver;

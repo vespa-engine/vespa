@@ -9,7 +9,10 @@ import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A cluster with its associated metrics which allows prediction about its future behavior.
@@ -19,6 +22,8 @@ import java.util.OptionalDouble;
  */
 public class ClusterModel {
 
+    private static final Logger log = Logger.getLogger(ClusterModel.class.getName());
+
     private static final Duration CURRENT_LOAD_DURATION = Duration.ofMinutes(5);
 
     static final double idealQueryCpuLoad = 0.8;
@@ -27,18 +32,16 @@ public class ClusterModel {
     static final double idealDiskLoad = 0.6;
 
     private final Application application;
-    private final Cluster cluster;
     /** The current nodes of this cluster, or empty if this models a new cluster not yet deployed */
     private final NodeList nodes;
-    private final MetricsDb metricsDb;
     private final Clock clock;
     private final Duration scalingDuration;
+    private final ClusterTimeseries clusterTimeseries;
+    private final ClusterNodesTimeseries nodeTimeseries;
 
     // Lazily initialized members
     private Double queryFractionOfMax = null;
     private Double maxQueryGrowthRate = null;
-    private ClusterNodesTimeseries nodeTimeseries = null;
-    private ClusterTimeseries clusterTimeseries = null;
 
     public ClusterModel(Application application,
                         Cluster cluster,
@@ -47,11 +50,11 @@ public class ClusterModel {
                         MetricsDb metricsDb,
                         Clock clock) {
         this.application = application;
-        this.cluster = cluster;
         this.nodes = clusterNodes;
-        this.metricsDb = metricsDb;
         this.clock = clock;
         this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
+        this.clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
+        this.nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
     }
 
     /** For testing */
@@ -59,29 +62,23 @@ public class ClusterModel {
                  Cluster cluster,
                  Clock clock,
                  Duration scalingDuration,
-                 ClusterTimeseries clusterTimeseries) {
+                 ClusterTimeseries clusterTimeseries,
+                 ClusterNodesTimeseries nodeTimeseries) {
         this.application = application;
-        this.cluster = cluster;
         this.nodes = null;
-        this.metricsDb = null;
         this.clock = clock;
 
         this.scalingDuration = scalingDuration;
         this.clusterTimeseries = clusterTimeseries;
+        this.nodeTimeseries = nodeTimeseries;
     }
 
     /** Returns the predicted duration of a rescaling of this cluster */
     public Duration scalingDuration() { return scalingDuration; }
 
-    public ClusterNodesTimeseries nodeTimeseries() {
-        if (nodeTimeseries != null) return nodeTimeseries;
-        return nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
-    }
+    public ClusterNodesTimeseries nodeTimeseries() { return nodeTimeseries; }
 
-    public ClusterTimeseries clusterTimeseries() {
-        if (clusterTimeseries != null) return clusterTimeseries;
-        return clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
-    }
+    public ClusterTimeseries clusterTimeseries() { return clusterTimeseries; }
 
     /**
      * Returns the predicted max query growth rate per minute as a fraction of the average traffic
@@ -186,6 +183,26 @@ public class ClusterModel {
         if ( ! duration.minus(largestAllowed).isNegative())
             return largestAllowed;
         return duration;
+    }
+
+    /**
+     * Create a cluster model if possible and logs a warning and returns empty otherwise.
+     * This is useful in cases where it's possible to continue without the cluser model,
+     * as QuestDb is known to temporarily fail during reading of data.
+     */
+    public static Optional<ClusterModel> create(Application application,
+                                                Cluster cluster,
+                                                ClusterSpec clusterSpec,
+                                                NodeList clusterNodes,
+                                                MetricsDb metricsDb,
+                                                Clock clock) {
+        try {
+            return Optional.of(new ClusterModel(application, cluster, clusterSpec, clusterNodes, metricsDb, clock));
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);
+            return Optional.empty();
+        }
     }
 
 }

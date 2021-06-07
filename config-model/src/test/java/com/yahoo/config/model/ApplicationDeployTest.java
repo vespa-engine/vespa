@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 public class ApplicationDeployTest {
 
     private static final String TESTDIR = "src/test/cfg/application/";
-    private static final String TESTSDDIR = TESTDIR + "app1/searchdefinitions/";
+    private static final String TEST_SCHEMAS_DIR = TESTDIR + "app1/schemas/";
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -54,7 +54,7 @@ public class ApplicationDeployTest {
     @Test
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
-        VespaModel model = new VespaModel(tester.app());
+        new VespaModel(tester.app());
         List<NamedSchema> schemas = tester.getSchemas();
         assertEquals(schemas.size(), 5);
         for (NamedSchema searchDefinition : schemas) {
@@ -73,11 +73,11 @@ public class ApplicationDeployTest {
                     fail();
             }
         }
-        assertEquals(Set.of(new File(TESTSDDIR + "laptop.sd"),
-                            new File(TESTSDDIR + "music.sd"),
-                            new File(TESTSDDIR + "pc.sd"),
-                            new File(TESTSDDIR + "product.sd"),
-                            new File(TESTSDDIR + "sock.sd")),
+        assertEquals(Set.of(new File(TEST_SCHEMAS_DIR + "laptop.sd"),
+                            new File(TEST_SCHEMAS_DIR + "music.sd"),
+                            new File(TEST_SCHEMAS_DIR + "pc.sd"),
+                            new File(TEST_SCHEMAS_DIR + "product.sd"),
+                            new File(TEST_SCHEMAS_DIR + "sock.sd")),
                      new HashSet<>(tester.app().getSearchDefinitionFiles()));
 
         List<FilesApplicationPackage.Component> components = tester.app().getComponents();

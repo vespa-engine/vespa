@@ -65,9 +65,7 @@ public:
     ~StorageApp() override;
 
     void handleSignal(int signal) {
-        LOG(info, "Got signal %d, waiting for lock", signal);
-        std::lock_guard sync(_signalLock);
-        LOG(info, "Got lock for signal %d", signal);
+        LOG(info, "Got signal %d", signal);
         _lastSignal = signal;
         _signalCond.notify_one();
     }

@@ -182,7 +182,7 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
-                         " and application version " + versions.targetApplication().id() + " ...");
+                   " and application version " + versions.targetApplication().id() + " ...");
         return deployReal(id, false, logger);
     }
 
@@ -239,7 +239,7 @@ public class InternalStepRunner implements StepRunner {
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
                     logger.log("Deployment failed with possibly transient error " + e.code() +
-                            ", will retry: " + e.getMessage());
+                               ", will retry: " + e.getMessage());
                     return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
@@ -725,7 +725,7 @@ public class InternalStepRunner implements StepRunner {
                 updater.accept("invalid application configuration, or timeout of other deployments of the same application");
                 return;
             case installationFailed:
-                updater.accept("nodes were not able to start the new Java containers");
+                updater.accept("nodes were not able to upgrade to the new configuration");
                 return;
             case testFailure:
                 updater.accept("one or more verification tests against the deployment failed");

@@ -92,7 +92,6 @@ cp="libexec/vespa/patches/configproxy:lib/jars/config-proxy-jar-with-dependencie
 VESPA_LOG_LEVEL="all -debug -spam"
 
 export VESPA_LOG_TARGET VESPA_LOG_LEVEL VESPA_LOG_CONTROL_DIR
-export VESPA_SENTINEL_PORT
 
 mkdir -p "$LOGDIR"
 mkdir -p "$VESPA_LOG_CONTROL_DIR"

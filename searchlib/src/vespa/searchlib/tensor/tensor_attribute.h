@@ -26,11 +26,13 @@ protected:
     TensorStore &_tensorStore; // data store for serialized tensors
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred
+    vespalib::MemoryUsage _cached_tensor_store_memory_usage;
 
     template <typename RefType>
     void doCompactWorst();
     void checkTensorType(const vespalib::eval::Value &tensor);
     void setTensorRef(DocId docId, EntryRef ref);
+    virtual vespalib::MemoryUsage update_stat();
     virtual vespalib::MemoryUsage memory_usage() const;
     void populate_state(vespalib::slime::Cursor& object) const;
 

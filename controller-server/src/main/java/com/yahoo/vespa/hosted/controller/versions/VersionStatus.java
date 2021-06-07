@@ -229,7 +229,9 @@ public class VersionStatus {
 
             // Keep existing confidence if we cannot raise it at this moment in time
             if (!confidenceIsOverridden &&
-                !existingVespaVersion.confidence().canChangeTo(confidence, controller.clock().instant())) {
+                !existingVespaVersion.confidence().canChangeTo(confidence,
+                                                               controller.serviceRegistry().zoneRegistry().system(),
+                                                               controller.clock().instant())) {
                 confidence = existingVespaVersion.confidence();
             }
         }

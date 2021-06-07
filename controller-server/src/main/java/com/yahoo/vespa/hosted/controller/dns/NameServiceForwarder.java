@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  */
 public class NameServiceForwarder {
 
-    private static final int maxQueuedRequests = 200;
+    private static final int QUEUE_CAPACITY = 300;
 
     private static final Logger log = Logger.getLogger(NameServiceForwarder.class.getName());
 
@@ -73,13 +73,13 @@ public class NameServiceForwarder {
         try (Lock lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
-            if (queued >= maxQueuedRequests) {
+            if (queued >= QUEUE_CAPACITY) {
                 log.log(Level.WARNING, "Queue is at capacity (size: " + queued + "), dropping older " +
                                           "requests. This likely means that the name service is not successfully " +
                                           "executing requests");
             }
             log.log(Level.FINE, () -> "Queueing name service request: " + request);
-            db.writeNameServiceQueue(queue.with(request, priority).last(maxQueuedRequests));
+            db.writeNameServiceQueue(queue.with(request, priority).last(QUEUE_CAPACITY));
         }
     }
 

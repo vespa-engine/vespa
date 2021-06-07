@@ -182,7 +182,8 @@ public class LoadBalancerProvisioner {
                     : loadBalancer.get().state();
             newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
             if (loadBalancer.get().state() != newLoadBalancer.state()) {
-                log.log(Level.FINE, () -> "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
+                log.log(Level.INFO, () -> "Moving " + newLoadBalancer.id() + " from " + loadBalancer.get().state() +
+                                          " to " + newLoadBalancer.state());
             }
         }
 
@@ -209,13 +210,13 @@ public class LoadBalancerProvisioner {
     private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, Set<Real> reals,
                                                              Optional<LoadBalancer> currentLoadBalancer) {
         if (hasReals(currentLoadBalancer, reals)) return currentLoadBalancer.get().instance();
-        log.log(Level.FINE, () -> "Creating " + id + ", targeting: " + reals);
+        log.log(Level.INFO, () -> "Creating " + id + ", targeting: " + reals);
         try {
             return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals),
                                               allowEmptyReals(currentLoadBalancer)));
         } catch (Exception e) {
-            log.log(Level.WARNING, "Could not (re)configure " + id + ", targeting: " +
-                                   reals + ". The operation will be retried on next deployment", e);
+            log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
+                                            reals + ". The operation will be retried on next deployment");
         }
         return Optional.empty();
     }

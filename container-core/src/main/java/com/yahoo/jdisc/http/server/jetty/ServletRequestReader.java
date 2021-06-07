@@ -251,6 +251,7 @@ class ServletRequestReader implements ReadListener {
     @Override
     public void onError(final Throwable t) {
         finishedFuture.completeExceptionally(t);
+        requestContentChannel.onError(t);
         doneReading();
     }
 

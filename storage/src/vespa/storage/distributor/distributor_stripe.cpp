@@ -41,7 +41,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      DoneInitializeHandler& doneInitHandler,
                                      ChainedMessageSender& messageSender,
                                      StripeHostInfoNotifier& stripe_host_info_notifier,
-                                     bool use_legacy_mode)
+                                     bool use_legacy_mode,
+                                     uint32_t stripe_index)
     : DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
@@ -57,7 +58,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _bucketDBUpdater(_component, _component, *this, *this, use_legacy_mode),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
-      _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg),
+      _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, stripe_index),
       _messageSender(messageSender),
       _stripe_host_info_notifier(stripe_host_info_notifier),
       _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
@@ -86,7 +87,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
       _must_send_updated_host_info(false),
-      _use_legacy_mode(use_legacy_mode)
+      _use_legacy_mode(use_legacy_mode),
+      _stripe_index(stripe_index)
 {
     if (use_legacy_mode) {
         _distributorStatusDelegate.registerStatusPage();
@@ -176,7 +178,7 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
         return true;
     }
     MBUS_TRACE(msg->getTrace(), 9,
-               "Distributor: Added to message queue. Thread state: "
+               vespalib::make_string("DistributorStripe[%u]: Added to message queue. Thread state: ", _stripe_index)
                + _threadPool.getStatus());
     if (_use_legacy_mode) {
         // TODO STRIPE remove
@@ -570,7 +572,8 @@ bool is_client_request(const api::StorageMessage& msg) noexcept {
 
 void DistributorStripe::handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg) {
     if (!handleMessage(msg)) {
-        MBUS_TRACE(msg->getTrace(), 9, "Distributor: Not handling it. Sending further down.");
+        MBUS_TRACE(msg->getTrace(), 9,
+                   vespalib::make_string("DistributorStripe[%u]: Not handling it. Sending further down", _stripe_index));
         _messageSender.sendDown(msg);
     }
 }
@@ -578,10 +581,12 @@ void DistributorStripe::handle_or_propagate_message(const std::shared_ptr<api::S
 void DistributorStripe::startExternalOperations() {
     for (auto& msg : _fetchedMessages) {
         if (is_client_request(*msg)) {
-            MBUS_TRACE(msg->getTrace(), 9, "Distributor: adding to client request priority queue");
+            MBUS_TRACE(msg->getTrace(), 9,
+                       vespalib::make_string("DistributorStripe[%u]: Adding to client request priority queue", _stripe_index));
             _client_request_priority_queue.emplace(std::move(msg));
         } else {
-            MBUS_TRACE(msg->getTrace(), 9, "Distributor: Grabbed from queue to be processed.");
+            MBUS_TRACE(msg->getTrace(), 9,
+                       vespalib::make_string("DistributorStripe[%u]: Grabbed from queue to be processed", _stripe_index));
             handle_or_propagate_message(msg);
         }
     }
@@ -589,8 +594,9 @@ void DistributorStripe::startExternalOperations() {
     const bool start_single_client_request = !_client_request_priority_queue.empty();
     if (start_single_client_request) {
         const auto& msg = _client_request_priority_queue.top();
-        MBUS_TRACE(msg->getTrace(), 9, "Distributor: Grabbed from "
-                   "client request priority queue to be processed.");
+        MBUS_TRACE(msg->getTrace(), 9,
+                   vespalib::make_string("DistributorStripe[%u]: Grabbed from "
+                   "client request priority queue to be processed", _stripe_index));
         handle_or_propagate_message(msg);
         _client_request_priority_queue.pop();
     }

@@ -4,6 +4,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.mirror");
@@ -25,7 +26,6 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
       _configurator(config.create(_slobrokSpecs)),
       _currSlobrok(""),
       _rpc_ms(100),
-      _idx(0),
       _backOff(),
       _target(0),
       _req(0)
@@ -53,14 +53,22 @@ MirrorAPI::~MirrorAPI()
 
 
 MirrorAPI::SpecList
-MirrorAPI::lookup(const std::string & pattern) const
+MirrorAPI::lookup(vespalib::stringref pattern) const
 {
     SpecList ret;
+    ret.reserve(1);
+    bool exact = pattern.find('*') == std::string::npos;
     std::lock_guard guard(_lock);
-    SpecList::const_iterator end = _specs.end();
-    for (SpecList::const_iterator it = _specs.begin(); it != end; ++it) {
-        if (match(it->first.c_str(), pattern.c_str())) {
-            ret.push_back(*it);
+    if (exact) {
+        auto found = _specs.find(pattern);
+        if (found != _specs.end()) {
+            ret.emplace_back(found->first, found->second);
+        }
+    } else {
+        for (const auto & spec : _specs) {
+            if (match(spec.first.c_str(), pattern.data())) {
+                ret.emplace_back(spec.first, spec.second);
+            }
         }
     }
     return ret;
@@ -77,8 +85,6 @@ MirrorAPI::lookup(const std::string & pattern) const
 bool
 IMirrorAPI::match(const char *name, const char *pattern)
 {
-    LOG_ASSERT(name != NULL);
-    LOG_ASSERT(pattern != NULL);
     while (*pattern != '\0') {
         if (*name == *pattern) {
             ++name;
@@ -102,11 +108,11 @@ IMirrorAPI::match(const char *name, const char *pattern)
 
 
 void
-MirrorAPI::updateTo(SpecList& newSpecs, uint32_t newGen)
+MirrorAPI::updateTo(SpecMap newSpecs, uint32_t newGen)
 {
     {
         std::lock_guard guard(_lock);
-        std::swap(newSpecs, _specs);
+         _specs = std::move(newSpecs);
         _updates.add();
     }
     _specsGen.setFromInt(newGen);
@@ -167,34 +173,26 @@ MirrorAPI::handleIncrementalFetch()
             LOG(spam, "incremental diff [%u;%u] full dump, but numRemove=%u, numNames=%u",
                 diff_from, diff_to, numRemove, numNames);
         }
-        SpecList specs;
+        SpecMap specs;
         for (uint32_t idx = 0; idx < numNames; idx++) {
-            specs.push_back(
-                    std::make_pair(std::string(n[idx]._str),
-                                   std::string(s[idx]._str)));
+            specs[n[idx]._str] = s[idx]._str;
         }
-        updateTo(specs, diff_to);
+        updateTo(std::move(specs), diff_to);
     } else if (_specsGen == diff_from) {
         // incremental update
-        SpecList specs;
-        SpecList::const_iterator end = _specs.end();
-        for (SpecList::const_iterator it = _specs.begin();
-             it != end;
-             ++it)
-        {
+        SpecMap specs;
+        for (const auto & spec : _specs) {
             bool keep = true;
             for (uint32_t idx = 0; idx < numRemove; idx++) {
-                if (it->first == r[idx]._str) keep = false;
+                if (spec.first == r[idx]._str) keep = false;
             }
             for (uint32_t idx = 0; idx < numNames; idx++) {
-                if (it->first == n[idx]._str) keep = false;
+                if (spec.first == n[idx]._str) keep = false;
             }
-            if (keep) specs.push_back(*it);
+            if (keep) specs[spec.first] = spec.second;
         }
         for (uint32_t idx = 0; idx < numNames; idx++) {
-            specs.push_back(
-                    std::make_pair(std::string(n[idx]._str),
-                                   std::string(s[idx]._str)));
+            specs[n[idx]._str] = s[idx]._str;
         }
         updateTo(specs, diff_to);
     }
@@ -222,13 +220,7 @@ MirrorAPI::handleReqDone()
     if (_reqDone) {
         _reqDone = false;
         _reqPending = false;
-        bool reconn = (_target == 0);
-
-        if (_req->IsError()) {
-            reconn = true;
-        } else {
-            reconn = handleIncrementalFetch();
-        }
+        bool reconn = _req->IsError() ? true : handleIncrementalFetch();
 
         if (reconn) {
             if (_target != 0) {

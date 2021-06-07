@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "config.h"
 #include "iocomponent.h"
 #include "databuffer.h"
 #include "context.h"
@@ -67,13 +68,14 @@ public:
 
 private:
     struct Flags {
-        Flags() :
+        Flags(const FNET_Config &cfg) :
             _gotheader(false),
             _inCallback(false),
             _callbackWait(false),
             _discarding(false),
             _framed(false),
-            _handshake_work_pending(false)
+            _handshake_work_pending(false),
+            _drop_empty_buffers(cfg._drop_empty_buffers)
         { }
         bool _gotheader;
         bool _inCallback;
@@ -81,6 +83,7 @@ private:
         bool _discarding;
         bool _framed;
         bool _handshake_work_pending;
+        bool _drop_empty_buffers;
     };
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
         FNET_Connection *connection;

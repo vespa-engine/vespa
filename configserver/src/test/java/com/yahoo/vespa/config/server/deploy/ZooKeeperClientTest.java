@@ -64,7 +64,7 @@ public class ZooKeeperClientTest {
         Map<Version, FileRegistry> fileRegistries = createFileRegistries();
         app.writeMetaData();
         zkc.initialize();
-        zkc.write(app);
+        zkc.writeApplicationPackage(app);
         zkc.write(fileRegistries);
     }
 

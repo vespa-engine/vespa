@@ -5,9 +5,9 @@
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <memory>
 #include <vector>
-#include <vespa/vespalib/stllike/hash_map.h>
 
 using vespalib::hashtable;
 using std::vector;
@@ -132,6 +132,79 @@ TEST("require that hashtable<vector<int>> can be copied") {
     VectorHashtable table2(table);
     EXPECT_EQUAL(6, (*table2.find(2))[2]);
     EXPECT_EQUAL(6, (*table.find(2))[2]);
+}
+
+/**
+ * Test to profile destruction and recreation of hash map.
+ * It revealed some unexpected behaviour. Results with 10k iterations on 2018 macbook pro 2.6 Ghz i7
+ * 1 - previous - 14.7s hash_node() : _node(), _next(invalid) {}
+ * 2 - test     -  6.6s hash_node() : _next(invalid) { memset(_node, 0, sizeof(node)); }
+ * 3 - current  -  2.3s hash_node() : _next(invalid) {}
+ */
+TEST("benchmark hash table reconstruction with POD objects") {
+    vespalib::hash_map<uint32_t, uint32_t> m(1000000);
+    constexpr size_t NUM_ITER = 10; // Set to 1k-10k to get measurable numbers 10k ~= 2.3s
+    for (size_t i(0); i < NUM_ITER; i++) {
+        m[46] = 17;
+        EXPECT_FALSE(m.empty());
+        EXPECT_EQUAL(1u, m.size());
+        EXPECT_EQUAL(1048576u, m.capacity());
+        m.clear();
+        EXPECT_TRUE(m.empty());
+        EXPECT_EQUAL(1048576u, m.capacity());
+    }
+}
+
+class NonPOD {
+public:
+    NonPOD() noexcept
+        : _v(rand())
+    {
+        construction_count++;
+    }
+    NonPOD(NonPOD && rhs) noexcept { _v = rhs._v; rhs._v = -1; }
+    NonPOD & operator =(NonPOD && rhs) noexcept { _v = rhs._v; rhs._v = -1; return *this; }
+    NonPOD(const NonPOD &) = delete;
+    NonPOD & operator =(const NonPOD &) = delete;
+    ~NonPOD() {
+        if (_v != -1) {
+            destruction_count++;
+        }
+    }
+    int32_t _v;
+    static size_t construction_count;
+    static size_t destruction_count;
+};
+
+size_t NonPOD::construction_count = 0;
+size_t NonPOD::destruction_count = 0;
+
+/**
+ * Performance is identical for NonPOD objects as with POD object.
+ * Object are are only constructed on insert, and destructed on erase/clear.
+ */
+TEST("benchmark hash table reconstruction with non POD objects") {
+    vespalib::hash_map<uint32_t, NonPOD> m(1000000);
+    constexpr size_t NUM_ITER = 10; // Set to 1k-10k to get measurable numbers 10k ~= 2.3s
+    NonPOD::construction_count = 0;
+    NonPOD::destruction_count = 0;
+    for (size_t i(0); i < NUM_ITER; i++) {
+        EXPECT_EQUAL(i, NonPOD::construction_count);
+        EXPECT_EQUAL(i, NonPOD::destruction_count);
+        m.insert(std::make_pair(46, NonPOD()));
+        EXPECT_EQUAL(i+1, NonPOD::construction_count);
+        EXPECT_EQUAL(i, NonPOD::destruction_count);
+        EXPECT_FALSE(m.empty());
+        EXPECT_EQUAL(1u, m.size());
+        EXPECT_EQUAL(1048576u, m.capacity());
+        m.clear();
+        EXPECT_EQUAL(i+1, NonPOD::construction_count);
+        EXPECT_EQUAL(i+1, NonPOD::destruction_count);
+        EXPECT_TRUE(m.empty());
+        EXPECT_EQUAL(1048576u, m.capacity());
+    }
+    EXPECT_EQUAL(NUM_ITER, NonPOD::construction_count);
+    EXPECT_EQUAL(NUM_ITER, NonPOD::destruction_count);
 }
 
 }  // namespace

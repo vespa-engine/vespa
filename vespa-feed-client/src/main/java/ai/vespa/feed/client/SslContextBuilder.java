@@ -34,7 +34,7 @@ import java.util.List;
  */
 class SslContextBuilder {
 
-    private static final BouncyCastleProvider bcProvider = new BouncyCastleProvider();
+    static final BouncyCastleProvider bcProvider = new BouncyCastleProvider();
 
     private Path certificateFile;
     private Path privateKeyFile;
@@ -54,6 +54,7 @@ class SslContextBuilder {
     SSLContext build() throws IOException {
         try {
             KeyStore keystore = KeyStore.getInstance("PKCS12");
+            keystore.load(null);
             if (certificateFile != null && privateKeyFile != null) {
                 keystore.setKeyEntry("cert", privateKey(privateKeyFile), new char[0], certificates(certificateFile));
             }
@@ -64,7 +65,7 @@ class SslContextBuilder {
             kmf.init(keystore, new char[0]);
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(keystore);
-            SSLContext sslContext = SSLContext.getDefault();
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             return sslContext;
         } catch (GeneralSecurityException e) {

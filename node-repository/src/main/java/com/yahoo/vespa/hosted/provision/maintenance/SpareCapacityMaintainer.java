@@ -66,12 +66,11 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
     }
 
     @Override
-    protected boolean maintain() {
-        if ( ! nodeRepository().nodes().isWorking()) return false;
+    protected double maintain() {
+        if ( ! nodeRepository().nodes().isWorking()) return 0.0;
 
-        boolean success = true;
         // Don't need to maintain spare capacity in dynamically provisioned zones; can provision more on demand.
-        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success;
+        if (nodeRepository().zone().getCloud().dynamicProvisioning()) return 1.0;
 
         NodeList allNodes = nodeRepository().nodes().list();
         CapacityChecker capacityChecker = new CapacityChecker(allNodes);
@@ -80,6 +79,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         metric.set("overcommittedHosts", overcommittedHosts.size(), null);
         retireOvercommitedHosts(allNodes, overcommittedHosts);
 
+        boolean success = true;
         Optional<CapacityChecker.HostFailurePath> failurePath = capacityChecker.worstCaseHostLossLeadingToFailure();
         if (failurePath.isPresent()) {
             int spareHostCapacity = failurePath.get().hostsCausingFailure.size() - 1;
@@ -96,7 +96,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             }
             metric.set("spareHostCapacity", spareHostCapacity, null);
         }
-        return success;
+        return success ? 1.0 : 0.0;
     }
 
     private boolean execute(List<Move> mitigation, CapacityChecker.HostFailurePath failurePath) {

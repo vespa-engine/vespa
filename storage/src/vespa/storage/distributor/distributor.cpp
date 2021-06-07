@@ -16,12 +16,15 @@
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -59,6 +62,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
       _use_legacy_mode(num_distributor_stripes == 0),
+      _n_stripe_bits(0),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
                                                   doneInitHandler, *this, *this, _use_legacy_mode)),
       _stripe_pool(stripe_pool),
@@ -88,13 +92,20 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (!_use_legacy_mode) {
-        LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
+        assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
+        _n_stripe_bits = calc_num_stripe_bits(num_distributor_stripes);
+        LOG(info, "Setting up distributor with %u stripes using %u stripe bits",
+            num_distributor_stripes, _n_stripe_bits); // TODO STRIPE remove once legacy gone
         _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
         _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
                                                                *this, *this,
                                                                _component.getDistribution(),
                                                                *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
+        for (size_t i = 1; i < num_distributor_stripes; ++i) {
+            _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
+                                                                      doneInitHandler, *this, *this, _use_legacy_mode, i));
+        }
         _stripe_scan_stats.resize(num_distributor_stripes);
         _distributorStatusDelegate.registerStatusPage();
         _bucket_db_status_delegate = std::make_unique<StatusReporterDelegate>(compReg, *this, *_bucket_db_updater);
@@ -114,14 +125,12 @@ Distributor::~Distributor()
 // TODO STRIPE remove
 DistributorStripe&
 Distributor::first_stripe() noexcept {
-    assert(_stripes.size() == 1);
     return *_stripes[0];
 }
 
 // TODO STRIPE remove
 const DistributorStripe&
 Distributor::first_stripe() const noexcept {
-    assert(_stripes.size() == 1);
     return *_stripes[0];
 }
 
@@ -252,7 +261,10 @@ Distributor::onOpen()
         _threadPool.addThread(*this);
         _threadPool.start(_component.getThreadPool());
         if (!_use_legacy_mode) {
-            std::vector<TickableStripe*> pool_stripes({_stripes[0].get()});
+            std::vector<TickableStripe*> pool_stripes;
+            for (auto& stripe : _stripes) {
+                pool_stripes.push_back(stripe.get());
+            }
             _stripe_pool.start(pool_stripes);
         }
     } else {
@@ -319,6 +331,49 @@ bool should_be_handled_by_top_level_bucket_db_updater(const api::StorageMessage&
     }
 }
 
+document::BucketId
+get_bucket_id_for_striping(const api::StorageMessage& msg, const DistributorNodeContext& node_ctx)
+{
+    if (!msg.getBucketId().isSet()) {
+        // Calculate a bucket id (dependent on the message type) to dispatch the message to the correct distributor stripe.
+        switch (msg.getType().getId()) {
+            case api::MessageType::PUT_ID:
+            case api::MessageType::UPDATE_ID:
+            case api::MessageType::REMOVE_ID:
+                return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::TestAndSetCommand&>(msg).getDocumentId());
+            case api::MessageType::REQUESTBUCKETINFO_REPLY_ID:
+            {
+                const auto& reply = dynamic_cast<const api::RequestBucketInfoReply&>(msg);
+                if (!reply.getBucketInfo().empty()) {
+                    // Note: All bucket ids in this reply belong to the same distributor stripe, so we just use the first entry.
+                    return reply.getBucketInfo()[0]._bucketId;
+                } else {
+                    return reply.getBucketId();
+                }
+            }
+            case api::MessageType::GET_ID:
+                return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::GetCommand&>(msg).getDocumentId());
+            case api::MessageType::VISITOR_CREATE_ID:
+                return dynamic_cast<const api::CreateVisitorCommand&>(msg).super_bucket_id();
+            case api::MessageType::VISITOR_CREATE_REPLY_ID:
+                return dynamic_cast<const api::CreateVisitorReply&>(msg).super_bucket_id();
+            default:
+                return msg.getBucketId();
+        }
+    }
+    return msg.getBucketId();
+}
+
+uint32_t
+stripe_of_bucket_id(const document::BucketId& bucketd_id, uint8_t n_stripe_bits)
+{
+    if (!bucketd_id.isSet()) {
+        // TODO STRIPE: Messages with a non-set bucket id should be handled by the top-level distributor instead.
+        return 0;
+    }
+    return storage::stripe_of_bucket_key(bucketd_id.toKey(), n_stripe_bits);
+}
+
 }
 
 bool
@@ -333,12 +388,13 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
             dispatch_to_main_distributor_thread_queue(msg);
             return true;
         }
-        assert(_stripes.size() == 1);
-        assert(_stripe_pool.stripe_count() == 1);
-        // TODO STRIPE correct routing with multiple stripes
-        bool handled = first_stripe().handle_or_enqueue_message(msg);
+        auto bucket_id = get_bucket_id_for_striping(*msg, _component);
+        uint32_t stripe_idx = stripe_of_bucket_id(bucket_id, _n_stripe_bits);
+        MBUS_TRACE(msg->getTrace(), 9,
+                   vespalib::make_string("Distributor::onDown(): Dispatch message to stripe %u", stripe_idx));
+        bool handled = _stripes[stripe_idx]->handle_or_enqueue_message(msg);
         if (handled) {
-            _stripe_pool.stripe_thread(0).notify_event_has_triggered();
+            _stripe_pool.stripe_thread(stripe_idx).notify_event_has_triggered();
         }
         return handled;
     }
@@ -440,7 +496,6 @@ Distributor::propagateDefaultDistribution(
     } else {
         // Should only be called at ctor time, at which point the pool is not yet running.
         assert(_stripe_pool.stripe_count() == 0);
-        assert(_stripes.size() == 1); // TODO STRIPE all the stripes yes
         auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
         for (auto& stripe : _stripes) {
             stripe->update_distribution_config(new_configs);

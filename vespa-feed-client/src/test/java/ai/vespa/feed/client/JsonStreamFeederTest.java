@@ -5,20 +5,20 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JsonStreamFeederTest {
 
     @Test
     void test() throws IOException {
-        int docs = 1 << 10;
+        int docs = 1 << 14;
         String json = "[\n" +
 
                       IntStream.range(0, docs).mapToObj(i ->
@@ -28,7 +28,7 @@ class JsonStreamFeederTest {
                                                                 "      \"lul\":\"lal\"\n" +
                                                                 "    }\n" +
                                                                 "  },\n"
-                      ).collect(Collectors.joining()) +
+                      ).collect(joining()) +
 
                       "  {\n" +
                       "    \"id\": \"id:ns:type::abc" + docs + "\",\n" +
@@ -38,8 +38,10 @@ class JsonStreamFeederTest {
                       "  }\n" +
                       "]";
         ByteArrayInputStream in = new ByteArrayInputStream(json.getBytes(UTF_8));
-        Set<String> ids = new ConcurrentSkipListSet<>();
+        Set<String> ids = new HashSet<>();
+        long startNanos = System.nanoTime();
         JsonStreamFeeder.builder(new FeedClient() {
+
             @Override
             public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
                 ids.add(documentId.userSpecific());
@@ -57,10 +59,10 @@ class JsonStreamFeederTest {
             }
 
             @Override
-            public void close() throws IOException {
+            public void close(boolean graceful) { }
 
-            }
-        }).build().feed(in, 1 << 7, false); // TODO: hangs on 1 << 6.
+        }).build().feed(in, 1 << 7, false); // TODO: hangs when buffer is smaller than largest document
+        System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
         assertEquals(docs + 1, ids.size());
     }
 

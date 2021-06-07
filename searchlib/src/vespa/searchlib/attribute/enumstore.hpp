@@ -207,7 +207,7 @@ template <typename EntryT>
 vespalib::MemoryUsage
 EnumStoreT<EntryT>::update_stat()
 {
-    auto &store = _store.get_allocator().get_data_store();
+    auto &store = _store.get_data_store();
     _cached_values_memory_usage = store.getMemoryUsage();
     _cached_values_address_space_usage = store.getAddressSpaceUsage();
     _cached_dictionary_btree_usage = _dict->get_btree_memory_usage();

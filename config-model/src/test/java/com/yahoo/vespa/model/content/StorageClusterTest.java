@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.content.PersistenceConfig;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.documentmodel.NewDocumentType;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
@@ -44,9 +45,16 @@ public class StorageClusterTest {
         return parse(xml, root);
     }
 
-    StorageCluster parse(String xml) {
-        MockRoot root = new MockRoot();
+    StorageCluster parse(String xml, ModelContext.Properties properties) {
+        MockRoot root = new MockRoot("",
+                new DeployState.Builder()
+                        .properties(properties)
+                        .applicationPackage(new MockApplicationPackage.Builder().build())
+                        .build());
         return parse(xml, root);
+    }
+    StorageCluster parse(String xml) {
+        return parse(xml, new TestProperties());
     }
     StorageCluster parse(String xml, MockRoot root) {
         root.getDeployState().getDocumentModel().getDocumentManager().add(
@@ -61,13 +69,23 @@ public class StorageClusterTest {
         return cluster.getStorageNodes();
     }
 
+    private static String group() {
+        return joinLines(
+                "<group>",
+                "   <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "</group>");
+    }
+    private static String cluster(String clusterName, String insert) {
+        return joinLines(
+                "<content id=\"" + clusterName + "\">",
+                "<documents/>",
+                insert,
+                group(),
+                "</content>");
+    }
     @Test
     public void testBasics() {
-        StorageCluster storage = parse("<content id=\"foofighters\"><documents/>\n" +
-              "  <group>" +
-              "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-              "  </group>" +
-              "</content>\n");
+        StorageCluster storage = parse(cluster("foofighters", ""));
 
         assertEquals(1, storage.getChildren().size());
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
@@ -79,11 +97,7 @@ public class StorageClusterTest {
     }
     @Test
     public void testCommunicationManagerDefaults() {
-        StorageCluster storage = parse("<content id=\"foofighters\"><documents/>\n" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</content>\n");
+        StorageCluster storage = parse(cluster("foofighters", ""));
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         storage.getChildren().get("0").getConfig(builder);
         StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
@@ -97,40 +111,49 @@ public class StorageClusterTest {
     }
 
     @Test
+    public void testMergeDefaults() {
+        StorServerConfig.Builder builder = new StorServerConfig.Builder();
+        parse(cluster("foofighters", "")).getConfig(builder);
+
+        StorServerConfig config = new StorServerConfig(builder);
+        assertEquals(16, config.max_merges_per_node());
+        assertEquals(1024, config.max_merge_queue_size());
+    }
+
+    @Test
     public void testMerges() {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
-        parse("" +
-                "<content id=\"foofighters\">\n" +
-                "  <documents/>" +
-                "  <tuning>" +
-                "    <merges max-per-node=\"1K\" max-queue-size=\"10K\"/>\n" +
-                "  </tuning>" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</content>"
+        parse(cluster("foofighters", joinLines(
+                "<tuning>",
+                "  <merges max-per-node=\"1K\" max-queue-size=\"10K\"/>",
+                "</tuning>")),
+                new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37)
         ).getConfig(builder);
 
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(1024, config.max_merges_per_node());
         assertEquals(1024*10, config.max_merge_queue_size());
     }
+    @Test
+    public void testMergeFeatureFlags() {
+        StorServerConfig.Builder builder = new StorServerConfig.Builder();
+        parse(cluster("foofighters", ""), new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37)).getConfig(builder);
+
+        StorServerConfig config = new StorServerConfig(builder);
+        assertEquals(37, config.max_merges_per_node());
+        assertEquals(1919, config.max_merge_queue_size());
+    }
 
     @Test
     public void testVisitors() {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
-        parse(
-                "<cluster id=\"bees\">\n" +
-                "  <documents/>" +
-                "  <tuning>\n" +
-                "    <visitors thread-count=\"7\" max-queue-size=\"1000\">\n" +
-                "      <max-concurrent fixed=\"42\" variable=\"100\"/>\n" +
-                "    </visitors>\n" +
-                "  </tuning>\n" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</cluster>"
+        parse(cluster("bees",
+                joinLines(
+                "<tuning>",
+                "  <visitors thread-count=\"7\" max-queue-size=\"1000\">",
+                "    <max-concurrent fixed=\"42\" variable=\"100\"/>",
+                "  </visitors>",
+                "</tuning>"))
         ).getConfig(builder);
 
         StorVisitorConfig config = new StorVisitorConfig(builder);
@@ -143,16 +166,10 @@ public class StorageClusterTest {
     @Test
     public void testPersistenceThreads() {
 
-        StorageCluster stc = parse(
-                "<cluster id=\"bees\">\n" +
-                "    <documents/>" +
-                "    <tuning>\n" +
-                "        <persistence-threads count=\"7\"/>\n" +
-                "    </tuning>\n" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</cluster>",
+        StorageCluster stc = parse(cluster("bees",joinLines(
+                "<tuning>",
+                "  <persistence-threads count=\"7\"/>",
+                "</tuning>")),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
 
@@ -178,16 +195,10 @@ public class StorageClusterTest {
     @Test
     public void testResponseThreads() {
 
-        StorageCluster stc = parse(
-                "<cluster id=\"bees\">\n" +
-                        "    <documents/>" +
-                        "    <tuning>\n" +
-                        "        <persistence-threads count=\"7\"/>\n" +
-                        "    </tuning>\n" +
-                        "  <group>" +
-                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</cluster>",
+        StorageCluster stc = parse(cluster("bees",joinLines(
+                "<tuning>",
+                "  <persistence-threads count=\"7\"/>",
+                "</tuning>")),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
@@ -201,20 +212,14 @@ public class StorageClusterTest {
     @Test
     public void testPersistenceThreadsOld() {
 
-        StorageCluster stc = parse(
-                "<cluster id=\"bees\">\n" +
-                        "    <documents/>" +
-                        "    <tuning>\n" +
-                        "        <persistence-threads>\n" +
-                        "            <thread lowest-priority=\"VERY_LOW\" count=\"2\"/>\n" +
-                        "            <thread lowest-priority=\"VERY_HIGH\" count=\"1\"/>\n" +
-                        "            <thread count=\"1\"/>\n" +
-                        "        </persistence-threads>\n" +
-                        "    </tuning>\n" +
-                        "  <group>" +
-                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</cluster>",
+        StorageCluster stc = parse(cluster("bees", joinLines(
+                "<tuning>",
+                "  <persistence-threads>",
+                "    <thread lowest-priority=\"VERY_LOW\" count=\"2\"/>",
+                "    <thread lowest-priority=\"VERY_HIGH\" count=\"1\"/>",
+                "    <thread count=\"1\"/>",
+                "  </persistence-threads>",
+                "</tuning>")),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
 
@@ -238,15 +243,7 @@ public class StorageClusterTest {
 
     @Test
     public void testNoPersistenceThreads() {
-        StorageCluster stc = parse(
-                "<cluster id=\"bees\">\n" +
-                        "    <documents/>" +
-                        "    <tuning>\n" +
-                        "    </tuning>\n" +
-                        "  <group>" +
-                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</cluster>",
+        StorageCluster stc = parse(cluster("bees", ""),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
 
@@ -267,13 +264,7 @@ public class StorageClusterTest {
     }
 
     private StorageCluster simpleCluster(ModelContext.Properties properties) {
-        return parse(
-                "<cluster id=\"bees\">\n" +
-                        "    <documents/>" +
-                        "  <group>" +
-                        "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</cluster>",
+        return parse(cluster("bees", ""),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()),
                 properties);
     }
@@ -302,14 +293,7 @@ public class StorageClusterTest {
     @Test
     public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
-        parse(
-                "<cluster id=\"bees\">\n" +
-                "  <documents/>" +
-                "  <group>" +
-                "     <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</cluster>"
-        ).getConfig(builder);
+        parse(cluster("bees", "")).getConfig(builder);
         StorIntegritycheckerConfig config = new StorIntegritycheckerConfig(builder);
         // '-' --> don't run on the given week day
         assertEquals("-------", config.weeklycycle());
@@ -317,15 +301,15 @@ public class StorageClusterTest {
 
     @Test
     public void testCapacity() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "    <node distribution-key=\"1\" hostalias=\"mockhost\" capacity=\"1.5\"/>\n" +
-                        "    <node distribution-key=\"2\" hostalias=\"mockhost\" capacity=\"2.0\"/>\n" +
-                        "  </group>\n" +
-                        "</cluster>";
+        String xml = joinLines(
+                "<cluster id=\"storage\">",
+                "  <documents/>",
+                "  <group>",
+                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "    <node distribution-key=\"1\" hostalias=\"mockhost\" capacity=\"1.5\"/>",
+                "    <node distribution-key=\"2\" hostalias=\"mockhost\" capacity=\"2.0\"/>",
+                "  </group>",
+                "</cluster>");
 
         ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
@@ -341,15 +325,7 @@ public class StorageClusterTest {
 
     @Test
     public void testRootFolder() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "</cluster>";
-
-        ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
+        ContentCluster cluster = ContentClusterUtils.createCluster(cluster("storage", ""), new MockRoot());
 
         StorageNode node = cluster.getStorageNodes().getChildren().get("0");
 
@@ -372,18 +348,18 @@ public class StorageClusterTest {
 
     @Test
     public void testGenericPersistenceTuning() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                        "<documents/>" +
-                        "<engine>\n" +
-                        "    <fail-partition-on-error>true</fail-partition-on-error>\n" +
-                        "    <revert-time>34m</revert-time>\n" +
-                        "    <recovery-time>5d</recovery-time>\n" +
-                        "</engine>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "</cluster>";
+        String xml = joinLines(
+                "<cluster id=\"storage\">",
+                "  <documents/>",
+                "  <engine>",
+                "    <fail-partition-on-error>true</fail-partition-on-error>",
+                "    <revert-time>34m</revert-time>",
+                "    <recovery-time>5d</recovery-time>",
+                "  </engine>",
+                "  <group>",
+                "    node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "  </group>",
+                "</cluster>");
 
         ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
@@ -398,21 +374,21 @@ public class StorageClusterTest {
 
     @Test
     public void requireThatUserDoesNotSpecifyBothGroupAndNodes() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                        "<documents/>\n" +
-                        "<engine>\n" +
-                        "    <fail-partition-on-error>true</fail-partition-on-error>\n" +
-                        "    <revert-time>34m</revert-time>\n" +
-                        "    <recovery-time>5d</recovery-time>\n" +
-                        "</engine>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "  <nodes>\n" +
-                        "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                        "  </nodes>\n" +
-                        "</cluster>";
+        String xml = joinLines(
+                "<cluster id=\"storage\">",
+                "  <documents/>",
+                "  <engine>",
+                "    <fail-partition-on-error>true</fail-partition-on-error>",
+                "    <revert-time>34m</revert-time>",
+                "    <recovery-time>5d</recovery-time>",
+                "  </engine>",
+                "  <group>",
+                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "  </group>",
+                "  <nodes>",
+                "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>",
+                "  </nodes>",
+                "</cluster>");
 
         try {
             final MockRoot root = new MockRoot();
@@ -429,20 +405,20 @@ public class StorageClusterTest {
 
     @Test
     public void requireThatGroupNamesMustBeUniqueAmongstSiblings() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                 "  <redundancy>2</redundancy>" +
-                "  <documents/>\n" +
-                "  <group>\n" +
-                "    <distribution partitions=\"*\"/>\n" +
-                "    <group distribution-key=\"0\" name=\"bar\">\n" +
-                "      <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                "    </group>\n" +
-                "    <group distribution-key=\"0\" name=\"bar\">\n" +
-                "      <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                "    </group>\n" +
-                "  </group>\n" +
-                "</cluster>";
+        String xml = joinLines(
+                "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>",
+                "  <documents/>",
+                "  <group>",
+                "    <distribution partitions=\"*\"/>",
+                "    <group distribution-key=\"0\" name=\"bar\">",
+                "      <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "    </group>",
+                "    <group distribution-key=\"0\" name=\"bar\">",
+                "      <node distribution-key=\"1\" hostalias=\"mockhost\"/>",
+                "    </group>",
+                "  </group>",
+                "</cluster>");
 
         try {
             ContentClusterUtils.createCluster(xml, new MockRoot());
@@ -455,24 +431,24 @@ public class StorageClusterTest {
 
     @Test
     public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                "  <redundancy>2</redundancy>" +
-                "<documents/>\n" +
-                "  <group>\n" +
-                "    <distribution partitions=\"*\"/>\n" +
-                "    <group distribution-key=\"0\" name=\"bar\">\n" +
-                "      <group distribution-key=\"0\" name=\"foo\">\n" +
-                "        <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                "      </group>\n" +
-                "    </group>\n" +
-                "    <group distribution-key=\"0\" name=\"foo\">\n" +
-                "      <group distribution-key=\"0\" name=\"bar\">\n" +
-                "        <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                "      </group>\n" +
-                "    </group>\n" +
-                "  </group>\n" +
-                "</cluster>";
+        String xml = joinLines(
+                "<cluster id=\"storage\">",
+                "  <redundancy>2</redundancy>",
+                "  <documents/>",
+                "  <group>",
+                "    <distribution partitions=\"*\"/>",
+                "    <group distribution-key=\"0\" name=\"bar\">",
+                "      <group distribution-key=\"0\" name=\"foo\">",
+                "        <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "      </group>",
+                "    </group>",
+                "    <group distribution-key=\"0\" name=\"foo\">",
+                "      <group distribution-key=\"0\" name=\"bar\">",
+                "        <node distribution-key=\"1\" hostalias=\"mockhost\"/>",
+                "      </group>",
+                "    </group>",
+                "  </group>",
+                "</cluster>");
 
         // Should not throw.
         ContentClusterUtils.createCluster(xml, new MockRoot());
@@ -480,18 +456,18 @@ public class StorageClusterTest {
 
     @Test
     public void requireThatNestedGroupsRequireDistribution() {
-        String xml =
-                "<cluster id=\"storage\">\n" +
-                        "<documents/>\n" +
-                        "  <group>\n" +
-                        "    <group distribution-key=\"0\" name=\"bar\">\n" +
-                        "      <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "    </group>\n" +
-                        "    <group distribution-key=\"0\" name=\"baz\">\n" +
-                        "      <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                        "    </group>\n" +
-                        "  </group>\n" +
-                        "</cluster>";
+        String xml = joinLines(
+                "<cluster id=\"storage\">",
+                "  <documents/>",
+                "  <group>",
+                "    <group distribution-key=\"0\" name=\"bar\">",
+                "      <node distribution-key=\"0\" hostalias=\"mockhost\"/>",
+                "    </group>",
+                "    <group distribution-key=\"0\" name=\"baz\">",
+                "      <node distribution-key=\"1\" hostalias=\"mockhost\"/>",
+                "    </group>",
+                "  </group>",
+                "</cluster>");
 
         try {
             ContentClusterUtils.createCluster(xml, new MockRoot());
