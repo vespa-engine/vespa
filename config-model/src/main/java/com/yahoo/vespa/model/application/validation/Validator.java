@@ -15,7 +15,7 @@ public abstract class Validator {
      * Validates the input vespamodel
      *
      * @param model a VespaModel object
-     * @param deployState The {@link DeployState} built from building the model
+     * @param deployState the {@link DeployState} built from building the model
      */
     public abstract void validate(VespaModel model, DeployState deployState);
 

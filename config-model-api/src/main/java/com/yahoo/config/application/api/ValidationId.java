@@ -23,7 +23,8 @@ public enum ValidationId {
     configModelVersionMismatch("config-model-version-mismatch"), // Internal use
     skipOldConfigModels("skip-old-config-models"), // Internal use
     accessControl("access-control"), // Internal use, used in zones where there should be no access-control
-    globalEndpointChange("global-endpoint-change"); // Changing global endpoints
+    globalEndpointChange("global-endpoint-change"), // Changing global endpoints
+    redundancyIncrease("redundancy-increase"); // Increasing redundancy - may easily cause feed blocked
 
     private final String id;
 
