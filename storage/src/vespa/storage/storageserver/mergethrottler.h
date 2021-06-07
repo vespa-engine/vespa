@@ -57,12 +57,13 @@ public:
         MergeFailureMetrics failures;
 
         MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner);
-        ~MergeOperationMetrics();
+        ~MergeOperationMetrics() override;
     };
 
     class Metrics : public metrics::MetricSet {
     public:
         metrics::DoubleAverageMetric averageQueueWaitingTime;
+        metrics::LongValueMetric queueSize;
         metrics::LongCountMetric bounced_due_to_back_pressure;
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;

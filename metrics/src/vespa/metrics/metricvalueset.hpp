@@ -70,14 +70,6 @@ MetricValueSet<ValueClass>::setValues(const ValueClass& values) {
 }
 
 template<typename ValueClass>
-ValueClass
-MetricValueSet<ValueClass>::getValuesAndReset() {
-    ValueClass result(getValues());
-    setFlag(RESET);
-    return result;
-}
-
-template<typename ValueClass>
 std::string
 MetricValueSet<ValueClass>::toString() {
     std::ostringstream ost;
