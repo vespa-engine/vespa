@@ -25,8 +25,8 @@ namespace {
 
 // TODO: Move this to MemoryAllocator, with name PAGE_SIZE.
 constexpr size_t small_page_size = 4_Ki;
-constexpr size_t min_num_arrays_for_new_buffer = 64_Ki;
-constexpr float alloc_grow_factor = 0.2;
+constexpr size_t min_num_arrays_for_new_buffer = 512_Ki;
+constexpr float alloc_grow_factor = 0.3;
 // TODO: Adjust these numbers to what we accept as max in config.
 constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 64;
