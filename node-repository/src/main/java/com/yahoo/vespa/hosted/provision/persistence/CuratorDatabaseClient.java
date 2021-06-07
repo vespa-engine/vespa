@@ -71,7 +71,7 @@ public class CuratorDatabaseClient {
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
     private static final Path archiveUrisPath = root.append("archiveUris");
 
-    private static final Duration defaultLockTimeout = Duration.ofMinutes(6);
+    private static final Duration defaultLockTimeout = Duration.ofMinutes(10);
 
     private final NodeSerializer nodeSerializer;
     private final CuratorDatabase db;
