@@ -23,7 +23,7 @@ public class FleetControllerClusterTest {
         var clusterElement = new ModelElement(doc.getDocumentElement());
         return new ClusterControllerConfig.Builder("storage",
                                                    clusterElement,
-                                                   new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false)
+                                                   new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false, false)
                                                            .build(clusterElement).getClusterControllerLimits())
                 .build(root.getDeployState(), root, clusterElement.getXml());
     }
@@ -112,7 +112,7 @@ public class FleetControllerClusterTest {
         assertLimits(0.8, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
     }
 
-    private static double DELTA = 0.00001;
+    private static final double DELTA = 0.00001;
 
     private void assertLimits(double expDisk, double expMemory, FleetcontrollerConfig config) {
         var limits = config.cluster_feed_block_limit();

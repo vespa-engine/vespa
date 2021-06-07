@@ -6,6 +6,7 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.w3c.dom.Document;
 
 import java.util.Optional;
 
@@ -48,7 +49,7 @@ public class ClusterResourceLimitsTest {
             return this;
         }
         public ClusterResourceLimits build() {
-            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false);
+            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false, false);
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
             return builder.build();
@@ -126,18 +127,22 @@ public class ClusterResourceLimitsTest {
     public void exception_is_thrown_when_resource_limits_are_specified() {
         final boolean hosted = true;
 
+        Document clusterXml = XML.getDocument("<cluster id=\"test\">" +
+                                            "  <tuning>\n" +
+                                            "    <resource-limits>\n" +
+                                            "      <memory>0.92</memory>\n" +
+                                            "    </resource-limits>\n" +
+                                            "  </tuning>\n" +
+                                            "</cluster>");
+
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(containsString("Element 'resource-limits' is not allowed to be set"));
+        ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true, hosted, true);
+        builder.build(new ModelElement(clusterXml.getDocumentElement()));
 
-        ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true, hosted);
-        builder.build(new ModelElement(XML.getDocument("<cluster id=\"test\">" +
-                                                       "  <tuning>\n" +
-                                                       "    <resource-limits>\n" +
-                                                       "      <memory>0.92</memory>\n" +
-                                                       "    </resource-limits>\n" +
-                                                       "  </tuning>\n" +
-                                                       "</cluster>")
-                                          .getDocumentElement()));
+        expectedException = ExpectedException.none();
+        ClusterResourceLimits.Builder builder2 = new ClusterResourceLimits.Builder(true, hosted, false);
+        builder2.build(new ModelElement(clusterXml.getDocumentElement()));
     }
 
     private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk, Double expNodeMemory, Fixture f) {

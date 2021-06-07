@@ -36,12 +36,14 @@ public class ClusterResourceLimits {
 
         private final boolean enableFeedBlockInDistributor;
         private final boolean hostedVespa;
+        private final boolean throwIfSpecified;
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
-        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa) {
+        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa, boolean throwIfSpecified) {
             this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
             this.hostedVespa = hostedVespa;
+            this.throwIfSpecified = throwIfSpecified;
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
@@ -55,7 +57,7 @@ public class ClusterResourceLimits {
         private ResourceLimits.Builder createBuilder(ModelElement element) {
             return element == null
                     ? new ResourceLimits.Builder()
-                    : DomResourceLimitsBuilder.createBuilder(element, hostedVespa);
+                    : DomResourceLimitsBuilder.createBuilder(element, hostedVespa, throwIfSpecified);
         }
 
         public void setClusterControllerBuilder(ResourceLimits.Builder builder) {

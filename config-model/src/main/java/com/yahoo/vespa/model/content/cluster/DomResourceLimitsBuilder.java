@@ -11,12 +11,13 @@ import com.yahoo.vespa.model.content.ResourceLimits;
  */
 public class DomResourceLimitsBuilder {
 
-    public static ResourceLimits.Builder createBuilder(ModelElement contentXml, boolean hostedVespa) {
+    public static ResourceLimits.Builder createBuilder(ModelElement contentXml, boolean hostedVespa, boolean throwIfSpecified) {
         ResourceLimits.Builder builder = new ResourceLimits.Builder();
         ModelElement resourceLimits = contentXml.child("resource-limits");
         if (resourceLimits == null) { return builder; }
 
-        if (hostedVespa) throw new IllegalArgumentException("Element '" + resourceLimits + "' is not allowed to be set");
+        if (hostedVespa && throwIfSpecified)
+            throw new IllegalArgumentException("Element '" + resourceLimits + "' is not allowed to be set");
 
         if (resourceLimits.child("disk") != null) {
             builder.setDiskLimit(resourceLimits.childAsDouble("disk"));

@@ -96,6 +96,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"tokle", "bjorncs"}) default boolean enableCustomAclMapping() { return false; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean throwIfResourceLimitsSpecified() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
