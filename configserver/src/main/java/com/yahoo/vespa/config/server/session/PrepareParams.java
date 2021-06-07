@@ -306,7 +306,7 @@ public final class PrepareParams {
                 .athenzDomain(SlimeUtils.optionalString(params.field(ATHENZ_DOMAIN)).orElse(null))
                 .applicationRoles(ApplicationRoles.fromString(SlimeUtils.optionalString(params.field(APPLICATION_HOST_ROLE)).orElse(null), SlimeUtils.optionalString(params.field(APPLICATION_CONTAINER_ROLE)).orElse(null)))
                 .quota(deserialize(params.field(QUOTA_PARAM_NAME), Quota::fromSlime))
-                .tenantSecretStores(SlimeUtils.optionalString(params.field(TENANT_SECRET_STORES_PARAM_NAME)).orElse(null))
+                .tenantSecretStores(deserialize(params.field(TENANT_SECRET_STORES_PARAM_NAME), TenantSecretStoreSerializer::listFromSlime, List.of()))
                 .force(booleanValue(params, FORCE_PARAM_NAME))
                 .waitForResourcesInPrepare(booleanValue(params, WAIT_FOR_RESOURCES_IN_PREPARE))
                 .withOperatorCertificates(deserialize(params.field(OPERATOR_CERTIFICATES), PrepareParams::readOperatorCertificates, Collections.emptyList()))
