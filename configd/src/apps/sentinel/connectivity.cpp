@@ -24,7 +24,7 @@ Connectivity::~Connectivity() = default;
 
 namespace {
 
-const char *toString(CcResult value) {
+std::string toString(CcResult value) {
     switch (value) {
         case CcResult::UNKNOWN: return "BAD: missing result"; // very very bad
         case CcResult::REVERSE_FAIL: return "connect OK, but reverse check FAILED"; // very bad
@@ -90,10 +90,10 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
     size_t numFailedReverse = 0;
     bool allChecksOk = true;
     for (const auto & [hostname, check] : connectivityMap) {
-        const char *detail = toString(check.result());
+        std::string detail = toString(check.result());
         std::string prev = _detailsPerHost[hostname];
         if (prev != detail) {
-            LOG(info, "Connectivity check details: %s -> %s", hostname.c_str(), detail);
+            LOG(info, "Connectivity check details: %s -> %s", hostname.c_str(), detail.c_str());
         }
         _detailsPerHost[hostname] = detail;
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);

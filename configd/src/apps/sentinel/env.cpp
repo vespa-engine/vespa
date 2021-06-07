@@ -56,6 +56,7 @@ void Env::boot(const std::string &configId) {
     Connectivity checker;
     for (int retry = 0; retry < maxConnectivityRetries; ++retry) {
         bool changed = _cfgOwner.checkForConfigUpdate();
+        LOG_ASSERT(changed || retry > 0);
         if (changed) {
             LOG_ASSERT(_cfgOwner.hasConfig());
             const auto & cfg = _cfgOwner.getConfig();
