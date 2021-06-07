@@ -63,12 +63,15 @@ class HttpRequestStrategy implements RequestStrategy {
         this.maxInflight = builder.connectionsPerEndpoint * (long) builder.maxStreamsPerConnection;
         this.minInflight = builder.connectionsPerEndpoint * (long) min(16, builder.maxStreamsPerConnection);
         this.targetInflightX10 = new AtomicLong(10 * (long) (Math.sqrt(minInflight) * Math.sqrt(maxInflight)));
-        new Thread(this::dispatch, "feed-client-dispatcher").start();
+
+        Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
+        dispatcher.setDaemon(true);
+        dispatcher.start();
     }
 
     private void dispatch() {
         try {
-            while (breaker.state() != OPEN) {
+            while (breaker.state() != OPEN && ! destroyed.get()) {
                 while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
                 Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
