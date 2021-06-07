@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableList;
@@ -67,7 +67,7 @@ public class ValidationOverrides {
 
     public boolean allows(String validationIdString, Instant now) {
         Optional<ValidationId> validationId = ValidationId.from(validationIdString);
-        if ( ! validationId.isPresent()) return false; // unknown id -> not allowed
+        if (validationId.isEmpty()) return false; // unknown id -> not allowed
         return allows(validationId.get(), now);
     }
 
@@ -125,8 +125,8 @@ public class ValidationOverrides {
                         .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
                         .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
                 Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
-                if (validationId.isPresent()) // skip unknown ids as they may be valid for other model versions
-                    overrides.add(new ValidationOverrides.Allow(validationId.get(), until));
+                // skip unknown ids as they may be valid for other model versions
+                validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
             }
             return new ValidationOverrides(overrides, xmlForm);
         }
