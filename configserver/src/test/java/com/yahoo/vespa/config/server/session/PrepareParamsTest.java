@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -24,6 +25,7 @@ import com.yahoo.slime.SlimeInserter;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
+import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
@@ -201,6 +203,26 @@ public class PrepareParamsTest {
         PrepareParams prepareParams = PrepareParams.fromJson(SlimeUtils.toJsonBytes(slime), TenantName.from("foo"), Duration.ofSeconds(60));
         assertEquals(1, prepareParams.operatorCertificates().size());
         assertEquals(certificate, prepareParams.operatorCertificates().get(0));
+    }
+
+    @Test
+    public void testSecretStores() throws  IOException {
+        List<TenantSecretStore> secretStores = List.of(new TenantSecretStore("name", "awsId", "role"));
+        Slime secretStoreSlime = TenantSecretStoreSerializer.toSlime(secretStores);
+        String secretStoreParam = new String(SlimeUtils.toJsonBytes(secretStoreSlime), StandardCharsets.UTF_8);
+
+        var prepareParams = createParams(request + "&" + PrepareParams.TENANT_SECRET_STORES_PARAM_NAME + "=" + URLEncoder.encode(secretStoreParam, StandardCharsets.UTF_8), TenantName.from("foo"));
+        assertEquals(1, prepareParams.tenantSecretStores().size());
+        TenantSecretStore tenantSecretStore = prepareParams.tenantSecretStores().get(0);
+        assertEquals("name", tenantSecretStore.getName());
+        assertEquals("awsId", tenantSecretStore.getAwsId());
+        assertEquals("role", tenantSecretStore.getRole());
+
+        // Verify using json object
+        var root = SlimeUtils.jsonToSlime(json);
+        new Injector().inject(secretStoreSlime.get(), new ObjectInserter(root.get(), PrepareParams.TENANT_SECRET_STORES_PARAM_NAME));
+        PrepareParams prepareParamsJson = PrepareParams.fromJson(SlimeUtils.toJsonBytes(root), TenantName.from("foo"), Duration.ofSeconds(60));
+        assertPrepareParamsEqual(prepareParams, prepareParamsJson);
     }
 
     private void assertPrepareParamsEqual(PrepareParams urlParams, PrepareParams jsonParams) {
