@@ -6,7 +6,7 @@
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
 #include <string>
-#include <vector>
+#include <map>
 
 using cloud::config::SentinelConfig;
 using cloud::config::ModelConfig;
@@ -18,19 +18,14 @@ namespace config::sentinel {
  **/
 class Connectivity {
 public:
-    Connectivity(const SentinelConfig::Connectivity & config, RpcServer &rpcServer);
+    Connectivity();
     ~Connectivity();
-
-    struct CheckResult {
-        bool enoughOk;
-        bool allOk;
-        std::vector<std::string> details;
-    };
-
-    CheckResult checkConnectivity(const ModelConfig &model);
+    void configure(const SentinelConfig::Connectivity &config);
+    bool checkConnectivity(RpcServer &rpcServer);
 private:
-    const SentinelConfig::Connectivity _config;
-    RpcServer &_rpcServer;
+    SentinelConfig::Connectivity _config;
+    std::map<std::string, std::string> _checkSpecs;
+    std::map<std::string, std::string> _detailsPerHost;
 };
 
 }

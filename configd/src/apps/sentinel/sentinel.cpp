@@ -63,16 +63,20 @@ main(int argc, char **argv)
     LOG(debug, "Reading configuration");
     try {
         environment.boot(configId);
+    } catch (vespalib::FatalException& ex) {
+        LOG(error, "Stopping before boot complete: %s", ex.message());
+        EV_STOPPING("config-sentinel", ex.message());
+        return EXIT_FAILURE;
     } catch (ConfigTimeoutException & ex) {
-        LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
-        EV_STOPPING("config-sentinel", ex.what());
+        LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s", ex.message());
+        EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
     } catch (InvalidConfigException& ex) {
-        LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
-        EV_STOPPING("config-sentinel", ex.what());
+        LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.message());
+        EV_STOPPING("config-sentinel", ex.message());
         return EXIT_FAILURE;
     } catch (ConfigRuntimeException& ex) {
-        LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.getMessage().c_str());
+        LOG(error, "Fatal: Could not get config, please check your setup: %s", ex.message());
         EV_STOPPING("config-sentinel", ex.what());
         return EXIT_FAILURE;
     }
@@ -84,13 +88,13 @@ main(int argc, char **argv)
             vespalib::SignalHandler::CHLD.clear();
             manager.doWork();       // Check for child procs & commands
         } catch (InvalidConfigException& ex) {
-            LOG(warning, "Configuration problem: (ignoring): %s", ex.what());
+            LOG(warning, "Configuration problem: (ignoring): %s", ex.message());
         } catch (vespalib::PortListenException& ex) {
-            LOG(error, "Fatal: %s", ex.getMessage().c_str());
+            LOG(error, "Fatal: %s", ex.message());
             EV_STOPPING("config-sentinel", ex.what());
             return EXIT_FAILURE;
         } catch (vespalib::FatalException& ex) {
-            LOG(error, "Fatal: %s", ex.getMessage().c_str());
+            LOG(error, "Fatal: %s", ex.message());
             EV_STOPPING("config-sentinel", ex.what());
             return EXIT_FAILURE;
         }
