@@ -266,6 +266,13 @@ public class Flags {
             "Takes effect on next restart",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED = defineFeatureFlag(
+            "throw-exception-if-resource-limits-specified", false,
+            List.of("mpolden"), "2021-06-07", "2021-07-07",
+            "Whether to throw an exception in hosted Vespa if the application specifies resource limits in services.xml",
+            "Takes effect on next deployment through controller",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

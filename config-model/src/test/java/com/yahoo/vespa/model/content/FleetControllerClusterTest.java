@@ -1,12 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -24,9 +23,7 @@ public class FleetControllerClusterTest {
         var clusterElement = new ModelElement(doc.getDocumentElement());
         return new ClusterControllerConfig.Builder("storage",
                                                    clusterElement,
-                                                   new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
-                                                                                     false,
-                                                                                     new BaseDeployLogger())
+                                                   new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false, false)
                                                            .build(clusterElement).getClusterControllerLimits())
                 .build(root.getDeployState(), root, clusterElement.getXml());
     }
@@ -115,7 +112,7 @@ public class FleetControllerClusterTest {
         assertLimits(0.8, 0.7, getConfigForResourceLimitsTuning(null, 0.7));
     }
 
-    private static double DELTA = 0.00001;
+    private static final double DELTA = 0.00001;
 
     private void assertLimits(double expDisk, double expMemory, FleetcontrollerConfig config) {
         var limits = config.cluster_feed_block_limit();
