@@ -33,7 +33,7 @@ public class ZooKeeperDeployer {
     public void deploy(ApplicationPackage applicationPackage, Map<Version, FileRegistry> fileRegistryMap, 
                        AllocatedHosts allocatedHosts) throws IOException {
         zooKeeperClient.initialize();
-        zooKeeperClient.write(applicationPackage);
+        zooKeeperClient.writeApplicationPackage(applicationPackage);
         zooKeeperClient.write(fileRegistryMap);
         zooKeeperClient.write(allocatedHosts);
     }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
 import com.yahoo.component.Version;
@@ -87,14 +87,14 @@ public interface ApplicationPackage {
     /**
      * Contents of services.xml. Caller must close reader after use.
      *
-     * @return a Reader, or null if no services.xml/vespa-services.xml present
+     * @return a Reader, or null if no services.xml present
      */
     Reader getServices();
 
     /**
      * Contents of hosts.xml. Caller must close reader after use.
      *
-     * @return a Reader, or null if no hosts.xml/vespa-hosts.xml present
+     * @return a Reader, or null if no hosts.xml present
      */
     Reader getHosts();
 
@@ -146,10 +146,11 @@ public interface ApplicationPackage {
 
     /** Returns the major version this application is valid for, or empty if it is valid for all versions */
     default Optional<Integer> getMajorVersion() {
-        if ( ! getDeployment().isPresent()) return Optional.empty();
+        if (getDeployment().isEmpty()) return Optional.empty();
 
         Element deployElement = XML.getDocument(getDeployment().get()).getDocumentElement();
         if (deployElement == null) return Optional.empty();
+
         String majorVersionString = deployElement.getAttribute("major-version");
         if (majorVersionString == null || majorVersionString.isEmpty())
             return Optional.empty();
@@ -181,7 +182,6 @@ public interface ApplicationPackage {
     /** Returns handle for the file containing client certificate authorities */
     default ApplicationFile getClientSecurityFile() { return getFile(SECURITY_DIR.append("clients.pem")); }
 
-    //For generating error messages
     String getHostSource();
     String getServicesSource();
 

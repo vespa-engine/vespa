@@ -1,15 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.*;
-import java.io.*;
+import javax.xml.transform.TransformerException;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 
 /**
@@ -72,7 +73,7 @@ public class IncludeProcessorTest {
                 "    </nodes>\n" +
                 "</container></services>";
 
-        Document doc = new IncludeProcessor(app).process(docBuilder.parse(Xml.getServices(app)));
+        Document doc = new IncludeProcessor(app).process(docBuilder.parse(getServices(app)));
         // System.out.println(Xml.documentAsString(doc));
         TestBase.assertDocument(expected, doc);
     }
@@ -81,7 +82,11 @@ public class IncludeProcessorTest {
     public void testRequiredIncludeIsDefault() throws ParserConfigurationException, IOException, SAXException, TransformerException {
         File app = new File("src/test/resources/multienvapp_failrequired");
         DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
-        new IncludeProcessor(app).process(docBuilder.parse(Xml.getServices(app)));
+        new IncludeProcessor(app).process(docBuilder.parse(getServices(app)));
+    }
+
+    static File getServices(File app) {
+        return new File(app, ApplicationPackage.SERVICES);
     }
 
 }

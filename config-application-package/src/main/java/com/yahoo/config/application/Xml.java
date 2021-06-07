@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -75,10 +75,6 @@ public class Xml {
         return factory.newDocumentBuilder();
     }
 
-    static File getServices(File app) {
-        return new File(app, "services.xml"); // TODO Do not hard-code
-    }
-
     static Document copyDocument(Document input) throws TransformerException {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         DOMSource source = new DOMSource(input);
@@ -142,9 +138,7 @@ public class Xml {
         List<Element> children = XML.getChildren(parent, name);
         List<Element> allFromFiles = allElemsFromPath(app, pathFromAppRoot);
         for (Element fromFile : allFromFiles) {
-            for (Element inThatFile : XML.getChildren(fromFile, name)) {
-                children.add(inThatFile);
-            }
+            children.addAll(XML.getChildren(fromFile, name));
         }
         return children;
     }
