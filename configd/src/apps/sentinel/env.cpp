@@ -30,7 +30,7 @@ void maybeStopNow() {
 }
 
 constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS = 3min;
-constexpr std::chrono::milliseconds MODEL_TIMEOUT_MS = 1500ms;
+constexpr int maxConnectivityRetries = 100;
 
 } // namespace <unnamed>
 
@@ -53,22 +53,34 @@ void Env::boot(const std::string &configId) {
     LOG(debug, "Reading configuration for ID: %s", configId.c_str());
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
     // subscribe() should throw if something is not OK
-    for (int retry = 0; retry < maxRetryLoops; ++retry) {
-        _cfgOwner.checkForConfigUpdate();
-        LOG_ASSERT(_cfgOwner.hasConfig());
-        const auto & cfg = _cfgOwner.getConfig();
-        LOG(config, "Booting sentinel '%s' with [stateserver port %d] and [rpc port %d]",
-            configId.c_str(), cfg.port.telnet, cfg.port.rpc);
-        rpcPort(cfg.port.rpc);
-        statePort(cfg.port.telnet);
-        if (waitForConnectivity(retry)) {
+    Connectivity checker;
+    for (int retry = 0; retry < maxConnectivityRetries; ++retry) {
+        bool changed = _cfgOwner.checkForConfigUpdate();
+        if (changed) {
+            LOG_ASSERT(_cfgOwner.hasConfig());
+            const auto & cfg = _cfgOwner.getConfig();
+            LOG(config, "Booting sentinel '%s' with [stateserver port %d] and [rpc port %d]",
+                configId.c_str(), cfg.port.telnet, cfg.port.rpc);
+            rpcPort(cfg.port.rpc);
+            statePort(cfg.port.telnet);
+            checker.configure(cfg.connectivity);
+        }
+        if (checker.checkConnectivity(*_rpcServer)) {
             _stateApi.myHealth.setOk();
             return;
         } else {
-            LOG(warning, "Bad network connectivity, retry from start");
+            _stateApi.myHealth.setFailed("FAILED connectivity check");
+            if ((retry % 10) == 0) {
+                LOG(warning, "Bad network connectivity (try %d)", 1+retry);
+            }
+            for (int i = 0; i < 5; ++i) {
+                respondAsEmpty();
+                maybeStopNow();
+                std::this_thread::sleep_for(600ms);
+            }
         }
     }
-    throw InvalidConfigException("Giving up - too many connectivity check failures");
+    throw vespalib::FatalException("Giving up - too many connectivity check failures");
 }
 
 void Env::rpcPort(int port) {
@@ -111,38 +123,6 @@ void Env::respondAsEmpty() {
     for (Cmd::UP &cmd : commands) {
         cmd->retError("still booting, not ready for all RPC commands");
     }
-}
-
-bool Env::waitForConnectivity(int outerRetry) {
-    auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS);
-    if (! up) {
-        LOG(warning, "could not get model config, skipping connectivity checks");
-        return true;
-    }
-    Connectivity::CheckResult lastCheckResult;
-    Connectivity checker(_cfgOwner.getConfig().connectivity, *_rpcServer);
-    for (int retry = 0; retry < maxRetriesInsideLoop; ++retry) {
-        auto res = checker.checkConnectivity(*up);
-        if (res.enoughOk) {
-            LOG(info, "Connectivity check OK, proceeding with service startup");
-            if (retry > 0 || ! res.allOk) {
-                res.logDetails();
-            }
-            return true;
-        }
-        LOG(warning, "Connectivity check FAILED (try %d)", 1 + retry + maxRetriesInsideLoop*outerRetry);
-        _stateApi.myHealth.setFailed("FAILED connectivity check");
-        if (lastCheckResult.details != res.details) {
-            res.logDetails();
-            lastCheckResult = std::move(res);
-        }
-        for (int i = 0; i <= outerRetry; ++i) {
-            respondAsEmpty();
-            maybeStopNow();
-            std::this_thread::sleep_for(1s);
-        }
-    }
-    return false;
 }
 
 }

@@ -25,9 +25,6 @@ public:
     CommandQueue &commandQueue() { return _rpcCommandQueue; }
     StartMetrics &metrics() { return _startMetrics; }
 
-    static constexpr int maxRetryLoops = 5;
-    static constexpr int maxRetriesInsideLoop = 10;
-
     void boot(const std::string &configId);
     void rpcPort(int portnum);
     void statePort(int portnum);
@@ -35,7 +32,6 @@ public:
     void notifyConfigUpdated();
 private:
     void respondAsEmpty();
-    bool waitForConnectivity(int outerRetry);
     ConfigOwner _cfgOwner;
     CommandQueue _rpcCommandQueue;
     std::unique_ptr<RpcServer> _rpcServer;

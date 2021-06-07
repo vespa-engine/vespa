@@ -1,5 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "config-owner.h"
 #include "connectivity.h"
 #include "outward-check.h"
 #include <vespa/defaults.h>
@@ -16,20 +17,9 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-void Connectivity::CheckResult::logDetails() const {
-    for (const std::string &detail : details) {
-        LOG(info, "Connectivity check details: %s", detail.c_str());
-    }
-}
+constexpr std::chrono::milliseconds MODEL_TIMEOUT_MS = 60s;
 
-Connectivity::Connectivity(const SentinelConfig::Connectivity & config, RpcServer &rpcServer)
-  : _config(config),
-    _rpcServer(rpcServer)
-{
-    LOG(config, "connectivity.maxBadReverseCount = %d", _config.maxBadReverseCount);
-    LOG(config, "connectivity.maxBadOutPercent = %d", _config.maxBadOutPercent);
-}
-
+Connectivity::Connectivity() = default;
 Connectivity::~Connectivity() = default;
 
 namespace {
@@ -71,16 +61,28 @@ std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
 
 }
 
-Connectivity::CheckResult
-Connectivity::checkConnectivity(const ModelConfig &model) {
-    const auto checkSpecs = specsFrom(model);
-    size_t clusterSize = checkSpecs.size();
+void Connectivity::configure(const SentinelConfig::Connectivity &config) {
+    _config = config;
+    LOG(config, "connectivity.maxBadReverseCount = %d", _config.maxBadReverseCount);
+    LOG(config, "connectivity.maxBadOutPercent = %d", _config.maxBadOutPercent);
+    if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
+        _checkSpecs = specsFrom(*up);
+    }
+}
+
+bool
+Connectivity::checkConnectivity(RpcServer &rpcServer) {
+    size_t clusterSize = _checkSpecs.size();
+    if (clusterSize == 0) {
+        LOG(warning, "could not get model config, skipping connectivity checks");
+        return true;
+    }
     OutwardCheckContext checkContext(clusterSize,
                                      vespa::Defaults::vespaHostname(),
-                                     _rpcServer.getPort(),
-                                     _rpcServer.orb());
+                                     rpcServer.getPort(),
+                                     rpcServer.orb());
     std::map<std::string, OutwardCheck> connectivityMap;
-    for (const auto & [ hn, spec ] : checkSpecs) {
+    for (const auto & [ hn, spec ] : _checkSpecs) {
         connectivityMap.try_emplace(hn, spec, checkContext);
     }
     checkContext.latch.await();
@@ -88,6 +90,12 @@ Connectivity::checkConnectivity(const ModelConfig &model) {
     size_t numFailedReverse = 0;
     bool allChecksOk = true;
     for (const auto & [hostname, check] : connectivityMap) {
+        const char *detail = toString(check.result());
+        std::string prev = _detailsPerHost[hostname];
+        if (prev != detail) {
+            LOG(info, "Connectivity check details: %s -> %s", hostname.c_str(), detail);
+        }
+        _detailsPerHost[hostname] = detail;
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);
         if (check.result() == CcResult::CONN_FAIL) ++numFailedConns;
         if (check.result() == CcResult::REVERSE_FAIL) ++numFailedReverse;
@@ -103,16 +111,12 @@ Connectivity::checkConnectivity(const ModelConfig &model) {
             numFailedConns, clusterSize, pct, _config.maxBadOutPercent);
         allChecksOk = false;
     }
-    std::vector<std::string> details;
-    for (const auto & [hostname, check] : connectivityMap) {
-        std::string detail = fmt("%s -> %s", hostname.c_str(), toString(check.result()));
-        details.push_back(detail);
+    if (allChecksOk && (numFailedConns == 0) && (numFailedReverse == 0)) {
+        LOG(info, "All connectivity checks OK, proceeding with service startup");
+    } else if (allChecksOk) {
+        LOG(info, "Enough connectivity checks OK, proceeding with service startup");
     }
-    CheckResult result{false, false, {}};
-    result.enoughOk = allChecksOk;
-    result.allOk = (numFailedConns == 0) && (numFailedReverse == 0);
-    result.details = std::move(details);
-    return result;
+    return allChecksOk;
 }
 
 }
