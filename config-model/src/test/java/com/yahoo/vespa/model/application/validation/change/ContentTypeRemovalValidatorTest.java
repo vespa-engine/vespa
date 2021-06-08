@@ -45,14 +45,6 @@ public class ContentTypeRemovalValidatorTest {
         tester.deploy(previous, getServices("book"), Environment.prod, removalOverride); // Allowed due to override
     }
 
-    @Test
-    public void testNoOverrideNeededinDev() {
-        ValidationTester tester = new ValidationTester();
-
-        VespaModel previous = tester.deploy(null, getServices("music"), Environment.prod, null).getFirst();
-        tester.deploy(previous, getServices("book"), Environment.dev, null);
-    }
-
     private static String getServices(String documentType) {
         return "<services version='1.0'>" +
                "  <content id='test' version='1.0'>" +

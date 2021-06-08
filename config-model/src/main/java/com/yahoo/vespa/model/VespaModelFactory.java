@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -174,8 +175,9 @@ public class VespaModelFactory implements ModelFactory {
             return Validation.validate(model, validationParameters, deployState);
         } catch (ValidationOverrides.ValidationException e) {
             if (deployState.isHosted() && zone.environment().isManuallyDeployed())
-                log.warning("Auto-overriding validation which would be disallowed in production: " +
-                            Exceptions.toMessageString(e));
+                deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
+                                                                    "Auto-overriding validation which would be disallowed in production: " +
+                                                                    Exceptions.toMessageString(e));
             else
                 rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (IllegalArgumentException | TransientException e) {
