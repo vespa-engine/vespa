@@ -25,6 +25,7 @@ import com.yahoo.vespa.model.application.validation.change.ResourcesReductionVal
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
 import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
+import com.yahoo.vespa.model.application.validation.first.RedundancyOnFirstDeploymentValidator;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -124,6 +125,7 @@ public class Validation {
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
         new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
+        new RedundancyOnFirstDeploymentValidator().validate(model, deployState);
     }
 
     private static void deferConfigChangesForClustersToBeRestarted(List<ConfigChangeAction> actions, VespaModel model) {

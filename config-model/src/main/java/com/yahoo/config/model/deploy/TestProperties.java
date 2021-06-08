@@ -42,6 +42,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String sequencerType = "LATENCY";
+    private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
@@ -77,7 +78,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
     @Override public String feedSequencerType() { return sequencerType; }
     @Override public boolean isBootstrap() { return false; }
-    @Override public boolean isFirstTimeDeployment() { return false; }
+    @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -131,6 +132,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setResponseSequencerType(String type) {
         responseSequencerType = type;
+        return this;
+    }
+    public TestProperties setFirstTimeDeployment(boolean firstTimeDeployment) {
+        this.firstTimeDeployment = firstTimeDeployment;
         return this;
     }
     public TestProperties setResponseNumThreads(int numThreads) {

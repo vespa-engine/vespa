@@ -18,7 +18,7 @@
     </container>
 
     <content version="1.0">
-        <redundancy>1</redundancy>
+        <redundancy>2</redundancy>
         <documents>
             <document type="keyvalue" mode="index"/>
         </documents>
