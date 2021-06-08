@@ -75,7 +75,7 @@ public class ConnectorFactory {
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
         connector.setReuseAddress(connectorConfig.reuseAddress());
-        connector.setIdleTimeout(toMillis(connector.getIdleTimeout()));
+        connector.setIdleTimeout(toMillis(connectorConfig.idleTimeout()));
         return connector;
     }
 
