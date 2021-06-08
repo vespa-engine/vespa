@@ -167,7 +167,7 @@ public class Nodes {
                     if (rebuilding) {
                         node = node.with(node.status().withWantToRetire(existing.get().status().wantToRetire(),
                                                                         false,
-                                                                        existing.get().status().wantToRebuild()));
+                                                                        rebuilding));
                     }
                     nodesToRemove.add(existing.get());
                 }
