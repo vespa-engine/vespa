@@ -12,11 +12,11 @@ namespace config::sentinel {
 
 struct OutwardCheckContext {
     vespalib::CountDownLatch latch;
-    const char * myHostname;
+    std::string myHostname;
     int myPortnum;
     FRT_Supervisor &orb;
     OutwardCheckContext(size_t count,
-                        const char * hostname,
+                        const std::string &hostname,
                         int portnumber,
                         FRT_Supervisor &supervisor)
       : latch(count),
@@ -24,6 +24,7 @@ struct OutwardCheckContext {
         myPortnum(portnumber),
         orb(supervisor)
     {}
+    ~OutwardCheckContext();
 };
 
 enum class CcResult { UNKNOWN, CONN_FAIL, REVERSE_FAIL, REVERSE_UNAVAIL, ALL_OK };

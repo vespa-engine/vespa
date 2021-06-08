@@ -18,13 +18,20 @@ namespace config::sentinel {
  **/
 class Connectivity {
 public:
+    struct HostAndPort {
+        std::string host;
+        int port;
+        std::string spec() const;
+    };
+    using SpecMap = std::map<std::string, HostAndPort>;
+
     Connectivity();
     ~Connectivity();
     void configure(const SentinelConfig::Connectivity &config);
     bool checkConnectivity(RpcServer &rpcServer);
 private:
     SentinelConfig::Connectivity _config;
-    std::map<std::string, std::string> _checkSpecs;
+    SpecMap _checkSpecs;
     std::map<std::string, std::string> _detailsPerHost;
 };
 

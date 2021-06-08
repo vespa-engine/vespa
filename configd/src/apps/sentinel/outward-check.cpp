@@ -7,6 +7,8 @@ LOG_SETUP(".outward-check");
 
 namespace config::sentinel {
 
+OutwardCheckContext::~OutwardCheckContext() = default;
+
 OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context)
   : _spec(spec),
     _context(context)
@@ -14,7 +16,7 @@ OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context
     _target = context.orb.GetTarget(spec.c_str());
     _req = context.orb.AllocRPCRequest();
     _req->SetMethodName("sentinel.check.connectivity");
-    _req->GetParams()->AddString(context.myHostname);
+    _req->GetParams()->AddString(context.myHostname.c_str());
     _req->GetParams()->AddInt32(context.myPortnum);
     _req->GetParams()->AddInt32(500);
     _target->InvokeAsync(_req, 1.500, this);
@@ -29,10 +31,14 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
         if (answer == "ok") {
             LOG(debug, "ping to %s with reverse connectivity OK", _spec.c_str());
             _result = CcResult::ALL_OK;
-        } else {
+        } else if (answer == "bad") {
             LOG(debug, "connected to %s, but reverse connectivity fails: %s",
                 _spec.c_str(), answer.c_str());
             _result = CcResult::REVERSE_FAIL;
+        } else {
+            LOG(warning, "connected to %s, but strange reverse connectivity: %s",
+                _spec.c_str(), answer.c_str());
+            _result = CcResult::REVERSE_UNAVAIL;
         }
     } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD ||
                req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS ||
