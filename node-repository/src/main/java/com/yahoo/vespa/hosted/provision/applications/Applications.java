@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
-import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
@@ -28,6 +28,8 @@ public class Applications {
         for (ApplicationId id : ids()) {
             try (Mutex lock = db.lock(id)) {
                 get(id).ifPresent(application -> put(application, lock));
+            } catch (ApplicationLockException e) {
+                throw new ApplicationLockException(e.getMessage());  // No need for stack trace here
             }
         }
     }
