@@ -74,7 +74,7 @@ public class OnnxEvaluatorTest {
         assertEvaluate("cast_int8_float.onnx", "tensor<float>(d0[1]):[-128]", "tensor<int8>(d0[1]):[128]");
         assertEvaluate("cast_float_int8.onnx", "tensor<int8>(d0[1]):[-1]", "tensor<float>(d0[1]):[255]");
 
-        // ONNX Runtime 1.7.0 does not support much of bfloat16 yet
+        // ONNX Runtime 1.8.0 does not support much of bfloat16 yet
         // assertEvaluate("cast_bfloat16_float.onnx", "tensor<float>(d0[1]):[1]", "tensor<bfloat16>(d0[1]):[1]");
     }
 
