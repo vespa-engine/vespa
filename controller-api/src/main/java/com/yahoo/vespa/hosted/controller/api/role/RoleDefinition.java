@@ -44,7 +44,8 @@ public enum RoleDefinition {
            Policy.publicRead,
            Policy.paymentInstrumentRead,
            Policy.paymentInstrumentDelete,
-           Policy.billingInformationRead),
+           Policy.billingInformationRead,
+           Policy.horizonProxyOperations),
 
     /** User — the dev.ops. role for normal Vespa tenant users */
     developer(Policy.applicationCreate,
