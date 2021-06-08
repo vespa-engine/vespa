@@ -208,10 +208,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 builtModelVersions.add(modelVersion);
             } catch (RuntimeException e) {
                 // allow failure to create old config models if there is a validation override that allow skipping old
-                // config models (which is always true for manually deployed zones)
-                if (builtModelVersions.size() > 0 && builtModelVersions.get(0).getModel().skipOldConfigModels(now))
+                // config models or we're manually deploying
+                if (builtModelVersions.size() > 0 &&
+                    ( builtModelVersions.get(0).getModel().skipOldConfigModels(now) || zone().environment().isManuallyDeployed()))
                     log.log(Level.INFO, applicationId + ": Failed to build version " + version +
-                                        ", but allow failure due to validation override ´skipOldConfigModels´");
+                                        ", but allow failure due to validation override or manual deployment");
                 else {
                     log.log(Level.SEVERE, applicationId + ": Failed to build version " + version);
                     throw e;

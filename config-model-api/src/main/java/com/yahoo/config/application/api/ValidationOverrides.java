@@ -177,6 +177,7 @@ public class ValidationOverrides {
 
     }
 
+    // TODO: Remove this class after June 2021
     public static class AllowAllValidationOverrides extends ValidationOverrides {
 
         private final DeployLogger logger;
