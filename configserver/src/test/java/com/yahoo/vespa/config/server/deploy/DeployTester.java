@@ -209,7 +209,7 @@ public class DeployTester {
         @Override
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
             if ( ! validationParameters.ignoreValidationErrors())
-                throw new IllegalArgumentException("Validation fails");
+                throw new IllegalArgumentException("Model building fails");
             return new ModelCreateResult(createModel(modelContext), Collections.emptyList());
         }
 
