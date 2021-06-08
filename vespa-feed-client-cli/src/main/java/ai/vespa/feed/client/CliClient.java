@@ -59,7 +59,7 @@ public class CliClient {
                 if (cliArgs.benchmarkModeEnabled()) {
                     printBenchmarkResult(feeder.benchmark(in));
                 } else {
-                    feeder.feed(in);
+                    feeder.feedMany(in);
                 }
             }
             return 0;

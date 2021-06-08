@@ -61,7 +61,7 @@ class JsonFeederTest {
             @Override
             public void close(boolean graceful) { }
 
-        }).build().feed(in, 1 << 7, false); // TODO: hangs when buffer is smaller than largest document
+        }).build().feedMany(in, 1 << 7, false); // TODO: hangs when buffer is smaller than largest document
         System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
         assertEquals(docs + 1, ids.size());
     }

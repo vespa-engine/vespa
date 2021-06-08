@@ -68,15 +68,15 @@ public class JsonFeeder implements Closeable {
      * </pre>
      * Note that {@code "id"} is an alias for the document put operation.
      */
-    public void feed(InputStream jsonStream) throws IOException {
-        feed(jsonStream, 1 << 26, false);
+    public void feedMany(InputStream jsonStream) throws IOException {
+        feedMany(jsonStream, 1 << 26, false);
     }
 
     BenchmarkResult benchmark(InputStream jsonStream) throws IOException {
-        return feed(jsonStream, 1 << 26, true).get();
+        return feedMany(jsonStream, 1 << 26, true).get();
     }
 
-    Optional<BenchmarkResult> feed(InputStream jsonStream, int size, boolean benchmark) throws IOException {
+    Optional<BenchmarkResult> feedMany(InputStream jsonStream, int size, boolean benchmark) throws IOException {
         RingBufferStream buffer = new RingBufferStream(jsonStream, size);
         buffer.expect(JsonToken.START_ARRAY);
         AtomicInteger okCount = new AtomicInteger();
