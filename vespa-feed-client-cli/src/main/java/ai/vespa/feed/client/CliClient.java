@@ -55,7 +55,7 @@ public class CliClient {
                 return 0;
             }
             try (InputStream in = createFeedInputStream(cliArgs);
-                 JsonStreamFeeder feeder = createJsonFeeder(cliArgs)) {
+                 JsonFeeder feeder = createJsonFeeder(cliArgs)) {
                 if (cliArgs.benchmarkModeEnabled()) {
                     printBenchmarkResult(feeder.benchmark(in));
                 } else {
@@ -85,9 +85,9 @@ public class CliClient {
         return builder.build();
     }
 
-    private static JsonStreamFeeder createJsonFeeder(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
+    private static JsonFeeder createJsonFeeder(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
         FeedClient feedClient = createFeedClient(cliArgs);
-        JsonStreamFeeder.Builder builder = JsonStreamFeeder.builder(feedClient);
+        JsonFeeder.Builder builder = JsonFeeder.builder(feedClient);
         cliArgs.timeout().ifPresent(builder::withTimeout);
         cliArgs.route().ifPresent(builder::withRoute);
         cliArgs.traceLevel().ifPresent(builder::withTracelevel);
@@ -98,7 +98,7 @@ public class CliClient {
         return cliArgs.readFeedFromStandardInput() ? systemIn : Files.newInputStream(cliArgs.inputFile().get());
     }
 
-    private void printBenchmarkResult(JsonStreamFeeder.BenchmarkResult result) throws IOException {
+    private void printBenchmarkResult(JsonFeeder.BenchmarkResult result) throws IOException {
         JsonFactory factory = new JsonFactory();
         try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
             generator.writeStartObject();

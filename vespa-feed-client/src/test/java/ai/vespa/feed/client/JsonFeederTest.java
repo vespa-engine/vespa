@@ -14,7 +14,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class JsonStreamFeederTest {
+class JsonFeederTest {
 
     @Test
     void test() throws IOException {
@@ -40,7 +40,7 @@ class JsonStreamFeederTest {
         ByteArrayInputStream in = new ByteArrayInputStream(json.getBytes(UTF_8));
         Set<String> ids = new HashSet<>();
         long startNanos = System.nanoTime();
-        JsonStreamFeeder.builder(new FeedClient() {
+        JsonFeeder.builder(new FeedClient() {
 
             @Override
             public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {

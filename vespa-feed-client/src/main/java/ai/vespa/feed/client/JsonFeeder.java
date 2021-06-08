@@ -31,12 +31,12 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author jonmv
  */
-public class JsonStreamFeeder implements Closeable {
+public class JsonFeeder implements Closeable {
 
     private final FeedClient client;
     private final OperationParameters protoParameters;
 
-    private JsonStreamFeeder(FeedClient client, OperationParameters protoParameters) {
+    private JsonFeeder(FeedClient client, OperationParameters protoParameters) {
         this.client = client;
         this.protoParameters = protoParameters;
     }
@@ -341,8 +341,8 @@ public class JsonStreamFeeder implements Closeable {
             return this;
         }
 
-        public JsonStreamFeeder build() {
-            return new JsonStreamFeeder(client, parameters);
+        public JsonFeeder build() {
+            return new JsonFeeder(client, parameters);
         }
 
     }
