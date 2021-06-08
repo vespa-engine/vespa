@@ -197,8 +197,16 @@ public class NodeRepositoryTest {
         }
         tester.nodeRepository().nodes().removeRecursively("host1");
 
+        // Set host 2 properties and deprovision it
+        try (var lock = tester.nodeRepository().nodes().lockAndGetRequired("host2")) {
+            Node host2 = lock.node().withWantToRetire(true, false, true, Agent.system, tester.nodeRepository().clock().instant());
+            tester.nodeRepository().nodes().write(host2, lock);
+        }
+        tester.nodeRepository().nodes().removeRecursively("host2");
+
         // Host 1 is deprovisioned and unwanted properties are cleared
         Node host1 = tester.nodeRepository().nodes().node("host1").get();
+        Node host2 = tester.nodeRepository().nodes().node("host2").get();
         assertEquals(Node.State.deprovisioned, host1.state());
         assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
@@ -214,6 +222,8 @@ public class NodeRepositoryTest {
         assertTrue("Transferred from deprovisioned host", host1.status().firmwareVerifiedAt().isPresent());
         assertEquals("Transferred from deprovisioned host", 1, host1.status().failCount());
         assertEquals("Transferred from deprovisioned host", 1, host1.reports().getReports().size());
+        assertTrue("Transferred from rebuilt host", host2.status().wantToRetire());
+        assertTrue("Transferred from rebuilt host", host2.status().wantToRebuild());
     }
 
     @Test
