@@ -40,6 +40,10 @@ using ConnectivityMap = std::map<std::string, OutwardCheck>;
 using HostAndPort = Connectivity::HostAndPort;
 using SpecMap = Connectivity::SpecMap;
 
+std::string spec(const SpecMap::value_type &host_and_port) {
+    return fmt("tcp/%s:%d", host_and_port.first.c_str(), host_and_port.second);
+}
+
 SpecMap specsFrom(const ModelConfig &model) {
     SpecMap checkSpecs;
     for (const auto & h : model.hosts) {
@@ -48,7 +52,7 @@ SpecMap specsFrom(const ModelConfig &model) {
             if (s.name == "config-sentinel") {
                 for (const auto & p : s.ports) {
                     if (p.tags.find("rpc") != p.tags.npos) {
-                        checkSpecs[h.name] = HostAndPort{h.name, p.number};
+                        checkSpecs[h.name] = p.number;
                         foundSentinelPort = true;
                     }
                 }
@@ -73,18 +77,18 @@ size_t countUnreachable(const ConnectivityMap &connectivityMap,
         auto iter = specMap.find(hostname);
         LOG_ASSERT(iter != specMap.end());
         if ((check.result() == CcResult::ALL_OK) && (hostname != myHostname)) {
-            goodNeighborSpecs.push_back(iter->second);
+            goodNeighborSpecs.push_back(*iter);
         }
         if (check.result() == CcResult::CONN_FAIL) {
-            failedConnSpecs.push_back(iter->second);
+            failedConnSpecs.push_back(*iter);
         }
     }
     size_t counter = 0;
     for (const auto & toCheck : failedConnSpecs) {
-        OutwardCheckContext checkContext(goodNeighborSpecs.size(), toCheck.host, toCheck.port, rpcServer.orb());
+        OutwardCheckContext checkContext(goodNeighborSpecs.size(), toCheck.first, toCheck.second, rpcServer.orb());
         ConnectivityMap cornerProbes;
         for (const auto & hp : goodNeighborSpecs) {
-            cornerProbes.try_emplace(hp.host, hp.spec(), checkContext);
+            cornerProbes.try_emplace(hp.first, spec(hp), checkContext);
         }
         checkContext.latch.await();
         size_t numReportsUp = 0;
@@ -100,10 +104,6 @@ size_t countUnreachable(const ConnectivityMap &connectivityMap,
     return counter;
 }
 
-}
-
-std::string Connectivity::HostAndPort::spec() const {
-    return fmt("tcp/%s:%d", host.c_str(), port);
 }
 
 void Connectivity::configure(const SentinelConfig::Connectivity &config) {
@@ -128,8 +128,8 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
                                      rpcServer.getPort(),
                                      rpcServer.orb());
     ConnectivityMap connectivityMap;
-    for (const auto & [ hn, host_and_port ] : _checkSpecs) {
-        connectivityMap.try_emplace(hn, host_and_port.spec(), checkContext);
+    for (const auto &host_and_port : _checkSpecs) {
+        connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext);
     }
     checkContext.latch.await();
     size_t numAllGood = 0;

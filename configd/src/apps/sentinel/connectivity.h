@@ -18,12 +18,8 @@ namespace config::sentinel {
  **/
 class Connectivity {
 public:
-    struct HostAndPort {
-        std::string host;
-        int port;
-        std::string spec() const;
-    };
-    using SpecMap = std::map<std::string, HostAndPort>;
+    using SpecMap = std::map<std::string, int>;
+    using HostAndPort = SpecMap::value_type;
 
     Connectivity();
     ~Connectivity();
