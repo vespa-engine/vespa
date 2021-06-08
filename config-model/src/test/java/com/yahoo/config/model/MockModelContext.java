@@ -20,8 +20,8 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import java.util.Optional;
 
 /**
-* @author hmusum
-*/
+ * @author hmusum
+ */
 public class MockModelContext implements ModelContext {
 
     private final ApplicationPackage applicationPackage;
@@ -82,4 +82,5 @@ public class MockModelContext implements ModelContext {
     public Properties properties() {
         return new TestProperties();
     }
+
 }

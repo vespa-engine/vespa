@@ -25,6 +25,7 @@ public interface ChangeValidator {
      * @param now the instant to use as now
      * @return a list of actions specifying what needs to be done in order to activate the new model.
      *         Return an empty list if nothing needs to be done
+     * @throws IllegalArgumentException if the change fails validation
      */
     List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now);
 
