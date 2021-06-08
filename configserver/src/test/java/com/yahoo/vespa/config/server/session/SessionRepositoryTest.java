@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.Model;
@@ -14,6 +15,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.reader.NamedReader;
+import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
@@ -42,15 +45,18 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.LongPredicate;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -112,6 +118,10 @@ public class SessionRepositoryTest {
         assertEquals(2, applicationSet.getApplicationGeneration());
         assertEquals(applicationId.application(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
+
+        LocalSession session = sessionRepository.getLocalSession(secondSessionId);
+        Collection<NamedReader> a = session.applicationPackage.get().getSchemas();
+        assertEquals(1, a.size());
 
         sessionRepository.close();
         // All created sessions are deleted
@@ -239,6 +249,24 @@ public class SessionRepositoryTest {
         deploy(applicationId, testApp);
 
         // Does not cause an error because model version 3 is skipped
+    }
+
+    @Test
+    public void require_that_searchdefinitions_are_written_to_schemas_dir() throws Exception {
+        setup();
+        // App has schemas in searchdefinitions/, should be moved to schemas/ on deploy
+        long firstSessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
+        assertNotNull(sessionRepository.getLocalSession(firstSessionId));
+
+        LocalSession session = sessionRepository.getLocalSession(firstSessionId);
+        Collection<NamedReader> schemas = session.applicationPackage.get().getSchemas();
+        assertEquals(1, schemas.size());
+
+        ApplicationFile schema = session.applicationPackage.get().getFile(Path.fromString("schemas").append("music.sd"));
+        assertTrue(schema.exists());
+
+        ApplicationFile sd = session.applicationPackage.get().getFile(Path.fromString("searchdefinitions").append("music.sd"));
+        assertFalse(sd.exists());
     }
 
     private void createSession(long sessionId, boolean wait) {

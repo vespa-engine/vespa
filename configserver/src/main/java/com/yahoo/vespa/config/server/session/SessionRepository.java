@@ -36,7 +36,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
@@ -58,6 +57,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -676,12 +676,32 @@ public class SessionRepository {
             tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
             log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
             IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
+            copyToSchemasDir(tempDestinationDir);
+
             log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
             Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
         } finally {
             // In case some of the operations above fail
             if (tempDestinationDir != null)
                 IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
+        }
+    }
+
+    // TODO: Remove in Vespa 8 (when we don't allow files in SEARCH_DEFINITIONS_DIR)
+    // Copies schemas from searchdefinitions/ to schemas/ if searchdefinitions/ exists
+    private void copyToSchemasDir(java.nio.file.Path applicationDir) throws IOException {
+        File schemasDir = applicationDir.resolve(ApplicationPackage.SCHEMAS_DIR.getRelative()).toFile();
+        File sdDir = applicationDir.resolve(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getRelative()).toFile();
+        if (sdDir.exists() && sdDir.isDirectory()) {
+            File[] sdFiles = sdDir.listFiles();
+            if (sdFiles != null) {
+                Files.createDirectories(schemasDir.toPath());
+                Arrays.asList(sdFiles).forEach(file -> Exceptions.uncheck(
+                        () -> Files.move(file.toPath(),
+                                         schemasDir.toPath().resolve(file.toPath().getFileName()),
+                                         StandardCopyOption.REPLACE_EXISTING)));
+            }
+            Files.delete(sdDir.toPath());
         }
     }
 
