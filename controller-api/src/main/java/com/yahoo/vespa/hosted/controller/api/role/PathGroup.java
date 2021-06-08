@@ -202,10 +202,6 @@ enum PathGroup {
     classifiedTenantInfo("/application/v4/",
                          "/application/v4/tenant/"),
 
-    /** Paths which contain (not very strictly) classified information about, e.g., customers. */
-    classifiedInfo("/",
-                   "/d/{*}"),
-
     /** Paths providing public information. */
     publicInfo("/user/v1/user",     // Information about who you are.
                "/badge/v1/{*}",     // Badges for deployment jobs.
