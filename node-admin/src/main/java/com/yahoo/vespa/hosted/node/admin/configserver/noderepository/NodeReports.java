@@ -42,6 +42,8 @@ public class NodeReports {
         reports.put(reportId, jsonNode);
     }
 
+    public boolean hasReport(String reportId) { return reports.containsKey(reportId); }
+
     public <T> Optional<T> getReport(String reportId, Class<T> jacksonClass) {
         return Optional.ofNullable(reports.get(reportId)).map(r -> uncheck(() -> mapper.treeToValue(r, jacksonClass)));
     }
