@@ -133,6 +133,7 @@ public:
     explicit StandaloneFRT(std::shared_ptr<vespalib::CryptoEngine> crypto);
     ~StandaloneFRT();
     FRT_Supervisor & supervisor() { return *_supervisor; }
+    void shutdown();
 private:
     std::unique_ptr<FastOS_ThreadPool> _threadPool;
     std::unique_ptr<FNET_Transport> _transport;
