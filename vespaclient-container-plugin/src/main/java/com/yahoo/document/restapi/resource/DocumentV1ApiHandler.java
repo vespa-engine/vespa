@@ -743,8 +743,15 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static void serverError(HttpRequest request, Throwable t, ResponseHandler handler) {
         loggingException(() -> {
-            log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath() + ":", t);
+            log.log(WARNING, "Uncaught exception handling request " + request.getMethod() + " " + request.getUri().getRawPath(), t);
             JsonResponse.create(request, Exceptions.toMessageString(t), handler).respond(Response.Status.INTERNAL_SERVER_ERROR);
+        });
+    }
+
+    private static void badGateway(HttpRequest request, Throwable t, ResponseHandler handler) {
+        loggingException(() -> {
+            log.log(FINE, t, () -> "Document access error handling request " + request.getMethod() + " " + request.getUri().getRawPath());
+            JsonResponse.create(request, Exceptions.toMessageString(t), handler).respond(Response.Status.BAD_GATEWAY);
         });
     }
 
@@ -803,6 +810,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             catch (IllegalArgumentException e) {
                 badRequest(request, e, handler);
             }
+            catch (DispatchException e) {
+                badGateway(request, e, handler);
+            }
             catch (RuntimeException e) {
                 serverError(request, e, handler);
             }
@@ -821,10 +831,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return false;
 
         if (result.type() == Result.ResultType.FATAL_ERROR)
-            throw new RuntimeException(result.getError());
+            throw new DispatchException(result.getError());
 
         outstanding.incrementAndGet();
         return true;
+    }
+
+    private static class DispatchException extends RuntimeException {
+        private DispatchException(Throwable cause) { super(cause); }
     }
 
     /** Readable content channel which forwards data to a reader when closed. */
@@ -923,7 +937,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         log.log(WARNING, "Unexpected document API operation outcome '" + response.outcome() + "'");
                     case ERROR:
                         log.log(FINE, () -> "Exception performing document operation: " + response.getTextMessage());
-                        jsonResponse.commit(Response.Status.INTERNAL_SERVER_ERROR);
+                        jsonResponse.commit(Response.Status.BAD_GATEWAY);
                 }
             }
         }
@@ -1118,7 +1132,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 if (getVisitorStatistics() != null)
                                     response.writeDocumentCount(getVisitorStatistics().getDocumentsReturned());
 
-                                response.respond(Response.Status.INTERNAL_SERVER_ERROR);
+                                response.respond(Response.Status.BAD_GATEWAY);
                         }
                     });
                     visitDispatcher.execute(() -> {
