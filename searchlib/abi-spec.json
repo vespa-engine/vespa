@@ -336,6 +336,8 @@
       "public java.util.Map getRankProperties(com.yahoo.searchlib.rankingexpression.rule.SerializationContext)",
       "public java.util.Map getRankProperties(java.util.List)",
       "public static java.lang.String propertyName(java.lang.String)",
+      "public static java.lang.String propertyExpressionName(java.lang.String)",
+      "public static java.lang.String extractScriptName(java.lang.String)",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public static com.yahoo.searchlib.rankingexpression.RankingExpression from(java.lang.String)"

@@ -91,7 +91,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
         RankProfile rp = rankProfileRegistry.get(search, "my_profile");
-        return new RankProfileTransformContext(rp, queryProfileRegistry, Collections.EMPTY_MAP, null, Collections.EMPTY_MAP, Collections.EMPTY_MAP);
+        return new RankProfileTransformContext(rp, queryProfileRegistry, Collections.emptyMap(), null, Collections.emptyMap(), Collections.emptyMap());
     }
 
 }
