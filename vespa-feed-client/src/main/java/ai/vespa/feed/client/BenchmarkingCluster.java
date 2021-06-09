@@ -31,7 +31,7 @@ public class BenchmarkingCluster implements Cluster {
     private final long[] responsesByCode = new long[600];
     private long exceptions = 0;
     private long totalLatencyMillis = 0;
-    private long minLatencyMillis = 0;
+    private long minLatencyMillis = Long.MAX_VALUE;
     private long maxLatencyMillis = 0;
     private long bytesSent = 0;
     private long bytesReceived = 0;
@@ -88,8 +88,8 @@ public class BenchmarkingCluster implements Cluster {
         return new OperationStats(requests.get(),
                                   responses,
                                   exceptions,
-                         requests.get() - results,
-                         totalLatencyMillis / this.responses,
+                                  requests.get() - results,
+                                  this.responses == 0 ? 0 : totalLatencyMillis / this.responses,
                                   minLatencyMillis,
                                   maxLatencyMillis,
                                   bytesSent,
