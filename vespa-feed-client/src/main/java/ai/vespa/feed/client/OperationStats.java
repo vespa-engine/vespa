@@ -42,6 +42,10 @@ public class OperationStats {
         return requests - inflight;
     }
 
+    public long successes() {
+        return responsesByCode.getOrDefault(200, 0L);
+    }
+
     public Map<Integer, Long> responsesByCode() {
         return responsesByCode;
     }

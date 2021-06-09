@@ -8,6 +8,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -57,18 +58,12 @@ public class CliClient {
                 return 0;
             }
             try (InputStream in = createFeedInputStream(cliArgs);
-                 JsonFeeder feeder = createJsonFeeder(cliArgs)) {
+                 FeedClient feedClient = createFeedClient(cliArgs);
+                 JsonFeeder feeder = createJsonFeeder(feedClient, cliArgs)) {
+                long startNanos = System.nanoTime();
+                feeder.feedMany(in).join();
                 if (cliArgs.benchmarkModeEnabled()) {
-                    BenchmarkResultAggregator aggregator = new BenchmarkResultAggregator();
-                    feeder.feedMany(in, aggregator).join();
-                    aggregator.printBenchmarkResult();
-                } else {
-                    JsonFeeder.ResultCallback emptyCallback = new JsonFeeder.ResultCallback() {
-                        @Override public void onNextResult(Result result, Throwable error) {}
-                        @Override public void onError(Throwable error) {}
-                        @Override public void onComplete() {}
-                    };
-                    feeder.feedMany(in, emptyCallback).join();
+                    printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemOut);
                 }
             }
             return 0;
@@ -94,8 +89,7 @@ public class CliClient {
         return builder.build();
     }
 
-    private static JsonFeeder createJsonFeeder(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
-        FeedClient feedClient = createFeedClient(cliArgs);
+    private static JsonFeeder createJsonFeeder(FeedClient feedClient, CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
         JsonFeeder.Builder builder = JsonFeeder.builder(feedClient);
         cliArgs.timeout().ifPresent(builder::withTimeout);
         cliArgs.route().ifPresent(builder::withRoute);
@@ -129,42 +123,30 @@ public class CliClient {
         @Override public boolean verify(String hostname, SSLSession session) { return true; }
     }
 
-    private class BenchmarkResultAggregator implements JsonFeeder.ResultCallback {
+    static void printBenchmarkResult(long durationNanos, OperationStats stats, OutputStream systemOut) throws IOException {
+        JsonFactory factory = new JsonFactory();
+        long okCount = stats.successes();
+        long errorCount = stats.requests() - okCount;
+        double throughput = okCount * 1e6D / Math.max(1, durationNanos);
+        try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
+            generator.writeStartObject();
+            generator.writeNumberField("feeder.runtime", durationNanos / 1_000_000);
+            generator.writeNumberField("feeder.okcount", okCount);
+            generator.writeNumberField("feeder.errorcount", errorCount);
+            generator.writeNumberField("feeder.throughput", throughput);
+            generator.writeNumberField("feeder.minlatency", stats.minLatencyMillis());
+            generator.writeNumberField("feeder.avglatency", stats.averageLatencyMillis());
+            generator.writeNumberField("feeder.maxlatency", stats.maxLatencyMillis());
+            generator.writeNumberField("feeder.bytessent", stats.bytesSent());
+            generator.writeNumberField("feeder.bytesreceived", stats.bytesReceived());
 
-        private final AtomicInteger okCount = new AtomicInteger();
-        private final AtomicInteger errorCount = new AtomicInteger();
-        private volatile long endNanoTime;
-        private volatile long startNanoTime;
+            generator.writeObjectFieldStart("feeder.responsecodes");
+            for (Map.Entry<Integer, Long> entry : stats.responsesByCode().entrySet())
+                generator.writeNumberField(Integer.toString(entry.getKey()), entry.getValue());
+            generator.writeEndObject();
 
-        void start() { this.startNanoTime = System.nanoTime(); }
-
-        void printBenchmarkResult() throws IOException {
-            JsonFactory factory = new JsonFactory();
-            Duration duration = Duration.ofNanos(endNanoTime - startNanoTime);
-            int okCount = this.okCount.get();
-            int errorCount = this.errorCount.get();
-            double throughput = (double) okCount / duration.toMillis() * 1000D;
-            try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
-                generator.writeStartObject();
-                generator.writeNumberField("feeder.runtime", duration.toMillis());
-                generator.writeNumberField("feeder.okcount", okCount);
-                generator.writeNumberField("feeder.errorcount", errorCount);
-                generator.writeNumberField("feeder.throughput", throughput);
-                generator.writeEndObject();
-            }
+            generator.writeEndObject();
         }
-
-        @Override
-        public void onNextResult(Result result, Throwable error) {
-            if (error != null) {
-                errorCount.incrementAndGet();
-            } else {
-                okCount.incrementAndGet();
-            }
-        }
-
-        @Override public void onError(Throwable error) {}
-
-        @Override public void onComplete() { this.endNanoTime = System.nanoTime(); }
     }
+
 }
