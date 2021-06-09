@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepo
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
+import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
@@ -96,4 +97,6 @@ public interface ServiceRegistry {
     ChangeRequestClient changeRequestClient();
 
     AccessControlService accessControlService();
+
+    HorizonClient horizonClient();
 }
