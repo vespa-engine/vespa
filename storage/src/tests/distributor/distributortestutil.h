@@ -202,6 +202,12 @@ public:
 
     void setSystemState(const lib::ClusterState& systemState);
 
+    // Invokes full cluster state transition pipeline rather than directly applying
+    // the state and just pretending everything has been completed.
+    void receive_set_system_state_command(const vespalib::string& state_str);
+
+    void handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
+
     // Must be called prior to createLinks() to have any effect
     void set_num_distributor_stripes(uint32_t n_stripes) noexcept {
         _num_distributor_stripes = n_stripes;

@@ -143,9 +143,9 @@ SplitOperation::onReceive(DistributorStripeMessageSender&, const api::StorageRep
 }
 
 bool
-SplitOperation::isBlocked(const PendingMessageTracker& tracker, const OperationSequencer& op_seq) const
+SplitOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
 {
-    return checkBlockForAllNodes(getBucket(), tracker, op_seq);
+    return checkBlockForAllNodes(getBucket(), ctx, op_seq);
 }
 
 bool

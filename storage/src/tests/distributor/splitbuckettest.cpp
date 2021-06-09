@@ -261,7 +261,6 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
     OperationSequencer op_seq;
 
     enableDistributorClusterState("distributor:1 storage:2");
@@ -274,7 +273,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     joinCmd->getSourceBuckets() = joinSources;
     joinCmd->setAddress(_Storage0Address);
 
-    tracker.insert(joinCmd);
+    pending_message_tracker().insert(joinCmd);
 
     insertBucketInfo(joinTarget, 0, 0xabc, 1000, 1234, true);
 
@@ -284,18 +283,18 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
                       splitCount,
                       splitByteSize);
 
-    EXPECT_TRUE(op.isBlocked(tracker, op_seq));
+    EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
 
     // Now, pretend there's a join for another node in the same bucket. This
     // will happen when a join is partially completed.
-    tracker.clearMessagesForNode(0);
-    EXPECT_FALSE(op.isBlocked(tracker, op_seq));
+    pending_message_tracker().clearMessagesForNode(0);
+    EXPECT_FALSE(op.isBlocked(operation_context(), op_seq));
 
     joinCmd->setAddress(api::StorageMessageAddress::create(dummy_cluster_context.cluster_name_ptr(),
                                                            lib::NodeType::STORAGE, 1));
-    tracker.insert(joinCmd);
+    pending_message_tracker().insert(joinCmd);
 
-    EXPECT_TRUE(op.isBlocked(tracker, op_seq));
+    EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
 }
 
 TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
@@ -303,7 +302,6 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
     OperationSequencer op_seq;
 
     enableDistributorClusterState("distributor:1 storage:2");
@@ -314,10 +312,10 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     SplitOperation op(dummy_cluster_context, BucketAndNodes(makeDocumentBucket(source_bucket), toVector<uint16_t>(0)),
                       maxSplitBits, splitCount, splitByteSize);
 
-    EXPECT_FALSE(op.isBlocked(tracker, op_seq));
+    EXPECT_FALSE(op.isBlocked(operation_context(), op_seq));
     auto token = op_seq.try_acquire(makeDocumentBucket(source_bucket), "foo");
     EXPECT_TRUE(token.valid());
-    EXPECT_TRUE(op.isBlocked(tracker, op_seq));
+    EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
 }
 
 } // storage::distributor

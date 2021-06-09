@@ -87,6 +87,11 @@ public:
         return dummy_cluster_context;
     }
 
+    distributor::PendingMessageTracker& getPendingMessageTracker() override {
+        assert(_pending_message_tracker);
+        return *_pending_message_tracker;
+    }
+
     const distributor::PendingMessageTracker& getPendingMessageTracker() const override {
         assert(_pending_message_tracker);
         return *_pending_message_tracker;

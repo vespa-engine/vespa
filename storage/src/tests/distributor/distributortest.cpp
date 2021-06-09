@@ -222,7 +222,6 @@ struct DistributorTest : Test, DistributorTestUtil {
     }
 
     void configureMaxClusterClockSkew(int seconds);
-    void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
     void sendDownDummyRemoveCommand();
     void assertSingleBouncedRemoveReplyPresent();
@@ -795,12 +794,6 @@ auto make_dummy_get_command_for_bucket_1() {
 
 }
 
-void DistributorTest::sendDownClusterStateCommand() {
-    lib::ClusterState newState("bits:1 storage:1 distributor:1");
-    auto stateCmd = std::make_shared<api::SetSystemStateCommand>(newState);
-    _distributor->handleMessage(stateCmd);
-}
-
 void DistributorTest::replyToSingleRequestBucketInfoCommandWith1Bucket() {
     ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
     for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
@@ -847,7 +840,7 @@ TEST_F(DistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
     getClock().setAbsoluteTimeInSeconds(1000);
     configureMaxClusterClockSkew(10);
 
-    sendDownClusterStateCommand();
+    receive_set_system_state_command("bits:1 storage:1 distributor:1");
     ASSERT_NO_FATAL_FAILURE(replyToSingleRequestBucketInfoCommandWith1Bucket());
     // SetSystemStateCommand sent down chain at this point.
     sendDownDummyRemoveCommand();

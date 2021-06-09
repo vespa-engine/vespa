@@ -161,10 +161,10 @@ JoinOperation::getJoinBucket(size_t idx) const
 }
 
 bool
-JoinOperation::isBlocked(const PendingMessageTracker& tracker, const OperationSequencer& op_seq) const
+JoinOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
 {
-    return (checkBlock(getBucket(), tracker, op_seq) ||
-            checkBlock(getJoinBucket(0), tracker, op_seq) ||
-            (_bucketsToJoin.size() > 1 && checkBlock(getJoinBucket(1), tracker, op_seq)));
+    return (checkBlock(getBucket(), ctx, op_seq) ||
+            checkBlock(getJoinBucket(0), ctx, op_seq) ||
+            (_bucketsToJoin.size() > 1 && checkBlock(getJoinBucket(1), ctx, op_seq)));
 }
 

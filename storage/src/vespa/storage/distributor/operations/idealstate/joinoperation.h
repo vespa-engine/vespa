@@ -35,7 +35,7 @@ public:
         return JOIN_BUCKET;
     }
 
-    bool isBlocked(const PendingMessageTracker& pendingMessages,
+    bool isBlocked(const DistributorStripeOperationContext& ctx,
                    const OperationSequencer& op_seq) const override;
 
 protected:

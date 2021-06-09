@@ -26,6 +26,7 @@ public:
 
 class DistributorStripeMessageSender : public DistributorMessageSender {
 public:
+    virtual PendingMessageTracker& getPendingMessageTracker() = 0;
     virtual const PendingMessageTracker& getPendingMessageTracker() const = 0;
     virtual const OperationSequencer& operation_sequencer() const noexcept = 0;
 };

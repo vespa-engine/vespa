@@ -22,7 +22,7 @@ class PendingMessageTracker;
  */
 class DistributorStripeOperationContext : public DistributorOperationContext {
 public:
-    virtual ~DistributorStripeOperationContext() {}
+    virtual ~DistributorStripeOperationContext() = default;
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,
                                         uint32_t update_flags = 0) = 0;
@@ -41,6 +41,7 @@ public:
                                                        uint8_t pri) = 0;
     virtual OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket& bucket) const = 0;
     virtual PendingMessageTracker& pending_message_tracker() noexcept = 0;
+    virtual const PendingMessageTracker& pending_message_tracker() const noexcept = 0;
     virtual bool has_pending_message(uint16_t node_index,
                                      const document::Bucket& bucket,
                                      uint32_t message_type) const = 0;

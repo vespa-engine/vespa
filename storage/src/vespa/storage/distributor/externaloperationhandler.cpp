@@ -54,6 +54,9 @@ public:
     const ClusterContext & cluster_context() const override {
         return _node_ctx;
     }
+    PendingMessageTracker& getPendingMessageTracker() override {
+        abort(); // Never called by the messages using this component.
+    }
     const PendingMessageTracker& getPendingMessageTracker() const override {
         abort(); // Never called by the messages using this component.
     }

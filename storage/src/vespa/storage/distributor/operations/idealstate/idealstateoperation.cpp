@@ -156,39 +156,24 @@ public:
     }
 };
 
-// TODO STRIPE replace with check for pending cluster state transition.
-//   Null-bucket messages are not intercepted nor observeable by stripes,
-//   only by the top-level distributor.
-bool
-checkNullBucketRequestBucketInfoMessage(uint16_t node,
-                                        document::BucketSpace bucketSpace,
-                                        const PendingMessageTracker& tracker)
-{
-    RequestBucketInfoChecker rchk;
-    // Check messages sent to null-bucket (i.e. any bucket) for the node.
-    document::Bucket nullBucket(bucketSpace, document::BucketId());
-    tracker.checkPendingMessages(node, nullBucket, rchk);
-    return rchk.blocked;
-}
-
 }
 
 bool
 IdealStateOperation::checkBlock(const document::Bucket &bucket,
-                                const PendingMessageTracker& tracker,
+                                const DistributorStripeOperationContext& ctx,
                                 const OperationSequencer& seq) const
 {
     if (seq.is_blocked(bucket)) {
         return true;
     }
+    if (ctx.pending_cluster_state_or_null(bucket.getBucketSpace())) {
+        return true;
+    }
     IdealStateOpChecker ichk(*this);
     const std::vector<uint16_t>& nodes(getNodes());
     for (auto node : nodes) {
-        tracker.checkPendingMessages(node, bucket, ichk);
+        ctx.pending_message_tracker().checkPendingMessages(node, bucket, ichk);
         if (ichk.blocked) {
-            return true;
-        }
-        if (checkNullBucketRequestBucketInfoMessage(node, bucket.getBucketSpace(), tracker)) {
             return true;
         }
     }
@@ -198,32 +183,25 @@ IdealStateOperation::checkBlock(const document::Bucket &bucket,
 bool
 IdealStateOperation::checkBlockForAllNodes(
         const document::Bucket &bucket,
-        const PendingMessageTracker& tracker,
+        const DistributorStripeOperationContext& ctx,
         const OperationSequencer& seq) const
 {
     if (seq.is_blocked(bucket)) {
         return true;
     }
-    IdealStateOpChecker ichk(*this);
-    // Check messages sent to _any node_ for _this_ particular bucket.
-    tracker.checkPendingMessages(bucket, ichk);
-    if (ichk.blocked) {
+    if (ctx.pending_cluster_state_or_null(bucket.getBucketSpace())) {
         return true;
     }
-    const std::vector<uint16_t>& nodes(getNodes());
-    for (auto node : nodes) {
-        if (checkNullBucketRequestBucketInfoMessage(node, bucket.getBucketSpace(), tracker)) {
-            return true;
-        }
-    }
-    return false;
+    IdealStateOpChecker ichk(*this);
+    // Check messages sent to _any node_ for _this_ particular bucket.
+    ctx.pending_message_tracker().checkPendingMessages(bucket, ichk);
+    return ichk.blocked;
 }
 
-
 bool
-IdealStateOperation::isBlocked(const PendingMessageTracker& tracker, const OperationSequencer& op_seq) const
+IdealStateOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
 {
-    return checkBlock(getBucket(), tracker, op_seq);
+    return checkBlock(getBucket(), ctx, op_seq);
 }
 
 std::string

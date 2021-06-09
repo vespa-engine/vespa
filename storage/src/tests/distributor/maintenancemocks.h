@@ -51,7 +51,7 @@ public:
     }
     void onStart(DistributorStripeMessageSender&) override {}
     void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
-    bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const override {
+    bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const override {
         return _shouldBlock;
     }
     void setShouldBlock(bool shouldBlock) {
