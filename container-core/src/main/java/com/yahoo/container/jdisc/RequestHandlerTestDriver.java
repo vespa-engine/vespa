@@ -74,14 +74,14 @@ public class RequestHandlerTestDriver implements AutoCloseable {
     }
 
     public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, ByteBuffer body) {
-        responseHandler = new MockResponseHandler();
+        MockResponseHandler responseHandler = new MockResponseHandler();
         Request request = HttpRequest.newServerRequest(driver, URI.create(uri), method);
         request.context().put("contextVariable", 37); // TODO: Add a method for accepting a Request instead
         ContentChannel requestContent = request.connect(responseHandler);
         requestContent.write(body, null);
         requestContent.close(null);
         request.release();
-        return responseHandler;
+        return this.responseHandler = responseHandler;
     }
 
     public MockResponseHandler sendRequest(String uri, HttpRequest.Method method, ByteBuffer body, String contentType) {
