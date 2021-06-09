@@ -31,6 +31,8 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Rule;
@@ -72,6 +74,7 @@ public class SessionRepositoryTest {
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionRepository sessionRepository;
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -92,6 +95,7 @@ public class SessionRepositoryTest {
         tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
+                .withFlagSource(flagSource)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
@@ -100,6 +104,7 @@ public class SessionRepositoryTest {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withFlagSource(flagSource)
                 .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }
@@ -254,19 +259,35 @@ public class SessionRepositoryTest {
     @Test
     public void require_that_searchdefinitions_are_written_to_schemas_dir() throws Exception {
         setup();
+
+        // App has schemas in searchdefinitions/, should NOT be moved to schemas/ on deploy
+        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), false);
+        long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
+        LocalSession session = sessionRepository.getLocalSession(sessionId);
+
+        assertEquals(1, session.applicationPackage.get().getSchemas().size());
+
+        ApplicationFile schema = getSchema(session, "schemas");
+        assertFalse(schema.exists());
+        ApplicationFile sd = getSchema(session, "searchdefinitions");
+        assertTrue(sd.exists());
+
+
         // App has schemas in searchdefinitions/, should be moved to schemas/ on deploy
-        long firstSessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
-        assertNotNull(sessionRepository.getLocalSession(firstSessionId));
+        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), true);
+        sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
+        session = sessionRepository.getLocalSession(sessionId);
 
-        LocalSession session = sessionRepository.getLocalSession(firstSessionId);
-        Collection<NamedReader> schemas = session.applicationPackage.get().getSchemas();
-        assertEquals(1, schemas.size());
+        assertEquals(1, session.applicationPackage.get().getSchemas().size());
 
-        ApplicationFile schema = session.applicationPackage.get().getFile(Path.fromString("schemas").append("music.sd"));
+        schema = getSchema(session, "schemas");
         assertTrue(schema.exists());
-
-        ApplicationFile sd = session.applicationPackage.get().getFile(Path.fromString("searchdefinitions").append("music.sd"));
+        sd = getSchema(session, "searchdefinitions");
         assertFalse(sd.exists());
+    }
+
+    ApplicationFile getSchema(Session session, String subDirectory) {
+        return session.applicationPackage.get().getFile(Path.fromString(subDirectory).append("music.sd"));
     }
 
     private void createSession(long sessionId, boolean wait) {
