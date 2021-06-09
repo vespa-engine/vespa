@@ -28,7 +28,9 @@ std::string toString(CcResult value) {
     switch (value) {
         case CcResult::UNKNOWN: return "BAD: missing result"; // very very bad
         case CcResult::REVERSE_FAIL: return "connect OK, but reverse check FAILED"; // very bad
+        case CcResult::UNREACHABLE_UP: return "unreachable from me, but up"; // very bad
         case CcResult::CONN_FAIL: return "failed to connect"; // bad
+        case CcResult::AFFIRMED_DOWN: return "affirmed down"; // a problem, but probably not on this end
         case CcResult::REVERSE_UNAVAIL: return "connect OK (but reverse check unavailable)"; // unfortunate
         case CcResult::ALL_OK: return "OK: both ways connectivity verified"; // good
     }
@@ -66,26 +68,36 @@ SpecMap specsFrom(const ModelConfig &model) {
     return checkSpecs;
 }
 
-size_t countUnreachable(const ConnectivityMap &connectivityMap,
-                        const SpecMap &specMap,
-                        RpcServer &rpcServer)
+void classifyConnFails(ConnectivityMap &connectivityMap,
+                       const SpecMap &specMap,
+                       RpcServer &rpcServer)
 {
     std::vector<HostAndPort> failedConnSpecs;
     std::vector<HostAndPort> goodNeighborSpecs;
     std::string myHostname = vespa::Defaults::vespaHostname();
-    for (const auto & [hostname, check] : connectivityMap) {
-        auto iter = specMap.find(hostname);
-        LOG_ASSERT(iter != specMap.end());
-        if ((check.result() == CcResult::ALL_OK) && (hostname != myHostname)) {
-            goodNeighborSpecs.push_back(*iter);
-        }
-        if (check.result() == CcResult::CONN_FAIL) {
-            failedConnSpecs.push_back(*iter);
+    for (auto & [hostname, check] : connectivityMap) {
+        if (hostname == myHostname) {
+            if (check.result() == CcResult::CONN_FAIL) {
+                check.classifyResult(CcResult::UNREACHABLE_UP);
+            }
+        } else {
+            auto iter = specMap.find(hostname);
+            LOG_ASSERT(iter != specMap.end());
+            if (check.result() == CcResult::ALL_OK) {
+                goodNeighborSpecs.push_back(*iter);
+            }
+            if (check.result() == CcResult::CONN_FAIL) {
+                failedConnSpecs.push_back(*iter);
+            }
         }
     }
-    size_t counter = 0;
-    for (const auto & toCheck : failedConnSpecs) {
-        OutwardCheckContext checkContext(goodNeighborSpecs.size(), toCheck.first, toCheck.second, rpcServer.orb());
+    if ((failedConnSpecs.size() == 0) || (goodNeighborSpecs.size() == 0)) {
+        return;
+    }
+    for (const auto & [ nameToCheck, portToCheck ] : failedConnSpecs) {
+        auto cmIter = connectivityMap.find(nameToCheck);
+        LOG_ASSERT(cmIter != connectivityMap.end());
+        OutwardCheckContext checkContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
         ConnectivityMap cornerProbes;
         for (const auto & hp : goodNeighborSpecs) {
             cornerProbes.try_emplace(hp.first, spec(hp), checkContext);
@@ -98,15 +110,16 @@ size_t countUnreachable(const ConnectivityMap &connectivityMap,
             if (probe.result() == CcResult::ALL_OK) ++numReportsUp;
         }
         if (numReportsUp > numReportsDown) {
-            LOG(warning, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
-                toCheck.first.c_str(), numReportsUp, numReportsDown);
-            ++counter;
+            LOG(info, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
+                nameToCheck.c_str(), numReportsUp, numReportsDown);
+            cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
+        } else if ((numReportsUp == 0) && (numReportsDown > 0)) {
+            cmIter->second.classifyResult(CcResult::AFFIRMED_DOWN);
         }
     }
-    return counter;
 }
 
-}
+} // namespace <unnamed>
 
 void Connectivity::configure(const SentinelConfig::Connectivity &config) {
     _config = config;
@@ -134,9 +147,9 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext);
     }
     checkContext.latch.await();
-    size_t numAllGood = 0;
-    size_t numFailedConns = 0;
-    size_t numFailedReverse = 0;
+    classifyConnFails(connectivityMap, _checkSpecs, rpcServer);
+    size_t numProblematic = 0;
+    size_t numUpButBad = 0;
     bool allChecksOk = true;
     for (const auto & [hostname, check] : connectivityMap) {
         std::string detail = toString(check.result());
@@ -146,32 +159,34 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         }
         _detailsPerHost[hostname] = detail;
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);
-        if ((check.result() == CcResult::ALL_OK) && (hostname != myHostname)) {
-            ++numAllGood;
+        switch (check.result()) {
+            case CcResult::UNREACHABLE_UP:
+            case CcResult::REVERSE_FAIL:
+                ++numUpButBad;
+                ++numProblematic;
+                break;
+            case CcResult::AFFIRMED_DOWN:
+            case CcResult::CONN_FAIL:
+                ++numProblematic;
+                break;
+            case CcResult::UNKNOWN:
+            case CcResult::REVERSE_UNAVAIL:
+            case CcResult::ALL_OK:
+                break;
         }
-        if (check.result() == CcResult::CONN_FAIL) ++numFailedConns;
-        if (check.result() == CcResult::REVERSE_FAIL) ++numFailedReverse;
     }
-    if (numFailedReverse > size_t(_config.maxBadReverseCount)) {
-        LOG(warning, "%zu of %zu nodes report problems connecting to me (max is %d)",
-            numFailedReverse, clusterSize, _config.maxBadReverseCount);
+    if (numUpButBad > size_t(_config.maxBadReverseCount)) {
+        LOG(warning, "%zu of %zu nodes up but with network connectivity problems (max is %d)",
+            numUpButBad, clusterSize, _config.maxBadReverseCount);
         allChecksOk = false;
     }
-    if (numFailedConns * 100.0 > _config.maxBadOutPercent * clusterSize) {
-        double pct = numFailedConns * 100.0 / clusterSize;
-        LOG(warning, "Problems connecting to %zu of %zu nodes, %.2f %% (max is %d)",
-            numFailedConns, clusterSize, pct, _config.maxBadOutPercent);
+    if (numProblematic * 100.0 > _config.maxBadOutPercent * clusterSize) {
+        double pct = numProblematic * 100.0 / clusterSize;
+        LOG(warning, "Problems with connection to %zu of %zu nodes, %.1f%% (max is %d%%)",
+            numProblematic, clusterSize, pct, _config.maxBadOutPercent);
         allChecksOk = false;
     }
-    size_t numUnreachable = (numFailedConns > 0)
-        ? countUnreachable(connectivityMap, _checkSpecs, rpcServer)
-        : 0;
-    if (numUnreachable > size_t(_config.maxBadReverseCount)) {
-        LOG(warning, "%zu of %zu nodes are up but unreachable from me (max is %d)",
-            numUnreachable, clusterSize, _config.maxBadReverseCount);
-        allChecksOk = false;
-    }
-    if (allChecksOk && (numFailedConns == 0) && (numFailedReverse == 0)) {
+    if (numProblematic == 0) {
         LOG(info, "All connectivity checks OK, proceeding with service startup");
     } else if (allChecksOk) {
         LOG(info, "Enough connectivity checks OK, proceeding with service startup");

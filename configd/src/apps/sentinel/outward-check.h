@@ -27,7 +27,7 @@ struct OutwardCheckContext {
     ~OutwardCheckContext();
 };
 
-enum class CcResult { UNKNOWN, CONN_FAIL, REVERSE_FAIL, REVERSE_UNAVAIL, ALL_OK };
+enum class CcResult { UNKNOWN, AFFIRMED_DOWN, CONN_FAIL, UNREACHABLE_UP, REVERSE_FAIL, REVERSE_UNAVAIL, ALL_OK };
 
 class OutwardCheck  : public FRT_IRequestWait {
 private:
@@ -42,6 +42,7 @@ public:
     void RequestDone(FRT_RPCRequest *req) override;
     bool ok() const { return _result == CcResult::ALL_OK; }
     CcResult result() const { return _result; }
+    void classifyResult(CcResult value);
 };
 
 }

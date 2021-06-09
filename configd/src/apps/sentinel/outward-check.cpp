@@ -58,4 +58,9 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
     _context.latch.countDown();
 }
 
+void OutwardCheck::classifyResult(CcResult value) {
+    LOG_ASSERT(_result == CcResult::CONN_FAIL);
+    _result = value;
+}
+
 }
