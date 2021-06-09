@@ -332,83 +332,92 @@ public class JsonFeeder implements Closeable {
 
         private final JsonParser parser;
         private final boolean multipleOperations;
+        private boolean arrayPrefixParsed;
 
         protected OperationParserAndExecutor(JsonParser parser, boolean multipleOperations) throws IOException {
             this.parser = parser;
             this.multipleOperations = multipleOperations;
-            if (multipleOperations) expect(START_ARRAY);
         }
 
         abstract String getDocumentJson(long start, long end);
 
         CompletableFuture<Result> next() throws IOException {
-            JsonToken token = parser.nextToken();
-            if (token == END_ARRAY && multipleOperations) return null;
-            else if (token == null && !multipleOperations) return null;
-            else if (token == START_OBJECT);
-            else throw new IllegalArgumentException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
-            long start = 0, end = -1;
-            OperationType type = null;
-            DocumentId id = null;
-            OperationParameters parameters = protoParameters;
-            loop: while (true) {
-                switch (parser.nextToken()) {
-                    case FIELD_NAME:
-                        switch (parser.getText()) {
-                            case "id":
-                            case "put":    type = PUT;    id = readId(); break;
-                            case "update": type = UPDATE; id = readId(); break;
-                            case "remove": type = REMOVE; id = readId(); break;
-                            case "condition": parameters = parameters.testAndSetCondition(readString()); break;
-                            case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
-                            case "fields": {
-                                expect(START_OBJECT);
-                                start = parser.getTokenLocation().getByteOffset();
-                                int depth = 1;
-                                while (depth > 0) switch (parser.nextToken()) {
-                                    case START_OBJECT: ++depth; break;
-                                    case END_OBJECT:   --depth; break;
-                                }
-                                end = parser.getTokenLocation().getByteOffset() + 1;
-                                break;
-                            }
-                            default: throw new IllegalArgumentException("Unexpected field name '" + parser.getText() + "' at offset " +
-                                    parser.getTokenLocation().getByteOffset());
-                        }
-                        break;
-
-                    case END_OBJECT:
-                        break loop;
-
-                    default:
-                        throw new IllegalArgumentException("Unexpected token '" + parser.currentToken() + "' at offset " +
-                                parser.getTokenLocation().getByteOffset());
+            try {
+                if (multipleOperations && !arrayPrefixParsed){
+                    expect(START_ARRAY);
+                    arrayPrefixParsed = true;
                 }
-            }
-            if (id == null)
-                throw new IllegalArgumentException("No document id for document at offset " + start);
 
-            if (end < start)
-                throw new IllegalArgumentException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
-            String payload = getDocumentJson(start, end);
-            switch (type) {
-                case PUT:    return client.put   (id, payload, parameters);
-                case UPDATE: return client.update(id, payload, parameters);
-                case REMOVE: return client.remove(id, parameters);
-                default: throw new IllegalStateException("Unexpected operation type '" + type + "'");
+                JsonToken token = parser.nextToken();
+                if (token == END_ARRAY && multipleOperations) return null;
+                else if (token == null && !multipleOperations) return null;
+                else if (token == START_OBJECT);
+                else throw new JsonParseException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
+                long start = 0, end = -1;
+                OperationType type = null;
+                DocumentId id = null;
+                OperationParameters parameters = protoParameters;
+                loop: while (true) {
+                    switch (parser.nextToken()) {
+                        case FIELD_NAME:
+                            switch (parser.getText()) {
+                                case "id":
+                                case "put":    type = PUT;    id = readId(); break;
+                                case "update": type = UPDATE; id = readId(); break;
+                                case "remove": type = REMOVE; id = readId(); break;
+                                case "condition": parameters = parameters.testAndSetCondition(readString()); break;
+                                case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
+                                case "fields": {
+                                    expect(START_OBJECT);
+                                    start = parser.getTokenLocation().getByteOffset();
+                                    int depth = 1;
+                                    while (depth > 0) switch (parser.nextToken()) {
+                                        case START_OBJECT: ++depth; break;
+                                        case END_OBJECT:   --depth; break;
+                                    }
+                                    end = parser.getTokenLocation().getByteOffset() + 1;
+                                    break;
+                                }
+                                default: throw new JsonParseException("Unexpected field name '" + parser.getText() + "' at offset " +
+                                        parser.getTokenLocation().getByteOffset());
+                            }
+                            break;
+
+                        case END_OBJECT:
+                            break loop;
+
+                        default:
+                            throw new JsonParseException("Unexpected token '" + parser.currentToken() + "' at offset " +
+                                    parser.getTokenLocation().getByteOffset());
+                    }
+                }
+                if (id == null)
+                    throw new JsonParseException("No document id for document at offset " + start);
+
+                if (end < start)
+                    throw new JsonParseException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
+                String payload = getDocumentJson(start, end);
+                switch (type) {
+                    case PUT:    return client.put   (id, payload, parameters);
+                    case UPDATE: return client.update(id, payload, parameters);
+                    case REMOVE: return client.remove(id, parameters);
+                    default: throw new JsonParseException("Unexpected operation type '" + type + "'");
+                }
+            } catch (com.fasterxml.jackson.core.JacksonException e) {
+                throw new JsonParseException("Failed to parse JSON", e);
             }
         }
 
-        void expect(JsonToken token) throws IOException {
+        private void expect(JsonToken token) throws IOException {
             if (parser.nextToken() != token)
-                throw new IllegalArgumentException("Expected '" + token + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                throw new JsonParseException("Expected '" + token + "' at offset " + parser.getTokenLocation().getByteOffset() +
                         ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
         }
 
         private String readString() throws IOException {
             String value = parser.nextTextValue();
             if (value == null)
-                throw new IllegalArgumentException("Expected '" + VALUE_STRING + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                throw new JsonParseException("Expected '" + VALUE_STRING + "' at offset " + parser.getTokenLocation().getByteOffset() +
                         ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
 
             return value;
@@ -417,7 +426,7 @@ public class JsonFeeder implements Closeable {
         private boolean readBoolean() throws IOException {
             Boolean value = parser.nextBooleanValue();
             if (value == null)
-                throw new IllegalArgumentException("Expected '" + VALUE_FALSE + "' or '" + VALUE_TRUE + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                throw new JsonParseException("Expected '" + VALUE_FALSE + "' or '" + VALUE_TRUE + "' at offset " + parser.getTokenLocation().getByteOffset() +
                         ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
 
             return value;
