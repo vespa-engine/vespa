@@ -202,10 +202,6 @@ enum PathGroup {
     classifiedTenantInfo("/application/v4/",
                          "/application/v4/tenant/"),
 
-    /** Paths which contain (not very strictly) classified information about, e.g., customers. */
-    classifiedInfo("/",
-                   "/d/{*}"),
-
     /** Paths providing public information. */
     publicInfo("/user/v1/user",     // Information about who you are.
                "/badge/v1/{*}",     // Badges for deployment jobs.
@@ -229,7 +225,10 @@ enum PathGroup {
     endpointCertificateRequestInfo("/certificateRequests/"),
 
     /** Path used for secret store management */
-    secretStore(Matcher.tenant, "/application/v4/tenant/{tenant}/secret-store/{*}");
+    secretStore(Matcher.tenant, "/application/v4/tenant/{tenant}/secret-store/{*}"),
+
+    /** Paths used to proxy Horizon metric requests */
+    horizonProxy("/horizion/v1/{*}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;

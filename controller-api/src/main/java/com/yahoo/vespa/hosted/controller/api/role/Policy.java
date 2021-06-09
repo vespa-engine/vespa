@@ -201,7 +201,11 @@ enum Policy {
     /** Secret store operations */
     secretStoreOperations(Privilege.grant(Action.all())
                                 .on(PathGroup.secretStore)
-                                .in(SystemName.PublicCd, SystemName.Public));
+                                .in(SystemName.PublicCd, SystemName.Public)),
+
+    horizonProxyOperations(Privilege.grant(Action.all())
+            .on(PathGroup.horizonProxy)
+            .in(SystemName.PublicCd));
 
     private final Set<Privilege> privileges;
 
