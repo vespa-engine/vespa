@@ -8,7 +8,7 @@ import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.OnnxModel;
-import com.yahoo.searchdefinition.RankExpressionFile;
+import com.yahoo.searchdefinition.RankExpressionBody;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
@@ -165,7 +165,7 @@ public class RankSetupValidator extends Validator {
             config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
         }
 
-        for (RankExpressionFile expr : db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values()) {
+        for (RankExpressionBody expr : db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values()) {
             String modelPath = getFileRepositoryPath(expr.getFilePath(), expr.getFileReference());
             config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, expr.getFileReference()));
             config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));

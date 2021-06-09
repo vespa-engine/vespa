@@ -52,7 +52,6 @@ public class DistributableResource {
         this.pathType = PathType.URI;
     }
 
-    protected void setFileReference(String fileReference) { this.fileReference = fileReference; }
     /** Initiate sending of this constant to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
         fileReference = sendToServices(services).value();

@@ -33,7 +33,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
-import com.yahoo.searchdefinition.RankExpressionFiles;
+import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -131,7 +131,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private final RankingConstants rankingConstants = new RankingConstants();
 
     /** External rank expression files of this */
-    private final RankExpressionFiles rankExpressionFiles = new RankExpressionFiles();
+    private final LargeRankExpressions largeRankExpressions = new LargeRankExpressions();
 
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
@@ -187,7 +187,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                  deployState.rankProfileRegistry(), deployState.getQueryProfiles());
         rankProfileList = new RankProfileList(null, // null search -> global
                                               rankingConstants,
-                                              rankExpressionFiles,
+                largeRankExpressions,
                                               AttributeFields.empty,
                                               deployState.rankProfileRegistry(),
                                               deployState.getQueryProfiles().getRegistry(),
@@ -266,7 +266,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Returns the global ranking constants of this */
     public RankingConstants rankingConstants() { return rankingConstants; }
 
-    public RankExpressionFiles rankExpressionFiles() { return rankExpressionFiles; }
+    public LargeRankExpressions rankExpressionFiles() { return largeRankExpressions; }
 
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {

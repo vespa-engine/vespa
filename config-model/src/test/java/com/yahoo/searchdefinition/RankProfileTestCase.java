@@ -102,7 +102,8 @@ public class RankProfileTestCase extends SchemaTestCase {
         assertEquals(8, rankProfile.getNumThreadsPerSearch());
         assertEquals(70, rankProfile.getMinHitsPerThread());
         assertEquals(1200, rankProfile.getNumSearchPartitions());
-        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, deployProperties);
+        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new LargeRankExpressions(), new QueryProfileRegistry(),
+                                                           new ImportedMlModels(), attributeFields, deployProperties);
         if (expectedTermwiseLimit != null) {
             assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
             assertEquals(String.valueOf(expectedTermwiseLimit), findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").get());

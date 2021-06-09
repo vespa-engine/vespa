@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SchemaTestCase;
@@ -49,7 +50,7 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
                      functions.get("artistmatch").function().getBody().getRoot().toString());
         assertEquals(0, functions.get("artistmatch").function().arguments().size());
 
-        RawRankProfile rawRankProfile = new RawRankProfile(functionsRankProfile, new QueryProfileRegistry(),
+        RawRankProfile rawRankProfile = new RawRankProfile(functionsRankProfile, new LargeRankExpressions(), new QueryProfileRegistry(),
                 new ImportedMlModels(), new AttributeFields(search), deployProperties);
         List<Pair<String, String>> rankProperties = rawRankProfile.configProperties();
         assertEquals(6, rankProperties.size());
