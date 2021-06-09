@@ -140,6 +140,9 @@ public:
     PendingMessageTracker& pending_message_tracker() noexcept override {
         return getDistributor().getPendingMessageTracker();
     }
+    const PendingMessageTracker& pending_message_tracker() const noexcept override {
+        return getDistributor().getPendingMessageTracker();
+    }
     bool has_pending_message(uint16_t node_index,
                              const document::Bucket& bucket,
                              uint32_t message_type) const override;

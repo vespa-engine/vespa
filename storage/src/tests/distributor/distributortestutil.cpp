@@ -101,6 +101,19 @@ DistributorTestUtil::triggerDistributionChange(lib::Distribution::SP distr)
 }
 
 void
+DistributorTestUtil::receive_set_system_state_command(const vespalib::string& state_str)
+{
+    auto state_cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(state_str));
+    _distributor->handleMessage(state_cmd); // TODO move semantics
+}
+
+void
+DistributorTestUtil::handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg)
+{
+    _distributor->handleMessage(msg);
+}
+
+void
 DistributorTestUtil::setTypeRepo(const std::shared_ptr<const document::DocumentTypeRepo> &repo)
 {
     _node->getComponentRegister().setDocumentTypeRepo(repo);

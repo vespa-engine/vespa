@@ -16,6 +16,7 @@ class StorageComponent;
 
 namespace distributor {
 
+class DistributorStripeOperationContext;
 class PendingMessageTracker;
 class OperationSequencer;
 
@@ -61,7 +62,7 @@ public:
      * Returns true if we are blocked to start this operation given
      * the pending messages.
      */
-    virtual bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const {
+    virtual bool isBlocked(const DistributorStripeOperationContext&, const OperationSequencer&) const {
         return false;
     }
 

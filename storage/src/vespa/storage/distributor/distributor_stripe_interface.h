@@ -24,7 +24,6 @@ class PendingMessageTracker;
 class DistributorStripeInterface : public DistributorStripeMessageSender
 {
 public:
-    virtual PendingMessageTracker& getPendingMessageTracker() = 0;
     virtual DistributorMetricSet& getMetrics() = 0;
     virtual void enableClusterStateBundle(const lib::ClusterStateBundle& state) = 0;
     virtual const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const = 0;

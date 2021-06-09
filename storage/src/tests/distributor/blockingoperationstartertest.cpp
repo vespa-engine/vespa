@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storage/distributor/blockingoperationstarter.h>
+#include <vespa/storage/distributor/distributor_stripe_operation_context.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <tests/distributor/maintenancemocks.h>
@@ -12,6 +13,86 @@ using document::BucketId;
 using namespace ::testing;
 
 namespace storage::distributor {
+
+struct FakeDistributorStripeOperationContext : public DistributorStripeOperationContext {
+
+    PendingMessageTracker& _message_tracker;
+
+    explicit FakeDistributorStripeOperationContext(PendingMessageTracker& message_tracker)
+        : _message_tracker(message_tracker)
+    {}
+
+    ~FakeDistributorStripeOperationContext() override = default;
+
+    // From DistributorOperationContext:
+    api::Timestamp generate_unique_timestamp() override {
+        abort();
+    }
+    const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override {
+        abort();
+    }
+    DistributorBucketSpaceRepo& bucket_space_repo() noexcept override {
+        abort();
+    }
+    const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept override {
+        abort();
+    }
+    DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept override {
+        abort();
+    }
+    const DistributorConfiguration& distributor_config() const noexcept override {
+        abort();
+    }
+    // From DistributorStripeOperationContext:
+    void update_bucket_database(const document::Bucket&, const BucketCopy&, uint32_t) override {
+        abort();
+    }
+    void update_bucket_database(const document::Bucket&, const std::vector<BucketCopy>&, uint32_t) override {
+        abort();
+    }
+    void remove_node_from_bucket_database(const document::Bucket&, uint16_t) override {
+        abort();
+    }
+    void remove_nodes_from_bucket_database(const document::Bucket&, const std::vector<uint16_t>&) override {
+        abort();
+    }
+    document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId&) const override {
+        abort();
+    }
+    void recheck_bucket_info(uint16_t, const document::Bucket&) override {
+        abort();
+    }
+    document::BucketId get_sibling(const document::BucketId&) const override {
+        abort();
+    }
+    void send_inline_split_if_bucket_too_large(document::BucketSpace, const BucketDatabase::Entry&, uint8_t) override {
+        abort();
+    }
+    OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const override {
+        abort();
+    }
+    PendingMessageTracker& pending_message_tracker() noexcept override {
+        return _message_tracker;
+    }
+    const PendingMessageTracker& pending_message_tracker() const noexcept override {
+        return _message_tracker;
+    }
+    bool has_pending_message(uint16_t, const document::Bucket&, uint32_t) const override {
+        abort();
+    }
+    const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace&) const override {
+        abort();
+    }
+    const lib::ClusterStateBundle& cluster_state_bundle() const override {
+        abort();
+    }
+    bool storage_node_is_up(document::BucketSpace, uint32_t) const override {
+        abort();
+    }
+    const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const override {
+        abort();
+    }
+};
 
 struct BlockingOperationStarterTest : Test {
     std::shared_ptr<Operation> createMockOperation() {
@@ -27,6 +108,7 @@ struct BlockingOperationStarterTest : Test {
     std::unique_ptr<MockOperationStarter> _starterImpl;
     std::unique_ptr<StorageComponentRegisterImpl> _compReg;
     std::unique_ptr<PendingMessageTracker> _messageTracker;
+    std::unique_ptr<FakeDistributorStripeOperationContext> _fake_ctx;
     std::unique_ptr<OperationSequencer> _operation_sequencer;
     std::unique_ptr<BlockingOperationStarter> _operationStarter;
 
@@ -41,8 +123,9 @@ BlockingOperationStarterTest::SetUp()
     _compReg->setClock(_clock);
     _clock.setAbsoluteTimeInSeconds(1);
     _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg);
+    _fake_ctx = std::make_unique<FakeDistributorStripeOperationContext>(*_messageTracker);
     _operation_sequencer = std::make_unique<OperationSequencer>();
-    _operationStarter = std::make_unique<BlockingOperationStarter>(*_messageTracker, *_operation_sequencer, *_starterImpl);
+    _operationStarter = std::make_unique<BlockingOperationStarter>(*_fake_ctx, *_operation_sequencer, *_starterImpl);
 }
 
 TEST_F(BlockingOperationStarterTest, operation_not_blocked_when_no_messages_pending) {

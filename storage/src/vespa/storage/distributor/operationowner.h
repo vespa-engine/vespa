@@ -43,6 +43,10 @@ public:
             return _sender.cluster_context();
         }
 
+        PendingMessageTracker& getPendingMessageTracker() override {
+            return _sender.getPendingMessageTracker();
+        }
+
         const PendingMessageTracker& getPendingMessageTracker() const override {
             return _sender.getPendingMessageTracker();
         }

@@ -18,13 +18,11 @@ using namespace ::testing;
 namespace storage::distributor {
 
 struct MergeOperationTest : Test, DistributorTestUtil {
-    std::unique_ptr<PendingMessageTracker> _pendingTracker;
     OperationSequencer _operation_sequencer;
 
     void SetUp() override {
         createLinks();
-        _pendingTracker = std::make_unique<PendingMessageTracker>(getComponentRegister());
-        _sender.setPendingMessageTracker(*_pendingTracker);
+        _sender.setPendingMessageTracker(pending_message_tracker());
         _sender.set_operation_sequencer(_operation_sequencer);
     }
 
@@ -256,7 +254,7 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
             makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE);
     vespalib::string storage("storage");
     msg->setAddress(api::StorageMessageAddress::create(&storage, lib::NodeType::STORAGE, 1));
-    _pendingTracker->insert(msg);
+    pending_message_tracker().insert(msg);
 
     sendReply(op);
     // Should not be a remove here!
@@ -400,19 +398,19 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_any_busy_target_node) {
     op.setIdealStateManager(&getIdealStateManager());
 
     // Should not block on nodes _not_ included in operation node set
-    _pendingTracker->getNodeInfo().setBusy(3, std::chrono::seconds(10));
-    EXPECT_FALSE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+    pending_message_tracker().getNodeInfo().setBusy(3, std::chrono::seconds(10));
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 
     // Node 1 is included in operation node set and should cause a block
-    _pendingTracker->getNodeInfo().setBusy(0, std::chrono::seconds(10));
-    EXPECT_TRUE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+    pending_message_tracker().getNodeInfo().setBusy(0, std::chrono::seconds(10));
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
 
     getClock().addSecondsToTime(11);
-    EXPECT_FALSE(op.isBlocked(*_pendingTracker, _operation_sequencer)); // No longer busy
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer)); // No longer busy
 
     // Should block on other operation nodes than the first listed as well
-    _pendingTracker->getNodeInfo().setBusy(1, std::chrono::seconds(10));
-    EXPECT_TRUE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+    pending_message_tracker().getNodeInfo().setBusy(1, std::chrono::seconds(10));
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
 
@@ -426,8 +424,8 @@ TEST_F(MergeOperationTest, global_bucket_merges_are_not_blocked_by_busy_nodes) {
     op.setIdealStateManager(&getIdealStateManager());
 
     // Node 1 is included in operation node set but should not cause a block of global bucket merge
-    _pendingTracker->getNodeInfo().setBusy(0, std::chrono::seconds(10));
-    EXPECT_FALSE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+    pending_message_tracker().getNodeInfo().setBusy(0, std::chrono::seconds(10));
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
 TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
@@ -437,10 +435,10 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
-    EXPECT_FALSE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
     auto token = _operation_sequencer.try_acquire(makeDocumentBucket(document::BucketId(16, 1)), "foo");
     EXPECT_TRUE(token.valid());
-    EXPECT_TRUE(op.isBlocked(*_pendingTracker, _operation_sequencer));
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
 TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {

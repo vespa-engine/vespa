@@ -86,6 +86,10 @@ struct IntermediateMessageSender : DistributorStripeMessageSender {
         return forward.cluster_context();
     }
 
+    PendingMessageTracker& getPendingMessageTracker() override {
+        return forward.getPendingMessageTracker();
+    }
+
     const PendingMessageTracker& getPendingMessageTracker() const override {
         return forward.getPendingMessageTracker();
     }

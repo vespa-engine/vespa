@@ -235,7 +235,7 @@ MergeOperation::deleteSourceOnlyNodes(
                         BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!
-        if (_removeOperation->isBlocked(sender.getPendingMessageTracker(), sender.operation_sequencer())) {
+        if (_removeOperation->isBlocked(_manager->operation_context(), sender.operation_sequencer())) {
             LOG(debug, "Source only removal for %s was blocked by a pending operation",
                 getBucketId().toString().c_str());
             _ok = false;
@@ -324,7 +324,7 @@ bool MergeOperation::shouldBlockThisOperation(uint32_t messageType, uint8_t pri)
     return IdealStateOperation::shouldBlockThisOperation(messageType, pri);
 }
 
-bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker,
+bool MergeOperation::isBlocked(const DistributorStripeOperationContext& ctx,
                                const OperationSequencer& op_seq) const {
     // To avoid starvation of high priority global bucket merges, we do not consider
     // these for blocking due to a node being "busy" (usually caused by a full merge
@@ -338,14 +338,14 @@ bool MergeOperation::isBlocked(const PendingMessageTracker& pending_tracker,
     //  2. Global bucket merges have high priority and will most likely be allowed
     //     to enter the merge throttler queues, displacing lower priority merges.
     if (!is_global_bucket_merge()) {
-        const auto& node_info = pending_tracker.getNodeInfo();
+        const auto& node_info = ctx.pending_message_tracker().getNodeInfo();
         for (auto node : getNodes()) {
             if (node_info.isBusy(node)) {
                 return true;
             }
         }
     }
-    return IdealStateOperation::isBlocked(pending_tracker, op_seq);
+    return IdealStateOperation::isBlocked(ctx, op_seq);
 }
 
 bool MergeOperation::is_global_bucket_merge() const noexcept {
