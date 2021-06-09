@@ -273,6 +273,13 @@ public class Flags {
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR = defineFeatureFlag(
+            "move-search-definitions-to-schemas-dir", false,
+            List.of("hmusum"), "2021-06-09", "2021-08-09",
+            "Whether to move files in searchdefinitions/ to schemas/ when deploying an application",
+            "Takes effect on next deployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

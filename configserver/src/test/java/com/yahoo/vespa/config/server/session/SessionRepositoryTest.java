@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.Model;
@@ -14,6 +15,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.reader.NamedReader;
+import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
@@ -28,6 +31,8 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Rule;
@@ -42,15 +47,18 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.LongPredicate;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -66,6 +74,7 @@ public class SessionRepositoryTest {
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionRepository sessionRepository;
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -86,6 +95,7 @@ public class SessionRepositoryTest {
         tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
+                .withFlagSource(flagSource)
                 .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
@@ -94,6 +104,7 @@ public class SessionRepositoryTest {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
+                .withFlagSource(flagSource)
                 .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }
@@ -112,6 +123,10 @@ public class SessionRepositoryTest {
         assertEquals(2, applicationSet.getApplicationGeneration());
         assertEquals(applicationId.application(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
+
+        LocalSession session = sessionRepository.getLocalSession(secondSessionId);
+        Collection<NamedReader> a = session.applicationPackage.get().getSchemas();
+        assertEquals(1, a.size());
 
         sessionRepository.close();
         // All created sessions are deleted
@@ -239,6 +254,40 @@ public class SessionRepositoryTest {
         deploy(applicationId, testApp);
 
         // Does not cause an error because model version 3 is skipped
+    }
+
+    @Test
+    public void require_that_searchdefinitions_are_written_to_schemas_dir() throws Exception {
+        setup();
+
+        // App has schemas in searchdefinitions/, should NOT be moved to schemas/ on deploy
+        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), false);
+        long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
+        LocalSession session = sessionRepository.getLocalSession(sessionId);
+
+        assertEquals(1, session.applicationPackage.get().getSchemas().size());
+
+        ApplicationFile schema = getSchema(session, "schemas");
+        assertFalse(schema.exists());
+        ApplicationFile sd = getSchema(session, "searchdefinitions");
+        assertTrue(sd.exists());
+
+
+        // App has schemas in searchdefinitions/, should be moved to schemas/ on deploy
+        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), true);
+        sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
+        session = sessionRepository.getLocalSession(sessionId);
+
+        assertEquals(1, session.applicationPackage.get().getSchemas().size());
+
+        schema = getSchema(session, "schemas");
+        assertTrue(schema.exists());
+        sd = getSchema(session, "searchdefinitions");
+        assertFalse(sd.exists());
+    }
+
+    ApplicationFile getSchema(Session session, String subDirectory) {
+        return session.applicationPackage.get().getFile(Path.fromString(subDirectory).append("music.sd"));
     }
 
     private void createSession(long sessionId, boolean wait) {
