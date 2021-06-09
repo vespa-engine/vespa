@@ -93,7 +93,7 @@ if [ "${VESPA_LOG_LEVEL}" = "" ]; then
 fi
 
 export MALLOC_ARENA_MAX=1 # Does not need fast allocation
-echo exec java \
+exec java \
 -server -enableassertions \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
