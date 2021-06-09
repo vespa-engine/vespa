@@ -110,7 +110,7 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
             if (probe.result() == CcResult::ALL_OK) ++numReportsUp;
         }
         if (numReportsUp > numReportsDown) {
-            LOG(info, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
+            LOG(debug, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
                 nameToCheck.c_str(), numReportsUp, numReportsDown);
             cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
         } else if ((numReportsUp == 0) && (numReportsDown > 0)) {
