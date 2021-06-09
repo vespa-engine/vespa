@@ -105,20 +105,20 @@ class HttpCluster implements Cluster {
                                                                      .disableRedirectHandling()
                                                                      .disableAutomaticRetries()
                                                                      .setIOReactorConfig(IOReactorConfig.custom()
-                                                                                                        .setIoThreadCount(1)
+                                                                                                        .setIoThreadCount(2)
                                                                                                         .setTcpNoDelay(true)
                                                                                                         .setSoTimeout(Timeout.ofSeconds(10))
                                                                                                         .build())
-                                                                     .setDefaultRequestConfig(
-                                                                             RequestConfig.custom()
-                                                                                          .setConnectTimeout(Timeout.ofSeconds(10))
-                                                                                          .setConnectionRequestTimeout(Timeout.DISABLED)
-                                                                                          .setResponseTimeout(Timeout.ofMinutes(5))
-                                                                                          .build())
-                                                                     .setH2Config(H2Config.initial()
+                                                                     .setDefaultRequestConfig(RequestConfig.custom()
+                                                                                                           .setConnectTimeout(Timeout.ofSeconds(10))
+                                                                                                           .setConnectionRequestTimeout(Timeout.DISABLED)
+                                                                                                           .setResponseTimeout(Timeout.ofMinutes(5))
+                                                                                                           .build())
+                                                                     .setH2Config(H2Config.custom()
                                                                                           .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
                                                                                           .setCompressionEnabled(true)
                                                                                           .setPushEnabled(false)
+                                                                                          .setInitialWindowSize(Integer.MAX_VALUE)
                                                                                           .build());
 
         SSLContext sslContext = constructSslContext(builder);
