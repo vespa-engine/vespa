@@ -62,6 +62,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int numDistributorStripes = 0;
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 1024;
+    private int largeRankExpressionLimit = 0x10000;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
 
@@ -105,11 +106,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
     @Override public boolean distributeExternalRankExpressions() { return useExternalRankExpression; }
+    @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
 
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
+        return this;
+    }
+    public TestProperties largeRankExpressionLimit(int value) {
+        largeRankExpressionLimit = value;
         return this;
     }
     public TestProperties setFeedConcurrency(double feedConcurrency) {
