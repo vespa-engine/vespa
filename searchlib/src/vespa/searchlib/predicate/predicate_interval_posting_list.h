@@ -14,10 +14,10 @@ namespace search::predicate {
 template<typename Iterator>
 class PredicateIntervalPostingList : public PredicatePostingList {
     const PredicateIntervalStore &_interval_store;
-    Iterator _iterator;
-    const Interval *_current_interval;
-    uint32_t _interval_count;
-    Interval _single_buf;
+    Iterator                      _iterator;
+    const Interval               *_current_interval;
+    uint32_t                      _interval_count;
+    Interval                      _single_buf;
 
 public:
     PredicateIntervalPostingList(const PredicateIntervalStore &interval_store, Iterator it);
@@ -46,7 +46,8 @@ PredicateIntervalPostingList<Iterator>::PredicateIntervalPostingList(
 }
 
 template<typename Iterator>
-bool PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {
+bool
+PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {
     if (!_iterator.valid()) {
         return false;
     }

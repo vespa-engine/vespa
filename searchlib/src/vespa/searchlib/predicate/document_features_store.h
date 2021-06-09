@@ -54,14 +54,14 @@ class DocumentFeaturesStore {
                          vespalib::btree::NoAggregated, const KeyComp &> WordIndex;
 
     DocumentFeaturesMap _docs;
-    RangeFeaturesMap _ranges;
-    WordStore _word_store;
-    WordIndex _word_index;
-    uint32_t _currDocId;
-    FeatureVector *_currFeatures;
-    size_t _numFeatures;
-    size_t _numRanges;
-    uint32_t _arity;
+    RangeFeaturesMap    _ranges;
+    WordStore           _word_store;
+    WordIndex           _word_index;
+    uint32_t            _currDocId;
+    FeatureVector      *_currFeatures;
+    size_t              _numFeatures;
+    size_t              _numRanges;
+    uint32_t            _arity;
 
     void setCurrent(uint32_t docId, FeatureVector *features);
 

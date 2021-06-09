@@ -53,7 +53,8 @@ namespace {
 }  // namespace
 
 template<typename Iterator>
-bool PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
+bool
+PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
     if (_iterator.valid() && _iterator.getKey() <= doc_id) {
         _iterator.linearSeek(doc_id + 1);
     }
@@ -74,7 +75,8 @@ bool PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
 }
 
 template<typename Iterator>
-bool PredicateBoundsPostingList<Iterator>::nextInterval() {
+bool
+PredicateBoundsPostingList<Iterator>::nextInterval() {
     uint32_t next_bounds;
     do {
         if (__builtin_expect(_interval_count == 1, true)) {

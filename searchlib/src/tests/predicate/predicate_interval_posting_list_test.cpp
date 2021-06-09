@@ -28,7 +28,7 @@ SimpleIndexConfig config;
 const uint64_t hash = 0x123;
 
 TEST("require that empty posting list starts at 0.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
     vespalib::datastore::EntryRef ref;
     PredicateIntervalPostingList<PredicateIndex::BTreeIterator>
     posting_list(index.getIntervalStore(), index.getIntervalIndex().getBTreePostingList(ref));
@@ -38,7 +38,7 @@ TEST("require that empty posting list starts at 0.") {
 }
 
 TEST("require that posting list can iterate.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
     const auto &interval_index = index.getIntervalIndex();
     for (uint32_t id = 1; id < 100; ++id) {
         PredicateTreeAnnotations annotations(id);

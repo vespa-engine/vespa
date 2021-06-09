@@ -141,12 +141,12 @@ private:
     template <typename T>
     using optional = std::optional<T>;
 
-    Dictionary _dictionary;
-    BTreeStore _btree_posting_lists;
-    VectorStore _vector_posting_lists;
-    GenerationHolder &_generation_holder;
-    uint32_t _insert_remove_counter = 0;
-    const SimpleIndexConfig _config;
+    Dictionary                _dictionary;
+    BTreeStore                _btree_posting_lists;
+    VectorStore               _vector_posting_lists;
+    GenerationHolder         &_generation_holder;
+    uint32_t                  _insert_remove_counter = 0;
+    const SimpleIndexConfig   _config;
     const DocIdLimitProvider &_limit_provider;
 
     void insertIntoPosting(vespalib::datastore::EntryRef &ref, Key key, DocId doc_id, const Posting &posting);
@@ -164,7 +164,7 @@ private:
     bool shouldRemoveVectorPosting(size_t size, double ratio) const;
     size_t getVectorPostingSize(const PostingVector &vector) const {
         return std::min(vector.size(),
-                       static_cast<size_t>(_limit_provider.getCommittedDocIdLimit()));
+                        static_cast<size_t>(_limit_provider.getCommittedDocIdLimit()));
     }
 
 public:
@@ -219,8 +219,8 @@ public:
 
 template<typename Posting, typename Key, typename DocId>
 template<typename FunctionType>
-void SimpleIndex<Posting, Key, DocId>::foreach_frozen_key(
-        vespalib::datastore::EntryRef ref, Key key, FunctionType func) const {
+void
+SimpleIndex<Posting, Key, DocId>::foreach_frozen_key(vespalib::datastore::EntryRef ref, Key key, FunctionType func) const {
     auto it = _vector_posting_lists.getFrozenView().find(key);
     double ratio = getDocumentRatio(getDocumentCount(ref), _limit_provider.getDocIdLimit());
     if (it.valid() && ratio > _config.foreach_vector_threshold) {

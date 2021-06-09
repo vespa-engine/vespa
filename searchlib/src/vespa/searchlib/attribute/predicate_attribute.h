@@ -80,7 +80,6 @@ public:
 
     void populateIfNeeded();
 private:
-    vespalib::string _base_file_name;
     const AttributeVectorDocIdLimitProvider _limit_provider;
     std::unique_ptr<predicate::PredicateIndex> _index;
     int64_t _lower_bound;

@@ -15,6 +15,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <algorithm>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.predicate.predicate_blueprint");
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
@@ -73,11 +74,11 @@ struct MyRangeHandler {
 };
 
 template <typename Entry>
-void pushRangeDictionaryEntries(
-        const Entry &entry,
-        const PredicateIndex &index,
-        vector<IntervalEntry> &interval_entries,
-        vector<BoundsEntry> &bounds_entries) {
+void
+pushRangeDictionaryEntries(const Entry &entry, const PredicateIndex &index,
+                           vector<IntervalEntry> &interval_entries,
+                           vector<BoundsEntry> &bounds_entries)
+{
     PredicateRangeTermExpander expander(index.getArity());
     MyRangeHandler handler{index.getIntervalIndex(), index.getBoundsIndex(), interval_entries,
                            bounds_entries, entry.getSubQueryBitmap()};
@@ -202,16 +203,17 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
         });
 
 
-    if (zero_constraints_docs.size() == 0 &&
+    if ((zero_constraints_docs.size() == 0) &&
         _interval_dict_entries.empty() && _bounds_dict_entries.empty() &&
-        !_zstar_dict_entry.valid()) {
+        !_zstar_dict_entry.valid())
+    {
         setEstimate(HitEstimate(0, true));
     } else {
         setEstimate(HitEstimate(static_cast<uint32_t>(zero_constraints_docs.size()), false));
     }
 }
 
-PredicateBlueprint::~PredicateBlueprint() {}
+PredicateBlueprint::~PredicateBlueprint() = default;
 
 namespace {
 
@@ -277,29 +279,30 @@ PredicateBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, 
     PredicateAttribute::MinFeatureHandle mfh = attribute.getMinFeatureVector();
     auto interval_range_vector = attribute.getIntervalRangeVector();
     auto max_interval_range = attribute.getMaxIntervalRange();
-    return SearchIterator::UP(new PredicateSearch(mfh.first, interval_range_vector, max_interval_range, _kV,
-                                                  createPostingLists(), tfmda));
+    return std::make_unique<PredicateSearch>(mfh.first, interval_range_vector, max_interval_range, _kV,
+                                             createPostingLists(), tfmda);
 }
 
 namespace {
 
-    template<typename IteratorEntry, typename PostingListFactory>
-    void createPredicatePostingLists(const std::vector<IteratorEntry> &iterator_entries,
-                                     std::vector<PredicatePostingList::UP> &posting_lists,
-                                     PostingListFactory posting_list_factory)
-    {
-        for (const auto &entry : iterator_entries) {
-            if (entry.iterator.valid()) {
-                auto posting_list = posting_list_factory(entry);
-                posting_list->setSubquery(entry.entry.subquery);
-                posting_lists.emplace_back(PredicatePostingList::UP(posting_list));
-            }
+template<typename IteratorEntry, typename PostingListFactory>
+void createPredicatePostingLists(const std::vector<IteratorEntry> &iterator_entries,
+                                 std::vector<PredicatePostingList::UP> &posting_lists,
+                                 PostingListFactory posting_list_factory)
+{
+    for (const auto &entry : iterator_entries) {
+        if (entry.iterator.valid()) {
+            auto posting_list = posting_list_factory(entry);
+            posting_list->setSubquery(entry.entry.subquery);
+            posting_lists.emplace_back(PredicatePostingList::UP(posting_list));
         }
     }
+}
 
 }
 
-std::vector<PredicatePostingList::UP> PredicateBlueprint::createPostingLists() const {
+std::vector<PredicatePostingList::UP>
+PredicateBlueprint::createPostingLists() const {
     size_t total_size = _interval_btree_iterators.size() + _interval_vector_iterators.size() +
                         _bounds_btree_iterators.size() + _bounds_vector_iterators.size() + 2;
     std::vector<PredicatePostingList::UP> posting_lists;
@@ -333,17 +336,15 @@ std::vector<PredicatePostingList::UP> PredicateBlueprint::createPostingLists() c
             });
 
     if (_zstar_vector_iterator && _zstar_vector_iterator->valid()) {
-        auto posting_list = PredicatePostingList::UP(
-                new PredicateZstarCompressedPostingList<VectorIterator>(interval_store, *_zstar_vector_iterator));
+        auto posting_list = std::make_unique<PredicateZstarCompressedPostingList<VectorIterator>>(interval_store, *_zstar_vector_iterator);
         posting_lists.emplace_back(std::move(posting_list));
     } else if (_zstar_btree_iterator && _zstar_btree_iterator->valid()) {
-        auto posting_list = PredicatePostingList::UP(
-                new PredicateZstarCompressedPostingList<BTreeIterator>(interval_store, *_zstar_btree_iterator));
+        auto posting_list = std::make_unique<PredicateZstarCompressedPostingList<BTreeIterator>>(interval_store, *_zstar_btree_iterator);
         posting_lists.emplace_back(std::move(posting_list));
     }
     auto iterator = _index.getZeroConstraintDocs().begin();
     if (iterator.valid()) {
-        auto posting_list = PredicatePostingList::UP(new PredicateZeroConstraintPostingList(iterator));
+        auto posting_list = std::make_unique<PredicateZeroConstraintPostingList>(iterator);
         posting_lists.emplace_back(std::move(posting_list));
     }
     return posting_lists;
