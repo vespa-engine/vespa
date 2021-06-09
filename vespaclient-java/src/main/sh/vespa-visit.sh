@@ -74,16 +74,30 @@ findhost
 
 # END environment bootstrap section
 
+# Allow -Xmx to be specified in args
+for arg in "$@"; do
+  shift
+  if case $arg in -Xmx*) true;; *) false;; esac; then # portable if [string begins with]
+    export Xmx=$arg
+  else
+    set -- "$@" "$arg"
+  fi
+done
+
 if [ "${VESPA_LOG_LEVEL}" = "" ]; then
     export VESPA_LOG_LEVEL=error,warning
 fi
 
-export MALLOC_ARENA_MAX=1 #Does not need fast allocation
-exec java \
+if [ "${VESPA_LOG_LEVEL}" = "" ]; then
+    export VESPA_LOG_LEVEL=error,warning
+fi
+
+export MALLOC_ARENA_MAX=1 # Does not need fast allocation
+echo exec java \
 -server -enableassertions \
 -XX:ThreadStackSize=512 \
 -XX:MaxJavaStackTraceDepth=1000000 \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
 -XX:MaxDirectMemorySize=32m -Djava.awt.headless=true \
--Xms128m -Xmx1024m $(getJavaOptionsIPV46) \
+-Xms128m -Xmx1024m $(getJavaOptionsIPV46) ${Xmx} \
 -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespavisit.VdsVisit "$@"
