@@ -3,11 +3,14 @@ package ai.vespa.feed.client;
 
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,47 +45,59 @@ class JsonFeederTest {
                       "    }\n" +
                       "  }\n" +
                       "]";
-        ByteArrayInputStream in = new ByteArrayInputStream(json.getBytes(UTF_8));
-        Set<String> ids = new ConcurrentSkipListSet<>();
-        AtomicInteger resultsReceived = new AtomicInteger();
-        AtomicBoolean completedSuccessfully = new AtomicBoolean();
         AtomicReference<Throwable> exceptionThrow = new AtomicReference<>();
-        long startNanos = System.nanoTime();
-        JsonFeeder.builder(new FeedClient() {
+        Path tmpFile = Files.createTempFile(null, null);
+        Files.write(tmpFile, json.getBytes(UTF_8));
+        try (InputStream in = Files.newInputStream(tmpFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE)) {
+            AtomicInteger resultsReceived = new AtomicInteger();
+            AtomicBoolean completedSuccessfully = new AtomicBoolean();
+            Set<String> ids = new HashSet<>();
+            long startNanos = System.nanoTime();
+            JsonFeeder.builder(new FeedClient() {
 
-            @Override
-            public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
-                ids.add(documentId.userSpecific());
-                return createSuccessResult(documentId);
-            }
+                @Override
+                public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
+                    ids.add(documentId.userSpecific());
+                    return createSuccessResult(documentId);
+                }
 
-            @Override
-            public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
-                return createSuccessResult(documentId);
-            }
+                @Override
+                public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
+                    return createSuccessResult(documentId);
+                }
 
-            @Override
-            public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
-                return createSuccessResult(documentId);
-            }
+                @Override
+                public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
+                    return createSuccessResult(documentId);
+                }
 
-            @Override
-            public void close(boolean graceful) { }
+                @Override
+                public OperationStats stats() { return null; }
 
-            private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
-                return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
-            }
+                @Override
+                public void close(boolean graceful) { }
 
-        }).build().feedMany(in, 1 << 7, new JsonFeeder.ResultCallback() {
-            @Override public void onNextResult(Result result, Throwable error) { resultsReceived.incrementAndGet(); }
-            @Override public void onError(Throwable error) { exceptionThrow.set(error); }
-            @Override public void onComplete() { completedSuccessfully.set(true); }
-        }).join(); // TODO: hangs when buffer is smaller than largest document
-        System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
-        assertEquals(docs + 1, ids.size());
-        assertEquals(docs + 1, resultsReceived.get());
-        assertTrue(completedSuccessfully.get());
-        assertNull(exceptionThrow.get());
+                private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
+                    return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
+                }
+
+            }).build().feedMany(in, 1 << 7, new JsonFeeder.ResultCallback() { // TODO: hangs when buffer is smaller than largest document
+                @Override
+                public void onNextResult(Result result, Throwable error) { resultsReceived.incrementAndGet(); }
+
+                @Override
+                public void onError(Throwable error) { exceptionThrow.set(error); }
+
+                @Override
+                public void onComplete() { completedSuccessfully.set(true); }
+            }).join();
+
+            System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
+            assertEquals(docs + 1, ids.size());
+            assertEquals(docs + 1, resultsReceived.get());
+            assertTrue(completedSuccessfully.get());
+            assertNull(exceptionThrow.get());
+        }
     }
 
 }

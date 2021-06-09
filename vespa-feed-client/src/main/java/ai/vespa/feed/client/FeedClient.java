@@ -19,6 +19,9 @@ public interface FeedClient extends Closeable {
     /** Send a document remove with the given parameters, returning a future with the result of the operation. */
     CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params);
 
+    /** Returns a snapshot of the stats for this feed client, such as requests made, and responses by status. */
+    OperationStats stats();
+
     /** Shut down, and reject new operations. Operations in flight are allowed to complete normally if graceful. */
     void close(boolean graceful);
 

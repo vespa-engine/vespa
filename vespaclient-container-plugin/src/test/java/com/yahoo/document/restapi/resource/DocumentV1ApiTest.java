@@ -66,11 +66,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -83,6 +85,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -672,6 +675,76 @@ public class DocumentV1ApiTest {
         if (handler.get() != null)                          // Timeout may have occurred before dispatch, or ...
             handler.get().handleResponse(new Response(0));  // response may eventually arrive, but too late.
 
+        driver.close();
+    }
+
+    @Test
+    public void testThroughput() throws InterruptedException {
+        DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder().build();
+        handler = new DocumentV1ApiHandler(clock, metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
+
+        int writers = 4;
+        int queueFill = executorConfig.maxThrottled() - writers;
+        RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
+        ScheduledExecutorService writer = Executors.newScheduledThreadPool(writers);
+        ScheduledExecutorService reader = Executors.newScheduledThreadPool(1);
+        ScheduledExecutorService replier = Executors.newScheduledThreadPool(writers);
+        BlockingQueue<RequestHandlerTestDriver.MockResponseHandler> responses = new LinkedBlockingQueue<>();
+
+        Response success = new Response(0, null, Response.Outcome.SUCCESS);
+        int docs = 1 << 14;
+        assertTrue(docs >= writers);
+        AtomicReference<com.yahoo.jdisc.Response> failed = new AtomicReference<>();
+
+        CountDownLatch latch = new CountDownLatch(docs);
+        reader.execute(() -> {
+            while ( ! reader.isShutdown()) {
+                try {
+                    var response = responses.take();
+                    response.awaitResponse().readAll();
+                    if (response.getStatus() != 200)
+                        failed.set(response.getResponse());
+                    latch.countDown();
+                }
+                catch (InterruptedException e) { break; }
+            }
+        });
+
+        // Fill the handler resend queue.
+        long startNanos = System.nanoTime();
+        CountDownLatch setup = new CountDownLatch(queueFill);
+        access.session.expect((id, parameters) -> {
+            setup.countDown();
+            return new Result(Result.ResultType.TRANSIENT_ERROR, new Error());
+        });
+        for (int i = 0; i < queueFill; i++) {
+            int j = i;
+            writer.execute(() -> {
+                responses.add(driver.sendRequest("http://localhost/document/v1/ns/music/docid/" + j,
+                                                 POST,
+                                                 "{ \"fields\": { \"artist\": \"Sigrid\" } }"));
+            });
+        }
+        setup.await();
+
+        // Let "messagebus" start accepting messages.
+        access.session.expect((id, parameters) -> {
+            replier.schedule(() -> parameters.responseHandler().get().handleResponse(success), 10, TimeUnit.MILLISECONDS);
+            return new Result(0);
+        });
+        // Send the rest of the documents. Rely on resender to empty queue of throttled oppperations.
+        for (int i = queueFill; i < docs; i++) {
+            int j = i;
+            writer.execute(() -> {
+                responses.add(driver.sendRequest("http://localhost/document/v1/ns/music/docid/" + j,
+                                                 POST,
+                                                 "{ \"fields\": { \"artist\": \"Sigrid\" } }"));
+            });
+        }
+        latch.await();
+        System.err.println((System.nanoTime() - startNanos) * 1e-9 + " seconds total");
+
+        assertNull(failed.get());
         driver.close();
     }
 

@@ -5,10 +5,11 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.Closeable;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Allows dispatch to a Vespa cluster. {@link #dispatch} should be called by a single thread, i.e., it is not thread-safe.
+ * Allows dispatch to a Vespa cluster.
  */
 interface Cluster extends Closeable {
 
@@ -17,5 +18,7 @@ interface Cluster extends Closeable {
 
     @Override
     default void close() { }
+
+    default OperationStats stats() { return new OperationStats(0, Collections.emptyMap(), 0, 0, 0, 0, 0, 0, 0); }
 
 }

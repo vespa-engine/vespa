@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +34,7 @@ public class FeedClientBuilder {
     int connectionsPerEndpoint = 4;
     int maxStreamsPerConnection = 128;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
-    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Clock.systemUTC(), Duration.ofSeconds(1), Duration.ofMinutes(10));
+    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(1), Duration.ofMinutes(10));
     Path certificate;
     Path privateKey;
     Path caCertificates;

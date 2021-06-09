@@ -12,6 +12,8 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -51,9 +53,14 @@ class HttpRequestStrategy implements RequestStrategy {
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final AtomicLong delayedCount = new AtomicLong(0);
     private final AtomicLong retries = new AtomicLong(0);
+    private final ExecutorService resultExecutor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "feed-client-result-executor");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     HttpRequestStrategy(FeedClientBuilder builder) throws IOException {
-        this(builder, new HttpCluster(builder));
+        this(builder, new BenchmarkingCluster(new HttpCluster(builder)));
     }
 
     HttpRequestStrategy(FeedClientBuilder builder, Cluster cluster) {
@@ -67,6 +74,10 @@ class HttpRequestStrategy implements RequestStrategy {
         Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);
         dispatcher.start();
+    }
+
+    public OperationStats stats() {
+        return cluster.stats();
     }
 
     private void dispatch() {
@@ -222,22 +233,23 @@ class HttpRequestStrategy implements RequestStrategy {
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
     private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result, int attempt) {
-        vessel.whenComplete((response, thrown) -> {
-            // Retry the operation if it failed with a transient error ...
-            if (thrown != null ? retry(request, thrown, attempt)
-                               : retry(request, response, attempt)) {
-                retries.incrementAndGet();
-                CircuitBreaker.State state = breaker.state();
-                CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
-                offer(() -> cluster.dispatch(request, retry));
-                handleAttempt(retry, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
-            }
-            // ... or accept the outcome and mark the operation as complete.
-            else {
-                if (thrown == null) result.complete(response);
-                else result.completeExceptionally(thrown);
-            }
-        });
+        vessel.whenCompleteAsync((response, thrown) -> {
+                                     // Retry the operation if it failed with a transient error ...
+                                     if (thrown != null ? retry(request, thrown, attempt)
+                                                        : retry(request, response, attempt)) {
+                                         retries.incrementAndGet();
+                                         CircuitBreaker.State state = breaker.state();
+                                         CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
+                                         offer(() -> cluster.dispatch(request, retry));
+                                         handleAttempt(retry, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
+                                     }
+                                     // ... or accept the outcome and mark the operation as complete.
+                                     else {
+                                         if (thrown == null) result.complete(response);
+                                         else result.completeExceptionally(thrown);
+                                     }
+                                 },
+                                 resultExecutor);
     }
 
     @Override
@@ -246,6 +258,7 @@ class HttpRequestStrategy implements RequestStrategy {
             inflightById.values().forEach(result -> result.cancel(true));
 
         cluster.close();
+        resultExecutor.shutdown();
     }
 
 }
