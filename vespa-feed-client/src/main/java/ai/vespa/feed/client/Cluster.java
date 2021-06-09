@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  */
 interface Cluster extends Closeable {
 
-    /** Dispatch the request to the cluster, causing the response vessel to complete at a later time. */
+    /** Dispatch the request to the cluster, causing the response vessel to complete at a later time. May not throw. */
     void dispatch(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel);
 
     @Override

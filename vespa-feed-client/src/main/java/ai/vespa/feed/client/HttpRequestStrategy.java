@@ -113,7 +113,7 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     private boolean retry(SimpleHttpRequest request, int attempt) {
-        if (attempt >= strategy.retries())
+        if (attempt > strategy.retries())
             return false;
 
         switch (request.getMethod().toUpperCase()) {
