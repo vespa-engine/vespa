@@ -98,6 +98,8 @@ size_t countUnreachable(const ConnectivityMap &connectivityMap,
             if (probe.result() == CcResult::ALL_OK) ++numReportsUp;
         }
         if (numReportsUp > numReportsDown) {
+            LOG(warning, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
+                toCheck.first.c_str(), numReportsUp, numReportsDown);
             ++counter;
         }
     }
