@@ -142,12 +142,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = importMlModels(applicationPackage, modelImporters, deployLogger);
 
-        ValidationOverrides suppliedValidationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
-                                                                            .orElse(ValidationOverrides.empty);
-        this.validationOverrides =
-                zone.environment().isManuallyDeployed() // // Warn but allow in manually deployed zones
-                ? new ValidationOverrides.AllowAllValidationOverrides(suppliedValidationOverrides, deployLogger)
-                : suppliedValidationOverrides;
+        this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
+                                                     .orElse(ValidationOverrides.empty);
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;

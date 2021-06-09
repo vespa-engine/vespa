@@ -55,6 +55,7 @@ public class Validation {
      * between the previous and current model
      *
      * @return a list of required changes needed to make this configuration live
+     * @throws ValidationOverrides.ValidationException if the change fails validation
      */
     public static List<ConfigChangeAction> validate(VespaModel model, ValidationParameters validationParameters, DeployState deployState) {
         if (validationParameters.checkRouting()) {

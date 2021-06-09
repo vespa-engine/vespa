@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -23,6 +24,7 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
+import com.yahoo.yolean.Exceptions;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -170,6 +173,13 @@ public class VespaModelFactory implements ModelFactory {
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
             return Validation.validate(model, validationParameters, deployState);
+        } catch (ValidationOverrides.ValidationException e) {
+            if (deployState.isHosted() && zone.environment().isManuallyDeployed())
+                deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
+                                                                    "Auto-overriding validation which would be disallowed in production: " +
+                                                                    Exceptions.toMessageString(e));
+            else
+                rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (IllegalArgumentException | TransientException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {

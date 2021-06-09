@@ -19,7 +19,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import org.junit.Before;
 import org.junit.Test;
 

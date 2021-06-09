@@ -430,4 +430,8 @@ StandaloneFRT::~StandaloneFRT()
     _transport->ShutDown(true);
 }
 
+void StandaloneFRT::shutdown() {
+    _transport->ShutDown(true);
+}
+
 }

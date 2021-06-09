@@ -161,6 +161,14 @@ public class Nodes {
                     node = node.with(node.status().withFailCount(existing.get().status().failCount()));
                     if (existing.get().status().firmwareVerifiedAt().isPresent())
                         node = node.with(node.status().withFirmwareVerifiedAt(existing.get().status().firmwareVerifiedAt().get()));
+                    // Preserve wantToRebuild/wantToRetire when rebuilding as the fields shouldn't be cleared until the
+                    // host is readied (i.e. we know it is up and rebuild completed)
+                    boolean rebuilding = existing.get().status().wantToRebuild();
+                    if (rebuilding) {
+                        node = node.with(node.status().withWantToRetire(existing.get().status().wantToRetire(),
+                                                                        false,
+                                                                        rebuilding));
+                    }
                     nodesToRemove.add(existing.get());
                 }
 
