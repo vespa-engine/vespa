@@ -64,7 +64,7 @@ public class BenchmarkingCluster implements Cluster {
     }
 
     @Override
-    public Stats stats() {
+    public OperationStats stats() {
         try {
             try {
                 return executor.submit(this::getStats).get();
@@ -79,21 +79,21 @@ public class BenchmarkingCluster implements Cluster {
         }
     }
 
-    private Stats getStats() {
+    private OperationStats getStats() {
         Map<Integer, Long> responses = new HashMap<>();
         for (int code = 0; code < responsesByCode.length; code++)
             if (responsesByCode[code] > 0)
                 responses.put(code, responsesByCode[code]);
 
-        return new Stats(requests.get(),
-                         responses,
-                         exceptions,
+        return new OperationStats(requests.get(),
+                                  responses,
+                                  exceptions,
                          requests.get() - results,
                          totalLatencyMillis / this.responses,
-                         minLatencyMillis,
-                         maxLatencyMillis,
-                         bytesSent,
-                         bytesReceived);
+                                  minLatencyMillis,
+                                  maxLatencyMillis,
+                                  bytesSent,
+                                  bytesReceived);
     }
 
     @Override

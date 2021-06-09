@@ -15,6 +15,9 @@ import java.util.function.BiConsumer;
  */
 interface RequestStrategy {
 
+    /** Stats for operations sent through this. */
+    OperationStats stats();
+
     /** Whether this has failed fatally, and we should cease sending further operations. */
     boolean hasFailed();
 

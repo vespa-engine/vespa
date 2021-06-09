@@ -76,6 +76,10 @@ class HttpRequestStrategy implements RequestStrategy {
         dispatcher.start();
     }
 
+    public OperationStats stats() {
+        return cluster.stats();
+    }
+
     private void dispatch() {
         try {
             while (breaker.state() != OPEN && ! destroyed.get()) {

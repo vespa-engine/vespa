@@ -72,6 +72,9 @@ class JsonFeederTest {
                 }
 
                 @Override
+                public OperationStats stats() { return null; }
+
+                @Override
                 public void close(boolean graceful) { }
 
                 private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {

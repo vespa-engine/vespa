@@ -7,14 +7,9 @@ import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,7 +36,7 @@ class HttpRequestStrategyTest {
         strategy.await();
         executor.shutdown();
         cluster.close();
-        Cluster.Stats stats = cluster.stats();
+        OperationStats stats = cluster.stats();
         long successes = stats.responsesByCode().get(200);
         System.err.println(successes + " successes in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
         System.err.println(stats);

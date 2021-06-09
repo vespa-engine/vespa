@@ -64,6 +64,11 @@ class HttpFeedClient implements FeedClient {
     }
 
     @Override
+    public OperationStats stats() {
+        return requestStrategy.stats();
+    }
+
+    @Override
     public void close(boolean graceful) {
         closed.set(true);
         if (graceful)
