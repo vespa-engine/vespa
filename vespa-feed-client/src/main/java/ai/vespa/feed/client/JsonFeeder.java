@@ -12,14 +12,18 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static ai.vespa.feed.client.FeedClient.OperationType.PUT;
 import static ai.vespa.feed.client.FeedClient.OperationType.REMOVE;
 import static ai.vespa.feed.client.FeedClient.OperationType.UPDATE;
+import static com.fasterxml.jackson.core.JsonToken.END_ARRAY;
+import static com.fasterxml.jackson.core.JsonToken.START_ARRAY;
 import static com.fasterxml.jackson.core.JsonToken.START_OBJECT;
 import static com.fasterxml.jackson.core.JsonToken.VALUE_FALSE;
 import static com.fasterxml.jackson.core.JsonToken.VALUE_STRING;
@@ -30,15 +34,42 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * @author jonmv
+ * @author bjorncs
  */
-public class JsonStreamFeeder implements Closeable {
+public class JsonFeeder implements Closeable {
 
+    private final ExecutorService resultExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "json-feeder-result-executor");
+        t.setDaemon(true);
+        return t;
+    });
     private final FeedClient client;
     private final OperationParameters protoParameters;
 
-    private JsonStreamFeeder(FeedClient client, OperationParameters protoParameters) {
+    private JsonFeeder(FeedClient client, OperationParameters protoParameters) {
         this.client = client;
         this.protoParameters = protoParameters;
+    }
+
+    public interface ResultCallback {
+        /**
+         * Invoked after each operation has either completed successfully or failed
+         *
+         * @param result Non-null if operation completed successfully
+         * @param error Non-null if operation failed
+         */
+        void onNextResult(Result result, Throwable error);
+
+        /**
+         * Invoked if an unrecoverable error occurred during feed processing,
+         * after which no other {@link ResultCallback} methods are invoked.
+         */
+        void onError(Throwable error);
+
+        /**
+         * Invoked when all feed operations are either completed successfully or failed.
+         */
+        void onComplete();
     }
 
     public static Builder builder(FeedClient client) { return new Builder(client); }
@@ -68,45 +99,59 @@ public class JsonStreamFeeder implements Closeable {
      * </pre>
      * Note that {@code "id"} is an alias for the document put operation.
      */
-    public void feed(InputStream jsonStream) throws IOException {
-        feed(jsonStream, 1 << 26, false);
+    public CompletableFuture<Void> feedMany(InputStream jsonStream, ResultCallback resultCallback) {
+        return feedMany(jsonStream, 1 << 26, resultCallback);
     }
 
-    BenchmarkResult benchmark(InputStream jsonStream) throws IOException {
-        return feed(jsonStream, 1 << 26, true).get();
-    }
-
-    Optional<BenchmarkResult> feed(InputStream jsonStream, int size, boolean benchmark) throws IOException {
+    CompletableFuture<Void> feedMany(InputStream jsonStream, int size, ResultCallback resultCallback) {
         RingBufferStream buffer = new RingBufferStream(jsonStream, size);
-        buffer.expect(JsonToken.START_ARRAY);
-        AtomicInteger okCount = new AtomicInteger();
-        AtomicInteger failedCount = new AtomicInteger();
-        long startTime = System.nanoTime();
+        CompletableFuture<Void> overallResult = new CompletableFuture<>();
         CompletableFuture<Result> result;
-        AtomicReference<Throwable> thrown = new AtomicReference<>();
-        while ((result = buffer.next()) != null) {
-            result.whenComplete((r, t) -> {
-                if (t != null) {
-                    failedCount.incrementAndGet();
-                    if (!benchmark) thrown.set(t);
-                } else
-                    okCount.incrementAndGet();
-            });
-            if (thrown.get() != null)
-                sneakyThrow(thrown.get());
+        AtomicInteger pending = new AtomicInteger(1); // The below dispatch loop itself is counted as a single pending operation
+        AtomicBoolean finalCallbackInvoked = new AtomicBoolean();
+        try {
+            while ((result = buffer.next()) != null) {
+                pending.incrementAndGet();
+                result.whenCompleteAsync((r, t) -> {
+                    if (!finalCallbackInvoked.get()) {
+                        resultCallback.onNextResult(r, t);
+                    }
+                    if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
+                        resultCallback.onComplete();
+                        overallResult.complete(null);
+                    }
+                }, resultExecutor);
+            }
+            if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
+                resultExecutor.execute(() -> {
+                    resultCallback.onComplete();
+                    overallResult.complete(null);
+                });
+            }
+        } catch (Exception e) {
+            if (finalCallbackInvoked.compareAndSet(false, true)) {
+                resultExecutor.execute(() -> {
+                    resultCallback.onError(e);
+                    overallResult.completeExceptionally(e);
+                });
+            }
         }
-        if (!benchmark) return Optional.empty();
-        Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-        double throughPut = (double)okCount.get() / duration.toMillis() * 1000D;
-        return Optional.of(new BenchmarkResult(okCount.get(), failedCount.get(), duration, throughPut));
+        return overallResult;
     }
-
-    @SuppressWarnings("unchecked")
-    static <T extends Throwable> void sneakyThrow(Throwable thrown) throws T { throw (T) thrown; }
 
     private static final JsonFactory factory = new JsonFactory();
 
-    @Override public void close() throws IOException { client.close(); }
+    @Override public void close() throws IOException {
+        client.close();
+        resultExecutor.shutdown();
+        try {
+            if (!resultExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                throw new IOException("Failed to close client in time");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 
     private class RingBufferStream extends InputStream {
 
@@ -115,12 +160,12 @@ public class JsonStreamFeeder implements Closeable {
         private final byte[] data;
         private final int size;
         private final Object lock = new Object();
-        private final JsonParser parser;
         private Throwable thrown = null;
         private long tail = 0;
         private long pos = 0;
         private long head = 0;
         private boolean done = false;
+        private final OperationParserAndExecutor parserAndExecutor;
 
         RingBufferStream(InputStream in, int size) {
             this.in = in;
@@ -129,7 +174,7 @@ public class JsonStreamFeeder implements Closeable {
 
             new Thread(this::fill, "feed-reader").start();
 
-            try { this.parser = factory.createParser(this); }
+            try { this.parserAndExecutor = new RingBufferBackedOperationParserAndExecutor(factory.createParser(this)); }
             catch (IOException e) { throw new UncheckedIOException(e); }
         }
 
@@ -164,77 +209,8 @@ public class JsonStreamFeeder implements Closeable {
             }
         }
 
-        void expect(JsonToken token) throws IOException {
-            if (parser.nextToken() != token)
-                throw new IllegalArgumentException("Expected '" + token + "' at offset " + parser.getTokenLocation().getByteOffset() +
-                                                   ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
-        }
-
         public CompletableFuture<Result> next() throws IOException {
-            long start = 0, end = -1;
-            OperationType type = null;
-            DocumentId id = null;
-            OperationParameters parameters = protoParameters;
-            switch (parser.nextToken()) {
-                case END_ARRAY: return null;
-                case START_OBJECT: break;
-                default: throw new IllegalArgumentException("Unexpected token '" + parser.currentToken() + "' at offset " +
-                                                            parser.getTokenLocation().getByteOffset());
-            }
-
-            loop: while (true) {
-                switch (parser.nextToken()) {
-                    case FIELD_NAME:
-                        switch (parser.getText()) {
-                            case "id":
-                            case "put":    type = PUT;    id = readId(); break;
-                            case "update": type = UPDATE; id = readId(); break;
-                            case "remove": type = REMOVE; id = readId(); break;
-                            case "condition": parameters = parameters.testAndSetCondition(readString()); break;
-                            case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
-                            case "fields": {
-                                expect(START_OBJECT);
-                                start = parser.getTokenLocation().getByteOffset();
-                                int depth = 1;
-                                while (depth > 0) switch (parser.nextToken()) {
-                                    case START_OBJECT: ++depth; break;
-                                    case END_OBJECT:   --depth; break;
-                                }
-                                end = parser.getTokenLocation().getByteOffset() + 1;
-                                break;
-                            }
-                            default: throw new IllegalArgumentException("Unexpected field name '" + parser.getText() + "' at offset " +
-                                                                        parser.getTokenLocation().getByteOffset());
-                        }
-                        break;
-
-                    case END_OBJECT:
-                        break loop;
-
-                    default:
-                        throw new IllegalArgumentException("Unexpected token '" + parser.currentToken() + "' at offset " +
-                                                           parser.getTokenLocation().getByteOffset());
-                }
-            }
-
-            if (id == null)
-                throw new IllegalArgumentException("No document id for document at offset " + start);
-
-            if (end < start)
-                throw new IllegalArgumentException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
-
-            String payload = new String(copy(start, end), UTF_8);
-            synchronized (lock) {
-                tail = end;
-                lock.notify();
-            }
-
-            switch (type) {
-                case PUT:    return client.put   (id, payload, parameters);
-                case UPDATE: return client.update(id, payload, parameters);
-                case REMOVE: return client.remove(id, parameters);
-                default: throw new IllegalStateException("Unexpected operation type '" + type + "'");
-            }
+           return parserAndExecutor.next();
         }
 
         private final byte[] prefix = "{\"fields\":".getBytes(UTF_8);
@@ -253,28 +229,6 @@ public class JsonStreamFeeder implements Closeable {
             return buffer;
         }
 
-        private String readString() throws IOException {
-            String value = parser.nextTextValue();
-            if (value == null)
-                throw new IllegalArgumentException("Expected '" + VALUE_STRING + "' at offset " + parser.getTokenLocation().getByteOffset() +
-                                                   ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
-
-            return value;
-        }
-
-        private boolean readBoolean() throws IOException {
-            Boolean value = parser.nextBooleanValue();
-            if (value == null)
-                throw new IllegalArgumentException("Expected '" + VALUE_FALSE + "' or '" + VALUE_TRUE + "' at offset " + parser.getTokenLocation().getByteOffset() +
-                                                   ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
-
-            return value;
-
-        }
-
-        private DocumentId readId() throws IOException {
-            return DocumentId.of(readString());
-        }
 
         @Override
         public void close() throws IOException {
@@ -314,6 +268,122 @@ public class JsonStreamFeeder implements Closeable {
             }
         }
 
+        private class RingBufferBackedOperationParserAndExecutor extends OperationParserAndExecutor {
+
+            RingBufferBackedOperationParserAndExecutor(JsonParser parser) throws IOException { super(parser, true); }
+
+            @Override
+            String getDocumentJson(long start, long end) {
+                String payload = new String(copy(start, end), UTF_8);
+                synchronized (lock) {
+                    tail = end;
+                    lock.notify();
+                }
+                return payload;
+            }
+        }
+    }
+
+    private abstract class OperationParserAndExecutor {
+
+        private final JsonParser parser;
+        private final boolean multipleOperations;
+
+        protected OperationParserAndExecutor(JsonParser parser, boolean multipleOperations) throws IOException {
+            this.parser = parser;
+            this.multipleOperations = multipleOperations;
+            if (multipleOperations) expect(START_ARRAY);
+        }
+
+        abstract String getDocumentJson(long start, long end);
+
+        CompletableFuture<Result> next() throws IOException {
+            JsonToken token = parser.nextToken();
+            if (token == END_ARRAY && multipleOperations) return null;
+            else if (token == null && !multipleOperations) return null;
+            else if (token == START_OBJECT);
+            else throw new IllegalArgumentException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
+            long start = 0, end = -1;
+            OperationType type = null;
+            DocumentId id = null;
+            OperationParameters parameters = protoParameters;
+            loop: while (true) {
+                switch (parser.nextToken()) {
+                    case FIELD_NAME:
+                        switch (parser.getText()) {
+                            case "id":
+                            case "put":    type = PUT;    id = readId(); break;
+                            case "update": type = UPDATE; id = readId(); break;
+                            case "remove": type = REMOVE; id = readId(); break;
+                            case "condition": parameters = parameters.testAndSetCondition(readString()); break;
+                            case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
+                            case "fields": {
+                                expect(START_OBJECT);
+                                start = parser.getTokenLocation().getByteOffset();
+                                int depth = 1;
+                                while (depth > 0) switch (parser.nextToken()) {
+                                    case START_OBJECT: ++depth; break;
+                                    case END_OBJECT:   --depth; break;
+                                }
+                                end = parser.getTokenLocation().getByteOffset() + 1;
+                                break;
+                            }
+                            default: throw new IllegalArgumentException("Unexpected field name '" + parser.getText() + "' at offset " +
+                                    parser.getTokenLocation().getByteOffset());
+                        }
+                        break;
+
+                    case END_OBJECT:
+                        break loop;
+
+                    default:
+                        throw new IllegalArgumentException("Unexpected token '" + parser.currentToken() + "' at offset " +
+                                parser.getTokenLocation().getByteOffset());
+                }
+            }
+            if (id == null)
+                throw new IllegalArgumentException("No document id for document at offset " + start);
+
+            if (end < start)
+                throw new IllegalArgumentException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
+            String payload = getDocumentJson(start, end);
+            switch (type) {
+                case PUT:    return client.put   (id, payload, parameters);
+                case UPDATE: return client.update(id, payload, parameters);
+                case REMOVE: return client.remove(id, parameters);
+                default: throw new IllegalStateException("Unexpected operation type '" + type + "'");
+            }
+        }
+
+        void expect(JsonToken token) throws IOException {
+            if (parser.nextToken() != token)
+                throw new IllegalArgumentException("Expected '" + token + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                        ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
+        }
+
+        private String readString() throws IOException {
+            String value = parser.nextTextValue();
+            if (value == null)
+                throw new IllegalArgumentException("Expected '" + VALUE_STRING + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                        ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
+
+            return value;
+        }
+
+        private boolean readBoolean() throws IOException {
+            Boolean value = parser.nextBooleanValue();
+            if (value == null)
+                throw new IllegalArgumentException("Expected '" + VALUE_FALSE + "' or '" + VALUE_TRUE + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                        ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
+
+            return value;
+
+        }
+
+        private DocumentId readId() throws IOException {
+            return DocumentId.of(readString());
+        }
+
     }
 
 
@@ -341,24 +411,9 @@ public class JsonStreamFeeder implements Closeable {
             return this;
         }
 
-        public JsonStreamFeeder build() {
-            return new JsonStreamFeeder(client, parameters);
+        public JsonFeeder build() {
+            return new JsonFeeder(client, parameters);
         }
 
     }
-
-    static class BenchmarkResult {
-        final int okCount;
-        final int errorCount;
-        final Duration duration;
-        final double throughput;
-
-        BenchmarkResult(int okCount, int errorCount, Duration duration, double throughput) {
-            this.okCount = okCount;
-            this.errorCount = errorCount;
-            this.duration = duration;
-            this.throughput = throughput;
-        }
-    }
-
 }
