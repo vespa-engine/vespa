@@ -74,19 +74,14 @@ findhost
 
 # END environment bootstrap section
 
+Xmx="-Xmx1024m"
 # Allow -Xmx to be specified in args
 for arg in "$@"; do
   shift
-  if case $arg in -Xmx*) true;; *) false;; esac; then # portable if [string begins with]
-    export Xmx=$arg
-  else
-    set -- "$@" "$arg"
-  fi
+  case $arg in -Xmx*) Xmx=$arg ;;
+                   *) set -- "$@" "$arg" ;;
+  esac
 done
-
-if [ "${VESPA_LOG_LEVEL}" = "" ]; then
-    export VESPA_LOG_LEVEL=error,warning
-fi
 
 if [ "${VESPA_LOG_LEVEL}" = "" ]; then
     export VESPA_LOG_LEVEL=error,warning
@@ -99,5 +94,5 @@ exec java \
 -XX:MaxJavaStackTraceDepth=1000000 \
 -Djava.library.path=${VESPA_HOME}/libexec64/native:${VESPA_HOME}/lib64 \
 -XX:MaxDirectMemorySize=32m -Djava.awt.headless=true \
--Xms128m -Xmx1024m $(getJavaOptionsIPV46) ${Xmx} \
+-Xms128m $(getJavaOptionsIPV46) ${Xmx} \
 -cp ${VESPA_HOME}/lib/jars/vespaclient-java-jar-with-dependencies.jar com.yahoo.vespavisit.VdsVisit "$@"
