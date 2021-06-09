@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import com.yahoo.config.FileReference;
@@ -13,6 +14,7 @@ public interface FileRegistry {
 
     FileReference addFile(String relativePath);
     FileReference addUri(String uri);
+    FileReference addBlob(ByteBuffer blob);
     default FileReference addApplicationPackage() { return addFile(""); }
 
     /**

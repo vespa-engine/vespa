@@ -9,11 +9,11 @@ import com.yahoo.net.HostName;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -78,12 +78,13 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
         throw new RuntimeException("addUri(String uri) is not implemented here.");
     }
 
-    public String fileSourceHost() {
-        return HostName.getLocalhost();
+    @Override
+    public FileReference addBlob(ByteBuffer blob) {
+        throw new RuntimeException("addBlob(ByteBuffer blob) is not implemented here.");
     }
 
-    public Set<String> allRelativePaths() {
-        return fileReferenceToFile.values().stream().map(File::getPath).collect(Collectors.toSet());
+    public String fileSourceHost() {
+        return HostName.getLocalhost();
     }
 
     private static Constructor<FileReference> createFileReferenceConstructor() {

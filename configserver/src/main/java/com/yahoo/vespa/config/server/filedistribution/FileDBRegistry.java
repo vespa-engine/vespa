@@ -51,6 +51,22 @@ public class FileDBRegistry implements FileRegistry {
     }
 
     @Override
+    public FileReference addBlob(ByteBuffer blob) {
+        long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);
+        String blobName = Long.toHexString(blobHash);
+        String relativePath = blobToRelativeFile(blob, blobName);
+        synchronized (this) {
+            Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
+            return cachedReference.orElseGet(() -> {
+                FileReference newRef = manager.addBlob(blob, relativePath);
+                entries.add(new Entry(blobName, newRef));
+                fileReferenceCache.put(blobName, newRef);
+                return newRef;
+            });
+        }
+    }
+
+    @Override
     public String fileSourceHost() {
         return HostName.getLocalhost();
     }
@@ -69,6 +85,11 @@ public class FileDBRegistry implements FileRegistry {
         } else if (uri.endsWith(".lz4")) {
             relative += ".lz4";
         }
+        return relative;
+    }
+
+    private static String blobToRelativeFile(ByteBuffer blob, String blobName) {
+        String relative = "blob/" + blobName;
         return relative;
     }
 

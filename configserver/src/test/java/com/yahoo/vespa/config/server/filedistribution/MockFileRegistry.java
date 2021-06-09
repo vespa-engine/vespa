@@ -4,8 +4,10 @@ package com.yahoo.vespa.config.server.filedistribution;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.net.HostName;
+import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,16 @@ public class MockFileRegistry implements FileRegistry {
     @Override
     public FileReference addUri(String uri) {
         throw new IllegalArgumentException("FileReference addUri(String uri) is not implemented for " + getClass().getCanonicalName());
+    }
+
+    @Override
+    public FileReference addBlob(ByteBuffer blob) {
+        long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);
+        String relativePath = "./" + Long.toHexString(blobHash) + ".blob";
+        FileReference fileReference = addFileInterface.addBlob(blob, relativePath);
+
+        entries.add(new Entry(relativePath, fileReference));
+        return fileReference;
     }
 
 }
