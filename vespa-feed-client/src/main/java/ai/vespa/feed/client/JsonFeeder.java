@@ -74,6 +74,31 @@ public class JsonFeeder implements Closeable {
 
     public static Builder builder(FeedClient client) { return new Builder(client); }
 
+    /** Feeds single JSON feed operations on the form
+     *  <pre>
+     *    {
+     *      "id": "id:ns:type::boo",
+     *      "fields": { ... document fields ... }
+     *    }
+     *  </pre>
+     */
+    public CompletableFuture<Result> feedSingle(String json) {
+        CompletableFuture<Result> result = new CompletableFuture<>();
+        try {
+            SingleOperationParserAndExecutor parser = new SingleOperationParserAndExecutor(json.getBytes(UTF_8));
+            parser.next().whenCompleteAsync((operationResult, error) -> {
+                if (error != null) {
+                    result.completeExceptionally(error);
+                } else {
+                    result.complete(operationResult);
+                }
+            }, resultExecutor);
+        } catch (Exception e) {
+            resultExecutor.execute(() -> result.completeExceptionally(e));
+        }
+        return result;
+    }
+
     /** Feeds a stream containing a JSON array of feed operations on the form
      * <pre>
      *     [
@@ -285,6 +310,21 @@ public class JsonFeeder implements Closeable {
                 }
                 return payload;
             }
+        }
+    }
+
+    private class SingleOperationParserAndExecutor extends OperationParserAndExecutor {
+
+        private final byte[] json;
+
+        SingleOperationParserAndExecutor(byte[] json) throws IOException {
+            super(factory.createParser(json), false);
+            this.json = json;
+        }
+
+        @Override
+        String getDocumentJson(long start, long end) {
+            return new String(json, (int) start, (int) (end - start), UTF_8);
         }
     }
 

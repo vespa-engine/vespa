@@ -11,6 +11,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -72,6 +73,21 @@ class JsonFeederTest {
             assertEquals(docs + 1, resultsReceived.get());
             assertTrue(completedSuccessfully.get());
             assertNull(exceptionThrow.get());
+        }
+    }
+
+    @Test
+    public void singleJsonOperationIsDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
+        try (JsonFeeder feeder = JsonFeeder.builder(new SimpleClient()).build()) {
+            String json = "{\"put\": \"id:ns:type::abc1\",\n" +
+                    "    \"fields\": {\n" +
+                    "      \"lul\":\"lal\"\n" +
+                    "    }\n" +
+                    "  }\n";
+            Result result = feeder.feedSingle(json).get();
+            assertEquals(DocumentId.of("id:ns:type::abc1"), result.documentId());
+            assertEquals(Result.Type.success, result.type());
+            assertEquals("success", result.resultMessage().get());
         }
     }
 
