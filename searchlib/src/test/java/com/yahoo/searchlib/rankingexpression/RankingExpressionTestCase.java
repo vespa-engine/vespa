@@ -14,6 +14,7 @@ import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.functions.Reduce;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
@@ -23,10 +24,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Simon Thoresen Hult
@@ -205,6 +209,16 @@ public class RankingExpressionTestCase {
                             "tensor(scalarFunction[1])(tensorFunction{x: scalarFunction + scalarFunction()})",
                             functions, true);
 
+    }
+
+    @Test
+    public void testPropertyName() {
+        assertEquals("rankingExpression(m4).rankingScript", RankingExpression.propertyName("m4"));
+        assertEquals("m4", RankingExpression.extractScriptName("rankingExpression(m4).rankingScript"));
+        assertNull(RankingExpression.extractScriptName("rankingexpression(m4).rankingScript"));
+        assertNull(RankingExpression.extractScriptName("rankingExpression(m4).rankingscript"));
+
+        assertEquals("rankingExpression(m4).expressionName", RankingExpression.propertyExpressionName("m4"));
     }
 
     @Test

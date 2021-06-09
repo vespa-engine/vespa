@@ -322,7 +322,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         public List<Pair<String, String>>  derive() {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
-                if (("rankingExpression(" + RankProfile.FIRST_PHASE + ").rankingScript").equals(property.getName())) {
+                if (RankingExpression.propertyName(RankProfile.FIRST_PHASE).equals(property.getName())) {
                     // Could have been set by function expansion. Set expressions, then skip this property.
                     try {
                         firstPhaseRanking = new RankingExpression(property.getValue());
@@ -330,7 +330,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                         throw new IllegalArgumentException("Could not parse first phase expression", e);
                     }
                 }
-                else if (("rankingExpression(" + RankProfile.SECOND_PHASE + ").rankingScript").equals(property.getName())) {
+                else if (RankingExpression.propertyName(RankProfile.SECOND_PHASE).equals(property.getName())) {
                     try {
                         secondPhaseRanking = new RankingExpression(property.getValue());
                     } catch (ParseException e) {
@@ -419,7 +419,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
             } else {
                 properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));
-                properties.add(new Pair<>("rankingExpression(" + name + ").rankingScript", expression.getRoot().toString()));
+                properties.add(new Pair<>(RankingExpression.propertyName(name), expression.getRoot().toString()));
             }
             return properties;
         }

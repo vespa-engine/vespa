@@ -81,6 +81,9 @@ public class RankingExpression implements Serializable {
 
     private String name = "";
     private ExpressionNode root;
+    private final static String RANKEXPRESSION = "rankingExpression(";
+    private final static String RANKINGSCRIPT = ").rankingScript";
+    private final static String EXPRESSION_NAME = ").expressionName";
 
     /** Creates an anonymous ranking expression by consuming from the reader */
     public RankingExpression(Reader reader) throws ParseException {
@@ -273,7 +276,16 @@ public class RankingExpression implements Serializable {
      * @return the property name.
      */
     public static String propertyName(String expressionName) {
-        return "rankingExpression(" + expressionName + ").rankingScript";
+        return RANKEXPRESSION + expressionName + RANKINGSCRIPT;
+    }
+    public static String propertyExpressionName(String expressionName) {
+        return RANKEXPRESSION + expressionName + EXPRESSION_NAME;
+    }
+    public static String extractScriptName(String propertyName) {
+        if (propertyName.startsWith(RANKEXPRESSION) && propertyName.endsWith(RANKINGSCRIPT)) {
+            return propertyName.substring(RANKEXPRESSION.length(), propertyName.length() - RANKINGSCRIPT.length());
+        }
+        return null;
     }
 
     /**
