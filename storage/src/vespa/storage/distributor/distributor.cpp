@@ -68,6 +68,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _stripe_pool(stripe_pool),
       _stripes(),
       _stripe_accessor(),
+      _random_stripe_gen(),
+      _random_stripe_gen_mutex(),
       _message_queue(),
       _fetched_messages(),
       _component(*this, compReg, "distributor"),
@@ -364,16 +366,29 @@ get_bucket_id_for_striping(const api::StorageMessage& msg, const DistributorNode
     return msg.getBucketId();
 }
 
+}
+
 uint32_t
-stripe_of_bucket_id(const document::BucketId& bucketd_id, uint8_t n_stripe_bits)
+Distributor::random_stripe_idx()
+{
+    std::lock_guard lock(_random_stripe_gen_mutex);
+    return _random_stripe_gen.nextUint32() % _stripes.size();
+}
+
+uint32_t
+Distributor::stripe_of_bucket_id(const document::BucketId& bucketd_id, api::MessageType::Id msg_id)
 {
     if (!bucketd_id.isSet()) {
         // TODO STRIPE: Messages with a non-set bucket id should be handled by the top-level distributor instead.
         return 0;
+    } else if (bucketd_id.getUsedBits() < spi::BucketLimits::MinUsedBits) {
+        if (msg_id == api::MessageType::VISITOR_CREATE_ID) {
+            // This message will eventually be bounced with api::ReturnCode::WRONG_DISTRIBUTION,
+            // so we can just route it to a random distributor stripe.
+            return random_stripe_idx();
+        }
     }
-    return storage::stripe_of_bucket_key(bucketd_id.toKey(), n_stripe_bits);
-}
-
+    return storage::stripe_of_bucket_key(bucketd_id.toKey(), _n_stripe_bits);
 }
 
 bool
@@ -389,7 +404,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
             return true;
         }
         auto bucket_id = get_bucket_id_for_striping(*msg, _component);
-        uint32_t stripe_idx = stripe_of_bucket_id(bucket_id, _n_stripe_bits);
+        uint32_t stripe_idx = stripe_of_bucket_id(bucket_id, msg->getType().getId());
         MBUS_TRACE(msg->getTrace(), 9,
                    vespalib::make_string("Distributor::onDown(): Dispatch message to stripe %u", stripe_idx));
         bool handled = _stripes[stripe_idx]->handle_or_enqueue_message(msg);
