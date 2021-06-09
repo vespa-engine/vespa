@@ -24,6 +24,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <vespa/vdslib/state/random.h>
 #include <chrono>
 #include <queue>
 #include <unordered_map>
@@ -189,6 +190,9 @@ private:
     // Precondition: _stripe_scan_notify_mutex is held
     [[nodiscard]] bool may_send_host_info_on_behalf_of_stripes(std::lock_guard<std::mutex>& held_lock) noexcept;
 
+    uint32_t random_stripe_idx();
+    uint32_t stripe_of_bucket_id(const document::BucketId& bucketd_id, api::MessageType::Id msg_id);
+
     struct StripeScanStats {
         bool wants_to_send_host_info = false;
         bool has_reported_in_at_least_once = false;
@@ -206,6 +210,8 @@ private:
     DistributorStripePool&                _stripe_pool;
     std::vector<std::unique_ptr<DistributorStripe>> _stripes;
     std::unique_ptr<StripeAccessor>      _stripe_accessor;
+    storage::lib::RandomGen              _random_stripe_gen;
+    std::mutex                           _random_stripe_gen_mutex;
     MessageQueue                         _message_queue; // Queue for top-level ops
     MessageQueue                         _fetched_messages;
     distributor::DistributorComponent    _component;
