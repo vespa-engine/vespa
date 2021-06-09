@@ -112,17 +112,15 @@ public class JsonFeeder implements Closeable {
         try {
             while ((result = buffer.next()) != null) {
                 pending.incrementAndGet();
-                result.whenComplete((r, t) -> {
+                result.whenCompleteAsync((r, t) -> {
                     if (!finalCallbackInvoked.get()) {
-                        resultExecutor.execute(() -> resultCallback.onNextResult(r, t));
+                        resultCallback.onNextResult(r, t);
                     }
                     if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
-                        resultExecutor.execute(() -> {
-                            resultCallback.onComplete();
-                            overallResult.complete(null);
-                        });
+                        resultCallback.onComplete();
+                        overallResult.complete(null);
                     }
-                });
+                }, resultExecutor);
             }
             if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
                 resultExecutor.execute(() -> {
