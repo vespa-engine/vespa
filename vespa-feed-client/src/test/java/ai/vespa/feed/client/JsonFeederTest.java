@@ -45,21 +45,25 @@ class JsonFeederTest {
             @Override
             public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
                 ids.add(documentId.userSpecific());
-                return new CompletableFuture<>();
+                return createSuccessResult(documentId);
             }
 
             @Override
             public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
-                return new CompletableFuture<>();
+                return createSuccessResult(documentId);
             }
 
             @Override
             public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
-                return new CompletableFuture<>();
+                return createSuccessResult(documentId);
             }
 
             @Override
             public void close(boolean graceful) { }
+
+            private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
+                return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
+            }
 
         }).build().feedMany(in, 1 << 7, false); // TODO: hangs when buffer is smaller than largest document
         System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
