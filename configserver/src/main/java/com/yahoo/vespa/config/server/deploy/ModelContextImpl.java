@@ -180,6 +180,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean requireConnectivityCheck;
         private final int maxConcurrentMergesPerContentNode;
         private final int maxMergeQueueSize;
+        private final int largeRankExpressionLimit;
         private final boolean throwIfResourceLimitsSpecified;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -203,6 +204,7 @@ public class ModelContextImpl implements ModelContext {
             this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
             this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);
             this.distributeExternalRankExpressions = flagValue(source, appId, Flags.DISTRIBUTE_EXTERNAL_RANK_EXPRESSION);
+            this.largeRankExpressionLimit = flagValue(source, appId, Flags.LARGE_RANK_EXPRESSION_LIMIT);
             this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
@@ -231,6 +233,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int numDistributorStripes() { return numDistributorStripes; }
         @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
         @Override public boolean distributeExternalRankExpressions() { return distributeExternalRankExpressions; }
+        @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
         @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }

@@ -232,6 +232,13 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
+            "large-rank-expression-limit", 0x10000,
+            List.of("baldersheim"), "2021-06-09", "2021-07-01",
+            "Limit for size of rank expressions distributed by filedistribution",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
             "enable-routing-core-dumps", false,
             List.of("tokle"), "2021-04-16", "2021-08-01",
