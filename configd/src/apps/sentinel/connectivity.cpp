@@ -27,11 +27,11 @@ namespace {
 std::string toString(CcResult value) {
     switch (value) {
         case CcResult::UNKNOWN: return "BAD: missing result"; // very very bad
-        case CcResult::REVERSE_FAIL: return "connect OK, but reverse check FAILED"; // very bad
+        case CcResult::REMOTE_PING_FAIL: return "connect OK, but reverse check FAILED"; // very bad
         case CcResult::UNREACHABLE_UP: return "unreachable from me, but up"; // very bad
         case CcResult::CONN_FAIL: return "failed to connect"; // bad
         case CcResult::AFFIRMED_DOWN: return "affirmed down"; // a problem, but probably not on this end
-        case CcResult::REVERSE_UNAVAIL: return "connect OK (but reverse check unavailable)"; // unfortunate
+        case CcResult::REMOTE_PING_UNAVAIL: return "connect OK (but reverse check unavailable)"; // unfortunate
         case CcResult::ALL_OK: return "OK: both ways connectivity verified"; // good
     }
     LOG(error, "Unknown CcResult enum value: %d", (int)value);
@@ -106,7 +106,7 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
         size_t numReportsUp = 0;
         size_t numReportsDown = 0;
         for (const auto & [hostname, probe] : cornerProbes) {
-            if (probe.result() == CcResult::REVERSE_FAIL) ++numReportsDown;
+            if (probe.result() == CcResult::REMOTE_PING_FAIL) ++numReportsDown;
             if (probe.result() == CcResult::ALL_OK) ++numReportsUp;
         }
         if (numReportsUp > numReportsDown) {
@@ -161,7 +161,7 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);
         switch (check.result()) {
             case CcResult::UNREACHABLE_UP:
-            case CcResult::REVERSE_FAIL:
+            case CcResult::REMOTE_PING_FAIL:
                 ++numUpButBad;
                 ++numProblematic;
                 break;
@@ -170,7 +170,7 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
                 ++numProblematic;
                 break;
             case CcResult::UNKNOWN:
-            case CcResult::REVERSE_UNAVAIL:
+            case CcResult::REMOTE_PING_UNAVAIL:
             case CcResult::ALL_OK:
                 break;
         }

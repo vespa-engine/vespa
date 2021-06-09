@@ -27,7 +27,7 @@ struct OutwardCheckContext {
     ~OutwardCheckContext();
 };
 
-enum class CcResult { UNKNOWN, AFFIRMED_DOWN, CONN_FAIL, UNREACHABLE_UP, REVERSE_FAIL, REVERSE_UNAVAIL, ALL_OK };
+enum class CcResult { UNKNOWN, AFFIRMED_DOWN, CONN_FAIL, UNREACHABLE_UP, REMOTE_PING_FAIL, REMOTE_PING_UNAVAIL, ALL_OK };
 
 class OutwardCheck  : public FRT_IRequestWait {
 private:
