@@ -202,6 +202,8 @@ private:
 
     DistributorComponentRegister&         _comp_reg;
     std::shared_ptr<DistributorMetricSet> _metrics;
+    std::shared_ptr<DistributorMetricSet> _metrics_sum;
+    std::vector<std::shared_ptr<DistributorMetricSet>> _stripe_metrics;
     ChainedMessageSender*                 _messageSender;
     const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.

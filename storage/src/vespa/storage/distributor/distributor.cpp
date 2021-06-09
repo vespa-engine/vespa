@@ -38,6 +38,30 @@ using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
+namespace {
+
+std::shared_ptr<DistributorMetricSet>
+make_metrics_sum(uint32_t num_distributor_stripes)
+{
+    if (num_distributor_stripes == 0) {
+        return {};
+    }
+    return std::make_shared<DistributorMetricSet>();
+}
+
+std::vector<std::shared_ptr<DistributorMetricSet>>
+make_stripe_metrics(uint32_t num_distributor_stripes)
+{
+    std::vector<std::shared_ptr<DistributorMetricSet>> stripe_metrics;
+    stripe_metrics.reserve(num_distributor_stripes);
+    for (uint32_t i = 0; i < num_distributor_stripes; ++i) {
+        stripe_metrics.emplace_back(std::make_shared<DistributorMetricSet>());
+    }
+    return stripe_metrics;
+}
+
+}
+
 /* TODO STRIPE
  *  - need a DistributorStripeComponent per stripe
  *    - or better, remove entirely!
@@ -60,10 +84,12 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _comp_reg(compReg),
       _metrics(std::make_shared<DistributorMetricSet>()),
+      _metrics_sum(make_metrics_sum(num_distributor_stripes)),
+      _stripe_metrics(make_stripe_metrics(num_distributor_stripes)),
       _messageSender(messageSender),
       _use_legacy_mode(num_distributor_stripes == 0),
       _n_stripe_bits(0),
-      _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
+      _stripe(std::make_unique<DistributorStripe>(compReg, _use_legacy_mode ? *_metrics : *_stripe_metrics[0], node_identity, threadPool,
                                                   doneInitHandler, *this, *this, _use_legacy_mode)),
       _stripe_pool(stripe_pool),
       _stripes(),
@@ -91,7 +117,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _next_distribution(),
       _current_internal_config_generation(_component.internal_config_generation())
 {
-    _component.registerMetric(*_metrics);
+    _component.registerMetric(_use_legacy_mode ? *_metrics : *_metrics_sum);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (!_use_legacy_mode) {
         assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
@@ -105,7 +131,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                                                                *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
         for (size_t i = 1; i < num_distributor_stripes; ++i) {
-            _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
+            _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg, *_stripe_metrics[i], node_identity, threadPool,
                                                                       doneInitHandler, *this, *this, _use_legacy_mode, i));
         }
         _stripe_scan_stats.resize(num_distributor_stripes);
@@ -558,7 +584,12 @@ Distributor::propagateInternalScanMetricsToExternal()
     if (_use_legacy_mode) {
         _stripe->propagateInternalScanMetricsToExternal();
     } else {
-        first_stripe().propagateInternalScanMetricsToExternal();
+        _metrics_sum->reset();
+        _metrics->addToPart(*_metrics_sum);
+        for (auto &stripe : _stripes) {
+            stripe->propagateInternalScanMetricsToExternal();
+            stripe->getMetrics().addToPart(*_metrics_sum);
+        }
     }
 }
 
