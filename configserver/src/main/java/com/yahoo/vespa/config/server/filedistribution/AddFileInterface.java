@@ -3,10 +3,13 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 
+import java.nio.ByteBuffer;
+
 /**
  * @author baldersheim
  */
 public interface AddFileInterface {
     FileReference addUri(String uri, String relativePath);
     FileReference addFile(String relativePath);
+    FileReference addBlob(ByteBuffer blob, String relativePath);
 }

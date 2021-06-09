@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
@@ -33,6 +34,32 @@ public class ApplicationFileManager implements AddFileInterface {
     public FileReference addUri(String uri, String relativePath) {
         download(uri, relativePath);
         return addFile(relativePath);
+    }
+
+    @Override
+    public FileReference addBlob(ByteBuffer blob, String relativePath) {
+        writeBlob(blob, relativePath);
+        return addFile(relativePath);
+    }
+
+    private void writeBlob(ByteBuffer blob, String relativePath) {
+        File file = new File(applicationDir, relativePath);
+        FileOutputStream fos = null;
+        try {
+            Files.createDirectories(file.toPath().getParent());
+            fos = new FileOutputStream(file.getAbsolutePath());
+            fos.write(blob.array(), blob.arrayOffset(), blob.remaining());
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed creating directory " + file.getParent(), e);
+        } finally {
+            try {
+                if (fos != null) {
+                    fos.close();
+                }
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Failed closing down after writing blob of size " + blob.remaining() + " to " + file.getAbsolutePath());
+            }
+        }
     }
 
     private void download(String uri, String relativePath) {

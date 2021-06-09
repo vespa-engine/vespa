@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,6 +81,10 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     @Override
     public FileReference addUri(String uri) {
         return new FileReference(path2Hash.get(uri));
+    }
+    @Override
+    public FileReference addBlob(ByteBuffer blob) {
+        return new FileReference(path2Hash.get(blob));
     }
 
     @Override

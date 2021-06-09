@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.defaults.Defaults;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -468,6 +469,10 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     public FileReference sendUri(String uri) {
         return getRoot().getFileDistributor().sendUriToHost(uri, getHost().getHost());
+    }
+
+    public FileReference sendBlob(ByteBuffer blob) {
+        return getRoot().getFileDistributor().sendBlobToHost(blob, getHost().getHost());
     }
 
     /** The service HTTP port for health status */

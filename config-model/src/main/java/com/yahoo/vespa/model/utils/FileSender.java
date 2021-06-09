@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,6 +58,20 @@ public class FileSender implements Serializable {
         for (AbstractService service : services) {
             // The same reference will be returned from each call.
             fileref = service.sendUri(uri);
+        }
+        return fileref;
+    }
+
+    public static FileReference sendBlobToServices(ByteBuffer blob, Collection<? extends AbstractService> services) {
+        if (services.isEmpty()) {
+            throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
+                    "using 'count' instead of <node> tags.");
+        }
+
+        FileReference fileref = null;
+        for (AbstractService service : services) {
+            // The same reference will be returned from each call.
+            fileref = service.sendBlob(blob);
         }
         return fileref;
     }
