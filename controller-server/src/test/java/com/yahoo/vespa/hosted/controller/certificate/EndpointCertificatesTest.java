@@ -13,8 +13,6 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -133,7 +131,6 @@ public class EndpointCertificatesTest {
     @Test
     public void provisions_new_certificate_in_public_prod() {
         ControllerTester tester = new ControllerTester(SystemName.Public);
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.VESPA_APP_DOMAIN_IN_CERTIFICATE.id(), true);
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
         EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
         List<String> expectedSans = List.of(

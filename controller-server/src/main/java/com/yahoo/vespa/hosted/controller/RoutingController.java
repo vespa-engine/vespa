@@ -72,7 +72,6 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag hideSharedRoutingEndpoint;
-    private final BooleanFlag vespaAppDomainInCertificate;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -80,7 +79,6 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(rotationsConfig, controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
-        this.vespaAppDomainInCertificate = Flags.VESPA_APP_DOMAIN_IN_CERTIFICATE.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -180,7 +178,7 @@ public class RoutingController {
             builder = builder.routingMethod(RoutingMethod.exclusive)
                              .on(Port.tls());
             Endpoint endpoint = builder.in(controller.system());
-            if (controller.system().isPublic() && vespaAppDomainInCertificate.with(FetchVector.Dimension.APPLICATION_ID, deployment.applicationId().serializedForm()).value()) {
+            if (controller.system().isPublic()) {
                 Endpoint legacyEndpoint = builder.legacy().in(controller.system());
                 endpointDnsNames.add(legacyEndpoint.dnsName());
             }
