@@ -4,8 +4,6 @@ package ai.vespa.feed.client;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.net.URIBuilder;
 
@@ -13,6 +11,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -87,18 +87,15 @@ class HttpFeedClient implements FeedClient {
         ensureOpen();
 
         String path = operationPath(documentId, params).toString();
-        SimpleHttpRequest request = new SimpleHttpRequest(method, path);
-        requestHeaders.forEach((name, value) -> request.setHeader(name, value.get()));
-        if (operationJson != null)
-            request.setBody(operationJson, ContentType.APPLICATION_JSON);
+        HttpRequest request = new HttpRequest(method, path, requestHeaders, operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
 
         return requestStrategy.enqueue(documentId, request)
                               .thenApply(response -> toResult(request, response, documentId));
     }
 
-    static Result toResult(SimpleHttpRequest request, SimpleHttpResponse response, DocumentId documentId) {
+    static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
         Result.Type type;
-        switch (response.getCode()) {
+        switch (response.code()) {
             case 200: type = Result.Type.success; break;
             case 412: type = Result.Type.conditionNotMet; break;
             case 502:
@@ -110,9 +107,9 @@ class HttpFeedClient implements FeedClient {
         String message = null;
         String trace = null;
         try {
-            JsonParser parser = factory.createParser(response.getBodyText());
+            JsonParser parser = factory.createParser(response.body());
             if (parser.nextToken() != JsonToken.START_OBJECT)
-                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + new String(response.body(), UTF_8));
 
             String name;
             while ((name = parser.nextFieldName()) != null) {
@@ -124,15 +121,15 @@ class HttpFeedClient implements FeedClient {
             }
 
             if (parser.currentToken() != JsonToken.END_OBJECT)
-                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + new String(response.body(), UTF_8));
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
 
         if (type == null) // Not a Vespa response, but a failure in the HTTP layer.
-            throw new FeedException("Status " + response.getCode() + " executing '" + request +
-                                    "': " + (message == null ? response.getBodyText() : message));
+            throw new FeedException("Status " + response.code() + " executing '" + request +
+                                    "': " + (message == null ? new String(response.body(), UTF_8) : message));
 
         return new Result(type, documentId, message, trace);
     }

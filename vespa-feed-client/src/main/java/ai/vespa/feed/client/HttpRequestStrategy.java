@@ -3,8 +3,6 @@ package ai.vespa.feed.client;
 
 import ai.vespa.feed.client.FeedClient.CircuitBreaker;
 import ai.vespa.feed.client.FeedClient.RetryStrategy;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.IOException;
 import java.util.Map;
@@ -23,6 +21,7 @@ import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 
@@ -60,7 +59,7 @@ class HttpRequestStrategy implements RequestStrategy {
     });
 
     HttpRequestStrategy(FeedClientBuilder builder) throws IOException {
-        this(builder, new BenchmarkingCluster(new HttpCluster(builder)));
+        this(builder, new BenchmarkingCluster(new ApacheCluster(builder)));
     }
 
     HttpRequestStrategy(FeedClientBuilder builder, Cluster cluster) {
@@ -112,15 +111,15 @@ class HttpRequestStrategy implements RequestStrategy {
         return inflight.get() - delayedCount.get() > targetInflight();
     }
 
-    private boolean retry(SimpleHttpRequest request, int attempt) {
+    private boolean retry(HttpRequest request, int attempt) {
         if (attempt > strategy.retries())
             return false;
 
-        switch (request.getMethod().toUpperCase()) {
+        switch (request.method().toUpperCase()) {
             case "POST":   return strategy.retry(FeedClient.OperationType.PUT);
             case "PUT":    return strategy.retry(FeedClient.OperationType.UPDATE);
             case "DELETE": return strategy.retry(FeedClient.OperationType.REMOVE);
-            default: throw new IllegalStateException("Unexpected HTTP method: " + request.getMethod());
+            default: throw new IllegalStateException("Unexpected HTTP method: " + request.method());
         }
     }
 
@@ -128,7 +127,7 @@ class HttpRequestStrategy implements RequestStrategy {
      * Retries all IOExceptions, unless error rate has converged to a value higher than the threshold,
      * or the user has turned off retries for this type of operation.
      */
-    private boolean retry(SimpleHttpRequest request, Throwable thrown, int attempt) {
+    private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure();
         log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
 
@@ -151,23 +150,23 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Retries throttled requests (429, 503), adjusting the target inflight count, and server errors (500, 502). */
-    private boolean retry(SimpleHttpRequest request, SimpleHttpResponse response, int attempt) {
-        if (response.getCode() / 100 == 2) {
+    private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
+        if (response.code() / 100 == 2) {
             breaker.success();
             incrementTargetInflight();
             return false;
         }
 
-        log.log(FINE, () -> "Status code " + response.getCode() + " (" + response.getBodyText() +
+        log.log(FINE, () -> "Status code " + response.code() + " (" + new String(response.body(), UTF_8) +
                             ") on attempt " + attempt + " at " + request);
 
-        if (response.getCode() == 429 || response.getCode() == 503) { // Throttling; reduce target inflight.
+        if (response.code() == 429 || response.code() == 503) { // Throttling; reduce target inflight.
             decreaseTargetInflight();
             return true;
         }
 
         breaker.failure();
-        if (response.getCode() == 500 || response.getCode() == 502 || response.getCode() == 504) // Hopefully temporary errors.
+        if (response.code() == 500 || response.code() == 502 || response.code() == 504) // Hopefully temporary errors.
             return retry(request, attempt);
 
         return false;
@@ -205,9 +204,9 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     @Override
-    public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, SimpleHttpRequest request) {
-        CompletableFuture<SimpleHttpResponse> result = new CompletableFuture<>(); // Carries the aggregate result of the operation, including retries.
-        CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
+    public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) {
+        CompletableFuture<HttpResponse> result = new CompletableFuture<>(); // Carries the aggregate result of the operation, including retries.
+        CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
         CompletableFuture<?> previous = inflightById.put(documentId, result);
         if (destroyed.get()) {
             result.cancel(true);
@@ -232,14 +231,14 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
-    private void handleAttempt(CompletableFuture<SimpleHttpResponse> vessel, SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> result, int attempt) {
+    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request, CompletableFuture<HttpResponse> result, int attempt) {
         vessel.whenCompleteAsync((response, thrown) -> {
                                      // Retry the operation if it failed with a transient error ...
                                      if (thrown != null ? retry(request, thrown, attempt)
                                                         : retry(request, response, attempt)) {
                                          retries.incrementAndGet();
                                          CircuitBreaker.State state = breaker.state();
-                                         CompletableFuture<SimpleHttpResponse> retry = new CompletableFuture<>();
+                                         CompletableFuture<HttpResponse> retry = new CompletableFuture<>();
                                          offer(() -> cluster.dispatch(request, retry));
                                          handleAttempt(retry, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
                                      }

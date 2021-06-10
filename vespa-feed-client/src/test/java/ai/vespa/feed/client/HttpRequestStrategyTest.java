@@ -2,8 +2,6 @@
 package ai.vespa.feed.client;
 
 import ai.vespa.feed.client.FeedClient.CircuitBreaker;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.Test;
 
@@ -35,9 +33,8 @@ class HttpRequestStrategyTest {
     @Test
     void testConcurrency() {
         int documents = 1 << 16;
-        SimpleHttpRequest request = new SimpleHttpRequest("PUT", "/");
-        SimpleHttpResponse response = new SimpleHttpResponse(200);
-        response.setBody("{}".getBytes(UTF_8), ContentType.APPLICATION_JSON);
+        HttpRequest request = new HttpRequest("PUT", "/", null, null);
+        HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), 100, TimeUnit.MILLISECONDS));
 
@@ -84,7 +81,7 @@ class HttpRequestStrategyTest {
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
-        SimpleHttpRequest request = new SimpleHttpRequest("POST", "/");
+        HttpRequest request = new HttpRequest("POST", "/", null, null);
 
         // Runtime exception is not retried.
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
@@ -101,17 +98,17 @@ class HttpRequestStrategyTest {
         assertEquals(3, strategy.stats().requests());
 
         // Successful response is returned
-        SimpleHttpResponse success = new SimpleHttpResponse(200);
+        HttpResponse success = HttpResponse.of(200, null);
         cluster.expect((__, vessel) -> vessel.complete(success));
         assertEquals(success, strategy.enqueue(id1, request).get());
         assertEquals(4, strategy.stats().requests());
 
         // Throttled requests are retried. Concurrent operations to same ID (only) are serialised.
         now.set(2000);
-        SimpleHttpResponse throttled = new SimpleHttpResponse(429);
+        HttpResponse throttled = HttpResponse.of(429, null);
         AtomicInteger count = new AtomicInteger(3);
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<CompletableFuture<SimpleHttpResponse>> completion = new AtomicReference<>();
+        AtomicReference<CompletableFuture<HttpResponse>> completion = new AtomicReference<>();
         cluster.expect((req, vessel) -> {
             if (req == request) {
                 if (count.decrementAndGet() > 0)
@@ -123,9 +120,9 @@ class HttpRequestStrategyTest {
             }
             else vessel.complete(success);
         });
-        CompletableFuture<SimpleHttpResponse> delayed = strategy.enqueue(id1, request);
-        CompletableFuture<SimpleHttpResponse> serialised = strategy.enqueue(id1, new SimpleHttpRequest("PUT", "/"));
-        assertEquals(success, strategy.enqueue(id2, new SimpleHttpRequest("DELETE", "/")).get());
+        CompletableFuture<HttpResponse> delayed = strategy.enqueue(id1, request);
+        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null));
+        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null)).get());
         latch.await();
         assertEquals(8, strategy.stats().requests()); // 3 attempts at throttled and one at id2.
         now.set(4000);
@@ -135,7 +132,7 @@ class HttpRequestStrategyTest {
         assertEquals(success, serialised.get());
 
         // Some error responses are retried.
-        SimpleHttpResponse serverError = new SimpleHttpResponse(500);
+        HttpResponse serverError = HttpResponse.of(500, null);
         cluster.expect((__, vessel) -> vessel.complete(serverError));
         assertEquals(serverError, strategy.enqueue(id1, request).get());
         assertEquals(11, strategy.stats().requests());
@@ -143,11 +140,11 @@ class HttpRequestStrategyTest {
 
         // Error responses are not retried when not of appropriate type.
         cluster.expect((__, vessel) -> vessel.complete(serverError));
-        assertEquals(serverError, strategy.enqueue(id1, new SimpleHttpRequest("PUT", "/")).get());
+        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null)).get());
         assertEquals(12, strategy.stats().requests());
 
         // Some error responses are not retried.
-        SimpleHttpResponse badRequest = new SimpleHttpResponse(400);
+        HttpResponse badRequest = HttpResponse.of(400, null);
         cluster.expect((__, vessel) -> vessel.complete(badRequest));
         assertEquals(badRequest, strategy.enqueue(id1, request).get());
         assertEquals(13, strategy.stats().requests());
@@ -169,14 +166,14 @@ class HttpRequestStrategyTest {
 
     static class MockCluster implements Cluster {
 
-        final AtomicReference<BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>>> dispatch = new AtomicReference<>();
+        final AtomicReference<BiConsumer<HttpRequest, CompletableFuture<HttpResponse>>> dispatch = new AtomicReference<>();
 
-        void expect(BiConsumer<SimpleHttpRequest, CompletableFuture<SimpleHttpResponse>> expected) {
+        void expect(BiConsumer<HttpRequest, CompletableFuture<HttpResponse>> expected) {
             dispatch.set(expected);
         }
 
         @Override
-        public void dispatch(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel) {
+        public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
             dispatch.get().accept(request, vessel);
         }
 
