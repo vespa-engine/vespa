@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "cc-result.h"
 #include <string>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -28,8 +29,6 @@ struct OutwardCheckContext {
     {}
     ~OutwardCheckContext();
 };
-
-enum class CcResult { UNKNOWN, CONN_FAIL, UNREACHABLE_UP, INDIRECT_PING_FAIL, INDIRECT_PING_UNAVAIL, ALL_OK };
 
 class OutwardCheck  : public FRT_IRequestWait {
 private:

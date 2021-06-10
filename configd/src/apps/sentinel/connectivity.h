@@ -3,7 +3,7 @@
 #pragma once
 
 #include "rpcserver.h"
-#include "outward-check.h"
+#include "cc-result.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
 #include <string>
