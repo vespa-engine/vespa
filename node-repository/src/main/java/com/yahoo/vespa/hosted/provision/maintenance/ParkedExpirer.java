@@ -43,13 +43,14 @@ public class ParkedExpirer extends NodeRepositoryMaintainer {
                                                         .nodeType(NodeType.host)
                                                         .asList());
 
-        parkedHosts.sort(Comparator.comparing(this::getParkedTime));
-        var hostsToExpire = parkedHosts.size() - MAX_ALLOWED_PARKED_HOSTS;
-        for(int i = 0; i < hostsToExpire; i++) {
-            var parkedHost = parkedHosts.get(i);
-            log.info("Allowed number of parked nodes exceeded. Recycling " + parkedHost.hostname());
-            nodeRepository.nodes().deallocate(parkedHost, Agent.ParkedExpirer, "Expired by ParkedExpirer");
-        }
+        int hostsToExpire = Math.max(0, parkedHosts.size() - MAX_ALLOWED_PARKED_HOSTS);
+        nodeRepository.nodes().list(Node.State.parked).nodeType(NodeType.host)
+                .sortedBy(Comparator.comparing(this::getParkedTime))
+                .first(hostsToExpire)
+                .forEach(host -> {
+                    log.info("Allowed number of parked nodes exceeded. Recycling " + host.hostname());
+                    nodeRepository.nodes().deallocate(host, Agent.ParkedExpirer, "Expired by ParkedExpirer");
+                });
 
         return 1.0;
     }
