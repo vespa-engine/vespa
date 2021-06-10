@@ -8,7 +8,6 @@
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
@@ -55,7 +54,8 @@ struct MyRangeHandler {
     vector<BoundsEntry> &bounds_entries;
     uint64_t subquery_bitmap;
 
-    void handleRange(const string &label) {
+    void
+    handleRange(const string &label) {
         uint64_t feature = PredicateHash::hash64(label);
         auto iterator = interval_index.lookup(feature);
         if (iterator.valid()) {
@@ -63,7 +63,8 @@ struct MyRangeHandler {
             interval_entries.push_back({iterator.getData(), subquery_bitmap, sz, feature});
         }
     }
-    void handleEdge(const string &label, uint32_t value) {
+    void
+    handleEdge(const string &label, uint32_t value) {
         uint64_t feature = PredicateHash::hash64(label);
         auto iterator = bounds_index.lookup(feature);
         if (iterator.valid()) {
@@ -85,7 +86,8 @@ pushRangeDictionaryEntries(const Entry &entry, const PredicateIndex &index,
     expander.expand(entry.getKey(), entry.getValue(), handler);
 }
 
-void pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &interval_index,
+void
+pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &interval_index,
                           vector<IntervalEntry> &interval_entries) {
     uint64_t feature = Constants::z_star_hash;
     auto iterator = interval_index.lookup(feature);
@@ -97,7 +99,8 @@ void pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &inte
 
 }  // namespace
 
-void PredicateBlueprint::addPostingToK(uint64_t feature)
+void
+PredicateBlueprint::addPostingToK(uint64_t feature)
 {
     const auto &interval_index = _index.getIntervalIndex();
     auto tmp = interval_index.lookup(feature);
@@ -116,7 +119,8 @@ void PredicateBlueprint::addPostingToK(uint64_t feature)
     }
 }
 
-void PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
+void
+PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
 {
     const auto &bounds_index = _index.getBoundsIndex();
     auto tmp = bounds_index.lookup(feature);
@@ -135,7 +139,8 @@ void PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
     }
 }
 
-void PredicateBlueprint::addZeroConstraintToK()
+void
+PredicateBlueprint::addZeroConstraintToK()
 {
     uint8_t *kVBase = &_kV[0];
     size_t kVSize = _kV.size();
@@ -175,15 +180,14 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
         pushValueDictionaryEntry(entry, interval_index, _interval_dict_entries);
     }
     for (const auto &entry : term.getRangeFeatures()) {
-        pushRangeDictionaryEntries(entry, _index, _interval_dict_entries,
-                                   _bounds_dict_entries);
+        pushRangeDictionaryEntries(entry, _index, _interval_dict_entries,_bounds_dict_entries);
     }
     pushZStarPostingList(interval_index, _interval_dict_entries);
 
     BitVectorCache::KeyAndCountSet keys;
     keys.reserve(_interval_dict_entries.size());
     for (const auto & e : _interval_dict_entries) {
-        keys.push_back({e.feature, e.size});
+        keys.emplace_back(e.feature, e.size);
     }
     _cachedFeatures = _index.lookupCachedSet(keys);
 
@@ -217,27 +221,29 @@ PredicateBlueprint::~PredicateBlueprint() = default;
 
 namespace {
 
-    template<typename DictEntry, typename VectorIteratorEntry, typename BTreeIteratorEntry>
-    void lookupPostingLists(const std::vector<DictEntry> &dict_entries,
-                            std::vector<VectorIteratorEntry> &vector_iterators,
-                            std::vector<BTreeIteratorEntry> &btree_iterators,
-                            const SimpleIndex<vespalib::datastore::EntryRef> &index)
-    {
-        for (const auto &entry : dict_entries) {
-            auto vector_iterator = index.getVectorPostingList(entry.feature);
-            if (vector_iterator) {
-                vector_iterators.push_back(VectorIteratorEntry{*vector_iterator, entry});
-            } else {
-                auto btree_iterator = index.getBTreePostingList(entry.entry_ref);
-                btree_iterators.push_back(BTreeIteratorEntry{btree_iterator, entry});
-            }
+template<typename DictEntry, typename VectorIteratorEntry, typename BTreeIteratorEntry>
+void
+lookupPostingLists(const std::vector<DictEntry> &dict_entries,
+                   std::vector<VectorIteratorEntry> &vector_iterators,
+                   std::vector<BTreeIteratorEntry> &btree_iterators,
+                   const SimpleIndex<vespalib::datastore::EntryRef> &index)
+{
+    for (const auto &entry : dict_entries) {
+        auto vector_iterator = index.getVectorPostingList(entry.feature);
+        if (vector_iterator) {
+            vector_iterators.push_back(VectorIteratorEntry{*vector_iterator, entry});
+        } else {
+            auto btree_iterator = index.getBTreePostingList(entry.entry_ref);
+            btree_iterators.push_back(BTreeIteratorEntry{btree_iterator, entry});
         }
-
-    };
+    }
 
 }
 
-void PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
+}
+
+void
+PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
     if (!_fetch_postings_done) {
         const auto &interval_index = _index.getIntervalIndex();
         const auto &bounds_index = _index.getBoundsIndex();
@@ -286,9 +292,10 @@ PredicateBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, 
 namespace {
 
 template<typename IteratorEntry, typename PostingListFactory>
-void createPredicatePostingLists(const std::vector<IteratorEntry> &iterator_entries,
-                                 std::vector<PredicatePostingList::UP> &posting_lists,
-                                 PostingListFactory posting_list_factory)
+void
+createPredicatePostingLists(const std::vector<IteratorEntry> &iterator_entries,
+                            std::vector<PredicatePostingList::UP> &posting_lists,
+                            PostingListFactory posting_list_factory)
 {
     for (const auto &entry : iterator_entries) {
         if (entry.iterator.valid()) {
