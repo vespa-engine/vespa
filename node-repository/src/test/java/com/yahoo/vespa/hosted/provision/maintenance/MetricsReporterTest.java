@@ -112,6 +112,10 @@ public class MetricsReporterTest {
         expectedMetrics.put("wantToRetire", 0);
         expectedMetrics.put("wantToDeprovision", 0);
         expectedMetrics.put("failReport", 0);
+
+        expectedMetrics.put("wantToEncrypt", 0);
+        expectedMetrics.put("diskEncrypted", 0);
+
         expectedMetrics.put("allowedToBeDown", 1);
         expectedMetrics.put("suspended", 1);
         expectedMetrics.put("suspendedSeconds", 123L);
