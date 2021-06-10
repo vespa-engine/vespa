@@ -9,9 +9,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.net.URIBuilder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -134,7 +132,7 @@ class HttpFeedClient implements FeedClient {
 
         if (type == null) // Not a Vespa response, but a failure in the HTTP layer.
             throw new FeedException("Status " + response.getCode() + " executing '" + request +
-                                    "': " + (message == null ? request.getBodyText() : message));
+                                    "': " + (message == null ? response.getBodyText() : message));
 
         return new Result(type, documentId, message, trace);
     }
