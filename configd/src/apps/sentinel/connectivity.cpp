@@ -145,8 +145,7 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
     }
     checkContext.latch.await();
     classifyConnFails(connectivityMap, _checkSpecs, rpcServer);
-    size_t numProblematic = 0;
-    size_t numUpButBad = 0;
+    Accumulated accumulated;
     for (const auto & [hostname, check] : connectivityMap) {
         std::string detail = toString(check.result());
         std::string prev = _detailsPerHost[hostname];
@@ -155,39 +154,47 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         }
         _detailsPerHost[hostname] = detail;
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);
-        switch (check.result()) {
-            case CcResult::UNREACHABLE_UP:
-            case CcResult::INDIRECT_PING_FAIL:
-                ++numUpButBad;
-                ++numProblematic;
-                break;
-            case CcResult::CONN_FAIL:
-                ++numProblematic;
-                break;
-            case CcResult::UNKNOWN:
-            case CcResult::INDIRECT_PING_UNAVAIL:
-            case CcResult::ALL_OK:
-                break;
-        }
+        accumulate(accumulated, check.result());
     }
-    bool allChecksOk = true;
-    if (numUpButBad > size_t(_config.maxBadReverseCount)) {
+    return enoughOk(accumulated, clusterSize);
+}
+
+void Connectivity::accumulate(Accumulated &target, CcResult value) {
+    switch (value) {
+        case CcResult::UNKNOWN:
+        case CcResult::UNREACHABLE_UP:
+        case CcResult::INDIRECT_PING_FAIL:
+            ++target.numSeriousIssues;
+            ++target.numIssues;
+            break;
+        case CcResult::CONN_FAIL:
+            ++target.numIssues;
+            break;
+        case CcResult::INDIRECT_PING_UNAVAIL:
+        case CcResult::ALL_OK:
+            break;
+    }
+}
+
+bool Connectivity::enoughOk(const Accumulated &results, size_t clusterSize) {
+    bool enough = true;
+    if (results.numSeriousIssues > size_t(_config.maxBadReverseCount)) {
         LOG(warning, "%zu of %zu nodes up but with network connectivity problems (max is %d)",
-            numUpButBad, clusterSize, _config.maxBadReverseCount);
-        allChecksOk = false;
+            results.numSeriousIssues, clusterSize, _config.maxBadReverseCount);
+        enough = false;
     }
-    if (numProblematic * 100.0 > _config.maxBadOutPercent * clusterSize) {
-        double pct = numProblematic * 100.0 / clusterSize;
+    if (results.numIssues * 100.0 > _config.maxBadOutPercent * clusterSize) {
+        double pct = results.numIssues * 100.0 / clusterSize;
         LOG(warning, "Problems with connection to %zu of %zu nodes, %.1f%% (max is %d%%)",
-            numProblematic, clusterSize, pct, _config.maxBadOutPercent);
-        allChecksOk = false;
+            results.numIssues, clusterSize, pct, _config.maxBadOutPercent);
+        enough = false;
     }
-    if (numProblematic == 0) {
+    if (results.numIssues == 0) {
         LOG(info, "All connectivity checks OK, proceeding with service startup");
-    } else if (allChecksOk) {
+    } else if (enough) {
         LOG(info, "Enough connectivity checks OK, proceeding with service startup");
     }
-    return allChecksOk;
+    return enough;
 }
 
 }

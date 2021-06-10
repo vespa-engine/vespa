@@ -3,6 +3,7 @@
 #pragma once
 
 #include "rpcserver.h"
+#include "outward-check.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
 #include <string>
@@ -26,6 +27,12 @@ public:
     void configure(const SentinelConfig::Connectivity &config);
     bool checkConnectivity(RpcServer &rpcServer);
 private:
+    struct Accumulated {
+        size_t numIssues = 0;
+        size_t numSeriousIssues = 0;
+    };
+    void accumulate(Accumulated &target, CcResult value);
+    bool enoughOk(const Accumulated &results, size_t clusterSize);
     SentinelConfig::Connectivity _config;
     SpecMap _checkSpecs;
     std::map<std::string, std::string> _detailsPerHost;
