@@ -9,7 +9,7 @@ import java.io.InputStream;
  */
 public interface HorizonClient {
 
-    InputStream getMetrics(Slime query);
+    InputStream getMetrics(byte[] query);
 
     InputStream getUser();
 
