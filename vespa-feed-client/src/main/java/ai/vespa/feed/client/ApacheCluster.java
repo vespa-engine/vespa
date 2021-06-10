@@ -127,7 +127,7 @@ class ApacheCluster implements Cluster {
                                                                                           .setInitialWindowSize(Integer.MAX_VALUE)
                                                                                           .build());
 
-        SSLContext sslContext = constructSslContext(builder);
+        SSLContext sslContext = builder.constructSslContext();
         String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
         if (allowedCiphers.length == 0)
             throw new IllegalStateException("No adequate SSL cipher suites supported by the JVM");
@@ -141,23 +141,6 @@ class ApacheCluster implements Cluster {
         return httpClientBuilder.setTlsStrategy(tlsStrategyBuilder.build())
                                 .build();
     }
-
-    private static SSLContext constructSslContext(FeedClientBuilder builder) throws IOException {
-        if (builder.sslContext != null) return builder.sslContext;
-        SslContextBuilder sslContextBuilder = new SslContextBuilder();
-        if (builder.certificateFile != null && builder.privateKeyFile != null) {
-            sslContextBuilder.withCertificateAndKey(builder.certificateFile, builder.privateKeyFile);
-        } else if (builder.certificate != null && builder.privateKey != null) {
-            sslContextBuilder.withCertificateAndKey(builder.certificate, builder.privateKey);
-        }
-        if (builder.caCertificatesFile != null) {
-            sslContextBuilder.withCaCertificates(builder.caCertificatesFile);
-        } else if (builder.caCertificates != null) {
-            sslContextBuilder.withCaCertificates(builder.caCertificates);
-        }
-        return sslContextBuilder.build();
-    }
-
 
     private static class ApacheHttpResponse implements HttpResponse {
 

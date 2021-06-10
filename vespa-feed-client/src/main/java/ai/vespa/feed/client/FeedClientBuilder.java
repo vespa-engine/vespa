@@ -150,6 +150,22 @@ public class FeedClientBuilder {
         }
     }
 
+    SSLContext constructSslContext() throws IOException {
+        if (sslContext != null) return sslContext;
+        SslContextBuilder sslContextBuilder = new SslContextBuilder();
+        if (certificateFile != null && privateKeyFile != null) {
+            sslContextBuilder.withCertificateAndKey(certificateFile, privateKeyFile);
+        } else if (certificate != null && privateKey != null) {
+            sslContextBuilder.withCertificateAndKey(certificate, privateKey);
+        }
+        if (caCertificatesFile != null) {
+            sslContextBuilder.withCaCertificates(caCertificatesFile);
+        } else if (caCertificates != null) {
+            sslContextBuilder.withCaCertificates(caCertificates);
+        }
+        return sslContextBuilder.build();
+    }
+
     private void validateConfiguration() {
         if (sslContext != null && (
                 certificateFile != null || caCertificatesFile != null || privateKeyFile != null ||
