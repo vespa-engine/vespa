@@ -60,6 +60,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -133,7 +134,7 @@ public class DocumentV1ApiTest {
         access = new MockDocumentAccess(docConfig);
         metric = new NullMetric();
         metrics = new MetricReceiver.MockReceiver();
-        handler = new DocumentV1ApiHandler(clock, metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
+        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
     }
 
     @After
@@ -179,7 +180,7 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testResponses() {
+    public void testResponses() throws InterruptedException {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null));
         // GET at non-existent path returns 404 with available paths
@@ -207,7 +208,7 @@ public class DocumentV1ApiTest {
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
-            assertEquals(1000, parameters.getSessionTimeoutMs());
+            assertEquals(6000, parameters.getSessionTimeoutMs());
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
@@ -272,7 +273,7 @@ public class DocumentV1ApiTest {
         access.expect(parameters -> {
             assertEquals("[Content:cluster=content]", parameters.getRemoteDataHandler());
             assertEquals("[all]", parameters.fieldSet());
-            assertEquals(55_000L, parameters.getSessionTimeoutMs());
+            assertEquals(60_000L, parameters.getSessionTimeoutMs());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?destinationCluster=content&selection=true&cluster=content&timeout=60", POST);
@@ -666,14 +667,18 @@ public class DocumentV1ApiTest {
             handler.set(parameters.responseHandler().get());
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?timeout=1ms");
-        assertSameJson("{" +
-                       "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
-                       "  \"message\": \"Request timeout after 1ms\"" +
-                       "}", response4.readAll());
-        assertEquals(504, response4.getStatus());
-        if (handler.get() != null)                          // Timeout may have occurred before dispatch, or ...
-            handler.get().handleResponse(new Response(0));  // response may eventually arrive, but too late.
+        try {
+            var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?timeout=1ms");
+            assertSameJson("{" +
+                           "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
+                           "  \"message\": \"Timeout after 1ms\"" +
+                           "}", response4.readAll());
+            assertEquals(504, response4.getStatus());
+        }
+        finally {
+            if (handler.get() != null)                          // Timeout may have occurred before dispatch, or ...
+                handler.get().handleResponse(new Response(0));  // response may eventually arrive, but too late.
+        }
 
         driver.close();
     }
@@ -681,7 +686,7 @@ public class DocumentV1ApiTest {
     @Test
     public void testThroughput() throws InterruptedException {
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder().build();
-        handler = new DocumentV1ApiHandler(clock, metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
+        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
 
         int writers = 4;
         int queueFill = executorConfig.maxThrottled() - writers;
@@ -742,7 +747,7 @@ public class DocumentV1ApiTest {
             });
         }
         latch.await();
-        System.err.println((System.nanoTime() - startNanos) * 1e-9 + " seconds total");
+        System.err.println(docs + " requests in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
 
         assertNull(failed.get());
         driver.close();
