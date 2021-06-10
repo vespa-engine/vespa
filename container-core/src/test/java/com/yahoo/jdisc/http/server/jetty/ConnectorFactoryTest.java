@@ -8,6 +8,8 @@ import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,44 +18,71 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Einar M R Rosenvinge
+ * @author bjorncs
  */
 public class ConnectorFactoryTest {
 
+    private Server server;
+
+    @Before
+    public void createServer() {
+        server = new Server();
+    }
+
+    @After
+    public void stopServer() {
+        try {
+            server.stop();
+            server = null;
+        } catch (Exception e) {
+            //ignore
+        }
+    }
+
     @Test
     public void requireThatServerCanBindChannel() throws Exception {
-        Server server = new Server();
-        try {
-            ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
-            ConnectorFactory factory = createConnectorFactory(config);
-            JettyConnectionLogger connectionLogger = new JettyConnectionLogger(
-                    new ServerConfig.ConnectionLog.Builder().enabled(false).build(),
-                    new VoidConnectionLog());
-            DummyMetric metric = new DummyMetric();
-            var connectionMetricAggregator = new ConnectionMetricAggregator(new ServerConfig(new ServerConfig.Builder()), metric);
-            JDiscServerConnector connector =
-                    (JDiscServerConnector)factory.createConnector(metric, server, connectionLogger, connectionMetricAggregator);
-            server.addConnector(connector);
-            server.setHandler(new HelloWorldHandler());
-            server.start();
+        ConnectorConfig config = new ConnectorConfig(new ConnectorConfig.Builder());
+        ConnectorFactory factory = createConnectorFactory(config);
+        JDiscServerConnector connector = createConnectorFromFactory(factory);
+        server.addConnector(connector);
+        server.setHandler(new HelloWorldHandler());
+        server.start();
 
-            SimpleHttpClient client = new SimpleHttpClient(null, connector.getLocalPort(), false);
-            SimpleHttpClient.RequestExecutor ex = client.newGet("/blaasdfnb");
-            SimpleHttpClient.ResponseValidator val = ex.execute();
-            val.expectContent(equalTo("Hello world"));
-        } finally {
-            try {
-                server.stop();
-            } catch (Exception e) {
-                //ignore
-            }
-        }
+        SimpleHttpClient client = new SimpleHttpClient(null, connector.getLocalPort(), false);
+        SimpleHttpClient.RequestExecutor ex = client.newGet("/blaasdfnb");
+        SimpleHttpClient.ResponseValidator val = ex.execute();
+        val.expectContent(equalTo("Hello world"));
+    }
+
+    @Test
+    public void constructed_connector_is_based_on_jdisc_connector_config() {
+        ConnectorConfig config = new ConnectorConfig.Builder()
+                .idleTimeout(25)
+                .name("my-server-name")
+                .listenPort(12345)
+                .build();
+        ConnectorFactory factory = createConnectorFactory(config);
+        JDiscServerConnector connector = createConnectorFromFactory(factory);
+        assertEquals(25000, connector.getIdleTimeout());
+        assertEquals(12345, connector.listenPort());
+        assertEquals("my-server-name", connector.getName());
     }
 
     private static ConnectorFactory createConnectorFactory(ConnectorConfig config) {
         return new ConnectorFactory(config, new ConfiguredSslContextFactoryProvider(config));
+    }
+
+    private JDiscServerConnector createConnectorFromFactory(ConnectorFactory factory) {
+        JettyConnectionLogger connectionLogger = new JettyConnectionLogger(
+                new ServerConfig.ConnectionLog.Builder().enabled(false).build(),
+                new VoidConnectionLog());
+        DummyMetric metric = new DummyMetric();
+        var connectionMetricAggregator = new ConnectionMetricAggregator(new ServerConfig(new ServerConfig.Builder()), metric);
+        return (JDiscServerConnector)factory.createConnector(metric, server, connectionLogger, connectionMetricAggregator);
     }
 
     private static class HelloWorldHandler extends AbstractHandler {
