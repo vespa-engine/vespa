@@ -3,6 +3,7 @@
 #pragma once
 
 #include "rpcserver.h"
+#include "cc-result.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
 #include <string>
@@ -18,13 +19,22 @@ namespace config::sentinel {
  **/
 class Connectivity {
 public:
+    using SpecMap = std::map<std::string, int>;
+    using HostAndPort = SpecMap::value_type;
+
     Connectivity();
     ~Connectivity();
     void configure(const SentinelConfig::Connectivity &config);
     bool checkConnectivity(RpcServer &rpcServer);
 private:
+    struct Accumulated {
+        size_t numIssues = 0;
+        size_t numSeriousIssues = 0;
+    };
+    void accumulate(Accumulated &target, CcResult value);
+    bool enoughOk(const Accumulated &results, size_t clusterSize);
     SentinelConfig::Connectivity _config;
-    std::map<std::string, std::string> _checkSpecs;
+    SpecMap _checkSpecs;
     std::map<std::string, std::string> _detailsPerHost;
 };
 

@@ -1,5 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#pragma once
+
+#include "cc-result.h"
 #include <string>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -12,21 +15,20 @@ namespace config::sentinel {
 
 struct OutwardCheckContext {
     vespalib::CountDownLatch latch;
-    const char * myHostname;
-    int myPortnum;
+    std::string targetHostname;
+    int targetPortnum;
     FRT_Supervisor &orb;
     OutwardCheckContext(size_t count,
-                        const char * hostname,
+                        const std::string &hostname,
                         int portnumber,
                         FRT_Supervisor &supervisor)
       : latch(count),
-        myHostname(hostname),
-        myPortnum(portnumber),
+        targetHostname(hostname),
+        targetPortnum(portnumber),
         orb(supervisor)
     {}
+    ~OutwardCheckContext();
 };
-
-enum class CcResult { UNKNOWN, CONN_FAIL, REVERSE_FAIL, REVERSE_UNAVAIL, ALL_OK };
 
 class OutwardCheck  : public FRT_IRequestWait {
 private:
@@ -41,6 +43,7 @@ public:
     void RequestDone(FRT_RPCRequest *req) override;
     bool ok() const { return _result == CcResult::ALL_OK; }
     CcResult result() const { return _result; }
+    void classifyResult(CcResult value);
 };
 
 }

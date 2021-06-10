@@ -27,25 +27,33 @@ namespace {
 std::string toString(CcResult value) {
     switch (value) {
         case CcResult::UNKNOWN: return "BAD: missing result"; // very very bad
-        case CcResult::REVERSE_FAIL: return "connect OK, but reverse check FAILED"; // very bad
+        case CcResult::INDIRECT_PING_FAIL: return "connect OK, but reverse check FAILED"; // very bad
+        case CcResult::UNREACHABLE_UP: return "unreachable from me, but up"; // very bad
         case CcResult::CONN_FAIL: return "failed to connect"; // bad
-        case CcResult::REVERSE_UNAVAIL: return "connect OK (but reverse check unavailable)"; // unfortunate
+        case CcResult::INDIRECT_PING_UNAVAIL: return "connect OK (but reverse check unavailable)"; // unfortunate
         case CcResult::ALL_OK: return "OK: both ways connectivity verified"; // good
     }
     LOG(error, "Unknown CcResult enum value: %d", (int)value);
     LOG_ABORT("Unknown CcResult enum value");
 }
 
-std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
-    std::map<std::string, std::string> checkSpecs;
+using ConnectivityMap = std::map<std::string, OutwardCheck>;
+using HostAndPort = Connectivity::HostAndPort;
+using SpecMap = Connectivity::SpecMap;
+
+std::string spec(const SpecMap::value_type &host_and_port) {
+    return fmt("tcp/%s:%d", host_and_port.first.c_str(), host_and_port.second);
+}
+
+SpecMap specsFrom(const ModelConfig &model) {
+    SpecMap checkSpecs;
     for (const auto & h : model.hosts) {
         bool foundSentinelPort = false;
         for (const auto & s : h.services) {
             if (s.name == "config-sentinel") {
                 for (const auto & p : s.ports) {
                     if (p.tags.find("rpc") != p.tags.npos) {
-                        auto spec = fmt("tcp/%s:%d", h.name.c_str(), p.number);
-                        checkSpecs[h.name] = spec;
+                        checkSpecs[h.name] = p.number;
                         foundSentinelPort = true;
                     }
                 }
@@ -59,7 +67,56 @@ std::map<std::string, std::string> specsFrom(const ModelConfig &model) {
     return checkSpecs;
 }
 
+void classifyConnFails(ConnectivityMap &connectivityMap,
+                       const SpecMap &specMap,
+                       RpcServer &rpcServer)
+{
+    std::vector<HostAndPort> failedConnSpecs;
+    std::vector<HostAndPort> goodNeighborSpecs;
+    std::string myHostname = vespa::Defaults::vespaHostname();
+    for (auto & [hostname, check] : connectivityMap) {
+        if (hostname == myHostname) {
+            if (check.result() == CcResult::CONN_FAIL) {
+                check.classifyResult(CcResult::UNREACHABLE_UP);
+            }
+        } else {
+            auto iter = specMap.find(hostname);
+            LOG_ASSERT(iter != specMap.end());
+            if (check.result() == CcResult::ALL_OK) {
+                goodNeighborSpecs.push_back(*iter);
+            }
+            if (check.result() == CcResult::CONN_FAIL) {
+                failedConnSpecs.push_back(*iter);
+            }
+        }
+    }
+    if ((failedConnSpecs.size() == 0) || (goodNeighborSpecs.size() == 0)) {
+        return;
+    }
+    for (const auto & [ nameToCheck, portToCheck ] : failedConnSpecs) {
+        auto cmIter = connectivityMap.find(nameToCheck);
+        LOG_ASSERT(cmIter != connectivityMap.end());
+        OutwardCheckContext checkContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
+        ConnectivityMap cornerProbes;
+        for (const auto & hp : goodNeighborSpecs) {
+            cornerProbes.try_emplace(hp.first, spec(hp), checkContext);
+        }
+        checkContext.latch.await();
+        size_t numReportsUp = 0;
+        size_t numReportsDown = 0;
+        for (const auto & [hostname, probe] : cornerProbes) {
+            if (probe.result() == CcResult::INDIRECT_PING_FAIL) ++numReportsDown;
+            if (probe.result() == CcResult::ALL_OK) ++numReportsUp;
+        }
+        if (numReportsUp > 0) {
+            LOG(debug, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
+                nameToCheck.c_str(), numReportsUp, numReportsDown);
+            cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
+        }
+    }
 }
+
+} // namespace <unnamed>
 
 void Connectivity::configure(const SentinelConfig::Connectivity &config) {
     _config = config;
@@ -77,18 +134,18 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         LOG(warning, "could not get model config, skipping connectivity checks");
         return true;
     }
+    std::string myHostname = vespa::Defaults::vespaHostname();
     OutwardCheckContext checkContext(clusterSize,
-                                     vespa::Defaults::vespaHostname(),
+                                     myHostname,
                                      rpcServer.getPort(),
                                      rpcServer.orb());
-    std::map<std::string, OutwardCheck> connectivityMap;
-    for (const auto & [ hn, spec ] : _checkSpecs) {
-        connectivityMap.try_emplace(hn, spec, checkContext);
+    ConnectivityMap connectivityMap;
+    for (const auto &host_and_port : _checkSpecs) {
+        connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext);
     }
     checkContext.latch.await();
-    size_t numFailedConns = 0;
-    size_t numFailedReverse = 0;
-    bool allChecksOk = true;
+    classifyConnFails(connectivityMap, _checkSpecs, rpcServer);
+    Accumulated accumulated;
     for (const auto & [hostname, check] : connectivityMap) {
         std::string detail = toString(check.result());
         std::string prev = _detailsPerHost[hostname];
@@ -97,26 +154,47 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         }
         _detailsPerHost[hostname] = detail;
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);
-        if (check.result() == CcResult::CONN_FAIL) ++numFailedConns;
-        if (check.result() == CcResult::REVERSE_FAIL) ++numFailedReverse;
+        accumulate(accumulated, check.result());
     }
-    if (numFailedReverse > size_t(_config.maxBadReverseCount)) {
-        LOG(warning, "%zu of %zu nodes report problems connecting to me (max is %d)",
-            numFailedReverse, clusterSize, _config.maxBadReverseCount);
-        allChecksOk = false;
+    return enoughOk(accumulated, clusterSize);
+}
+
+void Connectivity::accumulate(Accumulated &target, CcResult value) {
+    switch (value) {
+        case CcResult::UNKNOWN:
+        case CcResult::UNREACHABLE_UP:
+        case CcResult::INDIRECT_PING_FAIL:
+            ++target.numSeriousIssues;
+            ++target.numIssues;
+            break;
+        case CcResult::CONN_FAIL:
+            ++target.numIssues;
+            break;
+        case CcResult::INDIRECT_PING_UNAVAIL:
+        case CcResult::ALL_OK:
+            break;
     }
-    if (numFailedConns * 100.0 > _config.maxBadOutPercent * clusterSize) {
-        double pct = numFailedConns * 100.0 / clusterSize;
-        LOG(warning, "Problems connecting to %zu of %zu nodes, %.2f %% (max is %d)",
-            numFailedConns, clusterSize, pct, _config.maxBadOutPercent);
-        allChecksOk = false;
+}
+
+bool Connectivity::enoughOk(const Accumulated &results, size_t clusterSize) {
+    bool enough = true;
+    if (results.numSeriousIssues > size_t(_config.maxBadReverseCount)) {
+        LOG(warning, "%zu of %zu nodes up but with network connectivity problems (max is %d)",
+            results.numSeriousIssues, clusterSize, _config.maxBadReverseCount);
+        enough = false;
     }
-    if (allChecksOk && (numFailedConns == 0) && (numFailedReverse == 0)) {
+    if (results.numIssues * 100.0 > _config.maxBadOutPercent * clusterSize) {
+        double pct = results.numIssues * 100.0 / clusterSize;
+        LOG(warning, "Problems with connection to %zu of %zu nodes, %.1f%% (max is %d%%)",
+            results.numIssues, clusterSize, pct, _config.maxBadOutPercent);
+        enough = false;
+    }
+    if (results.numIssues == 0) {
         LOG(info, "All connectivity checks OK, proceeding with service startup");
-    } else if (allChecksOk) {
+    } else if (enough) {
         LOG(info, "Enough connectivity checks OK, proceeding with service startup");
     }
-    return allChecksOk;
+    return enough;
 }
 
 }
