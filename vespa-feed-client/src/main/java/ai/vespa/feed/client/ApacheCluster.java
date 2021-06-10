@@ -147,9 +147,13 @@ class ApacheCluster implements Cluster {
         SslContextBuilder sslContextBuilder = new SslContextBuilder();
         if (builder.certificateFile != null && builder.privateKeyFile != null) {
             sslContextBuilder.withCertificateAndKey(builder.certificateFile, builder.privateKeyFile);
+        } else if (builder.certificate != null && builder.privateKey != null) {
+            sslContextBuilder.withCertificateAndKey(builder.certificate, builder.privateKey);
         }
         if (builder.caCertificatesFile != null) {
             sslContextBuilder.withCaCertificates(builder.caCertificatesFile);
+        } else if (builder.caCertificates != null) {
+            sslContextBuilder.withCaCertificates(builder.caCertificates);
         }
         return sslContextBuilder.build();
     }
