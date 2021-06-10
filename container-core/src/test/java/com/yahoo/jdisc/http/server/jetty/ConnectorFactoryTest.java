@@ -59,7 +59,7 @@ public class ConnectorFactoryTest {
     }
 
     @Test
-    public void constructed_connector_is_based_jdisc_connector_config() {
+    public void constructed_connector_is_based_on_jdisc_connector_config() {
         ConnectorConfig config = new ConnectorConfig.Builder()
                 .idleTimeout(25)
                 .name("my-server-name")
