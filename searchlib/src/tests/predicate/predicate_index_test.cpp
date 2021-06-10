@@ -33,7 +33,7 @@ DummyDocIdLimitProvider dummy_provider;
 SimpleIndexConfig simple_index_config;
 
 TEST("require that PredicateIndex can index empty documents") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
@@ -41,7 +41,7 @@ TEST("require that PredicateIndex can index empty documents") {
 }
 
 TEST("require that indexDocument don't index empty documents") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
     PredicateTreeAnnotations annotations;
     index.indexDocument(3, annotations);
@@ -50,7 +50,7 @@ TEST("require that indexDocument don't index empty documents") {
 }
 
 TEST("require that PredicateIndex can remove empty documents") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
@@ -61,7 +61,7 @@ TEST("require that PredicateIndex can remove empty documents") {
 }
 
 TEST("require that indexing the same empty document multiple times is ok") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
@@ -109,7 +109,7 @@ const IntervalWithBounds bounds = {0x0001ffff, 0x03};
 Interval single_buf;
 
 TEST("require that PredicateIndex can index document") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {});
     index.commit();
@@ -124,7 +124,7 @@ TEST("require that PredicateIndex can index document") {
 }
 
 TEST("require that PredicateIndex can index document with bounds") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {}, {{hash, bounds}});
     index.commit();
@@ -149,7 +149,7 @@ TEST("require that PredicateIndex can index document with bounds") {
 
 TEST("require that PredicateIndex can index multiple documents "
      "with the same feature") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     for (uint32_t id = 1; id < 100; ++id) {
         indexFeature(index, id, min_feature, {{hash, interval}}, {});
@@ -171,7 +171,7 @@ TEST("require that PredicateIndex can index multiple documents "
 }
 
 TEST("require that PredicateIndex can remove indexed documents") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature,
                  {{hash, interval}}, {{hash2, bounds}});
@@ -187,7 +187,7 @@ TEST("require that PredicateIndex can remove indexed documents") {
 }
 
 TEST("require that PredicateIndex can remove multiple documents") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     const auto &interval_index = index.getIntervalIndex();
     EXPECT_FALSE(interval_index.lookup(hash).valid());
     for (uint32_t id = 1; id < 100; ++id) {
@@ -214,7 +214,7 @@ TEST("require that PredicateIndex can remove multiple documents with "
         intervals.push_back(make_pair(hash + i, interval));
         bounds_intervals.push_back(make_pair(hash2 + i, bounds));
     }
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     const auto &interval_index = index.getIntervalIndex();
     EXPECT_FALSE(interval_index.lookup(hash).valid());
     for (uint32_t id = 1; id < 100; ++id) {
@@ -272,7 +272,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
         intervals.push_back(make_pair(hash + i, interval));
         bounds_intervals.push_back(make_pair(hash2 + i, bounds));
     }
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 8);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 8);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     for (uint32_t id = 1; id < 100; ++id) {
         indexFeature(index, id, id, intervals, bounds_intervals);
@@ -284,7 +284,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
     index.serialize(buffer);
     uint32_t doc_id_limit;
     DocIdLimitFinder finder(doc_id_limit);
-    PredicateIndex index2(generation_handler, generation_holder, dummy_provider, simple_index_config,
+    PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,
                           buffer, finder, PredicateAttribute::PREDICATE_ATTRIBUTE_VERSION);
     const PredicateIntervalStore &interval_store = index2.getIntervalStore();
     EXPECT_EQUAL(199u, doc_id_limit);
@@ -322,7 +322,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
 }
 
 TEST("require that DocumentFeaturesStore is restored on deserialization") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature,
                  {{hash, interval}}, {{hash2, bounds}});
@@ -330,7 +330,7 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
     index.serialize(buffer);
     uint32_t doc_id_limit;
     DocIdLimitFinder finder(doc_id_limit);
-    PredicateIndex index2(generation_handler, generation_holder, dummy_provider, simple_index_config,
+    PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,
                           buffer, finder, PredicateAttribute::PREDICATE_ATTRIBUTE_VERSION);
     const auto &interval_index = index2.getIntervalIndex();
     const auto &bounds_index = index2.getBoundsIndex();
@@ -351,7 +351,7 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
 }
 
 TEST("require that hold lists are attempted emptied on destruction") {
-    PredicateIndex index(generation_handler, generation_holder, dummy_provider, simple_index_config, 10);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     indexFeature(index, doc_id, min_feature,
                  {{hash, interval}}, {{hash2, bounds}});
     {

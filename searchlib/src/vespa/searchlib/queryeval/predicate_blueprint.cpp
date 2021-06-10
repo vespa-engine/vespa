@@ -8,13 +8,13 @@
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <algorithm>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.predicate.predicate_blueprint");
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
@@ -54,7 +54,8 @@ struct MyRangeHandler {
     vector<BoundsEntry> &bounds_entries;
     uint64_t subquery_bitmap;
 
-    void handleRange(const string &label) {
+    void
+    handleRange(const string &label) {
         uint64_t feature = PredicateHash::hash64(label);
         auto iterator = interval_index.lookup(feature);
         if (iterator.valid()) {
@@ -62,7 +63,8 @@ struct MyRangeHandler {
             interval_entries.push_back({iterator.getData(), subquery_bitmap, sz, feature});
         }
     }
-    void handleEdge(const string &label, uint32_t value) {
+    void
+    handleEdge(const string &label, uint32_t value) {
         uint64_t feature = PredicateHash::hash64(label);
         auto iterator = bounds_index.lookup(feature);
         if (iterator.valid()) {
@@ -73,18 +75,19 @@ struct MyRangeHandler {
 };
 
 template <typename Entry>
-void pushRangeDictionaryEntries(
-        const Entry &entry,
-        const PredicateIndex &index,
-        vector<IntervalEntry> &interval_entries,
-        vector<BoundsEntry> &bounds_entries) {
+void
+pushRangeDictionaryEntries(const Entry &entry, const PredicateIndex &index,
+                           vector<IntervalEntry> &interval_entries,
+                           vector<BoundsEntry> &bounds_entries)
+{
     PredicateRangeTermExpander expander(index.getArity());
     MyRangeHandler handler{index.getIntervalIndex(), index.getBoundsIndex(), interval_entries,
                            bounds_entries, entry.getSubQueryBitmap()};
     expander.expand(entry.getKey(), entry.getValue(), handler);
 }
 
-void pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &interval_index,
+void
+pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &interval_index,
                           vector<IntervalEntry> &interval_entries) {
     uint64_t feature = Constants::z_star_hash;
     auto iterator = interval_index.lookup(feature);
@@ -96,7 +99,8 @@ void pushZStarPostingList(const SimpleIndex<vespalib::datastore::EntryRef> &inte
 
 }  // namespace
 
-void PredicateBlueprint::addPostingToK(uint64_t feature)
+void
+PredicateBlueprint::addPostingToK(uint64_t feature)
 {
     const auto &interval_index = _index.getIntervalIndex();
     auto tmp = interval_index.lookup(feature);
@@ -115,7 +119,8 @@ void PredicateBlueprint::addPostingToK(uint64_t feature)
     }
 }
 
-void PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
+void
+PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
 {
     const auto &bounds_index = _index.getBoundsIndex();
     auto tmp = bounds_index.lookup(feature);
@@ -134,7 +139,8 @@ void PredicateBlueprint::addBoundsPostingToK(uint64_t feature)
     }
 }
 
-void PredicateBlueprint::addZeroConstraintToK()
+void
+PredicateBlueprint::addZeroConstraintToK()
 {
     uint8_t *kVBase = &_kV[0];
     size_t kVSize = _kV.size();
@@ -174,15 +180,14 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
         pushValueDictionaryEntry(entry, interval_index, _interval_dict_entries);
     }
     for (const auto &entry : term.getRangeFeatures()) {
-        pushRangeDictionaryEntries(entry, _index, _interval_dict_entries,
-                                   _bounds_dict_entries);
+        pushRangeDictionaryEntries(entry, _index, _interval_dict_entries,_bounds_dict_entries);
     }
     pushZStarPostingList(interval_index, _interval_dict_entries);
 
     BitVectorCache::KeyAndCountSet keys;
     keys.reserve(_interval_dict_entries.size());
     for (const auto & e : _interval_dict_entries) {
-        keys.push_back({e.feature, e.size});
+        keys.emplace_back(e.feature, e.size);
     }
     _cachedFeatures = _index.lookupCachedSet(keys);
 
@@ -202,40 +207,43 @@ PredicateBlueprint::PredicateBlueprint(const FieldSpecBase &field,
         });
 
 
-    if (zero_constraints_docs.size() == 0 &&
+    if ((zero_constraints_docs.size() == 0) &&
         _interval_dict_entries.empty() && _bounds_dict_entries.empty() &&
-        !_zstar_dict_entry.valid()) {
+        !_zstar_dict_entry.valid())
+    {
         setEstimate(HitEstimate(0, true));
     } else {
         setEstimate(HitEstimate(static_cast<uint32_t>(zero_constraints_docs.size()), false));
     }
 }
 
-PredicateBlueprint::~PredicateBlueprint() {}
+PredicateBlueprint::~PredicateBlueprint() = default;
 
 namespace {
 
-    template<typename DictEntry, typename VectorIteratorEntry, typename BTreeIteratorEntry>
-    void lookupPostingLists(const std::vector<DictEntry> &dict_entries,
-                            std::vector<VectorIteratorEntry> &vector_iterators,
-                            std::vector<BTreeIteratorEntry> &btree_iterators,
-                            const SimpleIndex<vespalib::datastore::EntryRef> &index)
-    {
-        for (const auto &entry : dict_entries) {
-            auto vector_iterator = index.getVectorPostingList(entry.feature);
-            if (vector_iterator) {
-                vector_iterators.push_back(VectorIteratorEntry{*vector_iterator, entry});
-            } else {
-                auto btree_iterator = index.getBTreePostingList(entry.entry_ref);
-                btree_iterators.push_back(BTreeIteratorEntry{btree_iterator, entry});
-            }
+template<typename DictEntry, typename VectorIteratorEntry, typename BTreeIteratorEntry>
+void
+lookupPostingLists(const std::vector<DictEntry> &dict_entries,
+                   std::vector<VectorIteratorEntry> &vector_iterators,
+                   std::vector<BTreeIteratorEntry> &btree_iterators,
+                   const SimpleIndex<vespalib::datastore::EntryRef> &index)
+{
+    for (const auto &entry : dict_entries) {
+        auto vector_iterator = index.getVectorPostingList(entry.feature);
+        if (vector_iterator) {
+            vector_iterators.push_back(VectorIteratorEntry{*vector_iterator, entry});
+        } else {
+            auto btree_iterator = index.getBTreePostingList(entry.entry_ref);
+            btree_iterators.push_back(BTreeIteratorEntry{btree_iterator, entry});
         }
-
-    };
+    }
 
 }
 
-void PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
+}
+
+void
+PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
     if (!_fetch_postings_done) {
         const auto &interval_index = _index.getIntervalIndex();
         const auto &bounds_index = _index.getBoundsIndex();
@@ -277,29 +285,31 @@ PredicateBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, 
     PredicateAttribute::MinFeatureHandle mfh = attribute.getMinFeatureVector();
     auto interval_range_vector = attribute.getIntervalRangeVector();
     auto max_interval_range = attribute.getMaxIntervalRange();
-    return SearchIterator::UP(new PredicateSearch(mfh.first, interval_range_vector, max_interval_range, _kV,
-                                                  createPostingLists(), tfmda));
+    return std::make_unique<PredicateSearch>(mfh.first, interval_range_vector, max_interval_range, _kV,
+                                             createPostingLists(), tfmda);
 }
 
 namespace {
 
-    template<typename IteratorEntry, typename PostingListFactory>
-    void createPredicatePostingLists(const std::vector<IteratorEntry> &iterator_entries,
-                                     std::vector<PredicatePostingList::UP> &posting_lists,
-                                     PostingListFactory posting_list_factory)
-    {
-        for (const auto &entry : iterator_entries) {
-            if (entry.iterator.valid()) {
-                auto posting_list = posting_list_factory(entry);
-                posting_list->setSubquery(entry.entry.subquery);
-                posting_lists.emplace_back(PredicatePostingList::UP(posting_list));
-            }
+template<typename IteratorEntry, typename PostingListFactory>
+void
+createPredicatePostingLists(const std::vector<IteratorEntry> &iterator_entries,
+                            std::vector<PredicatePostingList::UP> &posting_lists,
+                            PostingListFactory posting_list_factory)
+{
+    for (const auto &entry : iterator_entries) {
+        if (entry.iterator.valid()) {
+            auto posting_list = posting_list_factory(entry);
+            posting_list->setSubquery(entry.entry.subquery);
+            posting_lists.emplace_back(PredicatePostingList::UP(posting_list));
         }
     }
+}
 
 }
 
-std::vector<PredicatePostingList::UP> PredicateBlueprint::createPostingLists() const {
+std::vector<PredicatePostingList::UP>
+PredicateBlueprint::createPostingLists() const {
     size_t total_size = _interval_btree_iterators.size() + _interval_vector_iterators.size() +
                         _bounds_btree_iterators.size() + _bounds_vector_iterators.size() + 2;
     std::vector<PredicatePostingList::UP> posting_lists;
@@ -333,17 +343,15 @@ std::vector<PredicatePostingList::UP> PredicateBlueprint::createPostingLists() c
             });
 
     if (_zstar_vector_iterator && _zstar_vector_iterator->valid()) {
-        auto posting_list = PredicatePostingList::UP(
-                new PredicateZstarCompressedPostingList<VectorIterator>(interval_store, *_zstar_vector_iterator));
+        auto posting_list = std::make_unique<PredicateZstarCompressedPostingList<VectorIterator>>(interval_store, *_zstar_vector_iterator);
         posting_lists.emplace_back(std::move(posting_list));
     } else if (_zstar_btree_iterator && _zstar_btree_iterator->valid()) {
-        auto posting_list = PredicatePostingList::UP(
-                new PredicateZstarCompressedPostingList<BTreeIterator>(interval_store, *_zstar_btree_iterator));
+        auto posting_list = std::make_unique<PredicateZstarCompressedPostingList<BTreeIterator>>(interval_store, *_zstar_btree_iterator);
         posting_lists.emplace_back(std::move(posting_list));
     }
     auto iterator = _index.getZeroConstraintDocs().begin();
     if (iterator.valid()) {
-        auto posting_list = PredicatePostingList::UP(new PredicateZeroConstraintPostingList(iterator));
+        auto posting_list = std::make_unique<PredicateZeroConstraintPostingList>(iterator);
         posting_lists.emplace_back(std::move(posting_list));
     }
     return posting_lists;

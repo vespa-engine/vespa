@@ -27,11 +27,11 @@ public:
     {
     public:
         EntryRef _ref;
-        size_t _len;  // Aligned length
+        size_t   _len;  // Aligned length
 
         ElemHold1ListElem(EntryRef ref, size_t len)
-                : _ref(ref),
-                  _len(len)
+            : _ref(ref),
+              _len(len)
         { }
     };
 

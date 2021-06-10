@@ -25,7 +25,7 @@ DummyDocIdLimitProvider limit_provider;
 SimpleIndexConfig config;
 
 TEST("require that empty posting list starts at 0.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
     PredicateZeroConstraintPostingList posting_list(index.getZeroConstraintDocs().begin());
     EXPECT_EQUAL(0u, posting_list.getDocId());
     EXPECT_EQUAL(0x00010001u, posting_list.getInterval());
@@ -33,7 +33,7 @@ TEST("require that empty posting list starts at 0.") {
 }
 
 TEST("require that posting list can iterate.") {
-    PredicateIndex index(generation_handler, generation_holder, limit_provider, config, 8);
+    PredicateIndex index(generation_holder, limit_provider, config, 8);
     for (uint32_t id = 1; id < 100; ++id) {
         index.indexEmptyDocument(id);
     }

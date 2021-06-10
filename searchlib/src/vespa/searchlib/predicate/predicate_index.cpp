@@ -17,16 +17,19 @@ using std::vector;
 namespace search::predicate {
 
 template <>
-void PredicateIndex::addPosting<Interval>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
+void
+PredicateIndex::addPosting<Interval>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
     _interval_index.addPosting(feature, doc_id, ref);
 }
 template <>
-void PredicateIndex::addPosting<IntervalWithBounds>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
+void
+PredicateIndex::addPosting<IntervalWithBounds>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
     _bounds_index.addPosting(feature, doc_id, ref);
 }
 
 template <typename IntervalT>
-void PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex::FeatureMap<IntervalT> &interval_map) {
+void
+PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex::FeatureMap<IntervalT> &interval_map) {
     if (interval_map.empty()) {
         return;
     }
@@ -80,11 +83,10 @@ public:
 
 }  // namespace
 
-PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
+PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
                                const DocIdLimitProvider &limit_provider,
                                const SimpleIndexConfig &simple_index_config, uint32_t arity)
     : _arity(arity),
-      _generation_handler(generation_handler),
       _limit_provider(limit_provider),
       _interval_index(genHolder, limit_provider, simple_index_config),
       _bounds_index(genHolder, limit_provider, simple_index_config),
@@ -95,12 +97,11 @@ PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, Generation
 {
 }
 
-PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
+PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
                                const DocIdLimitProvider &limit_provider,
                                const SimpleIndexConfig &simple_index_config, DataBuffer &buffer,
                                SimpleIndexDeserializeObserver<> & observer, uint32_t version)
     : _arity(0),
-      _generation_handler(generation_handler),
       _limit_provider(limit_provider),
       _interval_index(genHolder, limit_provider, simple_index_config),
       _bounds_index(genHolder, limit_provider, simple_index_config),
@@ -121,15 +122,15 @@ PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, Generation
     _zero_constraint_docs.assign(builder);
     IntervalDeserializer<Interval> interval_deserializer(_interval_store);
     _interval_index.deserialize(buffer, interval_deserializer, observer, version);
-    IntervalDeserializer<IntervalWithBounds>
-        bounds_deserializer(_interval_store);
+    IntervalDeserializer<IntervalWithBounds> bounds_deserializer(_interval_store);
     _bounds_index.deserialize(buffer, bounds_deserializer, observer, version);
     commit();
 }
 
 PredicateIndex::~PredicateIndex() = default;
 
-void PredicateIndex::serialize(DataBuffer &buffer) const {
+void
+PredicateIndex::serialize(DataBuffer &buffer) const {
     _features_store.serialize(buffer);
     buffer.writeInt16(_arity);
     buffer.writeInt32(_zero_constraint_docs.size());
@@ -142,25 +143,29 @@ void PredicateIndex::serialize(DataBuffer &buffer) const {
     _bounds_index.serialize(buffer, bounds_serializer);
 }
 
-void PredicateIndex::onDeserializationCompleted() {
+void
+PredicateIndex::onDeserializationCompleted() {
     _interval_index.promoteOverThresholdVectors();
     _bounds_index.promoteOverThresholdVectors();
 }
 
-void PredicateIndex::indexDocument(uint32_t doc_id, const PredicateTreeAnnotations &annotations) {
+void
+PredicateIndex::indexDocument(uint32_t doc_id, const PredicateTreeAnnotations &annotations) {
     indexDocumentFeatures(doc_id, annotations.interval_map);
     indexDocumentFeatures(doc_id, annotations.bounds_map);
     _features_store.insert(annotations, doc_id);
 }
 
-void PredicateIndex::indexEmptyDocument(uint32_t doc_id)
+void
+PredicateIndex::indexEmptyDocument(uint32_t doc_id)
 {
     _zero_constraint_docs.insert(doc_id, vespalib::btree::BTreeNoLeafData::_instance);
 }
 
 namespace {
-void removeFromIndex(
-        uint64_t feature, uint32_t doc_id, SimpleIndex<vespalib::datastore::EntryRef> &index, PredicateIntervalStore &interval_store)
+void
+removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<vespalib::datastore::EntryRef> &index,
+                PredicateIntervalStore &interval_store)
 {
     auto result = index.removeFromPostingList(feature, doc_id);
     if (result.second) { // Posting was removed
@@ -189,7 +194,8 @@ private:
 
 }  // namespace
 
-void PredicateIndex::removeDocument(uint32_t doc_id) {
+void
+PredicateIndex::removeDocument(uint32_t doc_id) {
     _zero_constraint_docs.remove(doc_id);
 
     auto features = _features_store.get(doc_id);
@@ -203,27 +209,31 @@ void PredicateIndex::removeDocument(uint32_t doc_id) {
     _features_store.remove(doc_id);
 }
 
-void PredicateIndex::commit() {
+void
+PredicateIndex::commit() {
     _interval_index.commit();
     _bounds_index.commit();
     _zero_constraint_docs.getAllocator().freeze();
 }
 
-void PredicateIndex::trimHoldLists(generation_t used_generation) {
+void
+PredicateIndex::trimHoldLists(generation_t used_generation) {
     _interval_index.trimHoldLists(used_generation);
     _bounds_index.trimHoldLists(used_generation);
     _interval_store.trimHoldLists(used_generation);
     _zero_constraint_docs.getAllocator().trimHoldLists(used_generation);
 }
 
-void PredicateIndex::transferHoldLists(generation_t generation) {
+void
+PredicateIndex::transferHoldLists(generation_t generation) {
     _interval_index.transferHoldLists(generation);
     _bounds_index.transferHoldLists(generation);
     _interval_store.transferHoldLists(generation);
     _zero_constraint_docs.getAllocator().transferHoldLists(generation);
 }
 
-vespalib::MemoryUsage PredicateIndex::getMemoryUsage() const {
+vespalib::MemoryUsage
+PredicateIndex::getMemoryUsage() const {
     // TODO Include bit vector cache memory usage
     vespalib::MemoryUsage combined;
     combined.merge(_interval_index.getMemoryUsage());

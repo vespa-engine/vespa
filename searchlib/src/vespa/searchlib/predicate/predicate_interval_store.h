@@ -34,7 +34,7 @@ class PredicateIntervalStore {
         }
     };
     DataStoreAdapter _store_adapter;
-    RefCacheType _ref_cache;
+    RefCacheType     _ref_cache;
 
     // Return type for private allocation functions
     template <typename T>
@@ -89,7 +89,8 @@ public:
      * single interval optimization.
      */
     template <typename IntervalT>
-    const IntervalT *get(vespalib::datastore::EntryRef btree_ref,
+    const IntervalT
+    *get(vespalib::datastore::EntryRef btree_ref,
                          uint32_t &size_out,
                          IntervalT *single_buf) const
     {

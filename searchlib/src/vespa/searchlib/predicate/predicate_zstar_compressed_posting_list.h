@@ -41,7 +41,8 @@ PredicateZstarCompressedPostingList<Iterator>::PredicateZstarCompressedPostingLi
 }
 
 template<typename Iterator>
-bool PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
+bool
+PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
     if (_iterator.valid() && _iterator.getKey() <= doc_id) {
         _iterator.linearSeek(doc_id + 1);
     }
@@ -57,7 +58,8 @@ bool PredicateZstarCompressedPostingList<Iterator>::next(uint32_t doc_id) {
 }
 
 template<typename Iterator>
-bool PredicateZstarCompressedPostingList<Iterator>::nextInterval() {
+bool
+PredicateZstarCompressedPostingList<Iterator>::nextInterval() {
     uint32_t next_interval = UINT32_MAX;
     if (_interval_count > 1) {
         next_interval = _current_interval[1].interval;

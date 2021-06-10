@@ -87,10 +87,10 @@ BitVectorCache::lookupCachedSet(const KeyAndCountSet & keys)
 BitVectorCache::SortedKeyMeta
 BitVectorCache::getSorted(Key2Index & keys)
 {
-    std::vector<std::pair<Key, KeyMeta *>> sorted;
+    SortedKeyMeta sorted;
     sorted.reserve(keys.size());
     for (auto & e : keys) {
-        sorted.push_back({e.first, &e.second});
+        sorted.emplace_back(e.first, &e.second);
     }
     std::sort(sorted.begin(), sorted.end(),
         [&] (const auto & a, const auto & b) {

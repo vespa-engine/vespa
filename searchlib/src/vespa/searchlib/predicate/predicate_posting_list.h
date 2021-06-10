@@ -16,9 +16,9 @@ class PredicatePostingList {
 
 protected:
     PredicatePostingList()
-            : _docId(0),
-              _subquery(UINT64_MAX) {
-    }
+        : _docId(0),
+          _subquery(UINT64_MAX)
+    { }
 
     void setDocId(uint32_t docId) { _docId = docId; }
 
