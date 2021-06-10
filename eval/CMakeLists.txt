@@ -5,6 +5,7 @@ vespa_define_module(
     staging_vespalib
 
     APPS
+    src/apps/analyze_onnx_model
     src/apps/eval_expr
     src/apps/make_tensor_binary_format_test_spec
     src/apps/tensor_conformance
