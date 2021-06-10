@@ -7,6 +7,7 @@ vespa_add_library(storage_distributor
     bucket_space_distribution_configs.cpp
     bucket_space_distribution_context.cpp
     bucket_space_state_map.cpp
+    bucket_spaces_stats_provider.cpp
     bucketdbupdater.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
@@ -29,6 +30,7 @@ vespa_add_library(storage_distributor
     idealstatemanager.cpp
     idealstatemetricsset.cpp
     messagetracker.cpp
+    min_replica_provider.cpp
     multi_threaded_stripe_access_guard.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp

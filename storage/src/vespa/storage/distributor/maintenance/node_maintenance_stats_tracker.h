@@ -37,6 +37,8 @@ struct NodeMaintenanceStats
     bool operator!=(const NodeMaintenanceStats& other) const noexcept {
         return !(*this == other);
     }
+
+    void merge(const NodeMaintenanceStats& rhs);
 };
 
 std::ostream& operator<<(std::ostream&, const NodeMaintenanceStats&);
@@ -93,6 +95,11 @@ public:
     const PerNodeStats& perNodeStats() const {
         return _stats;
     }
+
+    bool operator==(const NodeMaintenanceStatsTracker& rhs) const {
+        return _stats == rhs._stats;
+    }
+    void merge(const NodeMaintenanceStatsTracker& rhs);
 };
 
 } // storage::distributor

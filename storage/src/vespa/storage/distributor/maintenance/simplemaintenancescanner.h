@@ -18,6 +18,9 @@ public:
         GlobalMaintenanceStats()
             : pending(MaintenanceOperation::OPERATION_COUNT)
         { }
+
+        bool operator==(const GlobalMaintenanceStats& rhs) const;
+        void merge(const GlobalMaintenanceStats& rhs);
     };
     struct PendingMaintenanceStats {
         PendingMaintenanceStats();
@@ -26,6 +29,8 @@ public:
         ~PendingMaintenanceStats();
         GlobalMaintenanceStats global;
         NodeMaintenanceStatsTracker perNodeStats;
+
+        void merge(const PendingMaintenanceStats& rhs);
     };
 private:
     BucketPriorityDatabase& _bucketPriorityDb;

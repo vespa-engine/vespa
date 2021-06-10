@@ -19,6 +19,28 @@ SimpleMaintenanceScanner::SimpleMaintenanceScanner(BucketPriorityDatabase& bucke
 
 SimpleMaintenanceScanner::~SimpleMaintenanceScanner() = default;
 
+bool
+SimpleMaintenanceScanner::GlobalMaintenanceStats::operator==(const GlobalMaintenanceStats& rhs) const
+{
+    return pending == rhs.pending;
+}
+
+void
+SimpleMaintenanceScanner::GlobalMaintenanceStats::merge(const GlobalMaintenanceStats& rhs)
+{
+    assert(pending.size() == rhs.pending.size());
+    for (size_t i = 0; i < pending.size(); ++i) {
+        pending[i] += rhs.pending[i];
+    }
+}
+
+void
+SimpleMaintenanceScanner::PendingMaintenanceStats::merge(const PendingMaintenanceStats& rhs)
+{
+    global.merge(rhs.global);
+    perNodeStats.merge(rhs.perNodeStats);
+}
+
 SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats() = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats::~PendingMaintenanceStats() = default;
 SimpleMaintenanceScanner::PendingMaintenanceStats::PendingMaintenanceStats(const PendingMaintenanceStats &) = default;
