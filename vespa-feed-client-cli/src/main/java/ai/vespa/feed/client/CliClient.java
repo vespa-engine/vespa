@@ -127,7 +127,7 @@ public class CliClient {
         JsonFactory factory = new JsonFactory();
         long okCount = stats.successes();
         long errorCount = stats.requests() - okCount;
-        double throughput = okCount * 1e6D / Math.max(1, durationNanos);
+        double throughput = okCount * 1e9 / Math.max(1, durationNanos);
         try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
             generator.writeStartObject();
             generator.writeNumberField("feeder.runtime", durationNanos / 1_000_000);
