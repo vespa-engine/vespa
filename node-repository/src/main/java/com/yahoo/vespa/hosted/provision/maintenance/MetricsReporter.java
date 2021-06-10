@@ -200,6 +200,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
         metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
+        metric.set("wantToEncrypt", node.reports().getReport("wantToEncrypt").isPresent() ? 1 : 0, context);
+        metric.set("diskEncrypted", node.reports().getReport("diskEncrypted").isPresent() ? 1 : 0, context);
+
         HostName hostname = new HostName(node.hostname());
 
         serviceModel.getApplication(hostname)
