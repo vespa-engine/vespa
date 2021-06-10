@@ -34,18 +34,18 @@ void OutwardCheck::RequestDone(FRT_RPCRequest *req) {
         } else if (answer == "bad") {
             LOG(debug, "connected to %s, but reverse connectivity fails: %s",
                 _spec.c_str(), answer.c_str());
-            _result = CcResult::REMOTE_PING_FAIL;
+            _result = CcResult::INDIRECT_PING_FAIL;
         } else {
             LOG(warning, "connected to %s, but strange reverse connectivity: %s",
                 _spec.c_str(), answer.c_str());
-            _result = CcResult::REMOTE_PING_UNAVAIL;
+            _result = CcResult::INDIRECT_PING_UNAVAIL;
         }
     } else if (req->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD ||
                req->GetErrorCode() == FRTE_RPC_WRONG_PARAMS ||
                req->GetErrorCode() == FRTE_RPC_WRONG_RETURN)
     {
         LOG(debug, "Connected OK to %s but no reverse connectivity check available", _spec.c_str());
-        _result = CcResult::REMOTE_PING_UNAVAIL;
+        _result = CcResult::INDIRECT_PING_UNAVAIL;
     } else {
         LOG(debug, "error on request to %s : %s (%d)", _spec.c_str(),
             req->GetErrorMessage(), req->GetErrorCode());
