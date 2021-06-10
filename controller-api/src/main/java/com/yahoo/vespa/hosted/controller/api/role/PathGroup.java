@@ -228,7 +228,7 @@ enum PathGroup {
     secretStore(Matcher.tenant, "/application/v4/tenant/{tenant}/secret-store/{*}"),
 
     /** Paths used to proxy Horizon metric requests */
-    horizonProxy("/horizion/v1/{*}");
+    horizonProxy("/horizon/v1/{*}");
 
     final List<String> pathSpecs;
     final List<Matcher> matchers;
