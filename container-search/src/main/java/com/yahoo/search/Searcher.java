@@ -73,6 +73,7 @@ public abstract class Searcher extends Processor {
 
     // Note to developers: If you think you should add something here you are probably wrong
     //                     Create a subclass containing the new method instead.
+
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public Searcher() {}

@@ -523,7 +523,6 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      *
      * @param result the result to fill
      */
-    @SuppressWarnings("deprecation")
     public void fillAttributes(Result result) {
         fill(result, ATTRIBUTEPREFETCH);
     }
