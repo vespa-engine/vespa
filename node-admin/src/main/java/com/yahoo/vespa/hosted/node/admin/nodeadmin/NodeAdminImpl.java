@@ -15,11 +15,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Administers a host (for now only docker hosts) and its nodes (docker containers nodes).
@@ -130,7 +132,7 @@ public class NodeAdminImpl implements NodeAdmin {
         }
 
         // Use filter with count instead of allMatch() because allMatch() will short circuit on first non-match
-        boolean allNodeAgentsConverged = nodeAgentWithSchedulerByHostname.values().parallelStream()
+        boolean allNodeAgentsConverged = parallelStreamOfNodeAgentWithScheduler()
                 .filter(nodeAgentScheduler -> !nodeAgentScheduler.setFrozen(wantFrozen, freezeTimeout))
                 .count() == 0;
 
@@ -158,9 +160,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void stopNodeAgentServices() {
         // Each container may spend 1-1:30 minutes stopping
-        nodeAgentWithSchedulerByHostname.values()
-                                        .parallelStream()
-                                        .forEach(NodeAgentWithScheduler::stopForHostSuspension);
+        parallelStreamOfNodeAgentWithScheduler().forEach(NodeAgentWithScheduler::stopForHostSuspension);
     }
 
     @Override
@@ -171,7 +171,18 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void stop() {
         // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
-        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgentWithScheduler::stopForRemoval);
+        parallelStreamOfNodeAgentWithScheduler().forEach(NodeAgentWithScheduler::stopForRemoval);
+    }
+
+    /**
+     * Returns a parallel stream of NodeAgentWithScheduler.
+     *
+     * <p>Why not just call nodeAgentWithSchedulerByHostname.values().parallelStream()? Experiments
+     * with Java 11 have shown that with 10 nodes and forEach(), there are a maximum of 3 concurrent
+     * threads. With HashMap it produces 5.  With List it produces 10 concurrent threads.</p>
+     */
+    private Stream<NodeAgentWithScheduler> parallelStreamOfNodeAgentWithScheduler() {
+        return List.copyOf(nodeAgentWithSchedulerByHostname.values()).parallelStream();
     }
 
     // Set-difference. Returns minuend minus subtrahend.
