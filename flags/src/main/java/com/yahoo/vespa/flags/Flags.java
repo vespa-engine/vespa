@@ -253,13 +253,6 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag VESPA_APP_DOMAIN_IN_CERTIFICATE = defineFeatureFlag(
-            "new-domain-in-certificate", false,
-            List.of("mpolden"), "2021-05-25", "2021-09-01",
-            "Whether to include the vespa-app.cloud names in certificate requests",
-            "Takes effect on next deployment through controller",
-            APPLICATION_ID);
-
     public static final UnboundIntFlag MAX_ENCRYPTING_HOSTS = defineIntFlag(
             "max-encrypting-hosts", 0,
             List.of("mpolden", "hakonhall"), "2021-05-27", "2021-10-01",
