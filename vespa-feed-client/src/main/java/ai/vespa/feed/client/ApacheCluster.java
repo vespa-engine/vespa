@@ -145,11 +145,11 @@ class ApacheCluster implements Cluster {
     private static SSLContext constructSslContext(FeedClientBuilder builder) throws IOException {
         if (builder.sslContext != null) return builder.sslContext;
         SslContextBuilder sslContextBuilder = new SslContextBuilder();
-        if (builder.certificate != null && builder.privateKey != null) {
-            sslContextBuilder.withCertificateAndKey(builder.certificate, builder.privateKey);
+        if (builder.certificateFile != null && builder.privateKeyFile != null) {
+            sslContextBuilder.withCertificateAndKey(builder.certificateFile, builder.privateKeyFile);
         }
-        if (builder.caCertificates != null) {
-            sslContextBuilder.withCaCertificates(builder.caCertificates);
+        if (builder.caCertificatesFile != null) {
+            sslContextBuilder.withCaCertificates(builder.caCertificatesFile);
         }
         return sslContextBuilder.build();
     }

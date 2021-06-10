@@ -84,7 +84,7 @@ public class CliClient {
             builder.setHostnameVerifier(AcceptAllHostnameVerifier.INSTANCE);
         }
         cliArgs.certificateAndKey().ifPresent(c -> builder.setCertificate(c.certificateFile, c.privateKeyFile));
-        cliArgs.caCertificates().ifPresent(builder::setCaCertificates);
+        cliArgs.caCertificates().ifPresent(builder::setCaCertificatesFile);
         cliArgs.headers().forEach(builder::addRequestHeader);
         return builder.build();
     }

@@ -35,9 +35,9 @@ public class FeedClientBuilder {
     int maxStreamsPerConnection = 128;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
     FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(1), Duration.ofMinutes(10));
-    Path certificate;
-    Path privateKey;
-    Path caCertificates;
+    Path certificateFile;
+    Path privateKeyFile;
+    Path caCertificatesFile;
 
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
 
@@ -81,9 +81,6 @@ public class FeedClientBuilder {
     }
 
     public FeedClientBuilder setSslContext(SSLContext context) {
-        if (certificate != null || caCertificates != null || privateKey != null) {
-            throw new IllegalArgumentException("Cannot set both SSLContext and certificate / CA certificates");
-        }
         this.sslContext = requireNonNull(context);
         return this;
     }
@@ -113,23 +110,28 @@ public class FeedClientBuilder {
     }
 
     public FeedClientBuilder setCertificate(Path certificatePemFile, Path privateKeyPemFile) {
-        if (sslContext != null) throw new IllegalArgumentException("Cannot set both SSLContext and certificate");
-        this.certificate = certificatePemFile;
-        this.privateKey = privateKeyPemFile;
+        this.certificateFile = certificatePemFile;
+        this.privateKeyFile = privateKeyPemFile;
         return this;
     }
 
-    public FeedClientBuilder setCaCertificates(Path caCertificatesFile) {
-        if (sslContext != null) throw new IllegalArgumentException("Cannot set both SSLContext and CA certificate");
-        this.caCertificates = caCertificatesFile;
+    public FeedClientBuilder setCaCertificatesFile(Path caCertificatesFile) {
+        this.caCertificatesFile = caCertificatesFile;
         return this;
     }
 
     public FeedClient build() {
         try {
+            validateConfiguration();
             return new HttpFeedClient(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private void validateConfiguration() {
+        if (sslContext != null && (certificateFile != null || caCertificatesFile != null || privateKeyFile != null)) {
+            throw new IllegalArgumentException("Cannot set both SSLContext and certificate / CA certificates");
         }
     }
 
