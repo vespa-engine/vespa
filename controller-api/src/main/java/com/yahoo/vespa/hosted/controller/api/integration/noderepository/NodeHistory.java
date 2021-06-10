@@ -17,7 +17,7 @@ public class NodeHistory {
     @JsonProperty("at")
     public Long at;
     @JsonProperty("agent")
-    public Agent agent;
+    public String agent;
     @JsonProperty("event")
     public String event;
 
@@ -25,32 +25,12 @@ public class NodeHistory {
         return at;
     }
 
-    public Agent getAgent() {
+    public String getAgent() {
         return agent;
     }
 
     public String getEvent() {
         return event;
-    }
-
-    public enum Agent {
-        operator,
-        application,
-        system,
-        DirtyExpirer,
-        DynamicProvisioningMaintainer,
-        FailedExpirer,
-        InactiveExpirer,
-        NodeFailer,
-        NodeHealthTracker,
-        ProvisionedExpirer,
-        Rebalancer,
-        ReservationExpirer,
-        RetiringUpgrader,
-        RebuildingOsUpgrader,
-        SpareCapacityMaintainer,
-        SwitchRebalancer,
-        HostEncrypter,
     }
 
 }
