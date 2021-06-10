@@ -95,23 +95,18 @@ class HttpFeedClient implements FeedClient {
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
         return requestStrategy.enqueue(documentId, request)
-                              .handle((response, thrown) -> {
-                                  if (thrown != null) {
-                                      // TODO: What to do with exceptions here? Ex on 400, 401, 403, etc, and wrap and throw?
-                                      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                                      thrown.printStackTrace(new PrintStream(buffer));
-                                      return new Result(Result.Type.failure, documentId, buffer.toString(), null);
-                                  }
-                                  return toResult(response, documentId);
-                              });
+                              .thenApply(response -> toResult(request, response, documentId));
     }
 
-    static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
+    static Result toResult(SimpleHttpRequest request, SimpleHttpResponse response, DocumentId documentId) {
         Result.Type type;
         switch (response.getCode()) {
             case 200: type = Result.Type.success; break;
             case 412: type = Result.Type.conditionNotMet; break;
-            default:  type = Result.Type.failure;
+            case 502:
+            case 504:
+            case 507: type = Result.Type.failure; break;
+            default:  type = null;
         }
 
         String message = null;
@@ -136,6 +131,10 @@ class HttpFeedClient implements FeedClient {
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+
+        if (type == null) // Not a Vespa response, but a failure in the HTTP layer.
+            throw new FeedException("Status " + response.getCode() + " executing '" + request +
+                                    "': " + (message == null ? request.getBodyText() : message));
 
         return new Result(type, documentId, message, trace);
     }
