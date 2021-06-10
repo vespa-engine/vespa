@@ -167,7 +167,6 @@ public class ConnectorFactory {
         factory.setMaxConcurrentStreams(connectorConfig.http2().maxConcurrentStreams());
         factory.setInitialSessionRecvWindow(1 << 24);
         factory.setInitialStreamRecvWindow(1 << 20);
-        factory.setRateControlFactory(new RateControl.Factory(){ });
         return factory;
     }
 
