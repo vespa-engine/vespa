@@ -1,9 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +38,7 @@ public class BenchmarkingCluster implements Cluster {
     }
 
     @Override
-    public void dispatch(SimpleHttpRequest request, CompletableFuture<SimpleHttpResponse> vessel) {
+    public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         requests.incrementAndGet();
         long startMillis = System.currentTimeMillis();
         delegate.dispatch(request, vessel);
@@ -49,13 +46,13 @@ public class BenchmarkingCluster implements Cluster {
                                      results++;
                                      if (thrown == null) {
                                          responses++;
-                                         responsesByCode[response.getCode()]++;
+                                         responsesByCode[response.code()]++;
                                          long latency = System.currentTimeMillis() - startMillis;
                                          totalLatencyMillis += latency;
                                          minLatencyMillis = Math.min(minLatencyMillis, latency);
                                          maxLatencyMillis = Math.max(maxLatencyMillis, latency);
-                                         bytesSent += request.getBodyBytes() == null ? 0 : request.getBodyBytes().length;
-                                         bytesReceived += response.getBodyBytes() == null ? 0 : response.getBodyBytes().length;
+                                         bytesSent += request.body() == null ? 0 : request.body().length;
+                                         bytesReceived += response.body() == null ? 0 : response.body().length;
                                      }
                                      else
                                          exceptions++;

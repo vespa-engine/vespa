@@ -4,17 +4,14 @@ package ai.vespa.feed.client;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.net.URIBuilder;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -89,37 +87,29 @@ class HttpFeedClient implements FeedClient {
         ensureOpen();
 
         String path = operationPath(documentId, params).toString();
-        SimpleHttpRequest request = new SimpleHttpRequest(method, path);
-        requestHeaders.forEach((name, value) -> request.setHeader(name, value.get()));
-        if (operationJson != null)
-            request.setBody(operationJson, ContentType.APPLICATION_JSON);
+        HttpRequest request = new HttpRequest(method, path, requestHeaders, operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
 
         return requestStrategy.enqueue(documentId, request)
-                              .handle((response, thrown) -> {
-                                  if (thrown != null) {
-                                      // TODO: What to do with exceptions here? Ex on 400, 401, 403, etc, and wrap and throw?
-                                      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                                      thrown.printStackTrace(new PrintStream(buffer));
-                                      return new Result(Result.Type.failure, documentId, buffer.toString(), null);
-                                  }
-                                  return toResult(response, documentId);
-                              });
+                              .thenApply(response -> toResult(request, response, documentId));
     }
 
-    static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
+    static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
         Result.Type type;
-        switch (response.getCode()) {
+        switch (response.code()) {
             case 200: type = Result.Type.success; break;
             case 412: type = Result.Type.conditionNotMet; break;
-            default:  type = Result.Type.failure;
+            case 502:
+            case 504:
+            case 507: type = Result.Type.failure; break;
+            default:  type = null;
         }
 
         String message = null;
         String trace = null;
         try {
-            JsonParser parser = factory.createParser(response.getBodyText());
+            JsonParser parser = factory.createParser(response.body());
             if (parser.nextToken() != JsonToken.START_OBJECT)
-                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + new String(response.body(), UTF_8));
 
             String name;
             while ((name = parser.nextFieldName()) != null) {
@@ -131,11 +121,15 @@ class HttpFeedClient implements FeedClient {
             }
 
             if (parser.currentToken() != JsonToken.END_OBJECT)
-                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + response.getBodyText());
+                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + new String(response.body(), UTF_8));
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+
+        if (type == null) // Not a Vespa response, but a failure in the HTTP layer.
+            throw new FeedException("Status " + response.code() + " executing '" + request +
+                                    "': " + (message == null ? new String(response.body(), UTF_8) : message));
 
         return new Result(type, documentId, message, trace);
     }

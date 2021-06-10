@@ -58,18 +58,18 @@ public class JsonFeeder implements Closeable {
          * @param result Non-null if operation completed successfully
          * @param error Non-null if operation failed
          */
-        void onNextResult(Result result, Throwable error);
+        default void onNextResult(Result result, Throwable error) { }
 
         /**
          * Invoked if an unrecoverable error occurred during feed processing,
          * after which no other {@link ResultCallback} methods are invoked.
          */
-        void onError(Throwable error);
+        default void onError(Throwable error) { }
 
         /**
          * Invoked when all feed operations are either completed successfully or failed.
          */
-        void onComplete();
+        default void onComplete() { }
     }
 
     public static Builder builder(FeedClient client) { return new Builder(client); }
@@ -101,6 +101,10 @@ public class JsonFeeder implements Closeable {
      */
     public CompletableFuture<Void> feedMany(InputStream jsonStream, ResultCallback resultCallback) {
         return feedMany(jsonStream, 1 << 26, resultCallback);
+    }
+
+    public CompletableFuture<Void> feedMany(InputStream jsonStream) {
+        return feedMany(jsonStream, new ResultCallback() { });
     }
 
     CompletableFuture<Void> feedMany(InputStream jsonStream, int size, ResultCallback resultCallback) {
