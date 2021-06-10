@@ -18,8 +18,9 @@ void ConnectivityCheckResult::returnStatus(bool ok) {
     parent.requestDone();
 }
 
-ConnectivityReportResult::~ConnectivityReportResult() = default;
-
+void ConnectivityCheckResult::startCheck(FRT_Supervisor &orb) {
+    check = std::make_unique<PeerCheck>(*this, peerName, peerPort, orb, 2500);
+}
 
 ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb)
   : _parentRequest(req),
@@ -47,21 +48,21 @@ void ReportConnectivity::configure(std::unique_ptr<ModelConfig> config) {
     _configFetcher.close();
     auto map = Connectivity::specsFrom(*config);
     for (const auto & [ hostname, port ] : map) {
-        _result.peers.emplace_back(*this, hostname, port);
+        _result.emplace_back(*this, hostname, port);
     }
-    LOG(debug, "making connectivity report for %zd peers", _result.peers.size());
-    _remaining = _result.peers.size();
-    for (auto & peer : _result.peers) {
-        peer.check = std::make_unique<PeerCheck>(peer, peer.peerName, peer.peerPort, _orb, 2500);
+    LOG(debug, "making connectivity report for %zd peers", _result.size());
+    _remaining = _result.size();
+    for (auto & peer : _result) {
+        peer.startCheck(_orb);
     }
 }
 
 
 void ReportConnectivity::finish() const {
     FRT_Values *dst = _parentRequest->GetReturn();
-    FRT_StringValue *pt_hn = dst->AddStringArray(_result.peers.size());
-    FRT_StringValue *pt_ss = dst->AddStringArray(_result.peers.size());
-    for (const auto & peer : _result.peers) {
+    FRT_StringValue *pt_hn = dst->AddStringArray(_result.size());
+    FRT_StringValue *pt_ss = dst->AddStringArray(_result.size());
+    for (const auto & peer : _result) {
         dst->SetString(pt_hn++, peer.peerName.c_str());
         dst->SetString(pt_ss++, peer.status.c_str());
     }

@@ -37,12 +37,8 @@ struct ConnectivityCheckResult : StatusCallback {
     ConnectivityCheckResult(const ConnectivityCheckResult &) = default;
 
     virtual ~ConnectivityCheckResult();
+    void startCheck(FRT_Supervisor &orb);
     void returnStatus(bool ok) override;
-};
-
-struct ConnectivityReportResult {
-    std::vector<ConnectivityCheckResult> peers;
-    ~ConnectivityReportResult();
 };
 
 
@@ -58,7 +54,7 @@ private:
     void finish() const;
     FRT_RPCRequest *_parentRequest;
     FRT_Supervisor &_orb;
-    ConnectivityReportResult _result;
+    std::vector<ConnectivityCheckResult> _result;
     config::ConfigFetcher _configFetcher;
     std::mutex _lock;
     size_t _remaining;
