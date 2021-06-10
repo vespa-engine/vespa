@@ -10,15 +10,15 @@ using cloud::config::ModelConfig;
 
 namespace config::sentinel {
 
-ConnectivityCheckResult::~ConnectivityCheckResult() = default;
+SinglePing::~SinglePing() = default;
 
-void ConnectivityCheckResult::returnStatus(bool ok) {
+void SinglePing::returnStatus(bool ok) {
     status = ok ? "ok" : "ping failed";
     LOG(debug, "peer %s [port %d] -> %s", peerName.c_str(), peerPort, status.c_str());
     parent.requestDone();
 }
 
-void ConnectivityCheckResult::startCheck(FRT_Supervisor &orb) {
+void SinglePing::startCheck(FRT_Supervisor &orb) {
     check = std::make_unique<PeerCheck>(*this, peerName, peerPort, orb, 2500);
 }
 

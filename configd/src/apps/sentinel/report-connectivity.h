@@ -18,14 +18,14 @@ namespace config::sentinel {
 
 class ReportConnectivity;
 
-struct ConnectivityCheckResult : StatusCallback {
+struct SinglePing : StatusCallback {
     ReportConnectivity& parent;
     std::string peerName;
     int peerPort;
     std::string status;
     std::unique_ptr<PeerCheck> check;
 
-    ConnectivityCheckResult(ReportConnectivity& owner, const std::string &hostname, int port)
+    SinglePing(ReportConnectivity& owner, const std::string &hostname, int port)
       : parent(owner),
         peerName(hostname),
         peerPort(port),
@@ -33,10 +33,10 @@ struct ConnectivityCheckResult : StatusCallback {
         check(nullptr)
     {}
 
-    ConnectivityCheckResult(ConnectivityCheckResult &&) = default;
-    ConnectivityCheckResult(const ConnectivityCheckResult &) = default;
+    SinglePing(SinglePing &&) = default;
+    SinglePing(const SinglePing &) = default;
 
-    virtual ~ConnectivityCheckResult();
+    virtual ~SinglePing();
     void startCheck(FRT_Supervisor &orb);
     void returnStatus(bool ok) override;
 };
@@ -54,7 +54,7 @@ private:
     void finish() const;
     FRT_RPCRequest *_parentRequest;
     FRT_Supervisor &_orb;
-    std::vector<ConnectivityCheckResult> _result;
+    std::vector<SinglePing> _result;
     config::ConfigFetcher _configFetcher;
     std::mutex _lock;
     size_t _remaining;
