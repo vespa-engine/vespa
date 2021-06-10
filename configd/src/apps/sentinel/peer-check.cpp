@@ -33,7 +33,7 @@ void PeerCheck::RequestDone(FRT_RPCRequest *req) {
     LOG_ASSERT(req == _req);
     bool statusOk = false;
     if (req->IsError()) {
-        LOG(warning, "error on ping to %s [port %d]: %s (%d)", _hostname.c_str(), _portnum,
+        LOG(debug, "error on ping to %s [port %d]: %s (%d)", _hostname.c_str(), _portnum,
             req->GetErrorMessage(), req->GetErrorCode());
     } else {
         LOG(debug, "OK ping to %s [port %d]", _hostname.c_str(), _portnum);

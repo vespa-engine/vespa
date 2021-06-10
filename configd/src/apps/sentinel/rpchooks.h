@@ -36,6 +36,7 @@ private:
     void rpc_stopService(FRT_RPCRequest *req);
     void rpc_startService(FRT_RPCRequest *req);
     void rpc_checkConnectivity(FRT_RPCRequest *req);
+    void rpc_reportConnectivity(FRT_RPCRequest *req);
 };
 
 } // namespace config::sentinel

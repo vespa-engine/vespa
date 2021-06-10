@@ -26,6 +26,7 @@ public:
     ~Connectivity();
     void configure(const SentinelConfig::Connectivity &config);
     bool checkConnectivity(RpcServer &rpcServer);
+    static SpecMap specsFrom(const ModelConfig &model);
 private:
     struct Accumulated {
         size_t numIssues = 0;

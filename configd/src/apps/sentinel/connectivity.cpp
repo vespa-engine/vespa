@@ -45,28 +45,6 @@ std::string spec(const SpecMap::value_type &host_and_port) {
     return fmt("tcp/%s:%d", host_and_port.first.c_str(), host_and_port.second);
 }
 
-SpecMap specsFrom(const ModelConfig &model) {
-    SpecMap checkSpecs;
-    for (const auto & h : model.hosts) {
-        bool foundSentinelPort = false;
-        for (const auto & s : h.services) {
-            if (s.name == "config-sentinel") {
-                for (const auto & p : s.ports) {
-                    if (p.tags.find("rpc") != p.tags.npos) {
-                        checkSpecs[h.name] = p.number;
-                        foundSentinelPort = true;
-                    }
-                }
-            }
-        }
-        if (! foundSentinelPort) {
-            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
-                h.name.c_str(), h.services.size());
-        }
-    }
-    return checkSpecs;
-}
-
 void classifyConnFails(ConnectivityMap &connectivityMap,
                        const SpecMap &specMap,
                        RpcServer &rpcServer)
@@ -117,6 +95,28 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
 }
 
 } // namespace <unnamed>
+
+SpecMap Connectivity::specsFrom(const ModelConfig &model) {
+    SpecMap checkSpecs;
+    for (const auto & h : model.hosts) {
+        bool foundSentinelPort = false;
+        for (const auto & s : h.services) {
+            if (s.name == "config-sentinel") {
+                for (const auto & p : s.ports) {
+                    if (p.tags.find("rpc") != p.tags.npos) {
+                        checkSpecs[h.name] = p.number;
+                        foundSentinelPort = true;
+                    }
+                }
+            }
+        }
+        if (! foundSentinelPort) {
+            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
+                h.name.c_str(), h.services.size());
+        }
+    }
+    return checkSpecs;
+}
 
 void Connectivity::configure(const SentinelConfig::Connectivity &config) {
     _config = config;
