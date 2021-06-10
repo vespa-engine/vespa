@@ -16,8 +16,8 @@ OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context
     _target = context.orb.GetTarget(spec.c_str());
     _req = context.orb.AllocRPCRequest();
     _req->SetMethodName("sentinel.check.connectivity");
-    _req->GetParams()->AddString(context.myHostname.c_str());
-    _req->GetParams()->AddInt32(context.myPortnum);
+    _req->GetParams()->AddString(context.targetHostname.c_str());
+    _req->GetParams()->AddInt32(context.targetPortnum);
     _req->GetParams()->AddInt32(500);
     _target->InvokeAsync(_req, 1.500, this);
 }

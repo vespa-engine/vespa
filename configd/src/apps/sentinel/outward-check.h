@@ -15,16 +15,16 @@ namespace config::sentinel {
 
 struct OutwardCheckContext {
     vespalib::CountDownLatch latch;
-    std::string myHostname;
-    int myPortnum;
+    std::string targetHostname;
+    int targetPortnum;
     FRT_Supervisor &orb;
     OutwardCheckContext(size_t count,
                         const std::string &hostname,
                         int portnumber,
                         FRT_Supervisor &supervisor)
       : latch(count),
-        myHostname(hostname),
-        myPortnum(portnumber),
+        targetHostname(hostname),
+        targetPortnum(portnumber),
         orb(supervisor)
     {}
     ~OutwardCheckContext();
