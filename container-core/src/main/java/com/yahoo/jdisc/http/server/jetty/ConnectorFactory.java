@@ -8,6 +8,7 @@ import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http2.parser.RateControl;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
@@ -164,6 +165,9 @@ public class ConnectorFactory {
         HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
         factory.setStreamIdleTimeout(toMillis(connectorConfig.http2().streamIdleTimeout()));
         factory.setMaxConcurrentStreams(connectorConfig.http2().maxConcurrentStreams());
+        factory.setInitialSessionRecvWindow(1 << 24);
+        factory.setInitialStreamRecvWindow(1 << 20);
+        factory.setRateControlFactory(new RateControl.Factory(){ });
         return factory;
     }
 
