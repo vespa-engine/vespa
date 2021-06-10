@@ -9,6 +9,8 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
+import com.yahoo.searchdefinition.LargeRankExpressions;
+import com.yahoo.searchdefinition.RankExpressionBody;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
@@ -20,6 +22,7 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,6 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,19 +59,20 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /**
      * Creates a raw rank profile from the given rank profile
      */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
+    public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
+                          QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.getName();
         compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels),
-                                        attributeFields, deployProperties).derive());
+                                                    attributeFields, deployProperties).derive(largeExpressions));
     }
 
     /**
      * Only for testing
      */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles,
-                          ImportedMlModels importedModels, AttributeFields attributeFields) {
-        this(rankProfile, queryProfiles, importedModels, attributeFields, new TestProperties());
+    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
+                          AttributeFields attributeFields) {
+        this(rankProfile, new LargeRankExpressions(), queryProfiles, importedModels, attributeFields, new TestProperties());
     }
 
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
@@ -142,6 +147,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final int numSearchPartitions;
         private final double termwiseLimit;
         private final double rankScoreDropLimit;
+        private final int largeRankExpressionLimit;
+        private final boolean distributeLargeRankExpressions;
+        private final boolean useDistributedRankExpressions;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -150,6 +158,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final Map<String, String> attributeTypes;
         private final Map<String, String> queryFeatureTypes;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
+        private final String rankprofileName;
 
         private RankingExpression firstPhaseRanking;
         private RankingExpression secondPhaseRanking;
@@ -159,6 +168,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          */
         Deriver(RankProfile compiled, AttributeFields attributeFields, ModelContext.Properties deployProperties)
         {
+            rankprofileName = compiled.getName();
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
             firstPhaseRanking = compiled.getFirstPhaseRanking();
@@ -174,6 +184,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
+            largeRankExpressionLimit = deployProperties.featureFlags().largeRankExpressionLimit();
+            distributeLargeRankExpressions = deployProperties.featureFlags().distributeExternalRankExpressions();
+            useDistributedRankExpressions = deployProperties.featureFlags().useExternalRankExpressions();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
@@ -319,7 +332,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         /** Derives the properties this produces */
-        public List<Pair<String, String>>  derive() {
+        public List<Pair<String, String>>  derive(LargeRankExpressions largeRankExpressions) {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
                 if (RankingExpression.propertyName(RankProfile.FIRST_PHASE).equals(property.getName())) {

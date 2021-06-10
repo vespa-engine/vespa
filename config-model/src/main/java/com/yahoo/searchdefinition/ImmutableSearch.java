@@ -32,7 +32,7 @@ public interface ImmutableSearch {
     DeployLogger getDeployLogger();
     ModelContext.Properties getDeployProperties();
     RankingConstants rankingConstants();
-    RankExpressionFiles rankExpressionFiles();
+    LargeRankExpressions rankExpressionFiles();
     OnnxModels onnxModels();
     Stream<ImmutableSDField> allImportedFields();
 
