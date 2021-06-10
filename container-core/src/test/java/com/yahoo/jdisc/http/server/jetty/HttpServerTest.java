@@ -41,6 +41,7 @@ import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
@@ -969,14 +970,12 @@ public class HttpServerTest {
 
     private static CloseableHttpAsyncClient createHttp2Client(JettyTestDriver driver) {
         TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
-                .setSslContext(driver.sslContext())
-                .build();
-        var client = HttpAsyncClientBuilder.create()
-                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_2)
-                .disableConnectionState()
-                .disableAutomaticRetries()
-                .setConnectionManager(PoolingAsyncClientConnectionManagerBuilder.create().setTlsStrategy(tlsStrategy).build())
-                .build();
+                                                          .setSslContext(driver.sslContext())
+                                                          .build();
+        var client = H2AsyncClientBuilder.create()
+                                         .disableAutomaticRetries()
+                                         .setTlsStrategy(tlsStrategy)
+                                         .build();
         client.start();
         return client;
     }
