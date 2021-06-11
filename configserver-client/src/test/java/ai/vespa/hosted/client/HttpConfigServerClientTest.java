@@ -92,6 +92,7 @@ class HttpConfigServerClientTest {
         assertEquals("GET http://localhost:" + server.port() + "/ failed with status 409 and body 'hi'", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
+        server.resetRequests();
     }
 
 }
