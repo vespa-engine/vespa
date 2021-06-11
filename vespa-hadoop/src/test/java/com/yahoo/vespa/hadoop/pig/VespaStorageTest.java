@@ -1,14 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.pig;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-
+import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
+import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.hadoop.mapred.Counters;
@@ -18,11 +12,14 @@ import org.apache.pig.backend.executionengine.ExecJob;
 import org.apache.pig.tools.pigstats.JobStats;
 import org.apache.pig.tools.pigstats.PigStats;
 import org.apache.pig.tools.pigstats.mapreduce.MRJobStats;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
-import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class VespaStorageTest {
 
@@ -51,6 +48,13 @@ public class VespaStorageTest {
         assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig");
     }
 
+    @Test
+    public void requireThatPremadeOperationsWithJsonLoaderFeedAndNonLegacyClientSucceeds() throws Exception {
+        Configuration conf = new HdfsConfiguration();
+        conf.set(VespaConfiguration.USE_SSL, Boolean.TRUE.toString());
+        conf.set(VespaConfiguration.USE_LEGACY_CLIENT, Boolean.FALSE.toString());
+        assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig", conf);
+    }
 
     @Test
     public void requireThatCreateOperationsFeedSucceeds() throws Exception {

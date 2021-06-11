@@ -168,8 +168,6 @@ private:
     }
 
 public:
-    SimpleIndex(GenerationHolder &generation_holder, const DocIdLimitProvider &provider) :
-            SimpleIndex(generation_holder, provider, SimpleIndexConfig()) {}
     SimpleIndex(GenerationHolder &generation_holder,
                 const DocIdLimitProvider &provider, const SimpleIndexConfig &config)
         : _generation_holder(generation_holder), _config(config), _limit_provider(provider) {}

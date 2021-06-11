@@ -22,11 +22,11 @@ application.region string default="default"
 # those that can connect back to us. We delay starting services
 # if we have more problems than the following limits allow:
 
-## Percentage we fail to talk to, maximum
-connectivity.maxBadOutPercent int default=100
+## Percentage of nodes that must be up and fully OK, minimum
+connectivity.minOkPercent int default=0
 
-## Absolute number of nodes that fail to talk back to us, maximum
-connectivity.maxBadReverseCount int default=999999999
+## Absolute number of nodes with confirmed network connectivity problems, maximum
+connectivity.maxBadCount int default=999999999
 
 ## The command to run. This will be run by sh -c, and the following
 ## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,

@@ -11,6 +11,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -51,52 +52,72 @@ class JsonFeederTest {
         try (InputStream in = Files.newInputStream(tmpFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE)) {
             AtomicInteger resultsReceived = new AtomicInteger();
             AtomicBoolean completedSuccessfully = new AtomicBoolean();
-            Set<String> ids = new HashSet<>();
             long startNanos = System.nanoTime();
-            JsonFeeder.builder(new FeedClient() {
+            SimpleClient feedClient = new SimpleClient();
+            JsonFeeder.builder(feedClient).build()
+                    .feedMany(in, 1 << 7,
+                            new JsonFeeder.ResultCallback() { // TODO: hangs when buffer is smaller than largest document
+                                @Override
+                                public void onNextResult(Result result, Throwable error) { resultsReceived.incrementAndGet(); }
 
-                @Override
-                public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
-                    ids.add(documentId.userSpecific());
-                    return createSuccessResult(documentId);
-                }
+                                @Override
+                                public void onError(Throwable error) { exceptionThrow.set(error); }
 
-                @Override
-                public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
-                    return createSuccessResult(documentId);
-                }
-
-                @Override
-                public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
-                    return createSuccessResult(documentId);
-                }
-
-                @Override
-                public OperationStats stats() { return null; }
-
-                @Override
-                public void close(boolean graceful) { }
-
-                private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
-                    return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
-                }
-
-            }).build().feedMany(in, 1 << 7, new JsonFeeder.ResultCallback() { // TODO: hangs when buffer is smaller than largest document
-                @Override
-                public void onNextResult(Result result, Throwable error) { resultsReceived.incrementAndGet(); }
-
-                @Override
-                public void onError(Throwable error) { exceptionThrow.set(error); }
-
-                @Override
-                public void onComplete() { completedSuccessfully.set(true); }
-            }).join();
+                                @Override
+                                public void onComplete() { completedSuccessfully.set(true); }
+                            })
+                    .join();
 
             System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
-            assertEquals(docs + 1, ids.size());
+            assertEquals(docs + 1, feedClient.ids.size());
             assertEquals(docs + 1, resultsReceived.get());
             assertTrue(completedSuccessfully.get());
             assertNull(exceptionThrow.get());
+        }
+    }
+
+    @Test
+    public void singleJsonOperationIsDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
+        try (JsonFeeder feeder = JsonFeeder.builder(new SimpleClient()).build()) {
+            String json = "{\"put\": \"id:ns:type::abc1\",\n" +
+                    "    \"fields\": {\n" +
+                    "      \"lul\":\"lal\"\n" +
+                    "    }\n" +
+                    "  }\n";
+            Result result = feeder.feedSingle(json).get();
+            assertEquals(DocumentId.of("id:ns:type::abc1"), result.documentId());
+            assertEquals(Result.Type.success, result.type());
+            assertEquals("success", result.resultMessage().get());
+        }
+    }
+
+    private static class SimpleClient implements FeedClient {
+        final Set<String> ids = new HashSet<>();
+
+        @Override
+        public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
+            ids.add(documentId.userSpecific());
+            return createSuccessResult(documentId);
+        }
+
+        @Override
+        public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
+            return createSuccessResult(documentId);
+        }
+
+        @Override
+        public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
+            return createSuccessResult(documentId);
+        }
+
+        @Override
+        public OperationStats stats() { return null; }
+
+        @Override
+        public void close(boolean graceful) { }
+
+        private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
+            return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
         }
     }
 

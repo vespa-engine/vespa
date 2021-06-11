@@ -84,7 +84,7 @@ public class CliClient {
             builder.setHostnameVerifier(AcceptAllHostnameVerifier.INSTANCE);
         }
         cliArgs.certificateAndKey().ifPresent(c -> builder.setCertificate(c.certificateFile, c.privateKeyFile));
-        cliArgs.caCertificates().ifPresent(builder::setCaCertificates);
+        cliArgs.caCertificates().ifPresent(builder::setCaCertificatesFile);
         cliArgs.headers().forEach(builder::addRequestHeader);
         return builder.build();
     }
@@ -127,7 +127,7 @@ public class CliClient {
         JsonFactory factory = new JsonFactory();
         long okCount = stats.successes();
         long errorCount = stats.requests() - okCount;
-        double throughput = okCount * 1e6D / Math.max(1, durationNanos);
+        double throughput = okCount * 1e9 / Math.max(1, durationNanos);
         try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
             generator.writeStartObject();
             generator.writeNumberField("feeder.runtime", durationNanos / 1_000_000);

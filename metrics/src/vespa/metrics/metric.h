@@ -247,6 +247,8 @@ public:
 
     virtual bool isMetricSet() const { return false; }
 
+    virtual bool is_sum_metric() const;
+
 private:
 
     /**

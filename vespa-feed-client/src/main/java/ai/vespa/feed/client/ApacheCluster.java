@@ -34,7 +34,7 @@ class ApacheCluster implements Cluster {
 
     private final List<Endpoint> endpoints = new ArrayList<>();
 
-    public ApacheCluster(FeedClientBuilder builder) throws IOException {
+    ApacheCluster(FeedClientBuilder builder) throws IOException {
         for (URI endpoint : builder.endpoints)
             for (int i = 0; i < builder.connectionsPerEndpoint; i++)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
@@ -127,7 +127,7 @@ class ApacheCluster implements Cluster {
                                                                                           .setInitialWindowSize(Integer.MAX_VALUE)
                                                                                           .build());
 
-        SSLContext sslContext = constructSslContext(builder);
+        SSLContext sslContext = builder.constructSslContext();
         String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
         if (allowedCiphers.length == 0)
             throw new IllegalStateException("No adequate SSL cipher suites supported by the JVM");
@@ -142,19 +142,6 @@ class ApacheCluster implements Cluster {
                                 .build();
     }
 
-    private static SSLContext constructSslContext(FeedClientBuilder builder) throws IOException {
-        if (builder.sslContext != null) return builder.sslContext;
-        SslContextBuilder sslContextBuilder = new SslContextBuilder();
-        if (builder.certificate != null && builder.privateKey != null) {
-            sslContextBuilder.withCertificateAndKey(builder.certificate, builder.privateKey);
-        }
-        if (builder.caCertificates != null) {
-            sslContextBuilder.withCaCertificates(builder.caCertificates);
-        }
-        return sslContextBuilder.build();
-    }
-
-
     private static class ApacheHttpResponse implements HttpResponse {
 
         private final SimpleHttpResponse wrapped;
@@ -162,7 +149,6 @@ class ApacheCluster implements Cluster {
         private ApacheHttpResponse(SimpleHttpResponse wrapped) {
             this.wrapped = wrapped;
         }
-
 
         @Override
         public int code() {

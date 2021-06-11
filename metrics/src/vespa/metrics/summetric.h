@@ -69,6 +69,7 @@ public:
     void printDebug(std::ostream&, const std::string& indent="") const override;
     void addToPart(Metric&) const override;
     void addToSnapshot(Metric&, std::vector<Metric::UP> &) const override;
+    bool is_sum_metric() const override;
 
 private:
     friend struct MetricManagerTest;

@@ -70,7 +70,7 @@ public class DeploymentExpirerTest {
         assertEquals(1, permanentDeployments(prodApp.instance()));
 
         // Dev application expires when enough time has passed since most recent attempt
-        tester.clock().advance(Duration.ofDays(12));
+        tester.clock().advance(Duration.ofDays(12).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertEquals(0, permanentDeployments(devApp.instance()));
         assertEquals(1, permanentDeployments(prodApp.instance()));

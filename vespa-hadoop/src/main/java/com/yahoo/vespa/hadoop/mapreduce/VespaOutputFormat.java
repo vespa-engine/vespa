@@ -10,7 +10,7 @@ import java.util.Properties;
 
 /**
  * An output specification for writing to Vespa instances in a Map-Reduce job.
- * Mainly returns an instance of a {@link VespaRecordWriter} that does the
+ * Mainly returns an instance of a {@link LegacyVespaRecordWriter} that does the
  * actual feeding to Vespa.
  *
  * @author lesters
@@ -35,7 +35,9 @@ public class VespaOutputFormat extends OutputFormat {
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         VespaCounters counters = VespaCounters.get(context);
         VespaConfiguration configuration = VespaConfiguration.get(context.getConfiguration(), configOverride);
-        return new VespaRecordWriter(configuration, counters);
+        return configuration.useLegacyClient()
+                ? new LegacyVespaRecordWriter(configuration, counters)
+                : new VespaRecordWriter(configuration, counters);
     }
 
 

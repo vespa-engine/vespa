@@ -20,19 +20,22 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The application maintainer detects manual operator changes to nodes and redeploys affected applications.
- * The purpose of this is to redeploy affected applications faster than achieved by the regular application
- * maintenance to reduce the time period where the node repository and the application model is out of sync.
+ * This maintainer detects changes to nodes that must be expedited, and redeploys affected applications.
+ *
+ * The purpose of this is to redeploy affected applications faster than achieved by
+ * {@link PeriodicApplicationMaintainer}, to reduce the time period where the node repository and the application model
+ * is out of sync.
  * 
  * Why can't the manual change directly make the application redeployment?
- * Because the redeployment must run at the right config server, while the node state change may be running
- * at any config server.
+ *
+ * Because we want to queue redeployments to avoid overloading config servers.
  *
  * @author bratseth
+ * @author mpolden
  */
-public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
+public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer {
     
-    OperatorChangeApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository, Duration interval) {
+    ExpeditedChangeApplicationMaintainer(Deployer deployer, Metric metric, NodeRepository nodeRepository, Duration interval) {
         super(deployer, metric, nodeRepository, interval);
     }
 
@@ -57,7 +60,7 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
         boolean deployed = deployWithLock(application);
         if (deployed)
             log.info("Redeployed application " + application.toShortString() +
-                     " as a manual change was made to its nodes");
+                     " as an expedited change was made to its nodes");
     }
 
     private boolean hasNodesWithChanges(ApplicationId applicationId, NodeList nodes) {
@@ -66,7 +69,7 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
 
         return nodes.stream()
                     .flatMap(node -> node.history().events().stream())
-                    .filter(event -> event.agent() == Agent.operator)
+                    .filter(event -> expediteChangeBy(event.agent()))
                     .map(History.Event::at)
                     .anyMatch(e -> lastDeployTime.get().isBefore(e));
     }
@@ -84,5 +87,14 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                                .groupingBy(node -> node.allocation().get().owner());
     }
 
+    /** Returns whether to expedite changes performed by agent */
+    private boolean expediteChangeBy(Agent agent) {
+        switch (agent) {
+            case operator:
+            case RebuildingOsUpgrader:
+            case HostEncrypter: return true;
+        }
+        return false;
+    }
 
 }

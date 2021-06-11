@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class OperatorChangeApplicationMaintainerTest {
+public class ExpeditedChangeApplicationMaintainerTest {
 
     @Test
     public void test_application_maintenance() {
@@ -42,10 +42,10 @@ public class OperatorChangeApplicationMaintainerTest {
         // Create applications
         fixture.activate();
         assertEquals("Initial applications are deployed", 3, fixture.deployer.redeployments);
-        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer,
-                                                                                                 new TestMetric(),
-                                                                                                 nodeRepository,
-                                                                                                 Duration.ofMinutes(1));
+        ExpeditedChangeApplicationMaintainer maintainer = new ExpeditedChangeApplicationMaintainer(fixture.deployer,
+                                                                                                   new TestMetric(),
+                                                                                                   nodeRepository,
+                                                                                                   Duration.ofMinutes(1));
         
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();

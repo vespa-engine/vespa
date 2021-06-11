@@ -748,7 +748,7 @@ void DistributorStripe::send_updated_host_info_if_required() {
         if (_use_legacy_mode) {
             _component.getStateUpdater().immediately_send_get_node_state_replies();
         } else {
-            _stripe_host_info_notifier.notify_stripe_wants_to_send_host_info(0); // TODO STRIPE correct stripe index!
+            _stripe_host_info_notifier.notify_stripe_wants_to_send_host_info(_stripe_index);
         }
         _must_send_updated_host_info = false;
     }

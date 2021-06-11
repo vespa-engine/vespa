@@ -1,83 +1,71 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.mapreduce;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import ai.vespa.feed.client.DocumentId;
+import ai.vespa.feed.client.DryrunResult;
+import ai.vespa.feed.client.FeedClient;
+import ai.vespa.feed.client.FeedClientBuilder;
+import ai.vespa.feed.client.JsonFeeder;
+import ai.vespa.feed.client.JsonParseException;
+import ai.vespa.feed.client.OperationParameters;
+import ai.vespa.feed.client.OperationStats;
+import ai.vespa.feed.client.Result;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
-import com.yahoo.vespa.hadoop.pig.VespaDocumentOperation;
-import com.yahoo.vespa.http.client.FeedClient;
-import com.yahoo.vespa.http.client.FeedClientFactory;
-import com.yahoo.vespa.http.client.Result;
-import com.yahoo.vespa.http.client.config.Cluster;
-import com.yahoo.vespa.http.client.config.ConnectionParams;
-import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
-import com.yahoo.vespa.http.client.config.FeedParams.DataFormat;
-import com.yahoo.vespa.http.client.config.SessionParams;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 import java.io.IOException;
-import java.io.StringReader;
+import java.net.URI;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
-import java.util.StringTokenizer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
+import static java.util.stream.Collectors.toList;
+
 /**
- * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa endpoints.
+ * {@link VespaRecordWriter} sends the output &lt;key, value&gt; to one or more Vespa endpoints using vespa-feed-client.
  *
- * @author lesters
+ * @author bjorncs
  */
-@SuppressWarnings("rawtypes")
-public class VespaRecordWriter extends RecordWriter {
+public class VespaRecordWriter extends RecordWriter<Object, Object> {
 
     private final static Logger log = Logger.getLogger(VespaRecordWriter.class.getCanonicalName());
 
-    private boolean initialized = false;
-    private FeedClient feedClient;
     private final VespaCounters counters;
-    private final int progressInterval;
+    private final VespaConfiguration config;
 
-    final VespaConfiguration configuration;
+    private boolean initialized = false;
+    private JsonFeeder feeder;
 
-    VespaRecordWriter(VespaConfiguration configuration, VespaCounters counters) {
+    protected VespaRecordWriter(VespaConfiguration config, VespaCounters counters) {
         this.counters = counters;
-        this.configuration = configuration;
-        this.progressInterval = configuration.progressInterval();
+        this.config = config;
     }
 
-
     @Override
-    public void write(Object key, Object data) throws IOException, InterruptedException {
-        if (!initialized) {
-            initialize();
-        }
-
-        String doc = data.toString().trim();
-
-        // Parse data to find document id - if none found, skip this write
-        String docId = DataFormat.JSON_UTF8.equals(configuration.dataFormat()) ? findDocId(doc)
-                : findDocIdFromXml(doc);
-        if (docId != null && docId.length() >= 0) {
-            feedClient.stream(docId, doc);
-            counters.incrementDocumentsSent(1);
-        } else {
-            counters.incrementDocumentsSkipped(1);
-        }
-
-        if (counters.getDocumentsSent() % progressInterval == 0) {
+    public void write(Object key, Object data) throws IOException {
+        initializeOnFirstWrite();
+        String json = data.toString().trim();
+        feeder.feedSingle(json)
+                .whenComplete((result, error) -> {
+                    if (error != null) {
+                        if (error instanceof JsonParseException) {
+                            counters.incrementDocumentsSkipped(1);
+                        } else {
+                            log.warning("Failed to feed single document: " + error);
+                            counters.incrementDocumentsFailed(1);
+                        }
+                    } else {
+                        counters.incrementDocumentsOk(1);
+                    }
+                });
+        counters.incrementDocumentsSent(1);
+        if (counters.getDocumentsSent() % config.progressInterval() == 0) {
             String progress = String.format("Feed progress: %d / %d / %d / %d (sent, ok, failed, skipped)",
                     counters.getDocumentsSent(),
                     counters.getDocumentsOk(),
@@ -85,151 +73,115 @@ public class VespaRecordWriter extends RecordWriter {
                     counters.getDocumentsSkipped());
             log.info(progress);
         }
-
     }
-
 
     @Override
-    public void close(TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-        if (feedClient != null) {
-            feedClient.close();
+    public void close(TaskAttemptContext context) throws IOException {
+        if (feeder != null) {
+            feeder.close();
+            feeder = null;
+            initialized = false;
         }
     }
 
-    protected ConnectionParams.Builder configureConnectionParams() {
-        ConnectionParams.Builder connParamsBuilder = new ConnectionParams.Builder();
-        connParamsBuilder.setDryRun(configuration.dryrun());
-        connParamsBuilder.setUseCompression(configuration.useCompression());
-        connParamsBuilder.setNumPersistentConnectionsPerEndpoint(configuration.numConnections());
-        connParamsBuilder.setMaxRetries(configuration.numRetries());
-        if (configuration.proxyHost() != null) {
-            connParamsBuilder.setProxyHost(configuration.proxyHost());
-        }
-        if (configuration.proxyPort() >= 0) {
-            connParamsBuilder.setProxyPort(configuration.proxyPort());
-        }
-        return connParamsBuilder;
+    /** Override method to alter {@link FeedClient} configuration */
+    protected void onFeedClientInitialization(FeedClientBuilder builder) {}
+
+    private void initializeOnFirstWrite() {
+        if (initialized) return;
+        validateConfig();
+        useRandomizedStartupDelayIfEnabled();
+        feeder = createJsonStreamFeeder();
+        initialized = true;
     }
 
-    protected FeedParams.Builder configureFeedParams() {
-        FeedParams.Builder feedParamsBuilder = new FeedParams.Builder();
-        feedParamsBuilder.setDataFormat(configuration.dataFormat());
-        feedParamsBuilder.setRoute(configuration.route());
-        feedParamsBuilder.setMaxSleepTimeMs(configuration.maxSleepTimeMs());
-        feedParamsBuilder.setMaxInFlightRequests(configuration.maxInFlightRequests());
-        feedParamsBuilder.setLocalQueueTimeOut(Duration.ofMinutes(10).toMillis());
-        return feedParamsBuilder;
+    private void validateConfig() {
+        if (!config.useSSL()) {
+            throw new IllegalArgumentException("SSL is required for this feed client implementation");
+        }
+        if (config.dataFormat() != FeedParams.DataFormat.JSON_UTF8) {
+            throw new IllegalArgumentException("Only JSON is support by this feed client implementation");
+        }
+        if (config.proxyHost() != null) {
+            log.warning(String.format("Ignoring proxy config (host='%s', port=%d)", config.proxyHost(), config.proxyPort()));
+        }
     }
 
-    protected SessionParams.Builder configureSessionParams() {
-        SessionParams.Builder sessionParamsBuilder = new SessionParams.Builder();
-        sessionParamsBuilder.setThrottlerMinSize(configuration.throttlerMinSize());
-        sessionParamsBuilder.setClientQueueSize(configuration.maxInFlightRequests()*2);
-        return sessionParamsBuilder;
-    }
-    
-    private void initialize() {
-        if (!configuration.dryrun() && configuration.randomStartupSleepMs() > 0) {
-            int delay = ThreadLocalRandom.current().nextInt(configuration.randomStartupSleepMs());
-            log.info("VespaStorage: Delaying startup by " + delay + " ms");
+    private void useRandomizedStartupDelayIfEnabled() {
+        if (!config.dryrun() && config.randomStartupSleepMs() > 0) {
+            int delay = ThreadLocalRandom.current().nextInt(config.randomStartupSleepMs());
+            log.info("Delaying startup by " + delay + " ms");
             try {
                 Thread.sleep(delay);
             } catch (Exception e) {}
         }
-
-        ConnectionParams.Builder connParamsBuilder = configureConnectionParams();
-        FeedParams.Builder feedParamsBuilder = configureFeedParams();
-        SessionParams.Builder sessionParams = configureSessionParams();
-
-        sessionParams.setConnectionParams(connParamsBuilder.build());
-        sessionParams.setFeedParams(feedParamsBuilder.build());
-
-        String endpoints = configuration.endpoint();
-        StringTokenizer tokenizer = new StringTokenizer(endpoints, ",");
-        while (tokenizer.hasMoreTokens()) {
-            String endpoint = tokenizer.nextToken().trim();
-            sessionParams.addCluster(new Cluster.Builder().addEndpoint(
-                    Endpoint.create(endpoint, configuration.defaultPort(), configuration.useSSL())
-            ).build());
-        }
-
-        ResultCallback resultCallback = new ResultCallback(counters);
-        feedClient = FeedClientFactory.create(sessionParams.build(), resultCallback);
-
-        initialized = true;
-        log.info("VespaStorage configuration:\n" + configuration.toString());
-        log.info(feedClient.getStatsAsJson());
-    }
-
-    private String findDocIdFromXml(String xml) {
-        try {
-            XMLEventReader eventReader = XMLInputFactory.newInstance().createXMLEventReader(new StringReader(xml));
-            while (eventReader.hasNext()) {
-                XMLEvent event = eventReader.nextEvent();
-                if (event.getEventType() == XMLEvent.START_ELEMENT) {
-                    StartElement element = event.asStartElement();
-                    String elementName = element.getName().getLocalPart();
-                    if (VespaDocumentOperation.Operation.valid(elementName)) {
-                        return element.getAttributeByName(QName.valueOf("documentid")).getValue();
-                    }
-                }
-            }
-        } catch (XMLStreamException | FactoryConfigurationError e) {
-            // as json dude does
-            return null;
-        }
-        return null;
-    }
-    
-    private String findDocId(String json) throws IOException {
-        JsonFactory factory = new JsonFactory();
-        try(JsonParser parser = factory.createParser(json)) {
-            if (parser.nextToken() != JsonToken.START_OBJECT) {
-                return null;
-            }
-            while (parser.nextToken() != JsonToken.END_OBJECT) {
-                String fieldName = parser.getCurrentName();
-                parser.nextToken();
-                if (VespaDocumentOperation.Operation.valid(fieldName)) {
-                    String docId = parser.getText();
-                    return docId;
-                } else {
-                    parser.skipChildren();
-                }
-            }
-        } catch (JsonParseException ex) {
-            return null;
-        }
-        return null;
     }
 
 
-    static class ResultCallback implements FeedClient.ResultCallback {
-        final VespaCounters counters;
+    private JsonFeeder createJsonStreamFeeder() {
+        FeedClient feedClient = createFeedClient();
+            JsonFeeder.Builder builder = JsonFeeder.builder(feedClient)
+                .withTimeout(Duration.ofMinutes(10));
+        if (config.route() != null) {
+            builder.withRoute(config.route());
+        }
+        return builder.build();
 
-        public ResultCallback(VespaCounters counters) {
-            this.counters = counters;
+    }
+
+    private FeedClient createFeedClient() {
+        if (config.dryrun()) {
+            return new DryrunClient();
+        } else {
+            FeedClientBuilder feedClientBuilder = FeedClientBuilder.create(endpointUris(config))
+                    .setConnectionsPerEndpoint(config.numConnections())
+                    .setMaxStreamPerConnection(streamsPerConnection(config))
+                    .setRetryStrategy(retryStrategy(config));
+
+            onFeedClientInitialization(feedClientBuilder);
+            return feedClientBuilder.build();
+        }
+    }
+
+    private static FeedClient.RetryStrategy retryStrategy(VespaConfiguration config) {
+        int maxRetries = config.numRetries();
+        return new FeedClient.RetryStrategy() {
+            @Override public int retries() { return maxRetries; }
+        };
+    }
+
+    private static int streamsPerConnection(VespaConfiguration config) {
+        return Math.min(256, config.maxInFlightRequests() / config.numConnections());
+    }
+
+    private static List<URI> endpointUris(VespaConfiguration config) {
+        return Arrays.stream(config.endpoint().split(","))
+                .map(hostname -> URI.create(String.format("https://%s:%d/", hostname, config.defaultPort())))
+                .collect(toList());
+    }
+
+    private static class DryrunClient implements FeedClient {
+
+        @Override
+        public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
+            return createSuccessResult(documentId);
         }
 
         @Override
-        public void onCompletion(String docId, Result documentResult) {
-            if (!documentResult.isSuccess()) {
-                counters.incrementDocumentsFailed(1);
-                StringBuilder sb = new StringBuilder();
-                sb.append("Problems with docid ");
-                sb.append(docId);
-                sb.append(": ");
-                List<Result.Detail> details = documentResult.getDetails();
-                for (Result.Detail detail : details) {
-                    sb.append(detail.toString());
-                    sb.append(" ");
-                }
-                log.warning(sb.toString());
-                return;
-            }
-            counters.incrementDocumentsOk(1);
+        public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
+            return createSuccessResult(documentId);
         }
 
-    }
+        @Override
+        public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
+            return createSuccessResult(documentId);
+        }
 
+        @Override public OperationStats stats() { return null; }
+        @Override public void close(boolean graceful) {}
+
+        private static CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
+            return CompletableFuture.completedFuture(DryrunResult.create(Result.Type.success, documentId, "ok", null));
+        }
+    }
 }

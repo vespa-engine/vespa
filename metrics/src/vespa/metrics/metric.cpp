@@ -232,4 +232,11 @@ Metric::assignValues(const Metric& m) {
     assert(ownerList.empty());
     return this;
 }
+
+bool
+Metric::is_sum_metric() const
+{
+    return false;
+}
+
 } // metrics
