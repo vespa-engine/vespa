@@ -25,25 +25,26 @@ void SinglePing::startCheck(FRT_Supervisor &orb) {
     check = std::make_unique<PeerCheck>(*this, peerName, peerPort, orb, 2500);
 }
 
-ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb)
+ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelSubscriber &modelSubscriber)
   : _parentRequest(req),
     _orb(orb),
-    _result(),
-    _configFetcher()
+    _result()
 {
-    try {
-        _configFetcher.subscribe<ModelConfig>("admin/model", this, 2000ms);
-        _configFetcher.start();
-        return;
-    } catch (ConfigTimeoutException & ex) {
-        LOG(warning, "Timeout getting model config: %s [no connectivity report]", ex.getMessage().c_str());
-    } catch (InvalidConfigException& ex) {
-        LOG(warning, "Invalid model config: %s [no connectivity report]", ex.getMessage().c_str());
-    } catch (ConfigRuntimeException& ex) {
-        LOG(warning, "Runtime exception getting model config: %s [no connectivity report]", ex.getMessage().c_str());
+    auto cfg = modelSubscriber.getModelConfig();
+    if (cfg.has_value()) {
+        auto map = Connectivity::specsFrom(cfg.value());
+        LOG(debug, "making connectivity report for %zd peers", _result.size());
+        _remaining = _result.size();
+        for (const auto & [ hostname, port ] : map) {
+            _result.emplace_back(*this, hostname, port);
+        }
+        for (auto & peer : _result) {
+            peer.startCheck(_orb);
+        }
+    } else {
+        _parentRequest->SetError(FRTE_RPC_METHOD_FAILED, "failed getting model config");
+        _parentRequest->Return();
     }
-    _parentRequest->SetError(FRTE_RPC_METHOD_FAILED, "failed getting model config");
-    _parentRequest->Return();
 }
 
 ReportConnectivity::~ReportConnectivity() = default;
@@ -57,20 +58,6 @@ void ReportConnectivity::requestDone() {
     }
     finish();
 }
-
-void ReportConnectivity::configure(std::unique_ptr<ModelConfig> config) {
-    _configFetcher.close();
-    auto map = Connectivity::specsFrom(*config);
-    for (const auto & [ hostname, port ] : map) {
-        _result.emplace_back(*this, hostname, port);
-    }
-    LOG(debug, "making connectivity report for %zd peers", _result.size());
-    _remaining = _result.size();
-    for (auto & peer : _result) {
-        peer.startCheck(_orb);
-    }
-}
-
 
 void ReportConnectivity::finish() const {
     FRT_Values *dst = _parentRequest->GetReturn();

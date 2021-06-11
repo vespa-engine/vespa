@@ -5,6 +5,7 @@
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
 #include <vespa/config/config.h>
+#include <optional>
 
 using cloud::config::SentinelConfig;
 using cloud::config::ModelConfig;
@@ -21,9 +22,13 @@ class ConfigOwner {
 private:
     ConfigSubscriber _subscriber;
     ConfigHandle<SentinelConfig>::UP _sentinelHandle;
-
+    
     int64_t _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
+
+    ConfigSubscriber _modelSubscriber;
+    ConfigHandle<ModelConfig>::UP _modelHandle;
+    std::unique_ptr<ModelConfig> _modelConfig;
 
     ConfigOwner(const ConfigOwner&) = delete;
     ConfigOwner& operator =(const ConfigOwner&) = delete;
@@ -37,7 +42,7 @@ public:
     bool hasConfig() const { return _currConfig.get() != nullptr; }
     const SentinelConfig& getConfig() const { return *_currConfig; }
     int64_t getGeneration() const { return _currGeneration; }
-    static std::unique_ptr<ModelConfig> fetchModelConfig(std::chrono::milliseconds timeout);
+    std::optional<ModelConfig> getModelConfig();
 };
 
 }

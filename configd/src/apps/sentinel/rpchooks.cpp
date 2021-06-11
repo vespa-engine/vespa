@@ -13,9 +13,10 @@ LOG_SETUP(".rpchooks");
 
 namespace config::sentinel {
 
-RPCHooks::RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor)
+RPCHooks::RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor, ModelSubscriber &modelSubscriber)
   : _commands(commands),
-    _orb(supervisor)
+    _orb(supervisor),
+    _modelSubscriber(modelSubscriber)
 {
     initRPC(&_orb);
 }
@@ -118,7 +119,7 @@ RPCHooks::rpc_reportConnectivity(FRT_RPCRequest *req)
 {
     LOG(debug, "got reportConnectivity");
     req->Detach();
-    req->getStash().create<ReportConnectivity>(req, _orb);
+    req->getStash().create<ReportConnectivity>(req, _orb, _modelSubscriber);
 }
 
 } // namespace slobrok

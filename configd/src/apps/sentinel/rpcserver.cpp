@@ -7,9 +7,9 @@ LOG_SETUP(".rpcserver");
 
 namespace config::sentinel {
 
-RpcServer::RpcServer(int portNumber, CommandQueue &cmdQ)
+RpcServer::RpcServer(int portNumber, CommandQueue &cmdQ, ModelSubscriber &modelSubscriber)
     : _server(),
-      _rpcHooks(cmdQ, _server.supervisor()),
+      _rpcHooks(cmdQ, _server.supervisor(), modelSubscriber),
       _port(portNumber)
 {
     if (_server.supervisor().Listen(portNumber)) {

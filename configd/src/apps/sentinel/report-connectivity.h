@@ -6,6 +6,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/config-model.h>
 #include <vespa/config/helper/configfetcher.h>
+#include "model-subscriber.h"
 #include "peer-check.h"
 #include "status-callback.h"
 
@@ -42,20 +43,17 @@ struct SinglePing : StatusCallback {
 };
 
 
-class ReportConnectivity : public config::IFetcherCallback<cloud::config::ModelConfig>
+class ReportConnectivity
 {
 public:
-    ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb);
+    ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelSubscriber &modelSubscriber);
     ~ReportConnectivity();
     void requestDone();
-    /** from IFetcherCallback */
-    void configure(std::unique_ptr<cloud::config::ModelConfig> config) override;
 private:
     void finish() const;
     FRT_RPCRequest *_parentRequest;
     FRT_Supervisor &_orb;
     std::vector<SinglePing> _result;
-    config::ConfigFetcher _configFetcher;
     std::mutex _lock;
     size_t _remaining;
 };

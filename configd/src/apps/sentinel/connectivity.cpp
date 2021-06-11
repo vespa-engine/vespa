@@ -118,13 +118,13 @@ SpecMap Connectivity::specsFrom(const ModelConfig &model) {
     return checkSpecs;
 }
 
-void Connectivity::configure(const SentinelConfig::Connectivity &config) {
+void Connectivity::configure(const SentinelConfig::Connectivity &config,
+                             const ModelConfig &model)
+{
     _config = config;
     LOG(config, "connectivity.maxBadReverseCount = %d", _config.maxBadReverseCount);
     LOG(config, "connectivity.maxBadOutPercent = %d", _config.maxBadOutPercent);
-    if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
-        _checkSpecs = specsFrom(*up);
-    }
+    _checkSpecs = specsFrom(model);
 }
 
 bool
