@@ -28,7 +28,7 @@ public:
     bool checkConnectivity(RpcServer &rpcServer);
 private:
     struct Accumulated {
-        size_t numIssues = 0;
+        size_t numUpAndOk = 0;
         size_t numSeriousIssues = 0;
     };
     void accumulate(Accumulated &target, CcResult value);
