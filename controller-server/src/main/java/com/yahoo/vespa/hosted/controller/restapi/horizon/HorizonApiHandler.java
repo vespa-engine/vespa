@@ -59,10 +59,10 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/config/dashboard/topFolders")) return jsonInputStreamResponse(client::getTopFolders);
-        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return jsonInputStreamResponse(() -> client.getDashboard(path.get("id")));
-        if (path.matches("/horizon/v1/config/dashboard/favorite")) return jsonInputStreamResponse(() -> client.getFavorite(request.getProperty("user")));
-        if (path.matches("/horizon/v1/config/dashboard/recent")) return jsonInputStreamResponse(() -> client.getRecent(request.getProperty("user")));
+        if (path.matches("/horizon/v1/config/dashboard/topFolders")) return new JsonInputStreamResponse(client::getTopFolders);
+        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return new JsonInputStreamResponse(() -> client.getDashboard(path.get("id")));
+        if (path.matches("/horizon/v1/config/dashboard/favorite")) return new JsonInputStreamResponse(() -> client.getFavorite(request.getProperty("user")));
+        if (path.matches("/horizon/v1/config/dashboard/recent")) return new JsonInputStreamResponse(() -> client.getRecent(request.getProperty("user")));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -75,7 +75,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private HttpResponse put(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/config/user")) return jsonInputStreamResponse(client::getUser);
+        if (path.matches("/horizon/v1/config/user")) return new JsonInputStreamResponse(client::getUser);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -83,7 +83,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         SecurityContext securityContext = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class);
         try {
             byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), securityContext.roles(), systemName);
-            return jsonInputStreamResponse(() -> client.getMetrics(data));
+            return new JsonInputStreamResponse(() -> client.getMetrics(data));
         } catch (TsdbQueryRewriter.UnauthorizedException e) {
             return ErrorResponse.forbidden("Access denied");
         } catch (IOException e) {
@@ -98,21 +98,13 @@ public class HorizonApiHandler extends LoggingRequestHandler {
                 .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
     }
 
-    private JsonInputStreamResponse jsonInputStreamResponse(Supplier<InputStream> supplier) {
-        try (InputStream inputStream = supplier.get()) {
-            return new JsonInputStreamResponse(inputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     private static class JsonInputStreamResponse extends HttpResponse {
 
-        private final InputStream jsonInputStream;
+        private final Supplier<InputStream> inputStreamSupplier;
 
-        public JsonInputStreamResponse(InputStream jsonInputStream) {
+        public JsonInputStreamResponse(Supplier<InputStream> inputStreamSupplier) {
             super(200);
-            this.jsonInputStream = jsonInputStream;
+            this.inputStreamSupplier = inputStreamSupplier;
         }
 
         @Override
@@ -122,7 +114,9 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
         @Override
         public void render(OutputStream outputStream) throws IOException {
-            jsonInputStream.transferTo(outputStream);
+            try (InputStream inputStream = inputStreamSupplier.get()) {
+                inputStream.transferTo(outputStream);
+            }
         }
     }
 }
