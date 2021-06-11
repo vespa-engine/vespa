@@ -10,52 +10,25 @@
 #include "peer-check.h"
 #include "status-callback.h"
 
+#include <atomic>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
 namespace config::sentinel {
 
-class ReportConnectivity;
-
-struct SinglePing : StatusCallback {
-    ReportConnectivity& parent;
-    std::string peerName;
-    int peerPort;
-    std::string status;
-    std::unique_ptr<PeerCheck> check;
-
-    SinglePing(ReportConnectivity& owner, const std::string &hostname, int port)
-      : parent(owner),
-        peerName(hostname),
-        peerPort(port),
-        status("unknown"),
-        check(nullptr)
-    {}
-
-    SinglePing(SinglePing &&) = default;
-    SinglePing(const SinglePing &) = default;
-
-    virtual ~SinglePing();
-    void startCheck(FRT_Supervisor &orb);
-    void returnStatus(bool ok) override;
-};
-
-
-class ReportConnectivity
+class ReportConnectivity : public StatusCallback
 {
 public:
     ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelSubscriber &modelSubscriber);
-    ~ReportConnectivity();
-    void requestDone();
+    virtual ~ReportConnectivity();
+    void returnStatus(bool ok) override;
 private:
     void finish() const;
     FRT_RPCRequest *_parentRequest;
     FRT_Supervisor &_orb;
-    std::vector<SinglePing> _result;
-    std::mutex _lock;
-    size_t _remaining;
+    std::vector<std::unique_ptr<PeerCheck>> _checks;
+    std::atomic<size_t> _remaining;
 };
 
 }
