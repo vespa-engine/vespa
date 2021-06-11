@@ -34,7 +34,7 @@ class ApacheCluster implements Cluster {
 
     private final List<Endpoint> endpoints = new ArrayList<>();
 
-    public ApacheCluster(FeedClientBuilder builder) throws IOException {
+    ApacheCluster(FeedClientBuilder builder) throws IOException {
         for (URI endpoint : builder.endpoints)
             for (int i = 0; i < builder.connectionsPerEndpoint; i++)
                 endpoints.add(new Endpoint(createHttpClient(builder), endpoint));
@@ -149,7 +149,6 @@ class ApacheCluster implements Cluster {
         private ApacheHttpResponse(SimpleHttpResponse wrapped) {
             this.wrapped = wrapped;
         }
-
 
         @Override
         public int code() {

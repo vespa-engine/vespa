@@ -4,18 +4,14 @@ package ai.vespa.feed.client;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.net.URIBuilder;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -86,8 +82,10 @@ class HttpFeedClient implements FeedClient {
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
         ensureOpen();
 
-        String path = operationPath(documentId, params).toString();
-        HttpRequest request = new HttpRequest(method, path, requestHeaders, operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
+        HttpRequest request = new HttpRequest(method,
+                                              getPath(documentId) + getQuery(params),
+                                              requestHeaders,
+                                              operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
 
         return requestStrategy.enqueue(documentId, request)
                               .thenApply(response -> toResult(request, response, documentId));
@@ -134,44 +132,45 @@ class HttpFeedClient implements FeedClient {
         return new Result(type, documentId, message, trace);
     }
 
-    static List<String> toPath(DocumentId documentId) {
-        List<String> path = new ArrayList<>();
+    static String getPath(DocumentId documentId) {
+        StringJoiner path = new StringJoiner("/", "/", "");
         path.add("document");
         path.add("v1");
-        path.add(documentId.namespace());
-        path.add(documentId.documentType());
+        path.add(encode(documentId.namespace()));
+        path.add(encode(documentId.documentType()));
         if (documentId.number().isPresent()) {
             path.add("number");
             path.add(Long.toUnsignedString(documentId.number().getAsLong()));
         }
         else if (documentId.group().isPresent()) {
             path.add("group");
-            path.add(documentId.group().get());
+            path.add(encode(documentId.group().get()));
         }
         else {
             path.add("docid");
         }
-        path.add(documentId.userSpecific());
+        path.add(encode(documentId.userSpecific()));
 
-        return path;
+        return path.toString();
     }
 
-    static URI operationPath(DocumentId documentId, OperationParameters params) {
-        URIBuilder url = new URIBuilder();
-        url.setPathSegments(toPath(documentId));
-
-        if (params.createIfNonExistent()) url.addParameter("create", "true");
-        params.testAndSetCondition().ifPresent(condition -> url.addParameter("condition", condition));
-        params.timeout().ifPresent(timeout -> url.addParameter("timeout", timeout.toMillis() + "ms"));
-        params.route().ifPresent(route -> url.addParameter("route", route));
-        params.tracelevel().ifPresent(tracelevel -> url.addParameter("tracelevel", Integer.toString(tracelevel)));
-
+    static String encode(String raw) {
         try {
-            return url.build();
+            return URLEncoder.encode(raw, UTF_8.name());
         }
-        catch (URISyntaxException e) {
+        catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    static String getQuery(OperationParameters params) {
+        StringJoiner query = new StringJoiner("&", "?", "").setEmptyValue("");
+        if (params.createIfNonExistent()) query.add("create=true");
+        params.testAndSetCondition().ifPresent(condition -> query.add("condition=" + encode(condition)));
+        params.timeout().ifPresent(timeout -> query.add("timeout=" + timeout.toMillis() + "ms"));
+        params.route().ifPresent(route -> query.add("route=" + encode(route)));
+        params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
+        return query.toString();
     }
 
 }
