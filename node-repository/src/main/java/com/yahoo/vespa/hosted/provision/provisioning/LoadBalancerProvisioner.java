@@ -76,7 +76,7 @@ public class LoadBalancerProvisioner {
      * Calling this for irrelevant node or cluster types is a no-op.
      */
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
-        if (!service.canForwardTo(requestedNodes.type(), cluster.type())) return; // Nothing to provision for this node and cluster type
+        if (!service.supports(requestedNodes.type(), cluster.type())) return; // Nothing to provision for this node and cluster type
         if (application.instance().isTester()) return; // Do not provision for tester instances
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
@@ -102,6 +102,9 @@ public class LoadBalancerProvisioner {
                                                          .collect(Collectors.toSet());
         for (var cluster : loadBalancedClustersOf(transaction.application()).entrySet()) {
             if (!activatingClusters.contains(cluster.getKey())) continue;
+
+            Node clusterNode = cluster.getValue().first().get();
+            if (!service.supports(clusterNode.type(), clusterNode.allocation().get().membership().cluster().type())) continue;
             activate(transaction, cluster.getKey(), cluster.getValue());
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
 
     private final Map<LoadBalancerId, LoadBalancerInstance> instances = new HashMap<>();
     private boolean throwOnCreate = false;
+    private boolean supportsProvisioning = true;
 
     public Map<LoadBalancerId, LoadBalancerInstance> instances() {
         return Collections.unmodifiableMap(instances);
@@ -26,6 +28,18 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     public LoadBalancerServiceMock throwOnCreate(boolean throwOnCreate) {
         this.throwOnCreate = throwOnCreate;
         return this;
+    }
+
+    public LoadBalancerServiceMock supportsProvisioning(boolean supportsProvisioning) {
+        this.supportsProvisioning = supportsProvisioning;
+        return this;
+    }
+
+    @Override
+    public boolean supports(NodeType nodeType, ClusterSpec.Type clusterType) {
+        if (!supportsProvisioning) return false;
+        return (nodeType == NodeType.tenant && clusterType.isContainer()) ||
+               nodeType.isConfigServerLike();
     }
 
     @Override

@@ -300,6 +300,13 @@ public class LoadBalancerProvisionerTest {
         assertTrue("Load balancer has instance", loadBalancers.get(0).instance().isPresent());
     }
 
+    @Test
+    public void provisioning_load_balancer_for_unsupported_cluster_fails_gracefully() {
+        tester.loadBalancerService().supportsProvisioning(false);
+        tester.activate(app1, prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs"))));
+        assertTrue("No load balancer provisioned", tester.nodeRepository().loadBalancers().list(app1).asList().isEmpty());
+    }
+
     private void dirtyNodesOf(ApplicationId application) {
         tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().list().owner(application).asList(), Agent.system, this.getClass().getSimpleName());
     }
