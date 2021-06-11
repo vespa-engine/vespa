@@ -131,18 +131,6 @@ Distributor::getMetrics()
     return _use_legacy_mode ? *_metrics : _total_metrics->bucket_db_updater_metrics();
 }
 
-// TODO STRIPE remove
-DistributorStripe&
-Distributor::first_stripe() noexcept {
-    return *_stripes[0];
-}
-
-// TODO STRIPE remove
-const DistributorStripe&
-Distributor::first_stripe() const noexcept {
-    return *_stripes[0];
-}
-
 // TODO STRIPE figure out how to handle inspection functions used by tests when legacy mode no longer exists.
 //   All functions below that assert on _use_legacy_mode are only currently used by tests
 
@@ -772,13 +760,8 @@ Distributor::getReportContentType(const framework::HttpUrlPath& path) const
 std::string
 Distributor::getActiveIdealStateOperations() const
 {
-    // TODO STRIPE need to aggregate status responses _across_ stripes..!
-    if (_use_legacy_mode) {
-        return _stripe->getActiveIdealStateOperations();
-    } else {
-        auto guard = _stripe_accessor->rendezvous_and_hold_all();
-        return first_stripe().getActiveIdealStateOperations();
-    }
+    assert(_use_legacy_mode);
+    return _stripe->getActiveIdealStateOperations();
 }
 
 bool
