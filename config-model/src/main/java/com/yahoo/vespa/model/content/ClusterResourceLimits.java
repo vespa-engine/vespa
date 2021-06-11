@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.DomResourceLimitsBuilder;
 
@@ -37,13 +38,16 @@ public class ClusterResourceLimits {
         private final boolean enableFeedBlockInDistributor;
         private final boolean hostedVespa;
         private final boolean throwIfSpecified;
+        private final DeployLogger deployLogger;
+
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
-        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa, boolean throwIfSpecified) {
+        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa, boolean throwIfSpecified, DeployLogger deployLogger) {
             this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
             this.hostedVespa = hostedVespa;
             this.throwIfSpecified = throwIfSpecified;
+            this.deployLogger = deployLogger;
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
@@ -57,7 +61,7 @@ public class ClusterResourceLimits {
         private ResourceLimits.Builder createBuilder(ModelElement element) {
             return element == null
                     ? new ResourceLimits.Builder()
-                    : DomResourceLimitsBuilder.createBuilder(element, hostedVespa, throwIfSpecified);
+                    : DomResourceLimitsBuilder.createBuilder(element, hostedVespa, throwIfSpecified, deployLogger);
         }
 
         public void setClusterControllerBuilder(ResourceLimits.Builder builder) {
