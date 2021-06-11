@@ -65,7 +65,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
         Instant now = nodeRepository().clock().instant();
         Instant expiry = now.minus(reservedExpiry);
         patchLoadBalancers(lb -> lb.state() == State.reserved && lb.changedAt().isBefore(expiry),
-                           lb -> db.writeLoadBalancer(lb.with(State.inactive, now)));
+                           lb -> db.writeLoadBalancer(lb.with(State.inactive, now), lb.state()));
     }
 
     /** Deprovision inactive load balancers that have expired */
@@ -114,7 +114,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                 attempts.add(1);
                 LOG.log(Level.INFO, () -> "Removing reals from inactive load balancer " + lb.id() + ": " + Sets.difference(lb.instance().get().reals(), reals));
                 service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals), true);
-                db.writeLoadBalancer(lb.with(lb.instance().map(instance -> instance.withReals(reals))));
+                db.writeLoadBalancer(lb.with(lb.instance().map(instance -> instance.withReals(reals))), lb.state());
             } catch (Exception e) {
                 failed.add(lb.id());
                 lastException.set(e);

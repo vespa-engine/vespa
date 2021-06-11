@@ -482,17 +482,28 @@ public class CuratorDatabaseClient {
         return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
     }
 
-    public void writeLoadBalancer(LoadBalancer loadBalancer) {
+    public void writeLoadBalancer(LoadBalancer loadBalancer, LoadBalancer.State fromState) {
         NestedTransaction transaction = new NestedTransaction();
-        writeLoadBalancers(List.of(loadBalancer), transaction);
+        writeLoadBalancers(List.of(loadBalancer), fromState, transaction);
         transaction.commit();
     }
 
-    public void writeLoadBalancers(Collection<LoadBalancer> loadBalancers, NestedTransaction transaction) {
+    public void writeLoadBalancers(Collection<LoadBalancer> loadBalancers, LoadBalancer.State fromState, NestedTransaction transaction) {
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         loadBalancers.forEach(loadBalancer -> {
             curatorTransaction.add(createOrSet(loadBalancerPath(loadBalancer.id()),
                                                LoadBalancerSerializer.toJson(loadBalancer)));
+        });
+        transaction.onCommitted(() -> {
+            for (var lb : loadBalancers) {
+                if (lb.state() == fromState) continue;
+                if (fromState == null) {
+                    log.log(Level.INFO, () -> "Creating " + lb.id() + " in " + lb.state());
+                } else {
+                    log.log(Level.INFO, () -> "Moving " + lb.id() + " from " + fromState +
+                                              " to " + lb.state());
+                }
+            }
         });
     }
 
