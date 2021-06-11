@@ -8,7 +8,6 @@
 #include <optional>
 
 using cloud::config::SentinelConfig;
-using cloud::config::ModelConfig;
 
 using config::ConfigSubscriber;
 using config::ConfigHandle;
@@ -26,10 +25,6 @@ private:
     int64_t _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
 
-    ConfigSubscriber _modelOwner;
-    ConfigHandle<ModelConfig>::UP _modelHandle;
-    std::unique_ptr<ModelConfig> _modelConfig;
-
     ConfigOwner(const ConfigOwner&) = delete;
     ConfigOwner& operator =(const ConfigOwner&) = delete;
 
@@ -42,7 +37,6 @@ public:
     bool hasConfig() const { return _currConfig.get() != nullptr; }
     const SentinelConfig& getConfig() const { return *_currConfig; }
     int64_t getGeneration() const { return _currGeneration; }
-    std::optional<ModelConfig> getModelConfig();
 };
 
 }
