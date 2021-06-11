@@ -9,9 +9,6 @@
 
 using cloud::config::SentinelConfig;
 
-using config::ConfigSubscriber;
-using config::ConfigHandle;
-
 namespace config::sentinel {
 
 /**
@@ -19,8 +16,8 @@ namespace config::sentinel {
  **/
 class ConfigOwner {
 private:
-    ConfigSubscriber _subscriber;
-    ConfigHandle<SentinelConfig>::UP _sentinelHandle;
+    config::ConfigSubscriber _subscriber;
+    config::ConfigHandle<SentinelConfig>::UP _sentinelHandle;
     
     int64_t _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
