@@ -66,6 +66,7 @@ void Env::boot(const std::string &configId) {
                 configId.c_str(), cfg.port.telnet, cfg.port.rpc);
             rpcPort(cfg.port.rpc);
             statePort(cfg.port.telnet);
+            _modelOwner.checkForUpdates();
             auto model = _modelOwner.getModelConfig();
             if (model.has_value()) {
                 checker.configure(cfg.connectivity, model.value());
