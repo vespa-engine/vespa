@@ -69,6 +69,8 @@ public:
 
 OnnxBlueprint::OnnxBlueprint()
     : Blueprint("onnxModel"),
+      _cache_token(),
+      _debug_model(),
       _model(nullptr),
       _wire_info()
 {
@@ -80,15 +82,18 @@ bool
 OnnxBlueprint::setup(const IIndexEnvironment &env,
                      const ParameterList &params)
 {
-    auto optimize = (env.getFeatureMotivation() == env.FeatureMotivation::VERIFY_SETUP)
-                    ? Onnx::Optimize::DISABLE
-                    : Onnx::Optimize::ENABLE;
     auto model_cfg = env.getOnnxModel(params[0].getValue());
     if (!model_cfg) {
         return fail("no model with name '%s' found", params[0].getValue().c_str());
     }
     try {
-        _model = std::make_unique<Onnx>(model_cfg->file_path(), optimize);
+        if (env.getFeatureMotivation() == env.FeatureMotivation::VERIFY_SETUP) {
+            _debug_model = std::make_unique<Onnx>(model_cfg->file_path(), Optimize::DISABLE);
+            _model = _debug_model.get();
+        } else {
+            _cache_token = OnnxModelCache::load(model_cfg->file_path());
+            _model = &(_cache_token->get());
+        }
     } catch (std::exception &ex) {
         return fail("model setup failed: %s", ex.what());
     }
@@ -132,7 +137,7 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
 FeatureExecutor &
 OnnxBlueprint::createExecutor(const IQueryEnvironment &, Stash &stash) const
 {
-    assert(_model);
+    assert(_model != nullptr);
     return stash.create<OnnxFeatureExecutor>(*_model, _wire_info);
 }
 
