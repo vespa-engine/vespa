@@ -55,9 +55,10 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ParamDesc("timeout", "Timeout for check in milliseconds");
     rb.ReturnDesc("status", "Status (ok, bad, or unknown) for peer");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("sentinel.report.connectivity", "", "SS",
+    rb.DefineMethod("sentinel.report.connectivity", "i", "SS",
                     FRT_METHOD(RPCHooks::rpc_reportConnectivity), this);
     rb.MethodDesc("report connectivity for peer sentinels");
+    rb.ParamDesc("timeout", "Timeout for check in milliseconds");
     rb.ReturnDesc("hostnames", "Names of peers checked");
     rb.ReturnDesc("peerstatus", "Status description for each peer");
     //-------------------------------------------------------------------------
@@ -118,8 +119,10 @@ void
 RPCHooks::rpc_reportConnectivity(FRT_RPCRequest *req)
 {
     LOG(debug, "got reportConnectivity");
+    FRT_Values &args  = *req->GetParams();
+    int timeout = args[0]._intval32;
     req->Detach();
-    req->getStash().create<ReportConnectivity>(req, _orb, _modelOwner);
+    req->getStash().create<ReportConnectivity>(req, timeout, _orb, _modelOwner);
 }
 
 } // namespace slobrok

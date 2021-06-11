@@ -13,8 +13,7 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-
-ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelOwner &modelOwner)
+ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_Supervisor &orb, ModelOwner &modelOwner)
   : _parentRequest(req),
     _orb(orb),
     _checks()
@@ -25,7 +24,7 @@ ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb,
         LOG(debug, "making connectivity report for %zd peers", map.size());
         _remaining = map.size();
         for (const auto & [ hostname, port ] : map) {
-            _checks.emplace_back(std::make_unique<PeerCheck>(*this, hostname, port, _orb, 2500));
+            _checks.emplace_back(std::make_unique<PeerCheck>(*this, hostname, port, _orb, timeout_ms));
         }
     } else {
         _parentRequest->SetError(FRTE_RPC_METHOD_FAILED, "failed getting model config");

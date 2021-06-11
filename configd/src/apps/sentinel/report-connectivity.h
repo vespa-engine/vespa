@@ -20,7 +20,7 @@ namespace config::sentinel {
 class ReportConnectivity : public StatusCallback
 {
 public:
-    ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelOwner &modelOwner);
+    ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_Supervisor &orb, ModelOwner &modelOwner);
     virtual ~ReportConnectivity();
     void returnStatus(bool ok) override;
 private:
