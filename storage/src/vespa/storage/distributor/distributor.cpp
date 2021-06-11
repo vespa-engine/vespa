@@ -322,6 +322,7 @@ namespace {
 bool should_be_handled_by_top_level_bucket_db_updater(const api::StorageMessage& msg) noexcept {
     switch (msg.getType().getId()) {
     case api::MessageType::SETSYSTEMSTATE_ID:
+    case api::MessageType::GETNODESTATE_ID:
     case api::MessageType::ACTIVATE_CLUSTER_STATE_VERSION_ID:
         return true;
     case api::MessageType::REQUESTBUCKETINFO_REPLY_ID:
