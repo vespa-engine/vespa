@@ -22,6 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -155,6 +156,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     private List<String> mapToRequestPrivileges(List<AthenzRole> roles) {
         return roles.stream()
                 .map(this::rolePrivilege)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
