@@ -125,4 +125,45 @@ TEST(SumMetricTest, test_start_value)
     EXPECT_EQ(int64_t(60), sum.getLongValue("value"));
 }
 
+namespace {
+
+struct MetricSetWithSum : public MetricSet
+{
+    LongValueMetric _v1;
+    LongValueMetric _v2;
+    SumMetric<LongValueMetric> _sum;
+    MetricSetWithSum();
+    ~MetricSetWithSum() override;
+};
+
+MetricSetWithSum::MetricSetWithSum()
+    : MetricSet("MetricSetWithSum", {}, ""),
+      _v1("v1", {}, "", this),
+      _v2("v2", {}, "", this),
+      _sum("sum", {}, "", this)
+{
+    _sum.addMetricToSum(_v1);
+    _sum.addMetricToSum(_v2);
+}
+
+MetricSetWithSum::~MetricSetWithSum() = default;
+
+}
+
+TEST(SumMetricTest, test_nested_sum)
+{
+    MetricSetWithSum w1;
+    MetricSetWithSum w2;
+    MetricSetWithSum sum;
+    w1._v1.addValue(10);
+    w1._v2.addValue(13);
+    w2._v1.addValue(27);
+    w2._v2.addValue(29);
+    w1.addToPart(sum);
+    w2.addToPart(sum);
+    EXPECT_EQ(int64_t(37), sum._v1.getLongValue("value"));
+    EXPECT_EQ(int64_t(42), sum._v2.getLongValue("value"));
+    EXPECT_EQ(int64_t(79), sum._sum.getLongValue("value"));
+}
+
 }
