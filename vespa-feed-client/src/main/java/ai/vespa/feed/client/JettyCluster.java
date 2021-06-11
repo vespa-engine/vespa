@@ -33,7 +33,7 @@ class JettyCluster implements Cluster {
     private static HttpClient createJettyHttpClient(FeedClientBuilder builder) {
         try {
             SslContextFactory.Client clientSslCtxFactory = new SslContextFactory.Client();
-            clientSslCtxFactory.setSslContext(new SslContextBuilder().withCaCertificates(builder.caCertificates).build());
+            clientSslCtxFactory.setSslContext(builder.constructSslContext());
             clientSslCtxFactory.setHostnameVerifier(builder.hostnameVerifier);
 
             HTTP2Client wrapped = new HTTP2Client();
