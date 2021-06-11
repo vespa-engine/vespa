@@ -2,11 +2,14 @@
 
 #include "report-connectivity.h"
 #include "connectivity.h"
+#include <vespa/config/common/exceptions.h>
 #include <vespa/log/log.h>
+#include <chrono>
 
 LOG_SETUP(".report-connectivity");
 
 using cloud::config::ModelConfig;
+using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
@@ -28,8 +31,19 @@ ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb)
     _result(),
     _configFetcher()
 {
-    _configFetcher.subscribe<ModelConfig>("admin/model", this);
-    _configFetcher.start();
+    try {
+        _configFetcher.subscribe<ModelConfig>("admin/model", this, 2000ms);
+        _configFetcher.start();
+        return;
+    } catch (ConfigTimeoutException & ex) {
+        LOG(warning, "Timeout getting model config: %s [no connectivity report]", ex.getMessage().c_str());
+    } catch (InvalidConfigException& ex) {
+        LOG(warning, "Invalid model config: %s [no connectivity report]", ex.getMessage().c_str());
+    } catch (ConfigRuntimeException& ex) {
+        LOG(warning, "Runtime exception getting model config: %s [no connectivity report]", ex.getMessage().c_str());
+    }
+    _parentRequest->SetError(FRTE_RPC_METHOD_FAILED, "failed getting model config");
+    _parentRequest->Return();
 }
 
 ReportConnectivity::~ReportConnectivity() = default;
