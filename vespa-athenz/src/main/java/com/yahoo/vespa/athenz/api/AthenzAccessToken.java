@@ -6,7 +6,10 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Represents an Athenz Access Token
@@ -18,6 +21,8 @@ public class AthenzAccessToken {
     public static final String HTTP_HEADER_NAME = "Authorization";
 
     private static final String BEARER_TOKEN_PREFIX = "Bearer ";
+    private static final String SCOPE_CLAIM = "scp";
+    private static final String AUDIENCE_CLAIM = "aud";
 
     private final String value;
     private volatile DecodedJWT jwt;
@@ -43,6 +48,12 @@ public class AthenzAccessToken {
         return jwt().getExpiresAt().toInstant();
     }
     public AthenzIdentity getAthenzIdentity() { return AthenzIdentities.from(jwt().getClaim("client_id").asString()); }
+    public List<AthenzRole> roles() {
+        String domain = Optional.ofNullable(jwt().getClaim(AUDIENCE_CLAIM).asString()).orElse("");
+        return Optional.ofNullable(jwt().getClaim(SCOPE_CLAIM).asList(String.class)).orElse(List.of()).stream()
+                .map(role -> new AthenzRole(domain, role))
+                .collect(Collectors.toList());
+    }
 
     private DecodedJWT jwt() {
         if (jwt == null) {
