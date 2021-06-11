@@ -5,6 +5,7 @@
 #include <vespa/config-model.h>
 #include <vespa/config/config.h>
 #include <optional>
+#include <mutex>
 
 using cloud::config::ModelConfig;
 
@@ -18,11 +19,12 @@ private:
     std::string _configId;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<ModelConfig>::UP _modelHandle;
+    std::mutex _lock;
     std::unique_ptr<ModelConfig> _modelConfig;
 public:
     ModelOwner(const std::string &configId);
-    virtual ~ModelOwner();
-    void start(std::chrono::milliseconds timeout);
+    ~ModelOwner();
+    void start(std::chrono::milliseconds timeout, bool firstTime);
     void checkForUpdates();
     std::optional<ModelConfig> getModelConfig();
 };

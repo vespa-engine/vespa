@@ -5,7 +5,6 @@
 #include <vespa/config-sentinel.h>
 #include <vespa/config-model.h>
 #include <vespa/config/config.h>
-#include <optional>
 
 using cloud::config::SentinelConfig;
 

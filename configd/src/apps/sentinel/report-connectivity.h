@@ -26,7 +26,6 @@ public:
 private:
     void finish() const;
     FRT_RPCRequest *_parentRequest;
-    FRT_Supervisor &_orb;
     std::vector<std::unique_ptr<PeerCheck>> _checks;
     std::atomic<size_t> _remaining;
 };

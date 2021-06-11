@@ -116,6 +116,7 @@ Manager::doWork()
     if (_env.configOwner().checkForConfigUpdate()) {
         doConfigure();
     }
+    _env.modelOwner().checkForUpdates();
     handleRestarts();
     handleCommands();
     handleOutputs();

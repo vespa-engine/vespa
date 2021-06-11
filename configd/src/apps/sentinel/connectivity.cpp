@@ -17,8 +17,6 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-constexpr std::chrono::milliseconds MODEL_TIMEOUT_MS = 60s;
-
 Connectivity::Connectivity() = default;
 Connectivity::~Connectivity() = default;
 

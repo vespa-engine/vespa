@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 namespace config::sentinel {
 
 std::optional<ModelConfig> ModelOwner::getModelConfig() {
-    checkForUpdates();
+    std::lock_guard<std::mutex> guard(_lock);
     if (_modelConfig) {
         return ModelConfig(*_modelConfig);
     } else {
@@ -30,27 +30,34 @@ ModelOwner::ModelOwner(const std::string &configId)
 ModelOwner::~ModelOwner() = default;
 
 void
-ModelOwner::start(std::chrono::milliseconds timeout) {
+ModelOwner::start(std::chrono::milliseconds timeout, bool firstTime) {
     try {
         _modelHandle =_subscriber.subscribe<ModelConfig>(_configId, timeout);
     } catch (ConfigTimeoutException & ex) {
-        LOG(warning, "Timeout getting model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
+        if (firstTime) {
+            LOG(warning, "Timeout getting model config: %s [skipping connectivity checks]", ex.message());
+        }
     } catch (InvalidConfigException& ex) {
-        LOG(warning, "Invalid model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
+        if (firstTime) {
+            LOG(warning, "Invalid model config: %s [skipping connectivity checks]", ex.message());
+        }
     } catch (ConfigRuntimeException& ex) {
-        LOG(warning, "Runtime exception getting model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
+        if (firstTime) {
+            LOG(warning, "Runtime exception getting model config: %s [skipping connectivity checks]", ex.message());
+        }
     }
 }
 
 void
 ModelOwner::checkForUpdates() {
     if (! _modelHandle) {
-        start(5ms);
+        start(250ms, false);
     }
     if (_modelHandle && _subscriber.nextGenerationNow()) {
         if (auto newModel = _modelHandle->getConfig()) {
             LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %" PRId64 "]",
                 newModel->vespaVersion.c_str(), newModel->hosts.size(), _subscriber.getGeneration());
+            std::lock_guard<std::mutex> guard(_lock);
             _modelConfig = std::move(newModel);
         }
     }

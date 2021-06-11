@@ -53,7 +53,7 @@ Env::~Env() = default;
 void Env::boot(const std::string &configId) {
     LOG(debug, "Reading configuration for ID: %s", configId.c_str());
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
-    _modelOwner.start(CONFIG_TIMEOUT_MS);
+    _modelOwner.start(CONFIG_TIMEOUT_MS, true);
     // subscribe() should throw if something is not OK
     Connectivity checker;
     for (int retry = 0; retry < maxConnectivityRetries; ++retry) {
@@ -121,7 +121,6 @@ void Env::statePort(int port) {
 void Env::notifyConfigUpdated() {
     vespalib::ComponentConfigProducer::Config current("sentinel", _cfgOwner.getGeneration(), "ok");
     _stateApi.myComponents.addConfig(current);
-    _modelOwner.checkForUpdates();
 }
 
 void Env::respondAsEmpty() {
