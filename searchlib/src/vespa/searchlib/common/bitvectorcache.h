@@ -41,6 +41,7 @@ public:
     void adjustDocIdLimit(uint32_t docId);
     void populate(uint32_t count, const PopulateInterface &);
     bool needPopulation() const { return _needPopulation; }
+    void requirePopulation() { _needPopulation = true; }
 private:
     class KeyMeta {
     public:

@@ -113,7 +113,6 @@ TEST("require that PredicateIndex can index document") {
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {});
     index.commit();
-
     auto posting_it = lookupPosting(index, hash);
     EXPECT_EQUAL(doc_id, posting_it.getKey());
     uint32_t size;
@@ -122,6 +121,25 @@ TEST("require that PredicateIndex can index document") {
     ASSERT_EQUAL(1u, size);
     EXPECT_EQUAL(interval, interval_list[0]);
 }
+
+TEST("require that bit vector cache is initialized correctly") {
+    BitVectorCache::KeyAndCountSet keySet;
+    keySet.emplace_back(hash, dummy_provider.getDocIdLimit()/2);
+    PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
+    EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
+    indexFeature(index, doc_id, min_feature, {{hash, interval}}, {});
+    index.requireCachePopulation();
+    index.populateIfNeeded(dummy_provider.getDocIdLimit());
+    EXPECT_TRUE(index.lookupCachedSet(keySet).empty());
+    index.commit();
+    EXPECT_TRUE(index.getIntervalIndex().lookup(hash).valid());
+    EXPECT_TRUE(index.lookupCachedSet(keySet).empty());
+
+    index.requireCachePopulation();
+    index.populateIfNeeded(dummy_provider.getDocIdLimit());
+    EXPECT_FALSE(index.lookupCachedSet(keySet).empty());
+}
+
 
 TEST("require that PredicateIndex can index document with bounds") {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);

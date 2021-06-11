@@ -86,8 +86,7 @@ TEST_F("require that blueprint with empty index estimates empty.", Fixture) {
     EXPECT_EQUAL(0u, blueprint.getState().estimate().estHits);
 }
 
-TEST_F("require that blueprint with zero-constraint doc estimates non-empty.",
-       Fixture) {
+TEST_F("require that blueprint with zero-constraint doc estimates non-empty.", Fixture) {
     f.indexEmptyDocument(42);
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
     EXPECT_FALSE(blueprint.getState().estimate().empty);
@@ -98,11 +97,9 @@ const int min_feature = 1;
 const uint32_t doc_id = 2;
 const uint32_t interval = 0x0001ffff;
 
-TEST_F("require that blueprint with posting list entry estimates non-empty.",
-       Fixture) {
+TEST_F("require that blueprint with posting list entry estimates non-empty.", Fixture) {
     PredicateTreeAnnotations annotations(min_feature);
-    annotations.interval_map[PredicateHash::hash64("key=value")] =
-        std::vector<Interval>{{interval}};
+    annotations.interval_map[PredicateHash::hash64("key=value")] = std::vector<Interval>{{interval}};
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
@@ -110,8 +107,7 @@ TEST_F("require that blueprint with posting list entry estimates non-empty.",
     EXPECT_EQUAL(0u, blueprint.getState().estimate().estHits);
 }
 
-TEST_F("require that blueprint with 'bounds' posting list entry estimates "
-       "non-empty.", Fixture) {
+TEST_F("require that blueprint with 'bounds' posting list entry estimates non-empty.", Fixture) {
     PredicateTreeAnnotations annotations(min_feature);
     annotations.bounds_map[PredicateHash::hash64("range_key=40")] =
         std::vector<IntervalWithBounds>{{interval, 0x80000003}};
@@ -122,34 +118,50 @@ TEST_F("require that blueprint with 'bounds' posting list entry estimates "
     EXPECT_EQUAL(0u, blueprint.getState().estimate().estHits);
 }
 
-TEST_F("require that blueprint with zstar-compressed estimates non-empty.",
-       Fixture) {
+TEST_F("require that blueprint with zstar-compressed estimates non-empty.", Fixture) {
     PredicateTreeAnnotations annotations(1);
-    annotations.interval_map[Constants::z_star_compressed_hash] =std::vector<Interval>{{0xfffe0000}};
+    annotations.interval_map[Constants::z_star_compressed_hash] = std::vector<Interval>{{0xfffe0000}};
     f.indexDocument(doc_id, annotations);
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
     EXPECT_FALSE(blueprint.getState().estimate().empty);
     EXPECT_EQUAL(0u, blueprint.getState().estimate().estHits);
 }
 
-TEST_F("require that blueprint can create search", Fixture) {
-    PredicateTreeAnnotations annotations(1);
-    annotations.interval_map[PredicateHash::hash64("key=value")] =std::vector<Interval>{{interval}};
-    f.indexDocument(doc_id, annotations);
-
+void
+runQuery(Fixture & f, std::vector<uint32_t> expected, bool expectCachedSize, uint32_t expectedKV) {
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
     blueprint.fetchPostings(ExecuteInfo::TRUE);
+    EXPECT_EQUAL(expectCachedSize, blueprint.getCachedFeatures().size());
+    for (uint32_t docId : expected) {
+        EXPECT_EQUAL(expectedKV, uint32_t(blueprint.getKV()[docId]));
+    }
     TermFieldMatchDataArray tfmda;
     SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
     ASSERT_TRUE(it.get());
     it->initFullRange();
     EXPECT_EQUAL(SearchIterator::beginId(), it->getDocId());
-    EXPECT_FALSE(it->seek(doc_id - 1));
-    EXPECT_EQUAL(doc_id, it->getDocId());
-    EXPECT_TRUE(it->seek(doc_id));
-    EXPECT_EQUAL(doc_id, it->getDocId());
-    EXPECT_FALSE(it->seek(doc_id + 1));
-    EXPECT_TRUE(it->isAtEnd());
+    std::vector<uint32_t> actual;
+    for (it->seek(1); ! it->isAtEnd(); it->seek(it->getDocId()+1)) {
+        actual.push_back(it->getDocId());
+    }
+    EXPECT_EQUAL(expected.size(), actual.size());
+    for (size_t i(0); i < expected.size(); i++) {
+        EXPECT_EQUAL(expected[i], actual[i]);
+    }
+}
+
+TEST_F("require that blueprint can create search", Fixture) {
+    PredicateTreeAnnotations annotations(1);
+    annotations.interval_map[PredicateHash::hash64("key=value")] = std::vector<Interval>{{interval}};
+    for (size_t i(0); i < 9; i++) {
+        f.indexDocument(doc_id + i, annotations);
+    }
+    runQuery(f, {2,3,4,5,6,7,8,9,10}, 0, 1);
+    f.indexDocument(doc_id+9, annotations);
+    runQuery(f, {2, 3,4,5,6,7,8,9,10,11}, 0, 1);
+    f.index().requireCachePopulation();
+    f.indexDocument(doc_id+10, annotations);
+    runQuery(f, {2,3,4,5,6,7,8,9,10,11,12}, 1, 1);
 }
 
 TEST_F("require that blueprint can create more advanced search", Fixture) {

@@ -50,8 +50,11 @@ public:
     void fetchPostings(const ExecuteInfo &execInfo) override;
 
     SearchIterator::UP
-    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const override;
+    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+
+    // Exposed for testing
+    const BitVectorCache::CountVector &  getKV() const { return _kV; }
+    const BitVectorCache::KeySet &       getCachedFeatures() const { return _cachedFeatures; }
 private:
     using BTreeIterator = predicate::SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
     using VectorIterator = predicate::SimpleIndex<vespalib::datastore::EntryRef>::VectorIterator;
@@ -70,24 +73,24 @@ private:
     void addZeroConstraintToK();
     std::vector<predicate::PredicatePostingList::UP> createPostingLists() const;
 
-    const PredicateAttribute & _attribute;
+    const PredicateAttribute        & _attribute;
     const predicate::PredicateIndex &_index;
-    Alloc _kVBacking;
-    BitVectorCache::CountVector _kV;
-    BitVectorCache::KeySet _cachedFeatures;
+    Alloc                            _kVBacking;
+    BitVectorCache::CountVector      _kV;
+    BitVectorCache::KeySet           _cachedFeatures;
 
-    std::vector<IntervalEntry> _interval_dict_entries;
-    std::vector<BoundsEntry> _bounds_dict_entries;
-    vespalib::datastore::EntryRef _zstar_dict_entry;
+    std::vector<IntervalEntry>       _interval_dict_entries;
+    std::vector<BoundsEntry>         _bounds_dict_entries;
+    vespalib::datastore::EntryRef    _zstar_dict_entry;
 
-    std::vector<IntervalIteratorEntry<BTreeIterator>> _interval_btree_iterators;
+    std::vector<IntervalIteratorEntry<BTreeIterator>>  _interval_btree_iterators;
     std::vector<IntervalIteratorEntry<VectorIterator>> _interval_vector_iterators;
-    std::vector<BoundsIteratorEntry<BTreeIterator>> _bounds_btree_iterators;
-    std::vector<BoundsIteratorEntry<VectorIterator>> _bounds_vector_iterators;
+    std::vector<BoundsIteratorEntry<BTreeIterator>>    _bounds_btree_iterators;
+    std::vector<BoundsIteratorEntry<VectorIterator>>   _bounds_vector_iterators;
     // The zstar iterator is either a vector or a btree iterator.
-    optional<BTreeIterator> _zstar_btree_iterator;
+    optional<BTreeIterator>  _zstar_btree_iterator;
     optional<VectorIterator> _zstar_vector_iterator;
-    bool _fetch_postings_done;
+    bool                     _fetch_postings_done;
 };
 
 }

@@ -54,8 +54,6 @@ private:
     template <typename IntervalT>
     void indexDocumentFeatures(uint32_t doc_id, const FeatureMap<IntervalT> &interval_map);
 
-    PopulateInterface::Iterator::UP lookup(uint64_t key) const override;
-
 public:
     PredicateIndex(GenerationHolder &genHolder,
                    const DocIdLimitProvider &limit_provider,
@@ -105,6 +103,9 @@ public:
      * Adjust size of structures to have space for docId.
      */
     void adjustDocIdLimit(uint32_t docId);
+    PopulateInterface::Iterator::UP lookup(uint64_t key) const override;
+    // Exposed for testing
+    void requireCachePopulation() const { _cache.requirePopulation(); }
 };
 
 extern template class SimpleIndex<vespalib::datastore::EntryRef>;

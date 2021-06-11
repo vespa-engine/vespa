@@ -100,8 +100,8 @@ PredicateAttribute::getValueCount(DocId) const
 void
 PredicateAttribute::onCommit()
 {
-    populateIfNeeded();
     _index->commit();
+    populateIfNeeded();
     incGeneration();
 }
 
