@@ -1,6 +1,9 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import org.junit.Rule;
@@ -49,7 +52,10 @@ public class ClusterResourceLimitsTest {
             return this;
         }
         public ClusterResourceLimits build() {
-            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor, false, false);
+            var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
+                                                            false,
+                                                            false,
+                                                            new BaseDeployLogger());
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
             return builder.build();
@@ -125,24 +131,39 @@ public class ClusterResourceLimitsTest {
 
     @Test
     public void exception_is_thrown_when_resource_limits_are_specified() {
-        final boolean hosted = true;
+        TestableDeployLogger logger = new TestableDeployLogger();
 
-        Document clusterXml = XML.getDocument("<cluster id=\"test\">" +
-                                            "  <tuning>\n" +
-                                            "    <resource-limits>\n" +
-                                            "      <memory>0.92</memory>\n" +
-                                            "    </resource-limits>\n" +
-                                            "  </tuning>\n" +
-                                            "</cluster>");
+        buildClusterResourceLimitsAndLogIfSpecified(logger);
+        assertEquals(1, logger.warnings.size());
+        assertEquals("Element 'resource-limits' is not allowed to be set", logger.warnings.get(0));
 
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(containsString("Element 'resource-limits' is not allowed to be set"));
-        ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true, hosted, true);
-        builder.build(new ModelElement(clusterXml.getDocumentElement()));
+        buildClusterResourceLimitsAndThrowIfSpecified(logger);
+    }
 
-        expectedException = ExpectedException.none();
-        ClusterResourceLimits.Builder builder2 = new ClusterResourceLimits.Builder(true, hosted, false);
-        builder2.build(new ModelElement(clusterXml.getDocumentElement()));
+    private void buildClusterResourceLimitsAndThrowIfSpecified(DeployLogger deployLogger) {
+        buildClusterResourceLimits(true, deployLogger);
+    }
+
+    private void buildClusterResourceLimitsAndLogIfSpecified(DeployLogger deployLogger) {
+        buildClusterResourceLimits(false, deployLogger);
+    }
+
+    private void buildClusterResourceLimits(boolean throwIfSpecified, DeployLogger deployLogger) {
+        Document clusterXml = XML.getDocument("<cluster id=\"test\">" +
+                                              "  <tuning>\n" +
+                                              "    <resource-limits>\n" +
+                                              "      <memory>0.92</memory>\n" +
+                                              "    </resource-limits>\n" +
+                                              "  </tuning>\n" +
+                                              "</cluster>");
+
+        ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true,
+                                                                                  true,
+                                                                                  throwIfSpecified,
+                                                                                  deployLogger);
+        builder.build(new ModelElement(clusterXml.getDocumentElement()));
     }
 
     private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk, Double expNodeMemory, Fixture f) {
