@@ -43,6 +43,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -113,8 +114,6 @@ public class MetricsReporterTest {
         expectedMetrics.put("wantToDeprovision", 0);
         expectedMetrics.put("failReport", 0);
 
-        expectedMetrics.put("wantToEncrypt", 0);
-        expectedMetrics.put("diskEncrypted", 0);
 
         expectedMetrics.put("allowedToBeDown", 1);
         expectedMetrics.put("suspended", 1);
@@ -148,6 +147,27 @@ public class MetricsReporterTest {
         verifyAndRemoveIntegerMetricSum(metric, "lockAttempt.errors", 0);
 
         assertEquals(expectedMetrics, new TreeMap<>(metric.values));
+    }
+
+    @Test
+    public void test_registered_metrics_for_host() {
+        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        when(orchestrator.getHostInfo(eq(reference), any())).thenReturn(
+                HostInfo.createSuspended(HostStatus.ALLOWED_TO_BE_DOWN, Instant.ofEpochSecond(1)));
+        ProvisioningTester tester = new ProvisioningTester.Builder().flavors(nodeFlavors.getFlavors()).orchestrator(orchestrator).build();
+        tester.makeProvisionedNodes(1, "default", NodeType.host, 0);
+
+        tester.clock().setInstant(Instant.ofEpochSecond(124));
+
+        TestMetric metric = new TestMetric();
+        MetricsReporter metricsReporter = metricsReporter(metric, tester);
+        metricsReporter.maintain();
+
+        // Only verify metrics that are set for hosts
+        TreeMap<String, Number> metrics = new TreeMap<>(metric.values);
+        assertTrue(metrics.containsKey("wantToEncrypt"));
+        assertTrue(metrics.containsKey("diskEncrypted"));
     }
 
     private void verifyAndRemoveIntegerMetricSum(TestMetric metric, String key, int expected) {
