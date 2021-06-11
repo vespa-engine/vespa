@@ -11,10 +11,12 @@
 
 namespace storage::distributor {
 
-using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;
 using End = vespalib::JsonStream::End;
 using File = vespalib::File;
+using MinReplicaStats = std::unordered_map<uint16_t, uint32_t>;
 using Object = vespalib::JsonStream::Object;
+using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;
+using BucketSpacesStats = BucketSpacesStatsProvider::BucketSpacesStats;
 using namespace ::testing;
 
 struct DistributorHostInfoReporterTest : Test {
@@ -35,7 +37,7 @@ namespace {
 // My kingdom for GoogleMock!
 struct MockedMinReplicaProvider : MinReplicaProvider
 {
-    std::unordered_map<uint16_t, uint32_t> minReplica;
+    MinReplicaStats minReplica;
 
     std::unordered_map<uint16_t, uint32_t> getMinReplica() const override {
         return minReplica;
@@ -121,7 +123,7 @@ struct Fixture {
 TEST_F(DistributorHostInfoReporterTest, min_replica_stats_are_reported) {
     Fixture f;
 
-    std::unordered_map<uint16_t, uint32_t> minReplica;
+    MinReplicaStats minReplica;
     minReplica[0] = 2;
     minReplica[5] = 9;
     f.minReplicaProvider.minReplica = minReplica;
@@ -133,10 +135,30 @@ TEST_F(DistributorHostInfoReporterTest, min_replica_stats_are_reported) {
     EXPECT_EQ(9, getMinReplica(root, 5));
 }
 
+TEST_F(DistributorHostInfoReporterTest, merge_min_replica_stats) {
+
+    MinReplicaStats min_replica_a;
+    min_replica_a[3] = 2;
+    min_replica_a[5] = 4;
+
+    MinReplicaStats min_replica_b;
+    min_replica_b[5] = 6;
+    min_replica_b[7] = 8;
+
+    MinReplicaStats result;
+    merge_min_replica_stats(result, min_replica_a);
+    merge_min_replica_stats(result, min_replica_b);
+
+    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(2, result[3]);
+    EXPECT_EQ(4, result[5]);
+    EXPECT_EQ(8, result[7]);
+}
+
 TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
     Fixture f;
 
-    std::unordered_map<uint16_t, uint32_t> minReplica;
+    MinReplicaStats minReplica;
     minReplica[0] = 2;
     minReplica[5] = 9;
     f.minReplicaProvider.minReplica = minReplica;
@@ -175,7 +197,7 @@ TEST_F(DistributorHostInfoReporterTest, no_report_generated_if_disabled) {
     Fixture f;
     f.reporter.enableReporting(false);
 
-    std::unordered_map<uint16_t, uint32_t> minReplica;
+    MinReplicaStats minReplica;
     minReplica[0] = 2;
     minReplica[5] = 9;
     f.minReplicaProvider.minReplica = minReplica;
@@ -210,5 +232,41 @@ TEST_F(DistributorHostInfoReporterTest, bucket_spaces_stats_are_reported) {
     }
 }
 
+TEST_F(DistributorHostInfoReporterTest, merge_per_node_bucket_spaces_stats) {
+
+    PerNodeBucketSpacesStats stats_a;
+    stats_a[3]["default"] = BucketSpaceStats(3, 2);
+    stats_a[3]["global"] = BucketSpaceStats(5, 4);
+    stats_a[5]["default"] = BucketSpaceStats(7, 6);
+    stats_a[5]["global"] = BucketSpaceStats(9, 8);
+
+    PerNodeBucketSpacesStats stats_b;
+    stats_b[5]["default"] = BucketSpaceStats(11, 10);
+    stats_b[5]["global"] = BucketSpaceStats(13, 12);
+    stats_b[7]["default"] = BucketSpaceStats(15, 14);
+
+    PerNodeBucketSpacesStats result;
+    merge_per_node_bucket_spaces_stats(result, stats_a);
+    merge_per_node_bucket_spaces_stats(result, stats_b);
+
+    PerNodeBucketSpacesStats exp;
+    exp[3]["default"] = BucketSpaceStats(3, 2);
+    exp[3]["global"] = BucketSpaceStats(5, 4);
+    exp[5]["default"] = BucketSpaceStats(7+11, 6+10);
+    exp[5]["global"] = BucketSpaceStats(9+13, 8+12);
+    exp[7]["default"] = BucketSpaceStats(15, 14);
+
+    EXPECT_EQ(exp, result);
 }
 
+TEST_F(DistributorHostInfoReporterTest, merge_bucket_space_stats_maintains_valid_flag) {
+    BucketSpaceStats stats_a(5, 3);
+    BucketSpaceStats stats_b;
+
+    stats_a.merge(stats_b);
+    EXPECT_FALSE(stats_a.valid());
+    EXPECT_EQ(5, stats_a.bucketsTotal());
+    EXPECT_EQ(3, stats_a.bucketsPending());
+}
+
+}

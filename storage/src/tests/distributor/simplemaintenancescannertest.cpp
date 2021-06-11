@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/distributor/maintenancemocks.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
@@ -207,6 +208,90 @@ TEST_F(SimpleMaintenanceScannerTest, per_node_maintenance_stats_are_tracked) {
         wantedNode2Stats.copyingIn = 2;
         EXPECT_EQ(wantedNode2Stats, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
+}
+
+TEST_F(SimpleMaintenanceScannerTest, merge_node_maintenance_stats) {
+
+    NodeMaintenanceStats stats_a;
+    stats_a.movingOut = 1;
+    stats_a.syncing = 2;
+    stats_a.copyingIn = 3;
+    stats_a.copyingOut = 4;
+    stats_a.total = 5;
+
+    NodeMaintenanceStats stats_b;
+    stats_b.movingOut = 10;
+    stats_b.syncing = 20;
+    stats_b.copyingIn = 30;
+    stats_b.copyingOut = 40;
+    stats_b.total = 50;
+
+    NodeMaintenanceStats result;
+    result.merge(stats_a);
+    result.merge(stats_b);
+
+    NodeMaintenanceStats exp;
+    exp.movingOut = 11;
+    exp.syncing = 22;
+    exp.copyingIn = 33;
+    exp.copyingOut = 44;
+    exp.total = 55;
+    EXPECT_EQ(exp, result);
+}
+
+TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
+    auto default_space = document::FixedBucketSpaces::default_space();
+    auto global_space = document::FixedBucketSpaces::global_space();
+
+    PendingStats stats_a;
+    stats_a.global.pending[MaintenanceOperation::DELETE_BUCKET] = 1;
+    stats_a.global.pending[MaintenanceOperation::MERGE_BUCKET] = 2;
+    stats_a.global.pending[MaintenanceOperation::SPLIT_BUCKET] = 3;
+    stats_a.global.pending[MaintenanceOperation::JOIN_BUCKET] = 4;
+    stats_a.global.pending[MaintenanceOperation::SET_BUCKET_STATE] = 5;
+    stats_a.global.pending[MaintenanceOperation::GARBAGE_COLLECTION] = 6;
+    stats_a.perNodeStats.incMovingOut(3, default_space);
+    stats_a.perNodeStats.incSyncing(3, global_space);
+    stats_a.perNodeStats.incCopyingIn(5, default_space);
+    stats_a.perNodeStats.incCopyingOut(5, global_space);
+    stats_a.perNodeStats.incTotal(5, default_space);
+
+    PendingStats stats_b;
+    stats_b.global.pending[MaintenanceOperation::DELETE_BUCKET] = 10;
+    stats_b.global.pending[MaintenanceOperation::MERGE_BUCKET] = 20;
+    stats_b.global.pending[MaintenanceOperation::SPLIT_BUCKET] = 30;
+    stats_b.global.pending[MaintenanceOperation::JOIN_BUCKET] = 40;
+    stats_b.global.pending[MaintenanceOperation::SET_BUCKET_STATE] = 50;
+    stats_b.global.pending[MaintenanceOperation::GARBAGE_COLLECTION] = 60;
+    stats_b.perNodeStats.incMovingOut(7, default_space);
+    stats_b.perNodeStats.incSyncing(7, global_space);
+    stats_b.perNodeStats.incCopyingIn(5, default_space);
+    stats_b.perNodeStats.incCopyingOut(5, global_space);
+    stats_b.perNodeStats.incTotal(5, default_space);
+
+    PendingStats result;
+    result.merge(stats_a);
+    result.merge(stats_b);
+
+    PendingStats exp;
+    exp.global.pending[MaintenanceOperation::DELETE_BUCKET] = 11;
+    exp.global.pending[MaintenanceOperation::MERGE_BUCKET] = 22;
+    exp.global.pending[MaintenanceOperation::SPLIT_BUCKET] = 33;
+    exp.global.pending[MaintenanceOperation::JOIN_BUCKET] = 44;
+    exp.global.pending[MaintenanceOperation::SET_BUCKET_STATE] = 55;
+    exp.global.pending[MaintenanceOperation::GARBAGE_COLLECTION] = 66;
+    exp.perNodeStats.incMovingOut(3, default_space);
+    exp.perNodeStats.incSyncing(3, global_space);
+    exp.perNodeStats.incCopyingIn(5, default_space);
+    exp.perNodeStats.incCopyingIn(5, default_space);
+    exp.perNodeStats.incCopyingOut(5, global_space);
+    exp.perNodeStats.incCopyingOut(5, global_space);
+    exp.perNodeStats.incTotal(5, default_space);
+    exp.perNodeStats.incTotal(5, default_space);
+    exp.perNodeStats.incMovingOut(7, default_space);
+    exp.perNodeStats.incSyncing(7, global_space);
+    EXPECT_EQ(exp.global, result.global);
+    EXPECT_EQ(exp.perNodeStats, result.perNodeStats);
 }
 
 }

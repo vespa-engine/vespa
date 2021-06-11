@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
+#include <ostream>
 #include <unordered_map>
 
 namespace storage::distributor {
@@ -32,7 +33,21 @@ public:
     bool valid() const noexcept { return _valid; }
     size_t bucketsTotal() const noexcept { return _bucketsTotal; }
     size_t bucketsPending() const noexcept { return _bucketsPending; }
+
+    bool operator==(const BucketSpaceStats& rhs) const {
+        return (_valid == rhs._valid) &&
+                (_bucketsTotal == rhs._bucketsTotal) &&
+                (_bucketsPending == rhs._bucketsPending);
+    }
+
+    void merge(const BucketSpaceStats& rhs) {
+        _valid = _valid && rhs._valid;
+        _bucketsTotal += rhs._bucketsTotal;
+        _bucketsPending += rhs._bucketsPending;
+    }
 };
+
+std::ostream& operator<<(std::ostream& out, const BucketSpaceStats& stats);
 
 /**
  * Interface that provides snapshots of bucket spaces statistics per content node.
@@ -47,5 +62,11 @@ public:
     virtual ~BucketSpacesStatsProvider() {}
     virtual PerNodeBucketSpacesStats getBucketSpacesStats() const = 0;
 };
+
+void merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats& dest,
+                               const BucketSpacesStatsProvider::BucketSpacesStats& src);
+
+void merge_per_node_bucket_spaces_stats(BucketSpacesStatsProvider::PerNodeBucketSpacesStats& dest,
+                                        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& src);
 
 }

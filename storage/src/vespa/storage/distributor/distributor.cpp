@@ -521,32 +521,41 @@ Distributor::propagateDefaultDistribution(
 std::unordered_map<uint16_t, uint32_t>
 Distributor::getMinReplica() const
 {
-    // TODO STRIPE merged snapshot from all stripes
     if (_use_legacy_mode) {
         return _stripe->getMinReplica();
     } else {
-        return first_stripe().getMinReplica();
+        std::unordered_map<uint16_t, uint32_t> result;
+        for (const auto& stripe : _stripes) {
+            merge_min_replica_stats(result, stripe->getMinReplica());
+        }
+        return result;
     }
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats
 Distributor::getBucketSpacesStats() const
 {
-    // TODO STRIPE merged snapshot from all stripes
     if (_use_legacy_mode) {
         return _stripe->getBucketSpacesStats();
     } else {
-        return first_stripe().getBucketSpacesStats();
+        BucketSpacesStatsProvider::PerNodeBucketSpacesStats result;
+        for (const auto& stripe : _stripes) {
+            merge_per_node_bucket_spaces_stats(result, stripe->getBucketSpacesStats());
+        }
+        return result;
     }
 }
 
 SimpleMaintenanceScanner::PendingMaintenanceStats
 Distributor::pending_maintenance_stats() const {
-    // TODO STRIPE merged snapshot from all stripes
     if (_use_legacy_mode) {
         return _stripe->pending_maintenance_stats();
     } else {
-        return first_stripe().pending_maintenance_stats();
+        SimpleMaintenanceScanner::PendingMaintenanceStats result;
+        for (const auto& stripe : _stripes) {
+            result.merge(stripe->pending_maintenance_stats());
+        }
+        return result;
     }
 }
 
