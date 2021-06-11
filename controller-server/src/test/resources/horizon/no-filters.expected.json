@@ -17,7 +17,7 @@
     "filters": [
      {
       "type": "TagValueLiteralOr",
-      "filter": "Public",
+      "filter": "public",
       "tagKey": "system"
      },
      {

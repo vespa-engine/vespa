@@ -80,7 +80,7 @@ public class TsdbQueryRewriter {
         // Make sure we only show metrics in the relevant system
         ObjectNode systemFilter = filters.addObject();
         systemFilter.put("type", "TagValueLiteralOr");
-        systemFilter.put("filter", systemName.name());
+        systemFilter.put("filter", systemName.name().toLowerCase());
         systemFilter.put("tagKey", "system");
 
         // Make sure non-operators cannot see metrics outside of their tenants
