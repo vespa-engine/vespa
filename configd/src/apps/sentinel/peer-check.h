@@ -17,6 +17,9 @@ public:
     PeerCheck(StatusCallback &callback, const std::string &host, int portnum, FRT_Supervisor &orb, int timeout_ms);
     ~PeerCheck();
 
+    bool okStatus() const { return _statusOk; }
+    const std::string& getHostname() const { return _hostname; }
+
     PeerCheck(const PeerCheck &) = delete;
     PeerCheck(PeerCheck &&) = delete;
     PeerCheck& operator= (const PeerCheck &) = delete;
@@ -30,6 +33,7 @@ private:
     int             _portnum;
     FRT_Target     *_target;
     FRT_RPCRequest *_req;
+    bool            _statusOk;
 };
 
 }

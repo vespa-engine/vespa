@@ -15,7 +15,8 @@ PeerCheck::PeerCheck(StatusCallback &callback, const std::string &host, int port
     _hostname(host),
     _portnum(port),
     _target(nullptr),
-    _req(nullptr)
+    _req(nullptr),
+    _statusOk(false)
 {
     auto spec = fmt("tcp/%s:%d", _hostname.c_str(), _portnum);
     _target = orb.GetTarget(spec.c_str());
@@ -31,20 +32,19 @@ PeerCheck::~PeerCheck() {
 
 void PeerCheck::RequestDone(FRT_RPCRequest *req) {
     LOG_ASSERT(req == _req);
-    bool statusOk = false;
     if (req->IsError()) {
         LOG(debug, "error on ping to %s [port %d]: %s (%d)", _hostname.c_str(), _portnum,
             req->GetErrorMessage(), req->GetErrorCode());
     } else {
         LOG(debug, "OK ping to %s [port %d]", _hostname.c_str(), _portnum);
-        statusOk = true;
+        _statusOk = true;
     }
     _req->SubRef();
     _req = nullptr;
     _target->SubRef();
     _target = nullptr;
     // Note: will delete this object, so must be called as final step:
-    _callback.returnStatus(statusOk);
+    _callback.returnStatus(_statusOk);
 }
 
 }
