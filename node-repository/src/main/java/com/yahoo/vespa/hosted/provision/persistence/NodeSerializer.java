@@ -482,6 +482,7 @@ public class NodeSerializer {
             case "SpareCapacityMaintainer": return Agent.SpareCapacityMaintainer;
             case "SwitchRebalancer": return Agent.SwitchRebalancer;
             case "HostEncrypter": return Agent.HostEncrypter;
+            case "ParkedExpirer": return Agent.ParkedExpirer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
     }
@@ -504,6 +505,7 @@ public class NodeSerializer {
             case SpareCapacityMaintainer: return "SpareCapacityMaintainer";
             case SwitchRebalancer: return "SwitchRebalancer";
             case HostEncrypter: return "HostEncrypter";
+            case ParkedExpirer: return "ParkedExpirer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }

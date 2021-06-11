@@ -21,6 +21,7 @@ public enum Agent {
     InactiveExpirer,
     ProvisionedExpirer,
     ReservationExpirer,
+    ParkedExpirer,
     DynamicProvisioningMaintainer,
     RetiringUpgrader,
     RebuildingOsUpgrader,
