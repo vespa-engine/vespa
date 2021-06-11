@@ -48,7 +48,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
 
         maintainers.add(new NodeFailer(deployer, nodeRepository, defaults.failGrace, defaults.nodeFailerInterval, orchestrator, defaults.throttlePolicy, metric));
         maintainers.add(new NodeHealthTracker(hostLivenessTracker, serviceMonitor, nodeRepository, defaults.nodeFailureStatusUpdateInterval, metric));
-        maintainers.add(new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval));
+        maintainers.add(new ExpeditedChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.expeditedChangeRedeployInterval));
         maintainers.add(new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric));
         maintainers.add(new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
         maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, Map.of(NodeType.config, defaults.inactiveConfigServerExpiry,
@@ -91,7 +91,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         /** Time between each run of maintainer that does periodic redeployment */
         private final Duration redeployMaintainerInterval;
         /** Applications are redeployed after manual operator changes within this time period */
-        private final Duration operatorChangeRedeployInterval;
+        private final Duration expeditedChangeRedeployInterval;
 
         /** The time a node must be continuously unresponsive before it is failed */
         private final Duration failGrace;
@@ -133,7 +133,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             nodeFailerInterval = Duration.ofMinutes(15);
             nodeFailureStatusUpdateInterval = Duration.ofMinutes(2);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
-            operatorChangeRedeployInterval = Duration.ofMinutes(3);
+            expeditedChangeRedeployInterval = Duration.ofMinutes(3);
             // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(60);
