@@ -150,7 +150,6 @@ class ApacheCluster implements Cluster {
             this.wrapped = wrapped;
         }
 
-
         @Override
         public int code() {
             return wrapped.getCode();

@@ -59,7 +59,7 @@ class HttpRequestStrategy implements RequestStrategy {
     });
 
     HttpRequestStrategy(FeedClientBuilder builder) throws IOException {
-        this(builder, new BenchmarkingCluster(new ApacheCluster(builder)));
+        this(builder, new BenchmarkingCluster(new JettyCluster(builder)));
     }
 
     HttpRequestStrategy(FeedClientBuilder builder, Cluster cluster) {
