@@ -296,7 +296,9 @@ public class AthenzAuthorizationFilterTest {
                                 .allowedProxyIdentities(allowedProxyIdentities)),
                 new StaticRequestResourceMapper(RESOURCE_NAME, ACTION),
                 zpe,
-                metric);
+                metric,
+                new AthenzRole("domain","reader"),
+                new AthenzRole("domain", "writer"));
     }
 
     private static void assertAuthorizationResult(DiscFilterRequest request, Type expectedResult) {
