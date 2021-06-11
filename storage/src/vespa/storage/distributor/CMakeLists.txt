@@ -23,6 +23,7 @@ vespa_add_library(storage_distributor
     distributor_stripe_component.cpp
     distributor_stripe_pool.cpp
     distributor_stripe_thread.cpp
+    distributor_total_metrics.cpp
     distributormessagesender.cpp
     distributormetricsset.cpp
     externaloperationhandler.cpp

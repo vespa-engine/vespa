@@ -44,6 +44,7 @@ class DistributorBucketSpaceRepo;
 class DistributorStatus;
 class DistributorStripe;
 class DistributorStripePool;
+class DistributorTotalMetrics;
 class StripeAccessor;
 class OperationSequencer;
 class OwnershipTransferSafeTimePointCalculator;
@@ -78,7 +79,7 @@ public:
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
 
-    DistributorMetricSet& getMetrics() { return *_metrics; }
+    DistributorMetricSet& getMetrics();
 
     // Implements DistributorInterface and DistributorMessageSender.
     DistributorMetricSet& metrics() override { return getMetrics(); }
@@ -202,6 +203,7 @@ private:
 
     DistributorComponentRegister&         _comp_reg;
     std::shared_ptr<DistributorMetricSet> _metrics;
+    std::shared_ptr<DistributorTotalMetrics> _total_metrics;
     ChainedMessageSender*                 _messageSender;
     const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.

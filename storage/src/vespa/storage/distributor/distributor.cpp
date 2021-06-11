@@ -9,7 +9,7 @@
 #include "distributor_stripe.h"
 #include "distributor_stripe_pool.h"
 #include "distributor_stripe_thread.h"
-#include "distributormetricsset.h"
+#include "distributor_total_metrics.h"
 #include "idealstatemetricsset.h"
 #include "multi_threaded_stripe_access_guard.h"
 #include "operation_sequencer.h"
@@ -60,10 +60,11 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _comp_reg(compReg),
       _metrics(std::make_shared<DistributorMetricSet>()),
+      _total_metrics((num_distributor_stripes == 0) ? std::shared_ptr<DistributorTotalMetrics>() : std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
       _messageSender(messageSender),
       _use_legacy_mode(num_distributor_stripes == 0),
       _n_stripe_bits(0),
-      _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
+      _stripe(std::make_unique<DistributorStripe>(compReg, _use_legacy_mode ? *_metrics : _total_metrics->stripe(0), node_identity, threadPool,
                                                   doneInitHandler, *this, *this, _use_legacy_mode)),
       _stripe_pool(stripe_pool),
       _stripes(),
@@ -91,7 +92,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _next_distribution(),
       _current_internal_config_generation(_component.internal_config_generation())
 {
-    _component.registerMetric(*_metrics);
+    _component.registerMetric(_use_legacy_mode ? *_metrics : *_total_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (!_use_legacy_mode) {
         assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
@@ -105,7 +106,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                                                                *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
         for (size_t i = 1; i < num_distributor_stripes; ++i) {
-            _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
+            _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg, _total_metrics->stripe(i), node_identity, threadPool,
                                                                       doneInitHandler, *this, *this, _use_legacy_mode, i));
         }
         _stripe_scan_stats.resize(num_distributor_stripes);
@@ -122,6 +123,12 @@ Distributor::~Distributor()
 {
     // XXX: why is there no _component.unregisterMetricUpdateHook()?
     closeNextLink();
+}
+
+DistributorMetricSet&
+Distributor::getMetrics()
+{
+    return _use_legacy_mode ? *_metrics : _total_metrics->bucket_db_updater_metrics();
 }
 
 // TODO STRIPE remove
@@ -567,7 +574,10 @@ Distributor::propagateInternalScanMetricsToExternal()
     if (_use_legacy_mode) {
         _stripe->propagateInternalScanMetricsToExternal();
     } else {
-        first_stripe().propagateInternalScanMetricsToExternal();
+        for (auto &stripe : _stripes) {
+            stripe->propagateInternalScanMetricsToExternal();
+        }
+        _total_metrics->aggregate();
     }
 }
 
