@@ -20,11 +20,14 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -39,6 +42,9 @@ class SslContextBuilder {
     private Path certificateFile;
     private Path privateKeyFile;
     private Path caCertificatesFile;
+    private Collection<X509Certificate> certificate;
+    private PrivateKey privateKey;
+    private Collection<X509Certificate> caCertificates;
 
     SslContextBuilder withCertificateAndKey(Path certificate, Path privateKey) {
         this.certificateFile = certificate;
@@ -46,8 +52,19 @@ class SslContextBuilder {
         return this;
     }
 
+    SslContextBuilder withCertificateAndKey(Collection<X509Certificate> certificate, PrivateKey privateKey) {
+        this.certificate = certificate;
+        this.privateKey = privateKey;
+        return this;
+    }
+
     SslContextBuilder withCaCertificates(Path caCertificates) {
         this.caCertificatesFile = caCertificates;
+        return this;
+    }
+
+    SslContextBuilder withCaCertificates(Collection<X509Certificate> caCertificates) {
+        this.caCertificates = caCertificates;
         return this;
     }
 
@@ -57,9 +74,13 @@ class SslContextBuilder {
             keystore.load(null);
             if (certificateFile != null && privateKeyFile != null) {
                 keystore.setKeyEntry("cert", privateKey(privateKeyFile), new char[0], certificates(certificateFile));
+            } else if (certificate != null && privateKey != null) {
+                keystore.setKeyEntry("cert", privateKey, new char[0], certificate.toArray(new Certificate[0]));
             }
             if (caCertificatesFile != null) {
-                keystore.setCertificateEntry("ca-cert", certificates(caCertificatesFile)[0]);
+                addCaCertificates(keystore, Arrays.asList(certificates(caCertificatesFile)));
+            } else if (caCertificates != null) {
+                addCaCertificates(keystore, caCertificates);
             }
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(keystore, new char[0]);
@@ -70,6 +91,13 @@ class SslContextBuilder {
             return sslContext;
         } catch (GeneralSecurityException e) {
             throw new IOException(e);
+        }
+    }
+
+    private static void addCaCertificates(KeyStore keystore, Collection<? extends Certificate> certificates) throws KeyStoreException {
+        int i = 0;
+        for (Certificate cert : certificates) {
+            keystore.setCertificateEntry("ca-cert-" + ++i, cert);
         }
     }
 

@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,9 +38,12 @@ public class FeedClientBuilder {
     int maxStreamsPerConnection = 128;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
     FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(1), Duration.ofMinutes(10));
-    Path certificate;
-    Path privateKey;
-    Path caCertificates;
+    Path certificateFile;
+    Path privateKeyFile;
+    Path caCertificatesFile;
+    Collection<X509Certificate> certificate;
+    PrivateKey privateKey;
+    Collection<X509Certificate> caCertificates;
 
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
 
@@ -81,9 +87,6 @@ public class FeedClientBuilder {
     }
 
     public FeedClientBuilder setSslContext(SSLContext context) {
-        if (certificate != null || caCertificates != null || privateKey != null) {
-            throw new IllegalArgumentException("Cannot set both SSLContext and certificate / CA certificates");
-        }
         this.sslContext = requireNonNull(context);
         return this;
     }
@@ -113,23 +116,76 @@ public class FeedClientBuilder {
     }
 
     public FeedClientBuilder setCertificate(Path certificatePemFile, Path privateKeyPemFile) {
-        if (sslContext != null) throw new IllegalArgumentException("Cannot set both SSLContext and certificate");
-        this.certificate = certificatePemFile;
-        this.privateKey = privateKeyPemFile;
+        this.certificateFile = certificatePemFile;
+        this.privateKeyFile = privateKeyPemFile;
         return this;
     }
 
-    public FeedClientBuilder setCaCertificates(Path caCertificatesFile) {
-        if (sslContext != null) throw new IllegalArgumentException("Cannot set both SSLContext and CA certificate");
-        this.caCertificates = caCertificatesFile;
+    public FeedClientBuilder setCertificate(Collection<X509Certificate> certificate, PrivateKey privateKey) {
+        this.certificate = certificate;
+        this.privateKey = privateKey;
+        return this;
+    }
+
+    public FeedClientBuilder setCertificate(X509Certificate certificate, PrivateKey privateKey) {
+        return setCertificate(Collections.singletonList(certificate), privateKey);
+    }
+
+    public FeedClientBuilder setCaCertificatesFile(Path caCertificatesFile) {
+        this.caCertificatesFile = caCertificatesFile;
+        return this;
+    }
+
+    public FeedClientBuilder setCaCertificates(Collection<X509Certificate> caCertificates) {
+        this.caCertificates = caCertificates;
         return this;
     }
 
     public FeedClient build() {
         try {
+            validateConfiguration();
             return new HttpFeedClient(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    SSLContext constructSslContext() throws IOException {
+        if (sslContext != null) return sslContext;
+        SslContextBuilder sslContextBuilder = new SslContextBuilder();
+        if (certificateFile != null && privateKeyFile != null) {
+            sslContextBuilder.withCertificateAndKey(certificateFile, privateKeyFile);
+        } else if (certificate != null && privateKey != null) {
+            sslContextBuilder.withCertificateAndKey(certificate, privateKey);
+        }
+        if (caCertificatesFile != null) {
+            sslContextBuilder.withCaCertificates(caCertificatesFile);
+        } else if (caCertificates != null) {
+            sslContextBuilder.withCaCertificates(caCertificates);
+        }
+        return sslContextBuilder.build();
+    }
+
+    private void validateConfiguration() {
+        if (sslContext != null && (
+                certificateFile != null || caCertificatesFile != null || privateKeyFile != null ||
+                        certificate != null || caCertificates != null || privateKey != null)) {
+            throw new IllegalArgumentException("Cannot set both SSLContext and certificate / CA certificates");
+        }
+        if (certificate != null && certificateFile != null) {
+            throw new IllegalArgumentException("Cannot set both certificate directly and as file");
+        }
+        if (privateKey != null && privateKeyFile != null) {
+            throw new IllegalArgumentException("Cannot set both private key directly and as file");
+        }
+        if (caCertificates != null && caCertificatesFile != null) {
+            throw new IllegalArgumentException("Cannot set both CA certificates directly and as file");
+        }
+        if (certificate != null && certificate.isEmpty()) {
+            throw new IllegalArgumentException("Certificate cannot be empty");
+        }
+        if (caCertificates != null && caCertificates.isEmpty()) {
+            throw new IllegalArgumentException("CA certificates cannot be empty");
         }
     }
 
