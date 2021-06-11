@@ -151,7 +151,7 @@ TEST_F(DistributorHostInfoReporterTest, merge_min_replica_stats) {
 
     EXPECT_EQ(3, result.size());
     EXPECT_EQ(2, result[3]);
-    EXPECT_EQ(10, result[5]);
+    EXPECT_EQ(4, result[5]);
     EXPECT_EQ(8, result[7]);
 }
 

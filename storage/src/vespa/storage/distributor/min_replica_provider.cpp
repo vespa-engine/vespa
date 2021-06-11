@@ -10,7 +10,9 @@ merge_min_replica_stats(std::unordered_map<uint16_t, uint32_t>& dest,
 {
     for (const auto& entry : src) {
         auto node_index = entry.first;
-        dest[node_index] += entry.second;
+        auto itr = dest.find(node_index);
+        auto new_min_replica = (itr != dest.end()) ? std::min(itr->second, entry.second) : entry.second;
+        dest[node_index] = new_min_replica;
     }
 }
 
