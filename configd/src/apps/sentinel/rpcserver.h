@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "cmdq.h"
-#include "model-subscriber.h"
+#include "model-owner.h"
 #include "rpchooks.h"
 #include <vespa/fnet/frt/supervisor.h>
 
@@ -19,7 +19,7 @@ private:
     int _port;
 
 public:
-    RpcServer(int port, CommandQueue &cmdQ, ModelSubscriber &modelSubscriber);
+    RpcServer(int port, CommandQueue &cmdQ, ModelOwner &modelOwner);
     ~RpcServer();
 
     int getPort() const { return _port; }

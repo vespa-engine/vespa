@@ -36,7 +36,7 @@ constexpr int maxConnectivityRetries = 100;
 
 Env::Env()
   : _cfgOwner(),
-    _modelSubscriber("admin/model"),
+    _modelOwner("admin/model"),
     _rpcCommandQueue(),
     _rpcServer(),
     _stateApi(),
@@ -53,7 +53,7 @@ Env::~Env() = default;
 void Env::boot(const std::string &configId) {
     LOG(debug, "Reading configuration for ID: %s", configId.c_str());
     _cfgOwner.subscribe(configId, CONFIG_TIMEOUT_MS);
-    _modelSubscriber.start(CONFIG_TIMEOUT_MS);
+    _modelOwner.start(CONFIG_TIMEOUT_MS);
     // subscribe() should throw if something is not OK
     Connectivity checker;
     for (int retry = 0; retry < maxConnectivityRetries; ++retry) {
@@ -66,7 +66,7 @@ void Env::boot(const std::string &configId) {
                 configId.c_str(), cfg.port.telnet, cfg.port.rpc);
             rpcPort(cfg.port.rpc);
             statePort(cfg.port.telnet);
-            auto model = _modelSubscriber.getModelConfig();
+            auto model = _modelOwner.getModelConfig();
             if (model.has_value()) {
                 checker.configure(cfg.connectivity, model.value());
             }
@@ -99,7 +99,7 @@ void Env::rpcPort(int port) {
     if (_rpcServer && port == _rpcServer->getPort()) {
         return; // ok already
     }
-    _rpcServer = std::make_unique<RpcServer>(port, _rpcCommandQueue, _modelSubscriber);
+    _rpcServer = std::make_unique<RpcServer>(port, _rpcCommandQueue, _modelOwner);
 }
 
 void Env::statePort(int port) {
@@ -121,7 +121,7 @@ void Env::statePort(int port) {
 void Env::notifyConfigUpdated() {
     vespalib::ComponentConfigProducer::Config current("sentinel", _cfgOwner.getGeneration(), "ok");
     _stateApi.myComponents.addConfig(current);
-    _modelSubscriber.checkForUpdates();
+    _modelOwner.checkForUpdates();
 }
 
 void Env::respondAsEmpty() {

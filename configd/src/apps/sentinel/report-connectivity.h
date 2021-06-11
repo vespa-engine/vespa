@@ -6,7 +6,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/config-model.h>
 #include <vespa/config/helper/configfetcher.h>
-#include "model-subscriber.h"
+#include "model-owner.h"
 #include "peer-check.h"
 #include "status-callback.h"
 
@@ -20,7 +20,7 @@ namespace config::sentinel {
 class ReportConnectivity : public StatusCallback
 {
 public:
-    ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelSubscriber &modelSubscriber);
+    ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelOwner &modelOwner);
     virtual ~ReportConnectivity();
     void returnStatus(bool ok) override;
 private:

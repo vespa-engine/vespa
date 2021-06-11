@@ -1,19 +1,19 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "model-subscriber.h"
+#include "model-owner.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/common/exceptions.h>
 #include <string>
 #include <chrono>
 #include <vespa/log/log.h>
 
-LOG_SETUP(".sentinel.model-subscriber");
+LOG_SETUP(".sentinel.model-owner");
 
 using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-std::optional<ModelConfig> ModelSubscriber::getModelConfig() {
+std::optional<ModelConfig> ModelOwner::getModelConfig() {
     checkForUpdates();
     if (_modelConfig) {
         return ModelConfig(*_modelConfig);
@@ -23,14 +23,14 @@ std::optional<ModelConfig> ModelSubscriber::getModelConfig() {
 }
 
 
-ModelSubscriber::ModelSubscriber(const std::string &configId)
+ModelOwner::ModelOwner(const std::string &configId)
   : _configId(configId)
 {}
 
-ModelSubscriber::~ModelSubscriber() = default;
+ModelOwner::~ModelOwner() = default;
 
 void
-ModelSubscriber::start(std::chrono::milliseconds timeout) {
+ModelOwner::start(std::chrono::milliseconds timeout) {
     try {
         _modelHandle =_subscriber.subscribe<ModelConfig>(_configId, timeout);
     } catch (ConfigTimeoutException & ex) {
@@ -43,7 +43,7 @@ ModelSubscriber::start(std::chrono::milliseconds timeout) {
 }
 
 void
-ModelSubscriber::checkForUpdates() {
+ModelOwner::checkForUpdates() {
     if (! _modelHandle) {
         start(5ms);
     }

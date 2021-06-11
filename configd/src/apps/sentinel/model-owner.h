@@ -13,15 +13,15 @@ namespace config::sentinel {
 /**
  * Handles config subscription and has a snapshot of current config.
  **/
-class ModelSubscriber {
+class ModelOwner {
 private:
     std::string _configId;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<ModelConfig>::UP _modelHandle;
     std::unique_ptr<ModelConfig> _modelConfig;
 public:
-    ModelSubscriber(const std::string &configId);
-    virtual ~ModelSubscriber();
+    ModelOwner(const std::string &configId);
+    virtual ~ModelOwner();
     void start(std::chrono::milliseconds timeout);
     void checkForUpdates();
     std::optional<ModelConfig> getModelConfig();

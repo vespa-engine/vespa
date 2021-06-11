@@ -14,12 +14,12 @@ using namespace std::chrono_literals;
 namespace config::sentinel {
 
 
-ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelSubscriber &modelSubscriber)
+ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, FRT_Supervisor &orb, ModelOwner &modelOwner)
   : _parentRequest(req),
     _orb(orb),
     _checks()
 {
-    auto cfg = modelSubscriber.getModelConfig();
+    auto cfg = modelOwner.getModelConfig();
     if (cfg.has_value()) {
         auto map = Connectivity::specsFrom(cfg.value());
         LOG(debug, "making connectivity report for %zd peers", map.size());

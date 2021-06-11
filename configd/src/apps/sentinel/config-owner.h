@@ -26,7 +26,7 @@ private:
     int64_t _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
 
-    ConfigSubscriber _modelSubscriber;
+    ConfigSubscriber _modelOwner;
     ConfigHandle<ModelConfig>::UP _modelHandle;
     std::unique_ptr<ModelConfig> _modelConfig;
 

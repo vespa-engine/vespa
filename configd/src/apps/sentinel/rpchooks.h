@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "model-subscriber.h"
+#include "model-owner.h"
 #include <vespa/fnet/frt/invokable.h>
 #include <memory>
 
@@ -26,9 +26,9 @@ class RPCHooks : public FRT_Invokable
 private:
     CommandQueue &_commands;
     FRT_Supervisor &_orb;
-    ModelSubscriber &_modelSubscriber;
+    ModelOwner &_modelOwner;
 public:
-    RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor, ModelSubscriber &modelSubscriber);
+    RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor, ModelOwner &modelOwner);
     ~RPCHooks() override;
 private:
     void initRPC(FRT_Supervisor *supervisor);

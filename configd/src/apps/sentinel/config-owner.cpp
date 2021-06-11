@@ -18,7 +18,7 @@ void
 ConfigOwner::subscribe(const std::string & configId, std::chrono::milliseconds timeout) {
     _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeout);
     try {
-        _modelHandle =_modelSubscriber.subscribe<ModelConfig>("admin/model", timeout);
+        _modelHandle =_modelOwner.subscribe<ModelConfig>("admin/model", timeout);
     } catch (ConfigTimeoutException & ex) {
         LOG(warning, "Timeout getting model config: %s [skipping connectivity checks]", ex.getMessage().c_str());
     } catch (InvalidConfigException& ex) {
@@ -54,10 +54,10 @@ ConfigOwner::checkForConfigUpdate() {
 
 std::optional<ModelConfig>
 ConfigOwner::getModelConfig() {
-    if (_modelHandle && _modelSubscriber.nextGenerationNow()) {
+    if (_modelHandle && _modelOwner.nextGenerationNow()) {
         if (auto newModel = _modelHandle->getConfig()) {
             LOG(config, "Sentinel got model info [version %s] for %zd hosts [config generation %" PRId64 "]",
-                newModel->vespaVersion.c_str(), newModel->hosts.size(), _modelSubscriber.getGeneration());
+                newModel->vespaVersion.c_str(), newModel->hosts.size(), _modelOwner.getGeneration());
             _modelConfig = std::move(newModel);
         }
     }
