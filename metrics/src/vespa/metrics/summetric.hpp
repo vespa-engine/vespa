@@ -142,8 +142,17 @@ template<typename AddendMetric>
 void
 SumMetric<AddendMetric>::addToPart(Metric& m) const
 {
-    std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
-    sum.second->addToPart(m);
+    if (!m.is_sum_metric()) {
+        std::pair<std::vector<Metric::UP>, Metric::UP> sum(generateSum());
+        sum.second->addToPart(m);
+    }
+}
+
+template<typename AddendMetric>
+bool
+SumMetric<AddendMetric>::is_sum_metric() const
+{
+    return true;
 }
 
 template<typename AddendMetric>
