@@ -2,5 +2,6 @@
 
 vespa_add_library(eval_onnx OBJECT
     SOURCES
+    onnx_model_cache.cpp
     onnx_wrapper.cpp
 )

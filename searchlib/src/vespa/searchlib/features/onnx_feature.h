@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
-#include <vespa/eval/onnx/onnx_wrapper.h>
+#include <vespa/eval/onnx/onnx_model_cache.h>
 
 namespace search::features {
 
@@ -13,7 +13,11 @@ namespace search::features {
 class OnnxBlueprint : public fef::Blueprint {
 private:
     using Onnx = vespalib::eval::Onnx;
-    std::unique_ptr<Onnx> _model;
+    using Optimize = vespalib::eval::Onnx::Optimize;
+    using OnnxModelCache = vespalib::eval::OnnxModelCache;
+    OnnxModelCache::Token::UP _cache_token;
+    std::unique_ptr<Onnx> _debug_model;
+    const Onnx *_model;
     Onnx::WireInfo _wire_info;
 public:
     OnnxBlueprint();

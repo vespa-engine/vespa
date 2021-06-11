@@ -3,6 +3,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/int8float.h>
 #include <vespa/eval/onnx/onnx_wrapper.h>
+#include <vespa/eval/onnx/onnx_model_cache.h>
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -441,6 +442,25 @@ TEST(OnnxTest, default_allocator_type) {
     OrtAllocatorType res = Invalid;
     Ort::ThrowOnError(Ort::GetApi().MemoryInfoGetType(default_alloc.GetInfo(), &res));
     fprintf(stderr, "default allocator type: %d\n", int(res));
+}
+
+TEST(OnnxModelCacheTest, share_and_evict_onnx_models) {
+    {
+        auto simple1 = OnnxModelCache::load(simple_model);
+        auto simple2 = OnnxModelCache::load(simple_model);
+        auto dynamic1 = OnnxModelCache::load(dynamic_model);
+        auto dynamic2 = OnnxModelCache::load(dynamic_model);
+        auto dynamic3 = OnnxModelCache::load(dynamic_model);
+        EXPECT_EQ(simple1->get().inputs().size(), 3);
+        EXPECT_EQ(dynamic1->get().inputs().size(), 3);
+        EXPECT_EQ(&(simple1->get()), &(simple2->get()));
+        EXPECT_EQ(&(dynamic1->get()), &(dynamic2->get()));
+        EXPECT_EQ(&(dynamic2->get()), &(dynamic3->get()));
+        EXPECT_EQ(OnnxModelCache::num_cached(), 2);
+        EXPECT_EQ(OnnxModelCache::count_refs(), 5);
+    }
+    EXPECT_EQ(OnnxModelCache::num_cached(), 0);
+    EXPECT_EQ(OnnxModelCache::count_refs(), 0);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
