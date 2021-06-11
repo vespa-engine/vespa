@@ -7,6 +7,9 @@
       "name": "DirtyExpirer"
     },
     {
+      "name": "ExpeditedChangeApplicationMaintainer"
+    },
+    {
       "name": "FailedExpirer"
     },
     {
@@ -35,9 +38,6 @@
     },
     {
       "name": "NodeRebooter"
-    },
-    {
-      "name": "OperatorChangeApplicationMaintainer"
     },
     {
       "name": "OsUpgradeActivator"
