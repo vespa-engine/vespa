@@ -3,6 +3,7 @@ package ai.vespa.feed.client;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpClientTransport;
+import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Result;
 import org.eclipse.jetty.client.util.BufferingResponseListener;
 import org.eclipse.jetty.client.util.BytesContentProvider;
@@ -71,19 +72,20 @@ class JettyCluster implements Cluster {
         Endpoint endpoint = endpoints.get(index);
         endpoint.inflight.incrementAndGet();
         try {
-            endpoint.client.newRequest(endpoint.uri.resolve(request.path()))
-                           .method(request.method())
-                           .timeout(5, TimeUnit.MINUTES)
-                           .content(request.body() == null ? null : new BytesContentProvider(request.body()))
-                           .send(new BufferingResponseListener() {
-                               @Override public void onComplete(Result result) {
-                                   if (result.isSucceeded())
-                                       vessel.complete(HttpResponse.of(result.getResponse().getStatus(),
-                                                                       getContent()));
-                                   else
-                                       vessel.completeExceptionally(result.getFailure());
-                               }
-                           });
+            Request jettyRequest = endpoint.client.newRequest(endpoint.uri.resolve(request.path()))
+                                                  .method(request.method())
+                                                  .timeout(5, TimeUnit.MINUTES)
+                                                  .content(request.body() == null ? null : new BytesContentProvider("application/json", request.body()));
+            request.headers().forEach((name, value) -> jettyRequest.header(name, value.get()));
+            jettyRequest.send(new BufferingResponseListener() {
+                @Override public void onComplete(Result result) {
+                    if (result.isSucceeded())
+                        vessel.complete(HttpResponse.of(result.getResponse().getStatus(),
+                                                        getContent()));
+                    else
+                        vessel.completeExceptionally(result.getFailure());
+                }
+            });
         }
         catch (Throwable thrown) {
             vessel.completeExceptionally(thrown);
