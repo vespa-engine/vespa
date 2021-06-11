@@ -27,12 +27,15 @@ public:
     void configure(const SentinelConfig::Connectivity &config);
     bool checkConnectivity(RpcServer &rpcServer);
 private:
-    struct Accumulated {
-        size_t numIssues = 0;
-        size_t numSeriousIssues = 0;
+    class Accumulator {
+    private:
+        size_t _numOk = 0;
+        size_t _numBad = 0;
+        size_t _numHandled = 0;
+    public:
+        void handleResult(CcResult value);
+        bool enoughOk(const SentinelConfig::Connectivity &config) const;
     };
-    void accumulate(Accumulated &target, CcResult value);
-    bool enoughOk(const Accumulated &results, size_t clusterSize);
     SentinelConfig::Connectivity _config;
     SpecMap _checkSpecs;
     std::map<std::string, std::string> _detailsPerHost;

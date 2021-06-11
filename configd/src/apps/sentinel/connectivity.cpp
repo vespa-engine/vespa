@@ -120,8 +120,8 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
 
 void Connectivity::configure(const SentinelConfig::Connectivity &config) {
     _config = config;
-    LOG(config, "connectivity.maxBadReverseCount = %d", _config.maxBadReverseCount);
-    LOG(config, "connectivity.maxBadOutPercent = %d", _config.maxBadOutPercent);
+    LOG(config, "connectivity.maxBadCount = %d", _config.maxBadCount);
+    LOG(config, "connectivity.minOkPercent = %d", _config.minOkPercent);
     if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
         _checkSpecs = specsFrom(*up);
     }
@@ -145,7 +145,7 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
     }
     checkContext.latch.await();
     classifyConnFails(connectivityMap, _checkSpecs, rpcServer);
-    Accumulated accumulated;
+    Accumulator accumulated;
     for (const auto & [hostname, check] : connectivityMap) {
         std::string detail = toString(check.result());
         std::string prev = _detailsPerHost[hostname];
@@ -154,42 +154,43 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
         }
         _detailsPerHost[hostname] = detail;
         LOG_ASSERT(check.result() != CcResult::UNKNOWN);
-        accumulate(accumulated, check.result());
+        accumulated.handleResult(check.result());
     }
-    return enoughOk(accumulated, clusterSize);
+    return accumulated.enoughOk(_config);
 }
 
-void Connectivity::accumulate(Accumulated &target, CcResult value) {
+void Connectivity::Accumulator::handleResult(CcResult value) {
+    ++_numHandled;
     switch (value) {
         case CcResult::UNKNOWN:
         case CcResult::UNREACHABLE_UP:
         case CcResult::INDIRECT_PING_FAIL:
-            ++target.numSeriousIssues;
-            ++target.numIssues;
+            ++_numBad;
             break;
         case CcResult::CONN_FAIL:
-            ++target.numIssues;
+            // not OK, but not a serious issue either
             break;
         case CcResult::INDIRECT_PING_UNAVAIL:
         case CcResult::ALL_OK:
+            ++_numOk;
             break;
     }
 }
 
-bool Connectivity::enoughOk(const Accumulated &results, size_t clusterSize) {
+bool Connectivity::Accumulator::enoughOk(const SentinelConfig::Connectivity &config) const {
     bool enough = true;
-    if (results.numSeriousIssues > size_t(_config.maxBadReverseCount)) {
+    if (_numBad > size_t(config.maxBadCount)) {
         LOG(warning, "%zu of %zu nodes up but with network connectivity problems (max is %d)",
-            results.numSeriousIssues, clusterSize, _config.maxBadReverseCount);
+            _numBad, _numHandled, config.maxBadCount);
         enough = false;
     }
-    if (results.numIssues * 100.0 > _config.maxBadOutPercent * clusterSize) {
-        double pct = results.numIssues * 100.0 / clusterSize;
-        LOG(warning, "Problems with connection to %zu of %zu nodes, %.1f%% (max is %d%%)",
-            results.numIssues, clusterSize, pct, _config.maxBadOutPercent);
+    if (_numOk * 100.0 < config.minOkPercent * _numHandled) {
+        double pct = _numOk * 100.0 / _numHandled;
+        LOG(warning, "Only %zu of %zu nodes are up and OK, %.1f%% (min is %d%%)",
+            _numOk, _numHandled, pct, config.minOkPercent);
         enough = false;
     }
-    if (results.numIssues == 0) {
+    if (_numOk == _numHandled) {
         LOG(info, "All connectivity checks OK, proceeding with service startup");
     } else if (enough) {
         LOG(info, "Enough connectivity checks OK, proceeding with service startup");
