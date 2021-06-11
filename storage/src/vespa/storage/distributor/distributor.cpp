@@ -59,10 +59,10 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     : StorageLink("distributor"),
       framework::StatusReporter("distributor", "Distributor"),
       _comp_reg(compReg),
-      _metrics(std::make_shared<DistributorMetricSet>()),
-      _total_metrics((num_distributor_stripes == 0) ? std::shared_ptr<DistributorTotalMetrics>() : std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
-      _messageSender(messageSender),
       _use_legacy_mode(num_distributor_stripes == 0),
+      _metrics(std::make_shared<DistributorMetricSet>()),
+      _total_metrics(_use_legacy_mode ? std::shared_ptr<DistributorTotalMetrics>() : std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
+      _messageSender(messageSender),
       _n_stripe_bits(0),
       _stripe(std::make_unique<DistributorStripe>(compReg, _use_legacy_mode ? *_metrics : _total_metrics->stripe(0), node_identity, threadPool,
                                                   doneInitHandler, *this, *this, _use_legacy_mode)),
@@ -569,8 +569,6 @@ Distributor::pending_maintenance_stats() const {
 void
 Distributor::propagateInternalScanMetricsToExternal()
 {
-    // TODO STRIPE propagate to all stripes
-    // TODO STRIPE reconsider metric wiring...
     if (_use_legacy_mode) {
         _stripe->propagateInternalScanMetricsToExternal();
     } else {

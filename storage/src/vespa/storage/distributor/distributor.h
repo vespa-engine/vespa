@@ -202,10 +202,10 @@ private:
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
 
     DistributorComponentRegister&         _comp_reg;
+    const bool                            _use_legacy_mode;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
     ChainedMessageSender*                 _messageSender;
-    const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     uint8_t                               _n_stripe_bits;
     std::unique_ptr<DistributorStripe>    _stripe;
