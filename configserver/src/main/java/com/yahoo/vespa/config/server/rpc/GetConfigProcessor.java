@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jrt.Request;
 import com.yahoo.net.HostName;
@@ -164,7 +165,7 @@ class GetConfigProcessor implements Runnable {
 
     private void returnEmpty(JRTServerConfigRequest request) {
         log.log(Level.FINE, () -> "Returning empty sentinel config for request from " + request.getClientHostName());
-        ConfigPayload emptyPayload = ConfigPayload.empty();
+        var emptyPayload = ConfigPayload.fromInstance(new SentinelConfig.Builder().build());
         String configMd5 = ConfigUtils.getMd5(emptyPayload);
         ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, 0, false, configMd5);
         request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getConfigMd5());
