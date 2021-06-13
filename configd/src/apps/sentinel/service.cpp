@@ -12,7 +12,7 @@
 #include <sys/wait.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".service");
+LOG_SETUP(".sentinel.service");
 #include <vespa/log/llparser.h>
 
 static bool stop()

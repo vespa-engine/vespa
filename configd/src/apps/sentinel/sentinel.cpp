@@ -11,7 +11,7 @@
 #include <sys/time.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("config-sentinel");
+LOG_SETUP("sentinel.config-sentinel");
 
 using namespace config;
 

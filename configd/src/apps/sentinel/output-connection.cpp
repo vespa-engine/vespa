@@ -5,7 +5,7 @@
 #include <cstring>
 
 #include <vespa/log/log.h>
-LOG_SETUP("");
+LOG_SETUP(".sentinel.output-connection");
 #include <vespa/log/llparser.h>
 
 #include "output-connection.h"

@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 
-LOG_SETUP(".peer-check");
+LOG_SETUP(".sentinel.peer-check");
 
 using vespalib::make_string_short::fmt;
 

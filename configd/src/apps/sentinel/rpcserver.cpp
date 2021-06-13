@@ -3,7 +3,7 @@
 #include "rpcserver.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".sentinel.rpcserver");
 
 namespace config::sentinel {
 

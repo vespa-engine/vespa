@@ -12,7 +12,7 @@
 #include <thread>
 #include <chrono>
 
-LOG_SETUP(".env");
+LOG_SETUP(".sentinel.env");
 
 using vespalib::make_string_short::fmt;
 using namespace std::chrono_literals;

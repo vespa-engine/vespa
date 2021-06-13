@@ -9,7 +9,7 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpchooks");
+LOG_SETUP(".sentinel.rpchooks");
 
 namespace config::sentinel {
 
