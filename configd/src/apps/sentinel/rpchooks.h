@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "model-owner.h"
 #include <vespa/fnet/frt/invokable.h>
 #include <memory>
 
@@ -25,8 +26,9 @@ class RPCHooks : public FRT_Invokable
 private:
     CommandQueue &_commands;
     FRT_Supervisor &_orb;
+    ModelOwner &_modelOwner;
 public:
-    RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor);
+    RPCHooks(CommandQueue &commands, FRT_Supervisor &supervisor, ModelOwner &modelOwner);
     ~RPCHooks() override;
 private:
     void initRPC(FRT_Supervisor *supervisor);
@@ -36,6 +38,7 @@ private:
     void rpc_stopService(FRT_RPCRequest *req);
     void rpc_startService(FRT_RPCRequest *req);
     void rpc_checkConnectivity(FRT_RPCRequest *req);
+    void rpc_reportConnectivity(FRT_RPCRequest *req);
 };
 
 } // namespace config::sentinel

@@ -9,9 +9,11 @@ vespa_add_executable(configd_config-sentinel_app
     line-splitter.cpp
     manager.cpp
     metrics.cpp
+    model-owner.cpp
     output-connection.cpp
     outward-check.cpp
     peer-check.cpp
+    report-connectivity.cpp
     rpchooks.cpp
     rpcserver.cpp
     sentinel.cpp

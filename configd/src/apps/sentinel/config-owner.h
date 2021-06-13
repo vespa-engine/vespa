@@ -7,10 +7,6 @@
 #include <vespa/config/config.h>
 
 using cloud::config::SentinelConfig;
-using cloud::config::ModelConfig;
-
-using config::ConfigSubscriber;
-using config::ConfigHandle;
 
 namespace config::sentinel {
 
@@ -19,9 +15,9 @@ namespace config::sentinel {
  **/
 class ConfigOwner {
 private:
-    ConfigSubscriber _subscriber;
-    ConfigHandle<SentinelConfig>::UP _sentinelHandle;
-
+    config::ConfigSubscriber _subscriber;
+    config::ConfigHandle<SentinelConfig>::UP _sentinelHandle;
+    
     int64_t _currGeneration = -1;
     std::unique_ptr<SentinelConfig> _currConfig;
 
@@ -37,7 +33,6 @@ public:
     bool hasConfig() const { return _currConfig.get() != nullptr; }
     const SentinelConfig& getConfig() const { return *_currConfig; }
     int64_t getGeneration() const { return _currGeneration; }
-    static std::unique_ptr<ModelConfig> fetchModelConfig(std::chrono::milliseconds timeout);
 };
 
 }

@@ -5,6 +5,7 @@
 #include "cmdq.h"
 #include "config-owner.h"
 #include "metrics.h"
+#include "model-owner.h"
 #include "rpcserver.h"
 #include "state-api.h"
 #include <vespa/vespalib/net/state_server.h>
@@ -22,6 +23,7 @@ public:
     ~Env();
 
     ConfigOwner &configOwner() { return _cfgOwner; }
+    ModelOwner &modelOwner() { return _modelOwner; }
     CommandQueue &commandQueue() { return _rpcCommandQueue; }
     StartMetrics &metrics() { return _startMetrics; }
 
@@ -33,6 +35,7 @@ public:
 private:
     void respondAsEmpty();
     ConfigOwner _cfgOwner;
+    ModelOwner _modelOwner;
     CommandQueue _rpcCommandQueue;
     std::unique_ptr<RpcServer> _rpcServer;
     StateApi _stateApi;

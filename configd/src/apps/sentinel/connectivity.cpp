@@ -17,8 +17,6 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-constexpr std::chrono::milliseconds MODEL_TIMEOUT_MS = 60s;
-
 Connectivity::Connectivity() = default;
 Connectivity::~Connectivity() = default;
 
@@ -43,28 +41,6 @@ using SpecMap = Connectivity::SpecMap;
 
 std::string spec(const SpecMap::value_type &host_and_port) {
     return fmt("tcp/%s:%d", host_and_port.first.c_str(), host_and_port.second);
-}
-
-SpecMap specsFrom(const ModelConfig &model) {
-    SpecMap checkSpecs;
-    for (const auto & h : model.hosts) {
-        bool foundSentinelPort = false;
-        for (const auto & s : h.services) {
-            if (s.name == "config-sentinel") {
-                for (const auto & p : s.ports) {
-                    if (p.tags.find("rpc") != p.tags.npos) {
-                        checkSpecs[h.name] = p.number;
-                        foundSentinelPort = true;
-                    }
-                }
-            }
-        }
-        if (! foundSentinelPort) {
-            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
-                h.name.c_str(), h.services.size());
-        }
-    }
-    return checkSpecs;
 }
 
 void classifyConnFails(ConnectivityMap &connectivityMap,
@@ -118,13 +94,35 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
 
 } // namespace <unnamed>
 
-void Connectivity::configure(const SentinelConfig::Connectivity &config) {
+SpecMap Connectivity::specsFrom(const ModelConfig &model) {
+    SpecMap checkSpecs;
+    for (const auto & h : model.hosts) {
+        bool foundSentinelPort = false;
+        for (const auto & s : h.services) {
+            if (s.name == "config-sentinel") {
+                for (const auto & p : s.ports) {
+                    if (p.tags.find("rpc") != p.tags.npos) {
+                        checkSpecs[h.name] = p.number;
+                        foundSentinelPort = true;
+                    }
+                }
+            }
+        }
+        if (! foundSentinelPort) {
+            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
+                h.name.c_str(), h.services.size());
+        }
+    }
+    return checkSpecs;
+}
+
+void Connectivity::configure(const SentinelConfig::Connectivity &config,
+                             const ModelConfig &model)
+{
     _config = config;
     LOG(config, "connectivity.maxBadCount = %d", _config.maxBadCount);
     LOG(config, "connectivity.minOkPercent = %d", _config.minOkPercent);
-    if (auto up = ConfigOwner::fetchModelConfig(MODEL_TIMEOUT_MS)) {
-        _checkSpecs = specsFrom(*up);
-    }
+    _checkSpecs = specsFrom(model);
 }
 
 bool

@@ -24,8 +24,10 @@ public:
 
     Connectivity();
     ~Connectivity();
-    void configure(const SentinelConfig::Connectivity &config);
+    void configure(const SentinelConfig::Connectivity &config,
+                   const ModelConfig &model);
     bool checkConnectivity(RpcServer &rpcServer);
+    static SpecMap specsFrom(const ModelConfig &model);
 private:
     class Accumulator {
     private:
