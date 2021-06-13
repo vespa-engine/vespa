@@ -40,7 +40,7 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
-    LOG(debug, "Going into nextConfig loop, time left is %" PRId64, timeLeft.count());
+    LOG(spam, "Going into nextConfig loop, time left is %" PRId64, timeLeft.count());
     while (!isClosed() && (timeLeft.count() >= 0) && !inSync) {
         size_t numChanged = 0;
         size_t numGenerationChanged = 0;
@@ -62,7 +62,7 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
             } else {
                 LOG(spam, "Config subscription did not change, id(%s), defname(%s)", key.getConfigId().c_str(), key.getDefName().c_str());
             }
-            LOG(spam, "Previous generation is %" PRId64 ", updates is %" PRId64, generation, subscription->getGeneration());
+            LOG(spam, "Previous generation is %" PRId64 ", updates is %" PRId64, lastGeneration, subscription->getGeneration());
             if (isGenerationNewer(subscription->getGeneration(), _currentGeneration)) {
                 numGenerationChanged++;
             }
