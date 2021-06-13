@@ -957,7 +957,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.BYTE.equals(dt)) return "com.yahoo.document.DataType.BYTE";
         if (DataType.BOOL.equals(dt)) return "com.yahoo.document.DataType.BOOL";
         if (DataType.TAG.equals(dt)) return "com.yahoo.document.DataType.TAG";
-        if (dt instanceof StructDataType) return "new com.yahoo.document.StructDataType(\""+dt.getName()+"\")";
+        if (dt instanceof StructDataType) return  className(dt.getName()) +".type";
         if (dt instanceof WeightedSetDataType) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(((WeightedSetDataType)dt).getNestedType())+", "+
             ((WeightedSetDataType)dt).createIfNonExistent()+", "+ ((WeightedSetDataType)dt).removeIfZero()+","+dt.getId()+")";
         if (dt instanceof ArrayDataType) return "new com.yahoo.document.ArrayDataType("+toJavaReference(((ArrayDataType)dt).getNestedType())+")";
