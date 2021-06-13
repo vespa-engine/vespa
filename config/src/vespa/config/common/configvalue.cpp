@@ -57,8 +57,12 @@ ConfigValue::getLegacyFormat() const
 
 const vespalib::string
 ConfigValue::asJson() const {
-    const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
-    return payload.toString();
+    if (_payload) {
+        const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
+        return payload.toString();
+    } else {
+        return {};
+    }
 }
 
 void
@@ -74,7 +78,9 @@ ConfigValue::serializeV1(vespalib::slime::Cursor & cursor) const
 void
 ConfigValue::serializeV2(vespalib::slime::Cursor & cursor) const
 {
-    copySlimeObject(_payload->getSlimePayload(), cursor);
+    if (_payload) {
+        copySlimeObject(_payload->getSlimePayload(), cursor);
+    }
 }
 
 }
