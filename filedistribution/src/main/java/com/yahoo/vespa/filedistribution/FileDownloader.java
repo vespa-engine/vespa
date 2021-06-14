@@ -89,22 +89,22 @@ public class FileDownloader implements AutoCloseable {
         return downloadDirectory;
     }
 
-    // Files are moved atomically, so if file reference exists and is accessible we can use it
     private Optional<File> getFileFromFileSystem(FileReference fileReference) {
         File[] files = new File(downloadDirectory, fileReference.value()).listFiles();
-        if (downloadDirectory.exists() && downloadDirectory.isDirectory() && files != null && files.length > 0) {
-            File file = files[0];
-            if (!file.exists()) {
-                throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
-            } else if (!file.canRead()) {
-                throw new RuntimeException("File reference '" + fileReference.value() + "' exists, but unable to read it");
-            } else {
-                log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
-                downloads.setDownloadStatus(fileReference, 1.0);
-                return Optional.of(file);
-            }
+        if (files == null) return Optional.empty();
+        if (files.length == 0) return Optional.empty();
+        if (files.length > 1) throw new RuntimeException("More than one file reference found for " + fileReference);
+
+        File file = files[0];
+        if (!file.exists()) {
+            throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
+        } else if (!file.canRead()) {
+            throw new RuntimeException("File reference '" + fileReference.value() + "' exists, but unable to read it");
+        } else {
+            log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
+            downloads.setDownloadStatus(fileReference, 1.0);
+            return Optional.of(file);
         }
-        return Optional.empty();
     }
 
     boolean isDownloading(FileReference fileReference) {
