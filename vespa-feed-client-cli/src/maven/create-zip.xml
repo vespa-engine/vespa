@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>zip</id>
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <formats>
+        <format>zip</format>
+    </formats>
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.artifactId}-jar-with-dependencies.jar</source>
+        </file>
+        <file>
+            <source>${project.basedir}/src/main/sh/vespa-feed-client-standalone.sh</source>
+            <destName>vespa-feed-client</destName>
+        </file>
+        <file>
+            <source>${project.basedir}/src/main/resources/logging.properties</source>
+        </file>
+    </files>
+</assembly>
