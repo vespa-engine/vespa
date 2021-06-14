@@ -68,6 +68,7 @@ public:
         std::vector<int64_t> dimensions;
         TensorType(ElementType elements_in, std::vector<int64_t> dimensions_in) noexcept
             : elements(elements_in), dimensions(std::move(dimensions_in)) {}
+        vespalib::string type_as_string() const;
     };
 
     // how the model should be wired with inputs/outputs
@@ -88,6 +89,7 @@ public:
     public:
         WirePlanner() : _input_types(), _symbolic_sizes(), _bound_unknown_sizes() {}
         ~WirePlanner();
+        static CellType best_cell_type(Onnx::ElementType type);
         bool bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in);
         ValueType make_output_type(const TensorInfo &onnx_out) const;
         WireInfo get_wire_info(const Onnx &model) const;

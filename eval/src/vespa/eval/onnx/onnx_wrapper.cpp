@@ -117,23 +117,6 @@ auto convert_optimize(Onnx::Optimize optimize) {
     abort();
 }
 
-CellType to_cell_type(Onnx::ElementType type) {
-    switch (type) {
-    case Onnx::ElementType::INT8:     return CellType::INT8;
-    case Onnx::ElementType::BFLOAT16: return CellType::BFLOAT16;
-    case Onnx::ElementType::UINT8:    [[fallthrough]];
-    case Onnx::ElementType::INT16:    [[fallthrough]];
-    case Onnx::ElementType::UINT16:   [[fallthrough]];
-    case Onnx::ElementType::FLOAT:    return CellType::FLOAT;
-    case Onnx::ElementType::INT32:    [[fallthrough]];
-    case Onnx::ElementType::INT64:    [[fallthrough]];
-    case Onnx::ElementType::UINT32:   [[fallthrough]];
-    case Onnx::ElementType::UINT64:   [[fallthrough]];
-    case Onnx::ElementType::DOUBLE:   return CellType::DOUBLE;
-    }
-    abort();
-}
-
 Onnx::ElementType make_element_type(ONNXTensorElementDataType element_type) {
     switch (element_type) {
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8:     return Onnx::ElementType::INT8;
@@ -245,11 +228,40 @@ Onnx::TensorInfo::type_as_string() const
 
 Onnx::TensorInfo::~TensorInfo() = default;
 
+vespalib::string
+Onnx::TensorType::type_as_string() const
+{
+    vespalib::string res = type_name(elements);
+    for (const auto &size: dimensions) {
+        res += DimSize(size).as_string();
+    }
+    return res;
+}
+
 //-----------------------------------------------------------------------------
 
 Onnx::WireInfo::~WireInfo() = default;
 
 Onnx::WirePlanner::~WirePlanner() = default;
+
+CellType
+Onnx::WirePlanner::best_cell_type(Onnx::ElementType type)
+{
+    switch (type) {
+    case Onnx::ElementType::INT8:     return CellType::INT8;
+    case Onnx::ElementType::BFLOAT16: return CellType::BFLOAT16;
+    case Onnx::ElementType::UINT8:    [[fallthrough]];
+    case Onnx::ElementType::INT16:    [[fallthrough]];
+    case Onnx::ElementType::UINT16:   [[fallthrough]];
+    case Onnx::ElementType::FLOAT:    return CellType::FLOAT;
+    case Onnx::ElementType::INT32:    [[fallthrough]];
+    case Onnx::ElementType::INT64:    [[fallthrough]];
+    case Onnx::ElementType::UINT32:   [[fallthrough]];
+    case Onnx::ElementType::UINT64:   [[fallthrough]];
+    case Onnx::ElementType::DOUBLE:   return CellType::DOUBLE;
+    }
+    abort();
+}
 
 bool
 Onnx::WirePlanner::bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in)
@@ -309,7 +321,7 @@ Onnx::WirePlanner::make_output_type(const TensorInfo &onnx_out) const
         }
         dim_list.emplace_back(fmt("d%zu", dim_list.size()), dim_size);
     }
-    return ValueType::make_type(to_cell_type(elements), std::move(dim_list));
+    return ValueType::make_type(best_cell_type(elements), std::move(dim_list));
 }
 
 Onnx::WireInfo
