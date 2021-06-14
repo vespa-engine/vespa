@@ -6,6 +6,8 @@ import com.yahoo.container.logging.ConnectionLogEntry;
 import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
+import com.yahoo.security.SubjectAlternativeName;
+import com.yahoo.security.X509CertificateUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnection;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
@@ -36,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Jetty integration for jdisc connection log ({@link ConnectionLog}).
@@ -247,6 +250,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private Date sslPeerNotAfter;
         private List<SNIServerName> sslSniServerNames;
         private SSLHandshakeException sslHandshakeException;
+        private List<String> sslSubjectAlternativeNames;
         private String proxyProtocolVersion;
         private String httpProtocol;
 
@@ -300,6 +304,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 X509Certificate peerCertificate = (X509Certificate) session.getPeerCertificates()[0];
                 this.sslPeerNotBefore = peerCertificate.getNotBefore();
                 this.sslPeerNotAfter = peerCertificate.getNotAfter();
+                this.sslSubjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(peerCertificate).stream()
+                        .map(SubjectAlternativeName::getValue)
+                        .collect(Collectors.toList());
+
             } catch (SSLPeerUnverifiedException e) {
                 // Throw if peer is not authenticated (e.g when client auth is disabled)
                 // JSSE provides no means of checking for client authentication without catching this exception
@@ -361,6 +369,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 builder.withSslPeerSubject(sslPeerSubject)
                         .withSslPeerNotAfter(sslPeerNotAfter.toInstant())
                         .withSslPeerNotBefore(sslPeerNotBefore.toInstant());
+            }
+            if (sslSubjectAlternativeNames != null && !sslSubjectAlternativeNames.isEmpty()) {
+                builder.withSslSubjectAlternativeNames(sslSubjectAlternativeNames);
             }
             if (sslHandshakeException != null) {
                 List<ExceptionEntry> exceptionChain = new ArrayList<>();
