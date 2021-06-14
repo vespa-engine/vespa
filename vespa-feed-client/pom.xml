@@ -20,6 +20,11 @@
   <dependencies>
     <!-- compile scope -->
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
       <scope>compile</scope>
@@ -99,6 +104,10 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>abi-check-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
