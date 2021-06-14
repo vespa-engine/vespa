@@ -30,23 +30,30 @@ public class FileDownloader implements AutoCloseable {
     private final static Logger log = Logger.getLogger(FileDownloader.class.getName());
     public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
 
+    private final ConnectionPool connectionPool;
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
+    private final Downloads downloads;
 
     public FileDownloader(ConnectionPool connectionPool) {
-        this(connectionPool, defaultDownloadDirectory );
+        this(connectionPool, defaultDownloadDirectory, new Downloads());
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory) {
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads) {
         // TODO: Reduce timeout even more, timeout is so long that we might get starvation
-        this(connectionPool, downloadDirectory, downloadDirectory, Duration.ofMinutes(5), Duration.ofSeconds(10));
+        this(connectionPool, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads,
+                          Duration timeout, Duration sleepBetweenRetries) {
+        this.connectionPool = connectionPool;
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout, sleepBetweenRetries);
+        // Needed to receive RPC calls receiveFile* from server after asking for files
+        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory);
+        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
+        this.downloads = downloads;
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -74,39 +81,39 @@ public class FileDownloader implements AutoCloseable {
                 : download(fileReferenceDownload);
     }
 
-    double downloadStatus(FileReference fileReference) {
-        return fileReferenceDownloader.downloadStatus(fileReference.value());
-    }
+    public Map<FileReference, Double> downloadStatus() { return downloads.downloadStatus(); }
 
-    public Map<FileReference, Double> downloadStatus() {
-        return fileReferenceDownloader.downloadStatus();
-    }
+    public ConnectionPool connectionPool() { return connectionPool; }
 
     File downloadDirectory() {
         return downloadDirectory;
     }
 
-    // Files are moved atomically, so if file reference exists and is accessible we can use it
     private Optional<File> getFileFromFileSystem(FileReference fileReference) {
         File[] files = new File(downloadDirectory, fileReference.value()).listFiles();
-        if (downloadDirectory.exists() && downloadDirectory.isDirectory() && files != null && files.length > 0) {
-            File file = files[0];
-            if (!file.exists()) {
-                throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
-            } else if (!file.canRead()) {
-                throw new RuntimeException("File reference '" + fileReference.value() + "'exists, but unable to read it");
-            } else {
-                log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
-                fileReferenceDownloader.setDownloadStatus(fileReference, 1.0);
-                return Optional.of(file);
-            }
+        if (files == null) return Optional.empty();
+        if (files.length == 0) return Optional.empty();
+        if (files.length > 1) throw new RuntimeException("More than one file reference found for " + fileReference);
+
+        File file = files[0];
+        if (!file.exists()) {
+            throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
+        } else if (!file.canRead()) {
+            throw new RuntimeException("File reference '" + fileReference.value() + "' exists, but unable to read it");
+        } else {
+            log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
+            downloads.setDownloadStatus(fileReference, 1.0);
+            return Optional.of(file);
         }
-        return Optional.empty();
     }
 
-    private boolean alreadyDownloaded(FileReference fileReference) {
+    boolean isDownloading(FileReference fileReference) {
+        return downloads.get(fileReference).isPresent();
+    }
+
+    private boolean alreadyDownloaded(FileReferenceDownload fileReferenceDownload) {
         try {
-            return (getFileFromFileSystem(fileReference).isPresent());
+            return getFileFromFileSystem(fileReferenceDownload.fileReference()).isPresent();
         } catch (RuntimeException e) {
             return false;
         }
@@ -114,8 +121,7 @@ public class FileDownloader implements AutoCloseable {
 
     /** Start a download, don't wait for result */
     public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        FileReference fileReference = fileReferenceDownload.fileReference();
-        if (alreadyDownloaded(fileReference)) return;
+        if (alreadyDownloaded(fileReferenceDownload)) return;
 
         download(fileReferenceDownload);
     }
@@ -125,11 +131,8 @@ public class FileDownloader implements AutoCloseable {
         return fileReferenceDownloader.download(fileReferenceDownload);
     }
 
-    public FileReferenceDownloader fileReferenceDownloader() {
-        return fileReferenceDownloader;
-    }
-
     public void close() {
         fileReferenceDownloader.close();
     }
+
 }

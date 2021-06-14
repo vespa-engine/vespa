@@ -1,5 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -42,17 +41,17 @@ public class FileDownloaderTest {
     private static final Duration sleepBetweenRetries = Duration.ofMillis(10);
 
     private MockConnection connection;
+    private Downloads downloads;
     private FileDownloader fileDownloader;
     private File downloadDir;
-    private File tempDir;
 
     @Before
     public void setup() {
         try {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
-            tempDir = Files.createTempDirectory("download").toFile();
             connection = new MockConnection();
-            fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(1), sleepBetweenRetries);
+            downloads = new Downloads();
+            fileDownloader = new FileDownloader(connection, downloadDir, downloads, Duration.ofSeconds(1), sleepBetweenRetries);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -85,7 +84,7 @@ public class FileDownloaderTest {
             assertEquals("content", IOUtils.readFile(pathToFile.get()));
 
             // Verify download status when downloaded
-            assertDownloadStatus(fileDownloader, fileReference, 1.0);
+            assertDownloadStatus(fileReference, 1.0);
         }
 
         {
@@ -98,7 +97,7 @@ public class FileDownloaderTest {
             assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
             // Verify download status when unable to download
-            assertDownloadStatus(fileDownloader, fileReference, 0.0);
+            assertDownloadStatus(fileReference, 0.0);
         }
 
         {
@@ -109,7 +108,7 @@ public class FileDownloaderTest {
             assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
             // Verify download status
-            assertDownloadStatus(fileDownloader, fileReference, 0.0);
+            assertDownloadStatus(fileReference, 0.0);
 
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.jar";
@@ -122,7 +121,7 @@ public class FileDownloaderTest {
             assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
 
             // Verify download status when downloaded
-            assertDownloadStatus(fileDownloader, fileReference, 1.0);
+            assertDownloadStatus(fileReference, 1.0);
         }
 
         {
@@ -133,7 +132,7 @@ public class FileDownloaderTest {
             assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
             // Verify download status
-            assertDownloadStatus(fileDownloader, fileReference, 0.0);
+            assertDownloadStatus(fileReference, 0.0);
 
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.tar.gz";
@@ -157,13 +156,13 @@ public class FileDownloaderTest {
             assertEquals("bar", IOUtils.readFile(downloadedBar));
 
             // Verify download status when downloaded
-            assertDownloadStatus(fileDownloader, fileReference, 1.0);
+            assertDownloadStatus(fileReference, 1.0);
         }
     }
 
     @Test
     public void getFileWhenConnectionError() throws IOException {
-        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(2), sleepBetweenRetries);
+        fileDownloader = new FileDownloader(connection, downloadDir, downloads, Duration.ofSeconds(2), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         int timesToFail = 2;
@@ -175,8 +174,8 @@ public class FileDownloaderTest {
         assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
         // Getting file failed, verify download status and since there was an error is not downloading ATM
-        assertDownloadStatus(fileDownloader, fileReference, 0.0);
-        assertFalse(fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
+        assertDownloadStatus(fileReference, 0.0);
+        assertFalse(fileDownloader.isDownloading(fileReference));
 
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
@@ -188,7 +187,7 @@ public class FileDownloaderTest {
         assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
 
         // Verify download status when downloaded
-        assertDownloadStatus(fileDownloader, fileReference, 1.0);
+        assertDownloadStatus(fileReference, 1.0);
 
         assertEquals(timesToFail, responseHandler.failedTimes);
     }
@@ -197,7 +196,7 @@ public class FileDownloaderTest {
     public void getFileWhenDownloadInProgress() throws IOException, ExecutionException, InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         String filename = "abc.jar";
-        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, Duration.ofSeconds(3), sleepBetweenRetries);
+        fileDownloader = new FileDownloader(connection, downloadDir, downloads, Duration.ofSeconds(3), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         // Delay response so that we can make a second request while downloading the file from the first request
@@ -210,8 +209,8 @@ public class FileDownloaderTest {
         Future<Future<Optional<File>>> future1 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
         do {
             Thread.sleep(10);
-        } while (! fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
-        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
+        } while (! fileDownloader.isDownloading(fileReference));
+        assertTrue(fileDownloader.isDownloading(fileReference));
 
         // Request file while download is in progress
         Future<Future<Optional<File>>> future2 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
@@ -237,11 +236,11 @@ public class FileDownloaderTest {
         Duration timeout = Duration.ofMillis(200);
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
-        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, timeout, sleepBetweenRetries);
+        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, downloads, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
         // Should download since we do not have the file on disk
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
-        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(foo));
+        assertTrue(fileDownloader.isDownloading(foo));
         assertFalse(fileDownloader.getFile(foo).isPresent());
         // Receive files to simulate download
         receiveFile();
@@ -271,8 +270,8 @@ public class FileDownloaderTest {
         return new File(dir, fileReference.value());
     }
 
-    private void assertDownloadStatus(FileDownloader fileDownloader, FileReference fileReference, double expectedDownloadStatus) {
-        double downloadStatus = fileDownloader.downloadStatus(fileReference);
+    private void assertDownloadStatus(FileReference fileReference, double expectedDownloadStatus) {
+        double downloadStatus = downloads.downloadStatus(fileReference);
         assertEquals(expectedDownloadStatus, downloadStatus, 0.0001);
     }
 
@@ -285,10 +284,10 @@ public class FileDownloaderTest {
                              FileReferenceData.Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         FileReceiver.Session session =
-                new FileReceiver.Session(downloadDir, tempDir, 1, fileReference, type, filename, content.length);
+                new FileReceiver.Session(downloadDir, 1, fileReference, type, filename, content.length);
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
-        fileDownloader.fileReferenceDownloader().completedDownloading(fileReference, file);
+        downloads.completedDownloading(fileReference, file);
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {
