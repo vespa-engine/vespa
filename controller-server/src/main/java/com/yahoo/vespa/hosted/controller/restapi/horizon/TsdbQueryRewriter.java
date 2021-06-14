@@ -39,14 +39,16 @@ public class TsdbQueryRewriter {
 
         JsonNode root = mapper.readTree(data);
         getField(root, "executionGraph", ArrayNode.class)
-                .ifPresent(graph -> rewriteExecutionGraph(graph, authorizedTenants, operator, systemName));
+                .ifPresent(graph -> rewriteQueryGraph(graph, authorizedTenants, operator, systemName));
         getField(root, "filters", ArrayNode.class)
                 .ifPresent(filters -> rewriteFilters(filters, authorizedTenants, operator, systemName));
+        getField(root, "queries", ArrayNode.class)
+                .ifPresent(graph -> rewriteQueryGraph(graph, authorizedTenants, operator, systemName));
 
         return mapper.writeValueAsBytes(root);
     }
 
-    private static void rewriteExecutionGraph(ArrayNode executionGraph, Set<TenantName> tenantNames, boolean operator, SystemName systemName) {
+    private static void rewriteQueryGraph(ArrayNode executionGraph, Set<TenantName> tenantNames, boolean operator, SystemName systemName) {
         for (int i = 0; i < executionGraph.size(); i++) {
             JsonNode execution = executionGraph.get(i);
 
@@ -66,7 +68,7 @@ public class TsdbQueryRewriter {
         ObjectNode prev = ((ObjectNode) parent.get("filter"));
         ArrayNode filters;
         // If we dont already have a filter object, or the object that we have is not an AND filter
-        if (prev == null || !"Chain".equals(prev.get("type").asText()) || !"AND".equals(prev.get("op").asText())) {
+        if (prev == null || !"Chain".equals(prev.get("type").asText()) || prev.get("op") != null && !"AND".equals(prev.get("op").asText())) {
             // Create new filter object
             filters = parent.putObject("filter")
                     .put("type", "Chain")
@@ -88,7 +90,7 @@ public class TsdbQueryRewriter {
             ObjectNode appFilter = filters.addObject();
             appFilter.put("type", "TagValueRegex");
             appFilter.put("filter",
-                    tenantNames.stream().map(TenantName::value).sorted().collect(Collectors.joining("|", "(", ")\\..*")));
+                    tenantNames.stream().map(TenantName::value).sorted().collect(Collectors.joining("|", "^(", ")\\..*")));
             appFilter.put("tagKey", "applicationId");
         }
     }

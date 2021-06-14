@@ -22,4 +22,6 @@ public interface HorizonClient {
 
     InputStream getClipboard(String dashboardId);
 
+    InputStream getMetaData(byte[] query);
+
 }

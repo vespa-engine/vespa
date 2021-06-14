@@ -35,6 +35,10 @@ public class TsdbQueryRewriterTest {
         assertRewrite("no-filters.json",
                 "no-filters.expected.json",
                 Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
+
+        assertRewrite("filters-meta-query.json",
+                "filters-meta-query.expected.json",
+                Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
     }
 
     @Test(expected = TsdbQueryRewriter.UnauthorizedException.class)

@@ -16,7 +16,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -68,8 +67,8 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request);
-        if (path.matches("/horizon/v1/meta/search/timeseries")) assert true; // TODO
+        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request, true);
+        if (path.matches("/horizon/v1/meta/search/timeseries")) return tsdbQuery(request, false);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -79,11 +78,11 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse tsdbQuery(HttpRequest request) {
+    private HttpResponse tsdbQuery(HttpRequest request, boolean isMetricQuery) {
         SecurityContext securityContext = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class);
         try {
             byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), securityContext.roles(), systemName);
-            return new JsonInputStreamResponse(() -> client.getMetrics(data));
+            return new JsonInputStreamResponse(() -> isMetricQuery ? client.getMetrics(data) : client.getMetaData(data));
         } catch (TsdbQueryRewriter.UnauthorizedException e) {
             return ErrorResponse.forbidden("Access denied");
         } catch (IOException e) {

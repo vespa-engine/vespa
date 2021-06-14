@@ -35,7 +35,7 @@
      },
      {
       "type": "TagValueRegex",
-      "filter": "(tenant2)\\..*",
+      "filter": "^(tenant2)\\..*",
       "tagKey": "applicationId"
      }
     ]
