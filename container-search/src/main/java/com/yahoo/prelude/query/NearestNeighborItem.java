@@ -2,7 +2,6 @@
 
 package com.yahoo.prelude.query;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
@@ -17,7 +16,6 @@ import java.nio.ByteBuffer;
  *
  * @author arnej
  */
-@Beta
 public class NearestNeighborItem extends SimpleTaggableItem {
 
     private int targetNumHits = 0;
