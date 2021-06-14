@@ -24,8 +24,8 @@ public class OsUpgradeSchedulerTest {
     public void maintain() {
         ControllerTester tester = new ControllerTester();
         OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
-        Instant initialTime = Instant.parse("2021-01-23T00:00:00.00Z");
-        tester.clock().setInstant(initialTime);
+        Instant t0 = Instant.parse("2021-01-23T00:00:00.00Z"); // Outside trigger period
+        tester.clock().setInstant(t0);
 
         CloudName cloud = CloudName.from("cloud");
         ZoneApi zone = zone("prod.us-west-1", cloud);
@@ -50,7 +50,12 @@ public class OsUpgradeSchedulerTest {
         Version version1 = Version.fromString("7.0.0.20210302");
         tester.clock().advance(Duration.ofDays(15).plus(Duration.ofSeconds(1)));
         scheduler.maintain();
-        assertEquals("New target set", version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        assertEquals("Target is unchanged because we're outside trigger period", version0,
+                     tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        tester.clock().advance(Duration.ofHours(7)); // Put us inside the trigger period
+        scheduler.maintain();
+        assertEquals("New target set", version1,
+                     tester.controller().osVersionTarget(cloud).get().osVersion().version());
 
         // A few days pass and target remains unchanged
         tester.clock().advance(Duration.ofDays(2));

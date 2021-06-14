@@ -43,8 +43,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
+        Instant now = controller().clock().instant();
+        if (!canTriggerAt(now)) return 1.0;
         for (var cloud : supportedClouds()) {
-            Optional<Version> newTarget = newTargetIn(cloud);
+            Optional<Version> newTarget = newTargetIn(cloud, now);
             if (newTarget.isEmpty()) continue;
             controller().upgradeOsIn(cloud, newTarget.get(), upgradeBudget(), false);
         }
@@ -52,14 +54,12 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** Returns the new target version for given cloud, if any */
-    private Optional<Version> newTargetIn(CloudName cloud) {
+    private Optional<Version> newTargetIn(CloudName cloud, Instant now) {
         Optional<Version> currentTarget = controller().osVersionTarget(cloud)
                                                       .map(OsVersionTarget::osVersion)
                                                       .map(OsVersion::version);
         if (currentTarget.isEmpty()) return Optional.empty();
         if (!hasExpired(currentTarget.get())) return Optional.empty();
-
-        Instant now = controller().clock().instant();
         String qualifier = LocalDate.ofInstant(now.minus(AVAILABILITY_INTERVAL), ZoneOffset.UTC)
                                     .format(VERSION_DATE_PATTERN);
         return Optional.of(new Version(currentTarget.get().getMajor(),
@@ -86,6 +86,14 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         return controller().zoneRegistry().zones().reprovisionToUpgradeOs().zones().stream()
                            .map(ZoneApi::getCloudName)
                            .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private boolean canTriggerAt(Instant instant) {
+        int hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
+        int dayOfWeek = instant.atZone(ZoneOffset.UTC).getDayOfWeek().getValue();
+        // Upgrade can only be scheduled between 07:00 and 12:59 UTC, Monday-Thursday
+        return hourOfDay >= 7 && hourOfDay <= 12 &&
+               dayOfWeek < 5;
     }
 
     private Duration upgradeBudget() {
