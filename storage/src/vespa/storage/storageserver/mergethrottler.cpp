@@ -416,8 +416,8 @@ MergeThrottler::enqueueMerge(
     if (!validateNewMerge(mergeCmd, nodeSeq, msgGuard)) {
         return;
     }
-    _metrics->queueSize.set(_queue.size());
     _queue.insert(MergePriorityQueue::value_type(msg, _queueSequence++));
+    _metrics->queueSize.set(_queue.size());
 }
 
 bool

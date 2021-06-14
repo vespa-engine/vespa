@@ -1220,6 +1220,7 @@ TEST_F(MergeThrottlerTest, unknown_merge_with_self_in_chain) {
 TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
     size_t maxPending = _throttlers[0]->getThrottlePolicy().getMaxPendingCount();
     size_t maxQueue = _throttlers[0]->getMaxQueueSize();
+    ASSERT_EQ(20, maxQueue);
     ASSERT_LT(maxPending, 100);
     for (std::size_t i = 0; i < maxPending + maxQueue; ++i) {
         std::vector<MergeBucketCommand::Node> nodes;
@@ -1233,8 +1234,8 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue) {
 
     // Wait till we have maxPending replies and maxQueue queued
     _topLinks[0]->waitForMessages(maxPending, _messageWaitTime);
-    EXPECT_EQ(19, _throttlers[0]->getMetrics().queueSize.getMaximum());
     waitUntilMergeQueueIs(*_throttlers[0], maxQueue, _messageWaitTime);
+    EXPECT_EQ(maxQueue, _throttlers[0]->getMetrics().queueSize.getMaximum());
 
     // Clear all forwarded merges
     _topLinks[0]->getRepliesOnce();
