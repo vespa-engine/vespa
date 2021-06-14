@@ -40,14 +40,14 @@ public class BenchmarkingCluster implements Cluster {
     @Override
     public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         requests.incrementAndGet();
-        long startMillis = System.currentTimeMillis();
+        long startNanos = System.nanoTime();
         delegate.dispatch(request, vessel);
         vessel.whenCompleteAsync((response, thrown) -> {
                                      results++;
                                      if (thrown == null) {
                                          responses++;
                                          responsesByCode[response.code()]++;
-                                         long latency = System.currentTimeMillis() - startMillis;
+                                         long latency = (System.nanoTime() - startNanos) / 1_000_000;
                                          totalLatencyMillis += latency;
                                          minLatencyMillis = Math.min(minLatencyMillis, latency);
                                          maxLatencyMillis = Math.max(maxLatencyMillis, latency);
