@@ -286,7 +286,7 @@ public class DynamicDockerProvisionTest {
         }
 
         // Initial deployment
-        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 0.5, 5, 20),
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 1, 5, 20),
                                                       resources(6, 3, 4, 20, 40)));
         tester.assertNodes("Initial allocation at first actual flavor above min (except for disk)",
                            4, 2, 1, 10, 20,
@@ -316,7 +316,7 @@ public class DynamicDockerProvisionTest {
 
         // Force 1 more groups: Reducing to 2 nodes per group to preserve node count is rejected
         //                      since it will reduce total group memory from 60 to 40.
-        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 0.5,  5,  10),
+        tester.activate(app1, cluster1, Capacity.from(resources(6, 3, 1,  5,  10),
                                                       resources(9, 3,   5, 20, 15)));
         tester.assertNodes("Group size is preserved",
                            9, 3, 2, 20, 15,

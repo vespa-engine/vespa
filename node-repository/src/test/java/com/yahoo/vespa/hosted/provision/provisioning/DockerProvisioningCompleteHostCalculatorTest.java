@@ -26,7 +26,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
 
     @Test
     public void changing_to_different_range_preserves_allocation() {
-        Flavor hostFlavor = new Flavor(new NodeResources(20, 40, 1000, 4));
+        Flavor hostFlavor = new Flavor(new NodeResources(40, 40, 1000, 4));
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
                                                                     .resourcesCalculator(new CompleteResourcesCalculator(hostFlavor))
                                                                     .flavors(List.of(hostFlavor))
@@ -36,25 +36,25 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         ApplicationId app1 = ProvisioningTester.applicationId("app1");
         ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.content, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
 
-        var initialResources = new NodeResources(2, 16, 50, 1);
+        var initialResources = new NodeResources(20, 16, 50, 1);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, initialResources),
                                                       new ClusterResources(2, 1, initialResources)));
         tester.assertNodes("Initial allocation",
-                           2, 1, 2, 16, 50, 1.0,
+                           2, 1, 20, 16, 50, 1.0,
                            app1, cluster1);
 
-        var newMinResources = new NodeResources(0.5,  4, 11, 1);
-        var newMaxResources = new NodeResources(2.0, 10, 30, 1);
+        var newMinResources = new NodeResources( 5,  4, 11, 1);
+        var newMaxResources = new NodeResources(20, 10, 30, 1);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("New allocation preserves total resources",
-                           7, 1, 0.7, 4.6, 14.3, 1.0,
+                           7, 1, 7, 4.6, 14.3, 1.0,
                            app1, cluster1);
 
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(7, 1, newMinResources),
                                                       new ClusterResources(7, 1, newMaxResources)));
         tester.assertNodes("Redeploying the same ranges does not cause changes",
-                           7, 1, 0.7, 4.6, 14.3, 1.0,
+                           7, 1, 7, 4.6, 14.3, 1.0,
                            app1, cluster1);
     }
 

@@ -64,6 +64,7 @@ public class NodeResourceLimits {
 
     private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
         if (zone().environment() == Environment.dev && !zone().getCloud().dynamicProvisioning()) return 0.1;
+        if (clusterType.isContent() && zone().environment().isProduction()) return 1.0;
         if (clusterType == ClusterSpec.Type.admin) return 0.1;
         return 0.5;
     }
