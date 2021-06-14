@@ -6,7 +6,7 @@
 #include <vespa/log/log.h>
 #include <chrono>
 
-LOG_SETUP(".report-connectivity");
+LOG_SETUP(".sentinel.report-connectivity");
 
 using cloud::config::ModelConfig;
 using namespace std::chrono_literals;

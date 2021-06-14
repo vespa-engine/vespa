@@ -6,7 +6,7 @@
 #include <string>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".config-owner");
+LOG_SETUP(".sentinel.config-owner");
 
 namespace config::sentinel {
 

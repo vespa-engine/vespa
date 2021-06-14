@@ -3,7 +3,7 @@
 #include "outward-check.h"
 #include <vespa/log/log.h>
 
-LOG_SETUP(".outward-check");
+LOG_SETUP(".sentinel.outward-check");
 
 namespace config::sentinel {
 

@@ -10,7 +10,7 @@
 #include <thread>
 #include <chrono>
 
-LOG_SETUP(".connectivity");
+LOG_SETUP(".sentinel.connectivity");
 
 using vespalib::make_string_short::fmt;
 using namespace std::chrono_literals;
