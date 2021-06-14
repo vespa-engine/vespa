@@ -44,6 +44,7 @@ public class FeedClientBuilder {
     Collection<X509Certificate> certificate;
     PrivateKey privateKey;
     Collection<X509Certificate> caCertificates;
+    boolean benchmark;
 
     /** Creates a builder for a single container endpoint **/
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
@@ -97,6 +98,12 @@ public class FeedClientBuilder {
     /** Sets {@link HostnameVerifier} instance (e.g for disabling default SSL hostname verification). */
     public FeedClientBuilder setHostnameVerifier(HostnameVerifier verifier) {
         this.hostnameVerifier = requireNonNull(verifier);
+        return this;
+    }
+
+    /** Turns on/off benchmarking, aggregated in {@link FeedClient#stats()}. */
+    public FeedClientBuilder setBenchmarkOn(boolean on) {
+        this.benchmark = on;
         return this;
     }
 
