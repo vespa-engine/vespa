@@ -28,7 +28,8 @@ class JettyCluster implements Cluster {
 
     JettyCluster(FeedClientBuilder builder) {
         for (URI endpoint : builder.endpoints)
-            endpoints.add(new Endpoint(createJettyHttpClient(builder), endpoint));
+            for (int i = 0; i < builder.connectionsPerEndpoint; i++)
+                endpoints.add(new Endpoint(createJettyHttpClient(builder), endpoint));
     }
 
     private static HttpClient createJettyHttpClient(FeedClientBuilder builder) {
@@ -38,17 +39,13 @@ class JettyCluster implements Cluster {
             clientSslCtxFactory.setHostnameVerifier(builder.hostnameVerifier);
 
             HTTP2Client wrapped = new HTTP2Client();
-            wrapped.setSelectors(8);
             wrapped.setMaxConcurrentPushedStreams(builder.maxStreamsPerConnection);
             HttpClientTransport transport = new HttpClientTransportOverHTTP2(wrapped);
             HttpClient client = new HttpClient(transport, clientSslCtxFactory);
             client.setUserAgentField(new HttpField("User-Agent", String.format("vespa-feed-client/%s", Vespa.VERSION)));
-            client.setDefaultRequestContentType("application/json");
             client.setFollowRedirects(false);
-            client.setMaxRequestsQueuedPerDestination(builder.connectionsPerEndpoint * builder.maxStreamsPerConnection);
-            client.setIdleTimeout(10000);
-            client.setMaxConnectionsPerDestination(builder.connectionsPerEndpoint);
-            client.setRequestBufferSize(1 << 16);
+            client.setMaxRequestsQueuedPerDestination(builder.maxStreamsPerConnection);
+            client.setMaxConnectionsPerDestination(1);
 
             client.start();
             return client;
@@ -120,4 +117,5 @@ class JettyCluster implements Cluster {
         }
 
     }
+
 }
