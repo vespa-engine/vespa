@@ -1,12 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.horizon;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * @author valerijf
  */
-public class HorizonResponse {
+public class HorizonResponse implements AutoCloseable {
 
     private final int code;
     private final InputStream inputStream;
@@ -26,5 +27,10 @@ public class HorizonResponse {
 
     public static HorizonResponse empty() {
         return new HorizonResponse(200, InputStream.nullInputStream());
+    }
+
+    @Override
+    public void close() throws IOException {
+        inputStream.close();
     }
 }
