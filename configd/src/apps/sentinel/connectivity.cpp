@@ -69,15 +69,16 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
     if ((failedConnSpecs.size() == 0) || (goodNeighborSpecs.size() == 0)) {
         return;
     }
-    for (const auto & [ nameToCheck, portToCheck ] : failedConnSpecs) {
+    for (const auto & toClassify : failedConnSpecs) {
+        const auto & [ nameToCheck, portToCheck ] = toClassify;
         auto cmIter = connectivityMap.find(nameToCheck);
         LOG_ASSERT(cmIter != connectivityMap.end());
-        OutwardCheckContext checkContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
+        OutwardCheckContext cornerContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
         ConnectivityMap cornerProbes;
         for (const auto & hp : goodNeighborSpecs) {
-            cornerProbes.try_emplace(hp.first, spec(hp), checkContext);
+            cornerProbes.try_emplace(hp.first, spec(hp), cornerContext);
         }
-        checkContext.latch.await();
+        cornerContext.latch.await();
         size_t numReportsUp = 0;
         size_t numReportsDown = 0;
         for (const auto & [hostname, probe] : cornerProbes) {
@@ -87,7 +88,20 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
         if (numReportsUp > 0) {
             LOG(debug, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
                 nameToCheck.c_str(), numReportsUp, numReportsDown);
-            cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
+            OutwardCheckContext reverseContext(1,
+                                               myHostname,
+                                               rpcServer.getPort(),
+                                               rpcServer.orb());
+            OutwardCheck check(spec(toClassify), reverseContext);
+            reverseContext.latch.await();
+            auto secondResult = check.result();
+            if (secondResult == CcResult::CONN_FAIL) {
+                cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
+            } else {
+                LOG(debug, "Recheck %s gives new result: %s",
+                    nameToCheck.c_str(), toString(secondResult).c_str());
+                cmIter->second.classifyResult(secondResult);
+            }
         }
     }
 }
