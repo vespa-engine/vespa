@@ -111,13 +111,15 @@ public class Content extends ConfigModel {
         return null;
     }
 
-    private static void checkThatExplicitIndexingChainInheritsCorrectly(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
+    private static void checkThatExplicitIndexingChainInheritsCorrectly(ComponentRegistry<DocprocChain> allChains,
+                                                                        ChainSpecification chainSpec) {
         ChainSpecification.Inheritance inheritance = chainSpec.inheritance;
         for (ComponentSpecification componentSpec : inheritance.chainSpecifications) {
             ChainSpecification parentSpec = getChainSpec(allChains, componentSpec);
             if (containsIndexingChain(allChains, parentSpec)) return;
         }
-        throw new IllegalArgumentException("Docproc chain '" + chainSpec.componentId + "' does not inherit from 'indexing' chain.");
+        throw new IllegalArgumentException("Docproc chain '" + chainSpec.componentId +
+                                           "' must inherit from the 'indexing' chain");
     }
 
     public static List<Content> getContent(ConfigModelRepo pc) {
@@ -261,9 +263,17 @@ public class Content extends ConfigModel {
             if (cluster.hasExplicitIndexingChain()) {
                 indexingChain = allChains.getComponent(cluster.getIndexingChainName());
                 if (indexingChain == null) {
-                    throw new RuntimeException("Indexing cluster " + cluster.getClusterName() + " refers to docproc " +
-                                               "chain " + cluster.getIndexingChainName() + " for indexing, which does not exist.");
-                } else {
+                    throw new IllegalArgumentException(cluster + " refers to docproc " +
+                                                       "chain '" + cluster.getIndexingChainName() +
+                                                       "' for indexing, but this chain does not exist");
+                }
+                else if (indexingChain.getId().getName().equals("default")) {
+                    throw new IllegalArgumentException(cluster + " specifies the chain " +
+                                                       "'default' as indexing chain. As the 'default' chain is run by default, " +
+                                                       "using it as the indexing chain will run it twice. " +
+                                                       "Use a different name for the indexing chain.");
+                }
+                else {
                     checkThatExplicitIndexingChainInheritsCorrectly(allChains, indexingChain.getChainSpecification());
                 }
             } else {
