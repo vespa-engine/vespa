@@ -68,7 +68,7 @@ public class TsdbQueryRewriter {
         ObjectNode prev = ((ObjectNode) parent.get("filter"));
         ArrayNode filters;
         // If we dont already have a filter object, or the object that we have is not an AND filter
-        if (prev == null || !"Chain".equals(prev.get("type").asText()) || prev.get("op") == null || !"AND".equals(prev.get("op").asText())) {
+        if (prev == null || !"Chain".equals(prev.get("type").asText()) || prev.get("op") != null && !"AND".equals(prev.get("op").asText())) {
             // Create new filter object
             filters = parent.putObject("filter")
                     .put("type", "Chain")

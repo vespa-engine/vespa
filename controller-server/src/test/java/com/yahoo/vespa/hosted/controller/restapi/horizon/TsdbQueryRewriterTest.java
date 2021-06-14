@@ -36,8 +36,8 @@ public class TsdbQueryRewriterTest {
                 "no-filters.expected.json",
                 Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
 
-        assertRewrite("meta-query.json",
-                "filters-meta-query.json",
+        assertRewrite("filters-meta-query.json",
+                "filters-meta-query.expected.json",
                 Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
     }
 
