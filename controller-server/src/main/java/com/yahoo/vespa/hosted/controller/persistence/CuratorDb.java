@@ -632,7 +632,7 @@ public class CuratorDb {
 
     /** Take lock before reading before writing */
     public void writeSupportAccess(DeploymentId deploymentId, SupportAccess supportAccess) {
-        curator.set(supportAccessPath(deploymentId), asJson(SupportAccessSerializer.toSlime(supportAccess, true, Optional.empty())));
+        curator.set(supportAccessPath(deploymentId), asJson(SupportAccessSerializer.toSlime(supportAccess)));
     }
 
     // -------------- Paths ---------------------------------------------------

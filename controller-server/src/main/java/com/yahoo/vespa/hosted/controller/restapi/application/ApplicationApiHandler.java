@@ -31,7 +31,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
-import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonParseException;
@@ -123,7 +122,6 @@ import java.net.URISyntaxException;
 import java.security.DigestInputStream;
 import java.security.Principal;
 import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
@@ -982,7 +980,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse supportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, Map<String, String> queryParameters) {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         SupportAccess supportAccess = controller.supportAccess().forDeployment(deployment);
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(supportAccess, false, Optional.of(controller.clock().instant())));
+        return new SlimeJsonResponse(SupportAccessSerializer.serializeCurrentState(supportAccess, controller.clock().instant()));
     }
 
     // TODO support access: only let tenants (not operators!) allow access
@@ -992,14 +990,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Principal principal = requireUserPrincipal(request);
         Instant now = controller.clock().instant();
         SupportAccess allowed = controller.supportAccess().allow(deployment, now.plus(7, ChronoUnit.DAYS), principal.getName());
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(allowed, false, Optional.of(now)));
+        return new SlimeJsonResponse(SupportAccessSerializer.serializeCurrentState(allowed, now));
     }
 
     private HttpResponse disallowSupportAccess(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
         SupportAccess disallowed = controller.supportAccess().disallow(deployment, principal.getName());
-        return new SlimeJsonResponse(SupportAccessSerializer.toSlime(disallowed, false, Optional.of(controller.clock().instant())));
+        return new SlimeJsonResponse(SupportAccessSerializer.serializeCurrentState(disallowed, controller.clock().instant()));
     }
 
     private HttpResponse metrics(String tenantName, String applicationName, String instanceName, String environment, String region) {

@@ -45,33 +45,65 @@ public class SupportAccessSerializer {
     private static final String certificateFieldName = "certificate";
 
 
-    public static Slime toSlime(SupportAccess supportAccess, boolean includeCertificates, Optional<Instant> withCurrentState) {
+    public static Slime toSlime(SupportAccess supportAccess) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        withCurrentState.ifPresent(now -> {
-                    Cursor status = root.setObject(stateFieldName);
-                    SupportAccess.CurrentStatus currentState = supportAccess.currentStatus(now);
-                    status.setString(supportAccessFieldName, currentState.state().name());
-                    if (currentState.state() == SupportAccess.State.ALLOWED) {
-                        status.setString(untilFieldName, serializeInstant(currentState.allowedUntil().orElseThrow()));
-                        status.setString(byFieldName, currentState.allowedBy().orElseThrow());
-                    }
-                }
-        );
+        serializeHistoricEvents(root, supportAccess.changeHistory(), List.of());
+        serializeGrants(root, supportAccess.grantHistory(), true);
 
-        Cursor history = root.setArray(historyFieldName);
-        for (SupportAccessChange change : supportAccess.changeHistory()) {
-            Cursor historyObject = history.addObject();
+        return slime;
+    }
+
+    public static Slime serializeCurrentState(SupportAccess supportAccess, Instant currentTime) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+
+        Cursor status = root.setObject(stateFieldName);
+        SupportAccess.CurrentStatus currentState = supportAccess.currentStatus(currentTime);
+        status.setString(supportAccessFieldName, currentState.state().name());
+        if (currentState.state() == SupportAccess.State.ALLOWED) {
+            status.setString(untilFieldName, serializeInstant(currentState.allowedUntil().orElseThrow()));
+            status.setString(byFieldName, currentState.allowedBy().orElseThrow());
+        }
+
+        List<SupportAccessGrant> inactiveGrants = supportAccess.grantHistory().stream()
+                .filter(grant -> currentTime.isAfter(grant.certificate().getNotAfter().toInstant()))
+                .collect(Collectors.toList());
+
+        serializeHistoricEvents(root, supportAccess.changeHistory(), inactiveGrants);
+
+        // Active grants should show up in the grant section
+        List<SupportAccessGrant> activeGrants = supportAccess.grantHistory().stream()
+                .filter(grant -> currentTime.isBefore(grant.certificate().getNotAfter().toInstant()))
+                .collect(Collectors.toList());
+        serializeGrants(root, activeGrants, false);
+        return slime;
+    }
+
+    private static void serializeHistoricEvents(Cursor root, List<SupportAccessChange> changeEvents, List<SupportAccessGrant> historicGrants) {
+        Cursor historyRoot = root.setArray(historyFieldName);
+        for (SupportAccessChange change : changeEvents) {
+            Cursor historyObject = historyRoot.addObject();
             historyObject.setString(stateFieldName, change.accessAllowedUntil().isPresent() ? allowedStateName : disallowedStateName);
             historyObject.setString(atFieldName, serializeInstant(change.changeTime()));
             change.accessAllowedUntil().ifPresent(allowedUntil -> historyObject.setString(untilFieldName, serializeInstant(allowedUntil)));
             historyObject.setString(byFieldName, change.madeBy());
         }
 
-        Cursor grants = root.setArray(grantFieldName);
-        for (SupportAccessGrant grant : supportAccess.grantHistory()) {
-            Cursor grantObject = grants.addObject();
+        for (SupportAccessGrant grant : historicGrants) {
+            Cursor historyObject = historyRoot.addObject();
+            historyObject.setString(stateFieldName, "grant");
+            historyObject.setString(atFieldName, serializeInstant(grant.certificate().getNotBefore().toInstant()));
+            historyObject.setString(untilFieldName, serializeInstant(grant.certificate().getNotAfter().toInstant()));
+            historyObject.setString(byFieldName, grant.requestor());
+        }
+    }
+
+    private static void serializeGrants(Cursor root, List<SupportAccessGrant> grants, boolean includeCertificates) {
+        Cursor grantsRoot = root.setArray(grantFieldName);
+        for (SupportAccessGrant grant : grants) {
+            Cursor grantObject = grantsRoot.addObject();
             grantObject.setString(requestorFieldName, grant.requestor());
             if (includeCertificates) {
                 grantObject.setString(certificateFieldName, X509CertificateUtils.toPem(grant.certificate()));
@@ -80,7 +112,6 @@ public class SupportAccessSerializer {
             grantObject.setString(notAfterFieldName, serializeInstant(grant.certificate().getNotAfter().toInstant()));
         }
 
-        return slime;
     }
 
     private static String serializeInstant(Instant i) {

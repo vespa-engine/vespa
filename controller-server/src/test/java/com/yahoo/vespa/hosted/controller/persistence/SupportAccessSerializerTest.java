@@ -7,7 +7,7 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import org.intellij.lang.annotations.Language;
@@ -21,7 +21,6 @@ import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -80,7 +79,8 @@ public class SupportAccessSerializerTest {
 
     @Test
     public void serialize_default() {
-        assertSerialized(SupportAccess.DISALLOWED_NO_HISTORY, true, Instant.EPOCH, "{\n" +
+        var slime = SupportAccessSerializer.serializeCurrentState(SupportAccess.DISALLOWED_NO_HISTORY, Instant.EPOCH);
+        assertSerialized(slime, "{\n" +
                 " \"state\": {\n" +
                 "  \"supportAccess\": \"NOT_ALLOWED\"\n" +
                 " },\n" +
@@ -93,12 +93,14 @@ public class SupportAccessSerializerTest {
 
     @Test
     public void serialize_with_certificates() {
-        assertSerialized(supportAccessExample, true, null, expectedWithCertificates);
+        var slime = SupportAccessSerializer.toSlime(supportAccessExample);
+        assertSerialized(slime, expectedWithCertificates);
     }
 
     @Test
     public void serialize_with_status() {
-        assertSerialized(supportAccessExample, false, hour(32),
+        var slime = SupportAccessSerializer.serializeCurrentState(supportAccessExample, hour(12));
+        assertSerialized(slime,
                 "{\n" +
                         " \"state\": {\n" +
                         "  \"supportAccess\": \"ALLOWED\",\n" +
@@ -122,6 +124,12 @@ public class SupportAccessSerializerTest {
                         "   \"at\": \"1970-01-01T02:00:00Z\",\n" +
                         "   \"until\": \"1970-01-02T00:00:00Z\",\n" +
                         "   \"by\": \"andreer\"\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "   \"state\": \"grant\",\n" +
+                        "   \"at\": \"1970-01-01T03:00:00Z\",\n" +
+                        "   \"until\": \"1970-01-01T04:00:00Z\",\n" +
+                        "   \"by\": \"mortent\"\n" +
                         "  }\n" +
                         " ],\n" +
                         " \"grants\": [\n" +
@@ -129,28 +137,26 @@ public class SupportAccessSerializerTest {
                         "   \"requestor\": \"mortent\",\n" +
                         "   \"notBefore\": \"1970-01-01T07:00:00Z\",\n" +
                         "   \"notAfter\": \"1970-01-01T19:00:00Z\"\n" +
-                        "  },\n" +
-                        "  {\n" +
-                        "   \"requestor\": \"mortent\",\n" +
-                        "   \"notBefore\": \"1970-01-01T03:00:00Z\",\n" +
-                        "   \"notAfter\": \"1970-01-01T04:00:00Z\"\n" +
-                        "  }\n" +
+                        "  }" +
+                        "\n" +
                         " ]\n" +
                         "}\n");
     }
 
     @Test
     public void deserialize() {
-        assertEquals(supportAccessExample, SupportAccessSerializer.fromSlime(SlimeUtils.jsonToSlime(expectedWithCertificates)));
+        var slime = SupportAccessSerializer.toSlime(supportAccessExample);
+        assertSerialized(slime, expectedWithCertificates);
+
+        var deserialized = SupportAccessSerializer.fromSlime(slime);
+        assertEquals(supportAccessExample, deserialized);
     }
 
     private Instant hour(long h) {
         return Instant.EPOCH.plus(h, ChronoUnit.HOURS);
     }
 
-    private void assertSerialized(SupportAccess supportAccess, boolean includeCertificates, Instant now, String expected) {
-        var slime = SupportAccessSerializer.toSlime(supportAccess, includeCertificates, Optional.ofNullable(now));
-
+    private void assertSerialized(Slime slime, String expected) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new JsonFormat(false).encode(out, slime);
             assertEquals(expected, out.toString());
