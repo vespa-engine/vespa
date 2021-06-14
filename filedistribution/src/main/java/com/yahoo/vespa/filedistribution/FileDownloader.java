@@ -41,15 +41,15 @@ public class FileDownloader implements AutoCloseable {
 
     public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads) {
         // TODO: Reduce timeout even more, timeout is so long that we might get starvation
-        this(connectionPool, downloadDirectory, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
+        this(connectionPool, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Downloads downloads,
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads,
                           Duration timeout, Duration sleepBetweenRetries) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
         // Needed to receive RPC calls receiveFile* from server after asking for files
-        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory, tmpDirectory);
+        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
         this.downloads = downloads;
     }

@@ -44,17 +44,14 @@ public class FileDownloaderTest {
     private Downloads downloads;
     private FileDownloader fileDownloader;
     private File downloadDir;
-    private File tempDir;
 
     @Before
     public void setup() {
         try {
             downloadDir = Files.createTempDirectory("filedistribution").toFile();
-            tempDir = Files.createTempDirectory("download").toFile();
             connection = new MockConnection();
             downloads = new Downloads();
-            fileDownloader = new FileDownloader(connection, downloadDir, tempDir, downloads,
-                                                Duration.ofSeconds(1), sleepBetweenRetries);
+            fileDownloader = new FileDownloader(connection, downloadDir, downloads, Duration.ofSeconds(1), sleepBetweenRetries);
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -165,7 +162,7 @@ public class FileDownloaderTest {
 
     @Test
     public void getFileWhenConnectionError() throws IOException {
-        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, downloads, Duration.ofSeconds(2), sleepBetweenRetries);
+        fileDownloader = new FileDownloader(connection, downloadDir, downloads, Duration.ofSeconds(2), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         int timesToFail = 2;
@@ -199,7 +196,7 @@ public class FileDownloaderTest {
     public void getFileWhenDownloadInProgress() throws IOException, ExecutionException, InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         String filename = "abc.jar";
-        fileDownloader = new FileDownloader(connection, downloadDir, tempDir, downloads, Duration.ofSeconds(3), sleepBetweenRetries);
+        fileDownloader = new FileDownloader(connection, downloadDir, downloads, Duration.ofSeconds(3), sleepBetweenRetries);
         File downloadDir = fileDownloader.downloadDirectory();
 
         // Delay response so that we can make a second request while downloading the file from the first request
@@ -239,7 +236,7 @@ public class FileDownloaderTest {
         Duration timeout = Duration.ofMillis(200);
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
-        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, tempDir, downloads, timeout, sleepBetweenRetries);
+        FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, downloads, timeout, sleepBetweenRetries);
         FileReference foo = new FileReference("foo");
         // Should download since we do not have the file on disk
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
@@ -287,7 +284,7 @@ public class FileDownloaderTest {
                              FileReferenceData.Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         FileReceiver.Session session =
-                new FileReceiver.Session(downloadDir, tempDir, 1, fileReference, type, filename, content.length);
+                new FileReceiver.Session(downloadDir, 1, fileReference, type, filename, content.length);
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
         downloads.completedDownloading(fileReference, file);

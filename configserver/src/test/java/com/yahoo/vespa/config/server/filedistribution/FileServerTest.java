@@ -138,7 +138,7 @@ public class FileServerTest {
     private static class MockFileDownloader extends FileDownloader {
 
         public MockFileDownloader(File downloadDirectory) {
-            super(emptyConnectionPool(), downloadDirectory, downloadDirectory, new Downloads(), Duration.ofMillis(100), Duration.ofMillis(100));
+            super(emptyConnectionPool(), downloadDirectory, new Downloads(), Duration.ofMillis(100), Duration.ofMillis(100));
         }
 
     }

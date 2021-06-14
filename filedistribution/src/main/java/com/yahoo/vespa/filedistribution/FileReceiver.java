@@ -41,9 +41,6 @@ public class FileReceiver {
     private final Supervisor supervisor;
     private final Downloads downloads;
     private final File downloadDirectory;
-    // Should be on same partition as downloadDirectory to make sure moving files from tmpDirectory
-    // to downloadDirectory is atomic
-    private final File tmpDirectory;
     private final AtomicInteger nextSessionId = new AtomicInteger(1);
     private final Map<Integer, Session> sessions = new HashMap<>();
 
@@ -61,7 +58,7 @@ public class FileReceiver {
         private final File tmpDir;
         private final File inprogressFile;
 
-        Session(File downloadDirectory, File tmpDirectory, int sessionId, FileReference reference,
+        Session(File downloadDirectory, int sessionId, FileReference reference,
                 FileReferenceData.Type fileType, String fileName, long fileSize)
         {
             this.hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
@@ -74,12 +71,12 @@ public class FileReceiver {
             currentPartId = 0;
             currentHash = 0;
             fileReferenceDir = new File(downloadDirectory, reference.value());
-            this.tmpDir = tmpDirectory;
+            this.tmpDir = downloadDirectory;
 
             try {
-                inprogressFile = Files.createTempFile(tmpDirectory.toPath(), fileName, ".inprogress").toFile();
+                inprogressFile = Files.createTempFile(tmpDir.toPath(), fileName, ".inprogress").toFile();
             } catch (IOException e) {
-                String msg = "Failed creating temp file for inprogress file for " + fileName + " in '" + tmpDirectory.toPath() + "': ";
+                String msg = "Failed creating temp file for inprogress file for " + fileName + " in '" + tmpDir.toPath() + "': ";
                 log.log(Level.SEVERE, msg + e.getMessage(), e);
                 throw new RuntimeException(msg, e);
             }
@@ -149,11 +146,10 @@ public class FileReceiver {
         }
     }
 
-    FileReceiver(Supervisor supervisor, Downloads downloads, File downloadDirectory, File tmpDirectory) {
+    FileReceiver(Supervisor supervisor, Downloads downloads, File downloadDirectory) {
         this.supervisor = supervisor;
         this.downloads = downloads;
         this.downloadDirectory = downloadDirectory;
-        this.tmpDirectory = tmpDirectory;
         registerMethods();
     }
 
@@ -231,7 +227,7 @@ public class FileReceiver {
                 log.severe("Session id " + sessionId + " already exist, impossible. Request from(" + req.target() + ")");
             } else {
                 try {
-                    sessions.put(sessionId, new Session(downloadDirectory, tmpDirectory, sessionId, reference,
+                    sessions.put(sessionId, new Session(downloadDirectory, sessionId, reference,
                                                         FileReferenceData.Type.valueOf(type),fileName, fileSize));
                 } catch (Exception e) {
                     retval = 1;
