@@ -45,8 +45,10 @@ public class FeedClientBuilder {
     PrivateKey privateKey;
     Collection<X509Certificate> caCertificates;
 
+    /** Creates a builder for a single container endpoint **/
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
 
+    /** Creates a builder for multiple container endpoints **/
     public static FeedClientBuilder create(List<URI> endpoints) { return new FeedClientBuilder(endpoints); }
 
     private FeedClientBuilder(List<URI> endpoints) {
@@ -86,61 +88,85 @@ public class FeedClientBuilder {
         return this;
     }
 
+    /** Sets {@link SSLContext} instance. */
     public FeedClientBuilder setSslContext(SSLContext context) {
         this.sslContext = requireNonNull(context);
         return this;
     }
 
+    /** Sets {@link HostnameVerifier} instance (e.g for disabling default SSL hostname verification). */
     public FeedClientBuilder setHostnameVerifier(HostnameVerifier verifier) {
         this.hostnameVerifier = requireNonNull(verifier);
         return this;
     }
 
+    /** Adds HTTP request header to all client requests. */
     public FeedClientBuilder addRequestHeader(String name, String value) {
         return addRequestHeader(name, () -> requireNonNull(value));
     }
 
+    /**
+     * Adds HTTP request header to all client requests. Value {@link Supplier} is invoked for each HTTP request,
+     * i.e. value can be dynamically updated during a feed.
+     */
     public FeedClientBuilder addRequestHeader(String name, Supplier<String> valueSupplier) {
         this.requestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
         return this;
     }
 
+    /**
+     * Overrides default retry strategy.
+     * @see FeedClient.RetryStrategy
+     */
     public FeedClientBuilder setRetryStrategy(FeedClient.RetryStrategy strategy) {
         this.retryStrategy = requireNonNull(strategy);
         return this;
     }
 
+    /**
+     * Overrides default circuit breaker.
+     * @see FeedClient.CircuitBreaker
+     */
     public FeedClientBuilder setCircuitBreaker(FeedClient.CircuitBreaker breaker) {
         this.circuitBreaker = requireNonNull(breaker);
         return this;
     }
 
+    /** Sets path to client SSL certificate/key PEM files */
     public FeedClientBuilder setCertificate(Path certificatePemFile, Path privateKeyPemFile) {
         this.certificateFile = certificatePemFile;
         this.privateKeyFile = privateKeyPemFile;
         return this;
     }
 
+    /** Sets client SSL certificates/key */
     public FeedClientBuilder setCertificate(Collection<X509Certificate> certificate, PrivateKey privateKey) {
         this.certificate = certificate;
         this.privateKey = privateKey;
         return this;
     }
 
+    /** Sets client SSL certificate/key */
     public FeedClientBuilder setCertificate(X509Certificate certificate, PrivateKey privateKey) {
         return setCertificate(Collections.singletonList(certificate), privateKey);
     }
 
+    /**
+     * Overrides JVM default SSL truststore
+     * @param caCertificatesFile Path to PEM encoded file containing trusted certificates
+     */
     public FeedClientBuilder setCaCertificatesFile(Path caCertificatesFile) {
         this.caCertificatesFile = caCertificatesFile;
         return this;
     }
 
+    /** Overrides JVM default SSL truststore */
     public FeedClientBuilder setCaCertificates(Collection<X509Certificate> caCertificates) {
         this.caCertificates = caCertificates;
         return this;
     }
 
+    /** Constructs instance of {@link ai.vespa.feed.client.FeedClient} from builder configuration */
     public FeedClient build() {
         try {
             validateConfiguration();

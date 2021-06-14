@@ -4,6 +4,8 @@ package ai.vespa.feed.client;
 import java.util.Optional;
 
 /**
+ * Result for a document operation
+ *
  * @author bjorncs
  * @author jonmv
  */
