@@ -61,7 +61,6 @@ import com.yahoo.vespa.documentgen.test.annotation.Person;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.lang.Class;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
@@ -151,18 +150,18 @@ public class DocumentGenPluginTest {
         assertEquals(music.getFieldValue(artist), bingoAstroburger);
         assertEquals(music.getFieldValue("artist"), bingoAstroburger);
 
-        assertEquals(music.getFieldValue(new Field("nonexisting")), null);
-        assertEquals(music.getFieldValue("nono"), null);
-        assertEquals(music.getField("nope"), null);
-        assertEquals(music.getFieldValue(new Field("nada")), null);
-        assertEquals(music.getFieldValue("zilch"), null);
-        assertEquals(music.getFieldValue("zero"), null);
+        assertNull(music.getFieldValue(new Field("nonexisting")));
+        assertNull(music.getFieldValue("nono"));
+        assertNull(music.getField("nope"));
+        assertNull(music.getFieldValue(new Field("nada")));
+        assertNull(music.getFieldValue("zilch"));
+        assertNull(music.getFieldValue("zero"));
 
-        assertEquals(music.removeFieldValue("nothere"), null);
-        assertEquals(music.removeFieldValue(new Field("nothereno")), null);
-        assertEquals(music.removeFieldValue(new Field("invalid")), null);
-        assertEquals(music.removeFieldValue("goner"), null);
-        assertEquals(music.removeFieldValue("absent"), null);
+        assertNull(music.removeFieldValue("nothere"));
+        assertNull(music.removeFieldValue(new Field("nothereno")));
+        assertNull(music.removeFieldValue(new Field("invalid")));
+        assertNull(music.removeFieldValue("goner"));
+        assertNull(music.removeFieldValue("absent"));
     }
 
     @Test
@@ -193,12 +192,12 @@ public class DocumentGenPluginTest {
         Book book = getBook();
         book.setAuthor(null);
         Field a = new Field("author", DataType.STRING);
-        assertEquals(book.getFieldValue("author"), null);
-        assertEquals(book.getFieldValue(a), null);
+        assertNull(book.getFieldValue("author"));
+        assertNull(book.getFieldValue(a));
         assertEquals(book.getField("author"), a);
-        assertEquals(book.getFieldValue(a), null);
-        assertEquals(book.getFieldValue("author"), null);
-        assertEquals(book.getFieldValue("author"), null);
+        assertNull(book.getFieldValue(a));
+        assertNull(book.getFieldValue("author"));
+        assertNull(book.getFieldValue("author"));
 
         book.removeFieldValue("isbn");
         book.removeFieldValue(new Field("year", DataType.INT));
@@ -207,26 +206,26 @@ public class DocumentGenPluginTest {
         assertEquals(old.get(0), new IntegerFieldValue(10));
         book.removeFieldValue("stringmap");
         book.removeFieldValue("mywsfloat");
-        assertEquals(book.getIsbn(), null);
-        assertEquals(book.getYear(), null);
-        assertEquals(book.getDescription(), null);
-        assertEquals(book.getStringmap(), null);
-        assertEquals(book.getMyarrayint(), null);
-        assertEquals(book.getMywsfloat(), null);
+        assertNull(book.getIsbn());
+        assertNull(book.getYear());
+        assertNull(book.getDescription());
+        assertNull(book.getStringmap());
+        assertNull(book.getMyarrayint());
+        assertNull(book.getMywsfloat());
 
         Music music = getMusicBasic();
         Field artist = music.getField("artist");
         Field year = music.getField("year");
         music.removeFieldValue(artist);
-        assertEquals(music.getArtist(), null);
+        assertNull(music.getArtist());
         music.removeFieldValue("disp_song");
-        assertEquals(music.getDisp_song(), null);
+        assertNull(music.getDisp_song());
         music.removeFieldValue(year);
-        assertEquals(music.getYear(), null);
+        assertNull(music.getYear());
         music.removeFieldValue("uri");
-        assertEquals(music.getUri(), null);
+        assertNull(music.getUri());
         music.removeFieldValue("weight_src");
-        assertEquals(music.getWeight_src(), null);
+        assertNull(music.getWeight_src());
     }
 
     @Test
@@ -393,12 +392,12 @@ public class DocumentGenPluginTest {
         Person p2 = new Person();
         p2.setName("H. Melville");
         descTree.annotate(p2);
-        book.setDescriptionSpanTrees(new HashMap<String, SpanTree>(){{ put(descTree.getName(), descTree); }});
+        book.setDescriptionSpanTrees(new HashMap<>(){{ put(descTree.getName(), descTree); }});
         assertEquals(((Person) ((StringFieldValue) book.getFieldValue(book.getField("description"))).getSpanTrees().iterator().next().iterator().next()).getName(),
         "H. Melville");
         assertEquals(((Person) ((StringFieldValue) book.removeFieldValue("description")).getSpanTrees().iterator().next().iterator().next()).getName(), "H. Melville");
-        assertEquals(book.descriptionSpanTrees(), null);
-        assertEquals((book.getFieldValue("description")), null);
+        assertNull(book.descriptionSpanTrees());
+        assertNull((book.getFieldValue("description")));
         Artist a = new Artist();
         assertTrue(Person.class.isInstance(a));
         assertEquals(((StructDataType) a.getType().getDataType()).getField("name").getDataType(), DataType.STRING);
@@ -553,13 +552,13 @@ public class DocumentGenPluginTest {
     private Book newBookConcrete(int i) {
         Book book = new Book(new DocumentId("id:book:book::"+i));
         book.setAuthor("Melville");
-        Date date = new Date().setExacttime(99l);
-        book.setTitleSpanTrees(new HashMap<String, SpanTree>());
+        Date date = new Date().setExacttime(99L);
+        book.setTitleSpanTrees(new HashMap<>());
         SpanTree t = new SpanTree().annotate(date);
         book.titleSpanTrees().put(t.getName(), t);
         book.setTitle("Moby Dick");
         book.setYear(1851);
-        book.setMystruct(new Ss1().setSs01(new Ss0().setS0("My s0").setD0(99d)).setS1("My s1").setL1(89l));//.setAl1(myAs1));
+        book.setMystruct(new Ss1().setSs01(new Ss0().setS0("My s0").setD0(99d)).setS1("My s1").setL1(89L));//.setAl1(myAs1));
         Map<Float, Integer> wsFloat = new HashMap<>();
         wsFloat.put(56f, 55);
         wsFloat.put(57f, 54);
@@ -587,7 +586,7 @@ public class DocumentGenPluginTest {
 
         AnnotationType dateType = mgr.getAnnotationTypeRegistry().getType("date");
         Struct dateStruct = new Struct(mgr.getAnnotationTypeRegistry().getType("date").getDataType());
-        dateStruct.setFieldValue("exacttime", new LongFieldValue(99l));
+        dateStruct.setFieldValue("exacttime", new LongFieldValue(99L));
         Annotation date = new Annotation(dateType);
         date.setFieldValue(dateStruct);
         titleTree.annotate(date);
@@ -637,7 +636,7 @@ public class DocumentGenPluginTest {
 
         AnnotationType dateType = mgr.getAnnotationTypeRegistry().getType("date");
         Struct dateStruct = new Struct(mgr.getAnnotationTypeRegistry().getType("date").getDataType());
-        dateStruct.setFieldValue("exacttime", new LongFieldValue(99l));
+        dateStruct.setFieldValue("exacttime", new LongFieldValue(99L));
         Annotation date = new Annotation(dateType);
         date.setFieldValue(dateStruct);
         titleTree.annotate(date);
@@ -647,7 +646,7 @@ public class DocumentGenPluginTest {
         assertEquals(titleCheck.getWrappedValue(), "Moby Dick");
         SpanTree treeCheck = titleCheck.getSpanTrees().iterator().next();
         Annotation titleAnnCheck = treeCheck.iterator().next();
-        assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99l);
+        assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99L);
 
         bookGeneric.setFieldValue("year", new IntegerFieldValue(1851));
         Struct myS0 = new Struct(mgr.getDataType("ss0"));
@@ -689,7 +688,7 @@ public class DocumentGenPluginTest {
         assertEquals(book.getMystruct().getAs1().get(1), "as1_2");
         treeCheck = book.titleSpanTrees().values().iterator().next();
         titleAnnCheck = treeCheck.iterator().next();
-        assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99l);
+        assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99L);
 
         Book book2 = new Book(book, book.getId());
         assertEquals(book2.getId(), bookGeneric.getId());
@@ -704,7 +703,7 @@ public class DocumentGenPluginTest {
         assertEquals(book2.getMystruct().getAs1().get(1), "as1_2");
         treeCheck = book2.titleSpanTrees().values().iterator().next();
         titleAnnCheck = treeCheck.iterator().next();
-        assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99l);
+        assertEquals(((StructuredFieldValue) titleAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 99L);
     }
 
     @Test
@@ -712,13 +711,13 @@ public class DocumentGenPluginTest {
         Book b = (Book) ConcreteDocumentFactory.getDocument("book", new DocumentId("id:book:book::10"));
         b.setAuthor("Per Ulv");
         final Date d = (Date) ConcreteDocumentFactory.getAnnotation("date");
-        d.setExacttime(79l);
-        b.setAuthorSpanTrees(new HashMap<String, SpanTree>() {{ put("root", new SpanTree("root").annotate(d));  }});
+        d.setExacttime(79L);
+        b.setAuthorSpanTrees(new HashMap<>() {{ put("root", new SpanTree("root").annotate(d));  }});
         StringFieldValue authorCheck=(StringFieldValue) b.getFieldValue("author");
         assertEquals(authorCheck.getWrappedValue(), "Per Ulv");
         SpanTree treeCheck = authorCheck.getSpanTrees().iterator().next();
         Annotation authorAnnCheck = treeCheck.iterator().next();
-        assertEquals(((Struct) authorAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 79l);
+        assertEquals(((Struct) authorAnnCheck.getFieldValue()).getFieldValue("exacttime").getWrappedValue(), 79L);
 
         b.setMystruct(((Ss1) ConcreteDocumentFactory.getStruct("ss1")).setS1("Test s1!"));
         assertEquals(((Struct) b.getFieldValue("mystruct")).getFieldValue("s1").getWrappedValue(), "Test s1!");
@@ -761,7 +760,7 @@ public class DocumentGenPluginTest {
     }
 
     private String className(String s) {
-        return s.substring(0, 1).toUpperCase()+s.substring(1, s.length());
+        return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
 
     private Music getMusicBasic() {
@@ -799,8 +798,8 @@ public class DocumentGenPluginTest {
         myArrInt.add(30);
         book.setMyarrayint(myArrInt);
 
-        List<Integer> intL = new ArrayList<Integer>(){{add(1);add(2);add(3);}};
-        List<Integer> intL2 = new ArrayList<Integer>(){{add(9);add(10);add(11);}};
+        List<Integer> intL = new ArrayList<>(){{add(1);add(2);add(3);}};
+        List<Integer> intL2 = new ArrayList<>(){{add(9);add(10);add(11);}};
         List<List<Integer>> doubleIntL = new ArrayList<>();
         doubleIntL.add(intL);
         doubleIntL.add(intL2);
@@ -861,7 +860,6 @@ public class DocumentGenPluginTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testSerialization() {
         final Book book = getBook();
         assertEquals(book.getMystruct().getD1(), (Double)56.777);
