@@ -129,10 +129,6 @@ private:
     friend class DistributorTestUtil;
     friend class MetricUpdateHook;
 
-    // TODO STRIPE remove
-    DistributorStripe& first_stripe() noexcept;
-    const DistributorStripe& first_stripe() const noexcept;
-
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
 
