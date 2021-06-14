@@ -59,7 +59,7 @@ class HttpRequestStrategy implements RequestStrategy {
     });
 
     HttpRequestStrategy(FeedClientBuilder builder) throws IOException {
-        this(builder, new BenchmarkingCluster(new OkCluster(builder)));
+        this(builder, new BenchmarkingCluster(new ApacheCluster(builder)));
     }
 
     HttpRequestStrategy(FeedClientBuilder builder, Cluster cluster) {
@@ -75,14 +75,8 @@ class HttpRequestStrategy implements RequestStrategy {
         dispatcher.start();
     }
 
-    @Override
     public OperationStats stats() {
         return cluster.stats();
-    }
-
-    @Override
-    public CircuitBreaker.State circuitBreakerState() {
-        return breaker.state();
     }
 
     private void dispatch() {
@@ -90,7 +84,7 @@ class HttpRequestStrategy implements RequestStrategy {
             while (breaker.state() != OPEN && ! destroyed.get()) {
                 while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
-                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10); // TODO: Reduce throughput when turning half-open?
+                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
             }
         }
         catch (InterruptedException e) {
@@ -192,6 +186,11 @@ class HttpRequestStrategy implements RequestStrategy {
 
     private void releaseSlot() {
         inflight.decrementAndGet();
+    }
+
+    @Override
+    public boolean hasFailed() {
+        return breaker.state() == OPEN;
     }
 
     public void await() {
