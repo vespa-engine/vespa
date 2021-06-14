@@ -1,13 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enum_store_dictionary.h"
-#include "enumstore.h"
 #include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
@@ -28,9 +23,6 @@ void
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remove_unused_values(const IndexSet& unused,
                                                        const vespalib::datastore::EntryComparator& cmp)
 {
-    if (unused.empty()) {
-        return;
-    }
     for (const auto& ref : unused) {
         this->remove(cmp, ref);
     }
@@ -58,7 +50,9 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(const
             _enumStore.free_value_if_unused(iter.getKey(), unused);
         }
     } else {
-        this->_hash_dict.foreach_key([this, &unused](EntryRef ref) { _enumStore.free_value_if_unused(ref, unused); });
+        this->_hash_dict.foreach_key([this, &unused](EntryRef ref) {
+            _enumStore.free_value_if_unused(ref, unused);
+        });
     }
     remove_unused_values(unused, cmp);
 }
@@ -66,11 +60,17 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(const
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(const IndexSet& to_remove,
-                                                     const vespalib::datastore::EntryComparator& cmp)
+                                                                           const vespalib::datastore::EntryComparator& cmp)
 {
     IndexSet unused;
+
+    EntryRef prev;
     for (const auto& index : to_remove) {
-        _enumStore.free_value_if_unused(index, unused);
+        assert(prev <= index);
+        if (index != prev) {
+            _enumStore.free_value_if_unused(index, unused);
+            prev = index;
+        }
     }
     remove_unused_values(unused, cmp);
 }
@@ -96,8 +96,7 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remove(const EntryCompar
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 bool
-EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_index(const vespalib::datastore::EntryComparator& cmp,
-                                             Index& idx) const
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_index(const vespalib::datastore::EntryComparator& cmp, Index& idx) const
 {
     if constexpr (has_hash_dictionary) {
         auto find_result = this->_hash_dict.find(cmp, EntryRef());
@@ -118,8 +117,7 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_index(const vespali
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 bool
-EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_frozen_index(const vespalib::datastore::EntryComparator& cmp,
-                                                    Index& idx) const
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_frozen_index(const vespalib::datastore::EntryComparator& cmp, Index& idx) const
 {
     if constexpr (has_hash_dictionary) {
         auto find_result = this->_hash_dict.find(cmp, EntryRef());

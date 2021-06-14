@@ -40,22 +40,14 @@ public:
     using EnumIndexRemapper = vespalib::datastore::UniqueStoreRemapper<InternalIndex>;
     using Enumerator = vespalib::datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
 
-    struct CompareEnumIndex {
-        using Index = IEnumStore::Index;
-
-        bool operator()(const Index &lhs, const Index &rhs) const {
-            return lhs.ref() < rhs.ref();
-        }
-    };
-
-    using IndexSet = std::set<Index, CompareEnumIndex>;
+    using IndexList = std::vector<Index>;
 
     virtual ~IEnumStore() = default;
 
     virtual void write_value(BufferWriter& writer, Index idx) const = 0;
     virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void set_ref_count(Index idx, uint32_t ref_count) = 0;
-    virtual void free_value_if_unused(Index idx, IndexSet& unused) = 0;
+    virtual void free_value_if_unused(Index idx, IndexList& unused) = 0;
     virtual void free_unused_values() = 0;
     virtual bool is_folded_change(Index idx1, Index idx2) const = 0;
     virtual IEnumStoreDictionary& get_dictionary() = 0;

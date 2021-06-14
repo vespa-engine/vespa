@@ -31,7 +31,7 @@ public:
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumVector = IEnumStore::EnumVector;
     using Index = IEnumStore::Index;
-    using IndexSet = IEnumStore::IndexSet;
+    using IndexSet = IEnumStore::IndexList;
     using IndexVector = IEnumStore::IndexVector;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
