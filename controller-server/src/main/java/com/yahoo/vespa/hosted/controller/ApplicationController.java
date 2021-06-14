@@ -90,7 +90,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -442,6 +441,9 @@ public class ApplicationController {
         for (InstanceName instance : declaredInstances)
             if (applicationPackage.deploymentSpec().requireInstance(instance).concerns(Environment.prod))
                 application = controller.routing().assignRotations(application, instance);
+
+        // Validate new deployment spec thoroughly before storing it.
+        controller.jobController().deploymentStatus(application.get());
 
         store(application);
         return application;
