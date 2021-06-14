@@ -63,6 +63,11 @@ class HttpFeedClient implements FeedClient {
     }
 
     @Override
+    public CircuitBreaker.State circuitBreakerState() {
+        return requestStrategy.circuitBreakerState();
+    }
+
+    @Override
     public void close(boolean graceful) {
         closed.set(true);
         if (graceful)
@@ -71,17 +76,7 @@ class HttpFeedClient implements FeedClient {
         requestStrategy.destroy();
     }
 
-    private void ensureOpen() {
-        if (requestStrategy.hasFailed())
-            close();
-
-        if (closed.get())
-            throw new IllegalStateException("Client is closed, no further operations may be sent");
-    }
-
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
-        ensureOpen();
-
         HttpRequest request = new HttpRequest(method,
                                               getPath(documentId) + getQuery(params),
                                               requestHeaders,
