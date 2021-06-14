@@ -19,6 +19,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.yolean.chain.Before;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +33,17 @@ import java.util.Optional;
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateNearestNeighborSearcher extends Searcher {
 
-    private final Map<String, TensorType> validAttributes = new HashMap<>();
+    private final Map<String, List<TensorType>> validAttributes = new HashMap<>();
 
     public ValidateNearestNeighborSearcher(AttributesConfig attributesConfig) {
         for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
-            TensorType tt = null;
-            if (a.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
-                tt = TensorType.fromSpec(a.tensortype());
+            if (! validAttributes.containsKey(a.name())) {
+                validAttributes.put(a.name(), new ArrayList<TensorType>());
             }
-            validAttributes.put(a.name(), tt);
+            if (a.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
+                TensorType tt = TensorType.fromSpec(a.tensortype());
+                validAttributes.get(a.name()).add(tt);
+            }
         }
     }
 
@@ -60,10 +63,10 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
-        private final Map<String, TensorType> validAttributes;
+        private final Map<String, List<TensorType>> validAttributes;
         private final Query query;
 
-        public NNVisitor(RankProperties rankProperties, Map<String, TensorType> validAttributes, Query query) {
+        public NNVisitor(RankProperties rankProperties, Map<String, List<TensorType>> validAttributes, Query query) {
             this.validAttributes = validAttributes;
             this.query = query;
         }
@@ -101,17 +104,26 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             if (queryTensor.isEmpty())
                 return item + " requires a tensor rank feature " + queryFeatureName + " but this is not present";
 
-            if ( ! validAttributes.containsKey(item.getIndexName()))
+            if ( ! validAttributes.containsKey(item.getIndexName())) {
                 return item + " field is not an attribute";
-            TensorType fieldType = validAttributes.get(item.getIndexName());
-            if (fieldType == null) return item + " field is not a tensor";
-            if ( ! isDenseVector(fieldType))
-                return item + " tensor type " + fieldType + " is not a dense vector";
-
-            if ( ! isCompatible(fieldType, queryTensor.get().type()))
-                return item + " field type " + fieldType + " does not match query type " + queryTensor.get().type();
-
-            return null;
+            }
+            List<TensorType> allTensorTypes = validAttributes.get(item.getIndexName());
+            for (TensorType fieldType : allTensorTypes) {
+                if (isDenseVector(fieldType) && isCompatible(fieldType, queryTensor.get().type())) {
+                    return null;
+                }
+            }
+            for (TensorType fieldType : allTensorTypes) {
+                if (isDenseVector(fieldType) && ! isCompatible(fieldType, queryTensor.get().type())) {
+                    return item + " field type " + fieldType + " does not match query type " + queryTensor.get().type();
+                }
+            }
+            for (TensorType fieldType : allTensorTypes) {
+                if (! isDenseVector(fieldType)) {
+                    return item + " tensor type " + fieldType + " is not a dense vector";
+                }
+            }
+            return item + " field is not a tensor";
         }
 
         @Override
