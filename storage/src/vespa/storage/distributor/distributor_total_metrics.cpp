@@ -18,23 +18,26 @@ DistributorTotalMetrics::DistributorTotalMetrics(uint32_t num_distributor_stripe
 DistributorTotalMetrics::~DistributorTotalMetrics() = default;
 
 void
+DistributorTotalMetrics::aggregate_helper(DistributorMetricSet &total) const
+{
+    _bucket_db_updater_metrics.addToPart(total);
+    for (auto &stripe_metrics : _stripes_metrics) {
+        stripe_metrics->addToPart(total);
+    }
+}
+
+void
 DistributorTotalMetrics::aggregate()
 {
     DistributorMetricSet::reset();
-    _bucket_db_updater_metrics.addToPart(*this);
-    for (auto &stripe_metrics : _stripes_metrics) {
-        stripe_metrics->addToPart(*this);
-    }
+    aggregate_helper(*this);
 }
 
 void
 DistributorTotalMetrics::addToSnapshot(Metric& m, std::vector<Metric::UP> &ownerList) const
 {
     DistributorMetricSet total;
-    _bucket_db_updater_metrics.addToPart(total);
-    for (auto &stripe_metrics : _stripes_metrics) {
-        stripe_metrics->addToPart(total);
-    }
+    aggregate_helper(total);
     total.addToSnapshot(m, ownerList);
 }
 
