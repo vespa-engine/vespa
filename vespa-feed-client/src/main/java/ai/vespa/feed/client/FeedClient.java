@@ -22,6 +22,9 @@ public interface FeedClient extends Closeable {
     /** Returns a snapshot of the stats for this feed client, such as requests made, and responses by status. */
     OperationStats stats();
 
+    /** Current state of the circuit breaker. */
+    default CircuitBreaker.State circuitBreakerState() { return CircuitBreaker.State.CLOSED; }
+
     /** Shut down, and reject new operations. Operations in flight are allowed to complete normally if graceful. */
     void close(boolean graceful);
 
