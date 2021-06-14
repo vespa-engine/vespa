@@ -10,9 +10,9 @@ import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
+import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
-import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
@@ -82,7 +82,7 @@ public class FileServer {
         this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
         this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
-                                                     new DaemonThreadFactory("file server push"));
+                                                     new DaemonThreadFactory("file-server-"));
     }
 
     boolean hasFile(String fileReference) {

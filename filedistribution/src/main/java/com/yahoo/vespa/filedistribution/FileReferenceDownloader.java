@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.ConnectionPool;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,7 +19,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Downloads file reference using rpc requests to config server and keeps track of files being downloaded
@@ -35,20 +33,23 @@ public class FileReferenceDownloader {
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                          new DaemonThreadFactory("filereference downloader"));
     private final ConnectionPool connectionPool;
-    /* Ongoing downloads */
-    private final Downloads downloads = new Downloads();
-    /* Status for ongoing and finished downloads */
-    private final Downloads.DownloadStatuses downloadStatuses = new Downloads.DownloadStatuses();
+    private final Downloads downloads;
     private final Duration downloadTimeout;
     private final Duration sleepBetweenRetries;
     private final Duration rpcTimeout;
 
-    FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool, Duration timeout, Duration sleepBetweenRetries) {
+    FileReferenceDownloader(File downloadDirectory,
+                            File tmpDirectory,
+                            ConnectionPool connectionPool,
+                            Downloads downloads,
+                            Duration timeout,
+                            Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
+        this.downloads = downloads;
         this.downloadTimeout = timeout;
         this.sleepBetweenRetries = sleepBetweenRetries;
         // Needed to receive RPC calls receiveFile* from server after asking for files
-        new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
+        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory, tmpDirectory);
         String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
     }
@@ -85,24 +86,11 @@ public class FileReferenceDownloader {
 
         log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
         downloads.add(fileReferenceDownload);
-        downloadStatuses.add(fileReference);
         downloadExecutor.submit(() -> startDownload(fileReferenceDownload));
         return fileReferenceDownload.future();
     }
 
-    void completedDownloading(FileReference fileReference, File file) {
-        Optional<FileReferenceDownload> download = downloads.get(fileReference);
-        if (download.isPresent()) {
-            downloadStatuses.get(fileReference).ifPresent(Downloads.DownloadStatus::finished);
-            downloads.remove(fileReference);
-            download.get().future().complete(Optional.of(file));
-        } else {
-            log.log(Level.FINE, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
-        }
-    }
-
     void failedDownloading(FileReference fileReference) {
-        downloadStatuses.get(fileReference).ifPresent(d -> d.setProgress(0.0));
         downloads.remove(fileReference);
     }
 
@@ -148,27 +136,6 @@ public class FileReferenceDownloader {
             return false;
         }
         return true;
-    }
-
-    double downloadStatus(String file) {
-        double status = 0.0;
-        Optional<Downloads.DownloadStatus> downloadStatus = downloadStatuses.get(new FileReference(file));
-        if (downloadStatus.isPresent()) {
-            status = downloadStatus.get().progress();
-        }
-        return status;
-    }
-
-    void setDownloadStatus(FileReference fileReference, double completeness) {
-        Optional<Downloads.DownloadStatus> downloadStatus = downloadStatuses.get(fileReference);
-        if (downloadStatus.isPresent())
-            downloadStatus.get().setProgress(completeness);
-        else
-            downloadStatuses.add(fileReference, completeness);
-    }
-
-    Map<FileReference, Double> downloadStatus() {
-        return downloadStatuses.all().values().stream().collect(Collectors.toMap(Downloads.DownloadStatus::fileReference, Downloads.DownloadStatus::progress));
     }
 
     public ConnectionPool connectionPool() {

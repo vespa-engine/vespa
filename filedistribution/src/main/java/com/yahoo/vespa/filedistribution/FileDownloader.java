@@ -33,20 +33,24 @@ public class FileDownloader implements AutoCloseable {
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
+    private final Downloads downloads;
 
     public FileDownloader(ConnectionPool connectionPool) {
-        this(connectionPool, defaultDownloadDirectory );
+        this(connectionPool, defaultDownloadDirectory, new Downloads());
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory) {
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads) {
         // TODO: Reduce timeout even more, timeout is so long that we might get starvation
-        this(connectionPool, downloadDirectory, downloadDirectory, Duration.ofMinutes(5), Duration.ofSeconds(10));
+        this(connectionPool, downloadDirectory, downloadDirectory, downloads, Duration.ofMinutes(5), Duration.ofSeconds(10));
     }
 
-    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {
+    public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Downloads downloads,
+                          Duration timeout, Duration sleepBetweenRetries) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool, timeout, sleepBetweenRetries);
+        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool,
+                                                                   downloads, timeout, sleepBetweenRetries);
+        this.downloads = downloads;
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -74,12 +78,8 @@ public class FileDownloader implements AutoCloseable {
                 : download(fileReferenceDownload);
     }
 
-    double downloadStatus(FileReference fileReference) {
-        return fileReferenceDownloader.downloadStatus(fileReference.value());
-    }
-
     public Map<FileReference, Double> downloadStatus() {
-        return fileReferenceDownloader.downloadStatus();
+        return downloads.downloadStatus();
     }
 
     File downloadDirectory() {
@@ -94,10 +94,10 @@ public class FileDownloader implements AutoCloseable {
             if (!file.exists()) {
                 throw new RuntimeException("File reference '" + fileReference.value() + "' does not exist");
             } else if (!file.canRead()) {
-                throw new RuntimeException("File reference '" + fileReference.value() + "'exists, but unable to read it");
+                throw new RuntimeException("File reference '" + fileReference.value() + "' exists, but unable to read it");
             } else {
                 log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
-                fileReferenceDownloader.setDownloadStatus(fileReference, 1.0);
+                downloads.setDownloadStatus(fileReference, 1.0);
                 return Optional.of(file);
             }
         }
@@ -106,7 +106,7 @@ public class FileDownloader implements AutoCloseable {
 
     private boolean alreadyDownloaded(FileReference fileReference) {
         try {
-            return (getFileFromFileSystem(fileReference).isPresent());
+            return getFileFromFileSystem(fileReference).isPresent();
         } catch (RuntimeException e) {
             return false;
         }

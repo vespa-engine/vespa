@@ -8,7 +8,6 @@ import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Supervisor;
-import java.util.logging.Level;
 import net.jpountz.xxhash.StreamingXXHash64;
 import net.jpountz.xxhash.XXHashFactory;
 
@@ -22,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +39,7 @@ public class FileReceiver {
     public final static String RECEIVE_EOF_METHOD = "filedistribution.receiveFileEof";
 
     private final Supervisor supervisor;
-    private final FileReferenceDownloader downloader;
+    private final Downloads downloads;
     private final File downloadDirectory;
     // Should be on same partition as downloadDirectory to make sure moving files from tmpDirectory
     // to downloadDirectory is atomic
@@ -149,9 +149,9 @@ public class FileReceiver {
         }
     }
 
-    FileReceiver(Supervisor supervisor, FileReferenceDownloader downloader, File downloadDirectory, File tmpDirectory) {
+    FileReceiver(Supervisor supervisor, Downloads downloads, File downloadDirectory, File tmpDirectory) {
         this.supervisor = supervisor;
-        this.downloader = downloader;
+        this.downloads = downloads;
         this.downloadDirectory = downloadDirectory;
         this.tmpDirectory = tmpDirectory;
         registerMethods();
@@ -260,7 +260,7 @@ public class FileReceiver {
             }
             double completeness = (double) session.currentFileSize / (double) session.fileSize;
             log.log(Level.FINEST, () -> String.format("%.1f percent of '%s' downloaded", completeness * 100, reference.value()));
-            downloader.setDownloadStatus(reference, completeness);
+            downloads.setDownloadStatus(reference, completeness);
         }
         req.returnValues().add(new Int32Value(retval));
     }
@@ -273,7 +273,7 @@ public class FileReceiver {
         Session session = getSession(sessionId);
         int retval = verifySession(session, sessionId, reference);
         File file = session.close(xxhash);
-        downloader.completedDownloading(reference, file);
+        downloads.completedDownloading(reference, file);
         synchronized (sessions) {
             sessions.remove(sessionId);
         }

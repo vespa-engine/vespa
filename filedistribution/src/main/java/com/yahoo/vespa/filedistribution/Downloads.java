@@ -3,28 +3,71 @@ package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
 
+import java.io.File;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Keeps track of downloads and download status
  *
  * @author hmusum
  */
-class Downloads {
+public class Downloads {
+
+    private static final Logger log = Logger.getLogger(Downloads.class.getName());
 
     private final Map<FileReference, FileReferenceDownload> downloads = new ConcurrentHashMap<>();
+    private final DownloadStatuses downloadStatuses = new DownloadStatuses();
+
+    public DownloadStatuses downloadStatuses() { return downloadStatuses; }
+
+    void setDownloadStatus(FileReference fileReference, double completeness) {
+        Optional<Downloads.DownloadStatus> downloadStatus = downloadStatuses.get(fileReference);
+        if (downloadStatus.isPresent())
+            downloadStatus.get().setProgress(completeness);
+        else
+            downloadStatuses.add(fileReference, completeness);
+    }
+
+    void completedDownloading(FileReference fileReference, File file) {
+        Optional<FileReferenceDownload> download = get(fileReference);
+        if (download.isPresent()) {
+            downloadStatuses().get(fileReference).ifPresent(Downloads.DownloadStatus::finished);
+            downloads.remove(fileReference);
+            download.get().future().complete(Optional.of(file));
+        } else {
+            log.log(Level.FINE, () -> "Received '" + fileReference + "', which was not requested. Can be ignored if happening during upgrades/restarts");
+        }
+    }
 
     void add(FileReferenceDownload fileReferenceDownload) {
         downloads.put(fileReferenceDownload.fileReference(), fileReferenceDownload);
+        downloadStatuses.add(fileReferenceDownload.fileReference());
     }
 
     void remove(FileReference fileReference) {
+        downloadStatuses.get(fileReference).ifPresent(d -> d.setProgress(0.0));
         downloads.remove(fileReference);
+    }
+
+    double downloadStatus(FileReference fileReference) {
+        double status = 0.0;
+        Optional<Downloads.DownloadStatus> downloadStatus = downloadStatuses.get(fileReference);
+        if (downloadStatus.isPresent()) {
+            status = downloadStatus.get().progress();
+        }
+        return status;
+    }
+
+    Map<FileReference, Double> downloadStatus() {
+        return downloadStatuses.all().values().stream().collect(Collectors.toMap(Downloads.DownloadStatus::fileReference, Downloads.DownloadStatus::progress));
     }
 
     Optional<FileReferenceDownload> get(FileReference fileReference) {

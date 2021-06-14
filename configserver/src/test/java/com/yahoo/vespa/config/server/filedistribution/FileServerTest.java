@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.filedistribution.Downloads;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
@@ -137,7 +138,7 @@ public class FileServerTest {
     private static class MockFileDownloader extends FileDownloader {
 
         public MockFileDownloader(File downloadDirectory) {
-            super(emptyConnectionPool(), downloadDirectory, downloadDirectory, Duration.ofMillis(100), Duration.ofMillis(100));
+            super(emptyConnectionPool(), downloadDirectory, downloadDirectory, new Downloads(), Duration.ofMillis(100), Duration.ofMillis(100));
         }
 
     }

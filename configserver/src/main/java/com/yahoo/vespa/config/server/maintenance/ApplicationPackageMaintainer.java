@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.filedistribution.Downloads;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -52,7 +53,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         int attempts = 0;
         int failures = 0;
 
-        try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory)) {
+        try (var fileDownloader = new FileDownloader(connectionPool, downloadDirectory, new Downloads())) {
             for (var applicationId : applicationRepository.listApplications()) {
                 log.fine(() -> "Verifying application package for " + applicationId);
                 Session session = applicationRepository.getActiveSession(applicationId);
@@ -65,11 +66,11 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 if (applicationPackage != null) {
                     attempts++;
                     if (! fileReferenceExistsOnDisk(downloadDirectory, applicationPackage)) {
-                        log.fine(() -> "Downloading missing application package for application " + applicationId + " - session " + sessionId);
+                        log.fine(() -> "Downloading missing application package for application " + applicationId + " (session " + sessionId + ")");
 
                         if (fileDownloader.getFile(applicationPackage).isEmpty()) {
                             failures++;
-                            log.warning("Failed to download application package for application " + applicationId + " - session " + sessionId);
+                            log.warning("Failed to download application package for application " + applicationId + " (session " + sessionId + ")");
                             continue;
                         }
                     }
