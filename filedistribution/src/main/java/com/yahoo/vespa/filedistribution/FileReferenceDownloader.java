@@ -38,9 +38,7 @@ public class FileReferenceDownloader {
     private final Duration sleepBetweenRetries;
     private final Duration rpcTimeout;
 
-    FileReferenceDownloader(File downloadDirectory,
-                            File tmpDirectory,
-                            ConnectionPool connectionPool,
+    FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
                             Duration timeout,
                             Duration sleepBetweenRetries) {
@@ -48,8 +46,6 @@ public class FileReferenceDownloader {
         this.downloads = downloads;
         this.downloadTimeout = timeout;
         this.sleepBetweenRetries = sleepBetweenRetries;
-        // Needed to receive RPC calls receiveFile* from server after asking for files
-        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory, tmpDirectory);
         String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
     }

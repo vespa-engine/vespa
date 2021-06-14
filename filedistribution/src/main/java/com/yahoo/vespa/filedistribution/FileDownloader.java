@@ -48,8 +48,9 @@ public class FileDownloader implements AutoCloseable {
                           Duration timeout, Duration sleepBetweenRetries) {
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.fileReferenceDownloader = new FileReferenceDownloader(downloadDirectory, tmpDirectory, connectionPool,
-                                                                   downloads, timeout, sleepBetweenRetries);
+        // Needed to receive RPC calls receiveFile* from server after asking for files
+        new FileReceiver(connectionPool.getSupervisor(), downloads, downloadDirectory, tmpDirectory);
+        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
         this.downloads = downloads;
     }
 
