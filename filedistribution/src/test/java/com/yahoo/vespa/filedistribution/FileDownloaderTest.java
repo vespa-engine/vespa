@@ -175,7 +175,7 @@ public class FileDownloaderTest {
 
         // Getting file failed, verify download status and since there was an error is not downloading ATM
         assertDownloadStatus(fileReference, 0.0);
-        assertFalse(fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
+        assertFalse(fileDownloader.isDownloading(fileReference));
 
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
@@ -209,8 +209,8 @@ public class FileDownloaderTest {
         Future<Future<Optional<File>>> future1 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
         do {
             Thread.sleep(10);
-        } while (! fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
-        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(fileReference));
+        } while (! fileDownloader.isDownloading(fileReference));
+        assertTrue(fileDownloader.isDownloading(fileReference));
 
         // Request file while download is in progress
         Future<Future<Optional<File>>> future2 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
@@ -240,7 +240,7 @@ public class FileDownloaderTest {
         FileReference foo = new FileReference("foo");
         // Should download since we do not have the file on disk
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
-        assertTrue(fileDownloader.fileReferenceDownloader().isDownloading(foo));
+        assertTrue(fileDownloader.isDownloading(foo));
         assertFalse(fileDownloader.getFile(foo).isPresent());
         // Receive files to simulate download
         receiveFile();

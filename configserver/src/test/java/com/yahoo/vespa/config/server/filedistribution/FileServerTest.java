@@ -86,7 +86,7 @@ public class FileServerTest {
                 .configServerDBDir(temporaryFolder.newFolder("serverdb").getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath());
         FileServer fileServer = createFileServer(builder);
-        assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
+        assertEquals(0, fileServer.downloader().connectionPool().getSize());
 
         // Empty connection pool when only one server, no use in downloading from yourself
         List<ConfigserverConfig.Zookeeperserver.Builder> servers = new ArrayList<>();
@@ -96,7 +96,7 @@ public class FileServerTest {
         servers.add(serverBuilder);
         builder.zookeeperserver(servers);
         fileServer = createFileServer(builder);
-        assertEquals(0, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
+        assertEquals(0, fileServer.downloader().connectionPool().getSize());
 
         // connection pool of size 1 when 2 servers
         ConfigserverConfig.Zookeeperserver.Builder serverBuilder2 = new ConfigserverConfig.Zookeeperserver.Builder();
@@ -105,7 +105,7 @@ public class FileServerTest {
         servers.add(serverBuilder2);
         builder.zookeeperserver(servers);
         fileServer = createFileServer(builder);
-        assertEquals(1, fileServer.downloader().fileReferenceDownloader().connectionPool().getSize());
+        assertEquals(1, fileServer.downloader().connectionPool().getSize());
     }
 
     private void writeFile(String dir) throws IOException {

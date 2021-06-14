@@ -118,10 +118,6 @@ public class FileReferenceDownloader {
         }
     }
 
-    boolean isDownloading(FileReference fileReference) {
-        return downloads.get(fileReference).isPresent();
-    }
-
     private boolean validateResponse(Request request) {
         if (request.isError()) {
             return false;
@@ -132,10 +128,6 @@ public class FileReferenceDownloader {
             return false;
         }
         return true;
-    }
-
-    public ConnectionPool connectionPool() {
-        return connectionPool;
     }
 
     public void close() {

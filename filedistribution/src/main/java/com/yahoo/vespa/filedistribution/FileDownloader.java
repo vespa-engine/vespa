@@ -30,6 +30,7 @@ public class FileDownloader implements AutoCloseable {
     private final static Logger log = Logger.getLogger(FileDownloader.class.getName());
     public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
 
+    private final ConnectionPool connectionPool;
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
@@ -46,6 +47,7 @@ public class FileDownloader implements AutoCloseable {
 
     public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, Downloads downloads,
                           Duration timeout, Duration sleepBetweenRetries) {
+        this.connectionPool = connectionPool;
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
         // Needed to receive RPC calls receiveFile* from server after asking for files
@@ -79,9 +81,9 @@ public class FileDownloader implements AutoCloseable {
                 : download(fileReferenceDownload);
     }
 
-    public Map<FileReference, Double> downloadStatus() {
-        return downloads.downloadStatus();
-    }
+    public Map<FileReference, Double> downloadStatus() { return downloads.downloadStatus(); }
+
+    public ConnectionPool connectionPool() { return connectionPool; }
 
     File downloadDirectory() {
         return downloadDirectory;
@@ -105,9 +107,13 @@ public class FileDownloader implements AutoCloseable {
         return Optional.empty();
     }
 
-    private boolean alreadyDownloaded(FileReference fileReference) {
+    boolean isDownloading(FileReference fileReference) {
+        return downloads.get(fileReference).isPresent();
+    }
+
+    private boolean alreadyDownloaded(FileReferenceDownload fileReferenceDownload) {
         try {
-            return getFileFromFileSystem(fileReference).isPresent();
+            return getFileFromFileSystem(fileReferenceDownload.fileReference()).isPresent();
         } catch (RuntimeException e) {
             return false;
         }
@@ -115,8 +121,7 @@ public class FileDownloader implements AutoCloseable {
 
     /** Start a download, don't wait for result */
     public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        FileReference fileReference = fileReferenceDownload.fileReference();
-        if (alreadyDownloaded(fileReference)) return;
+        if (alreadyDownloaded(fileReferenceDownload)) return;
 
         download(fileReferenceDownload);
     }
@@ -126,11 +131,8 @@ public class FileDownloader implements AutoCloseable {
         return fileReferenceDownloader.download(fileReferenceDownload);
     }
 
-    public FileReferenceDownloader fileReferenceDownloader() {
-        return fileReferenceDownloader;
-    }
-
     public void close() {
         fileReferenceDownloader.close();
     }
+
 }
