@@ -28,6 +28,17 @@ DistributorTotalMetrics::aggregate()
 }
 
 void
+DistributorTotalMetrics::addToSnapshot(Metric& m, std::vector<Metric::UP> &ownerList) const
+{
+    DistributorMetricSet total;
+    _bucket_db_updater_metrics.addToPart(total);
+    for (auto &stripe_metrics : _stripes_metrics) {
+        stripe_metrics->addToPart(total);
+    }
+    total.addToSnapshot(m, ownerList);
+}
+
+void
 DistributorTotalMetrics::reset()
 {
     DistributorMetricSet::reset();

@@ -19,6 +19,7 @@ public:
     explicit DistributorTotalMetrics(uint32_t num_distributor_stripes);
     ~DistributorTotalMetrics() override;
     void aggregate();
+    void addToSnapshot(Metric& m, std::vector<Metric::UP> &ownerList) const override;
     void reset() override;
     DistributorMetricSet& stripe(uint32_t stripe_index) { return *_stripes_metrics[stripe_index]; }
     DistributorMetricSet& bucket_db_updater_metrics() { return _bucket_db_updater_metrics; }
