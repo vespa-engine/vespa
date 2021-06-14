@@ -10,6 +10,7 @@ import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
+import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonResponse;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.yolean.Exceptions;
 
@@ -17,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 
 /**
@@ -58,10 +58,10 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/config/dashboard/topFolders")) return new JsonInputStreamResponse(client::getTopFolders);
-        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return new JsonInputStreamResponse(() -> client.getDashboard(path.get("id")));
-        if (path.matches("/horizon/v1/config/dashboard/favorite")) return new JsonInputStreamResponse(() -> client.getFavorite(request.getProperty("user")));
-        if (path.matches("/horizon/v1/config/dashboard/recent")) return new JsonInputStreamResponse(() -> client.getRecent(request.getProperty("user")));
+        if (path.matches("/horizon/v1/config/dashboard/topFolders")) return new JsonInputStreamResponse(client.getTopFolders());
+        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return new JsonInputStreamResponse(client.getDashboard(path.get("id")));
+        if (path.matches("/horizon/v1/config/dashboard/favorite")) return new JsonInputStreamResponse(client.getFavorite(request.getProperty("user")));
+        if (path.matches("/horizon/v1/config/dashboard/recent")) return new JsonInputStreamResponse(client.getRecent(request.getProperty("user")));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -74,7 +74,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private HttpResponse put(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/config/user")) return new JsonInputStreamResponse(client::getUser);
+        if (path.matches("/horizon/v1/config/user")) return new JsonInputStreamResponse(client.getUser());
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -82,7 +82,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         SecurityContext securityContext = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class);
         try {
             byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), securityContext.roles(), systemName);
-            return new JsonInputStreamResponse(() -> isMetricQuery ? client.getMetrics(data) : client.getMetaData(data));
+            return new JsonInputStreamResponse(isMetricQuery ? client.getMetrics(data) : client.getMetaData(data));
         } catch (TsdbQueryRewriter.UnauthorizedException e) {
             return ErrorResponse.forbidden("Access denied");
         } catch (IOException e) {
@@ -99,11 +99,11 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private static class JsonInputStreamResponse extends HttpResponse {
 
-        private final Supplier<InputStream> inputStreamSupplier;
+        private final HorizonResponse response;
 
-        public JsonInputStreamResponse(Supplier<InputStream> inputStreamSupplier) {
-            super(200);
-            this.inputStreamSupplier = inputStreamSupplier;
+        public JsonInputStreamResponse(HorizonResponse response) {
+            super(response.code());
+            this.response = response;
         }
 
         @Override
@@ -113,7 +113,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
         @Override
         public void render(OutputStream outputStream) throws IOException {
-            try (InputStream inputStream = inputStreamSupplier.get()) {
+            try (InputStream inputStream = response.inputStream()) {
                 inputStream.transferTo(outputStream);
             }
         }

@@ -1,27 +1,25 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.horizon;
 
-import java.io.InputStream;
-
 /**
  * @author olaa
  */
 public interface HorizonClient {
 
-    InputStream getMetrics(byte[] query);
+    HorizonResponse getMetrics(byte[] query);
 
-    InputStream getUser();
+    HorizonResponse getUser();
 
-    InputStream getDashboard(String dashboardId) ;
+    HorizonResponse getDashboard(String dashboardId);
 
-    InputStream getFavorite(String userId);
+    HorizonResponse getFavorite(String userId);
 
-    InputStream getTopFolders();
+    HorizonResponse getTopFolders();
 
-    InputStream getRecent(String userId);
+    HorizonResponse getRecent(String userId);
 
-    InputStream getClipboard(String dashboardId);
+    HorizonResponse getClipboard(String dashboardId);
 
-    InputStream getMetaData(byte[] query);
+    HorizonResponse getMetaData(byte[] query);
 
 }
