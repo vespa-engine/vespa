@@ -42,4 +42,9 @@ public class MockHorizonClient implements HorizonClient {
     public InputStream getClipboard(String dashboardId) {
         return null;
     }
+
+    @Override
+    public InputStream getMetaData(byte[] query) {
+        return null;
+    }
 }
