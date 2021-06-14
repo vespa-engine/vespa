@@ -1,8 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
-import ai.vespa.feed.client.FeedClient.CircuitBreaker.State;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -15,8 +13,8 @@ interface RequestStrategy {
     /** Stats for operations sent through this. */
     OperationStats stats();
 
-    /** State of the circuit breaker. */
-    State circuitBreakerState();
+    /** Whether this has failed fatally, and we should cease sending further operations. */
+    boolean hasFailed();
 
     /** Forcibly terminates this, causing all inflight operations to complete immediately. */
     void destroy();
