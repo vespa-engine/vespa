@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -9,7 +10,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Keeps track of downloads and download status
+ *
+ * @author hmusum
+ */
 class Downloads {
+
     private final Map<FileReference, FileReferenceDownload> downloads = new ConcurrentHashMap<>();
 
     void add(FileReferenceDownload fileReferenceDownload) {
@@ -87,4 +94,5 @@ class Downloads {
             return created;
         }
     }
+
 }

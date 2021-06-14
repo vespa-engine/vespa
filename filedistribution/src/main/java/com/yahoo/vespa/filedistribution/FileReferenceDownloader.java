@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 
 /**
  * Downloads file reference using rpc requests to config server and keeps track of files being downloaded
- * <p>
- * Some methods are synchronized to make sure access to downloads is atomic
  *
  * @author hmusum
  */
