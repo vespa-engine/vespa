@@ -91,18 +91,22 @@ public enum JobType {
     productionAwsApNortheast1a  ("production-aws-ap-northeast-1a",
                             Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a"))),
 
+    testAwsApNortheast1a   ("test-aws-ap-northeast-1a",
+                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")), true),
+
     productionAwsEuWest1a  ("production-aws-eu-west-1a",
                             Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a"))),
 
-    testAwsApNortheast1a   ("test-aws-ap-northeast-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")), true),
+    testAwsEuWest1a         ("test-aws-eu-west-1a",
+                            Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a")), true),
 
     productionAwsUsWest2a  ("production-aws-us-west-2a",
                             Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
                                    Public, ZoneId.from("prod", "aws-us-west-2a"))),
 
     testAwsUsWest2a        ("test-aws-us-west-2a",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a")), true),
+                            Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
+                                   Public, ZoneId.from("prod", "aws-us-west-2a")), true),
 
     productionAwsUsEast1b  ("production-aws-us-east-1b",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b"))),
@@ -132,6 +136,9 @@ public enum JobType {
     productionCdUsCentral2 ("production-cd-us-central-2",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2"))),
 
+    testCdUsCentral2       ("test-cd-us-central-2",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2")), true),
+
     productionCdUsWest1    ("production-cd-us-west-1",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1"))),
 
@@ -155,7 +162,7 @@ public enum JobType {
                             Map.of(main, ZoneId.from("perf"   , "us-east-3")));
 
     private final String jobName;
-    private final Map<SystemName, ZoneId> zones;
+    final Map<SystemName, ZoneId> zones;
     private final boolean isProductionTest;
 
     JobType(String jobName, Map<SystemName, ZoneId> zones, boolean isProductionTest) {
