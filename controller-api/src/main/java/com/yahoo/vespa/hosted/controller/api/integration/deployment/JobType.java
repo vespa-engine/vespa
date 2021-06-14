@@ -136,6 +136,9 @@ public enum JobType {
     productionCdUsCentral2 ("production-cd-us-central-2",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2"))),
 
+    testCdUsCentral2       ("test-cd-us-central-2",
+                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2")), true),
+
     productionCdUsWest1    ("production-cd-us-west-1",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1"))),
 
@@ -159,7 +162,7 @@ public enum JobType {
                             Map.of(main, ZoneId.from("perf"   , "us-east-3")));
 
     private final String jobName;
-    private final Map<SystemName, ZoneId> zones;
+    final Map<SystemName, ZoneId> zones;
     private final boolean isProductionTest;
 
     JobType(String jobName, Map<SystemName, ZoneId> zones, boolean isProductionTest) {
