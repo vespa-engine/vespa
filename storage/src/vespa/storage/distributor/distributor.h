@@ -9,6 +9,7 @@
 #include "distributor_interface.h"
 #include "distributor_stripe_interface.h"
 #include "externaloperationhandler.h"
+#include "ideal_state_total_metrics.h"
 #include "idealstatemanager.h"
 #include "min_replica_provider.h"
 #include "pendingmessagetracker.h"
@@ -201,6 +202,8 @@ private:
     const bool                            _use_legacy_mode;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
+    std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
+    std::shared_ptr<IdealStateTotalMetrics>  _ideal_state_total_metrics;
     ChainedMessageSender*                 _messageSender;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     uint8_t                               _n_stripe_bits;
@@ -213,6 +216,7 @@ private:
     MessageQueue                         _message_queue; // Queue for top-level ops
     MessageQueue                         _fetched_messages;
     distributor::DistributorComponent    _component;
+    storage::DistributorComponent        _ideal_state_component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
     std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;
     StatusReporterDelegate               _distributorStatusDelegate;

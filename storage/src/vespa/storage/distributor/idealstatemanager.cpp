@@ -25,21 +25,14 @@ namespace storage {
 namespace distributor {
 
 IdealStateManager::IdealStateManager(
-        DistributorStripeInterface& owner,
-        DistributorBucketSpaceRepo& bucketSpaceRepo,
-        DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-        DistributorComponentRegister& compReg,
-        uint32_t stripe_index)
-    : _metrics(new IdealStateMetricSet),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
-      _bucketSpaceRepo(bucketSpaceRepo),
+        const DistributorNodeContext& node_ctx,
+        DistributorStripeOperationContext& op_ctx,
+        IdealStateMetricSet& metrics)
+    : _metrics(metrics),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
       _has_logged_phantom_replica_warning(false)
 {
-    if (stripe_index == 0) {
-        // TODO STRIPE: Add proper handling of metrics across distributor stripes
-        _distributorComponent.registerMetric(*_metrics);
-    }
-
     LOG(debug, "Adding BucketStateStateChecker to state checkers");
     _stateCheckers.push_back(StateChecker::SP(new BucketStateStateChecker()));
 
@@ -167,7 +160,7 @@ IdealStateManager::generateHighestPriority(
         const document::Bucket &bucket,
         NodeMaintenanceStatsTracker& statsTracker) const
 {
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
@@ -204,7 +197,7 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace,
 {
     NodeMaintenanceStatsTracker statsTracker;
     document::Bucket bucket(bucketSpace, e.getBucketId());
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     if (e.valid()) {
         c.entry = e;
@@ -239,7 +232,7 @@ std::vector<MaintenanceOperation::SP>
 IdealStateManager::generateAll(const document::Bucket &bucket,
                                NodeMaintenanceStatsTracker& statsTracker) const
 {
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket.getBucketSpace());
     StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
@@ -291,7 +284,7 @@ IdealStateManager::getBucketStatus(
 
 void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
     StatusBucketVisitor proc(*this, bucket_space, out);
-    auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket_space));
+    auto& distributorBucketSpace = _op_ctx.bucket_space_repo().get(bucket_space);
     distributorBucketSpace.getBucketDatabase().forEach(proc);
 }
 
@@ -299,7 +292,7 @@ void IdealStateManager::getBucketStatus(std::ostream& out) const {
     LOG(debug, "Dumping bucket database valid at cluster state version %u",
         operation_context().cluster_state_bundle().getVersion());
 
-    for (auto& space : _bucketSpaceRepo) {
+    for (auto& space : _op_ctx.bucket_space_repo()) {
         out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first << "</h2>\n";
         dump_bucket_space_db_status(space.first, out);
     }

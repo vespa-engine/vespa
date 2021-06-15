@@ -59,6 +59,7 @@ class DistributorStripe final
 public:
     DistributorStripe(DistributorComponentRegister&,
                       DistributorMetricSet& metrics,
+                      IdealStateMetricSet& ideal_state_metrics,
                       const NodeIdentity& node_identity,
                       framework::TickingThreadPool&,
                       DoneInitializeHandler&,
