@@ -51,10 +51,20 @@ public class ValidateNearestNeighborTestCase {
                                                      "attribute[3].tensortype          tensor(x{})\n" +
                                                      "attribute[4].name                matrix\n" +
                                                      "attribute[4].datatype            TENSOR\n" +
-                                                     "attribute[4].tensortype          tensor(x[3],y[1])\n"
+                                                     "attribute[4].tensortype          tensor(x[3],y[1])\n" +
+                                                     "attribute[5].name                threetypes\n" +
+                                                     "attribute[5].datatype            TENSOR\n" +
+                                                     "attribute[5].tensortype          tensor(x[42])\n" +
+                                                     "attribute[6].name                threetypes\n" +
+                                                     "attribute[6].datatype            TENSOR\n" +
+                                                     "attribute[6].tensortype          tensor(x[3])\n" +
+                                                     "attribute[7].name                threetypes\n" +
+                                                     "attribute[7].datatype            TENSOR\n" +
+                                                     "attribute[7].tensortype          tensor(x{})\n"
         )));
     }
 
+    private static TensorType tt_dense_dvector_42 = TensorType.fromSpec("tensor(x[42])");
     private static TensorType tt_dense_dvector_3 = TensorType.fromSpec("tensor(x[3])");
     private static TensorType tt_dense_dvector_2 = TensorType.fromSpec("tensor(x[2])");
     private static TensorType tt_dense_fvector_3 = TensorType.fromSpec("tensor<float>(x[3])");
@@ -183,6 +193,20 @@ public class ValidateNearestNeighborTestCase {
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
         assertErrMsg(desc("simple", "qvector", 1, "field is not a tensor"), r);
+    }
+
+    @Test
+    public void testSeveralAttributesWithSameName() {
+        String q = makeQuery("threetypes", "qvector");
+        Tensor t1 = makeTensor(tt_dense_fvector_3);
+        Result r1 = doSearch(searcher, q, t1);
+        assertNull(r1.hits().getError());
+        Tensor t2 = makeTensor(tt_dense_dvector_42, 42);
+        Result r2 = doSearch(searcher, q, t2);
+        assertNull(r2.hits().getError());
+        Tensor t3 = makeTensor(tt_dense_dvector_2, 2);
+        Result r3 = doSearch(searcher, q, t3);
+        assertErrMsg(desc("threetypes", "qvector", 1, "field type tensor(x[42]) does not match query type tensor(x[2])"), r3);
     }
 
     @Test
