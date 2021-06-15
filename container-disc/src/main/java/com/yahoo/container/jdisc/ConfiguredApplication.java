@@ -155,7 +155,7 @@ public final class ConfiguredApplication implements Application {
         if ( ! qrConfig.rpc().enabled()) return null;
 
         // 1. Set up RPC server
-        supervisor = new Supervisor(new Transport("slobrok")).useSmallBuffers();
+        supervisor = new Supervisor(new Transport("slobrok")).setDropEmptyBuffers(true);
         Spec listenSpec = new Spec(qrConfig.rpc().port());
         try {
             acceptor = supervisor.listen(listenSpec);

@@ -37,16 +37,6 @@ public class Supervisor {
     }
 
     /**
-     * Will optimize buffers size for small memory footprint
-     * Use this when you have many connections with very little traffic.
-     **/
-    public Supervisor useSmallBuffers() {
-        setMaxInputBufferSize(SMALL_INPUT_BUFFER_SIZE);
-        setMaxOutputBufferSize(SMALL_OUTPUT_BUFFER_SIZE);
-        return this;
-    }
-
-    /**
      * Drop empty buffers. This will reduce memory footprint for idle
      * connections at the cost of extra allocations when buffer space
      * is needed again.
