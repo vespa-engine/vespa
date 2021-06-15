@@ -336,11 +336,6 @@ public class IndexedSearchCluster extends SearchCluster
     @Override
     public int getRowBits() { return 8; }
 
-    @Override
-    public String toString() {
-        return "Indexing cluster '" + getClusterName() + "'";
-    }
-
     /**
      * Class used to retrieve combined configuration from multiple document databases.
      * It is not a {@link com.yahoo.config.ConfigInstance.Producer} of those configs,

@@ -6,6 +6,7 @@ import com.yahoo.messagebus.routing.HopBlueprint;
 import com.yahoo.messagebus.routing.PolicyDirective;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingTable;
+import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
@@ -16,48 +17,50 @@ import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author Einar M R Rosenvinge
  */
 public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
-
     @Test
-    public void oneContentOneDoctypeImplicitIndexingClusterImplicitIndexingChain() {
+    public void oneContentOneDoctypeImplicitIndexingClusterImplicitIndexingChain()
+            throws IOException, SAXException, ParseException {
         final String CLUSTERNAME = "musiccluster";
         SearchClusterSpec searchCluster = new SearchClusterSpec(CLUSTERNAME, null, null);
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
-        VespaModel model = getIndexedContentVespaModel(List.of(), List.of(searchCluster));
+        VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(searchCluster));
         assertIndexing(model, new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
         assertFeedingRoute(model, CLUSTERNAME, "container/chain.indexing");
     }
 
     @Test
-    public void oneContentTwoDoctypesImplicitIndexingClusterImplicitIndexingChain() {
+    public void oneContentTwoDoctypesImplicitIndexingClusterImplicitIndexingChain()
+            throws IOException, SAXException, ParseException {
         final String CLUSTERNAME = "musicandbookscluster";
         SearchClusterSpec searchCluster = new SearchClusterSpec(CLUSTERNAME, null, null);
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
         searchCluster.searchDefs.add(new SearchDefSpec("book", "author", "title"));
-        VespaModel model = getIndexedContentVespaModel(List.of(), List.of(searchCluster));
+        VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(searchCluster));
         assertIndexing(model, new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
         assertFeedingRoute(model, CLUSTERNAME, "container/chain.indexing");
     }
 
     @Test
-    public void twoContentTwoDoctypesImplicitIndexingClusterImplicitIndexingChain() {
+    public void twoContentTwoDoctypesImplicitIndexingClusterImplicitIndexingChain()
+            throws IOException, SAXException, ParseException {
         final String MUSIC = "musiccluster";
         SearchClusterSpec musicCluster = new SearchClusterSpec(MUSIC, null, null);
         musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
@@ -66,10 +69,10 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         SearchClusterSpec booksCluster = new SearchClusterSpec(BOOKS, null, null);
         booksCluster.searchDefs.add(new SearchDefSpec("book", "author", "title"));
 
-        VespaModel model = getIndexedContentVespaModel(List.of(), List.of(musicCluster, booksCluster));
+        VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(musicCluster, booksCluster));
 
         assertIndexing(model,
-                       new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
+                new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
 
         assertFeedingRoute(model, MUSIC, "container/chain.indexing");
         assertFeedingRoute(model, BOOKS, "container/chain.indexing");
@@ -77,17 +80,19 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
 
 
     @Test
-    public void oneContentOneDoctypeExplicitIndexingClusterImplicitIndexingChain() {
+    public void oneContentOneDoctypeExplicitIndexingClusterImplicitIndexingChain()
+            throws IOException, SAXException, ParseException {
         final String CLUSTERNAME = "musiccluster";
         SearchClusterSpec searchCluster = new SearchClusterSpec(CLUSTERNAME, "dpcluster", null);
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
-        VespaModel model = getIndexedContentVespaModel(List.of(new DocprocClusterSpec("dpcluster")), List.of(searchCluster));
+        VespaModel model = getIndexedContentVespaModel(Arrays.asList(new DocprocClusterSpec("dpcluster")), Arrays.asList(searchCluster));
         assertIndexing(model, new DocprocClusterSpec("dpcluster", new DocprocChainSpec("dpcluster/chain.indexing")));
         assertFeedingRoute(model, CLUSTERNAME, "dpcluster/chain.indexing");
     }
 
     @Test
-    public void oneSearchOneDoctypeExplicitIndexingClusterExplicitIndexingChain() {
+    public void oneSearchOneDoctypeExplicitIndexingClusterExplicitIndexingChain()
+            throws IOException, SAXException, ParseException {
         String xml =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<services version=\"1.0\">\n" +
@@ -125,7 +130,8 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
     }
 
     @Test
-    public void twoContentTwoDoctypesExplicitIndexingInSameIndexingCluster() {
+    public void twoContentTwoDoctypesExplicitIndexingInSameIndexingCluster()
+            throws IOException, SAXException, ParseException {
         final String MUSIC = "musiccluster";
         SearchClusterSpec musicCluster = new SearchClusterSpec(MUSIC, "dpcluster", null);
         musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
@@ -134,8 +140,8 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         SearchClusterSpec booksCluster = new SearchClusterSpec(BOOKS, "dpcluster", null);
         booksCluster.searchDefs.add(new SearchDefSpec("book", "author", "title"));
 
-        VespaModel model = getIndexedContentVespaModel(List.of(new DocprocClusterSpec("dpcluster")),
-                                                       List.of(musicCluster, booksCluster));
+        VespaModel model = getIndexedContentVespaModel(Arrays.asList(new DocprocClusterSpec("dpcluster")),
+                                                       Arrays.asList(musicCluster, booksCluster));
 
         assertIndexing(model, new DocprocClusterSpec("dpcluster", new DocprocChainSpec("dpcluster/chain.indexing")));
         assertFeedingRoute(model, MUSIC, "dpcluster/chain.indexing");
@@ -159,12 +165,14 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                         "</services>\n";
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("music", "title", "artist");
-        VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), services, sds).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(),
+                services, sds).create();
         assertIndexing(model, new DocprocClusterSpec("dokprok"));
     }
 
     @Test
-    public void twoContentTwoDoctypesExplicitIndexingInDifferentIndexingClustersExplicitChain() {
+    public void twoContentTwoDoctypesExplicitIndexingInDifferentIndexingClustersExplicitChain()
+            throws IOException, SAXException, ParseException {
         final String MUSIC = "musiccluster";
         SearchClusterSpec musicCluster = new SearchClusterSpec(MUSIC, "dpmusiccluster", "dpmusicchain");
         musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
@@ -175,8 +183,12 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
 
         DocprocClusterSpec dpMusicCluster = new DocprocClusterSpec("dpmusiccluster", new DocprocChainSpec("dpmusicchain", "indexing"));
         DocprocClusterSpec dpBooksCluster = new DocprocClusterSpec("dpbookscluster", new DocprocChainSpec("dpbookschain", "indexing"));
-        VespaModel model = getIndexedContentVespaModel(List.of(dpMusicCluster, dpBooksCluster),
-                                                       List.of(musicCluster, booksCluster));
+        VespaModel model = getIndexedContentVespaModel(Arrays.asList(
+                dpMusicCluster,
+                dpBooksCluster),
+                                                       Arrays.asList(
+                                                               musicCluster,
+                                                               booksCluster));
 
         //after we generated model, add indexing chains for validation:
         dpMusicCluster.chains.clear();
@@ -192,52 +204,52 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         assertFeedingRoute(model, BOOKS, "dpbookscluster/chain.dpbookschain");
     }
 
-    @Test
-    public void requiresIndexingInheritance() {
-        try {
-            SearchClusterSpec musicCluster = new SearchClusterSpec("musiccluster",
-                                                                   "dpmusiccluster",
-                                                                   "dpmusicchain");
-            musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
+    @Test(expected = IllegalArgumentException.class)
+    public void twoContentTwoDoctypesExplicitIndexingInDifferentIndexingClustersExplicitChainIncorrectInheritance()
+            throws IOException, SAXException, ParseException {
+        final String MUSIC = "musiccluster";
+        SearchClusterSpec musicCluster = new SearchClusterSpec(MUSIC, "dpmusiccluster", "dpmusicchain");
+        musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
 
-            DocprocClusterSpec dpMusicCluster = new DocprocClusterSpec("dpmusiccluster", new DocprocChainSpec("dpmusicchain"));
-            getIndexedContentVespaModel(List.of(dpMusicCluster), List.of(musicCluster));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("Docproc chain 'dpmusicchain' must inherit from the 'indexing' chain", e.getMessage());
-        }
-    }
+        final String BOOKS = "bookscluster";
+        SearchClusterSpec booksCluster = new SearchClusterSpec(BOOKS, "dpbookscluster", "dpbookschain");
+        booksCluster.searchDefs.add(new SearchDefSpec("book", "author", "title"));
 
-    @Test
-    public void indexingChainShouldNotBeTheDefaultChain() {
-        try {
-            SearchClusterSpec musicCluster = new SearchClusterSpec("musiccluster",
-                                                                   "dpmusiccluster",
-                                                                   "default");
-            musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
+        DocprocClusterSpec dpMusicCluster = new DocprocClusterSpec("dpmusiccluster", new DocprocChainSpec("dpmusicchain"));
+        DocprocClusterSpec dpBooksCluster = new DocprocClusterSpec("dpbookscluster", new DocprocChainSpec("dpbookschain"));
+        VespaModel model = getIndexedContentVespaModel(Arrays.asList(
+                dpMusicCluster,
+                dpBooksCluster),
+                                                       Arrays.asList(
+                                                               musicCluster,
+                                                               booksCluster));
 
-            DocprocClusterSpec dpMusicCluster = new DocprocClusterSpec("dpmusiccluster", new DocprocChainSpec("default", "indexing"));
-            getIndexedContentVespaModel(List.of(dpMusicCluster), List.of(musicCluster));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Indexing cluster 'musiccluster' specifies the chain 'default' as indexing chain"));
-        }
+        //after we generated model, add indexing chains for validation:
+        dpMusicCluster.chains.clear();
+        dpMusicCluster.chains.add(new DocprocChainSpec("dpmusiccluster/chain.indexing"));
+        dpMusicCluster.chains.add(new DocprocChainSpec("dpmusiccluster/chain.dpmusicchain"));
+
+        dpBooksCluster.chains.clear();
+        dpBooksCluster.chains.add(new DocprocChainSpec("dpbookscluster/chain.indexing"));
+        dpBooksCluster.chains.add(new DocprocChainSpec("dpbookscluster/chain.dpbookschain"));
+
+        assertIndexing(model, dpMusicCluster, dpBooksCluster);
+        assertFeedingRoute(model, MUSIC, "dpmusiccluster/chain.dpmusicchain");
+        assertFeedingRoute(model, BOOKS, "dpbookscluster/chain.dpbookschain");
     }
 
     private void assertIndexing(VespaModel model, DocprocClusterSpec... expectedDocprocClusters) {
         Map<String, ContainerCluster> docprocClusters = getDocprocClusters(model);
-        assertEquals(expectedDocprocClusters.length, docprocClusters.size());
+        assertThat(docprocClusters.size(), is(expectedDocprocClusters.length));
 
         for (DocprocClusterSpec expectedDocprocCluster : expectedDocprocClusters) {
             ContainerCluster docprocCluster = docprocClusters.get(expectedDocprocCluster.name);
-            assertNotNull(docprocCluster);
-            assertEquals(expectedDocprocCluster.name, docprocCluster.getName());
+            assertThat(docprocCluster, not(nullValue()));
+            assertThat(docprocCluster.getName(), is(expectedDocprocCluster.name));
             ContainerDocproc containerDocproc = docprocCluster.getDocproc();
-            assertNotNull(containerDocproc);
+            assertThat(containerDocproc, not(nullValue()));
             List<DocprocChain> chains = containerDocproc.getChains().allChains().allComponents();
-            assertEquals(expectedDocprocCluster.chains.size(),  chains.size());
+            assertThat(chains.size(), is(expectedDocprocCluster.chains.size()));
             List<String> actualDocprocChains = new ArrayList<>();
             for (DocprocChain chain : chains) {
                 actualDocprocChains.add(chain.getServiceName());
@@ -361,8 +373,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         return retval.toString();
     }
 
-    private String createVespaServicesWithContent(List<DocprocClusterSpec> docprocClusterSpecs,
-                                                  List<SearchClusterSpec> searchClusterSpecs) {
+    private String createVespaServicesWithContent(List<DocprocClusterSpec> docprocClusterSpecs, List<SearchClusterSpec> searchClusterSpecs) {
         String mainPre =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services version='1.0'>\n" +
@@ -382,7 +393,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
             String docprocCluster = "";
             docprocCluster += "  <container version='1.0' id='" + docprocClusterSpec.name + "'>\n";
 
-            if (docprocClusterSpec.chains.size() > 0) {
+            if (docprocClusterSpec.chains != null && docprocClusterSpec.chains.size() > 0) {
                 docprocCluster += "    <document-processing>\n";
                 for (DocprocChainSpec chain : docprocClusterSpec.chains) {
                     if (chain.inherits.isEmpty()) {
@@ -454,12 +465,11 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                 createVespaServicesWithContent(docprocClusterSpecs, searchClusterSpecs), sds).create();
     }
 
-    private static class SearchClusterSpec {
-
+    private class SearchClusterSpec {
         private final String name;
-        private final List<SearchDefSpec> searchDefs = new ArrayList<>(2);
-        private final String indexingClusterName;
-        private final String indexingChainName;
+        private List<SearchDefSpec> searchDefs = new ArrayList<>(2);
+        private String indexingClusterName;
+        private String indexingChainName;
 
         private SearchClusterSpec(String name, String indexingClusterName, String indexingChainName) {
             this.name = name;
@@ -468,11 +478,10 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         }
     }
 
-    private static class SearchDefSpec {
-
-        private final String typeName;
-        private final String field1Name;
-        private final String field2Name;
+    private class SearchDefSpec {
+        private String typeName;
+        private String field1Name;
+        private String field2Name;
 
         private SearchDefSpec(String typeName, String field1Name, String field2Name) {
             this.typeName = typeName;
@@ -482,7 +491,6 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
     }
 
     private class DocprocClusterSpec {
-
         private final String name;
         private final List<DocprocChainSpec> chains = new ArrayList<>();
 
@@ -492,8 +500,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         }
     }
 
-    private static class DocprocChainSpec {
-
+    private class DocprocChainSpec {
         private final String name;
         private final List<String> inherits = new ArrayList<>();
 
@@ -502,5 +509,4 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
             this.inherits.addAll(Arrays.asList(inherits));
         }
     }
-
 }
