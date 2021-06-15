@@ -33,11 +33,9 @@ class IdealStateManager : public MaintenancePriorityGenerator,
 {
 public:
 
-    IdealStateManager(DistributorStripeInterface& owner,
-                      DistributorBucketSpaceRepo& bucketSpaceRepo,
-                      DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                      DistributorComponentRegister& compReg,
-                      uint32_t stripe_index = 0);
+    IdealStateManager(const DistributorNodeContext& node_ctx,
+                      DistributorStripeOperationContext& op_ctx,
+                      IdealStateMetricSet& metrics);
 
     ~IdealStateManager() override;
 
@@ -66,18 +64,18 @@ public:
             const BucketDatabase::Entry& e,
             api::StorageMessage::Priority pri);
 
-    IdealStateMetricSet& getMetrics() { return *_metrics; }
+    IdealStateMetricSet& getMetrics() { return _metrics; }
 
 
     void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 
     void getBucketStatus(std::ostream& out) const;
 
-    const DistributorNodeContext& node_context() const { return _distributorComponent; }
-    DistributorStripeOperationContext& operation_context() { return _distributorComponent; }
-    const DistributorStripeOperationContext& operation_context() const { return _distributorComponent; }
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
+    const DistributorNodeContext& node_context() const { return _node_ctx; }
+    DistributorStripeOperationContext& operation_context() { return _op_ctx; }
+    const DistributorStripeOperationContext& operation_context() const { return _op_ctx; }
+    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _op_ctx.bucket_space_repo(); }
+    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _op_ctx.bucket_space_repo(); }
 
 private:
     void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
@@ -90,7 +88,7 @@ private:
 
     BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c) const;
 
-    std::shared_ptr<IdealStateMetricSet> _metrics;
+    IdealStateMetricSet& _metrics;
     document::BucketId _lastPrioritizedBucket;
 
     // Prioritized of state checkers that generate operations
@@ -98,8 +96,8 @@ private:
     std::vector<StateChecker::SP> _stateCheckers;
     SplitBucketStateChecker* _splitBucketStateChecker;
 
-    DistributorStripeComponent _distributorComponent;
-    DistributorBucketSpaceRepo& _bucketSpaceRepo;
+    const DistributorNodeContext& _node_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     mutable bool _has_logged_phantom_replica_warning;
 
     bool iAmUp() const;
