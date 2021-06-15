@@ -33,6 +33,7 @@ public class ConnectionLogEntry {
     private final Instant sslPeerNotAfter;
     private final String sslSniServerName;
     private final SslHandshakeFailure sslHandshakeFailure;
+    private final List<String> sslSubjectAlternativeNames;
     private final String httpProtocol;
     private final String proxyProtocolVersion;
 
@@ -59,6 +60,7 @@ public class ConnectionLogEntry {
         this.sslPeerNotAfter = builder.sslPeerNotAfter;
         this.sslSniServerName = builder.sslSniServerName;
         this.sslHandshakeFailure = builder.sslHandshakeFailure;
+        this.sslSubjectAlternativeNames = builder.sslSubjectAlternativeNames;
         this.httpProtocol = builder.httpProtocol;
         this.proxyProtocolVersion = builder.proxyProtocolVersion;
     }
@@ -88,6 +90,7 @@ public class ConnectionLogEntry {
     public Optional<Instant> sslPeerNotAfter() { return Optional.ofNullable(sslPeerNotAfter); }
     public Optional<String> sslSniServerName() { return Optional.ofNullable(sslSniServerName); }
     public Optional<SslHandshakeFailure> sslHandshakeFailure() { return Optional.ofNullable(sslHandshakeFailure); }
+    public List<String> sslSubjectAlternativeNames() { return sslSubjectAlternativeNames == null ? List.of() : sslSubjectAlternativeNames; }
     public Optional<String> httpProtocol() { return Optional.ofNullable(httpProtocol); }
     public Optional<String> proxyProtocolVersion() { return Optional.ofNullable(proxyProtocolVersion); }
 
@@ -139,6 +142,7 @@ public class ConnectionLogEntry {
         private Instant sslPeerNotAfter;
         private String sslSniServerName;
         private SslHandshakeFailure sslHandshakeFailure;
+        private List<String> sslSubjectAlternativeNames;
         private String httpProtocol;
         private String proxyProtocolVersion;
 
@@ -223,6 +227,10 @@ public class ConnectionLogEntry {
         }
         public Builder withSslHandshakeFailure(SslHandshakeFailure sslHandshakeFailure) {
             this.sslHandshakeFailure = sslHandshakeFailure;
+            return this;
+        }
+        public Builder withSslSubjectAlternativeNames(List<String> sslSubjectAlternativeNames) {
+            this.sslSubjectAlternativeNames = sslSubjectAlternativeNames;
             return this;
         }
         public Builder withHttpProtocol(String protocol) {

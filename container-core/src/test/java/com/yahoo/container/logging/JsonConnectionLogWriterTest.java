@@ -26,6 +26,7 @@ class JsonConnectionLogWriterTest {
                         List.of(
                                 new ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry("javax.net.ssl.SSLHandshakeException", "message"),
                                 new ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry("java.io.IOException", "cause message"))))
+                .withSslSubjectAlternativeNames(List.of("sandns", "sanemail"))
                 .build();
         String expectedJson = "{" +
                 "\"id\":\""+id.toString()+"\"," +
@@ -34,7 +35,7 @@ class JsonConnectionLogWriterTest {
                 "\"ssl\":{\"handshake-failure\":{\"exception\":[" +
                 "{\"cause\":\"javax.net.ssl.SSLHandshakeException\",\"message\":\"message\"}," +
                 "{\"cause\":\"java.io.IOException\",\"message\":\"cause message\"}" +
-                "],\"type\":\"UNKNOWN\"}}}";
+                "],\"type\":\"UNKNOWN\"},\"san\":[\"sandns\",\"sanemail\"]}}";
 
         JsonConnectionLogWriter writer = new JsonConnectionLogWriter();
         ByteArrayOutputStream out = new ByteArrayOutputStream();

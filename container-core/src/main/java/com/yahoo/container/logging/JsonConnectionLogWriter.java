@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -68,6 +69,7 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
             Instant sslPeerNotAfter = unwrap(record.sslPeerNotAfter());
             String sslSniServerName = unwrap(record.sslSniServerName());
             ConnectionLogEntry.SslHandshakeFailure sslHandshakeFailure = unwrap(record.sslHandshakeFailure());
+            List<String> sslSubjectAlternativeNames = record.sslSubjectAlternativeNames();
 
             if (isAnyValuePresent(
                     sslProtocol, sslSessionId, sslCipherSuite, sslPeerSubject, sslPeerNotBefore, sslPeerNotAfter,
@@ -95,7 +97,13 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
                     generator.writeStringField("type", sslHandshakeFailure.type());
                     generator.writeEndObject();
                 }
-
+                if (!sslSubjectAlternativeNames.isEmpty()) {
+                    generator.writeArrayFieldStart("san");
+                    for (String sanEntry : sslSubjectAlternativeNames) {
+                        generator.writeString(sanEntry);
+                    }
+                    generator.writeEndArray();
+                }
                 generator.writeEndObject();
             }
         }
