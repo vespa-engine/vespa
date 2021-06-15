@@ -1,8 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
-
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
@@ -13,14 +9,10 @@ import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames;
 import com.yahoo.vespa.model.container.component.Component;
@@ -40,14 +32,11 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.T
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getMetricsNodesConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getQrStartConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
-import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -75,42 +64,6 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(MockApplicationPackage.APPLICATION_GENERATION, config.generation());
         assertEquals(MockApplicationPackage.APPLICATION_NAME, config.name());
         assertEquals(MockApplicationPackage.DEPLOYED_BY_USER, config.user());
-    }
-
-    private void metrics_proxy_has_expected_qr_start_options(MetricsProxyModelTester.TestMode mode) {
-        metrics_proxy_has_expected_qr_start_options(mode, 0);
-    }
-
-    private void metrics_proxy_has_expected_qr_start_options(MetricsProxyModelTester.TestMode mode, int maxHeapForAdminClusterNodes) {
-        DeployState.Builder builder = new DeployState.Builder();
-        if (maxHeapForAdminClusterNodes > 0) {
-            builder.properties(new TestProperties().metricsProxyMaxHeapSizeInMb(maxHeapForAdminClusterNodes));
-        }
-
-        VespaModel model = getModel(servicesWithAdminOnly(), mode, builder);
-        for (HostInfo host : model.getHosts()) {
-            QrStartConfig qrStartConfig = getQrStartConfig(model, host.getHostname());
-            assertEquals(32, qrStartConfig.jvm().minHeapsize());
-            assertEquals(maxHeapForAdminClusterNodes > 0 ? maxHeapForAdminClusterNodes : 512, qrStartConfig.jvm().heapsize());
-            assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
-            assertEquals(2, qrStartConfig.jvm().availableProcessors());
-            assertFalse(qrStartConfig.jvm().verbosegc());
-            assertEquals(G1GC, qrStartConfig.jvm().gcopts());
-            assertEquals(512, qrStartConfig.jvm().stacksize());
-            assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
-            assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
-            assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
-        }
-    }
-
-    @Test
-    public void metrics_proxy_has_expected_qr_start_options() {
-        metrics_proxy_has_expected_qr_start_options(self_hosted);
-        metrics_proxy_has_expected_qr_start_options(hosted);
-
-        // With max heap from feature flag
-        metrics_proxy_has_expected_qr_start_options(self_hosted, 123);
-        metrics_proxy_has_expected_qr_start_options(hosted, 123);
     }
 
     @Test

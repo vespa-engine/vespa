@@ -45,16 +45,13 @@ public class MetricsProxyContainer extends Container implements
 
     final boolean isHostedVespa;
     private final Optional<ClusterMembership> clusterMembership;
-    private final ModelContext.FeatureFlags featureFlags;
     private final MetricsProxyContainerCluster cluster;
     private final String jvmGCOptions;
-
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
         super(cluster, host.getHostname(), index, deployState);
         this.isHostedVespa = deployState.isHosted();
         this.clusterMembership = host.spec().membership();
-        this.featureFlags = deployState.featureFlags();
         this.cluster = cluster;
         this.jvmGCOptions = deployState.getProperties().jvmGCOptions(clusterMembership.map(membership -> membership.cluster().type()));
         setProp("clustertype", "admin");
@@ -157,7 +154,9 @@ public class MetricsProxyContainer extends Container implements
         cluster.getConfig(builder);
 
         if (clusterMembership.isPresent()) {
-            int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb(clusterMembership.get().cluster().type());
+            int maxHeapSize = clusterMembership.get().cluster().type() == ClusterSpec.Type.admin
+                    ? 128
+                    : 256;
             builder.jvm
                     .gcopts(jvmGCOptions)
                     .heapsize(maxHeapSize);
