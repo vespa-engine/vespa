@@ -38,6 +38,7 @@ public class TsdbQueryRewriter {
             throw new UnauthorizedException();
 
         JsonNode root = mapper.readTree(data);
+        requireLegalType(root);
         getField(root, "executionGraph", ArrayNode.class)
                 .ifPresent(graph -> rewriteQueryGraph(graph, authorizedTenants, operator, systemName));
         getField(root, "filters", ArrayNode.class)
@@ -93,6 +94,13 @@ public class TsdbQueryRewriter {
                     tenantNames.stream().map(TenantName::value).sorted().collect(Collectors.joining("|", "^(", ")\\..*")));
             appFilter.put("tagKey", "applicationId");
         }
+    }
+
+    private static void requireLegalType(JsonNode root) {
+        Optional.ofNullable(root.get("type"))
+                .map(JsonNode::asText)
+                .filter(type -> !"TAG_KEYS_AND_VALUES".equals(type))
+                .ifPresent(type -> { throw new IllegalArgumentException("Illegal type " + type); });
     }
 
     private static <T extends JsonNode> Optional<T> getField(JsonNode object, String fieldName, Class<T> clazz) {
