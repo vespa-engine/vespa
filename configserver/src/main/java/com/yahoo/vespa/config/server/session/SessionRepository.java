@@ -218,7 +218,7 @@ public class SessionRepository {
                 future.get();
                 log.log(Level.FINE, () -> "Local session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
-                log.log(Level.WARNING, "Could not load session " + sessionId, e);
+                throw new RuntimeException("Could not load local session " + sessionId, e);
             }
         });
     }
@@ -383,7 +383,7 @@ public class SessionRepository {
                 future.get();
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
-                log.log(Level.WARNING, "Could not load session " + sessionId, e);
+                throw new RuntimeException("Could not load remote session " + sessionId, e);
             }
         });
     }
