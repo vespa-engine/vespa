@@ -28,7 +28,7 @@ public class BufferTest {
     @org.junit.Test
     public void testBuffer() {
 
-        int        size = Buffer.MAX_IO + (Buffer.MAX_IO / 10);
+        int        size = 70*1024;
         Buffer     buf  = new Buffer(1024);
         ByteBuffer b    = null;
 
@@ -115,62 +115,6 @@ public class BufferTest {
             ByteBuffer bb = buf.getReadable();
             assertEquals(bb.position(), bb.limit());
         }
-    }
-
-    @org.junit.Test
-    public void testBufferMax() {
-        int        size = Buffer.MAX_IO + (Buffer.MAX_IO / 10);
-        Buffer     buf  = new Buffer(1024);
-        ByteBuffer b    = null;
-
-        byte[] x = new byte[size];
-        byte[] y = new byte[size];
-
-        Arrays.fill(x, (byte) 10);
-        Arrays.fill(y, (byte) 55);
-
-        assertEquals(buf.bytes(), 0);
-        assertFalse(Arrays.equals(x, y));
-
-        b = buf.getChannelWritable(size);
-        assertEquals(b.remaining(), Buffer.MAX_IO);
-        assertTrue(b.remaining() < size);
-        assertEquals(buf.bytes(), 0);
-        b.put(x, 0, Buffer.MAX_IO);
-        assertEquals(buf.bytes(), Buffer.MAX_IO);
-        assertEquals(b.remaining(), 0);
-
-        b = buf.getChannelWritable(size - Buffer.MAX_IO);
-        assertTrue(b.remaining() >= size - Buffer.MAX_IO);
-        assertEquals(buf.bytes(), Buffer.MAX_IO);
-        b.put(x, Buffer.MAX_IO, x.length - Buffer.MAX_IO);
-        assertEquals(buf.bytes(), size);
-
-        b = buf.getChannelReadable();
-        assertEquals(buf.bytes(), size);
-
-        b = buf.getChannelWritable(512);
-        assertEquals(buf.bytes(), size);
-        b.put((byte)42);
-        assertEquals(buf.bytes(), size + 1);
-
-        b = buf.getChannelReadable();
-        assertEquals(buf.bytes(), size + 1);
-        assertEquals(b.remaining(), Buffer.MAX_IO);
-        b.get(y, 0, Buffer.MAX_IO);
-        assertEquals(buf.bytes(), size - Buffer.MAX_IO + 1);
-
-        b = buf.getChannelReadable();
-        assertEquals(buf.bytes(), size - Buffer.MAX_IO + 1);
-        assertEquals(b.remaining(), size - Buffer.MAX_IO + 1);
-        b.get(y, Buffer.MAX_IO, y.length - Buffer.MAX_IO);
-        assertEquals(buf.bytes(), 1);
-        assertEquals(b.remaining(), 1);
-        assertEquals(b.get(), 42);
-        assertEquals(buf.bytes(), 0);
-        assertEquals(b.remaining(), 0);
-
-        assertTrue(Arrays.equals(x, y));
     }
 
     @org.junit.Test
