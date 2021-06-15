@@ -7,7 +7,7 @@ package com.yahoo.messagebus;
  * way of {@link #setMaxPendingCount(int)}), the total size of pending messages (by way of {@link
  * #setMaxPendingSize(long)}), or some combination thereof.
  *
- * <b>NOTE:</b> By context, "pending" is refering to the number of sent messages that have not been replied to yet.
+ * <b>NOTE:</b> By context, "pending" refers to the number of sent messages that have not been replied to yet.
  *
  * @author Simon Thoresen Hult
  */

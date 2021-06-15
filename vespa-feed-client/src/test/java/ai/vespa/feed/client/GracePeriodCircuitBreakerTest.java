@@ -48,7 +48,7 @@ class GracePeriodCircuitBreakerTest {
 
         breaker.failure();
         now.addAndGet(60 * SECOND);
-        assertEquals(HALF_OPEN, breaker.state(), "State is half-open until doom period has passedd");
+        assertEquals(HALF_OPEN, breaker.state(), "State is half-open until doom period has passed");
 
         now.addAndGet(1);
         assertEquals(OPEN, breaker.state(), "State is open when doom period has passed");
