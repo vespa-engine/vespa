@@ -37,7 +37,7 @@ public class User {
         this.picture = picture;
         this.isVerified = isVerified;
         this.loginCount = loginCount;
-        this.lastLogin = lastLogin;
+        this.lastLogin = Objects.requireNonNull(lastLogin);
     }
 
     public String name() {
