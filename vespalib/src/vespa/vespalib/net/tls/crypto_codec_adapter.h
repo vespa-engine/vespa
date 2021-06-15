@@ -33,7 +33,7 @@ private:
     ssize_t flush_all();  // -1/0 -> error/ok
 public:
     CryptoCodecAdapter(SocketHandle socket, std::unique_ptr<CryptoCodec> codec)
-        : _input(64_Ki), _output(64_Ki), _socket(std::move(socket)), _codec(std::move(codec)),
+        : _input(0), _output(0), _socket(std::move(socket)), _codec(std::move(codec)),
           _got_tls_close(false), _encoded_tls_close(false) {}
     void inject_read_data(const char *buf, size_t len) override;
     int get_fd() const override { return _socket.get(); }
