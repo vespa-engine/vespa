@@ -270,13 +270,18 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 }
             });
             if ( ! Duration.between(lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()) {
-                log.log(Level.INFO, () -> finishedDeployments.size() + " of " + applicationCount + " apps redeployed " +
-                                          "(" + failedDeployments.size() + " failed)");
+                logProgress(applicationCount, failedDeployments, finishedDeployments);
                 lastLogged = Instant.now();
             }
         } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
 
+        logProgress(applicationCount, failedDeployments, finishedDeployments);
         return new ArrayList<>(failedDeployments);
+    }
+
+    private void logProgress(int applicationCount, Set<ApplicationId> failedDeployments, Set<ApplicationId> finishedDeployments) {
+        log.log(Level.INFO, () -> finishedDeployments.size() + " of " + applicationCount + " apps redeployed " +
+                                  "(" + failedDeployments.size() + " failed)");
     }
 
     private DeploymentStatus getDeploymentStatus(ApplicationId applicationId, Future<?> future) {
