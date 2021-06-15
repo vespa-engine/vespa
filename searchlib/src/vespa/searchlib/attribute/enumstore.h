@@ -63,7 +63,7 @@ private:
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
 
-    void free_value_if_unused(Index idx, IndexSet &unused) override;
+    void free_value_if_unused(Index idx, IndexList &unused) override;
 
     const vespalib::datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
         return _store.get_allocator().get_wrapped(idx);
@@ -153,7 +153,7 @@ public:
     class BatchUpdater {
     private:
         EnumStoreType& _store;
-        IndexSet _possibly_unused;
+        IndexList _possibly_unused;
 
     public:
         BatchUpdater(EnumStoreType& store)
@@ -168,11 +168,11 @@ public:
             auto& entry = _store.get_entry_base(idx);
             entry.dec_ref_count();
             if (entry.get_ref_count() == 0) {
-                _possibly_unused.insert(idx);
+                _possibly_unused.push_back(idx);
             }
         }
         void commit() {
-            _store.free_unused_values(_possibly_unused);
+            _store.free_unused_values(std::move(_possibly_unused));
         }
     };
 
@@ -198,7 +198,7 @@ public:
     Index insert(EntryType value);
     bool find_index(EntryType value, Index& idx) const;
     void free_unused_values() override;
-    void free_unused_values(const IndexSet& to_remove);
+    void free_unused_values(IndexList to_remove);
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst_values(bool compact_memory, bool compact_address_space) override;

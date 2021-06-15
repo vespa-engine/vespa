@@ -21,6 +21,7 @@ public:
     bool operator==(const EntryRef &rhs) const noexcept { return _ref == rhs._ref; }
     bool operator!=(const EntryRef &rhs) const noexcept { return _ref != rhs._ref; }
     bool operator <(const EntryRef &rhs) const noexcept { return _ref < rhs._ref; }
+    bool operator <=(const EntryRef &rhs) const noexcept { return _ref <= rhs._ref; }
 };
 
 /**

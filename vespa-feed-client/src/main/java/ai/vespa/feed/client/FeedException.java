@@ -2,6 +2,8 @@
 package ai.vespa.feed.client;
 
 /**
+ * Signals that an error occurred during feeding
+ *
  * @author bjorncs
  */
 public class FeedException extends RuntimeException {

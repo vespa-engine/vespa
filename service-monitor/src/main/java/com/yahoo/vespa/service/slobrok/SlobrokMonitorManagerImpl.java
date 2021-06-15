@@ -50,7 +50,7 @@ public class SlobrokMonitorManagerImpl extends AbstractComponent implements Slob
 
     private SlobrokMonitorManagerImpl(Transport transport, Supervisor orb, DuperModelManager duperModel) {
         this(() -> new SlobrokMonitor(orb), transport, duperModel);
-        orb.useSmallBuffers();
+        orb.setDropEmptyBuffers(true);
     }
 
     SlobrokMonitorManagerImpl(Supplier<SlobrokMonitor> slobrokMonitorFactory, Transport transport, DuperModelManager duperModel) {

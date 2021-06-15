@@ -5,6 +5,8 @@ import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Asynchronous feed client accepting document operations as JSON
+ *
  * @author bjorncs
  * @author jonmv
  */

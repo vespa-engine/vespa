@@ -13,6 +13,24 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-sentinel-cmd");
 
+namespace {
+struct Method {
+    const char * name;
+    const char * rpcMethod;
+    bool noArgNeeded;
+    bool needsTimeoutArg;
+};
+const Method methods[] = {
+    { "list", "sentinel.ls", true, false },
+    { "restart", "sentinel.service.restart", false, false },
+    { "start", "sentinel.service.start", false, false },
+    { "stop", "sentinel.service.stop", false, false },
+    { "connectivity", "sentinel.report.connectivity", true, true }
+};
+
+}
+
+
 class Cmd
 {
 private:
@@ -22,7 +40,7 @@ private:
 public:
     Cmd() : _server(), _target(nullptr) {}
     ~Cmd();
-    int run(const char *cmd, const char *arg);
+    int run(const Method &cmd, const char *arg);
     void initRPC(const char *spec);
     void finiRPC();
 };
@@ -41,6 +59,7 @@ void usage()
     fprintf(stderr, "  restart {service}\n");
     fprintf(stderr, "  start {service}\n");
     fprintf(stderr, "  stop {service}\n");
+    fprintf(stderr, "  connectivity [milliseconds]\n");
 }
 
 void
@@ -63,7 +82,7 @@ Cmd::finiRPC()
 
 
 int
-Cmd::run(const char *cmd, const char *arg)
+Cmd::run(const Method &cmd, const char *arg)
 {
     int retval = 0;
     try {
@@ -74,33 +93,61 @@ Cmd::run(const char *cmd, const char *arg)
         return 2;
     }
     FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
-    req->SetMethodName(cmd);
+    req->SetMethodName(cmd.rpcMethod);
 
-    if (arg) {
+    int pingTimeoutMs = 5000;
+    if (cmd.needsTimeoutArg) {
+        if (arg) {
+            pingTimeoutMs = atoi(arg);
+        }
+        req->GetParams()->AddInt32(pingTimeoutMs);
+    } else if (arg) {
         // one param
         req->GetParams()->AddString(arg);
     }
-    _target->InvokeSync(req, 5.0);
+    _target->InvokeSync(req, 2 * pingTimeoutMs * 0.001);
 
     if (req->IsError()) {
         fprintf(stderr, "vespa-sentinel-cmd '%s' error %d: %s\n",
-                cmd, req->GetErrorCode(), req->GetErrorMessage());
+                cmd.name, req->GetErrorCode(), req->GetErrorMessage());
         retval = 1;
     } else {
         FRT_Values &answer = *(req->GetReturn());
         const char *atypes = answer.GetTypeString();
-        fprintf(stderr, "vespa-sentinel-cmd '%s' OK.\n", cmd);
-        uint32_t idx = 0;
-        while (atypes != nullptr && *atypes != '\0') {
-            switch (*atypes) {
-            case 's':
+        fprintf(stderr, "vespa-sentinel-cmd '%s' OK.\n", cmd.name);
+        if (atypes && (strcmp(atypes, "SS") == 0)) {
+            uint32_t numHosts = answer[0]._string_array._len;
+            uint32_t numStats = answer[1]._string_array._len;
+            FRT_StringValue *hosts = answer[0]._string_array._pt;
+            FRT_StringValue *stats = answer[1]._string_array._pt;
+            uint32_t ml = 0;
+            uint32_t j;
+            for (j = 0; j < numHosts; ++j) {
+                uint32_t hl = strlen(hosts[j]._str);
+                if (hl > ml) ml = hl;
+            }
+            for (j = 0; j < numHosts && j < numStats; ++j) {
+                printf("%-*s -> %s\n", ml, hosts[j]._str, stats[j]._str);
+            }
+            for (; j < numHosts; ++j) {
+                printf("Extra host: %s\n", hosts[j]._str);
+            }
+            for (; j < numStats; ++j) {
+                printf("Extra stat: %s\n", stats[j]._str);
+            }
+        } else {
+            uint32_t idx = 0;
+            while (atypes != nullptr && *atypes != '\0') {
+                switch (*atypes) {
+                case 's':
                     printf("%s\n", answer[idx]._string._str);
                     break;
-            default:
+                default:
                     printf("BAD: unknown type %c\n", *atypes);
-            }
-            ++atypes;
+                }
+                ++atypes;
             ++idx;
+            }
         }
     }
     req->SubRef();
@@ -108,19 +155,15 @@ Cmd::run(const char *cmd, const char *arg)
     return retval;
 }
 
-const char *
+const Method *
 parseCmd(const char *arg)
 {
-    if (strcmp(arg, "list") == 0) {
-        return "sentinel.ls";
-    } else if (strcmp(arg, "restart") == 0) {
-        return "sentinel.service.restart";
-    } else if (strcmp(arg, "start") == 0) {
-        return "sentinel.service.start";
-    } else if (strcmp(arg, "stop") == 0) {
-        return "sentinel.service.stop";
+    for (const auto & method : methods) {
+        if (strcmp(arg, method.name) == 0) {
+            return &method;
+        }
     }
-    return 0;
+    return nullptr;
 }
 
 void hookSignals() {
@@ -131,14 +174,15 @@ void hookSignals() {
 int main(int argc, char** argv)
 {
     int retval = 1;
-    const char *cmd = 0;
+    const Method *cmd = nullptr;
     if (argc > 1) {
         cmd = parseCmd(argv[1]);
     }
-    if (cmd) {
+    const char *extraArg = (argc > 2 ? argv[2] : nullptr);
+    if (cmd && (extraArg || cmd->noArgNeeded)) {
         hookSignals();
         Cmd runner;
-        retval = runner.run(cmd, argc > 2 ? argv[2] : 0);
+        retval = runner.run(*cmd, extraArg);
     } else {
         usage();
     }

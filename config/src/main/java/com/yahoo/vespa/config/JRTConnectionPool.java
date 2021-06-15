@@ -43,7 +43,7 @@ public class JRTConnectionPool implements ConnectionPool {
 
     public JRTConnectionPool(ConfigSourceSet sourceSet, String poolName) {
         this.poolName = poolName;
-        supervisor = new Supervisor(new Transport(poolName)).useSmallBuffers();
+        supervisor = new Supervisor(new Transport(poolName))..setDropEmptyBuffers(true);
         addSources(sourceSet);
     }
 

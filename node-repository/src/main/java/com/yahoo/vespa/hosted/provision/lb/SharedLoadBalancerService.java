@@ -66,7 +66,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public boolean canForwardTo(NodeType nodeType, ClusterSpec.Type clusterType) {
+    public boolean supports(NodeType nodeType, ClusterSpec.Type clusterType) {
         // Shared routing layer only supports routing to tenant nodes
         return nodeType == NodeType.tenant && clusterType.isContainer();
     }

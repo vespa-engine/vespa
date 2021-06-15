@@ -48,6 +48,8 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
         NodeList allNodes = nodeRepository().nodes().list();
         for (var nodeType : NodeType.values()) {
             if (!nodeType.isHost()) continue;
+            // TODO: Require a minimum number of proxies in Orchestrator. For now skip proxy hosts.
+            if (nodeType == NodeType.proxyhost) continue;
             if (upgradingVespa(allNodes, nodeType)) continue;
             unencryptedHosts(allNodes, nodeType).forEach(host -> encrypt(host, now));
         }

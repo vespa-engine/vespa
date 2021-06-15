@@ -8,6 +8,8 @@ import java.util.OptionalLong;
 import static java.util.Objects.requireNonNull;
 
 /**
+ * Represents a Vespa document id
+ *
  * @author jonmv
  */
 public class DocumentId {

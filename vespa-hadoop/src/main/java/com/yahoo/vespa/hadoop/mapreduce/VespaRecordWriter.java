@@ -57,7 +57,10 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
                         if (error instanceof JsonParseException) {
                             counters.incrementDocumentsSkipped(1);
                         } else {
-                            log.warning("Failed to feed single document: " + error);
+                            String msg = "Failed to feed single document: " + error;
+                            System.out.println(msg);
+                            System.err.println(msg);
+                            log.warning(msg);
                             counters.incrementDocumentsFailed(1);
                         }
                     } else {
