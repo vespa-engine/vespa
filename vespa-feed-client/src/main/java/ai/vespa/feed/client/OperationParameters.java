@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
+ * Per-operation feed parameters
+ *
  * @author bjorncs
  * @author jonmv
  */

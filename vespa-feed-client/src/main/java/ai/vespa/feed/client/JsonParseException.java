@@ -2,6 +2,8 @@
 package ai.vespa.feed.client;
 
 /**
+ * Signals that supplied JSON is invalid
+ *
  * @author bjorncs
  */
 public class JsonParseException extends FeedException {
