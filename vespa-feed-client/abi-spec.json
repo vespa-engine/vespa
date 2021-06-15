@@ -158,8 +158,12 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)",
-      "public void <init>(java.lang.Throwable)"
+      "public void <init>(java.lang.Throwable)",
+      "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)",
+      "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String, java.lang.Throwable)",
+      "public java.util.Optional documentId()"
     ],
     "fields": []
   },
@@ -202,8 +206,8 @@
       "abstract"
     ],
     "methods": [
-      "public void onNextResult(ai.vespa.feed.client.Result, java.lang.Throwable)",
-      "public void onError(java.lang.Throwable)",
+      "public void onNextResult(ai.vespa.feed.client.Result, ai.vespa.feed.client.FeedException)",
+      "public void onError(ai.vespa.feed.client.FeedException)",
       "public void onComplete()"
     ],
     "fields": []
@@ -222,18 +226,6 @@
       "public java.util.concurrent.CompletableFuture feedMany(java.io.InputStream, ai.vespa.feed.client.JsonFeeder$ResultCallback)",
       "public java.util.concurrent.CompletableFuture feedMany(java.io.InputStream)",
       "public void close()"
-    ],
-    "fields": []
-  },
-  "ai.vespa.feed.client.JsonParseException": {
-    "superClass": "ai.vespa.feed.client.FeedException",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
     "fields": []
   },
@@ -258,6 +250,18 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.feed.client.OperationParseException": {
+    "superClass": "ai.vespa.feed.client.FeedException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
     "fields": []
   },
@@ -313,6 +317,18 @@
       "public ai.vespa.feed.client.DocumentId documentId()",
       "public java.util.Optional resultMessage()",
       "public java.util.Optional traceMessage()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.feed.client.ResultParseException": {
+    "superClass": "ai.vespa.feed.client.FeedException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String)",
+      "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)"
     ],
     "fields": []
   }

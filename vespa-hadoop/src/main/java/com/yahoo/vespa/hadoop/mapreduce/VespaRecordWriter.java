@@ -6,7 +6,7 @@ import ai.vespa.feed.client.DryrunResult;
 import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClientBuilder;
 import ai.vespa.feed.client.JsonFeeder;
-import ai.vespa.feed.client.JsonParseException;
+import ai.vespa.feed.client.OperationParseException;
 import ai.vespa.feed.client.OperationParameters;
 import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.Result;
@@ -54,7 +54,7 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
         feeder.feedSingle(json)
                 .whenComplete((result, error) -> {
                     if (error != null) {
-                        if (error instanceof JsonParseException) {
+                        if (error instanceof OperationParseException) {
                             counters.incrementDocumentsSkipped(1);
                         } else {
                             String msg = "Failed to feed single document: " + error;
