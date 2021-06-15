@@ -73,7 +73,6 @@ public class ClusterTest {
                                                    joinLines(
                                                            "<max-hits-per-partition>77</max-hits-per-partition>",
                                                            "<dispatch-policy>round-robin</dispatch-policy>",
-                                                           "<min-group-coverage>13</min-group-coverage>",
                                                            "<min-active-docs-coverage>93</min-active-docs-coverage>",
                                                            "<top-k-probability>0.777</top-k-probability>"),
                                                    false);
