@@ -41,13 +41,14 @@ public class ParkedExpirer extends NodeRepositoryMaintainer {
         NodeList parkedHosts = nodeRepository.nodes()
                                              .list(Node.State.parked)
                                              .nodeType(NodeType.host)
+                                             .not().matching(this::parkedByOperator)
                                              .not().deprovisioning();
         int hostsToExpire = Math.max(0, parkedHosts.size() - MAX_ALLOWED_PARKED_HOSTS);
         parkedHosts.sortedBy(Comparator.comparing(this::parkedAt))
                    .first(hostsToExpire)
                    .forEach(host -> {
                        log.info("Allowed number of parked nodes exceeded. Recycling " + host.hostname());
-                       nodeRepository.nodes().deallocate(host, Agent.ParkedExpirer, "Expired by ParkedExpirer");
+                       nodeRepository.nodes().deprovision(host.hostname(), Agent.ParkedExpirer, Instant.now());
                    });
 
         return 1.0;
@@ -57,6 +58,13 @@ public class ParkedExpirer extends NodeRepositoryMaintainer {
         return node.history().event(History.Event.Type.parked)
                    .map(History.Event::at)
                    .orElse(Instant.EPOCH); // Should not happen
+    }
+
+    private boolean parkedByOperator(Node node) {
+        return node.history().event(History.Event.Type.parked)
+                .map(History.Event::agent)
+                .map(Agent.operator::equals)
+                .orElse(false);
     }
 
 }

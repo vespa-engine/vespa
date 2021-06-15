@@ -36,8 +36,8 @@ public class ParkedExpirerTest {
         var expirer = new ParkedExpirer(tester.nodeRepository(), Duration.ofMinutes(4), new TestMetric());
         expirer.maintain();
 
-        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.dirty).size());
-        assertEquals(25, tester.nodeRepository().nodes().list(Node.State.parked).size());
+        assertEquals(1, tester.nodeRepository().nodes().list().deprovisioning().size());
+        assertEquals(24, tester.nodeRepository().nodes().list().not().deprovisioning().size());
     }
 
     @Test
@@ -48,8 +48,8 @@ public class ParkedExpirerTest {
         var expirer = new ParkedExpirer(tester.nodeRepository(), Duration.ofMinutes(4), new TestMetric());
         expirer.maintain();
 
-        assertEquals(4, tester.nodeRepository().nodes().list(Node.State.dirty).size());
-        assertEquals(21, tester.nodeRepository().nodes().list(Node.State.parked).size());
+        assertEquals(5, tester.nodeRepository().nodes().list().deprovisioning().size());
+        assertEquals(20, tester.nodeRepository().nodes().list().not().deprovisioning().size());
 
     }
 
