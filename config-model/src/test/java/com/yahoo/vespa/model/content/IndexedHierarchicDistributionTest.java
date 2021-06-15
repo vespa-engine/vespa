@@ -201,7 +201,6 @@ public class IndexedHierarchicDistributionTest {
         assertEquals(8, dg.getRowBits());
         assertEquals(3, dg.getNumPartitions());
         assertEquals(true, dg.useFixedRowInDispatch());
-        assertEquals(1, dg.getMaxNodesDownPerFixedRow());
         ArrayList<SearchInterface> list = new ArrayList<>();
         for(SearchInterface si : dg.getSearchersIterable()) {
             list.add(si);

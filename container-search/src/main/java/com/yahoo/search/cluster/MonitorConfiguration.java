@@ -9,7 +9,7 @@ package com.yahoo.search.cluster;
 public class MonitorConfiguration  {
 
     /** The interval in ms between consecutive checks of the monitored nodes */
-    private long checkInterval=1000;
+    private long checkInterval = 1000;
 
     /** The number of milliseconds to attempt to complete a request before giving up */
     private final long requestTimeout = 980;
@@ -18,6 +18,7 @@ public class MonitorConfiguration  {
     private long failLimit = 5000;
 
     /** Sets the interval between each ping of idle or failing nodes. Default is 1000 ms. */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setCheckInterval(long intervalMs) { this.checkInterval = intervalMs; }
 
     /** Returns the interval between each ping of idle or failing nodes. Default is 1000 ms. */
@@ -59,6 +60,7 @@ public class MonitorConfiguration  {
      * Sets the number of milliseconds a node is allowed to fail before we
      * mark it as not working
      */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setFailLimit(long failLimit) { this.failLimit=failLimit; }
 
     /**
@@ -86,6 +88,7 @@ public class MonitorConfiguration  {
     @Deprecated // TODO: Remove on Vespa 8
     public void setQuarantineTime(long quarantineTime) { }
 
+    @Override
     public String toString() {
         return "monitor configuration [" +
                "checkInterval: " + checkInterval +

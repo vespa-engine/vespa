@@ -44,7 +44,7 @@ public abstract class BaseNodeMonitor<T> {
     protected MonitorConfiguration configuration;
 
     /** Is the node we monitor part of an internal Vespa cluster or not */
-    private boolean internal;
+    private final boolean internal;
 
     public BaseNodeMonitor(boolean internal) {
         this.internal=internal;

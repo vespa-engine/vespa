@@ -46,7 +46,6 @@ public class IndexedSearchCluster extends SearchCluster
     private String routingSelector = null;
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final UnionConfiguration unionCfg;
-    private int maxNodesDownPerFixedRow = 0;
 
     private int searchableCopies = 1;
 
@@ -261,13 +260,6 @@ public class IndexedSearchCluster extends SearchCluster
         return false;
     }
 
-    int getMaxNodesDownPerFixedRow() {
-        return maxNodesDownPerFixedRow;
-    }
-
-    public void setMaxNodesDownPerFixedRow(int value) {
-        maxNodesDownPerFixedRow = value;
-    }
     public int getSearchableCopies() {
         return searchableCopies;
     }
@@ -305,8 +297,6 @@ public class IndexedSearchCluster extends SearchCluster
         }
         if (tuning.dispatch.getMinActiveDocsCoverage() != null)
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());
-        if (tuning.dispatch.getMinGroupCoverage() != null)
-            builder.minGroupCoverage(tuning.dispatch.getMinGroupCoverage());
         if (tuning.dispatch.getDispatchPolicy() != null) {
             switch (tuning.dispatch.getDispatchPolicy()) {
                 case ADAPTIVE:
@@ -320,7 +310,6 @@ public class IndexedSearchCluster extends SearchCluster
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 
-        builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)

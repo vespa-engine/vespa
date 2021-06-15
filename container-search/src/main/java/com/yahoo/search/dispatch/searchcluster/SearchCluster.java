@@ -368,7 +368,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     public boolean isPartialGroupCoverageSufficient(List<Node> nodes) {
         if (orderedGroups().size() == 1)
-            return nodes.size() >= wantedGroupSize() - dispatchConfig.maxNodesDownPerGroup();
+            return true;
         long activeDocuments = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
         return isGroupCoverageSufficient(activeDocuments, medianDocumentsPerGroup());
     }
@@ -378,7 +378,6 @@ public class SearchCluster implements NodeManager<Node> {
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
-            int requiredNodes = group.nodes().size() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
                 log.info("Cluster " + clusterId + ": " + group + " has full coverage. " +
                          "Active documents: " + group.getActiveDocuments() + "/" + medianDocuments + ", " +
@@ -391,7 +390,7 @@ public class SearchCluster implements NodeManager<Node> {
                 }
                 log.warning("Cluster " + clusterId + ": " + group + " has reduced coverage: " +
                             "Active documents: " + group.getActiveDocuments() + "/" + medianDocuments + ", " +
-                            "working nodes: " + group.workingNodes() + "/" + group.nodes().size() + " required " + requiredNodes +
+                            "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
                             ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive));
             }
         }

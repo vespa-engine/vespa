@@ -15,7 +15,6 @@ public class DispatchTuning {
 
     private final Integer maxHitsPerPartition;
     private DispatchPolicy dispatchPolicy;
-    private final Double minGroupCoverage;
     private final Double minActiveDocsCoverage;
 
     public Double getTopkProbability() {
@@ -27,7 +26,6 @@ public class DispatchTuning {
     private DispatchTuning(Builder builder) {
         maxHitsPerPartition = builder.maxHitsPerPartition;
         dispatchPolicy = builder.dispatchPolicy;
-        minGroupCoverage = builder.minGroupCoverage;
         minActiveDocsCoverage = builder.minActiveDocsCoverage;
         topkProbability = builder.topKProbability;
     }
@@ -41,9 +39,6 @@ public class DispatchTuning {
     @SuppressWarnings("unused")
     public void setDispatchPolicy(DispatchPolicy dispatchPolicy) { this.dispatchPolicy = dispatchPolicy; }
 
-    /** Returns the percentage of nodes in a group which must be up for that group to receive queries */
-    public Double getMinGroupCoverage() { return minGroupCoverage; }
-
     /** Returns the percentage of documents which must be available in a group for that group to receive queries */
     public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
 
@@ -51,7 +46,6 @@ public class DispatchTuning {
 
         private Integer maxHitsPerPartition;
         private DispatchPolicy dispatchPolicy;
-        private Double minGroupCoverage;
         private Double minActiveDocsCoverage;
         private Double topKProbability;
 
@@ -79,11 +73,6 @@ public class DispatchTuning {
                 case "round-robin": return DispatchPolicy.ROUNDROBIN;
                 default: throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
             }
-        }
-
-        public Builder setMinGroupCoverage(Double minGroupCoverage) {
-            this.minGroupCoverage = minGroupCoverage;
-            return this;
         }
 
         public Builder setMinActiveDocsCoverage(Double minCoverage) {
