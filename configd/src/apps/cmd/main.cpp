@@ -95,17 +95,17 @@ Cmd::run(const Method &cmd, const char *arg)
     FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
     req->SetMethodName(cmd.rpcMethod);
 
+    int pingTimeoutMs = 5000;
     if (cmd.needsTimeoutArg) {
-        int timeoutMs = 5000;
         if (arg) {
-            timeoutMs = atoi(arg);
+            pingTimeoutMs = atoi(arg);
         }
-        req->GetParams()->AddInt32(timeoutMs);
+        req->GetParams()->AddInt32(pingTimeoutMs);
     } else if (arg) {
         // one param
         req->GetParams()->AddString(arg);
     }
-    _target->InvokeSync(req, 10.0);
+    _target->InvokeSync(req, 2 * pingTimeoutMs * 0.001);
 
     if (req->IsError()) {
         fprintf(stderr, "vespa-sentinel-cmd '%s' error %d: %s\n",
