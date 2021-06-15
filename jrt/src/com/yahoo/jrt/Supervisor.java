@@ -21,8 +21,8 @@ public class Supervisor {
     private SessionHandler          sessionHandler = null;
     private final Object            methodMapLock = new Object();
     private final AtomicReference<HashMap<String, Method>> methodMap = new AtomicReference<>(new HashMap<>());
-    private int                     maxInputBufferSize  = 0;
-    private int                     maxOutputBufferSize = 0;
+    private int                     maxInputBufferSize  = 64*1024;
+    private int                     maxOutputBufferSize = 64*1024;
     private boolean                 dropEmptyBuffers = false;
 
     /**
@@ -47,6 +47,7 @@ public class Supervisor {
         dropEmptyBuffers = value;
         return this;
     }
+    boolean getDropEmptyBuffers() { return dropEmptyBuffers; }
 
     /**
      * Set maximum input buffer size. This value will only affect
@@ -61,6 +62,7 @@ public class Supervisor {
     public void setMaxInputBufferSize(int bytes) {
         maxInputBufferSize = bytes;
     }
+    int getMaxInputBufferSize() { return maxInputBufferSize; }
 
     /**
      * Set maximum output buffer size. This value will only affect
@@ -75,6 +77,7 @@ public class Supervisor {
     public void setMaxOutputBufferSize(int bytes) {
         maxOutputBufferSize = bytes;
     }
+    int getMaxOutputBufferSize() { return maxOutputBufferSize; }
 
     /**
      * Obtain the method map for this Supervisor
@@ -192,12 +195,6 @@ public class Supervisor {
      * @param target the target
      **/
     void sessionInit(Target target) {
-        if (target instanceof Connection) {
-            Connection conn = (Connection) target;
-            conn.setMaxInputSize(maxInputBufferSize);
-            conn.setMaxOutputSize(maxOutputBufferSize);
-            conn.setDropEmptyBuffers(dropEmptyBuffers);
-        }
         SessionHandler handler = sessionHandler;
         if (handler != null) {
             handler.handleSessionInit(target);

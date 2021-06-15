@@ -19,9 +19,9 @@ class Connection extends Target {
 
     private static final Logger log = Logger.getLogger(Connection.class.getName());
 
-    private static final int READ_SIZE  = 32768;
+    private static final int READ_SIZE  = 16*1024;
     private static final int READ_REDO  = 10;
-    private static final int WRITE_SIZE = 32768;
+    private static final int WRITE_SIZE = 16*1024;
     private static final int WRITE_REDO = 10;
 
     private static final int INITIAL    = 0;
@@ -32,11 +32,11 @@ class Connection extends Target {
     private int state = INITIAL;
     private final Queue  queue   = new Queue();
     private final Queue  myQueue = new Queue();
-    private final Buffer input   = new Buffer(0x1000); // Start off with small buffer.
-    private final Buffer output  = new Buffer(0x1000); // Start off with small buffer.
-    private int maxInputSize  = 64*1024;
-    private int maxOutputSize = 64*1024;
-    private boolean dropEmptyBuffers = false;
+    private final Buffer input   = new Buffer(0); // Start off with empty buffer.
+    private final Buffer output  = new Buffer(0); // Start off with empty buffer.
+    private final int maxInputSize;
+    private final int maxOutputSize;
+    private final boolean dropEmptyBuffers;
     private final boolean tcpNoDelay;
     private final Map<Integer, ReplyHandler> replyMap = new HashMap<>();
     private final Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
@@ -98,6 +98,9 @@ class Connection extends Target {
         this.socket = parent.transport().createServerCryptoSocket(channel);
         this.spec = null;
         this.tcpNoDelay = tcpNoDelay;
+        maxInputSize = owner.getMaxInputBufferSize();
+        maxOutputSize = owner.getMaxOutputBufferSize();
+        dropEmptyBuffers = owner.getDropEmptyBuffers();
         server = true;
         owner.sessionInit(this);
     }
@@ -108,20 +111,11 @@ class Connection extends Target {
         this.owner = owner;
         this.spec = spec;
         this.tcpNoDelay = tcpNoDelay;
+        maxInputSize = owner.getMaxInputBufferSize();
+        maxOutputSize = owner.getMaxOutputBufferSize();
+        dropEmptyBuffers = owner.getDropEmptyBuffers();
         server = false;
         owner.sessionInit(this);
-    }
-
-    public void setMaxInputSize(int bytes) {
-        maxInputSize = bytes;
-    }
-
-    public void setMaxOutputSize(int bytes) {
-        maxOutputSize = bytes;
-    }
-
-    public void setDropEmptyBuffers(boolean value) {
-        dropEmptyBuffers = value;
     }
 
     public TransportThread transportThread() {
@@ -235,7 +229,7 @@ class Connection extends Target {
                 readSize = socket.getMinimumReadBufferSize();
             }
             setState(CONNECTED);
-            while (socket.drain(input.getChannelWritable(readSize)) > 0) {
+            while (socket.drain(input.getWritable(readSize)) > 0) {
                 handlePackets();
             }
             break;
@@ -302,14 +296,14 @@ class Connection extends Target {
     private void read() throws IOException {
         boolean doneRead = false;
         for (int i = 0; !doneRead && i < READ_REDO; i++) {
-            ByteBuffer wb = input.getChannelWritable(readSize);
+            ByteBuffer wb = input.getWritable(readSize);
             if (socket.read(wb) == -1) {
                 throw new IOException("jrt: Connection closed by peer");
             }
             doneRead = (wb.remaining() > 0);
             handlePackets();
         }
-        while (socket.drain(input.getChannelWritable(readSize)) > 0) {
+        while (socket.drain(input.getWritable(readSize)) > 0) {
             handlePackets();
         }
         if (dropEmptyBuffers) {
@@ -346,7 +340,7 @@ class Connection extends Target {
                 owner.writePacket(info);
                 info.encodePacket(packet, wb);
             }
-            ByteBuffer rb = output.getChannelReadable();
+            ByteBuffer rb = output.getReadable();
             if (rb.remaining() == 0) {
                 break;
             }
