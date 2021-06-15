@@ -59,11 +59,11 @@ class HttpRequestStrategy implements RequestStrategy {
     });
 
     HttpRequestStrategy(FeedClientBuilder builder) throws IOException {
-        this(builder, new BenchmarkingCluster(new ApacheCluster(builder)));
+        this(builder, new ApacheCluster(builder));
     }
 
     HttpRequestStrategy(FeedClientBuilder builder, Cluster cluster) {
-        this.cluster = cluster;
+        this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster) : cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
         this.maxInflight = builder.connectionsPerEndpoint * (long) builder.maxStreamsPerConnection;

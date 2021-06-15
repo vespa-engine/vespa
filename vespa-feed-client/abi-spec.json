@@ -136,6 +136,7 @@
       "public ai.vespa.feed.client.FeedClientBuilder setMaxStreamPerConnection(int)",
       "public ai.vespa.feed.client.FeedClientBuilder setSslContext(javax.net.ssl.SSLContext)",
       "public ai.vespa.feed.client.FeedClientBuilder setHostnameVerifier(javax.net.ssl.HostnameVerifier)",
+      "public ai.vespa.feed.client.FeedClientBuilder setBenchmarkOn(boolean)",
       "public ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.lang.String)",
       "public ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.util.function.Supplier)",
       "public ai.vespa.feed.client.FeedClientBuilder setRetryStrategy(ai.vespa.feed.client.FeedClient$RetryStrategy)",
@@ -233,20 +234,6 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.Throwable)"
-    ],
-    "fields": []
-  },
-  "ai.vespa.feed.client.OkCluster": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "ai.vespa.feed.client.Cluster"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void dispatch(ai.vespa.feed.client.HttpRequest, java.util.concurrent.CompletableFuture)",
-      "public void close()"
     ],
     "fields": []
   },
