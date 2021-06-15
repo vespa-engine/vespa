@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.logging.Logger;
 
@@ -26,7 +26,6 @@ public class ParkedExpirer extends NodeRepositoryMaintainer {
     private static final int MAX_ALLOWED_PARKED_HOSTS = 20;
     private static final Logger log = Logger.getLogger(ParkedExpirer.class.getName());
 
-
     private final NodeRepository nodeRepository;
 
     ParkedExpirer(NodeRepository nodeRepository, Duration interval, Metric metric) {
@@ -39,25 +38,25 @@ public class ParkedExpirer extends NodeRepositoryMaintainer {
         if (!nodeRepository.zone().getCloud().dynamicProvisioning())
             return 1.0;
 
-        var parkedHosts = new ArrayList<>(nodeRepository.nodes().list(Node.State.parked)
-                                                        .nodeType(NodeType.host)
-                                                        .asList());
-
+        NodeList parkedHosts = nodeRepository.nodes()
+                                             .list(Node.State.parked)
+                                             .nodeType(NodeType.host)
+                                             .not().deprovisioning();
         int hostsToExpire = Math.max(0, parkedHosts.size() - MAX_ALLOWED_PARKED_HOSTS);
-        nodeRepository.nodes().list(Node.State.parked).nodeType(NodeType.host)
-                .sortedBy(Comparator.comparing(this::getParkedTime))
-                .first(hostsToExpire)
-                .forEach(host -> {
-                    log.info("Allowed number of parked nodes exceeded. Recycling " + host.hostname());
-                    nodeRepository.nodes().deallocate(host, Agent.ParkedExpirer, "Expired by ParkedExpirer");
-                });
+        parkedHosts.sortedBy(Comparator.comparing(this::parkedAt))
+                   .first(hostsToExpire)
+                   .forEach(host -> {
+                       log.info("Allowed number of parked nodes exceeded. Recycling " + host.hostname());
+                       nodeRepository.nodes().deallocate(host, Agent.ParkedExpirer, "Expired by ParkedExpirer");
+                   });
 
         return 1.0;
     }
 
-    private Instant getParkedTime(Node node) {
+    private Instant parkedAt(Node node) {
         return node.history().event(History.Event.Type.parked)
-                .map(History.Event::at)
-                .orElse(Instant.EPOCH); // Should not happen
+                   .map(History.Event::at)
+                   .orElse(Instant.EPOCH); // Should not happen
     }
+
 }

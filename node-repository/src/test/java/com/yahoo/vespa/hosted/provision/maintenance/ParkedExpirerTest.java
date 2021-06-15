@@ -48,8 +48,8 @@ public class ParkedExpirerTest {
         var expirer = new ParkedExpirer(tester.nodeRepository(), Duration.ofMinutes(4), new TestMetric());
         expirer.maintain();
 
-        assertEquals(5, tester.nodeRepository().nodes().list(Node.State.dirty).size());
-        assertEquals(20, tester.nodeRepository().nodes().list(Node.State.parked).size());
+        assertEquals(4, tester.nodeRepository().nodes().list(Node.State.dirty).size());
+        assertEquals(21, tester.nodeRepository().nodes().list(Node.State.parked).size());
 
     }
 
@@ -62,9 +62,10 @@ public class ParkedExpirerTest {
 
     private void populateNodeRepo() {
         var nodes = IntStream.range(0, 25)
-                                        .mapToObj(i -> Node.create("id-" + i, "host-" + i, new Flavor(NodeResources.unspecified()), Node.State.parked, NodeType.host).build())
-                                        .collect(Collectors.toList());
+                             .mapToObj(i -> Node.create("id-" + i, "host-" + i, new Flavor(NodeResources.unspecified()), Node.State.parked, NodeType.host).build())
+                             .collect(Collectors.toList());
         tester.nodeRepository().database().addNodesInState(nodes, Node.State.parked, Agent.system);
+        tester.nodeRepository().nodes().deprovision(nodes.get(0).hostname(), Agent.system, tester.clock().instant()); // Deprovisioning host is not recycled
     }
 
 }
