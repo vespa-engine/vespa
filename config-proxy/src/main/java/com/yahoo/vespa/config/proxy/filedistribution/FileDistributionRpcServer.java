@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -41,7 +41,7 @@ class FileDistributionRpcServer {
     FileDistributionRpcServer(Supervisor supervisor, FileDownloader downloader) {
         this.supervisor = supervisor;
         this.downloader = downloader;
-        declareFileDistributionMethods();
+        declareMethods();
     }
 
     void close() {
@@ -53,7 +53,7 @@ class FileDistributionRpcServer {
         }
     }
 
-    private void declareFileDistributionMethods() {
+    private void declareMethods() {
         // Legacy method, needs to be the same name as used in filedistributor
         supervisor.addMethod(new Method("waitFor", "s", "s", this::getFile)
                                      .methodDesc("get path to file reference")

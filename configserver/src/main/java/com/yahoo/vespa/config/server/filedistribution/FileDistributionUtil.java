@@ -40,7 +40,7 @@ public class FileDistributionUtil {
 
     /**
      * Returns a connection pool with all config servers except this one, or an empty pool if there
-     * is only one config server.
+     * is only one config server (no point in trying to download from yourself).
      */
     public static ConnectionPool createConnectionPool(ConfigserverConfig configserverConfig) {
         List<String> configServers = ConfigServerSpec.fromConfig(configserverConfig)
@@ -49,7 +49,9 @@ public class FileDistributionUtil {
                 .map(spec -> "tcp/" + spec.getHostName() + ":" + spec.getConfigServerPort())
                 .collect(Collectors.toList());
 
-        return configServers.size() > 0 ? new JRTConnectionPool(new ConfigSourceSet(configServers)) : emptyConnectionPool();
+        return configServers.size() > 0
+                ? new JRTConnectionPool(new ConfigSourceSet(configServers), "filedistribution-jrt-pool-")
+                : emptyConnectionPool();
     }
 
     public static boolean fileReferenceExistsOnDisk(File downloadDirectory, FileReference applicationPackageReference) {

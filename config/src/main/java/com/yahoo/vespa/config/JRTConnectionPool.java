@@ -29,6 +29,7 @@ public class JRTConnectionPool implements ConnectionPool {
 
     private final Supervisor supervisor;
     private final Map<String, JRTConnection> connections = new LinkedHashMap<>();
+    private final String poolName;
 
     // The config sources used by this connection pool.
     private ConfigSourceSet sourceSet = null;
@@ -37,11 +38,16 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
-        supervisor = new Supervisor(new Transport("config-jrtpool-" + sourceSet.hashCode())).setDropEmptyBuffers(true);
+        this(sourceSet, "config-jrt-pool-" + sourceSet.hashCode());
+    }
+
+    public JRTConnectionPool(ConfigSourceSet sourceSet, String poolName) {
+        this.poolName = poolName;
+        supervisor = new Supervisor(new Transport(poolName)).setDropEmptyBuffers(true);
         addSources(sourceSet);
     }
 
-    public JRTConnectionPool(List<String> addresses) {
+    JRTConnectionPool(List<String> addresses) {
         this(new ConfigSourceSet(addresses));
     }
 
@@ -131,7 +137,7 @@ public class JRTConnectionPool implements ConnectionPool {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(poolName + ": ");
         synchronized (connections) {
             for (JRTConnection conn : connections.values()) {
                 sb.append(conn.toString());
