@@ -76,8 +76,7 @@ public class LoadBalancerProvisioner {
      * Calling this for irrelevant node or cluster types is a no-op.
      */
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
-        if (!service.supports(requestedNodes.type(), cluster.type())) return; // Nothing to provision for this node and cluster type
-        if (application.instance().isTester()) return; // Do not provision for tester instances
+        if (!shouldProvision(application, requestedNodes.type(), cluster.type())) return;
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
@@ -104,7 +103,7 @@ public class LoadBalancerProvisioner {
             if (!activatingClusters.contains(cluster.getKey())) continue;
 
             Node clusterNode = cluster.getValue().first().get();
-            if (!service.supports(clusterNode.type(), clusterNode.allocation().get().membership().cluster().type())) continue;
+            if (!shouldProvision(transaction.application(), clusterNode.type(), clusterNode.allocation().get().membership().cluster().type())) continue;
             activate(transaction, cluster.getKey(), cluster.getValue());
         }
         // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
@@ -118,6 +117,13 @@ public class LoadBalancerProvisioner {
      */
     public void deactivate(ApplicationTransaction transaction) {
         deactivate(nodeRepository.loadBalancers().list(transaction.application()).asList(), transaction.nested());
+    }
+
+    /** Returns whether to provision a load balancer for given application */
+    private boolean shouldProvision(ApplicationId application, NodeType nodeType, ClusterSpec.Type clusterType) {
+        if (application.instance().isTester()) return false;  // Do not provision for tester instances
+        if (!service.supports(nodeType, clusterType)) return false;  // Nothing to provision for this node and cluster type
+        return true;
     }
 
     /** Returns load balancers of given application that are no longer referenced by given clusters */
