@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeType;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -33,6 +34,11 @@ public class PassthroughLoadBalancerService implements LoadBalancerService {
     @Override
     public Protocol protocol() {
         return Protocol.ipv4;
+    }
+
+    @Override
+    public boolean supports(NodeType nodeType, ClusterSpec.Type clusterType) {
+        return true;
     }
 
 }

@@ -29,10 +29,7 @@ public interface LoadBalancerService {
     Protocol protocol();
 
     /** Returns whether load balancers created by this service can forward traffic to given node and cluster type */
-    default boolean canForwardTo(NodeType nodeType, ClusterSpec.Type clusterType) {
-        return (nodeType == NodeType.tenant && clusterType.isContainer()) ||
-               nodeType.isConfigServerLike();
-    }
+    boolean supports(NodeType nodeType, ClusterSpec.Type clusterType);
 
     /** Load balancer protocols */
     enum Protocol {
