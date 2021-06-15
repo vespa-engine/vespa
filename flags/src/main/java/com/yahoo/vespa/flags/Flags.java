@@ -280,6 +280,12 @@ public class Flags {
             "Takes effect on next deployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING = defineFeatureFlag(
+            "load-local-sessions-when-bootstrapping", true,
+            List.of("hmusum"), "2021-06-15", "2021-07-15",
+            "Whether to load local sessions when bootstrapping config server",
+            "Takes effect on restart of config server");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

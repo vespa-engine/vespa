@@ -166,16 +166,17 @@ public class SessionRepository {
         this.configDefinitionRepo = configDefinitionRepo;
         this.rewriteSearchDefinitions = Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.bindTo(flagSource);
 
-        loadSessions(); // Needs to be done before creating cache below
+        loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
 
-    private void loadSessions() {
+    private void loadSessions(BooleanFlag loadLocalSessions) {
         ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                 new DaemonThreadFactory("load-sessions-"));
-        loadLocalSessions(executor);
+        if (loadLocalSessions.value())
+            loadLocalSessions(executor);
         loadRemoteSessions(executor);
         try {
             executor.shutdown();
