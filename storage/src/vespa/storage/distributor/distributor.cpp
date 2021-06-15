@@ -385,19 +385,21 @@ Distributor::random_stripe_idx()
 }
 
 uint32_t
-Distributor::stripe_of_bucket_id(const document::BucketId& bucketd_id, api::MessageType::Id msg_id)
+Distributor::stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg)
 {
-    if (!bucketd_id.isSet()) {
-        // TODO STRIPE: Messages with a non-set bucket id should be handled by the top-level distributor instead.
-        return 0;
-    } else if (bucketd_id.getUsedBits() < spi::BucketLimits::MinUsedBits) {
-        if (msg_id == api::MessageType::VISITOR_CREATE_ID) {
+    if (!bucket_id.isSet()) {
+        LOG(error, "Message (%s) has a bucket id (%s) that is not set. Cannot route to stripe",
+            msg.getSummary().c_str(), bucket_id.toString().c_str());
+    }
+    assert(bucket_id.isSet());
+    if (bucket_id.getUsedBits() < spi::BucketLimits::MinUsedBits) {
+        if (msg.getType().getId() == api::MessageType::VISITOR_CREATE_ID) {
             // This message will eventually be bounced with api::ReturnCode::WRONG_DISTRIBUTION,
             // so we can just route it to a random distributor stripe.
             return random_stripe_idx();
         }
     }
-    return storage::stripe_of_bucket_key(bucketd_id.toKey(), _n_stripe_bits);
+    return storage::stripe_of_bucket_key(bucket_id.toKey(), _n_stripe_bits);
 }
 
 bool
@@ -413,7 +415,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
             return true;
         }
         auto bucket_id = get_bucket_id_for_striping(*msg, _component);
-        uint32_t stripe_idx = stripe_of_bucket_id(bucket_id, msg->getType().getId());
+        uint32_t stripe_idx = stripe_of_bucket_id(bucket_id, *msg);
         MBUS_TRACE(msg->getTrace(), 9,
                    vespalib::make_string("Distributor::onDown(): Dispatch message to stripe %u", stripe_idx));
         bool handled = _stripes[stripe_idx]->handle_or_enqueue_message(msg);

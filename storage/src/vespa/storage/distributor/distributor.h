@@ -189,7 +189,7 @@ private:
     [[nodiscard]] bool may_send_host_info_on_behalf_of_stripes(std::lock_guard<std::mutex>& held_lock) noexcept;
 
     uint32_t random_stripe_idx();
-    uint32_t stripe_of_bucket_id(const document::BucketId& bucketd_id, api::MessageType::Id msg_id);
+    uint32_t stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg);
 
     struct StripeScanStats {
         bool wants_to_send_host_info = false;
