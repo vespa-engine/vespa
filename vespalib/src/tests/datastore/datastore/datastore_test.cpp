@@ -141,6 +141,38 @@ assertMemStats(const DataStoreBase::MemStats &exp,
     EXPECT_EQ(exp._holdBuffers, act._holdBuffers);
 }
 
+TEST(DataStoreTest, require_that_invalid_entry_ref_can_be_ordered) {
+    EntryRef inValid;
+    EntryRef a(1);
+    EXPECT_EQ(inValid, inValid);
+    EXPECT_EQ(a, a);
+    EXPECT_NE(inValid, a);
+    EXPECT_NE(a, inValid);
+    EXPECT_LT(inValid, a);
+    EXPECT_LE(inValid, a);
+}
+
+TEST(DataStoreTest, require_that_entry_ref_can_be_ordered) {
+    EntryRef a(1);
+    EntryRef b(2);
+    EntryRef c(3);
+    EXPECT_EQ(a, a);
+    EXPECT_EQ(b, b);
+    EXPECT_EQ(c, c);
+    EXPECT_NE(a, b);
+    EXPECT_NE(a, c);
+    EXPECT_NE(b, c);
+    EXPECT_LT(a, b);
+    EXPECT_LT(b, c);
+    EXPECT_LT(a, c);
+    EXPECT_LE(a, a);
+    EXPECT_LE(b, b);
+    EXPECT_LE(c, c);
+    EXPECT_LE(a, b);
+    EXPECT_LE(b, c);
+    EXPECT_LE(a, c);
+}
+
 TEST(DataStoreTest, require_that_entry_ref_is_working)
 {
     using MyRefType = EntryRefT<22>;
@@ -642,6 +674,7 @@ TEST(DataStoreTest, control_static_sizes) {
     BufferState bs;
     EXPECT_EQ(0, bs.size());
 }
+
 
 }
 

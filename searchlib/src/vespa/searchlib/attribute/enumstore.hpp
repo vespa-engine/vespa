@@ -30,11 +30,11 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, const search::D
                            std::unique_ptr<EntryComparator> folded_compare);
 
 template <typename EntryT>
-void EnumStoreT<EntryT>::free_value_if_unused(Index idx, IndexSet& unused)
+void EnumStoreT<EntryT>::free_value_if_unused(Index idx, IndexList& unused)
 {
     const auto& entry = get_entry_base(idx);
     if (entry.get_ref_count() == 0) {
-        unused.insert(idx);
+        unused.push_back(idx);
         _store.get_allocator().hold(idx);
     }
 }
@@ -140,7 +140,7 @@ EnumStoreT<EntryT>::BatchUpdater::insert(EntryType value)
     auto cmp = _store.make_comparator(value);
     auto result = _store._dict->add(cmp, [this, &value]() -> EntryRef { return _store._store.get_allocator().allocate(value); });
     if (result.inserted()) {
-        _possibly_unused.insert(result.ref());
+        _possibly_unused.push_back(result.ref());
     }
     return result.ref();
 }
@@ -191,8 +191,16 @@ EnumStoreT<EntryT>::free_unused_values()
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::free_unused_values(const IndexSet& to_remove)
+EnumStoreT<EntryT>::free_unused_values(IndexList to_remove)
 {
+    struct CompareEnumIndex {
+        using Index = IEnumStore::Index;
+
+        bool operator()(const Index &lhs, const Index &rhs) const {
+            return lhs.ref() < rhs.ref();
+        }
+    };
+    std::sort(to_remove.begin(), to_remove.end(), CompareEnumIndex());
     _dict->free_unused_values(to_remove, get_comparator());
 }
 

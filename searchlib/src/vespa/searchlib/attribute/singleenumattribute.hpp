@@ -312,9 +312,9 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
         uint32_t default_value_ref_count = this->_enumStore.get_ref_count(default_value_ref);
         assert(default_value_ref_count >= shrink_docs);
         this->_enumStore.set_ref_count(default_value_ref, default_value_ref_count - shrink_docs);
-        IEnumStore::IndexSet possibly_unused;
-        possibly_unused.insert(default_value_ref);
-        this->_enumStore.free_unused_values(possibly_unused);
+        IEnumStore::IndexList possibly_unused;
+        possibly_unused.push_back(default_value_ref);
+        this->_enumStore.free_unused_values(std::move(possibly_unused));
     }
     _enumIndices.shrink(committedDocIdLimit);
     this->setNumDocs(committedDocIdLimit);
