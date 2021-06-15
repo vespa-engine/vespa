@@ -25,6 +25,10 @@ public class SimpleToken implements Token {
         this.orig = orig;
     }
 
+    public SimpleToken(String orig, String tokenString) {
+        this.orig = orig;
+    }
+
     @Override
     public String getOrig() {
         return orig;

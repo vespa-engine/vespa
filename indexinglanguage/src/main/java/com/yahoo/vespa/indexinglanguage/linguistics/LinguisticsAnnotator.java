@@ -115,9 +115,7 @@ public class LinguisticsAnnotator {
                 }
                 return;
             }
-            if ( ! token.isIndexable()) {
-                return;
-            }
+            if ( ! token.isIndexable()) return;
         }
         String orig = token.getOrig();
         int pos = (int)token.getOffset();
@@ -138,9 +136,6 @@ public class LinguisticsAnnotator {
             String lowercasedTerm = lowercasedOrig;
             String term = token.getTokenString();
             if (term != null) {
-                term = tokenizer.getReplacementTerm(term);
-            }
-            if (term != null) {
                 lowercasedTerm = toLowerCase(term);
             }
             if (! lowercasedOrig.equals(lowercasedTerm)) {
@@ -155,12 +150,7 @@ public class LinguisticsAnnotator {
             }
         } else {
             String term = token.getTokenString();
-            if (term != null) {
-                term = tokenizer.getReplacementTerm(term);
-            }
-            if (term == null || term.trim().isEmpty()) {
-                return;
-            }
+            if (term == null || term.trim().isEmpty()) return;
             if (termOccurrences.termCountBelowLimit(term))  {
                 parent.span(pos, len).annotate(lowerCaseTermAnnotation(term, token.getOrig()));
             }
