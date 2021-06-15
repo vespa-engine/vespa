@@ -340,7 +340,10 @@ public class InternalStepRunner implements StepRunner {
                .map(since -> since.isBefore(controller.clock().instant().minus(timeouts.noNodesDown())))
                .orElse(false)) {
             if (summary.needPlatformUpgrade() > 0 || summary.needReboot() > 0 || summary.needRestart() > 0)
-                failureReason = "No nodes allowed to suspend to progress installation for " + timeouts.noNodesDown().toMinutes() + " minutes.";
+                failureReason = "Timed out after waiting " + timeouts.noNodesDown().toMinutes() + " minutes for " +
+                                "nodes to suspend. This is normal if the cluster is excessively busy. " +
+                                "Nodes will continue to attempt suspension to progress installation independently of " +
+                                "this run.";
             else
                 failureReason = "Nodes not able to start with new application package.";
         }
