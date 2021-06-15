@@ -81,4 +81,4 @@ exec java \
 -Xms128m -Xmx2048m $(getJavaOptionsIPV46) \
 --add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
 -Djava.util.logging.config.file=${VESPA_HOME}/conf/vespa-feed-client/logging.properties \
--cp ${VESPA_HOME}/lib/jars/vespa-feed-client-cli.jar ai.vespa.feed.client.CliClient "$@"
+-cp ${VESPA_HOME}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar ai.vespa.feed.client.CliClient "$@"
