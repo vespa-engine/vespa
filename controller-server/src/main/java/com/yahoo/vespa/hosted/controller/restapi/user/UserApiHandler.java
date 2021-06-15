@@ -248,8 +248,10 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (user.nickname() != null) userObject.setString("nickname", user.nickname());
         if (user.picture() != null) userObject.setString("picture", user.picture());
         userObject.setBool("verified", user.isVerified());
-        userObject.setString("lastLogin", user.lastLogin().format(DateTimeFormatter.ISO_DATE));
-        userObject.setLong("loginCount", user.loginCount());
+        if (!user.lastLogin().equals(User.NO_DATE))
+            userObject.setString("lastLogin", user.lastLogin().format(DateTimeFormatter.ISO_DATE));
+        if (user.loginCount() > -1)
+            userObject.setLong("loginCount", user.loginCount());
     }
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
