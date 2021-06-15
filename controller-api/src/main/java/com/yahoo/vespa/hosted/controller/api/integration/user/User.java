@@ -10,7 +10,7 @@ import java.util.Objects;
 public class User {
 
     public static final String ATTRIBUTE_NAME = "vespa.user.attributes";
-    public static final LocalDate NO_LOGIN_DATE = LocalDate.ofEpochDay(0);
+    public static final LocalDate NO_DATE = LocalDate.EPOCH;
 
     private final String email;
     private final String name;
@@ -27,7 +27,7 @@ public class User {
         this.picture = picture;
         this.isVerified = false;
         this.loginCount = -1;
-        this.lastLogin = NO_LOGIN_DATE;
+        this.lastLogin = NO_DATE;
     }
 
     public User(String email, String name, String nickname, String picture, boolean isVerified, int loginCount, LocalDate lastLogin) {
