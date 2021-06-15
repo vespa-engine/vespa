@@ -119,7 +119,6 @@ public class MockSearchCluster extends SearchCluster {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         builder.minActivedocsPercentage(88.0);
         builder.minGroupCoverage(99.0);
-        builder.maxNodesDownPerGroup(0);
         builder.minSearchCoverage(minSearchCoverage);
         builder.distributionPolicy(DispatchConfig.DistributionPolicy.Enum.ROUNDROBIN);
         if (minSearchCoverage < 100.0) {

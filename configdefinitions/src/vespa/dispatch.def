@@ -7,10 +7,10 @@ namespace=vespa.config.search
 # for that group to be included in queries
 minActivedocsPercentage double default=97.0
 
-# Minimum coverage for allowing a group to be considered for serving
+# Not used. TODO: Remove on Vespa 8
 minGroupCoverage double default=100
 
-# Maximum number of nodes allowed to be down for group to be considered for serving
+# Not used. TODO: Remove on Vespa 8
 maxNodesDownPerGroup int default=0
 
 # Distribution policy for group selection

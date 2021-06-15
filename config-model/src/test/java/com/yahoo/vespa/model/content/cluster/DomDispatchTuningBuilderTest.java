@@ -44,7 +44,6 @@ public class DomDispatchTuningBuilderTest {
                 "  </tuning>" +
                 "</content>");
         assertNull(dispatch.getMaxHitsPerPartition());
-        assertNull(dispatch.getMinGroupCoverage());
         assertNull(dispatch.getMinActiveDocsCoverage());
         assertNull(dispatch.getDispatchPolicy());
         assertNull(dispatch.getTopkProbability());
@@ -57,14 +56,12 @@ public class DomDispatchTuningBuilderTest {
                 "  <tuning>" +
                 "    <dispatch>" +
                 "      <max-hits-per-partition>69</max-hits-per-partition>" +
-                "      <min-group-coverage>7.5</min-group-coverage>" +
                 "      <min-active-docs-coverage>12.5</min-active-docs-coverage>" +
                 "      <top-k-probability>0.999</top-k-probability>" +
                 "    </dispatch>" +
                 "  </tuning>" +
                 "</content>");
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
-        assertEquals(7.5, dispatch.getMinGroupCoverage().doubleValue(), 0.0);
         assertEquals(12.5, dispatch.getMinActiveDocsCoverage().doubleValue(), 0.0);
         assertEquals(0.999, dispatch.getTopkProbability().doubleValue(), 0.0);
     }
