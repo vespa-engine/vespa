@@ -40,6 +40,8 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.PublicKey;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -136,12 +138,16 @@ public class UserApiHandler extends LoggingRequestHandler {
             RoleDefinition.hostedAccountant);
 
     private HttpResponse userMetadata(HttpRequest request) {
-        @SuppressWarnings("unchecked")
-        Map<String, String> userAttributes = (Map<String, String>) getAttribute(request, User.ATTRIBUTE_NAME, Map.class);
-        User user = new User(userAttributes.get("email"),
-                             userAttributes.get("name"),
-                             userAttributes.get("nickname"),
-                             userAttributes.get("picture"));
+        User user;
+        if (request.getJDiscRequest().context().get(User.ATTRIBUTE_NAME) instanceof User) {
+            user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+        } else {
+            // Remove this after June 2021 (once all security filters are setting this)
+            @SuppressWarnings("unchecked")
+            Map<String, String> attr = (Map<String, String>) getAttribute(request, User.ATTRIBUTE_NAME, Map.class);
+            user = new User(attr.get("email"), attr.get("name"), attr.get("nickname"), attr.get("picture"));
+        }
+
         Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
 
         Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
@@ -241,6 +247,11 @@ public class UserApiHandler extends LoggingRequestHandler {
         userObject.setString("email", user.email());
         if (user.nickname() != null) userObject.setString("nickname", user.nickname());
         if (user.picture() != null) userObject.setString("picture", user.picture());
+        userObject.setBool("verified", user.isVerified());
+        if (!user.lastLogin().equals(User.NO_DATE))
+            userObject.setString("lastLogin", user.lastLogin().format(DateTimeFormatter.ISO_DATE));
+        if (user.loginCount() > -1)
+            userObject.setLong("loginCount", user.loginCount());
     }
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {

@@ -6,7 +6,8 @@
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
-    "nickname": "dev"
+    "nickname": "dev",
+    "verified": false
   },
   "tenants": {
     "sandbox": {
