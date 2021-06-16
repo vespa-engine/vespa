@@ -64,7 +64,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
@@ -168,18 +167,18 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void addNodes(List<ZoneId> zones, List<SystemApplication> applications) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
-                List<Node> nodes = IntStream.rangeClosed(1, 3)
-                                            .mapToObj(i -> new Node.Builder()
-                                                    .hostname(HostName.from("node-" + i + "-" + application.id().application()
-                                                            .value() + "-" + zone.value()))
-                                                    .state(Node.State.active)
-                                                    .type(application.nodeType())
-                                                    .owner(application.id())
-                                                    .currentVersion(initialVersion).wantedVersion(initialVersion)
-                                                    .currentOsVersion(Version.emptyVersion).wantedOsVersion(Version.emptyVersion)
-                                                    .build())
-                                            .collect(Collectors.toList());
-                nodeRepository().putNodes(zone, nodes);
+                for (int i = 1; i <= 3; i++) {
+                    Node node = new Node.Builder()
+                            .hostname(HostName.from("node-" + i + "-" + application.id().application()
+                                                                                   .value() + "-" + zone.value()))
+                            .state(Node.State.active)
+                            .type(application.nodeType())
+                            .owner(application.id())
+                            .currentVersion(initialVersion).wantedVersion(initialVersion)
+                            .currentOsVersion(Version.emptyVersion).wantedOsVersion(Version.emptyVersion)
+                            .build();
+                    nodeRepository().putNode(zone, node);
+                }
                 convergeServices(application.id(), zone);
             }
         }

@@ -59,9 +59,14 @@ public class NodeRepositoryMock implements NodeRepository {
 
     /** Add or update given nodes in zone */
     public void putNodes(ZoneId zone, List<Node> nodes) {
-        nodeRepository.putIfAbsent(zone, new HashMap<>());
-        nodeRepository.get(zone).putAll(nodes.stream().collect(Collectors.toMap(Node::hostname,
-                                                                                Function.identity())));
+        Map<HostName, Node> zoneNodes = nodeRepository.computeIfAbsent(zone, (k) -> new HashMap<>());
+        for (var node : nodes) {
+            zoneNodes.put(node.hostname(), node);
+        }
+    }
+
+    public void putNode(ZoneId zone, Node node) {
+        nodeRepository.computeIfAbsent(zone, (k) -> new HashMap<>()).put(node.hostname(), node);
     }
 
     public void putApplication(ZoneId zone, Application application) {
