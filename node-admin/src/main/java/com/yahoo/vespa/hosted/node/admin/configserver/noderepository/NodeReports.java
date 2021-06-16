@@ -77,6 +77,17 @@ public class NodeReports {
         return new TreeMap<>(reports);
     }
 
+    /** Apply the override to this.  null value means removing report. */
+    public void updateFromRawMap(Map<String, JsonNode> override) {
+        override.forEach((reportId, jsonNode) -> {
+            if (jsonNode == null) {
+                reports.remove(reportId);
+            } else {
+                reports.put(reportId, jsonNode);
+            }
+        });
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

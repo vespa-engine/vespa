@@ -604,7 +604,7 @@ public class NodeSpec {
             attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
-            NodeReports.fromMap(attributes.getReports());
+            this.reports.updateFromRawMap(attributes.getReports());
 
             return this;
         }
