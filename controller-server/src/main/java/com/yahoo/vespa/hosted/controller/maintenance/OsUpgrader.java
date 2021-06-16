@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -89,12 +88,18 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     /** Returns the available upgrade budget for given zone */
     private Duration zoneBudgetOf(Duration totalBudget, ZoneApi zone) {
-        if (!zone.getEnvironment().isProduction()) return Duration.ZERO;
-        long consecutiveProductionZones = upgradePolicy.asList().stream()
-                                                       .filter(parallelZones -> parallelZones.stream().map(ZoneApi::getEnvironment)
-                                                                                             .anyMatch(Environment::isProduction))
-                                                       .count();
-        return totalBudget.dividedBy(consecutiveProductionZones);
+        if (!spendBudget(zone)) return Duration.ZERO;
+        long consecutiveZones = upgradePolicy.asList().stream()
+                                             .filter(parallelZones -> parallelZones.stream().anyMatch(this::spendBudget))
+                                             .count();
+        return totalBudget.dividedBy(consecutiveZones);
+    }
+
+    /** Returns whether to spend upgrade budget on given zone */
+    private boolean spendBudget(ZoneApi zone) {
+        if (!zone.getEnvironment().isProduction()) return false;
+        if (controller().zoneRegistry().systemZone().getVirtualId().equals(zone.getVirtualId())) return false; // Controller zone
+        return true;
     }
 
     /** Returns whether node is in a state where it can be upgraded */

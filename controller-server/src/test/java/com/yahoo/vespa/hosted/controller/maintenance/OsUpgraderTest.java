@@ -119,11 +119,13 @@ public class OsUpgraderTest {
     @Test
     public void upgrade_os_with_budget() {
         CloudName cloud = CloudName.from("cloud");
+        ZoneApi zone0 = zone("prod.us-north-42", "prod.controller", cloud);
         ZoneApi zone1 = zone("dev.us-east-1", cloud);
         ZoneApi zone2 = zone("prod.us-west-1", cloud);
         ZoneApi zone3 = zone("prod.us-central-1", cloud);
         ZoneApi zone4 = zone("prod.eu-west-1", cloud);
         UpgradePolicy upgradePolicy = UpgradePolicy.create()
+                                                   .upgrade(zone0)
                                                    .upgrade(zone1)
                                                    .upgradeInParallel(zone2, zone3)
                                                    .upgrade(zone4);
@@ -133,6 +135,7 @@ public class OsUpgraderTest {
         List<SystemApplication> nodeTypes = List.of(SystemApplication.configServerHost, SystemApplication.tenantHost);
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
                                         nodeTypes);
+        tester.configServer().addNodes(List.of(zone0.getVirtualId()), List.of(SystemApplication.controllerHost));
 
         // Upgrade with budget
         Version version = Version.fromString("7.1");
@@ -141,7 +144,16 @@ public class OsUpgraderTest {
         statusUpdater.maintain();
         osUpgrader.maintain();
 
+        // Controllers upgrade first
+        osUpgrader.maintain();
+        assertWanted(version, SystemApplication.controllerHost, zone0);
+        assertEquals("Controller zone gets a zero budget", Duration.ZERO, upgradeBudget(zone0, SystemApplication.controllerHost, version));
+        completeUpgrade(version, SystemApplication.controllerHost, zone0);
+        statusUpdater.maintain();
+        assertEquals(3, nodesOn(version).size());
+
         // First zone upgrades
+        osUpgrader.maintain();
         for (var nodeType : nodeTypes) {
             assertEquals("Dev zone gets a zero budget", Duration.ZERO, upgradeBudget(zone1, nodeType, version));
             completeUpgrade(version, nodeType, zone1);
