@@ -11,6 +11,7 @@
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/async_resolver.h>
 #include <vespa/vespalib/net/crypto_socket.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 
 class FNET_IPacketStreamer;
@@ -60,9 +61,9 @@ public:
     };
 
     enum {
-        FNET_READ_SIZE  = 32768,
+        FNET_READ_SIZE  = 16_Ki,
         FNET_READ_REDO  = 10,
-        FNET_WRITE_SIZE = 32768,
+        FNET_WRITE_SIZE = 16_Ki,
         FNET_WRITE_REDO = 10
     };
 
