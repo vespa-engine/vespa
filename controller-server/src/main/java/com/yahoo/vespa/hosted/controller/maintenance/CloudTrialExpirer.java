@@ -1,7 +1,7 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -13,6 +13,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Expires unused tenants from Vespa Cloud.
+ *
+ * @author ogronnesby
+ */
 public class CloudTrialExpirer extends ControllerMaintainer {
 
     private static Duration loginExpiry = Duration.ofDays(14);

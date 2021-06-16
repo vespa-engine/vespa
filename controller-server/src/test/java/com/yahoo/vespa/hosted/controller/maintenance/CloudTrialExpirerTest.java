@@ -1,3 +1,4 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
@@ -18,6 +19,9 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * @author ogronnesby
+ */
 public class CloudTrialExpirerTest {
     private final ControllerTester tester = new ControllerTester(SystemName.Public);
     private final DeploymentTester deploymentTester = new DeploymentTester(tester);
