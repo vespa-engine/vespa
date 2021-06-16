@@ -148,6 +148,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
             deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
                                                        hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+            log.info(String.format("%sScheduled service restart of %d nodes: %s",
+                                   session.logPre(), hostnames.size(), restartActions.format()));
 
             this.configChangeActions = new ConfigChangeActions(
                     new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());

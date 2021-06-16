@@ -615,7 +615,7 @@ public class ApplicationRepositoryTest {
 
         applicationRepository.prepare(sessionId2, prepareParams());
         exceptionRule.expect(ActivationConflictException.class);
-        exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
+        exceptionRule.expectMessage(containsString("app:test1.testapp.default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
     }
 
@@ -629,7 +629,7 @@ public class ApplicationRepositoryTest {
         applicationRepository.prepare(sessionId, prepareParams());
 
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(containsString("tenant:test1 app:testapp:default Session 2 is already active"));
+        exceptionRule.expectMessage(containsString("app:test1.testapp.default Session 2 is already active"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
     }
 
