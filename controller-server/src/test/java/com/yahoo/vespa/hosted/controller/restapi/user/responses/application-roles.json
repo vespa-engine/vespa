@@ -6,11 +6,13 @@
     {
       "name": "administrator@tenant",
       "email": "administrator@tenant",
+      "verified": false,
       "roles": {}
     },
     {
       "name": "developer@tenant",
       "email": "developer@tenant",
+      "verified": false,
       "roles": {}
     }
   ]
