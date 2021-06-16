@@ -8,7 +8,12 @@ import com.yahoo.search.grouping.request.parser.GroupingParserInput;
 import com.yahoo.search.grouping.request.parser.ParseException;
 import com.yahoo.search.grouping.request.parser.TokenMgrException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * This class represents a single node in a grouping operation tree. You may manually construct this tree, or you may
