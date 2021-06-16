@@ -77,6 +77,15 @@ public class NodeReports {
         return new TreeMap<>(reports);
     }
 
+    /** Set or overwrite the reports of {@code this} that are found in {@code override}. */
+    public void updateFromRawMap(Map<String, JsonNode> override) {
+        override.forEach((reportId, jsonNode) -> {
+            if (jsonNode != null) {
+                reports.put(reportId, jsonNode);
+            }
+        });
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
