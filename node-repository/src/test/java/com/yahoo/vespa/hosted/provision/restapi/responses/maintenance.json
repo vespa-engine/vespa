@@ -43,9 +43,6 @@
       "name": "OsUpgradeActivator"
     },
     {
-      "name": "ParkedExpirer"
-    },
-    {
       "name": "PeriodicApplicationMaintainer"
     },
     {
