@@ -33,9 +33,11 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct DistributorTest : Test, DistributorTestUtil {
-    DistributorTest();
-    ~DistributorTest() override;
+// TODO STRIPE: Add variant of this test for the new stripe mode.
+// TODO STRIPE: Remove this test when legacy mode is gone.
+struct LegacyDistributorTest : Test, DistributorTestUtil {
+    LegacyDistributorTest();
+    ~LegacyDistributorTest() override;
 
     // TODO handle edge case for window between getnodestate reply already
     // sent and new request not yet received
@@ -233,17 +235,17 @@ struct DistributorTest : Test, DistributorTestUtil {
     void set_up_and_start_get_op_with_stale_reads_enabled(bool enabled);
 };
 
-DistributorTest::DistributorTest()
+LegacyDistributorTest::LegacyDistributorTest()
     : Test(),
       DistributorTestUtil(),
       _bucketSpaces()
 {
 }
 
-DistributorTest::~DistributorTest() = default;
+LegacyDistributorTest::~LegacyDistributorTest() = default;
 
 // TODO -> stripe test
-TEST_F(DistributorTest, operation_generation) {
+TEST_F(LegacyDistributorTest, operation_generation) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     document::BucketId bid;
@@ -262,7 +264,7 @@ TEST_F(DistributorTest, operation_generation) {
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, operations_generated_and_started_without_duplicates) {
+TEST_F(LegacyDistributorTest, operations_generated_and_started_without_duplicates) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     for (uint32_t i = 0; i < 6; ++i) {
@@ -278,7 +280,7 @@ TEST_F(DistributorTest, operations_generated_and_started_without_duplicates) {
 
 // TODO -> stripe test
 // TODO also need to impl/test cross-stripe cluster state changes
-TEST_F(DistributorTest, recovery_mode_on_cluster_state_change) {
+TEST_F(LegacyDistributorTest, recovery_mode_on_cluster_state_change) {
     setupDistributor(Redundancy(1), NodeCount(2),
                      "storage:1 .0.s:d distributor:1");
     enableDistributorClusterState("storage:1 distributor:1");
@@ -300,7 +302,7 @@ TEST_F(DistributorTest, recovery_mode_on_cluster_state_change) {
 
 // TODO -> stripe test
 // TODO how to throttle across stripes?
-TEST_F(DistributorTest, operations_are_throttled) {
+TEST_F(LegacyDistributorTest, operations_are_throttled) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     getConfig().setMinPendingMaintenanceOps(1);
     getConfig().setMaxPendingMaintenanceOps(1);
@@ -313,7 +315,7 @@ TEST_F(DistributorTest, operations_are_throttled) {
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, handle_unknown_maintenance_reply) {
+TEST_F(LegacyDistributorTest, handle_unknown_maintenance_reply) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     {
@@ -333,7 +335,7 @@ TEST_F(DistributorTest, handle_unknown_maintenance_reply) {
 }
 
 // TODO -> generic, non distr/stripe test
-TEST_F(DistributorTest, contains_time_statement) {
+TEST_F(LegacyDistributorTest, contains_time_statement) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     EXPECT_FALSE(getConfig().containsTimeStatement(""));
@@ -345,7 +347,7 @@ TEST_F(DistributorTest, contains_time_statement) {
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, update_bucket_database) {
+TEST_F(LegacyDistributorTest, update_bucket_database) {
     enableDistributorClusterState("distributor:1 storage:3");
 
     EXPECT_EQ("BucketId(0x4000000000000001) : "
@@ -416,7 +418,7 @@ public:
 
 // TODO -> stripe test
 // TODO need to impl/test cross-stripe status requests
-TEST_F(DistributorTest, tick_processes_status_requests) {
+TEST_F(LegacyDistributorTest, tick_processes_status_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
@@ -446,7 +448,7 @@ TEST_F(DistributorTest, tick_processes_status_requests) {
 
 // TODO -> distributor test since it owns metric hook
 // TODO need to impl/test cross-stripe metrics aggregation
-TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) {
+TEST_F(LegacyDistributorTest, metric_update_hook_updates_pending_maintenance_metrics) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // To ensure we count all operations, not just those fitting within the
     // pending window.
@@ -493,7 +495,7 @@ TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) 
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {
+TEST_F(LegacyDistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {
     getClock().setAbsoluteTimeInSeconds(1000);
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
@@ -532,7 +534,7 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
 
 // TODO -> stripe test
 // TODO need to impl/test cross-stripe config propagation
-TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configuration) {
+TEST_F(LegacyDistributorTest, priority_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
@@ -569,7 +571,7 @@ TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configurati
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
+TEST_F(LegacyDistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     lib::ClusterState newState("storage:10 distributor:10");
     auto stateCmd = std::make_shared<api::SetSystemStateCommand>(newState);
@@ -591,7 +593,7 @@ TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time) {
+TEST_F(LegacyDistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     getClock().setAbsoluteTimeInSeconds(101234);
     document::BucketId bucket(16, 7654);
@@ -605,7 +607,7 @@ TEST_F(DistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_cur
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, merge_stats_are_accumulated_during_database_iteration) {
+TEST_F(LegacyDistributorTest, merge_stats_are_accumulated_during_database_iteration) {
     setupDistributor(Redundancy(2), NodeCount(3), "storage:3 distributor:1");
     // Copies out of sync. Not possible for distributor to _reliably_ tell
     // which direction(s) data will flow, so for simplicity assume that we
@@ -656,9 +658,9 @@ TEST_F(DistributorTest, merge_stats_are_accumulated_during_database_iteration) {
 }
 
 void
-DistributorTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
-                                        const vespalib::string& bucketSpace,
-                                        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats)
+LegacyDistributorTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
+                                              const vespalib::string& bucketSpace,
+                                              const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats)
 {
     auto nodeItr = stats.find(node);
     ASSERT_TRUE(nodeItr != stats.end());
@@ -677,7 +679,7 @@ DistributorTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucke
  * operations for the bucket.
  */
 // TODO -> stripe test
-TEST_F(DistributorTest, stats_generated_for_preempted_operations) {
+TEST_F(LegacyDistributorTest, stats_generated_for_preempted_operations) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // For this test it suffices to have a single bucket with multiple aspects
     // wrong about it. In this case, let a bucket be both out of sync _and_
@@ -702,7 +704,7 @@ TEST_F(DistributorTest, stats_generated_for_preempted_operations) {
 }
 
 // TODO -> distributor test
-TEST_F(DistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
+TEST_F(LegacyDistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     // Default is enabled=true.
@@ -716,13 +718,13 @@ TEST_F(DistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
 }
 
 // TODO -> stripe test (though config is a bit of a special case...)
-TEST_F(DistributorTest, replica_counting_mode_is_configured_to_trusted_by_default) {
+TEST_F(LegacyDistributorTest, replica_counting_mode_is_configured_to_trusted_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
+TEST_F(LegacyDistributorTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.minimumReplicaCountingMode = ConfigBuilder::MinimumReplicaCountingMode::ANY;
@@ -731,7 +733,7 @@ TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_upd
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config) {
+TEST_F(LegacyDistributorTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.maxConsecutivelyInhibitedMaintenanceTicks = 123;
@@ -740,13 +742,13 @@ TEST_F(DistributorTest, max_consecutively_inhibited_maintenance_ticks_config_is_
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, bucket_activation_is_enabled_by_default) {
+TEST_F(LegacyDistributorTest, bucket_activation_is_enabled_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_FALSE(getConfig().isBucketActivationDisabled());
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, bucket_activation_config_is_propagated_to_distributor_configuration) {
+TEST_F(LegacyDistributorTest, bucket_activation_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
@@ -759,7 +761,7 @@ TEST_F(DistributorTest, bucket_activation_config_is_propagated_to_distributor_co
 }
 
 void
-DistributorTest::configureMaxClusterClockSkew(int seconds) {
+LegacyDistributorTest::configureMaxClusterClockSkew(int seconds) {
     using namespace vespa::config::content::core;
 
     ConfigBuilder builder;
@@ -769,7 +771,7 @@ DistributorTest::configureMaxClusterClockSkew(int seconds) {
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, max_clock_skew_config_is_propagated_to_distributor_config) {
+TEST_F(LegacyDistributorTest, max_clock_skew_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configureMaxClusterClockSkew(5);
@@ -794,7 +796,7 @@ auto make_dummy_get_command_for_bucket_1() {
 
 }
 
-void DistributorTest::replyToSingleRequestBucketInfoCommandWith1Bucket() {
+void LegacyDistributorTest::replyToSingleRequestBucketInfoCommandWith1Bucket() {
     ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
     for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
         ASSERT_EQ(api::MessageType::REQUESTBUCKETINFO, _sender.command(i)->getType());
@@ -814,11 +816,11 @@ void DistributorTest::replyToSingleRequestBucketInfoCommandWith1Bucket() {
     _sender.commands().clear();
 }
 
-void DistributorTest::sendDownDummyRemoveCommand() {
+void LegacyDistributorTest::sendDownDummyRemoveCommand() {
     _distributor->handleMessage(makeDummyRemoveCommand());
 }
 
-void DistributorTest::assertSingleBouncedRemoveReplyPresent() {
+void LegacyDistributorTest::assertSingleBouncedRemoveReplyPresent() {
     ASSERT_EQ(1, _sender.replies().size()); // Rejected remove
     ASSERT_EQ(api::MessageType::REMOVE_REPLY, _sender.reply(0)->getType());
     auto& reply(static_cast<api::RemoveReply&>(*_sender.reply(0)));
@@ -826,7 +828,7 @@ void DistributorTest::assertSingleBouncedRemoveReplyPresent() {
     _sender.replies().clear();
 }
 
-void DistributorTest::assertNoMessageBounced() {
+void LegacyDistributorTest::assertNoMessageBounced() {
     ASSERT_EQ(0, _sender.replies().size());
 }
 
@@ -834,7 +836,7 @@ void DistributorTest::assertNoMessageBounced() {
 // reply once we have the "highest timestamp across all owned buckets" feature
 // in place.
 // TODO where does this truly belong?
-TEST_F(DistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
+TEST_F(LegacyDistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "bits:1 storage:1 distributor:2");
     getClock().setAbsoluteTimeInSeconds(1000);
@@ -854,7 +856,7 @@ TEST_F(DistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
     ASSERT_NO_FATAL_FAILURE(assertNoMessageBounced());
 }
 
-void DistributorTest::configure_mutation_sequencing(bool enabled) {
+void LegacyDistributorTest::configure_mutation_sequencing(bool enabled) {
     using namespace vespa::config::content::core;
 
     ConfigBuilder builder;
@@ -864,7 +866,7 @@ void DistributorTest::configure_mutation_sequencing(bool enabled) {
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, sequencing_config_is_propagated_to_distributor_config) {
+TEST_F(LegacyDistributorTest, sequencing_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     // Should be enabled by default
@@ -880,7 +882,7 @@ TEST_F(DistributorTest, sequencing_config_is_propagated_to_distributor_config) {
 }
 
 void
-DistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
+LegacyDistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
     using namespace vespa::config::content::core;
 
     ConfigBuilder builder;
@@ -890,7 +892,7 @@ DistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config) {
+TEST_F(LegacyDistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configure_merge_busy_inhibit_duration(7);
@@ -898,7 +900,7 @@ TEST_F(DistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_dist
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker) {
+TEST_F(LegacyDistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
 
@@ -924,7 +926,7 @@ TEST_F(DistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_mes
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, external_client_requests_are_handled_individually_in_priority_order) {
+TEST_F(LegacyDistributorTest, external_client_requests_are_handled_individually_in_priority_order) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
 
@@ -953,7 +955,7 @@ TEST_F(DistributorTest, external_client_requests_are_handled_individually_in_pri
 }
 
 // TODO -> stripe test
-TEST_F(DistributorTest, internal_messages_are_started_in_fifo_order_batch) {
+TEST_F(LegacyDistributorTest, internal_messages_are_started_in_fifo_order_batch) {
     // To test internal request ordering, we use NotifyBucketChangeCommand
     // for the reason that it explicitly updates the bucket database for
     // each individual invocation.
@@ -983,7 +985,7 @@ TEST_F(DistributorTest, internal_messages_are_started_in_fifo_order_batch) {
 
 // TODO -> stripe test
 // TODO also test that closing distributor closes stripes
-TEST_F(DistributorTest, closing_aborts_priority_queued_client_requests) {
+TEST_F(LegacyDistributorTest, closing_aborts_priority_queued_client_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     document::BucketId bucket(16, 1);
     addNodesToBucketDB(bucket, "0=1/1/1/t");
@@ -1024,7 +1026,7 @@ void assert_invalid_stats_for_all_spaces(
 // TODO -> stripe test
 // TODO must impl/test cross-stripe bucket space stats
 // TODO cross-stripe recovery mode handling how?
-TEST_F(DistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
+TEST_F(LegacyDistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
@@ -1046,7 +1048,7 @@ TEST_F(DistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
 }
 
 // TODO figure out interaction between stripes and distributors on this one
-TEST_F(DistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {
+TEST_F(LegacyDistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     // Should not send explicit replies during init stage
     ASSERT_EQ(0, explicit_node_state_reply_send_invocations());
@@ -1067,7 +1069,7 @@ TEST_F(DistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_rep
     EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
 }
 
-void DistributorTest::do_test_pending_merge_getnodestate_reply_edge(BucketSpace space) {
+void LegacyDistributorTest::do_test_pending_merge_getnodestate_reply_edge(BucketSpace space) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     EXPECT_TRUE(distributor_is_in_recovery_mode());
     // 2 buckets with missing replicas triggering merge pending stats
@@ -1103,15 +1105,15 @@ void DistributorTest::do_test_pending_merge_getnodestate_reply_edge(BucketSpace 
     EXPECT_EQ(2, explicit_node_state_reply_send_invocations());
 }
 
-TEST_F(DistributorTest, pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies) {
+TEST_F(LegacyDistributorTest, pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies) {
     do_test_pending_merge_getnodestate_reply_edge(FixedBucketSpaces::default_space());
 }
 
-TEST_F(DistributorTest, pending_to_no_pending_global_merges_edge_immediately_sends_getnodestate_replies) {
+TEST_F(LegacyDistributorTest, pending_to_no_pending_global_merges_edge_immediately_sends_getnodestate_replies) {
     do_test_pending_merge_getnodestate_reply_edge(FixedBucketSpaces::global_space());
 }
 
-TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_handler) {
+TEST_F(LegacyDistributorTest, stale_reads_config_is_propagated_to_external_operation_handler) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1122,7 +1124,7 @@ TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_h
     EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
 }
 
-TEST_F(DistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config) {
+TEST_F(LegacyDistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1133,7 +1135,7 @@ TEST_F(DistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_int
     EXPECT_FALSE(getConfig().update_fast_path_restart_enabled());
 }
 
-TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config) {
+TEST_F(LegacyDistributorTest, merge_disabling_config_is_propagated_to_internal_config) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1144,7 +1146,7 @@ TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config)
     EXPECT_FALSE(getConfig().merge_operations_disabled());
 }
 
-TEST_F(DistributorTest, metadata_update_phase_config_is_propagated_to_internal_config) {
+TEST_F(LegacyDistributorTest, metadata_update_phase_config_is_propagated_to_internal_config) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1155,7 +1157,7 @@ TEST_F(DistributorTest, metadata_update_phase_config_is_propagated_to_internal_c
     EXPECT_FALSE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
 }
 
-TEST_F(DistributorTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs) {
+TEST_F(LegacyDistributorTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1168,7 +1170,7 @@ TEST_F(DistributorTest, weak_internal_read_consistency_config_is_propagated_to_i
     EXPECT_FALSE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
 }
 
-void DistributorTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enabled) {
+void LegacyDistributorTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enabled) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
     configure_stale_reads_enabled(enabled);
@@ -1178,7 +1180,7 @@ void DistributorTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enab
     _distributor->onDown(make_dummy_get_command_for_bucket_1());
 }
 
-TEST_F(DistributorTest, gets_are_started_outside_main_distributor_logic_if_stale_reads_enabled) {
+TEST_F(LegacyDistributorTest, gets_are_started_outside_main_distributor_logic_if_stale_reads_enabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     ASSERT_THAT(_sender.commands(), SizeIs(1));
     EXPECT_THAT(_sender.replies(), SizeIs(0));
@@ -1190,7 +1192,7 @@ TEST_F(DistributorTest, gets_are_started_outside_main_distributor_logic_if_stale
     EXPECT_THAT(_sender.replies(), SizeIs(1));
 }
 
-TEST_F(DistributorTest, gets_are_not_started_outside_main_distributor_logic_if_stale_reads_disabled) {
+TEST_F(LegacyDistributorTest, gets_are_not_started_outside_main_distributor_logic_if_stale_reads_disabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(false);
     // Get has been placed into distributor queue, so no external messages are produced.
     EXPECT_THAT(_sender.commands(), SizeIs(0));
@@ -1200,21 +1202,21 @@ TEST_F(DistributorTest, gets_are_not_started_outside_main_distributor_logic_if_s
 // There's no need or desire to track "lockfree" Gets in the main pending message tracker,
 // as we only have to track mutations to inhibit maintenance ops safely. Furthermore,
 // the message tracker is a multi-index and therefore has some runtime cost.
-TEST_F(DistributorTest, gets_started_outside_main_thread_are_not_tracked_by_main_pending_message_tracker) {
+TEST_F(LegacyDistributorTest, gets_started_outside_main_thread_are_not_tracked_by_main_pending_message_tracker) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     Bucket bucket(FixedBucketSpaces::default_space(), BucketId(16, 1));
     EXPECT_FALSE(pending_message_tracker().hasPendingMessage(
             0, bucket, api::MessageType::GET_ID));
 }
 
-TEST_F(DistributorTest, closing_aborts_gets_started_outside_main_distributor_thread) {
+TEST_F(LegacyDistributorTest, closing_aborts_gets_started_outside_main_distributor_thread) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     _distributor->close();
     ASSERT_EQ(1, _sender.replies().size());
     EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
 }
 
-TEST_F(DistributorTest, prioritize_global_bucket_merges_config_is_propagated_to_internal_config) {
+TEST_F(LegacyDistributorTest, prioritize_global_bucket_merges_config_is_propagated_to_internal_config) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1225,7 +1227,7 @@ TEST_F(DistributorTest, prioritize_global_bucket_merges_config_is_propagated_to_
     EXPECT_FALSE(getConfig().prioritize_global_bucket_merges());
 }
 
-TEST_F(DistributorTest, max_activation_inhibited_out_of_sync_groups_config_is_propagated_to_internal_config) {
+TEST_F(LegacyDistributorTest, max_activation_inhibited_out_of_sync_groups_config_is_propagated_to_internal_config) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1236,7 +1238,7 @@ TEST_F(DistributorTest, max_activation_inhibited_out_of_sync_groups_config_is_pr
     EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 0);
 }
 
-TEST_F(DistributorTest, wanted_split_bit_count_is_lower_bounded) {
+TEST_F(LegacyDistributorTest, wanted_split_bit_count_is_lower_bounded) {
     createLinks();
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
@@ -1247,7 +1249,7 @@ TEST_F(DistributorTest, wanted_split_bit_count_is_lower_bounded) {
     EXPECT_EQ(getConfig().getMinimalBucketSplit(), 8);
 }
 
-TEST_F(DistributorTest, host_info_sent_immediately_once_all_stripes_first_reported) {
+TEST_F(LegacyDistributorTest, host_info_sent_immediately_once_all_stripes_first_reported) {
     set_num_distributor_stripes(4);
     createLinks();
     getClock().setAbsoluteTimeInSeconds(1000);
@@ -1276,7 +1278,7 @@ TEST_F(DistributorTest, host_info_sent_immediately_once_all_stripes_first_report
 }
 
 // TODO STRIPE make delay configurable instead of hardcoded
-TEST_F(DistributorTest, non_bootstrap_host_info_send_request_delays_sending) {
+TEST_F(LegacyDistributorTest, non_bootstrap_host_info_send_request_delays_sending) {
     set_num_distributor_stripes(4);
     createLinks();
     getClock().setAbsoluteTimeInSeconds(1000);

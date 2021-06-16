@@ -9,7 +9,7 @@
 
 namespace storage {
 
-namespace distributor { struct DistributorTest; }
+namespace distributor { struct LegacyDistributorTest; }
 
 class DistributorConfiguration {
 public: 
@@ -323,7 +323,7 @@ private:
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 
-    friend struct distributor::DistributorTest;
+    friend struct distributor::LegacyDistributorTest;
     void configureMaintenancePriorities(
             const vespa::config::content::core::StorDistributormanagerConfig&);
 };

@@ -125,10 +125,10 @@ public:
     };
 
 private:
-    friend struct DistributorTest;
     friend class BucketDBUpdaterTest;
     friend class DistributorTestUtil;
     friend class MetricUpdateHook;
+    friend struct LegacyDistributorTest;
 
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
