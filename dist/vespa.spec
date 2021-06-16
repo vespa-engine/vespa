@@ -57,7 +57,6 @@ BuildRequires: python3-devel
 BuildRequires: gcc-toolset-10-gcc-c++
 BuildRequires: gcc-toolset-10-binutils
 %define _devtoolset_enable /opt/rh/gcc-toolset-10/enable
-BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: maven
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
