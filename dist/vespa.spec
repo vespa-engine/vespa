@@ -16,6 +16,7 @@
 %define _create_vespa_user 1
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
+%define _command_cmake cmake3
 
 Name:           vespa
 Version:        _VESPA_VERSION_
@@ -101,6 +102,11 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
+%if 0%{?centos}
+# Current cmake on CentOS 8 is broken and manually requires libarchive install
+BuildRequires: libarchive
+%define _command_cmake cmake
+%endif
 %if 0%{?_centos_stream}
 BuildRequires: llvm-devel >= 11.0.0
 %else
@@ -488,7 +494,7 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
 %endif
 %{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
 %{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
-cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+%{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=$JAVA_HOME \
        -DCMAKE_PREFIX_PATH=%{_vespa_deps_prefix} \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
