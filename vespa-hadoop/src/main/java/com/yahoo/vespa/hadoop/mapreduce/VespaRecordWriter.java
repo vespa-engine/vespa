@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
@@ -60,7 +61,7 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
                             String msg = "Failed to feed single document: " + error;
                             System.out.println(msg);
                             System.err.println(msg);
-                            log.warning(msg);
+                            log.log(Level.WARNING, msg, error);
                             counters.incrementDocumentsFailed(1);
                         }
                     } else {
