@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
+import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.NullResultNode;
 import com.yahoo.searchlib.expression.StringBucketResultNode;
 import com.yahoo.vespa.objects.BufferSerializer;
@@ -186,6 +187,7 @@ public class GroupingTestCase {
     public void requireThatNeedDeepResultCollectionWorks() {
         assertFalse(new Grouping().addLevel(new GroupingLevel().setGroupPrototype(new Group())).needDeepResultCollection());
         assertTrue(new Grouping().addLevel(new GroupingLevel().setGroupPrototype(new Group().addOrderBy(new CountAggregationResult(9), true))).needDeepResultCollection());
+        assertTrue(new Grouping().addLevel(new GroupingLevel().setGroupPrototype(new Group().addOrderBy(new AverageAggregationResult(), true))).needDeepResultCollection());
     }
 
     @Test
