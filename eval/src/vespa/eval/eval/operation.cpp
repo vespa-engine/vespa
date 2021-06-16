@@ -50,6 +50,12 @@ double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double Elu::f(double a) { return (a < 0) ? std::exp(a) - 1 : a; }
 double Erf::f(double a) { return std::erf(a); }
+double Bit::f(double a, double b) {
+    // must match vespalib_eval_bit
+    int8_t value = (int8_t) a;
+    uint32_t n = (uint32_t) b;
+    return ((n < 8) && bool(value & (1 << n))) ? 1.0 : 0.0;
+}
 //-----------------------------------------------------------------------------
 double Inv::f(double a) { return (1.0 / a); }
 double Square::f(double a) { return (a * a); }
@@ -143,6 +149,7 @@ std::map<vespalib::string,op2_t> make_op2_map() {
     add_op2(map, "fmod(a,b)",  Mod::f);
     add_op2(map, "min(a,b)",   Min::f);
     add_op2(map, "max(a,b)",   Max::f);
+    add_op2(map, "bit(a,b)",   Bit::f);
     return map;
 }
 

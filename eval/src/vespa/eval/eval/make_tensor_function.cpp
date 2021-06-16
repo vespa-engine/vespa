@@ -357,6 +357,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Erf &node) override {
         make_map(node, operation::Erf::f);
     }
+    void visit(const Bit &node) override {
+        make_join(node, operation::Bit::f);
+    }
 
     //-------------------------------------------------------------------------
 

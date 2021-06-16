@@ -278,6 +278,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const Sigmoid &node) override { resolve_op1(node); }
     void visit(const Elu &node) override { resolve_op1(node); }
     void visit(const Erf &node) override { resolve_op1(node); }
+    void visit(const Bit &node) override { resolve_op2(node); }
 
     //-------------------------------------------------------------------------
 

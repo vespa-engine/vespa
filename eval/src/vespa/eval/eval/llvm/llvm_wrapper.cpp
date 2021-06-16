@@ -29,6 +29,12 @@ double vespalib_eval_approx(double a, double b) { return (vespalib::approx_equal
 double vespalib_eval_relu(double a) { return std::max(a, 0.0); }
 double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double vespalib_eval_elu(double a) { return (a < 0) ? std::exp(a) - 1.0 : a; }
+double vespalib_eval_bit(double a, double b) {
+    // must match Bit::f
+    int8_t value = (int8_t) a;
+    uint32_t n = (uint32_t) b;
+    return ((n < 8) && bool(value & (1 << n))) ? 1.0 : 0.0;
+}
 
 using vespalib::eval::gbdt::Forest;
 using resolve_function = double (*)(void *ctx, size_t idx);
@@ -645,6 +651,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const Erf &) override {
         make_call_1("erf");
+    }
+    void visit(const Bit &) override {
+        make_call_2("vespalib_eval_bit");
     }
 };
 

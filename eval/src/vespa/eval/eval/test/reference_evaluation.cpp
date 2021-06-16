@@ -335,6 +335,9 @@ struct EvalNode : public NodeVisitor {
     void visit(const Erf &node) override {
         eval_map(node.get_child(0), operation::Erf::f);
     }
+    void visit(const Bit &node) override {
+        eval_join(node.get_child(0), node.get_child(1), operation::Bit::f);
+    }
 };
 
 TensorSpec eval_node(const Node &node, const std::vector<TensorSpec> &params) {
