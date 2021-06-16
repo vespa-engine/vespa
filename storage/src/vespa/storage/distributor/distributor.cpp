@@ -353,15 +353,7 @@ get_bucket_id_for_striping(const api::StorageMessage& msg, const DistributorNode
             case api::MessageType::REMOVE_ID:
                 return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::TestAndSetCommand&>(msg).getDocumentId());
             case api::MessageType::REQUESTBUCKETINFO_REPLY_ID:
-            {
-                const auto& reply = dynamic_cast<const api::RequestBucketInfoReply&>(msg);
-                if (!reply.getBucketInfo().empty()) {
-                    // Note: All bucket ids in this reply belong to the same distributor stripe, so we just use the first entry.
-                    return reply.getBucketInfo()[0]._bucketId;
-                } else {
-                    return reply.getBucketId();
-                }
-            }
+                return dynamic_cast<const api::RequestBucketInfoReply&>(msg).super_bucket_id();
             case api::MessageType::GET_ID:
                 return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::GetCommand&>(msg).getDocumentId());
             case api::MessageType::VISITOR_CREATE_ID:
@@ -389,7 +381,7 @@ Distributor::stripe_of_bucket_id(const document::BucketId& bucket_id, const api:
 {
     if (!bucket_id.isSet()) {
         LOG(error, "Message (%s) has a bucket id (%s) that is not set. Cannot route to stripe",
-            msg.getSummary().c_str(), bucket_id.toString().c_str());
+            msg.toString(true).c_str(), bucket_id.toString().c_str());
     }
     assert(bucket_id.isSet());
     if (bucket_id.getUsedBits() < spi::BucketLimits::MinUsedBits) {

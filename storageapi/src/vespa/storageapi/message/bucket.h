@@ -358,6 +358,7 @@ public:
     const vespalib::string& getDistributionHash() const { return _distributionHash; }
     document::BucketSpace getBucketSpace() const { return _bucketSpace; }
     document::Bucket getBucket() const override;
+    document::BucketId super_bucket_id() const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -388,6 +389,7 @@ public:
 private:
     EntryVector _buckets;
     bool _full_bucket_fetch;
+    document::BucketId _super_bucket_id;
 
 public:
 
@@ -396,6 +398,7 @@ public:
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }
     [[nodiscard]] bool full_bucket_fetch() const noexcept { return _full_bucket_fetch; }
+    const document::BucketId& super_bucket_id() const { return _super_bucket_id; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)
 };

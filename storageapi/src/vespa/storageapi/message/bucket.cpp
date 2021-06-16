@@ -476,6 +476,12 @@ RequestBucketInfoCommand::getBucket() const
     return document::Bucket(_bucketSpace, document::BucketId());
 }
 
+document::BucketId
+RequestBucketInfoCommand::super_bucket_id() const
+{
+    return _buckets.empty() ? document::BucketId() : _buckets[0];
+}
+
 void
 RequestBucketInfoCommand::print(std::ostream& out, bool verbose,
                                 const std::string& indent) const
@@ -510,7 +516,8 @@ std::ostream& operator<<(std::ostream& out, const RequestBucketInfoReply::Entry&
 RequestBucketInfoReply::RequestBucketInfoReply(const RequestBucketInfoCommand& cmd)
     : StorageReply(cmd),
       _buckets(),
-      _full_bucket_fetch(cmd.hasSystemState())
+      _full_bucket_fetch(cmd.hasSystemState()),
+      _super_bucket_id(cmd.super_bucket_id())
 { }
 
 RequestBucketInfoReply::~RequestBucketInfoReply() = default;
