@@ -194,13 +194,13 @@ public:
     bool tick() override;
 
 private:
-    // TODO reduce number of friends. DistributorStripe too popular for its own good.
-    friend struct DistributorTest;
-    friend class BucketDBUpdaterTest;
-    friend class DistributorTestUtil;
-    friend class MetricUpdateHook;
+    // TODO STRIPE: reduce number of friends. DistributorStripe too popular for its own good.
     friend class Distributor;
+    friend class DistributorTestUtil;
+    friend class LegacyBucketDBUpdaterTest;
+    friend class MetricUpdateHook;
     friend class MultiThreadedStripeAccessGuard;
+    friend struct LegacyDistributorTest;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
     bool isMaintenanceReply(const api::StorageReply& reply) const;
