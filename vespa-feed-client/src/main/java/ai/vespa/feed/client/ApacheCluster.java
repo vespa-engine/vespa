@@ -63,12 +63,12 @@ class ApacheCluster implements Cluster {
             endpoint.client.execute(request,
                                     new FutureCallback<SimpleHttpResponse>() {
                                         @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }
-                                        @Override public void failed(Exception ex) { vessel.completeExceptionally(new FeedException(ex)); }
+                                        @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                         @Override public void cancelled() { vessel.cancel(false); }
                                     });
         }
         catch (Throwable thrown) {
-            vessel.completeExceptionally(new FeedException(thrown));
+            vessel.completeExceptionally(thrown);
         }
         vessel.whenComplete((__, ___) -> endpoint.inflight.decrementAndGet());
     }
