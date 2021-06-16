@@ -467,12 +467,7 @@ public class TenantRepository {
      */
     public static String logPre(ApplicationId app) {
         if (DEFAULT_TENANT.equals(app.tenant())) return "";
-        StringBuilder ret = new StringBuilder()
-                .append(logPre(app.tenant()))
-                .append("app:" + app.application().value())
-                .append(":" + app.instance().value())
-                .append(" ");
-        return ret.toString();
+        return "app:" + app.toFullString() + " ";
     }
 
     /**
@@ -483,10 +478,7 @@ public class TenantRepository {
      */
     public static String logPre(TenantName tenant) {
         if (DEFAULT_TENANT.equals(tenant)) return "";
-        StringBuilder ret = new StringBuilder()
-                .append("tenant:" + tenant.value())
-                .append(" ");
-        return ret.toString();
+        return "tenant:" + tenant.value() + " ";
     }
 
     private void stateChanged(CuratorFramework framework, ConnectionState connectionState) {
