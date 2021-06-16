@@ -41,7 +41,7 @@ public class ProvisionedExpirer extends Expirer {
                 continue;
             nodeRepository().nodes().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer, "Node is stuck in provisioned");
             if (MAXIMUM_ALLOWED_EXPIRED_HOSTS < ++previouslyExpired) {
-                nodeRepository.nodes().deprovision(expiredNode.hostname(), Agent.ProvisionedExpirer, Instant.now());
+                nodeRepository.nodes().deprovision(expiredNode.hostname(), Agent.ProvisionedExpirer, nodeRepository.clock().instant());
             }
         }
     }
