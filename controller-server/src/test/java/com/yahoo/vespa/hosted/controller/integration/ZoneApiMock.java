@@ -78,8 +78,7 @@ public class ZoneApiMock implements ZoneApi {
 
     public static class Builder {
 
-        private final SystemName systemName = SystemName.defaultSystem();
-
+        private SystemName systemName = SystemName.defaultSystem();
         private ZoneId id = ZoneId.defaultId();
         private ZoneId virtualId ;
         private CloudName cloudName = CloudName.defaultName();
@@ -87,6 +86,11 @@ public class ZoneApiMock implements ZoneApi {
 
         public Builder with(ZoneId id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder withSystem(SystemName systemName) {
+            this.systemName = systemName;
             return this;
         }
 

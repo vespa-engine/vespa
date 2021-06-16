@@ -163,6 +163,13 @@ public class PermanentFlags {
             "Takes effect immediately, but any current excess rebuilds will not be cancelled"
     );
 
+    public static final UnboundListFlag<String> EXTENDED_TRIAL_TENANTS = defineListFlag(
+            "extended-trial-tenants", List.of(), String.class,
+            "Tenants that will not be expired from their trial plan",
+            "Takes effect immediately, used by the CloudTrialExpirer maintainer",
+            TENANT_ID
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
