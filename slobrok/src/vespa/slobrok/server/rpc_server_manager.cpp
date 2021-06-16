@@ -173,9 +173,7 @@ RpcServerManager::addRemote(const std::string & name, const std::string &spec)
     }
     _rpcsrvmap.removeReservation(name);
     auto rpcsrv = std::make_unique<ManagedRpcServer>(name, spec, *this);
-    ManagedRpcServer & rpcServer = *rpcsrv;
     _rpcsrvmap.addNew(std::move(rpcsrv));
-    rpcServer.healthCheck();
     return OkState(0, "done");
 }
 

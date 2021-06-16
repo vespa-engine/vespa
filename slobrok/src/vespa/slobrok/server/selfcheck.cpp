@@ -18,7 +18,8 @@ SelfCheck::SelfCheck(FNET_Scheduler *sched,
                      RpcServerMap& rpcsrvmap,
                      RpcServerManager& rpcsrvman)
     : FNET_Task(sched),
-      _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman)
+      _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
+      _checkIndex(0)
 {
     // start within 1 second
     double seconds = randomIn(0.123, 1.000);
@@ -37,17 +38,18 @@ void
 SelfCheck::PerformTask()
 {
     std::vector<const NamedService *> mrpcsrvlist = _rpcsrvmap.allManaged();
-
-    for (size_t i = 0; i < mrpcsrvlist.size(); ++i) {
-        const NamedService *r = mrpcsrvlist[i];
+    if (_checkIndex < mrpcsrvlist.size()) {
+        const NamedService *r = mrpcsrvlist[_checkIndex++];
         ManagedRpcServer *m = _rpcsrvmap.lookupManaged(r->getName());
-        LOG_ASSERT(r == m);
         LOG(debug, "managed: %s -> %s", m->getName().c_str(), m->getSpec().c_str());
+        LOG_ASSERT(r == m);
         m->healthCheck();
+    } else {
+        _checkIndex = 0;
     }
-    // reschedule in 1-2 seconds:
-    double seconds = randomIn(0.987, 2.000);
-    LOG(debug, "selfcheck AGAIN in %g seconds", seconds);
+    // reschedule more often with more services, on average 1s per loop:
+    double seconds = randomIn(0.5, 1.5) / (1 + mrpcsrvlist.size());
+    LOG(debug, "next selfcheck in %g seconds", seconds);
     Schedule(seconds);
 }
 

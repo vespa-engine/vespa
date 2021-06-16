@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/fnet/task.h>
+#include <vector>
 
 namespace slobrok {
 
@@ -22,6 +23,7 @@ class SelfCheck : public FNET_Task
 private:
     RpcServerMap &_rpcsrvmap;
     RpcServerManager &_rpcsrvmanager;
+    size_t _checkIndex;
 
     SelfCheck(const SelfCheck &);            // Not used
     SelfCheck &operator=(const SelfCheck &); // Not used
