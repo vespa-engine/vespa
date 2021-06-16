@@ -7,7 +7,6 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     bucket_db_prune_elision_test.cpp
     bucketdatabasetest.cpp
     bucketdbmetricupdatertest.cpp
-    bucketdbupdatertest.cpp
     bucketgctimecalculatortest.cpp
     bucketstateoperationtest.cpp
     distributor_bucket_space_test.cpp
@@ -21,6 +20,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     gtest_runner.cpp
     idealstatemanagertest.cpp
     joinbuckettest.cpp
+    legacy_bucket_db_updater_test.cpp
     legacy_distributor_test.cpp
     maintenanceschedulertest.cpp
     mergelimitertest.cpp

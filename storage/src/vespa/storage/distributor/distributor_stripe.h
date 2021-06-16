@@ -194,10 +194,10 @@ public:
     bool tick() override;
 
 private:
-    // TODO reduce number of friends. DistributorStripe too popular for its own good.
-    friend class BucketDBUpdaterTest;
+    // TODO STRIPE: reduce number of friends. DistributorStripe too popular for its own good.
     friend class Distributor;
     friend class DistributorTestUtil;
+    friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend class MultiThreadedStripeAccessGuard;
     friend struct LegacyDistributorTest;

@@ -125,8 +125,8 @@ public:
     };
 
 private:
-    friend class BucketDBUpdaterTest;
     friend class DistributorTestUtil;
+    friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend struct LegacyDistributorTest;
 
