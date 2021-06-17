@@ -632,8 +632,9 @@ DocumentDB::saveInitialConfig(const DocumentDBConfig &configSnapshot)
     // Only called from ctor
 
     lock_guard guard(_configMutex);
-    if (_config_store->getBestSerialNum() != 0)
+    if (_config_store->getBestSerialNum() != 0) {
         return;             // Initial config already present
+    }
 
     SerialNum confSerial = _feedHandler->inc_replay_end_serial_num();
     _feedHandler->setSerialNum(confSerial);
@@ -658,16 +659,17 @@ void
 DocumentDB::resumeSaveConfig()
 {
     SerialNum bestSerial = _config_store->getBestSerialNum();
-    if (bestSerial == 0)
+    assert(bestSerial != 0);
+    if (bestSerial != _feedHandler->get_replay_end_serial_num() + 1) {
         return;
-    if (bestSerial != _feedHandler->get_replay_end_serial_num() + 1)
-        return;
+    }
+    LOG(warning, "DocumentDB(%s): resumeSaveConfig() resuming save config for serial %" PRIu64,
+        _docTypeName.toString().c_str(), bestSerial);
     // proton was interrupted when saving later config.
     SerialNum confSerial = _feedHandler->inc_replay_end_serial_num();
-    _feedHandler->setSerialNum(confSerial);
+    assert(confSerial == bestSerial);
     // resume operation, i.e. save config entry in transaction log
     NewConfigOperation op(confSerial, *_config_store);
-    op.setSerialNum(_feedHandler->inc_replay_end_serial_num());
     (void) _feedHandler->storeOperationSync(op);
     sync(op.getSerialNum());
 }

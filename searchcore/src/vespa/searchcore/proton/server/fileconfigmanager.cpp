@@ -4,8 +4,6 @@
 #include "bootstrapconfig.h"
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config/print/fileconfigwriter.h>
-#include <vespa/config/print/fileconfigsnapshotreader.h>
-#include <vespa/config/print/fileconfigsnapshotwriter.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
@@ -42,7 +40,8 @@ using vespa::config::search::summary::JuniperrcConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::nbostream;
 
-typedef IndexMetaInfo::SnapshotList SnapshotList;
+using SnapshotList = IndexMetaInfo::SnapshotList;
+using Snapshot = IndexMetaInfo::Snapshot;
 using namespace std::chrono_literals;
 
 namespace proton {
@@ -74,9 +73,7 @@ fsyncFile(const vespalib::string &fileName)
 
 template <class Config>
 void
-saveHelper(const vespalib::string &snapDir,
-           const vespalib::string &name,
-           const Config &config)
+saveHelper(const vespalib::string &snapDir, const vespalib::string &name, const Config &config)
 {
     vespalib::string fileName(snapDir + "/" + name + ".cfg");
     config::FileConfigWriter writer(fileName);
@@ -105,8 +102,7 @@ public:
     ConfigFile();
     ~ConfigFile();
 
-    ConfigFile(const vespalib::string &name,
-               const vespalib::string &fullName);
+    ConfigFile(const vespalib::string &name, const vespalib::string &fullName);
 
     nbostream &serialize(nbostream &stream) const;
     nbostream &deserialize(nbostream &stream);
@@ -122,8 +118,7 @@ ConfigFile::ConfigFile()
 
 ConfigFile::~ConfigFile() = default;
 
-ConfigFile::ConfigFile(const vespalib::string &name,
-                       const vespalib::string &fullName)
+ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &fullName)
     : _name(name),
       _modTime(0),
       _content()
@@ -142,7 +137,7 @@ ConfigFile::ConfigFile(const vespalib::string &name,
 nbostream &
 ConfigFile::serialize(nbostream &stream) const
 {
-    assert(strchr(_name.c_str(), '/') == NULL);
+    assert(strchr(_name.c_str(), '/') == nullptr);
     stream << _name;
     stream << static_cast<int64_t>(_modTime);;
     uint32_t sz = _content.size();
@@ -155,7 +150,7 @@ nbostream &
 ConfigFile::deserialize(nbostream &stream)
 {
     stream >> _name;
-    assert(strchr(_name.c_str(), '/') == NULL);
+    assert(strchr(_name.c_str(), '/') == nullptr);
     int64_t modTime;
     stream >> modTime;
     _modTime = modTime;
@@ -255,8 +250,7 @@ FileConfigManager::getOldestSerialNum() const
 }
 
 void
-FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
-                              SerialNum serialNum)
+FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum)
 {
     if (getBestSerialNum() >= serialNum) {
         LOG(warning, "Config for serial >= %" PRIu64 " already saved",
@@ -318,8 +312,7 @@ void addEmptyFile(vespalib::string snapDir, vespalib::string fileName)
 }
 
 void
-FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
-                              search::SerialNum serialNum,
+FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::SerialNum serialNum,
                               DocumentDBConfig::SP &loadedSnapshot)
 {
     vespalib::string snapDirBaseName(makeSnapDirBaseName(serialNum));
@@ -333,13 +326,14 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
 
     DocumentDBConfigHelper dbc(spec, _docTypeName);
 
-    typedef DocumenttypesConfig DTC;
-    typedef DocumentDBConfig::DocumenttypesConfigSP DTCSP;
-    DTCSP docTypesCfg(config::ConfigGetter<DTC>::getConfig("", spec).release());
+    using DTC = DocumenttypesConfig;
+    using DTCSP =  DocumentDBConfig::DocumenttypesConfigSP;
+    DTCSP docTypesCfg = config::ConfigGetter<DTC>::getConfig("", spec);
     std::shared_ptr<const DocumentTypeRepo> repo;
     if (currentSnapshot.getDocumenttypesConfigSP() &&
         currentSnapshot.getDocumentTypeRepoSP() &&
-        currentSnapshot.getDocumenttypesConfig() == *docTypesCfg) {
+        (currentSnapshot.getDocumenttypesConfig() == *docTypesCfg))
+    {
         docTypesCfg = currentSnapshot.getDocumenttypesConfigSP();
         repo = currentSnapshot.getDocumentTypeRepoSP();
     } else {
@@ -462,8 +456,7 @@ FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
     uint32_t numConfigs = configs.size();
     stream << numConfigs;
     for (const auto &config : configs) {
-        ConfigFile file(config,
-                        snapDir + "/" + config);
+        ConfigFile file(config, snapDir + "/" + config);
         stream << file;
     }
 }

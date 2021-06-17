@@ -10,8 +10,6 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * TODO: What is this and why
- *
  * @author Håkon Humberset
  */
 public abstract class StructuredDataType extends DataType {

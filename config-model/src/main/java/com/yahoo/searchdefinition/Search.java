@@ -98,7 +98,7 @@ public class Search implements ImmutableSearch {
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
 
-    /** Testin only */
+    /** Testing only */
     public Search(String name) {
         this(name, null, new BaseDeployLogger(), new TestProperties());
     }

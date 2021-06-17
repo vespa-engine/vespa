@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/guard.h>
 #include <cassert>
-#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".indexmetainfo");
@@ -14,13 +13,13 @@ namespace {
 
 class Parser {
 private:
-    vespalib::string           _name;
+    vespalib::string      _name;
     vespalib::FilePointer _file;
     uint32_t              _line;
     char                  _buf[2048];
     bool                  _error;
-    vespalib::string           _lastKey;
-    vespalib::string           _lastValue;
+    vespalib::string      _lastKey;
+    vespalib::string      _lastValue;
     uint32_t              _lastIdx;
     bool                  _matched;
 
@@ -44,8 +43,7 @@ public:
         return false;
     }
     bool illegalLine() {
-        LOG(warning, "%s:%d: illegal line: %s",
-            _name.c_str(), _line, _buf);
+        LOG(warning, "%s:%d: illegal line: %s", _name.c_str(), _line, _buf);
         _error = true;
         return false;
     }
@@ -57,8 +55,7 @@ public:
     }
     bool illegalValue() {
         LOG(warning, "%s:%d: illegal value for '%s': %s",
-            _name.c_str(), _line, _lastKey.c_str(),
-            _lastValue.c_str());
+            _name.c_str(), _line, _lastKey.c_str(), _lastValue.c_str());
         _error = true;
         return false;
     }
@@ -79,7 +76,7 @@ public:
         if (!_file.valid()) {
             return openFailed();
         }
-        if (fgets(_buf, sizeof(_buf), _file) == NULL) {
+        if (fgets(_buf, sizeof(_buf), _file) == nullptr) {
             return false; // EOF
         }
         ++_line;
@@ -88,7 +85,7 @@ public:
             _buf[--len] = '\0';
         }
         char *split = strchr(_buf, '=');
-        if (split == NULL || (split - _buf) == 0) {
+        if (split == nullptr || (split - _buf) == 0) {
             return illegalLine();
         }
         _lastKey = vespalib::string(_buf, split - _buf);
@@ -119,9 +116,9 @@ public:
     void parseInt64(const vespalib::string &k, uint64_t &v) {
         if (!_matched && !_error && _lastKey == k) {
             _matched = true;
-            char *end = NULL;
+            char *end = nullptr;
             uint64_t val = strtoull(_lastValue.c_str(), &end, 10);
-            if (end == NULL || *end != '\0' ||
+            if (end == nullptr || *end != '\0' ||
                 val == static_cast<uint64_t>(-1)) {
                 illegalValue();
                 return;
@@ -141,10 +138,10 @@ public:
         if (dot2 == vespalib::string::npos) {
             return illegalArrayKey();
         }
-        char *end = NULL;
+        char *end = nullptr;
         const char *pt = _lastKey.c_str() + name.length() + 1;
         uint32_t val = strtoul(pt, &end, 10);
-        if (end == NULL || end == pt || *end != '.'
+        if (end == nullptr || end == pt || *end != '.'
             || val > size || size > val + 1)
         {
             return illegalArrayKey();
@@ -200,7 +197,7 @@ IndexMetaInfo::IndexMetaInfo(const vespalib::string &path)
 {
 }
 
-IndexMetaInfo::~IndexMetaInfo() {}
+IndexMetaInfo::~IndexMetaInfo()  = default;
 
 IndexMetaInfo::Snapshot
 IndexMetaInfo::getBestSnapshot() const
@@ -209,11 +206,7 @@ IndexMetaInfo::getBestSnapshot() const
     while (idx >= 0 && !_snapshots[idx].valid) {
         --idx;
     }
-    if (idx >= 0) {
-        return _snapshots[idx];
-    } else {
-        return Snapshot();
-    }
+    return (idx >= 0) ? _snapshots[idx] : Snapshot();
 }
 
 
@@ -233,7 +226,7 @@ bool
 IndexMetaInfo::addSnapshot(const Snapshot &snap)
 {
     if (snap.dirName.empty()
-        || findSnapshot(snap.syncToken) != _snapshots.end())
+        || (findSnapshot(snap.syncToken) != _snapshots.end()))
     {
         return false;
     }
@@ -324,32 +317,23 @@ IndexMetaInfo::save(const vespalib::string &baseName)
         fprintf(f, "snapshot.%d.dirName=%s\n", i, snap.dirName.c_str());
     }
     if (ferror(f) != 0) {
-        LOG(error,
-            "Could not write to file %s",
-            newName.c_str());
+        LOG(error, "Could not write to file %s", newName.c_str());
         return false;
     }
     if (fflush(f) != 0) {
-        LOG(error,
-            "Could not flush file %s",
-            newName.c_str());
+        LOG(error, "Could not flush file %s", newName.c_str());
         return false;
     }
     if (fsync(fileno(f)) != 0) {
-        LOG(error,
-            "Could not fsync file %s",
-            newName.c_str());
+        LOG(error, "Could not fsync file %s", newName.c_str());
         return false;
     }
     if (fclose(f.release()) != 0) {
-        LOG(error,
-            "Could not close file %s",
-            newName.c_str());
+        LOG(error, "Could not close file %s", newName.c_str());
         return false;
     }
     if (rename(newName.c_str(), fileName.c_str()) != 0) {
-        LOG(warning, "could not rename: %s->%s",
-            newName.c_str(), fileName.c_str());
+        LOG(warning, "could not rename: %s->%s", newName.c_str(), fileName.c_str());
         return false;
     }
     vespalib::File::sync(vespalib::dirname(fileName));

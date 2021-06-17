@@ -6,7 +6,7 @@ set -e
 readonly SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly NUM_THREADS=$(( $(nproc) + 2 ))
 
-source /etc/profile.d/enable-devtoolset-9.sh
+source /etc/profile.d/enable-devtoolset-10.sh
 source /etc/profile.d/enable-rh-maven35.sh
 
 export MALLOC_ARENA_MAX=1
@@ -52,9 +52,9 @@ esac
 if [[ $SHOULD_BUILD == systemtest ]]; then  
   yum -y --setopt=skip_missing_names_on_install=False install \
     zstd \
-    devtoolset-9-gcc-c++ \
-    devtoolset-9-libatomic-devel \
-    devtoolset-9-binutils \
+    devtoolset-10-gcc-c++ \
+    devtoolset-10-libatomic-devel \
+    devtoolset-10-binutils \
     libxml2-devel \
     rh-ruby27-rubygems-devel \
     rh-ruby27-ruby-devel \

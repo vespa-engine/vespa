@@ -164,7 +164,6 @@ public class UpgraderTest {
         tester.triggerJobs();
         assertEquals("Upgrade with error should retry", 1, tester.jobs().active().size());
 
-
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         default0.submit(applicationPackage("default"));
@@ -1114,11 +1113,32 @@ public class UpgraderTest {
         assertEquals("Upgrade orders are distinct", versions.size(), upgradeOrders.size());
     }
 
+    private static final ApplicationPackage canaryApplicationPackage =
+            new ApplicationPackageBuilder().upgradePolicy("canary")
+                                           .region("us-west-1")
+                                           .region("us-east-3")
+                                           .build();
+
+    private static final ApplicationPackage defaultApplicationPackage =
+            new ApplicationPackageBuilder().upgradePolicy("default")
+                                           .region("us-west-1")
+                                           .region("us-east-3")
+                                           .build();
+
+    private static final ApplicationPackage conservativeApplicationPackage =
+            new ApplicationPackageBuilder().upgradePolicy("conservative")
+                                           .region("us-west-1")
+                                           .region("us-east-3")
+                                           .build();
+
+    /** Returns empty prebuilt applications for efficiency */
     private ApplicationPackage applicationPackage(String upgradePolicy) {
-        return new ApplicationPackageBuilder().upgradePolicy(upgradePolicy)
-                                              .region("us-west-1")
-                                              .region("us-east-3")
-                                              .build();
+        switch (upgradePolicy) {
+            case "canary" : return canaryApplicationPackage;
+            case "default" : return defaultApplicationPackage;
+            case "conservative" : return conservativeApplicationPackage;
+            default : throw new IllegalArgumentException("No upgrade policy '" + upgradePolicy + "'");
+        }
     }
 
     private DeploymentContext createAndDeploy(String applicationName, String upgradePolicy) {

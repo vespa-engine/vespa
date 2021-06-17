@@ -38,12 +38,12 @@ public interface Token {
     TokenScript getScript();
 
     /**
-     * Returns token string in a form suitable for indexing: The
-     * most lowercased variant of the most processed token form available.
+     * Returns the token string in a form suitable for indexing: The
+     * most lowercased variant of the most processed token form available,
      * If called on a compound token this returns a lowercased form of the
      * entire word.
-     *
-     * @return token string value
+     * If this is a special token with a configured replacement,
+     * this will return the replacement token.
      */
     String getTokenString();
 

@@ -78,10 +78,10 @@ public class LoadTester {
                          String configsList, String defPath) throws IOException, InterruptedException {
         configs = readConfigs(configsList);
         defs = readDefs(defPath);
-        Metrics m = new Metrics();
         List<LoadThread> threadList = new ArrayList<>();
-
         long start = System.currentTimeMillis();
+        Metrics m = new Metrics();
+
         for (int i = 0; i < threads; i++) {
             LoadThread lt = new LoadThread(iterations, host, port);
             threadList.add(lt);
@@ -98,16 +98,17 @@ public class LoadTester {
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> readDefs(String defPath) throws IOException {
         Map<ConfigDefinitionKey, Tuple2<String, String[]>> ret = new HashMap<>();
         if (defPath == null) return ret;
+
         File defDir = new File(defPath);
         if (!defDir.isDirectory()) {
-            System.out.println("# Given def file dir is not a directory: " + defDir.getPath() +
-                               " , will not send def contents in requests.");
+            System.out.println("# Given def file dir is not a directory: " +
+                               defDir.getPath() + " , will not send def contents in requests.");
             return ret;
         }
-        final File[] files = defDir.listFiles();
+        File[] files = defDir.listFiles();
         if (files == null) {
-            System.out.println("# Given def file dir has no files: " + defDir.getPath() +
-                               " , will not send def contents in requests.");
+            System.out.println("# Given def file dir has no files: " +
+                               defDir.getPath() + " , will not send def contents in requests.");
             return ret;
         }
         for (File f : files) {
@@ -115,8 +116,7 @@ public class LoadTester {
             if (!name.endsWith(".def")) continue;
             String contents = IOUtils.readFile(f);
             ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(f);
-            ret.put(key, new Tuple2<>(ConfigUtils.getDefMd5(Arrays.asList(contents.split("\n"))),
-                                      contents.split("\n")));
+            ret.put(key, new Tuple2<>(ConfigUtils.getDefMd5(Arrays.asList(contents.split("\n"))), contents.split("\n")));
         }
         System.out.println("#  Read " + ret.size() + " def files from " + defDir.getPath());
         return ret;
@@ -211,13 +211,17 @@ public class LoadTester {
 
             for (int i = 0; i < iterations; i++) {
                 ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(configs.size()));
-                JRTClientConfigRequest request = getRequest(reqKey);
+                ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
+                Tuple2<String, String[]> defContent = defs.get(dKey);
+                if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir
+                    System.out.println("# No def found for " + dKey + ", not sending in request.");
+                }
+                ConfigKey<?> configKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
+                JRTClientConfigRequest request = createRequest(configKey, defContent.second);
                 if (debug) System.out.println("# Requesting: " + reqKey);
-
                 long start = System.currentTimeMillis();
                 target.invokeSync(request.getRequest(), 10.0);
                 long end = System.currentTimeMillis();
-
                 if (request.isError()) {
                     target = handleError(request, spec, target);
                 } else {
@@ -233,6 +237,18 @@ public class LoadTester {
                     }
                 }
             }
+        }
+
+        private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey, String[] defContent) {
+            if (defContent == null) defContent = new String[0];
+            final long serverTimeout = 1000;
+            return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
+                                                             ConfigUtils.getCanonicalHostName(), "", 0, serverTimeout, Trace.createDummy(),
+                                                             compressionType, Optional.empty());
+        }
+
+        private Target connect(Spec spec) {
+            return supervisor.connect(spec);
         }
 
         private Target handleError(JRTClientConfigRequest request, Spec spec, Target target) {
@@ -252,24 +268,6 @@ public class LoadTester {
             return target;
         }
 
-        private JRTClientConfigRequest getRequest(ConfigKey<?> reqKey) {
-            long serverTimeout = 1000;
-
-            ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
-            Tuple2<String, String[]> defPair = defs.get(dKey);
-
-            String defMd5 = defPair.first;
-            DefContent defContent = DefContent.fromList(List.of(defPair.second));
-
-            ConfigKey<?> fullKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defMd5);
-            return JRTClientConfigRequestV3.createWithParams(fullKey, defContent, ConfigUtils.getCanonicalHostName(),
-                                                             "", 0, serverTimeout,
-                                                             Trace.createDummy(), compressionType, Optional.empty());
-        }
-
-        private Target connect(Spec spec) {
-            return supervisor.connect(spec);
-        }
     }
 
 }
