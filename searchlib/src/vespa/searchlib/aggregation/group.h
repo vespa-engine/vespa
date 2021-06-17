@@ -232,7 +232,7 @@ public:
 
     /**
      * Recursively checks if any itself or any children needs a full resort.
-     * Then all hits must be processed and should be doen before any hit sorting.
+     * Then all hits must be processed and should be done before any hit sorting.
      */
     bool needResort() const { return _aggr.needResort(); }
 
