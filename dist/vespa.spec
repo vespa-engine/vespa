@@ -98,7 +98,6 @@ BuildRequires: libarchive
 %define _command_cmake cmake
 %endif
 %if 0%{?_centos_stream}
-BuildRequires: llvm-devel >= 11.0.0
 BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
 %else
 BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
