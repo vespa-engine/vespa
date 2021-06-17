@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -15,7 +16,8 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author hakonhall
  */
 public class JsonNodeRawFlag implements RawFlag {
-    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private static final AtomicReference<ObjectMapper> mapper = new AtomicReference<>();
 
     private final JsonNode jsonNode;
 
@@ -24,7 +26,7 @@ public class JsonNodeRawFlag implements RawFlag {
     }
 
     public static JsonNodeRawFlag fromJson(String json) {
-        return new JsonNodeRawFlag(uncheck(() -> mapper.readTree(json)));
+        return new JsonNodeRawFlag(uncheck(() -> objectMapper().readTree(json)));
     }
 
     public static JsonNodeRawFlag fromJsonNode(JsonNode jsonNode) {
@@ -32,20 +34,20 @@ public class JsonNodeRawFlag implements RawFlag {
     }
 
     public static <T> JsonNodeRawFlag fromJacksonClass(T value) {
-        return new JsonNodeRawFlag(uncheck(() -> mapper.valueToTree(value)));
+        return new JsonNodeRawFlag(uncheck(() -> objectMapper().valueToTree(value)));
     }
 
     public <T> T toJacksonClass(Class<T> jacksonClass) {
-        return uncheck(() -> mapper.treeToValue(jsonNode, jacksonClass));
+        return uncheck(() -> objectMapper().treeToValue(jsonNode, jacksonClass));
     }
 
     public <T> T toJacksonClass(JavaType jacksonClass) {
-        return uncheck(() -> mapper.readValue(jsonNode.toString(), jacksonClass));
+        return uncheck(() -> objectMapper().readValue(jsonNode.toString(), jacksonClass));
     }
 
     @SuppressWarnings("rawtypes")
     public static JavaType constructCollectionType(Class<? extends Collection> collectionClass, Class<?> elementClass) {
-        return mapper.getTypeFactory().constructCollectionType(collectionClass, elementClass);
+        return objectMapper().getTypeFactory().constructCollectionType(collectionClass, elementClass);
     }
 
     @Override
@@ -57,4 +59,14 @@ public class JsonNodeRawFlag implements RawFlag {
     public String asJson() {
         return jsonNode.toString();
     }
+
+    /** Initialize object mapper lazily */
+    private static ObjectMapper objectMapper() {
+        // ObjectMapper is a heavy-weight object so we construct it only when we need it
+        return mapper.updateAndGet((objectMapper) -> {
+            if (objectMapper != null) return objectMapper;
+            return new ObjectMapper();
+        });
+    }
+
 }
