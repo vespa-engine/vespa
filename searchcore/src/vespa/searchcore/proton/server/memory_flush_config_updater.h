@@ -21,23 +21,20 @@ private:
     using LockGuard = std::lock_guard<Mutex>;
     using ProtonConfig = vespa::config::search::core::ProtonConfig;
 
-    Mutex _mutex;
-    MemoryFlush::SP _flushStrategy;
+    Mutex                       _mutex;
+    MemoryFlush::SP             _flushStrategy;
     ProtonConfig::Flush::Memory _currConfig;
-    HwInfo::Memory _memory;
-    DiskMemUsageState _currState;
-    bool _useConservativeDiskMode;
-    bool _useConservativeMemoryMode;
-    bool _nodeRetired;
+    HwInfo::Memory              _memory;
+    DiskMemUsageState           _currState;
+    bool                        _useConservativeDiskMode;
+    bool                        _useConservativeMemoryMode;
+    bool                        _nodeRetired;
 
 
-    void considerUseConservativeDiskMode(const LockGuard &guard,
-                                         MemoryFlush::Config &newConfig);
-    void considerUseConservativeMemoryMode(const LockGuard &guard,
-                                           MemoryFlush::Config &newConfig);
-    void considerUseRelaxedDiskMode(const LockGuard &guard,
-                                    MemoryFlush::Config &newConfig);
-    void updateFlushStrategy(const LockGuard &guard);
+    void considerUseConservativeDiskMode(const LockGuard &guard, MemoryFlush::Config &newConfig);
+    void considerUseConservativeMemoryMode(const LockGuard &guard, MemoryFlush::Config &newConfig);
+    void considerUseRelaxedDiskMode(const LockGuard &guard, MemoryFlush::Config &newConfig);
+    void updateFlushStrategy(const LockGuard &guard, const char * why);
 
 public:
     using UP = std::unique_ptr<MemoryFlushConfigUpdater>;
@@ -47,7 +44,7 @@ public:
                              const HwInfo::Memory &memory);
     void setConfig(const ProtonConfig::Flush::Memory &newConfig);
     void setNodeRetired(bool nodeRetired);
-    virtual void notifyDiskMemUsage(DiskMemUsageState newState) override;
+    void notifyDiskMemUsage(DiskMemUsageState newState) override;
 
     static MemoryFlush::Config convertConfig(const ProtonConfig::Flush::Memory &config,
                                              const HwInfo::Memory &memory);

@@ -159,7 +159,7 @@ TEST_F("require that more disk bloat is allowed while node state is retired", Fi
     f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.3), belowLimit());
     TEST_DO(f.assertStrategyDiskConfig(0.2, 0.2));
     f.setNodeRetired(true);
-    TEST_DO(f.assertStrategyDiskConfig((0.8 - 0.3 / 0.7) * 0.8, 1.0));
+    TEST_DO(f.assertStrategyDiskConfig((0.8 - ((0.3/0.7)*(1 - 0.2))) / 0.8, 1.0));
     f.notifyDiskMemUsage(belowLimit(), belowLimit());
     TEST_DO(f.assertStrategyDiskConfig(0.2, 0.2));
 }
