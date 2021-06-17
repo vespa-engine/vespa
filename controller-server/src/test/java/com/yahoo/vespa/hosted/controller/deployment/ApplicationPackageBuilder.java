@@ -279,7 +279,9 @@ public class ApplicationPackageBuilder {
             writeZipEntry(out, dir + "validation-overrides.xml", validationOverrides());
             writeZipEntry(out, dir + "search-definitions/test.sd", searchDefinition());
             writeZipEntry(out, dir + "build-meta.json", buildMeta(compileVersion));
-            writeZipEntry(out, dir + "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
+            if (!trustedCertificates.isEmpty()) {
+                writeZipEntry(out, dir + "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
