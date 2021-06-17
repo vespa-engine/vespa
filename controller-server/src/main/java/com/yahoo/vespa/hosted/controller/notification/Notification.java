@@ -73,7 +73,10 @@ public class Notification {
         deployment,
 
         /** Application cluster is (near) external feed blocked */
-        feedBlock;
+        feedBlock,
+
+        /** Application cluster is reindexing document(s) */
+        reindex;
     }
 
 }

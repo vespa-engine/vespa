@@ -93,6 +93,7 @@ public class NotificationsSerializer {
             case applicationPackage: return "applicationPackage";
             case deployment: return "deployment";
             case feedBlock: return "feedBlock";
+            case reindex: return "reindex";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
@@ -102,6 +103,7 @@ public class NotificationsSerializer {
             case "applicationPackage": return Notification.Type.applicationPackage;
             case "deployment": return Notification.Type.deployment;
             case "feedBlock": return Notification.Type.feedBlock;
+            case "reindex": return Notification.Type.reindex;
             default: throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
         }
     }
