@@ -16,7 +16,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
@@ -134,13 +133,24 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         Inspector inspector = inspectorOrThrow(request);
 
         // For now; mandatory fields
-        Inspector hostArray = getInspectorFieldOrThrow(inspector, "hosts");
+        Inspector hostArray = inspector.field("hosts");
+        Inspector switchArray = inspector.field("switches");
+
 
         // The impacted hostnames
         List<String> hostNames = new ArrayList<>();
         if (hostArray.valid()) {
             hostArray.traverse((ArrayTraverser) (i, host) -> hostNames.add(host.asString()));
         }
+
+        if (switchArray.valid()) {
+            List<String> switchNames = new ArrayList<>();
+            switchArray.traverse((ArrayTraverser) (i, switchName) -> switchNames.add(switchName.asString()));
+            hostNames.addAll(hostsOnSwitch(switchNames));
+        }
+
+        if (hostNames.isEmpty())
+            return ErrorResponse.badRequest("No prod hosts in provided host/switch list");
 
         return doAssessment(hostNames);
     }
@@ -272,19 +282,29 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
                 .map(HostName::from)
                 .collect(Collectors.toList());
 
-        var potentialZones = controller.zoneRegistry()
-                .zones()
-                .reachable()
-                .in(Environment.prod)
-                .ids();
-
-        for (var zone : potentialZones) {
+        for (var zone : getProdZones()) {
             var affectedHostsInZone = controller.serviceRegistry().configServer().nodeRepository().list(zone, affectedHosts);
             if (!affectedHostsInZone.isEmpty())
                 return Optional.of(zone);
         }
 
         return Optional.empty();
+    }
+
+    private List<String> hostsOnSwitch(List<String> switches) {
+        return getProdZones().stream()
+                .flatMap(zone -> controller.serviceRegistry().configServer().nodeRepository().list(zone, false).stream())
+                .filter(node -> node.switchHostname().map(switches::contains).orElse(false))
+                .map(node -> node.hostname().value())
+                .collect(Collectors.toList());
+    }
+
+    private List<ZoneId> getProdZones() {
+        return controller.zoneRegistry()
+                .zones()
+                .reachable()
+                .in(Environment.prod)
+                .ids();
     }
 
 }

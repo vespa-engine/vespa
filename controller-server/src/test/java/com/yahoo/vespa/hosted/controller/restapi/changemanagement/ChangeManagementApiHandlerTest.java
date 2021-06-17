@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,6 +51,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     @Test
     public void test_api() {
         assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{\"zone\":\"prod.us-east-3\", \"hosts\": [\"host1\"]}", Request.Method.POST), "initial.json");
+        assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{\"zone\":\"prod.us-east-3\", \"switches\": [\"switch1\"]}", Request.Method.POST), "initial.json");
         assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr"), "vcmrs.json");
     }
 
@@ -98,6 +98,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     private Node createNode() {
         return new Node.Builder()
                 .hostname(HostName.from("host1"))
+                .switchHostname("switch1")
                 .build();
     }
 
