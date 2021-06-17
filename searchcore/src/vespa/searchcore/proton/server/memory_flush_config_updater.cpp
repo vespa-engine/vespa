@@ -13,7 +13,8 @@ namespace {
 bool
 shouldUseConservativeMode(const ResourceUsageState &resourceState,
                           bool currentlyUseConservativeMode,
-                          double lowWatermarkFactor) {
+                          double lowWatermarkFactor)
+{
     return resourceState.aboveLimit() ||
            (currentlyUseConservativeMode && resourceState.aboveLimit(lowWatermarkFactor));
 }
@@ -21,8 +22,7 @@ shouldUseConservativeMode(const ResourceUsageState &resourceState,
 }
 
 void
-MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard,
-                                                          MemoryFlush::Config &newConfig)
+MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard, MemoryFlush::Config &newConfig)
 {
     if (shouldUseConservativeMode(_currState.diskState(), _useConservativeDiskMode,
                                   _currConfig.conservative.lowwatermarkfactor))
@@ -38,8 +38,7 @@ MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard
 }
 
 void
-MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &,
-                                                            MemoryFlush::Config &newConfig)
+MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &, MemoryFlush::Config &newConfig)
 {
     if (shouldUseConservativeMode(_currState.memoryState(), _useConservativeMemoryMode,
                                   _currConfig.conservative.lowwatermarkfactor))
@@ -59,18 +58,29 @@ MemoryFlushConfigUpdater::considerUseRelaxedDiskMode(const LockGuard &, MemoryFl
     double bloatMargin = _currConfig.conservative.lowwatermarkfactor - utilization;
     if (bloatMargin > 0.0) {
         // Node retired and disk utiliation is below low mater mark factor.
+        // Compute how much of disk is occupied by live data, give that bloat is maxed,
+        // which is normally the case in a system that has been running for a while.
+        double spaceUtilization = utilization * (1 - _currConfig.diskbloatfactor);
+        // Then compute how much bloat can allowed given the current space usage and still stay below low watermark
+        double targetBloat = (_currConfig.conservative.lowwatermarkfactor - spaceUtilization) / _currConfig.conservative.lowwatermarkfactor;
         newConfig.diskBloatFactor = 1.0;
-        newConfig.globalDiskBloatFactor = std::max(bloatMargin * 0.8, _currConfig.diskbloatfactor);
+        newConfig.globalDiskBloatFactor = std::max(targetBloat, _currConfig.diskbloatfactor);
     }
 }
 
 void
-MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard)
+MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard, const char * why)
 {
     MemoryFlush::Config newConfig = convertConfig(_currConfig, _memory);
     considerUseConservativeDiskMode(guard, newConfig);
     considerUseConservativeMemoryMode(guard, newConfig);
     _flushStrategy->setConfig(newConfig);
+    LOG(info, "Due to %s (conservative-disk=%d, conservative-memory=%d, retired=%d) flush config updated to "
+              "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),"
+              "max-global-memory(%" PRIu64 "), max-memory-gain(%" PRIu64 ")",
+        why, _useConservativeDiskMode, _useConservativeMemoryMode, _nodeRetired,
+        newConfig.globalDiskBloatFactor, newConfig.maxGlobalTlsSize,
+        newConfig.maxGlobalMemory, newConfig.maxMemoryGain);
 }
 
 MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
@@ -92,7 +102,7 @@ MemoryFlushConfigUpdater::setConfig(const ProtonConfig::Flush::Memory &newConfig
 {
     LockGuard guard(_mutex);
     _currConfig = newConfig;
-    updateFlushStrategy(guard);
+    updateFlushStrategy(guard, "new config");
 }
 
 void
@@ -100,7 +110,7 @@ MemoryFlushConfigUpdater::notifyDiskMemUsage(DiskMemUsageState newState)
 {
     LockGuard guard(_mutex);
     _currState = newState;
-    updateFlushStrategy(guard);
+    updateFlushStrategy(guard, "disk-mem-usage update");
 }
 
 void
@@ -108,7 +118,7 @@ MemoryFlushConfigUpdater::setNodeRetired(bool nodeRetired)
 {
     LockGuard guard(_mutex);
     _nodeRetired = nodeRetired;
-    updateFlushStrategy(guard);
+    updateFlushStrategy(guard, nodeRetired ? "node retired" : "node unretired");
 }
 
 namespace {
@@ -122,8 +132,7 @@ getHardMemoryLimit(const HwInfo::Memory &memory)
 }
 
 MemoryFlush::Config
-MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config,
-                                        const HwInfo::Memory &memory)
+MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config, const HwInfo::Memory &memory)
 {
     const size_t hardMemoryLimit = getHardMemoryLimit(memory);
     size_t totalMaxMemory = config.maxmemory;
