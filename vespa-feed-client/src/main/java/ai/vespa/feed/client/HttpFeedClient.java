@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -102,7 +101,10 @@ class HttpFeedClient implements FeedClient {
         try {
             JsonParser parser = factory.createParser(response.body());
             if (parser.nextToken() != JsonToken.START_OBJECT)
-                throw new IllegalArgumentException("Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " + new String(response.body(), UTF_8));
+                throw new ResultParseException(
+                        documentId,
+                        "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: "
+                                + new String(response.body(), UTF_8));
 
             String name;
             while ((name = parser.nextFieldName()) != null) {
@@ -114,15 +116,20 @@ class HttpFeedClient implements FeedClient {
             }
 
             if (parser.currentToken() != JsonToken.END_OBJECT)
-                throw new IllegalArgumentException("Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: " + new String(response.body(), UTF_8));
+                throw new ResultParseException(
+                        documentId,
+                        "Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: "
+                                + new String(response.body(), UTF_8));
         }
         catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new ResultParseException(documentId, e);
         }
 
         if (type == null) // Not a Vespa response, but a failure in the HTTP layer.
-            throw new FeedException("Status " + response.code() + " executing '" + request +
-                                    "': " + (message == null ? new String(response.body(), UTF_8) : message));
+            throw new ResultParseException(
+                    documentId,
+                    "Status " + response.code() + " executing '" + request + "': "
+                            + (message == null ? new String(response.body(), UTF_8) : message));
 
         return new Result(type, documentId, message, trace);
     }

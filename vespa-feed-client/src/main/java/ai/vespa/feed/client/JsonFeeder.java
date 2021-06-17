@@ -10,7 +10,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -58,13 +57,13 @@ public class JsonFeeder implements Closeable {
          * @param result Non-null if operation completed successfully
          * @param error Non-null if operation failed
          */
-        default void onNextResult(Result result, Throwable error) { }
+        default void onNextResult(Result result, FeedException error) { }
 
         /**
          * Invoked if an unrecoverable error occurred during feed processing,
          * after which no other {@link ResultCallback} methods are invoked.
          */
-        default void onError(Throwable error) { }
+        default void onError(FeedException error) { }
 
         /**
          * Invoked when all feed operations are either completed successfully or failed.
@@ -81,6 +80,7 @@ public class JsonFeeder implements Closeable {
      *      "fields": { ... document fields ... }
      *    }
      *  </pre>
+     *  Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
      */
     public CompletableFuture<Result> feedSingle(String json) {
         CompletableFuture<Result> result = new CompletableFuture<>();
@@ -94,7 +94,7 @@ public class JsonFeeder implements Closeable {
                 }
             }, resultExecutor);
         } catch (Exception e) {
-            resultExecutor.execute(() -> result.completeExceptionally(e));
+            resultExecutor.execute(() -> result.completeExceptionally(wrapException(e)));
         }
         return result;
     }
@@ -123,27 +123,32 @@ public class JsonFeeder implements Closeable {
      *     ]
      * </pre>
      * Note that {@code "id"} is an alias for the document put operation.
+     * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
      */
     public CompletableFuture<Void> feedMany(InputStream jsonStream, ResultCallback resultCallback) {
         return feedMany(jsonStream, 1 << 26, resultCallback);
     }
 
+    /**
+     * Same as {@link #feedMany(InputStream, ResultCallback)}, but without a provided {@link ResultCallback} instance.
+     * @see JsonFeeder#feedMany(InputStream, ResultCallback) for details.
+     */
     public CompletableFuture<Void> feedMany(InputStream jsonStream) {
         return feedMany(jsonStream, new ResultCallback() { });
     }
 
     CompletableFuture<Void> feedMany(InputStream jsonStream, int size, ResultCallback resultCallback) {
-        RingBufferStream buffer = new RingBufferStream(jsonStream, size);
         CompletableFuture<Void> overallResult = new CompletableFuture<>();
         CompletableFuture<Result> result;
         AtomicInteger pending = new AtomicInteger(1); // The below dispatch loop itself is counted as a single pending operation
         AtomicBoolean finalCallbackInvoked = new AtomicBoolean();
         try {
+            RingBufferStream buffer = new RingBufferStream(jsonStream, size);
             while ((result = buffer.next()) != null) {
                 pending.incrementAndGet();
                 result.whenCompleteAsync((r, t) -> {
                     if (!finalCallbackInvoked.get()) {
-                        resultCallback.onNextResult(r, t);
+                        resultCallback.onNextResult(r, (FeedException) t);
                     }
                     if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
                         resultCallback.onComplete();
@@ -160,8 +165,9 @@ public class JsonFeeder implements Closeable {
         } catch (Exception e) {
             if (finalCallbackInvoked.compareAndSet(false, true)) {
                 resultExecutor.execute(() -> {
-                    resultCallback.onError(e);
-                    overallResult.completeExceptionally(e);
+                    FeedException wrapped = wrapException(e);
+                    resultCallback.onError(wrapped);
+                    overallResult.completeExceptionally(wrapped);
                 });
             }
         }
@@ -182,6 +188,14 @@ public class JsonFeeder implements Closeable {
         }
     }
 
+    private FeedException wrapException(Exception e) {
+        if (e instanceof FeedException) return (FeedException) e;
+        if (e instanceof IOException) {
+            return new OperationParseException("Failed to parse document JSON: " + e.getMessage(), e);
+        }
+        return new FeedException(e);
+    }
+
     private class RingBufferStream extends InputStream {
 
         private final byte[] b = new byte[1];
@@ -189,22 +203,21 @@ public class JsonFeeder implements Closeable {
         private final byte[] data;
         private final int size;
         private final Object lock = new Object();
-        private Throwable thrown = null;
+        private IOException thrown = null;
         private long tail = 0;
         private long pos = 0;
         private long head = 0;
         private boolean done = false;
         private final OperationParserAndExecutor parserAndExecutor;
 
-        RingBufferStream(InputStream in, int size) {
+        RingBufferStream(InputStream in, int size) throws IOException {
             this.in = in;
             this.data = new byte[size];
             this.size = size;
 
             new Thread(this::fill, "feed-reader").start();
 
-            try { this.parserAndExecutor = new RingBufferBackedOperationParserAndExecutor(factory.createParser(this)); }
-            catch (IOException e) { throw new UncheckedIOException(e); }
+            this.parserAndExecutor = new RingBufferBackedOperationParserAndExecutor(factory.createParser(this));
         }
 
         @Override
@@ -220,7 +233,7 @@ public class JsonFeeder implements Closeable {
                     while ((ready = (int) (head - pos)) == 0 && ! done)
                         lock.wait();
                 }
-                if (thrown != null) throw new RuntimeException("Error reading input", thrown);
+                if (thrown != null) throw thrown;
                 if (ready == 0) return -1;
 
                 ready = min(ready, len);
@@ -273,7 +286,7 @@ public class JsonFeeder implements Closeable {
                 while (true) {
                     int free;
                     synchronized (lock) {
-                        while ((free = (int) (tail + size - head)) <= 0 && ! done)
+                        while ((free = (int) (tail + size - head)) <= 0 && !done)
                             lock.wait();
                     }
                     if (done) break;
@@ -288,18 +301,22 @@ public class JsonFeeder implements Closeable {
                         lock.notify();
                     }
                 }
-            }
-            catch (Throwable t) {
+            } catch (InterruptedException e) {
                 synchronized (lock) {
                     done = true;
-                    thrown = t;
+                    thrown = new InterruptedIOException("Interrupted reading data: " + e.getMessage());
+                }
+            } catch (IOException e) {
+                synchronized (lock) {
+                    done = true;
+                    thrown = e;
                 }
             }
         }
 
         private class RingBufferBackedOperationParserAndExecutor extends OperationParserAndExecutor {
 
-            RingBufferBackedOperationParserAndExecutor(JsonParser parser) throws IOException { super(parser, true); }
+            RingBufferBackedOperationParserAndExecutor(JsonParser parser) { super(parser, true); }
 
             @Override
             String getDocumentJson(long start, long end) {
@@ -334,7 +351,7 @@ public class JsonFeeder implements Closeable {
         private final boolean multipleOperations;
         private boolean arrayPrefixParsed;
 
-        protected OperationParserAndExecutor(JsonParser parser, boolean multipleOperations) throws IOException {
+        protected OperationParserAndExecutor(JsonParser parser, boolean multipleOperations) {
             this.parser = parser;
             this.multipleOperations = multipleOperations;
         }
@@ -342,82 +359,78 @@ public class JsonFeeder implements Closeable {
         abstract String getDocumentJson(long start, long end);
 
         CompletableFuture<Result> next() throws IOException {
-            try {
-                if (multipleOperations && !arrayPrefixParsed){
-                    expect(START_ARRAY);
-                    arrayPrefixParsed = true;
-                }
+            if (multipleOperations && !arrayPrefixParsed){
+                expect(START_ARRAY);
+                arrayPrefixParsed = true;
+            }
 
-                JsonToken token = parser.nextToken();
-                if (token == END_ARRAY && multipleOperations) return null;
-                else if (token == null && !multipleOperations) return null;
-                else if (token == START_OBJECT);
-                else throw new JsonParseException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
-                long start = 0, end = -1;
-                OperationType type = null;
-                DocumentId id = null;
-                OperationParameters parameters = protoParameters;
-                loop: while (true) {
-                    switch (parser.nextToken()) {
-                        case FIELD_NAME:
-                            switch (parser.getText()) {
-                                case "id":
-                                case "put":    type = PUT;    id = readId(); break;
-                                case "update": type = UPDATE; id = readId(); break;
-                                case "remove": type = REMOVE; id = readId(); break;
-                                case "condition": parameters = parameters.testAndSetCondition(readString()); break;
-                                case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
-                                case "fields": {
-                                    expect(START_OBJECT);
-                                    start = parser.getTokenLocation().getByteOffset();
-                                    int depth = 1;
-                                    while (depth > 0) switch (parser.nextToken()) {
-                                        case START_OBJECT: ++depth; break;
-                                        case END_OBJECT:   --depth; break;
-                                    }
-                                    end = parser.getTokenLocation().getByteOffset() + 1;
-                                    break;
+            JsonToken token = parser.nextToken();
+            if (token == END_ARRAY && multipleOperations) return null;
+            else if (token == null && !multipleOperations) return null;
+            else if (token == START_OBJECT);
+            else throw new OperationParseException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
+            long start = 0, end = -1;
+            OperationType type = null;
+            DocumentId id = null;
+            OperationParameters parameters = protoParameters;
+            loop: while (true) {
+                switch (parser.nextToken()) {
+                    case FIELD_NAME:
+                        switch (parser.getText()) {
+                            case "id":
+                            case "put":    type = PUT;    id = readId(); break;
+                            case "update": type = UPDATE; id = readId(); break;
+                            case "remove": type = REMOVE; id = readId(); break;
+                            case "condition": parameters = parameters.testAndSetCondition(readString()); break;
+                            case "create":    parameters = parameters.createIfNonExistent(readBoolean()); break;
+                            case "fields": {
+                                expect(START_OBJECT);
+                                start = parser.getTokenLocation().getByteOffset();
+                                int depth = 1;
+                                while (depth > 0) switch (parser.nextToken()) {
+                                    case START_OBJECT: ++depth; break;
+                                    case END_OBJECT:   --depth; break;
                                 }
-                                default: throw new JsonParseException("Unexpected field name '" + parser.getText() + "' at offset " +
-                                        parser.getTokenLocation().getByteOffset());
+                                end = parser.getTokenLocation().getByteOffset() + 1;
+                                break;
                             }
-                            break;
-
-                        case END_OBJECT:
-                            break loop;
-
-                        default:
-                            throw new JsonParseException("Unexpected token '" + parser.currentToken() + "' at offset " +
+                            default: throw new OperationParseException("Unexpected field name '" + parser.getText() + "' at offset " +
                                     parser.getTokenLocation().getByteOffset());
-                    }
-                }
-                if (id == null)
-                    throw new JsonParseException("No document id for document at offset " + start);
+                        }
+                        break;
 
-                if (end < start)
-                    throw new JsonParseException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
-                String payload = getDocumentJson(start, end);
-                switch (type) {
-                    case PUT:    return client.put   (id, payload, parameters);
-                    case UPDATE: return client.update(id, payload, parameters);
-                    case REMOVE: return client.remove(id, parameters);
-                    default: throw new JsonParseException("Unexpected operation type '" + type + "'");
+                    case END_OBJECT:
+                        break loop;
+
+                    default:
+                        throw new OperationParseException("Unexpected token '" + parser.currentToken() + "' at offset " +
+                                parser.getTokenLocation().getByteOffset());
                 }
-            } catch (com.fasterxml.jackson.core.JacksonException e) {
-                throw new JsonParseException("Failed to parse JSON", e);
+            }
+            if (id == null)
+                throw new OperationParseException("No document id for document at offset " + start);
+
+            if (end < start)
+                throw new OperationParseException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
+            String payload = getDocumentJson(start, end);
+            switch (type) {
+                case PUT:    return client.put   (id, payload, parameters);
+                case UPDATE: return client.update(id, payload, parameters);
+                case REMOVE: return client.remove(id, parameters);
+                default: throw new OperationParseException("Unexpected operation type '" + type + "'");
             }
         }
 
         private void expect(JsonToken token) throws IOException {
             if (parser.nextToken() != token)
-                throw new JsonParseException("Expected '" + token + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                throw new OperationParseException("Expected '" + token + "' at offset " + parser.getTokenLocation().getByteOffset() +
                         ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
         }
 
         private String readString() throws IOException {
             String value = parser.nextTextValue();
             if (value == null)
-                throw new JsonParseException("Expected '" + VALUE_STRING + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                throw new OperationParseException("Expected '" + VALUE_STRING + "' at offset " + parser.getTokenLocation().getByteOffset() +
                         ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
 
             return value;
@@ -426,7 +439,7 @@ public class JsonFeeder implements Closeable {
         private boolean readBoolean() throws IOException {
             Boolean value = parser.nextBooleanValue();
             if (value == null)
-                throw new JsonParseException("Expected '" + VALUE_FALSE + "' or '" + VALUE_TRUE + "' at offset " + parser.getTokenLocation().getByteOffset() +
+                throw new OperationParseException("Expected '" + VALUE_FALSE + "' or '" + VALUE_TRUE + "' at offset " + parser.getTokenLocation().getByteOffset() +
                         ", but found '" + parser.currentToken() + "' (" + parser.getText() + ")");
 
             return value;
@@ -438,7 +451,6 @@ public class JsonFeeder implements Closeable {
         }
 
     }
-
 
     public static class Builder {
 

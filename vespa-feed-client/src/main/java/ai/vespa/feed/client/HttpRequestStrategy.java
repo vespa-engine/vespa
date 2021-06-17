@@ -228,6 +228,14 @@ class HttpRequestStrategy implements RequestStrategy {
                 releaseSlot();
         });
 
+        result.handle((response, error) -> {
+            if (error != null) {
+                if (error instanceof FeedException) throw (FeedException)error;
+                throw new FeedException(documentId, error);
+            }
+            return response;
+        });
+
         return result;
     }
 

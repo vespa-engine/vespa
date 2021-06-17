@@ -1,8 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client.examples;
 
+import ai.vespa.feed.client.DocumentId;
 import ai.vespa.feed.client.FeedClient;
 import ai.vespa.feed.client.FeedClientBuilder;
+import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.JsonFeeder;
 import ai.vespa.feed.client.Result;
 
@@ -32,10 +34,11 @@ class JsonFileFeederExample implements Closeable {
         final long startTimeMillis = System.currentTimeMillis();;
 
         @Override
-        public void onNextResult(Result result, Throwable error) {
+        public void onNextResult(Result result, FeedException error) {
             resultsReceived.incrementAndGet();
             if (error != null) {
-                log.warning("Problems with feeding document");
+                log.warning("Problems with feeding document "
+                        + error.documentId().map(DocumentId::toString).orElse("<unknown>"));
                 errorsReceived.incrementAndGet();
             } else if (result.type() == Result.Type.failure) {
                 log.warning("Problems with docID " + result.documentId() + ":" + error);
@@ -44,8 +47,8 @@ class JsonFileFeederExample implements Closeable {
         }
 
         @Override
-        public void onError(Throwable error) {
-            log.severe("Feeding failed: " + error.getMessage());
+        public void onError(FeedException error) {
+            log.severe("Feeding failed for d: " + error.getMessage());
         }
 
         @Override

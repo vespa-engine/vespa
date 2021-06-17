@@ -46,7 +46,7 @@ class JsonFeederTest {
                       "    }\n" +
                       "  }\n" +
                       "]";
-        AtomicReference<Throwable> exceptionThrow = new AtomicReference<>();
+        AtomicReference<FeedException> exceptionThrow = new AtomicReference<>();
         Path tmpFile = Files.createTempFile(null, null);
         Files.write(tmpFile, json.getBytes(UTF_8));
         try (InputStream in = Files.newInputStream(tmpFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE)) {
@@ -58,10 +58,10 @@ class JsonFeederTest {
                     .feedMany(in, 1 << 7,
                             new JsonFeeder.ResultCallback() { // TODO: hangs when buffer is smaller than largest document
                                 @Override
-                                public void onNextResult(Result result, Throwable error) { resultsReceived.incrementAndGet(); }
+                                public void onNextResult(Result result, FeedException error) { resultsReceived.incrementAndGet(); }
 
                                 @Override
-                                public void onError(Throwable error) { exceptionThrow.set(error); }
+                                public void onError(FeedException error) { exceptionThrow.set(error); }
 
                                 @Override
                                 public void onComplete() { completedSuccessfully.set(true); }
