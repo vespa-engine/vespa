@@ -19,6 +19,8 @@
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
+#include <vespa/searchcore/proton/server/feedhandler.h>
+#include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
@@ -28,7 +30,10 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <iostream>
 
 using namespace cloud::config::filedistribution;
 using namespace proton;
@@ -39,6 +44,7 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumenttypesConfig;
 using document::test::makeBucketSpace;
+using search::SerialNum;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
@@ -50,6 +56,24 @@ using vespa::config::content::core::BucketspacesConfig;
 using vespalib::Slime;
 
 namespace {
+
+void
+cleanup_dirs(bool file_config)
+{
+    vespalib::rmdir("typea", true);
+    vespalib::rmdir("tmp", true);
+    if (file_config) {
+        vespalib::rmdir("config", true);
+    }
+}
+
+vespalib::string
+config_subdir(SerialNum serialNum)
+{
+    vespalib::asciistream os;
+    os << "config/config-" << serialNum;
+    return os.str();
+}
 
 struct MyDBOwner : public DummyDBOwner
 {
@@ -67,7 +91,30 @@ MyDBOwner::MyDBOwner()
 {}
 MyDBOwner::~MyDBOwner() = default;
 
-struct Fixture {
+struct FixtureBase {
+    bool _cleanup;
+    bool _file_config;
+    FixtureBase(bool file_config);
+    ~FixtureBase();
+    void disable_cleanup() { _cleanup = false; }
+};
+
+FixtureBase::FixtureBase(bool file_config)
+    : _cleanup(true),
+      _file_config(file_config)
+{
+    vespalib::mkdir("typea");
+}
+
+
+FixtureBase::~FixtureBase()
+{
+    if (_cleanup) {
+        cleanup_dirs(_file_config);
+    }
+}
+
+struct Fixture : public FixtureBase {
     DummyWireService _dummy;
     MyDBOwner _myDBOwner;
     vespalib::ThreadStackExecutor _summaryExecutor;
@@ -79,12 +126,20 @@ struct Fixture {
     matching::QueryLimiter _queryLimiter;
     vespalib::Clock _clock;
 
+    std::unique_ptr<ConfigStore> make_config_store();
     Fixture();
+    Fixture(bool file_config);
     ~Fixture();
 };
 
 Fixture::Fixture()
-    : _dummy(),
+    : Fixture(false)
+{
+}
+
+Fixture::Fixture(bool file_config)
+    : FixtureBase(file_config),
+      _dummy(),
       _myDBOwner(),
       _summaryExecutor(8, 128_Ki),
       _hwInfo(),
@@ -111,13 +166,25 @@ Fixture::Fixture()
     _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy,
-                             _fileHeaderContext, std::make_unique<MemoryConfigStore>(),
+                             _fileHeaderContext, make_config_store(),
                              std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo);
     _db->start();
     _db->waitForOnlineState();
 }
 
-Fixture::~Fixture() = default;
+Fixture::~Fixture()
+{
+}
+
+std::unique_ptr<ConfigStore>
+Fixture::make_config_store()
+{
+    if (_file_config) {
+        return std::make_unique<FileConfigManager>("config", "", "typea");
+    } else {
+        return std::make_unique<MemoryConfigStore>();
+    }
+}
 
 const IFlushTarget *
 extractRealFlushTarget(const IFlushTarget *target)
@@ -249,11 +316,56 @@ TEST_F("require that document db registers reference", Fixture)
     EXPECT_EQUAL(search::attribute::BasicType::INT32, attrReadGuard->attribute()->getBasicType());
 }
 
+TEST("require that normal restart works")
+{
+    {
+        Fixture f(true);
+        f.disable_cleanup();
+    }
+    {
+        Fixture f(true);
+    }
+}
+
+TEST("require that resume after interrupted save config works")
+{
+    SerialNum serialNum = 0;
+    {
+        Fixture f(true);
+        f.disable_cleanup();
+        serialNum = f._db->getFeedHandler().getSerialNum();
+    }
+    {
+        /*
+         * Simulate interrupted save config by copying best config to
+         * serial number after end of transaction log
+         */
+        std::cout << "Replay end serial num is " << serialNum << std::endl;
+        search::IndexMetaInfo info("config");
+        ASSERT_TRUE(info.load());
+        auto best_config_snapshot = info.getBestSnapshot();
+        ASSERT_TRUE(best_config_snapshot.valid);
+        std::cout << "Best config serial is " << best_config_snapshot.syncToken << std::endl;
+        auto old_config_subdir = config_subdir(best_config_snapshot.syncToken);
+        auto new_config_subdir = config_subdir(serialNum + 1);
+        vespalib::mkdir(new_config_subdir);
+        auto config_files = vespalib::listDirectory(old_config_subdir);
+        for (auto &config_file : config_files) {
+            vespalib::copy(old_config_subdir + "/" + config_file, new_config_subdir + "/" + config_file, false, false);
+        }
+        info.addSnapshot({true, serialNum + 1, new_config_subdir.substr(new_config_subdir.rfind('/') + 1)});
+        info.save();
+    }
+    {
+        Fixture f(true);
+    }
+}
+
 }  // namespace
 
 TEST_MAIN() {
+    cleanup_dirs(true);
     DummyFileHeaderContext::setCreator("documentdb_test");
-    FastOS_File::MakeDirectory("typea");
     TEST_RUN_ALL();
-    FastOS_FileInterface::EmptyAndRemoveDirectory("typea");
+    cleanup_dirs(true);
 }
