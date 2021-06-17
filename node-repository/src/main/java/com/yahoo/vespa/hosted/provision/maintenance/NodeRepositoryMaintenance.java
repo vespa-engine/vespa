@@ -67,7 +67,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
         maintainers.add(new HostEncrypter(nodeRepository, defaults.hostEncrypterInterval, metric));
-        maintainers.add(new ParkedExpirer(nodeRepository, defaults.parkedExpirerInterval, metric));
 
         provisionServiceProvider.getLoadBalancerService(nodeRepository)
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
@@ -120,7 +119,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
         private final Duration hostEncrypterInterval;
-        private final Duration parkedExpirerInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -151,7 +149,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             inactiveConfigServerExpiry = Duration.ofMinutes(5);
             inactiveControllerExpiry = Duration.ofMinutes(5);
-            parkedExpirerInterval = Duration.ofMinutes(30);
 
             if (zone.environment().isProduction() && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
