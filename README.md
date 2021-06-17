@@ -15,7 +15,7 @@ Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.v
 Vespa build status: [![Vespa Build Status](https://cd.screwdriver.cd/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 ## Table of contents
-
+ 
 - [Background](#background)
 - [Install](#install)
 - [Usage](#usage)
