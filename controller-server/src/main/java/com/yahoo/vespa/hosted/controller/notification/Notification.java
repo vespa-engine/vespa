@@ -62,7 +62,7 @@ public class Notification {
 
     public enum Level {
         // Must be ordered in order of importance
-        warning, error
+        info, warning, error
     }
 
     public enum Type {

@@ -108,6 +108,7 @@ public class NotificationsSerializer {
 
     private static String asString(Notification.Level level) {
         switch (level) {
+            case info: return "info";
             case warning: return "warning";
             case error: return "error";
             default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
@@ -116,6 +117,7 @@ public class NotificationsSerializer {
 
     private static Notification.Level levelFrom(Inspector field) {
         switch (field.asString()) {
+            case "info": return Notification.Level.info;
             case "warning": return Notification.Level.warning;
             case "error": return Notification.Level.error;
             default: throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");

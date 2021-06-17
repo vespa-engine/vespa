@@ -531,6 +531,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String notificationLevelAsString(Notification.Level level) {
         switch (level) {
+            case info: return "info";
             case warning: return "warning";
             case error: return "error";
             default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
