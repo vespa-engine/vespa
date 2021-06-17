@@ -22,7 +22,7 @@ public class StructDataType extends BaseStructDataType {
         super(name);
     }
 
-    public StructDataType(int id,String name) {
+    public StructDataType(int id, String name) {
         super(id, name);
     }
 

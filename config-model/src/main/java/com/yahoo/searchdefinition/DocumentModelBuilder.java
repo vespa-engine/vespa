@@ -209,17 +209,13 @@ public class DocumentModelBuilder {
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
                                                       Collection<NewDocumentType> docs) {
         if (type instanceof TemporaryStructuredDataType) {
-            NewDocumentType docType = getDocumentType(docs, type.getId());
-            if (docType != null) {
-                type = docType;
-                return type;
-            }
-            DataType real = repo.getDataType(type.getId());
-            if (real == null) {
-                throw new NullPointerException("Can not find type '" + type.toString() + "', impossible.");
-            }
-            type = real;
-        } else if (type instanceof StructDataType) {
+            DataType struct = repo.getDataType(type.getId());
+            if (struct != null)
+                type = struct;
+            else
+                type = getDocumentType(docs, type.getId());
+        }
+        else if (type instanceof StructDataType) {
             StructDataType dt = (StructDataType) type;
             for (com.yahoo.document.Field field : dt.getFields()) {
                 if (field.getDataType() != type) {
@@ -227,14 +223,17 @@ public class DocumentModelBuilder {
                     field.setDataType(resolveTemporariesRecurse(field.getDataType(), repo, docs));
                 }
             }
-        } else if (type instanceof MapDataType) {
+        }
+        else if (type instanceof MapDataType) {
             MapDataType t = (MapDataType) type;
             t.setKeyType(resolveTemporariesRecurse(t.getKeyType(), repo, docs));
             t.setValueType(resolveTemporariesRecurse(t.getValueType(), repo, docs));
-        } else if (type instanceof CollectionDataType) {
+        }
+        else if (type instanceof CollectionDataType) {
             CollectionDataType t = (CollectionDataType) type;
             t.setNestedType(resolveTemporariesRecurse(t.getNestedType(), repo, docs));
-        } else if (type instanceof ReferenceDataType) {
+        }
+        else if (type instanceof ReferenceDataType) {
             ReferenceDataType t = (ReferenceDataType) type;
             if (t.getTargetType() instanceof TemporaryStructuredDataType) {
                 DataType targetType = resolveTemporariesRecurse(t.getTargetType(), repo, docs);
