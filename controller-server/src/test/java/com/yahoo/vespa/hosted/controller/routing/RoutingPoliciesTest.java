@@ -66,9 +66,9 @@ public class RoutingPoliciesTest {
     private static final ZoneId zone3 = ZoneId.from("prod", "aws-us-east-1a");
     private static final ZoneId zone4 = ZoneId.from("prod", "aws-us-east-1b");
 
-    private final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
-                                                                                     .region(zone2.region())
-                                                                                     .build();
+    private static final ApplicationPackage applicationPackage = applicationPackageBuilder().region(zone1.region())
+                                                                                            .region(zone2.region())
+                                                                                            .build();
 
     @Test
     public void global_routing_policies() {
