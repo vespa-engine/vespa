@@ -96,7 +96,6 @@ BuildRequires: cmake >= 3.11.4-3
 # Current cmake on CentOS 8 is broken and manually requires libarchive install
 BuildRequires: libarchive
 %define _command_cmake cmake
-%endif
 BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
 %else
 BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
