@@ -3,7 +3,6 @@ package com.yahoo.documentmodel;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
-import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.StructuredDataType;
@@ -219,7 +218,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     @Override
     public Document createFieldValue() {
-        return new Document(null, (DocumentId)null); // XXX: Always causes NPE
+        throw new RuntimeException("Cannot create an instance of " + this);
     }
 
     @Override
@@ -365,6 +364,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
             this.name = name;
         }
 
+        @Override
         public String toString() { return name; }
 
         public final String getName() { return name; }
