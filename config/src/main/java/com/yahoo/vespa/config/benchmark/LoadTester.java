@@ -225,7 +225,6 @@ public class LoadTester {
                 if (request.isError()) {
                     target = handleError(request, spec, target);
                 } else {
-                    System.out.println("# Connection OK");
                     long duration = end - start;
 
                     if (debug) {
