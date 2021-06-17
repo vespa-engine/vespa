@@ -10,17 +10,12 @@
 namespace proton {
 
 class FileConfigManager : public ConfigStore {
-public:
-    typedef std::unique_ptr<FileConfigManager> UP;
-    typedef std::shared_ptr<FileConfigManager> SP;
-    typedef search::IndexMetaInfo::Snapshot Snapshot;
-
 private:
-    vespalib::string _baseDir;
-    vespalib::string _configId;
-    vespalib::string _docTypeName;
+    vespalib::string      _baseDir;
+    vespalib::string      _configId;
+    vespalib::string      _docTypeName;
     search::IndexMetaInfo _info;
-    ProtonConfigSP _protonConfig;
+    ProtonConfigSP        _protonConfig;
 
 public:
     /**
@@ -33,14 +28,12 @@ public:
                       const vespalib::string &configId,
                       const vespalib::string &docTypeName);
 
-    virtual
-    ~FileConfigManager();
+    ~FileConfigManager() override;
 
-    virtual SerialNum getBestSerialNum() const override;
-    virtual SerialNum getOldestSerialNum() const override;
+    SerialNum getBestSerialNum() const override;
+    SerialNum getOldestSerialNum() const override;
 
-    virtual void saveConfig(const DocumentDBConfig &snapshot,
-                            SerialNum serialNum) override;
+    void saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum) override;
 
     /**
      * Load a config snapshot from disk corresponding to the given
@@ -53,23 +46,21 @@ public:
      * @param loadedSnapshot the shared pointer in which to store the
      *                       resulting config snapshot.
      */
-    virtual void loadConfig(const DocumentDBConfig &currentSnapshot,
-                            SerialNum serialNum,
-                            DocumentDBConfig::SP &loadedSnapshot) override;
+    void loadConfig(const DocumentDBConfig &currentSnapshot, SerialNum serialNum,
+                    DocumentDBConfig::SP &loadedSnapshot) override;
 
-    virtual void removeInvalid() override;
-    virtual void prune(SerialNum serialNum) override;
-    virtual bool hasValidSerial(SerialNum serialNum) const override;
+    void removeInvalid() override;
+    void prune(SerialNum serialNum) override;
+    bool hasValidSerial(SerialNum serialNum) const override;
 
-    virtual SerialNum getPrevValidSerial(SerialNum serialNum) const override;
+    SerialNum getPrevValidSerial(SerialNum serialNum) const override;
 
     /**
      * Serialize config files.
      *
      * Used for serializing config into transaction log.
      */
-    virtual void
-    serializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
+    void serializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
 
 
     /**
@@ -80,10 +71,9 @@ public:
      * takes precedence over the serialized config files in the
      * transaction log.
      */
-    virtual void
-    deserializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
+    void deserializeConfig(SerialNum serialNum, vespalib::nbostream &stream) override;
 
-    virtual void setProtonConfig(const ProtonConfigSP &protonConfig) override;
+    void setProtonConfig(const ProtonConfigSP &protonConfig) override;
 };
 
 } // namespace proton
