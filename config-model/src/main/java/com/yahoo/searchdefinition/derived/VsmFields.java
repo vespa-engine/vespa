@@ -178,6 +178,7 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
 
         /** Converts to the right index type from a field datatype */
         private static Type convertType(DataType fieldType) {
+            System.out.println("Converting field type " + fieldType + " which is a " + fieldType.getClass());
             FieldValue fval = fieldType.createFieldValue();
             if (fieldType.equals(DataType.FLOAT16)) {
                 return Type.FLOAT16;

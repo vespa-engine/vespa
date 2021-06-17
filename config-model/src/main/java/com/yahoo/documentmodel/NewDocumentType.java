@@ -243,7 +243,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
 
     @Override
     public Document createFieldValue() {
-        return new Document(null, (DocumentId)null);
+        return new Document(null, (DocumentId)null); // XXX: Always causes NPE
     }
 
     @Override
