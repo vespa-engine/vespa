@@ -102,11 +102,13 @@ class MaintenanceDeployment implements Closeable {
     }
 
     private Optional<Mutex> tryLock(ApplicationId application, NodeRepository nodeRepository) {
+        Duration timeout = Duration.ofSeconds(3);
         try {
             // Use a short lock to avoid interfering with change deployments
-            return Optional.of(nodeRepository.nodes().lock(application, Duration.ofSeconds(1)));
+            return Optional.of(nodeRepository.nodes().lock(application, timeout));
         }
         catch (ApplicationLockException e) {
+            log.log(Level.WARNING, () -> "Could not lock " + application + " for maintenance deployment within " + timeout);
             return Optional.empty();
         }
     }
