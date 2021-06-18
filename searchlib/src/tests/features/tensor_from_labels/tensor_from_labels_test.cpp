@@ -95,6 +95,7 @@ struct ExecFixture
         attrs.push_back(AttributeFactory::createAttribute("astr", AVC(AVBT::STRING,  AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("aint", AVC(AVBT::INT32,  AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("wsstr", AVC(AVBT::STRING,  AVCT::WSET)));
+        attrs.push_back(AttributeFactory::createAttribute("sint", AVC(AVBT::INT32,  AVCT::SINGLE)));
 
         for (const auto &attr : attrs) {
             attr->addReservedDoc();
@@ -112,6 +113,9 @@ struct ExecFixture
         aint->append(1, 3, 0);
         aint->append(1, 5, 0);
         aint->append(1, 7, 0);
+        
+        IntegerAttribute *sint = static_cast<IntegerAttribute *>(attrs[3].get());
+        sint->update(1, 5);
 
         for (const auto &attr : attrs) {
             attr->commit();
@@ -165,6 +169,20 @@ TEST_F("require that array attribute can be converted to tensor (explicit dimens
                               .add({{"dim", "7"}}, 1)
                               .add({{"dim", "3"}}, 1)
                               .add({{"dim", "5"}}, 1)), f.execute());
+}
+
+TEST_F("require that single-value integer attribute can be converted to tensor (default dimension)",
+        ExecFixture("tensorFromLabels(attribute(sint))"))
+{
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(sint{})")
+                              .add({{"sint", "5"}}, 1)), f.execute());
+}
+
+TEST_F("require that single-value integer attribute can be converted to tensor (explicit dimension)",
+        ExecFixture("tensorFromLabels(attribute(sint),foobar)"))
+{
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(foobar{})")
+                              .add({{"foobar", "5"}}, 1)), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",
