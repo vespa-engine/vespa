@@ -70,6 +70,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
         maintainers.add(new VCMRMaintainer(controller, intervals.vcmrMaintainer));
+        maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
     }
 
     public Upgrader upgrader() { return upgrader; }

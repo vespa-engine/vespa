@@ -19,6 +19,9 @@
       "name": "CloudEventReporter"
     },
     {
+      "name": "CloudTrialExpirer"
+    },
+    {
       "name": "ContactInformationMaintainer"
     },
     {
