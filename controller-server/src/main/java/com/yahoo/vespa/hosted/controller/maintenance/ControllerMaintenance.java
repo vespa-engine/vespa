@@ -10,6 +10,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
@@ -71,6 +72,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
         maintainers.add(new VCMRMaintainer(controller, intervals.vcmrMaintainer));
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
+        maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -126,6 +128,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration tenantRoleMaintainer;
         private final Duration changeRequestMaintainer;
         private final Duration vcmrMaintainer;
+        private final Duration retriggerMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -158,6 +161,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.tenantRoleMaintainer = duration(5, MINUTES);
             this.changeRequestMaintainer = duration(1, HOURS);
             this.vcmrMaintainer = duration(1, HOURS);
+            this.retriggerMaintainer = duration(1, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

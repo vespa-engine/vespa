@@ -997,6 +997,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         DeploymentId deployment = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Principal principal = requireUserPrincipal(request);
         SupportAccess disallowed = controller.supportAccess().disallow(deployment, principal.getName());
+        controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
         return new SlimeJsonResponse(SupportAccessSerializer.serializeCurrentState(disallowed, controller.clock().instant()));
     }
 

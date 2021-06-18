@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -32,6 +33,7 @@ import java.util.OptionalLong;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
@@ -197,6 +199,35 @@ public class DeploymentTrigger {
             trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });
         return List.copyOf(jobs.keySet());
+    }
+
+    /** retrigger job. If the job is already running, it will be canceled, and retrigger enqueued. */
+    public Optional<JobId> reTriggerOrAddToQueue(DeploymentId deployment) {
+        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
+                .orElseThrow(() -> new IllegalArgumentException(String.format("No job to trigger for (system/zone): %s/%s", controller.system().value(), deployment.zoneId().value())));
+        Optional<Run> existingRun = controller.jobController().active(deployment.applicationId()).stream()
+                .filter(run -> run.id().type().equals(jobType))
+                .findFirst();
+
+        if (existingRun.isPresent()) {
+            Run run = existingRun.get();
+            try (Lock lock = controller.curator().lockDeploymentRetriggerQueue()) {
+                List<RetriggerEntry> retriggerEntries = controller.curator().readRetriggerEntries();
+                List<RetriggerEntry> newList = new ArrayList<>(retriggerEntries);
+                RetriggerEntry requiredEntry = new RetriggerEntry(new JobId(deployment.applicationId(), jobType), run.id().number() + 1);
+                if(newList.stream().noneMatch(entry -> entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun()>=requiredEntry.requiredRun())) {
+                    newList.add(requiredEntry);
+                }
+                newList = newList.stream()
+                        .filter(entry -> !(entry.jobId().equals(requiredEntry.jobId()) && entry.requiredRun() < requiredEntry.requiredRun()))
+                        .collect(toList());
+                controller.curator().writeRetriggerEntries(newList);
+            }
+            controller.jobController().abort(run.id());
+            return Optional.empty();
+        } else {
+            return Optional.of(reTrigger(deployment.applicationId(), jobType));
+        }
     }
 
     /** Prevents jobs of the given type from starting, until the given time. */

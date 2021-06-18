@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -1228,4 +1229,17 @@ public class DeploymentTriggerTest {
         assertEquals(List.of(), tester.jobs().active());
     }
 
+    @Test
+    public void testRetriggerQueue() {
+        var app = tester.newDeploymentContext().submit().deploy();
+        app.submit();
+        tester.triggerJobs();
+
+        tester.deploymentTrigger().reTrigger(app.instanceId(), productionUsEast3);
+        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")));
+        tester.deploymentTrigger().reTriggerOrAddToQueue(app.deploymentIdIn(ZoneId.from("prod", "us-east-3")));
+
+        List<RetriggerEntry> retriggerEntries = tester.controller().curator().readRetriggerEntries();
+        Assert.assertEquals(1, retriggerEntries.size());
+    }
 }

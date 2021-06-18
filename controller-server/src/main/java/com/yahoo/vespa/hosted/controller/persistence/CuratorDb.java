@@ -22,6 +22,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
+import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
+import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntrySerializer;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
@@ -219,6 +221,10 @@ public class CuratorDb {
 
     public Lock lockSupportAccess(DeploymentId deploymentId) {
         return curator.lock(lockRoot.append("supportAccess").append(deploymentId.dottedString()), defaultLockTimeout);
+    }
+
+    public Lock lockDeploymentRetriggerQueue() {
+        return curator.lock(lockRoot.append("deploymentRetriggerQueue"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -635,6 +641,16 @@ public class CuratorDb {
         curator.set(supportAccessPath(deploymentId), asJson(SupportAccessSerializer.toSlime(supportAccess)));
     }
 
+    // -------------- Job Retrigger entries -----------------------------------
+
+    public List<RetriggerEntry> readRetriggerEntries() {
+        return readSlime(deploymentRetriggerPath()).map(RetriggerEntrySerializer::fromSlime).orElse(List.of());
+    }
+
+    public void writeRetriggerEntries(List<RetriggerEntry> retriggerEntries) {
+        curator.set(deploymentRetriggerPath(), asJson(RetriggerEntrySerializer.toSlime(retriggerEntries)));
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -770,6 +786,10 @@ public class CuratorDb {
 
     private static Path supportAccessPath(DeploymentId deploymentId) {
         return supportAccessRoot.append(deploymentId.dottedString());
+    }
+
+    private static Path deploymentRetriggerPath() {
+        return root.append("deploymentRetriggerQueue");
     }
 
 }
