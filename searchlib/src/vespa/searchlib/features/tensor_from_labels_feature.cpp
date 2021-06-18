@@ -45,7 +45,7 @@ TensorFromLabelsBlueprint::setup(const search::fef::IIndexEnvironment &env,
         _dimension = _sourceParam;
     }
     describeOutput("tensor",
-                   "The tensor created from the given array source (attribute field or query parameter)",
+                   "The tensor created from the given source (attribute field or query parameter)",
                    FeatureType::object(ValueType::make_type(CellType::DOUBLE, {{_dimension}})));
     return validSource;
 }
@@ -63,10 +63,14 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
                 " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
-    if (attribute->getCollectionType() != search::attribute::CollectionType::ARRAY ||
-            attribute->isFloatingPointType()) {
-        LOG(warning, "The attribute vector '%s' is NOT of type array of string or integer."
-                " Returning empty tensor.", attrName.c_str());
+    if (attribute->isFloatingPointType()) {
+        LOG(warning, "The attribute vector '%s' must have basic type string or integer."
+            " Returning empty tensor.", attrName.c_str());
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
+    }
+    if (attribute->getCollectionType() == search::attribute::CollectionType::WSET) {
+        LOG(warning, "The attribute vector '%s' is a weighted set - use tensorFromWeightedSet instead."
+            " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     // Note that for array attribute vectors the default weight is 1.0 for all values.
