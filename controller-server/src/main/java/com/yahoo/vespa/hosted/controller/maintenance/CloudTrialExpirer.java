@@ -44,9 +44,9 @@ public class CloudTrialExpirer extends ControllerMaintainer {
         var expiredTenantNames = expiredTenants.stream()
                 .map(Tenant::name)
                 .map(TenantName::value)
-                .collect(Collectors.toList());
+                .collect(Collectors.joining(", "));
 
-        log.info("Moving expired tenants to 'none' plan: " + String.join(", ", expiredTenantNames));
+        log.info("Moving expired tenants to 'none' plan: " + expiredTenantNames);
         expireTenants(expiredTenants);
 
         return 0;
