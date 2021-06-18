@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -273,25 +274,25 @@ public class ApplicationPackageBuilder {
         }
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
-            out.putNextEntry(new ZipEntry(dir + "deployment.xml"));
-            out.write(deploymentSpec());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "validation-overrides.xml"));
-            out.write(validationOverrides());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "search-definitions/test.sd"));
-            out.write(searchDefinition());
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "build-meta.json"));
-            out.write(buildMeta(compileVersion));
-            out.closeEntry();
-            out.putNextEntry(new ZipEntry(dir + "security/clients.pem"));
-            out.write(X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
-            out.closeEntry();
+            out.setLevel(Deflater.NO_COMPRESSION); // This is for testing purposes so we skip compression for performance
+            writeZipEntry(out, dir + "deployment.xml", deploymentSpec());
+            writeZipEntry(out, dir + "validation-overrides.xml", validationOverrides());
+            writeZipEntry(out, dir + "search-definitions/test.sd", searchDefinition());
+            writeZipEntry(out, dir + "build-meta.json", buildMeta(compileVersion));
+            if (!trustedCertificates.isEmpty()) {
+                writeZipEntry(out, dir + "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         return new ApplicationPackage(zip.toByteArray());
+    }
+
+    private void writeZipEntry(ZipOutputStream out, String name, byte[] content) throws IOException {
+        ZipEntry entry = new ZipEntry(name);
+        out.putNextEntry(entry);
+        out.write(content);
+        out.closeEntry();
     }
 
     private static String asIso8601Date(Instant instant) {
