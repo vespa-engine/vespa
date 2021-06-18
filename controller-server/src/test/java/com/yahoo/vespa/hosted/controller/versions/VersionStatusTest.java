@@ -127,11 +127,7 @@ public class VersionStatusTest {
     @Test
     public void testVersionStatusAfterApplicationUpdates() {
         DeploymentTester tester = new DeploymentTester();
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("default")
-                .region("us-west-1")
-                .region("us-east-3")
-                .build();
+        ApplicationPackage applicationPackage = applicationPackage("default");
 
         Version version1 = new Version("6.2");
         Version version2 = new Version("6.3");
@@ -216,10 +212,9 @@ public class VersionStatusTest {
         Version version0 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().maintain();
-        var builder = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3");
 
         // Setup applications - all running on version0
-        ApplicationPackage canaryPolicy = builder.upgradePolicy("canary").build();
+        ApplicationPackage canaryPolicy = applicationPackage("canary");
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
                             .submit(canaryPolicy)
                             .deploy();
@@ -230,7 +225,7 @@ public class VersionStatusTest {
                             .submit(canaryPolicy)
                             .deploy();
 
-        ApplicationPackage defaultPolicy = builder.upgradePolicy("default").build();
+        ApplicationPackage defaultPolicy = applicationPackage("default");
         var default0 = tester.newDeploymentContext("tenant1", "default0", "default")
                              .submit(defaultPolicy)
                              .deploy();
@@ -262,7 +257,7 @@ public class VersionStatusTest {
                             .submit(defaultPolicy)
                             .deploy();
 
-        ApplicationPackage conservativePolicy = builder.upgradePolicy("conservative").build();
+        ApplicationPackage conservativePolicy = applicationPackage("conservative");
         var conservative0 = tester.newDeploymentContext("tenant1", "conservative0", "default")
                 .submit(conservativePolicy)
                 .deploy();
@@ -388,10 +383,10 @@ public class VersionStatusTest {
         Version version0 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().maintain();
-        var appPackage = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3").upgradePolicy("canary");
+        var appPackage = applicationPackage("canary");
 
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
-                            .submit(appPackage.build())
+                            .submit(appPackage)
                             .deploy();
 
         assertEquals("All applications running on this version: High",
@@ -537,13 +532,13 @@ public class VersionStatusTest {
         Version version0 = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version0);
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
-                            .submit(new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build())
+                            .submit(applicationPackage("canary"))
                             .deploy();
         var canary1 = tester.newDeploymentContext("tenant1", "canary1", "default")
-                            .submit(new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build())
+                            .submit(applicationPackage("canary"))
                             .deploy();
         var default0 = tester.newDeploymentContext("tenant1", "default0", "default")
-                            .submit(new ApplicationPackageBuilder().upgradePolicy("default").region("us-west-1").build())
+                            .submit(applicationPackage("default"))
                             .deploy();
         tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.high, tester.controller().readVersionStatus().version(version0).confidence());
@@ -609,12 +604,11 @@ public class VersionStatusTest {
     public void testStatusIncludesIncompleteUpgrades() {
         var tester = new DeploymentTester().atMondayMorning();
         var version0 = Version.fromString("7.1");
-        var applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
 
         // Application deploys on initial version
         tester.controllerTester().upgradeSystem(version0);
         var context = tester.newDeploymentContext("tenant1", "default0", "default");
-        context.submit(applicationPackage).deploy();
+        context.submit(applicationPackage("default")).deploy();
 
         // System is upgraded and application starts upgrading to next version
         var version1 = Version.fromString("7.2");
@@ -686,6 +680,34 @@ public class VersionStatusTest {
                          .findFirst()
                          .map(VespaVersion::confidence)
                          .orElseThrow(() -> new IllegalArgumentException("Expected to find version: " + version));
+    }
+
+    private static final ApplicationPackage canaryApplicationPackage =
+            new ApplicationPackageBuilder().upgradePolicy("canary")
+                                           .region("us-west-1")
+                                           .region("us-east-3")
+                                           .build();
+
+    private static final ApplicationPackage defaultApplicationPackage =
+            new ApplicationPackageBuilder().upgradePolicy("default")
+                                           .region("us-west-1")
+                                           .region("us-east-3")
+                                           .build();
+
+    private static final ApplicationPackage conservativeApplicationPackage =
+            new ApplicationPackageBuilder().upgradePolicy("conservative")
+                                           .region("us-west-1")
+                                           .region("us-east-3")
+                                           .build();
+
+    /** Returns empty prebuilt applications for efficiency */
+    private ApplicationPackage applicationPackage(String upgradePolicy) {
+        switch (upgradePolicy) {
+            case "canary" : return canaryApplicationPackage;
+            case "default" : return defaultApplicationPackage;
+            case "conservative" : return conservativeApplicationPackage;
+            default : throw new IllegalArgumentException("No upgrade policy '" + upgradePolicy + "'");
+        }
     }
 
 }
