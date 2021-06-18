@@ -516,6 +516,8 @@ public class Nodes {
     public void forget(Node node) {
         if (node.state() != Node.State.deprovisioned)
             throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
+        if (node.status().wantToRebuild())
+            throw new IllegalArgumentException(node + " is rebuilding and cannot be forgotten");
         NestedTransaction transaction = new NestedTransaction();
         db.removeNodes(List.of(node), transaction);
         transaction.commit();
