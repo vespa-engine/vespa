@@ -126,9 +126,8 @@ public class LoadTester {
         long stop = System.currentTimeMillis();
         float durSec = (float) (stop - start) / 1000f;
         StringBuilder sb = new StringBuilder();
-        sb.append("#reqs/sec #bytes/sec #avglatency #minlatency #maxlatency #failedrequests\n");
+        sb.append("#reqs/sec #avglatency #minlatency #maxlatency #failedrequests\n");
         sb.append(((float) (iterations * threads)) / durSec).append(",");
-        sb.append((metrics.totBytes / durSec)).append(",");
         sb.append((metrics.totLatency / threads / iterations)).append(",");
         sb.append((metrics.minLatency)).append(",");
         sb.append((metrics.maxLatency)).append(",");
@@ -155,22 +154,19 @@ public class LoadTester {
 
     private static class Metrics {
 
-        long totBytes = 0;
         long totLatency = 0;
         long failedRequests = 0;
         long maxLatency = Long.MIN_VALUE;
         long minLatency = Long.MAX_VALUE;
 
         public void merge(Metrics m) {
-            this.totBytes += m.totBytes;
             this.totLatency += m.totLatency;
             this.failedRequests += m.failedRequests;
             updateMin(m.minLatency);
             updateMax(m.maxLatency);
         }
 
-        public void update(long bytes, long latency) {
-            this.totBytes += bytes;
+        public void update(long latency) {
             this.totLatency += latency;
             updateMin(latency);
             updateMax(latency);
@@ -226,14 +222,7 @@ public class LoadTester {
                     target = handleError(request, spec, target);
                 } else {
                     long duration = end - start;
-
-                    if (debug) {
-                        String payload = request.getNewPayload().toString();
-                        metrics.update(payload.length(), duration); // assume 8 bit...
-                        System.out.println("# Ret: " + payload);
-                    } else {
-                        metrics.update(0, duration);
-                    }
+                    metrics.update(duration);
                 }
             }
         }
