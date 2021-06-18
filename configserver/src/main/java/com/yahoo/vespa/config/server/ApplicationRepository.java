@@ -1087,9 +1087,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
         ReindexActions reindexActions = actions.getReindexActions();
         if ( ! reindexActions.isEmpty()) {
-            logger.logApplicationPackage(Level.WARNING,
-                                         "Change(s) between active and new application that may require re-index:\n" +
-                                         reindexActions.format());
+            logger.log(Level.WARNING,
+                       "Change(s) between active and new application that may require re-index:\n" +
+                       reindexActions.format());
         }
     }
 

@@ -70,7 +70,9 @@ public class ClusterDeploymentMetricsRetrieverTest {
                 new DeploymentMetricsAggregator()
                         .addDocumentCount(6000.0)
                         .addMemoryUsage(0.89074, 0.8)
-                        .addDiskUsage(0.83517, 0.75),
+                        .addDiskUsage(0.83517, 0.75)
+                        .addReindexingProgress("test_artifacts", 0.71)
+                        .addReindexingProgress("announcements", 0),
                 aggregatorMap.get(expectedContentCluster)
         );
 
@@ -113,6 +115,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
         compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.util(), b.util()));
         compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
+        assertEquals(expected.reindexingProgress(), actual.reindexingProgress());
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

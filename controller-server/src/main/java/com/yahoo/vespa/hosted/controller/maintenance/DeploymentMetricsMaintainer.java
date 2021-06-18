@@ -69,7 +69,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                                                                lockedInstance -> lockedInstance.with(existingDeployment.zone(), newMetrics)
                                                                                                .recordActivityAt(now, existingDeployment.zone())));
 
-                                controller().notificationsDb().setDeploymentFeedingBlockedNotifications(deploymentId, clusterMetrics);
+                                controller().notificationsDb().setDeploymentMetricsNotifications(deploymentId, clusterMetrics);
                             });
                         } catch (Exception e) {
                             failures.incrementAndGet();

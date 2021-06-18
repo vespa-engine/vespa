@@ -93,6 +93,7 @@ public class NotificationsSerializer {
             case applicationPackage: return "applicationPackage";
             case deployment: return "deployment";
             case feedBlock: return "feedBlock";
+            case reindex: return "reindex";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
@@ -102,12 +103,14 @@ public class NotificationsSerializer {
             case "applicationPackage": return Notification.Type.applicationPackage;
             case "deployment": return Notification.Type.deployment;
             case "feedBlock": return Notification.Type.feedBlock;
+            case "reindex": return Notification.Type.reindex;
             default: throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
         }
     }
 
     private static String asString(Notification.Level level) {
         switch (level) {
+            case info: return "info";
             case warning: return "warning";
             case error: return "error";
             default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
@@ -116,6 +119,7 @@ public class NotificationsSerializer {
 
     private static Notification.Level levelFrom(Inspector field) {
         switch (field.asString()) {
+            case "info": return Notification.Level.info;
             case "warning": return Notification.Level.warning;
             case "error": return Notification.Level.error;
             default: throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");

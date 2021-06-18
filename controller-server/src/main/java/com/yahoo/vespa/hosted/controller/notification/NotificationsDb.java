@@ -124,31 +124,22 @@ public class NotificationsDb {
     }
 
     /**
-     * Updates feeding blocked notifications for the given deployment based on current cluster metrics.
-     * Will clear notifications of any cluster not reporting the metrics or whose metrics indicate feed is not blocked,
-     * while setting notifications for cluster that are (Level.error) or are nearly (Level.warning) feed blocked.
+     * Updates notifications based on deployment metrics (e.g. feed blocked and reindexing progress) for the given
+     * deployment based on current cluster metrics.
+     * Will clear notifications of any cluster not reporting the metrics or whose metrics indicate feed is not blocked
+     * or reindexing no longer in progress. Will set notification for clusters:
+     *  - that are (Level.error) or are nearly (Level.warning) feed blocked,
+     *  - that are (Level.info) currently reindexing at least 1 document type.
      */
-    public void setDeploymentFeedingBlockedNotifications(DeploymentId deploymentId, List<ClusterMetrics> clusterMetrics) {
+    public void setDeploymentMetricsNotifications(DeploymentId deploymentId, List<ClusterMetrics> clusterMetrics) {
         Instant now = clock.instant();
-        List<Notification> feedBlockNotifications = clusterMetrics.stream()
+        List<Notification> newNotifications = clusterMetrics.stream()
                 .flatMap(metric -> {
-                    Optional<Pair<Level, String>> memoryStatus =
-                            resourceUtilToFeedBlockStatus("memory", metric.memoryUtil(), metric.memoryFeedBlockLimit());
-                    Optional<Pair<Level, String>> diskStatus =
-                            resourceUtilToFeedBlockStatus("disk", metric.diskUtil(), metric.diskFeedBlockLimit());
-                    if (memoryStatus.isEmpty() && diskStatus.isEmpty()) return Stream.empty();
-
-                    // Find the max among levels
-                    Level level = Stream.of(memoryStatus, diskStatus)
-                            .flatMap(status -> status.stream().map(Pair::getFirst))
-                            .max(Comparator.comparing(Enum::ordinal)).get();
-                    List<String> messages = Stream.concat(memoryStatus.stream(), diskStatus.stream())
-                            .filter(status -> status.getFirst() == level) // Do not mix message from different levels
-                            .map(Pair::getSecond)
-                            .collect(Collectors.toUnmodifiableList());
                     NotificationSource source = NotificationSource.from(deploymentId, ClusterSpec.Id.from(metric.getClusterId()));
-                    return Stream.of(new Notification(now, Type.feedBlock, level, source, messages));
+                    return Stream.of(createFeedBlockNotification(source, now, metric),
+                                     createReindexNotification(source, now, metric));
                 })
+                .flatMap(Optional::stream)
                 .collect(Collectors.toUnmodifiableList());
 
         NotificationSource deploymentSource = NotificationSource.from(deploymentId);
@@ -157,15 +148,43 @@ public class NotificationsDb {
             List<Notification> updated = Stream.concat(
                     initial.stream()
                             .filter(notification ->
-                                    // Filter out old feed block notifications for this deployment
-                                    notification.type() != Type.feedBlock || !deploymentSource.contains(notification.source())),
+                                    // Filter out old feed block notifications and reindex for this deployment
+                                    (notification.type() != Type.feedBlock && notification.type() != Type.reindex) ||
+                                            !deploymentSource.contains(notification.source())),
                     // ... and add the new notifications for this deployment
-                    feedBlockNotifications.stream())
+                    newNotifications.stream())
                     .collect(Collectors.toUnmodifiableList());
 
             if (!initial.equals(updated))
                 curatorDb.writeNotifications(deploymentSource.tenant(), updated);
         }
+    }
+
+    private static Optional<Notification> createFeedBlockNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
+        Optional<Pair<Level, String>> memoryStatus =
+                resourceUtilToFeedBlockStatus("memory", metric.memoryUtil(), metric.memoryFeedBlockLimit());
+        Optional<Pair<Level, String>> diskStatus =
+                resourceUtilToFeedBlockStatus("disk", metric.diskUtil(), metric.diskFeedBlockLimit());
+        if (memoryStatus.isEmpty() && diskStatus.isEmpty()) return Optional.empty();
+
+        // Find the max among levels
+        Level level = Stream.of(memoryStatus, diskStatus)
+                .flatMap(status -> status.stream().map(Pair::getFirst))
+                .max(Comparator.comparing(Enum::ordinal)).get();
+        List<String> messages = Stream.concat(memoryStatus.stream(), diskStatus.stream())
+                .filter(status -> status.getFirst() == level) // Do not mix message from different levels
+                .map(Pair::getSecond)
+                .collect(Collectors.toUnmodifiableList());
+        return Optional.of(new Notification(at, Type.feedBlock, level, source, messages));
+    }
+
+    private static Optional<Notification> createReindexNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
+        if (metric.reindexingProgress().isEmpty()) return Optional.empty();
+        List<String> messages = metric.reindexingProgress().entrySet().stream()
+                .map(entry -> String.format("document type '%s' (%.1f%% done)", entry.getKey(), 100 * entry.getValue()))
+                .sorted()
+                .collect(Collectors.toUnmodifiableList());
+        return Optional.of(new Notification(at, Type.reindex, Level.info, source, messages));
     }
 
     /**

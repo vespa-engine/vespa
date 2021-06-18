@@ -525,12 +525,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             case applicationPackage: return "applicationPackage";
             case deployment: return "deployment";
             case feedBlock: return "feedBlock";
+            case reindex: return "reindex";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
 
     private static String notificationLevelAsString(Notification.Level level) {
         switch (level) {
+            case info: return "info";
             case warning: return "warning";
             case error: return "error";
             default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
