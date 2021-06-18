@@ -5,8 +5,10 @@ import ai.vespa.feed.client.FeedClient.CircuitBreaker;
 import ai.vespa.feed.client.FeedClient.RetryStrategy;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -137,10 +139,12 @@ class HttpRequestStrategy implements RequestStrategy {
         breaker.failure();
         log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
 
-        if ( ! (thrown instanceof IOException))
-            return false;
+        if (   (thrown instanceof IOException)               // General IO problems.
+            || (thrown instanceof CancellationException)     // TLS session disconnect.
+            || (thrown instanceof CancelledKeyException))    // Selection cancelled.
+            return retry(request, attempt);
 
-        return retry(request, attempt);
+        return false;
     }
 
     private void incrementTargetInflight() {
