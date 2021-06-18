@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipI
 import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -87,6 +89,10 @@ public interface ServiceRegistry {
     SystemMonitor systemMonitor();
 
     BillingController billingController();
+
+    ResourceDatabaseClient resourceDatabase();
+
+    BillingDatabaseClient billingDatabase();
 
     ContainerRegistry containerRegistry();
 
