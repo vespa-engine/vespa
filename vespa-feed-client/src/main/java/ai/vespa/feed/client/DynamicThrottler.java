@@ -23,7 +23,7 @@ public class DynamicThrottler extends StaticThrottler {
     private final AtomicLong targetInflight;
     private long updateNanos = 0;
     private final List<AtomicReference<Double>> latencies = new ArrayList<>();
-    private final double weight = 0.5; // Higher weight favours higher (exclusive) throughput, at the cost of (shared) latency.
+    private final double weight = 0.7; // Higher weight favours higher (own) throughput, at the cost of (shared) latency.
 
     public DynamicThrottler(FeedClientBuilder builder) {
         super(builder);
