@@ -79,7 +79,7 @@ public class LoadTester {
         configs = readConfigs(configsList);
         defs = readDefs(defPath);
         List<LoadThread> threadList = new ArrayList<>();
-        long start = System.currentTimeMillis();
+        long startInNanos = System.nanoTime();
         Metrics m = new Metrics();
 
         for (int i = 0; i < threads; i++) {
@@ -92,7 +92,7 @@ public class LoadTester {
             lt.join();
             m.merge(lt.metrics);
         }
-        printOutput(start, threads, iterations, m);
+        printOutput(startInNanos, threads, iterations, m);
     }
 
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> readDefs(String defPath) throws IOException {
@@ -122,14 +122,12 @@ public class LoadTester {
         return ret;
     }
 
-    private void printOutput(long start, long threads, long iterations, Metrics metrics) {
-        long stop = System.currentTimeMillis();
-        float durSec = (float) (stop - start) / 1000f;
+    private void printOutput(long startInNanos, long threads, long iterations, Metrics metrics) {
+        float durSec = (float) (System.nanoTime() - startInNanos) / 1_000_000_000f;
         StringBuilder sb = new StringBuilder();
-        sb.append("#reqs/sec #bytes/sec #avglatency #minlatency #maxlatency #failedrequests\n");
+        sb.append("#reqs/sec #avglatency #minlatency #maxlatency #failedrequests\n");
         sb.append(((float) (iterations * threads)) / durSec).append(",");
-        sb.append((metrics.totBytes / durSec)).append(",");
-        sb.append((metrics.totLatency / threads / iterations)).append(",");
+        sb.append((metrics.latencyInMillis / threads / iterations)).append(",");
         sb.append((metrics.minLatency)).append(",");
         sb.append((metrics.maxLatency)).append(",");
         sb.append((metrics.failedRequests));
@@ -155,23 +153,20 @@ public class LoadTester {
 
     private static class Metrics {
 
-        long totBytes = 0;
-        long totLatency = 0;
+        long latencyInMillis = 0;
         long failedRequests = 0;
         long maxLatency = Long.MIN_VALUE;
         long minLatency = Long.MAX_VALUE;
 
         public void merge(Metrics m) {
-            this.totBytes += m.totBytes;
-            this.totLatency += m.totLatency;
+            this.latencyInMillis += m.latencyInMillis;
             this.failedRequests += m.failedRequests;
             updateMin(m.minLatency);
             updateMax(m.maxLatency);
         }
 
-        public void update(long bytes, long latency) {
-            this.totBytes += bytes;
-            this.totLatency += latency;
+        public void update(long latency) {
+            this.latencyInMillis += latency;
             updateMin(latency);
             updateMax(latency);
         }
@@ -219,21 +214,13 @@ public class LoadTester {
                 ConfigKey<?> configKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
                 JRTClientConfigRequest request = createRequest(configKey, defContent.second);
                 if (debug) System.out.println("# Requesting: " + reqKey);
-                long start = System.currentTimeMillis();
+                long start = System.nanoTime();
                 target.invokeSync(request.getRequest(), 10.0);
-                long end = System.currentTimeMillis();
+                long durationInMillis = (System.nanoTime() - start) / 1_000_000;
                 if (request.isError()) {
                     target = handleError(request, spec, target);
                 } else {
-                    long duration = end - start;
-
-                    if (debug) {
-                        String payload = request.getNewPayload().toString();
-                        metrics.update(payload.length(), duration); // assume 8 bit...
-                        System.out.println("# Ret: " + payload);
-                    } else {
-                        metrics.update(0, duration);
-                    }
+                    metrics.update(durationInMillis);
                 }
             }
         }
