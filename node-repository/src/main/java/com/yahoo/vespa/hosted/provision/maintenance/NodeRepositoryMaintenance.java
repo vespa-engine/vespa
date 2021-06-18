@@ -127,7 +127,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             failedExpirerInterval = Duration.ofMinutes(10);
             failGrace = Duration.ofMinutes(30);
-            infrastructureProvisionInterval = Duration.ofMinutes(1);
+            infrastructureProvisionInterval = Duration.ofMinutes(3);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
             nodeFailerInterval = Duration.ofMinutes(15);
