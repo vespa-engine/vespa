@@ -445,6 +445,11 @@ public class ApplicationController {
         // Validate new deployment spec thoroughly before storing it.
         controller.jobController().deploymentStatus(application.get());
 
+        // Clear notifications for instances that are no longer declared
+        for (var name : existingInstances)
+            if ( ! declaredInstances.contains(name))
+                controller.notificationsDb().removeNotifications(NotificationSource.from(application.get().id().instance(name)));
+
         store(application);
         return application;
     }
