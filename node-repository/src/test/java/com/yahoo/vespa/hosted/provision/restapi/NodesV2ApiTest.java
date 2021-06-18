@@ -243,6 +243,13 @@ public class NodesV2ApiTest {
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
         // ... and then forget it completely
+        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                          new byte[0], Request.Method.DELETE),
+                              400,
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"deprovisioned host dockerhost1.yahoo.com is rebuilding and cannot be forgotten\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantToRebuild\": false}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Permanently removed dockerhost1.yahoo.com\"}");
