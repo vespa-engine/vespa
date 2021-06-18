@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -19,8 +21,9 @@ import java.util.stream.Collectors;
  * @author ogronnesby
  */
 public class CloudTrialExpirer extends ControllerMaintainer {
+    private static final Logger log = Logger.getLogger(CloudTrialExpirer.class.getName());
 
-    private static Duration loginExpiry = Duration.ofDays(14);
+    private static final Duration loginExpiry = Duration.ofDays(14);
     private final ListFlag<String> extendedTrialTenants;
 
     public CloudTrialExpirer(Controller controller, Duration interval) {
@@ -38,6 +41,12 @@ public class CloudTrialExpirer extends ControllerMaintainer {
                 .filter(this::tenantHasNoDeployments)        // no running deployments active
                 .collect(Collectors.toList());
 
+        var expiredTenantNames = expiredTenants.stream()
+                .map(Tenant::name)
+                .map(TenantName::value)
+                .collect(Collectors.toList());
+
+        log.info("Moving expired tenants to 'none' plan: " + String.join(", ", expiredTenantNames));
         expireTenants(expiredTenants);
 
         return 0;
