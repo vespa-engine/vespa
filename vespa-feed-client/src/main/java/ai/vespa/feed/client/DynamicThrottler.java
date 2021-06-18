@@ -18,7 +18,7 @@ import static java.lang.Math.random;
  *
  * @author jonmv
  */
-class DynamicThrottler extends StaticThrottler {
+public class DynamicThrottler extends StaticThrottler {
 
     private final AtomicLong targetInflight;
     private long updateNanos = 0;
