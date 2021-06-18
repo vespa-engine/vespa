@@ -127,7 +127,7 @@ public class LoadTester {
         StringBuilder sb = new StringBuilder();
         sb.append("#reqs/sec #avglatency #minlatency #maxlatency #failedrequests\n");
         sb.append(((float) (iterations * threads)) / durSec).append(",");
-        sb.append((metrics.totLatency / threads / iterations)).append(",");
+        sb.append((metrics.latencyInMillis / threads / iterations)).append(",");
         sb.append((metrics.minLatency)).append(",");
         sb.append((metrics.maxLatency)).append(",");
         sb.append((metrics.failedRequests));
@@ -153,20 +153,20 @@ public class LoadTester {
 
     private static class Metrics {
 
-        long totLatency = 0;
+        long latencyInMillis = 0;
         long failedRequests = 0;
         long maxLatency = Long.MIN_VALUE;
         long minLatency = Long.MAX_VALUE;
 
         public void merge(Metrics m) {
-            this.totLatency += m.totLatency;
+            this.latencyInMillis += m.latencyInMillis;
             this.failedRequests += m.failedRequests;
             updateMin(m.minLatency);
             updateMax(m.maxLatency);
         }
 
         public void update(long latency) {
-            this.totLatency += latency;
+            this.latencyInMillis += latency;
             updateMin(latency);
             updateMax(latency);
         }
