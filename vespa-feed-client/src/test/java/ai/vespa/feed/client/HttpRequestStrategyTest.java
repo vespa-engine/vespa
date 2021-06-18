@@ -84,7 +84,7 @@ class HttpRequestStrategyTest {
         HttpRequest request = new HttpRequest("POST", "/", null, null);
 
         // Runtime exception is not retried.
-        cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
+        cluster.expect((__, vessel) -> vessel.completeExceptionally(new FeedException("boom")));
         ExecutionException expected = assertThrows(ExecutionException.class,
                                                    () -> strategy.enqueue(id1, request).get());
         assertEquals("boom", expected.getCause().getMessage());
@@ -94,7 +94,7 @@ class HttpRequestStrategyTest {
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new IOException("retry me")));
         expected = assertThrows(ExecutionException.class,
                                 () -> strategy.enqueue(id1, request).get());
-        assertEquals("retry me", expected.getCause().getMessage());
+        assertEquals("retry me", expected.getCause().getCause().getMessage());
         assertEquals(3, strategy.stats().requests());
 
         // Successful response is returned

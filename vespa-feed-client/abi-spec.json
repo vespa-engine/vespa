@@ -102,6 +102,22 @@
     ],
     "fields": []
   },
+  "ai.vespa.feed.client.FeedClient$Throttler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void sent(long, java.util.concurrent.CompletableFuture)",
+      "public abstract void success()",
+      "public abstract void throttled(long)",
+      "public abstract long targetInflight()"
+    ],
+    "fields": []
+  },
   "ai.vespa.feed.client.FeedClient": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -331,5 +347,25 @@
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)"
     ],
     "fields": []
+  },
+  "ai.vespa.feed.client.StaticThrottler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "ai.vespa.feed.client.FeedClient$Throttler"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.feed.client.FeedClientBuilder)",
+      "public void sent(long, java.util.concurrent.CompletableFuture)",
+      "public void success()",
+      "public void throttled(long)",
+      "public long targetInflight()"
+    ],
+    "fields": [
+      "protected final long maxInflight",
+      "protected final long minInflight"
+    ]
   }
 }
