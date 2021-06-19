@@ -7,7 +7,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,6 +14,8 @@ import static org.junit.Assert.assertEquals;
  * @author freva
  */
 public class MaintainerTest {
+
+    private static final double delta = 0.000001;
 
     private final JobControl jobControl = new JobControl(new JobControlStateMock());
 
@@ -45,40 +46,34 @@ public class MaintainerTest {
         TestJobMetrics jobMetrics = new TestJobMetrics();
         TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics);
 
-        // Maintainer fails twice in a row
-        maintainer.successOnNextRun(false).run();
-        assertEquals(1, jobMetrics.consecutiveFailures.get());
-        maintainer.successOnNextRun(false).run();
-        assertEquals(2, jobMetrics.consecutiveFailures.get());
-
-        // Maintainer runs successfully
-        maintainer.successOnNextRun(true).run();
-        assertEquals(0, jobMetrics.consecutiveFailures.get());
-
-        // Maintainer runs successfully again
-        maintainer.run();
-        assertEquals(0, jobMetrics.consecutiveFailures.get());
+        maintainer.successOnNextRun(1.0).run();
+        assertEquals(1, jobMetrics.successFactor, delta);
+        maintainer.successOnNextRun(0.0).run();
+        assertEquals(0, jobMetrics.successFactor, delta);
+        maintainer.successOnNextRun(0.1).run();
+        assertEquals(0.1, jobMetrics.successFactor, delta);
 
         // Maintainer throws
         maintainer.throwOnNextRun(new RuntimeException()).run();
-        assertEquals(1, jobMetrics.consecutiveFailures.get());
+        assertEquals(0, jobMetrics.successFactor, delta);
 
         // Maintainer recovers
         maintainer.throwOnNextRun(null).run();
-        assertEquals(0, jobMetrics.consecutiveFailures.get());
+        maintainer.successOnNextRun(1.0).run();
+        assertEquals(1, jobMetrics.successFactor, delta);
 
         // Lock exception is treated as a failure
         maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
-        assertEquals(1, jobMetrics.consecutiveFailures.get());
+        assertEquals(0, jobMetrics.successFactor, delta);
     }
 
     private static class TestJobMetrics extends JobMetrics {
 
-        AtomicLong consecutiveFailures = new AtomicLong();
+        double successFactor = 0.0;
 
         @Override
-        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) {
-            consecutiveFailures.set(incompleteRuns);
+        public void completed(String job, double successFactor) {
+            this.successFactor = successFactor;
         }
 
     }

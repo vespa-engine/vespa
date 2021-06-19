@@ -84,7 +84,7 @@ public class JobControlTest {
     private static class NoopJobMetrics extends JobMetrics {
 
         @Override
-        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) { }
+        public void completed(String job, double successFactor) { }
 
     }
 

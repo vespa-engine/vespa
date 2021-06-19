@@ -56,8 +56,7 @@ public abstract class ControllerMaintainer extends Maintainer {
         }
 
         @Override
-        protected void recordCompletion(String job, Long incompleteRuns, double successFactor) {
-            metric.set("maintenance.consecutiveFailures", incompleteRuns, metric.createContext(Map.of("job", job)));
+        public void completed(String job, double successFactor) {
             metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
         }
 
