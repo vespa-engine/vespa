@@ -11,7 +11,7 @@ import java.util.List;
 class TestMaintainer extends Maintainer {
 
     private int totalRuns = 0;
-    private boolean success = true;
+    private double success = 1.0;
     private RuntimeException exceptionToThrow = null;
 
     public TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
@@ -22,7 +22,7 @@ class TestMaintainer extends Maintainer {
         return totalRuns;
     }
 
-    public TestMaintainer successOnNextRun(boolean success) {
+    public TestMaintainer successOnNextRun(double success) {
         this.success = success;
         return this;
     }
@@ -36,7 +36,7 @@ class TestMaintainer extends Maintainer {
     protected double maintain() {
         if (exceptionToThrow != null) throw exceptionToThrow;
         totalRuns++;
-        return success ? 1.0 : 0.0;
+        return success;
     }
 
 }
