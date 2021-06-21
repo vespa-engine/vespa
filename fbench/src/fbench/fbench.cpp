@@ -1,8 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-#include "fbench.h"
-#include "client.h"
-
 #include <util/timer.h>
 #include <httpclient/httpclient.h>
 #include <util/filereader.h>
@@ -13,6 +9,8 @@
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include "client.h"
+#include "fbench.h"
 #include <cstring>
 #include <cmath>
 #include <csignal>
@@ -21,8 +19,7 @@
 
 namespace {
 
-std::string
-maybe_load(const std::string &file_name, bool &failed) {
+std::string maybe_load(const std::string &file_name, bool &failed) {
     std::string content;
     if (!file_name.empty()) {
         vespalib::MappedFileInput file(file_name);
@@ -45,8 +42,8 @@ FBench::FBench()
       _clients(),
       _ignoreCount(0),
       _cycle(0),
-      _filenamePattern(),
-      _outputPattern(),
+      _filenamePattern(NULL),
+      _outputPattern(NULL),
       _byteLimit(0),
       _restartLimit(0),
       _maxLineSize(0),
@@ -61,6 +58,8 @@ FBench::FBench()
 FBench::~FBench()
 {
     _clients.clear();
+    free(_filenamePattern);
+    free(_outputPattern);
 }
 
 bool
@@ -122,13 +121,11 @@ FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
     _ignoreCount     = ignoreCount;
     _cycle           = cycle;
 
-    _filenamePattern = filenamePattern;
-    if (outputPattern != nullptr) {
-        _outputPattern = outputPattern;
-    } else {
-        _outputPattern.clear();
-    }
-
+    free(_filenamePattern);
+    _filenamePattern = strdup(filenamePattern);
+    free(_outputPattern);
+    _outputPattern   = (outputPattern == NULL) ?
+                       NULL : strdup(outputPattern);
     _queryStringToAppend = queryStringToAppend;
     _extraHeaders    = extraHeaders;
     _authority       = authority;
@@ -157,12 +154,15 @@ FBench::CreateClients()
             off_end = _queryfileOffset[i+1];
         }
         client = std::make_unique<Client>(_crypto_engine,
-            std::make_unique<ClientArguments>(i, _filenamePattern, _outputPattern,
-                                              _hostnames[i % _hostnames.size()].c_str(),
-                                              _ports[i % _ports.size()], _cycle,random() % spread,
-                                              _ignoreCount, _byteLimit, _restartLimit, _maxLineSize, _keepAlive,
-                                              _base64Decode, _headerBenchmarkdataCoverage, off_beg, off_end,
-                                              _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority, _usePostMode));
+            new ClientArguments(i, _clients.size(), _filenamePattern,
+                                _outputPattern, _hostnames[i % _hostnames.size()].c_str(),
+                                _ports[i % _ports.size()], _cycle,
+                                random() % spread, _ignoreCount,
+                                _byteLimit, _restartLimit, _maxLineSize,
+                                _keepAlive, _base64Decode,
+                                _headerBenchmarkdataCoverage,
+                                off_beg, off_end,
+                                _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority, _usePostMode));
         ++i;
     }
 }
@@ -278,8 +278,6 @@ FBench::PrintSummary()
     printf("utilization:            %8.2f %%\n",
            (maxRate > 0) ? 100 * (actualRate / maxRate) : 0);
     printf("zero hit queries:       %8ld\n", status._zeroHitQueries);
-    printf("zero hit percentage:    %8.2f %%\n",
-           (status._requestCnt > 0) ? 100.0*(double(status._zeroHitQueries)/status._requestCnt) : 0.0);
     printf("http request status breakdown:\n");
     for (const auto& entry : status._requestStatusDistribution)
         printf("  %8u : %8u \n", entry.first, entry.second);
@@ -347,7 +345,7 @@ FBench::Main(int argc, char *argv[])
     const int minLineSize = 1024;
 
     const char *queryFilePattern  = "query%03d.txt";
-    const char *outputFilePattern = nullptr;
+    const char *outputFilePattern = NULL;
     std::string queryStringToAppend;
     std::string extraHeaders;
     std::string ca_certs_file_name; // -T
@@ -601,8 +599,8 @@ main(int argc, char** argv)
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
 
-    sigaction(SIGINT, &act, nullptr);
-    sigaction(SIGPIPE, &act, nullptr);
+    sigaction(SIGINT, &act, NULL);
+    sigaction(SIGPIPE, &act, NULL);
 
     FBench myApp;
     return myApp.Main(argc, argv);
