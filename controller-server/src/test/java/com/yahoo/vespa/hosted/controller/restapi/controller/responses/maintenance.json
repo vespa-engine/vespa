@@ -79,6 +79,9 @@
       "name": "ResourceTagMaintainer"
     },
     {
+      "name":"RetriggerMaintainer"
+    },
+    {
       "name": "SystemRoutingPolicyMaintainer"
     },
     {
