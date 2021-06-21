@@ -233,14 +233,14 @@ public class LoadTester {
             int numberOfConfigs = configs.size();
             for (int i = 0; i < iterations; i++) {
                 ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(numberOfConfigs));
-                ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
-                Tuple2<String, String[]> defContent = defs.get(dKey);
-                ConfigKey<?> configKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
-                JRTClientConfigRequest request = createRequest(configKey, defContent.second);
-                if (debug) System.out.println("# Requesting: " + reqKey);
+                JRTClientConfigRequest request = createRequest(reqKey);
+                if (debug)
+                    System.out.println("# Requesting: " + reqKey);
+
                 long start = System.nanoTime();
                 target.invokeSync(request.getRequest(), 10.0);
                 long durationInMillis = (System.nanoTime() - start) / 1_000_000;
+
                 if (request.isError()) {
                     target = handleError(request, spec, target);
                 } else {
@@ -249,11 +249,15 @@ public class LoadTester {
             }
         }
 
-        private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey, String[] defContent) {
-            if (defContent == null) defContent = new String[0];
+        private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey) {
+            ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
+            Tuple2<String, String[]> defContent = defs.get(dKey);
+            ConfigKey<?> fullKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
+
             final long serverTimeout = 1000;
-            return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
-                                                             ConfigUtils.getCanonicalHostName(), "", 0, serverTimeout, Trace.createDummy(),
+            return JRTClientConfigRequestV3.createWithParams(fullKey, DefContent.fromList(List.of(defContent.second)),
+                                                             ConfigUtils.getCanonicalHostName(), "",
+                                                             0, serverTimeout, Trace.createDummy(),
                                                              compressionType, Optional.empty());
         }
 
