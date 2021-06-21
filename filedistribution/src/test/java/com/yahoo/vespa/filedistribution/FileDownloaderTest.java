@@ -237,17 +237,17 @@ public class FileDownloaderTest {
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
         FileDownloader fileDownloader = new FileDownloader(connectionPool, downloadDir, downloads, timeout, sleepBetweenRetries);
-        FileReference foo = new FileReference("foo");
+        FileReference xyzzy = new FileReference("xyzzy");
         // Should download since we do not have the file on disk
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
-        assertTrue(fileDownloader.isDownloading(foo));
-        assertFalse(fileDownloader.getFile(foo).isPresent());
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
+        assertTrue(fileDownloader.isDownloading(xyzzy));
+        assertFalse(fileDownloader.getFile(xyzzy).isPresent());
         // Receive files to simulate download
-        receiveFile();
+        receiveFile(fileDownloader, xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
         // Should not download, since file has already been downloaded
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(foo));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
         // and file should be available
-        assertTrue(fileDownloader.getFile(foo).isPresent());
+        assertTrue(fileDownloader.getFile(xyzzy).isPresent());
     }
 
     @Test
