@@ -63,7 +63,7 @@ class HttpRequestStrategy implements RequestStrategy {
         this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster) : cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
-        this.throttler = new StaticThrottler(builder);
+        this.throttler = new DynamicThrottler(builder);
 
         Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);
@@ -99,7 +99,6 @@ class HttpRequestStrategy implements RequestStrategy {
         delayedCount.incrementAndGet();
         queue.offer(() -> {
             cluster.dispatch(request, vessel);
-            throttler.sent(inflight.get(), vessel);
         });
     }
 
@@ -206,6 +205,7 @@ class HttpRequestStrategy implements RequestStrategy {
         if (previous == null) {
             acquireSlot();
             offer(request, vessel);
+            throttler.sent(inflight.get(), result);
         }
         else
             previous.whenComplete((__, ___) -> offer(request, vessel));

@@ -40,8 +40,8 @@ class HttpRequestStrategyTest {
         Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS));
 
         HttpRequestStrategy strategy = new HttpRequestStrategy(FeedClientBuilder.create(URI.create("https://dummy.com:123"))
-                                                                                .setConnectionsPerEndpoint(1 << 4)
-                                                                                .setMaxStreamPerConnection(1 << 20),
+                                                                                .setConnectionsPerEndpoint(1 << 10)
+                                                                                .setMaxStreamPerConnection(1 << 12),
                                                                cluster);
         CountDownLatch latch = new CountDownLatch(1);
         new Thread(() -> {
