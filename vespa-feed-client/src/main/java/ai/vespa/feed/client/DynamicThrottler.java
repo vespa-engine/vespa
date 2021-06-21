@@ -22,14 +22,14 @@ public class DynamicThrottler extends StaticThrottler {
 
     private final AtomicLong targetInflight;
     private long updateNanos = 0;
-    private final List<AtomicReference<Double>> latencies = new ArrayList<>();
+    private final List<AtomicLong> latencies = new ArrayList<>();
     private final double weight = 0.8; // Higher weight favours higher (own) throughput, at the cost of (shared) latency.
 
     public DynamicThrottler(FeedClientBuilder builder) {
         super(builder);
         this.targetInflight = new AtomicLong(128L * builder.connectionsPerEndpoint * builder.endpoints.size());
         for (int i = 0; i < 128; i++)
-            latencies.add(new AtomicReference<>(-1.0));
+            latencies.add(new AtomicLong(-1));
     }
 
     @Override
@@ -46,9 +46,7 @@ public class DynamicThrottler extends StaticThrottler {
                                                 / log(256)); // 4096 (server max streams per connection) / 16 (our min per connection)
             long nowNanos = System.nanoTime();
             long latencyNanos = nowNanos - startNanos;
-            double w1 = 1e-2; // Update values with some of the new measurement, some of the old.
-            double w2 = response != null && response.code() / 100 == 2 ? 1 - w1 : 1; // Punish non-successes.
-            latencies.get(index).updateAndGet(latency -> latency < 0 ? latencyNanos : latencyNanos * w1 + latency * w2);
+            latencies.get(index).set(latencyNanos);
             if ( ! update)
                 return;
 

@@ -37,6 +37,21 @@
     ],
     "fields": []
   },
+  "ai.vespa.feed.client.DynamicThrottler": {
+    "superClass": "ai.vespa.feed.client.StaticThrottler",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.feed.client.FeedClientBuilder)",
+      "public void sent(long, java.util.concurrent.CompletableFuture)",
+      "public void success()",
+      "public void throttled(long)",
+      "public long targetInflight()"
+    ],
+    "fields": []
+  },
   "ai.vespa.feed.client.FeedClient$CircuitBreaker$State": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
