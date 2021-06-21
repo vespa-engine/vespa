@@ -42,7 +42,6 @@ public class OsVersionTargetSerializer {
         Set<OsVersionTarget> osVersionTargets = new TreeSet<>();
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
-            // TODO(mpolden): Require this field after 2021-05-01
             Duration upgradeBudget = Duration.ofMillis(inspector.field(upgradeBudgetField).asLong());
             osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget));
         });
