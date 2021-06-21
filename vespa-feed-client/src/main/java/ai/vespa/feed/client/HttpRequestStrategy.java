@@ -5,8 +5,10 @@ import ai.vespa.feed.client.FeedClient.CircuitBreaker;
 import ai.vespa.feed.client.FeedClient.RetryStrategy;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -19,8 +21,6 @@ import java.util.logging.Logger;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.CLOSED;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
@@ -44,14 +44,11 @@ class HttpRequestStrategy implements RequestStrategy {
     private final Map<DocumentId, CompletableFuture<?>> inflightById = new ConcurrentHashMap<>();
     private final RetryStrategy strategy;
     private final CircuitBreaker breaker;
+    final FeedClient.Throttler throttler;
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
-    private final long maxInflight;
-    private final long minInflight;
-    private final AtomicLong targetInflightX10; // 10x target, so we can increment one every tenth success.
     private final AtomicLong inflight = new AtomicLong(0);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final AtomicLong delayedCount = new AtomicLong(0);
-    private final AtomicLong retries = new AtomicLong(0);
     private final ExecutorService resultExecutor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "feed-client-result-executor");
         thread.setDaemon(true);
@@ -66,9 +63,7 @@ class HttpRequestStrategy implements RequestStrategy {
         this.cluster = builder.benchmark ? new BenchmarkingCluster(cluster) : cluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
-        this.maxInflight = builder.connectionsPerEndpoint * (long) builder.maxStreamsPerConnection;
-        this.minInflight = builder.connectionsPerEndpoint * (long) min(16, builder.maxStreamsPerConnection);
-        this.targetInflightX10 = new AtomicLong(10 * (long) (Math.sqrt(minInflight) * Math.sqrt(maxInflight)));
+        this.throttler = new DynamicThrottler(builder);
 
         Thread dispatcher = new Thread(this::dispatch, "feed-client-dispatcher");
         dispatcher.setDaemon(true);
@@ -100,9 +95,11 @@ class HttpRequestStrategy implements RequestStrategy {
         destroy();
     }
 
-    private void offer(Runnable task) {
+    private void offer(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         delayedCount.incrementAndGet();
-        queue.offer(task);
+        queue.offer(() -> {
+            cluster.dispatch(request, vessel);
+        });
     }
 
     private boolean poll() {
@@ -113,8 +110,9 @@ class HttpRequestStrategy implements RequestStrategy {
         return true;
     }
 
+
     private boolean isInExcess() {
-        return inflight.get() - delayedCount.get() > targetInflight();
+        return inflight.get() - delayedCount.get() > throttler.targetInflight();
     }
 
     private boolean retry(HttpRequest request, int attempt) {
@@ -137,29 +135,19 @@ class HttpRequestStrategy implements RequestStrategy {
         breaker.failure();
         log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
 
-        if ( ! (thrown instanceof IOException))
-            return false;
+        if (   (thrown instanceof IOException)               // General IO problems.
+            || (thrown instanceof CancellationException)     // TLS session disconnect.
+            || (thrown instanceof CancelledKeyException))    // Selection cancelled.
+            return retry(request, attempt);
 
-        return retry(request, attempt);
-    }
-
-    private void incrementTargetInflight() {
-        targetInflightX10.incrementAndGet();
-    }
-
-    private void decreaseTargetInflight() {
-        targetInflightX10.set(max((inflight.get() - delayedCount.get()) * 9, minInflight * 10));
-    }
-
-    private long targetInflight() {
-        return min(targetInflightX10.get() / 10, maxInflight);
+        return false;
     }
 
     /** Retries throttled requests (429, 503), adjusting the target inflight count, and server errors (500, 502). */
     private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
         if (response.code() / 100 == 2) {
             breaker.success();
-            incrementTargetInflight();
+            throttler.success();
             return false;
         }
 
@@ -167,7 +155,7 @@ class HttpRequestStrategy implements RequestStrategy {
                             ") on attempt " + attempt + " at " + request);
 
         if (response.code() == 429 || response.code() == 503) { // Throttling; reduce target inflight.
-            decreaseTargetInflight();
+            throttler.throttled((inflight.get() - delayedCount.get()));
             return true;
         }
 
@@ -180,7 +168,7 @@ class HttpRequestStrategy implements RequestStrategy {
 
     private void acquireSlot() {
         try {
-            while (inflight.get() >= targetInflight())
+            while (inflight.get() >= throttler.targetInflight())
                 Thread.sleep(1);
 
             inflight.incrementAndGet();
@@ -216,27 +204,24 @@ class HttpRequestStrategy implements RequestStrategy {
 
         if (previous == null) {
             acquireSlot();
-            offer(() -> cluster.dispatch(request, vessel));
+            offer(request, vessel);
+            throttler.sent(inflight.get(), result);
         }
         else
-            previous.whenComplete((__, ___) -> offer(() -> cluster.dispatch(request, vessel)));
+            previous.whenComplete((__, ___) -> offer(request, vessel));
 
         handleAttempt(vessel, request, result, 1);
 
-        result.whenComplete((__, ___) -> {
+        return result.handle((response, error) -> {
             if (inflightById.compute(documentId, (____, current) -> current == result ? null : current) == null)
                 releaseSlot();
-        });
 
-        result.handle((response, error) -> {
             if (error != null) {
-                if (error instanceof FeedException) throw (FeedException)error;
+                if (error instanceof FeedException) throw (FeedException) error;
                 throw new FeedException(documentId, error);
             }
             return response;
         });
-
-        return result;
     }
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
@@ -245,10 +230,9 @@ class HttpRequestStrategy implements RequestStrategy {
                                      // Retry the operation if it failed with a transient error ...
                                      if (thrown != null ? retry(request, thrown, attempt)
                                                         : retry(request, response, attempt)) {
-                                         retries.incrementAndGet();
                                          CircuitBreaker.State state = breaker.state();
                                          CompletableFuture<HttpResponse> retry = new CompletableFuture<>();
-                                         offer(() -> cluster.dispatch(request, retry));
+                                         offer(request, retry);
                                          handleAttempt(retry, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
                                      }
                                      // ... or accept the outcome and mark the operation as complete.
@@ -262,11 +246,11 @@ class HttpRequestStrategy implements RequestStrategy {
 
     @Override
     public void destroy() {
-        if ( ! destroyed.getAndSet(true))
+        if ( ! destroyed.getAndSet(true)) {
             inflightById.values().forEach(result -> result.cancel(true));
-
-        cluster.close();
-        resultExecutor.shutdown();
+            cluster.close();
+            resultExecutor.shutdown();
+        }
     }
 
 }

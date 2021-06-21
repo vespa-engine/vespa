@@ -92,4 +92,22 @@ public interface FeedClient extends Closeable {
 
     }
 
+
+    /** Determines the number of requests to have inflight at any point. */
+    interface Throttler {
+
+        /** A request was just sent with {@code vessel}, with {@code inflight} total in flight. */
+        void sent(long inflight, CompletableFuture<HttpResponse> vessel);
+
+        /** A successful response was obtained. */
+        void success();
+
+        /** A throttle signal was obtained from the server. */
+        void throttled(long inflight);
+
+        /** The target inflight operations right now. */
+        long targetInflight();
+
+    }
+
 }

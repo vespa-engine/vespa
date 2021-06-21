@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,17 +37,29 @@ class HttpRequestStrategyTest {
         HttpRequest request = new HttpRequest("PUT", "/", null, null);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), 100, TimeUnit.MILLISECONDS));
+        Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS));
 
         HttpRequestStrategy strategy = new HttpRequestStrategy(FeedClientBuilder.create(URI.create("https://dummy.com:123"))
-                                                                                .setConnectionsPerEndpoint(1 << 12)
-                                                                                .setMaxStreamPerConnection(1 << 4),
+                                                                                .setConnectionsPerEndpoint(1 << 10)
+                                                                                .setMaxStreamPerConnection(1 << 12),
                                                                cluster);
+        CountDownLatch latch = new CountDownLatch(1);
+        new Thread(() -> {
+            try {
+                while ( ! latch.await(1, TimeUnit.SECONDS)) {
+                    System.err.println(cluster.stats().inflight());
+                    System.err.println(strategy.throttler.targetInflight());
+                    System.err.println();
+                }
+            }
+            catch (InterruptedException ignored) { }
+        }).start();
         long startNanos = System.nanoTime();
         for (int i = 0; i < documents; i++)
             strategy.enqueue(DocumentId.of("ns", "type", Integer.toString(i)), request);
 
         strategy.await();
+        latch.countDown();
         executor.shutdown();
         cluster.close();
         OperationStats stats = cluster.stats();
@@ -84,7 +97,7 @@ class HttpRequestStrategyTest {
         HttpRequest request = new HttpRequest("POST", "/", null, null);
 
         // Runtime exception is not retried.
-        cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
+        cluster.expect((__, vessel) -> vessel.completeExceptionally(new FeedException("boom")));
         ExecutionException expected = assertThrows(ExecutionException.class,
                                                    () -> strategy.enqueue(id1, request).get());
         assertEquals("boom", expected.getCause().getMessage());
@@ -94,7 +107,7 @@ class HttpRequestStrategyTest {
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new IOException("retry me")));
         expected = assertThrows(ExecutionException.class,
                                 () -> strategy.enqueue(id1, request).get());
-        assertEquals("retry me", expected.getCause().getMessage());
+        assertEquals("retry me", expected.getCause().getCause().getMessage());
         assertEquals(3, strategy.stats().requests());
 
         // Successful response is returned
