@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.notification;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -17,7 +16,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,38 +34,11 @@ public class NotificationsDb {
 
     public NotificationsDb(Controller controller) {
         this(controller.clock(), controller.curator());
-
-        Set<DeploymentId> allDeployments = controller.applications().asList().stream()
-                .flatMap(application -> application.instances().values().stream())
-                .flatMap(instance -> instance.deployments().keySet().stream()
-                        .map(zone -> new DeploymentId(instance.id(), zone)))
-                .collect(Collectors.toSet());
-        removeNotificationsForRemovedInstances(allDeployments);
     }
 
     NotificationsDb(Clock clock, CuratorDb curatorDb) {
         this.clock = clock;
         this.curatorDb = curatorDb;
-    }
-
-    // TODO (freva): Remove after 7.423
-    void removeNotificationsForRemovedInstances(Set<DeploymentId> allDeployments) {
-        // Prior to 7.423, notifications created for instances that were later removed by being removed from
-        // deployment.xml were not cleared. This should only affect notifications with type 'deployment'
-        allDeployments.stream()
-                .map(deploymentId -> deploymentId.applicationId().tenant())
-                .distinct()
-                .flatMap(tenant -> curatorDb.readNotifications(tenant).stream()
-                            .filter(notification -> notification.type() == Type.deployment && notification.source().zoneId().isPresent())
-                            .map(Notification::source))
-                            .filter(source -> {
-                                ApplicationId sourceApplication = ApplicationId.from(source.tenant(),
-                                                                                     source.application().get(),
-                                                                                     source.instance().get());
-                                DeploymentId sourceDeployment = new DeploymentId(sourceApplication, source.zoneId().get());
-                                return ! allDeployments.contains(sourceDeployment);
-                            })
-                            .forEach(source -> removeNotification(source, Type.deployment));
     }
 
     public List<Notification> listNotifications(NotificationSource source, boolean productionOnly) {
