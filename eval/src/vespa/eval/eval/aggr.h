@@ -10,13 +10,10 @@
 #include <algorithm>
 #include <cmath>
 
-namespace vespalib {
+namespace vespalib { class Stash; }
 
-class Stash;
+namespace vespalib::eval {
 
-namespace eval {
-
-struct BinaryOperation;
 
 /**
  * Enumeration of all different aggregators that are allowed to be
@@ -237,4 +234,3 @@ struct TypifyAggr {
 };
 
 } // namespace vespalib::eval
-} // namespace vespalib
