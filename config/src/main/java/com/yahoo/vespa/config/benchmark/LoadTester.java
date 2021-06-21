@@ -44,12 +44,29 @@ import static com.yahoo.vespa.config.ConfigKey.createFull;
  */
 public class LoadTester {
 
-    private static boolean debug = false;
     private final Transport transport = new Transport("rpc-client");
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();
     private final CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
+
+    private final String host;
+    private final int port;
+    private final int iterations;
+    private final int threads;
+    private final String configFile;
+    private final String defPath;
+    private final boolean debug;
+
+    LoadTester(String host, int port, int iterations, int threads, String configFile, String defPath, boolean debug) {
+        this.host = host;
+        this.port = port;
+        this.iterations = iterations;
+        this.threads = threads;
+        this.configFile = configFile;
+        this.defPath = defPath;
+        this.debug = debug;
+    }
 
     /**
      * @param args command-line arguments
@@ -61,28 +78,29 @@ public class LoadTester {
         parser.addRequiredBinarySwitch("-p", "port");
         parser.addRequiredBinarySwitch("-i", "iterations per thread");
         parser.addRequiredBinarySwitch("-t", "threads");
-        parser.addLegalBinarySwitch("-l", "configs file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
+        parser.addLegalBinarySwitch("-l", "config file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
         parser.addLegalBinarySwitch("-dd", "dir with def files, must be of form name.def");
         parser.parse();
         String host = parser.getBinarySwitches().get("-c");
         int port = Integer.parseInt(parser.getBinarySwitches().get("-p"));
         int iterations = Integer.parseInt(parser.getBinarySwitches().get("-i"));
         int threads = Integer.parseInt(parser.getBinarySwitches().get("-t"));
-        String configsList = parser.getBinarySwitches().get("-l");
+        String configFile = parser.getBinarySwitches().get("-l");
         String defPath = parser.getBinarySwitches().get("-dd");
-        debug = parser.getUnarySwitches().contains("-d");
-        new LoadTester().runLoad(host, port, iterations, threads, configsList, defPath);
+        boolean debug = parser.getUnarySwitches().contains("-d");
+        new LoadTester(host, port, iterations, threads, configFile, defPath, debug)
+                .runLoad();
     }
 
-    private void runLoad(String host, int port, int iterations, int threads,
-                         String configsList, String defPath) throws IOException, InterruptedException {
-        configs = readConfigs(configsList);
+    private void runLoad() throws IOException, InterruptedException {
+        configs = readConfigs(configFile);
         defs = readDefs(defPath);
         validateConfigs(configs, defs);
+
         List<LoadThread> threadList = new ArrayList<>();
-        long startInNanos = System.nanoTime();
         Metrics m = new Metrics();
 
+        long startInNanos = System.nanoTime();
         for (int i = 0; i < threads; i++) {
             LoadThread lt = new LoadThread(iterations, host, port);
             threadList.add(lt);
