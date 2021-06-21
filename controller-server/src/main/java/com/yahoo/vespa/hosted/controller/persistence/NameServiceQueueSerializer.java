@@ -6,6 +6,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -113,8 +114,8 @@ public class NameServiceQueueSerializer {
 
     private RemoveRecords removeRecordsFromSlime(Inspector object) {
         var type = Record.Type.valueOf(object.field(typeField).asString());
-        var name = Serializers.optionalString(object.field(nameField)).map(RecordName::from);
-        var data = Serializers.optionalString(object.field(dataField)).map(RecordData::from);
+        var name = SlimeUtils.optionalString(object.field(nameField)).map(RecordName::from);
+        var data = SlimeUtils.optionalString(object.field(dataField)).map(RecordData::from);
         return new RemoveRecords(type, name, data);
     }
 

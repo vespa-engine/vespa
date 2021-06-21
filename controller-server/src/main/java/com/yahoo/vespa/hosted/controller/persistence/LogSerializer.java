@@ -92,7 +92,7 @@ class LogSerializer {
 
     private LogEntry fromSlime(Inspector entryObject) {
         return new LogEntry(entryObject.field(idField).asLong(),
-                            Serializers.instant(entryObject.field(timestampField)),
+                            SlimeUtils.instant(entryObject.field(timestampField)),
                             typeOf(entryObject.field(typeField).asString()),
                             entryObject.field(messageField).asString());
     }

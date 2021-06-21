@@ -5,6 +5,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 
 import java.util.ArrayList;
@@ -51,11 +52,11 @@ public class AuditLogSerializer {
         Cursor root = slime.get();
         root.field(entriesField).traverse((ArrayTraverser) (i, entryObject) -> {
             entries.add(new AuditLog.Entry(
-                    Serializers.instant(entryObject.field(atField)),
+                    SlimeUtils.instant(entryObject.field(atField)),
                     entryObject.field(principalField).asString(),
                     methodFrom(entryObject.field(methodField)),
                     entryObject.field(resourceField).asString(),
-                    Serializers.optionalString(entryObject.field(dataField))
+                    SlimeUtils.optionalString(entryObject.field(dataField))
             ));
         });
         return new AuditLog(entries);

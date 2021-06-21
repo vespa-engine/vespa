@@ -295,18 +295,18 @@ public class ApplicationSerializer {
         Inspector root = slime.get();
 
         TenantAndApplicationId id = TenantAndApplicationId.fromSerialized(root.field(idField).asString());
-        Instant createdAt = Serializers.instant(root.field(createdAtField));
+        Instant createdAt = SlimeUtils.instant(root.field(createdAtField));
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
-        Optional<IssueId> deploymentIssueId = Serializers.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
-        Optional<IssueId> ownershipIssueId = Serializers.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
-        Optional<User> owner = Serializers.optionalString(root.field(ownerField)).map(User::from);
-        OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
+        Optional<IssueId> deploymentIssueId = SlimeUtils.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
+        Optional<IssueId> ownershipIssueId = SlimeUtils.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
+        Optional<User> owner = SlimeUtils.optionalString(root.field(ownerField)).map(User::from);
+        OptionalInt majorVersion = SlimeUtils.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
-        OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
+        OptionalLong projectId = SlimeUtils.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides,
@@ -354,18 +354,18 @@ public class ApplicationSerializer {
         return new Deployment(zoneIdFromSlime(deploymentObject.field(zoneField)),
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
-                              Serializers.instant(deploymentObject.field(deployTimeField)),
+                              SlimeUtils.instant(deploymentObject.field(deployTimeField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
-                              DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
-                                                        Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
-                                                        Serializers.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
-                                                        Serializers.optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
-                              QuotaUsage.create(Serializers.optionalDouble(deploymentObject.field(quotaUsageRateField))),
-                              Serializers.optionalDouble(deploymentObject.field(deploymentCostField)));
+                              DeploymentActivity.create(SlimeUtils.optionalInstant(deploymentObject.field(lastQueriedField)),
+                                                        SlimeUtils.optionalInstant(deploymentObject.field(lastWrittenField)),
+                                                        SlimeUtils.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
+                                                        SlimeUtils.optionalDouble(deploymentObject.field(lastWritesPerSecondField))),
+                              QuotaUsage.create(SlimeUtils.optionalDouble(deploymentObject.field(quotaUsageRateField))),
+                              SlimeUtils.optionalDouble(deploymentObject.field(deploymentCostField)));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
-        Optional<Instant> instant = Serializers.optionalInstant(object.field(deploymentMetricsUpdateTime));
+        Optional<Instant> instant = SlimeUtils.optionalInstant(object.field(deploymentMetricsUpdateTime));
         return new DeploymentMetrics(object.field(deploymentMetricsQPSField).asDouble(),
                                      object.field(deploymentMetricsWPSField).asDouble(),
                                      object.field(deploymentMetricsDocsField).asDouble(),
@@ -388,7 +388,7 @@ public class ApplicationSerializer {
         object.traverse((ArrayTraverser) (idx, statusObject) -> statusMap.put(new RotationId(statusObject.field(rotationIdField).asString()),
                                                                               new RotationStatus.Targets(
                                                                                       singleRotationStatusFromSlime(statusObject.field(statusField)),
-                                                                                      Serializers.instant(statusObject.field(lastUpdatedField)))));
+                                                                                      SlimeUtils.instant(statusObject.field(lastUpdatedField)))));
         return RotationStatus.from(statusMap);
     }
 
@@ -411,16 +411,16 @@ public class ApplicationSerializer {
 
     private ApplicationVersion applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return ApplicationVersion.unknown;
-        OptionalLong applicationBuildNumber = Serializers.optionalLong(object.field(applicationBuildNumberField));
+        OptionalLong applicationBuildNumber = SlimeUtils.optionalLong(object.field(applicationBuildNumberField));
         if (applicationBuildNumber.isEmpty())
             return ApplicationVersion.unknown;
 
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        Optional<String> authorEmail = Serializers.optionalString(object.field(authorEmailField));
-        Optional<Version> compileVersion = Serializers.optionalString(object.field(compileVersionField)).map(Version::fromString);
-        Optional<Instant> buildTime = Serializers.optionalInstant(object.field(buildTimeField));
-        Optional<String> sourceUrl = Serializers.optionalString(object.field(sourceUrlField));
-        Optional<String> commit = Serializers.optionalString(object.field(commitField));
+        Optional<String> authorEmail = SlimeUtils.optionalString(object.field(authorEmailField));
+        Optional<Version> compileVersion = SlimeUtils.optionalString(object.field(compileVersionField)).map(Version::fromString);
+        Optional<Instant> buildTime = SlimeUtils.optionalInstant(object.field(buildTimeField));
+        Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
+        Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
 
         return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit);
     }
@@ -437,7 +437,7 @@ public class ApplicationSerializer {
         object.field(jobStatusField).traverse((ArrayTraverser) (__, jobPauseObject) ->
                 JobType.fromOptionalJobName(jobPauseObject.field(jobTypeField).asString())
                        .ifPresent(jobType -> jobPauses.put(jobType,
-                                                           Serializers.instant(jobPauseObject.field(pausedUntilField)))));
+                                                           SlimeUtils.instant(jobPauseObject.field(pausedUntilField)))));
         return jobPauses;
     }
 

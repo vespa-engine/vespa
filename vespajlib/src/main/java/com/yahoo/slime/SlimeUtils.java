@@ -4,8 +4,13 @@ package com.yahoo.slime;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
@@ -57,7 +62,7 @@ public class SlimeUtils {
         }
     }
 
-    private static void copyArray(Inspector from, final Cursor to) {
+    private static void copyArray(Inspector from, Cursor to) {
         from.traverse((ArrayTraverser) (i, inspector) -> addValue(inspector, to));
     }
 
@@ -124,15 +129,32 @@ public class SlimeUtils {
         return slime;
     }
 
+    public static Instant instant(Inspector field) {
+        return Instant.ofEpochMilli(field.asLong());
+    }
+
     public static Optional<String> optionalString(Inspector inspector) {
         return Optional.of(inspector.asString()).filter(s -> !s.isEmpty());
     }
 
-    public static Optional<Long> optionalLong(Inspector inspector) {
-        if (inspector.type() == Type.LONG) {
-            return Optional.of(inspector.asLong());
-        }
-        return Optional.empty();
+    public static OptionalLong optionalLong(Inspector field) {
+        return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
+    }
+
+    public static OptionalInt optionalInteger(Inspector field) {
+        return field.valid() ? OptionalInt.of((int) field.asLong()) : OptionalInt.empty();
+    }
+
+    public static OptionalDouble optionalDouble(Inspector field) {
+        return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
+    }
+
+    public static Optional<Instant> optionalInstant(Inspector field) {
+        return optionalLong(field).stream().mapToObj(Instant::ofEpochMilli).findFirst();
+    }
+
+    public static Optional<Duration> optionalDuration(Inspector field) {
+        return optionalLong(field).stream().mapToObj(Duration::ofMillis).findFirst();
     }
 
     public static Iterator<Inspector> entriesIterator(Inspector inspector) {
@@ -146,8 +168,9 @@ public class SlimeUtils {
     /** Returns stream of entries for given inspector. If the inspector is not an array, empty stream is returned */
     public static Stream<Inspector> entriesStream(Inspector inspector) {
         int characteristics = Spliterator.NONNULL | Spliterator.SIZED | Spliterator.ORDERED;
-        return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(entriesIterator(inspector), characteristics),
-                false);
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(entriesIterator(inspector),
+                                                                        characteristics),
+                                    false);
     }
+
 }

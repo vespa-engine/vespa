@@ -8,6 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 
@@ -47,7 +48,7 @@ public class NodeVersionSerializer {
             var hostname = HostName.from(entry.field(hostnameField).asString());
             var zone = ZoneId.from(entry.field(zoneField).asString());
             var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
-            var suspendedAt = Serializers.optionalInstant(entry.field(suspendedAtField));
+            var suspendedAt = SlimeUtils.optionalInstant(entry.field(suspendedAtField));
             nodeVersions.put(hostname, new NodeVersion(hostname, zone, version, wantedVersion, suspendedAt));
         });
         return new NodeVersions(nodeVersions.build());

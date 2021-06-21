@@ -74,18 +74,18 @@ public class NotificationsSerializer {
 
     private static Notification fromInspector(TenantName tenantName, Inspector inspector) {
         return new Notification(
-               Serializers.instant(inspector.field(atFieldName)),
-               typeFrom(inspector.field(typeField)),
-               levelFrom(inspector.field(levelField)),
-               new NotificationSource(
-                       tenantName,
-                       Serializers.optionalString(inspector.field(applicationField)).map(ApplicationName::from),
-                       Serializers.optionalString(inspector.field(instanceField)).map(InstanceName::from),
-                       Serializers.optionalString(inspector.field(zoneField)).map(ZoneId::from),
-                       Serializers.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
-                       Serializers.optionalString(inspector.field(jobTypeField)).map(JobType::fromJobName),
-                       Serializers.optionalLong(inspector.field(runNumberField))),
-               SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).collect(Collectors.toUnmodifiableList()));
+                SlimeUtils.instant(inspector.field(atFieldName)),
+                typeFrom(inspector.field(typeField)),
+                levelFrom(inspector.field(levelField)),
+                new NotificationSource(
+                        tenantName,
+                        SlimeUtils.optionalString(inspector.field(applicationField)).map(ApplicationName::from),
+                        SlimeUtils.optionalString(inspector.field(instanceField)).map(InstanceName::from),
+                        SlimeUtils.optionalString(inspector.field(zoneField)).map(ZoneId::from),
+                        SlimeUtils.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
+                        SlimeUtils.optionalString(inspector.field(jobTypeField)).map(JobType::fromJobName),
+                        SlimeUtils.optionalLong(inspector.field(runNumberField))),
+                SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).collect(Collectors.toUnmodifiableList()));
     }
     
     private static String asString(Notification.Type type) {
