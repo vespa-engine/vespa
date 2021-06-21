@@ -32,6 +32,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
@@ -111,13 +113,17 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void addRoleMember(AthenzRole role, AthenzIdentity member) {
+    public void addRoleMember(AthenzRole role, AthenzIdentity member, Optional<String> reason) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
         MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(member.getFullName(), true, role.roleName(), null);
-        HttpUriRequest request = RequestBuilder.put(uri)
-                .setEntity(toJsonStringEntity(membership))
-                .build();
-        execute(request, response -> readEntity(response, Void.class));
+
+
+        RequestBuilder requestBuilder = RequestBuilder.put(uri)
+                .setEntity(toJsonStringEntity(membership));
+        if (reason.filter(s -> !s.isBlank()).isPresent()) {
+            requestBuilder.addHeader("Y-Audit-Ref", reason.get());
+        }
+        execute(requestBuilder.build(), response -> readEntity(response, Void.class));
     }
 
     @Override

@@ -215,7 +215,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     public void addTenantAdmin(AthenzDomain tenantDomain, AthenzUser user) {
-        zmsClient.addRoleMember(new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"), user);
+        zmsClient.addRoleMember(new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"), user, Optional.empty());
     }
 
     private void deleteApplication(AthenzDomain domain, ApplicationName application, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
