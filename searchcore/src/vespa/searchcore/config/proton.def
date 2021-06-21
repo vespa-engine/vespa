@@ -175,7 +175,7 @@ index.cache.size long default=0 restart
 attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 
 ## Multiple optional options for use with mmap
-search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+search.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
@@ -277,7 +277,7 @@ summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
 summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
-summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+summary.read.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
