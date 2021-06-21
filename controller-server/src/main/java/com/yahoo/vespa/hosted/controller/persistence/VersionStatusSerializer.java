@@ -7,6 +7,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -106,7 +107,7 @@ public class VersionStatusSerializer {
         var version = Version.fromString(object.field(deploymentStatisticsField).field(versionField).asString());
         return new VespaVersion(version,
                                 object.field(releaseCommitField).asString(),
-                                Serializers.instant(object.field(committedAtField)),
+                                SlimeUtils.instant(object.field(committedAtField)),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),

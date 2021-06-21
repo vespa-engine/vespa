@@ -151,14 +151,14 @@ public class TenantSerializer {
         Property property = new Property(tenantObject.field(propertyField).asString());
         Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
-        Instant createdAt = Serializers.instant(tenantObject.field(createdAtField));
+        Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
         return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
-        Instant createdAt = Serializers.instant(tenantObject.field(createdAtField));
+        Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
@@ -227,7 +227,7 @@ public class TenantSerializer {
     private LastLoginInfo lastLoginInfoFromSlime(Inspector lastLoginInfoObject) {
         Map<LastLoginInfo.UserLevel, Instant> lastLoginByUserLevel = new HashMap<>();
         lastLoginInfoObject.traverse((String name, Inspector value) ->
-                lastLoginByUserLevel.put(userLevelOf(name), Serializers.instant(value)));
+                lastLoginByUserLevel.put(userLevelOf(name), SlimeUtils.instant(value)));
         return new LastLoginInfo(lastLoginByUserLevel);
     }
 

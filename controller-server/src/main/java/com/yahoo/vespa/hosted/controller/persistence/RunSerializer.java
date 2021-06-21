@@ -9,6 +9,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -121,7 +122,7 @@ class RunSerializer {
             // For historical reasons are the step details stored in a separate JSON structure from the step statuses.
             Inspector stepDetailsField = detailsField.field(step);
             Inspector startTimeValue = stepDetailsField.field(startTimeField);
-            Optional<Instant> startTime = Serializers.optionalInstant(startTimeValue);
+            Optional<Instant> startTime = SlimeUtils.optionalInstant(startTimeValue);
 
             steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), startTime));
         });
@@ -130,12 +131,12 @@ class RunSerializer {
                                  runObject.field(numberField).asLong()),
                        steps,
                        versionsFromSlime(runObject.field(versionsField)),
-                       Serializers.instant(runObject.field(startField)),
-                       Serializers.optionalInstant(runObject.field(endField)),
+                       SlimeUtils.instant(runObject.field(startField)),
+                       SlimeUtils.optionalInstant(runObject.field(endField)),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
-                       Serializers.optionalInstant(runObject.field(noNodesDownSinceField)),
+                       SlimeUtils.optionalInstant(runObject.field(noNodesDownSinceField)),
                        convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
@@ -166,11 +167,11 @@ class RunSerializer {
                                                                          versionObject.field(branchField).asString(),
                                                                          versionObject.field(commitField).asString()))
                                                   .filter(revision -> ! revision.commit().isBlank() && ! revision.repository().isBlank() && ! revision.branch().isBlank());
-        Optional<String> authorEmail = Serializers.optionalString(versionObject.field(authorEmailField));
-        Optional<Version> compileVersion = Serializers.optionalString(versionObject.field(compileVersionField)).map(Version::fromString);
-        Optional<Instant> buildTime = Serializers.optionalInstant(versionObject.field(buildTimeField));
-        Optional<String> sourceUrl = Serializers.optionalString(versionObject.field(sourceUrlField));
-        Optional<String> commit = Serializers.optionalString(versionObject.field(commitField));
+        Optional<String> authorEmail = SlimeUtils.optionalString(versionObject.field(authorEmailField));
+        Optional<Version> compileVersion = SlimeUtils.optionalString(versionObject.field(compileVersionField)).map(Version::fromString);
+        Optional<Instant> buildTime = SlimeUtils.optionalInstant(versionObject.field(buildTimeField));
+        Optional<String> sourceUrl = SlimeUtils.optionalString(versionObject.field(sourceUrlField));
+        Optional<String> commit = SlimeUtils.optionalString(versionObject.field(commitField));
 
         return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
                                       compileVersion, buildTime, sourceUrl, commit);
