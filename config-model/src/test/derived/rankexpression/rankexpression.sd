@@ -115,8 +115,8 @@ search rankexpression {
         expression {
             exp(0) + 
             mysum(attribute(foo),
-                "attribute( bar )",
-                "attribute( \"baz\" )") 
+                  "attribute( bar )",
+                  "attribute( \"baz\" )")
         }
         rerank-count: 101
       }
