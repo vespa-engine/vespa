@@ -12,7 +12,6 @@ import com.yahoo.jdisc.http.server.jetty.testutils.ConnectorFactoryRegistryModul
 import com.yahoo.jdisc.test.ServerProviderConformanceTest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
-import org.apache.http.ProtocolVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -745,14 +744,9 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     private class TestRunner implements Adapter<JettyHttpServer, ClientProxy, Future<HttpResponse>> {
 
         private Matcher<ResponseGist> expectedResponse = null;
-        HttpVersion requestVersion;
         private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         void execute() throws Throwable {
-            requestVersion = HttpVersion.HTTP_1_0;
-            runTest(this);
-
-            requestVersion = HttpVersion.HTTP_1_1;
             runTest(this);
 
             executorService.shutdown();
@@ -791,7 +785,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
 
         @Override
         public ClientProxy newClient(final JettyHttpServer server) throws Throwable {
-            return new ClientProxy(server.getListenPort(), requestVersion);
+            return new ClientProxy(server.getListenPort());
         }
 
         @Override
@@ -802,12 +796,12 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
             final URI requestUri = URI.create("http://localhost:" + client.listenPort + "/status.html");
             if (!withRequestContent) {
                 HttpGet httpGet = new HttpGet(requestUri);
-                httpGet.setProtocolVersion(client.requestVersion);
+                httpGet.setProtocolVersion(HttpVersion.HTTP_1_1);
                 request = httpGet;
             } else {
                 final HttpPost post = new HttpPost(requestUri);
                 post.setEntity(new StringEntity(REQUEST_CONTENT, StandardCharsets.UTF_8));
-                post.setProtocolVersion(client.requestVersion);
+                post.setProtocolVersion(HttpVersion.HTTP_1_1);
                 request = post;
             }
             log.fine(() -> "executorService:"
@@ -836,11 +830,9 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
 
         final HttpClient delegate;
         final int listenPort;
-        final ProtocolVersion requestVersion;
 
-        ClientProxy(final int listenPort, final HttpVersion requestVersion) {
+        ClientProxy(final int listenPort) {
             this.delegate = HttpClientBuilder.create().build();
-            this.requestVersion = requestVersion;
             this.listenPort = listenPort;
         }
     }
