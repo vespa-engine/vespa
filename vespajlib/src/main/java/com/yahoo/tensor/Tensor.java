@@ -240,6 +240,7 @@ public interface Tensor {
     default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
     default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
     default Tensor approxEqual(Tensor argument) { return join(argument, (a, b) -> ( approxEquals(a,b) ? 1.0 : 0.0)); }
+    default Tensor bit(Tensor argument) { return join(argument, (a,b) -> ((int)b < 8 && (int)b >= 0 && ((int)a & (1 << (int)b)) != 0) ? 1.0 : 0.0); }
 
     default Tensor avg() { return avg(Collections.emptyList()); }
     default Tensor avg(String dimension) { return avg(Collections.singletonList(dimension)); }
