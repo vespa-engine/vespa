@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.zms;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -35,6 +36,8 @@ public interface ZmsClient extends AutoCloseable {
     void deleteRoleMember(AthenzRole role, AthenzIdentity member);
 
     boolean getMembership(AthenzRole role, AthenzIdentity identity);
+
+    boolean getGroupMembership(AthenzGroup group, AthenzIdentity identity);
 
     List<AthenzDomain> getDomainList(String prefix);
 
