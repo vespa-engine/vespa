@@ -35,7 +35,7 @@ public class FeedClientBuilder {
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
     int connectionsPerEndpoint = 4;
-    int maxStreamsPerConnection = 128;
+    int maxStreamsPerConnection = 4096;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
     FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(1), Duration.ofMinutes(10));
     Path certificateFile;
