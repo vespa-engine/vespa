@@ -21,23 +21,17 @@ struct ClientArguments
     int         _myNum;
 
     /**
-     * The total number of clients controlled by the parent fbench
-     * application
-     **/
-    int         _totNum;
-
-    /**
      * Pattern that combined with the client number will become the name
      * of the file containing the urls this client should request.
      **/
-    const char *_filenamePattern;
+    std::string _filenamePattern;
 
     /**
      * Pattern that combined with the client number will become the name
      * of the file this client should dump url content to. If this
      * pattern is set to NULL no output file is generated.
      **/
-    const char *_outputPattern;
+    std::string _outputPattern;
 
     /**
      * The server the client should fetch urls from.
@@ -116,9 +110,9 @@ struct ClientArguments
     std::string _extraHeaders;
     std::string _authority;
 
-    ClientArguments(int myNum, int totNum,
-                    const char *filenamePattern,
-                    const char *outputPattern,
+    ClientArguments(int myNum,
+                    const std::string & filenamePattern,
+                    const std::string & outputPattern,
                     const char *hostname, int port,
                     long cycle, long delay,
                     int ignoreCount, int byteLimit,
@@ -129,7 +123,6 @@ struct ClientArguments
                     const std::string & queryStringToAppend, const std::string & extraHeaders,
                     const std::string &authority, bool postMode)
         : _myNum(myNum),
-          _totNum(totNum),
           _filenamePattern(filenamePattern),
           _outputPattern(outputPattern),
           _hostname(hostname),
@@ -181,13 +174,11 @@ private:
     std::unique_ptr<FileReader>      _reader;
     std::unique_ptr<std::ofstream>   _output;
     int                              _linebufsize;
-    char                            *_linebuf;
+    std::unique_ptr<char[]>          _linebuf;
     std::atomic<bool>                _stop;
     std::atomic<bool>                _done;
     std::thread                      _thread;
 
-    Client(const Client &);
-    Client &operator=(const Client &);
     static void runMe(Client * client);
     void run();
 
@@ -197,7 +188,9 @@ public:
      * The client arguments given to this method becomes the
      * responsibility of the client.
      **/
-    Client(vespalib::CryptoEngine::SP engine, ClientArguments *args);
+    Client(vespalib::CryptoEngine::SP engine, std::unique_ptr<ClientArguments> args);
+    Client(const Client &) = delete;
+    Client &operator=(const Client &) = delete;
 
     /**
      * Delete objects owned by this client, including the client arguments.
