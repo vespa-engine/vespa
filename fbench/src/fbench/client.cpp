@@ -21,7 +21,7 @@ Client::Client(vespalib::CryptoEngine::SP engine, std::unique_ptr<ClientArgument
                                          _args->_headerBenchmarkdataCoverage, _args->_extraHeaders, _args->_authority)),
       _reader(std::make_unique<FileReader>()),
       _output(),
-      _linebufsize(args->_maxLineSize),
+      _linebufsize(_args->_maxLineSize),
       _linebuf(std::make_unique<char[]>(_linebufsize)),
       _stop(false),
       _done(false),
