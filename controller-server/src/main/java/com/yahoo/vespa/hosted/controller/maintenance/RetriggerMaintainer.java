@@ -59,7 +59,7 @@ public class RetriggerMaintainer extends ControllerMaintainer {
     Returns true of job needs triggering. I.e the job has not run since the queue item was last run.
      */
     private boolean needsTrigger(RetriggerEntry entry) {
-        return controller().jobController().lastSuccess(entry.jobId())
+        return controller().jobController().lastCompleted(entry.jobId())
                 .filter(run -> run.id().number() < entry.requiredRun())
                 .isPresent();
     }
