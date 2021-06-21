@@ -73,6 +73,12 @@
        <artifactId>slf4j-api</artifactId>
        <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
