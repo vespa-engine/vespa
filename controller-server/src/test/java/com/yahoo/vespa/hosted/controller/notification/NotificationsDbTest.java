@@ -22,16 +22,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Level;
 import static com.yahoo.vespa.hosted.controller.notification.Notification.Type;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author freva
@@ -158,41 +155,6 @@ public class NotificationsDbTest {
         expected.set(7, notification(12345, Type.feedBlock, Level.warning, sourceCluster3, "disk (usage: 75.0%, feed block limit: 80.0%)"));
         expected.set(8, notification(12345, Type.reindex, Level.info, sourceCluster3, "document type 'announcements' (90.0% done)"));
         assertEquals(expected, curatorDb.readNotifications(tenant));
-    }
-
-    @Test
-    public void removes_invalid_deployment_notifications() {
-        curatorDb.deleteNotifications(tenant); // Remove notifications set in init()
-
-        ZoneId z1 = ZoneId.from("prod", "us-west-1");
-        ZoneId z2 = ZoneId.from("prod", "eu-south-2");
-        DeploymentId d1 = new DeploymentId(ApplicationId.from("t1", "a1", "i1"), z1);
-        DeploymentId d2 = new DeploymentId(ApplicationId.from("t1", "a1", "i1"), z2);
-        DeploymentId d3 = new DeploymentId(ApplicationId.from("t1", "a1", "i2"), z1);
-        DeploymentId d4 = new DeploymentId(ApplicationId.from("t1", "a2", "i1"), z2);
-        DeploymentId d5 = new DeploymentId(ApplicationId.from("t2", "a1", "i1"), z2);
-
-        List<Notification> notifications = Stream.of(d1, d2, d3, d4, d5)
-                .flatMap(deployment -> Stream.of(Type.deployment, Type.feedBlock)
-                        .map(type -> new Notification(Instant.EPOCH, type, Level.warning, NotificationSource.from(deployment), List.of("msg"))))
-                .collect(Collectors.toUnmodifiableList());
-        notifications.stream().collect(Collectors.groupingBy(notification -> notification.source().tenant(), Collectors.toList()))
-                .forEach(curatorDb::writeNotifications);
-
-        // All except d3 plus a deployment that has no notifications
-        Set<DeploymentId> allDeployments = Set.of(d1, d2, d4, d5, new DeploymentId(ApplicationId.from("t3", "a1", "i1"), z1));
-        notificationsDb.removeNotificationsForRemovedInstances(allDeployments);
-
-        List<Notification> expectedNotifications = new ArrayList<>(notifications);
-        // Only the deployment notification for d3 should be cleared (the other types already correctly clear themselves)
-        expectedNotifications.remove(4);
-
-        List<Notification> actualNotifications = curatorDb.listNotifications().stream()
-                .flatMap(tenant -> curatorDb.readNotifications(tenant).stream())
-                .collect(Collectors.toUnmodifiableList());
-
-        assertEquals(expectedNotifications.stream().map(Notification::toString).collect(Collectors.joining("\n")),
-                actualNotifications.stream().map(Notification::toString).collect(Collectors.joining("\n")));
     }
 
     @Before
