@@ -17,6 +17,8 @@ bundles of parameters accessible to Searchers processing queries. Writes go thro
 Document Processors, but have no equivalent support for parametrization. This is to allow configuration of document 
 processor profiles by reusing the query profile support also for document processors.
 
+See [slack discussion](https://vespatalk.slack.com/archives/C01QNBPPNT1/p1624176344102300) for more details.
+
 **Code pointers:**
 - [Query profiles](https://github.com/vespa-engine/vespa/blob/master/container-search/src/main/java/com/yahoo/search/query/profile/QueryProfile.java)
 - [Document processors](https://github.com/vespa-engine/vespa/blob/master/docproc/src/main/java/com/yahoo/docproc/DocumentProcessor.java)
