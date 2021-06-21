@@ -3,6 +3,7 @@
 #include "operation.h"
 #include "function.h"
 #include "key_gen.h"
+#include "extract_bit.h"
 #include <vespa/vespalib/util/approx.h>
 #include <algorithm>
 
@@ -50,12 +51,7 @@ double Relu::f(double a) { return std::max(a, 0.0); }
 double Sigmoid::f(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double Elu::f(double a) { return (a < 0) ? std::exp(a) - 1 : a; }
 double Erf::f(double a) { return std::erf(a); }
-double Bit::f(double a, double b) {
-    // must match vespalib_eval_bit
-    int8_t value = (int8_t) a;
-    uint32_t n = (uint32_t) b;
-    return ((n < 8) && bool(value & (1 << n))) ? 1.0 : 0.0;
-}
+double Bit::f(double a, double b) { return extract_bit(a, b); }
 //-----------------------------------------------------------------------------
 double Inv::f(double a) { return (1.0 / a); }
 double Square::f(double a) { return (a * a); }
