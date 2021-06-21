@@ -69,8 +69,8 @@ public class DocumentGenMojo extends AbstractMojo {
     /**
      * Directory containing the schema files
      */
-    // TODO: Make this required when sdDirectory is removed in Vespa 8
-    @Parameter(defaultValue = ".", required = false)
+    // TODO: Make this required and with defaultValue "." when sdDirectory is removed in Vespa 8
+    @Parameter
     private File schemasDirectory;
 
     /**
@@ -987,10 +987,10 @@ public class DocumentGenMojo extends AbstractMojo {
     public void execute() {
         File dir = sdDirectory;
         // Prefer schemasDirectory if set
-        if ( ! schemasDirectory.getName().equals("."))
-            dir = schemasDirectory;
+        if (this.schemasDirectory != null)
+            dir = this.schemasDirectory;
 
-        execute(dir, outputDirectory, packageName);
+        execute(dir, this.outputDirectory, packageName);
     }
 
     Map<String, Search> getSearches() {
