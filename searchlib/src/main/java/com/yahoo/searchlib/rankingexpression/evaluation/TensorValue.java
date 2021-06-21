@@ -156,6 +156,7 @@ public class TensorValue extends Value {
             case pow: return value.pow(argument);
             case fmod: return value.fmod(argument);
             case ldexp: return value.ldexp(argument);
+            case bit: return value.bit(argument);
             default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
         }
     }

@@ -123,6 +123,7 @@ TOKEN :
     // MAX
     // MIN
     <POW: "pow"> |
+    <BIT: "bit"> |
 
     <MAP: "map"> |
     <REDUCE: "reduce"> |
@@ -733,7 +734,8 @@ Function binaryFunctionName() : { }
     <LDEXP> { return Function.ldexp; } |
     <MAX>   { return Function.max;   } |
     <MIN>   { return Function.min;   } |
-    <POW>   { return Function.pow;   }
+    <POW>   { return Function.pow;   } |
+    <BIT>   { return Function.bit;   }
 }
 
 List<ExpressionNode> expressionList() :

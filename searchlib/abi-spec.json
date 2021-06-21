@@ -1033,6 +1033,7 @@
       "public static final int FMOD",
       "public static final int LDEXP",
       "public static final int POW",
+      "public static final int BIT",
       "public static final int MAP",
       "public static final int REDUCE",
       "public static final int JOIN",
@@ -1387,7 +1388,8 @@
       "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function ldexp",
       "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function max",
       "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function min",
-      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function pow"
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function pow",
+      "public static final enum com.yahoo.searchlib.rankingexpression.rule.Function bit"
     ]
   },
   "com.yahoo.searchlib.rankingexpression.rule.FunctionNode": {

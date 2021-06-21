@@ -1201,6 +1201,7 @@
       "public com.yahoo.tensor.Tensor equal(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor notEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor approxEqual(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.Tensor bit(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor avg()",
       "public com.yahoo.tensor.Tensor avg(java.lang.String)",
       "public com.yahoo.tensor.Tensor avg(java.util.List)",
