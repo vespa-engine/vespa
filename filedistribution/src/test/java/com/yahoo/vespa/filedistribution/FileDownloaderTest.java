@@ -112,7 +112,7 @@ public class FileDownloaderTest {
 
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.jar";
-            receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.file, "some other content");
+            receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
             Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
@@ -121,6 +121,8 @@ public class FileDownloaderTest {
             assertEquals("some other content", IOUtils.readFile(downloadedFile.get()));
 
             // Verify download status when downloaded
+            System.out.println(downloads.downloadStatuses());
+            double downloadStatus = downloads.downloadStatus(fileReference);
             assertDownloadStatus(fileReference, 1.0);
         }
 
@@ -146,7 +148,7 @@ public class FileDownloaderTest {
 
             File tarFile = CompressedFileReference.compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
             byte[] tarredContent = IOUtils.readFileBytes(tarFile);
-            receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
+            receiveFile(fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
             Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
@@ -179,7 +181,7 @@ public class FileDownloaderTest {
 
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
-        receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.file, "some other content");
+        receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
         Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
         assertTrue(downloadedFile.isPresent());
         File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
@@ -216,7 +218,7 @@ public class FileDownloaderTest {
         Future<Future<Optional<File>>> future2 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
 
         // Receive file, will complete downloading and futures
-        receiveFile(fileDownloader, fileReference, filename, FileReferenceData.Type.file, "some other content");
+        receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
 
         // Check that we got file correctly with first request
         Optional<File> downloadedFile = future1.get().get();
@@ -232,7 +234,7 @@ public class FileDownloaderTest {
     }
 
     @Test
-    public void setFilesToDownload() throws IOException {
+    public void setFilesToDownload() {
         Duration timeout = Duration.ofMillis(200);
         MockConnection connectionPool = new MockConnection();
         connectionPool.setResponseHandler(new MockConnection.WaitResponseHandler(timeout.plus(Duration.ofMillis(1000))));
@@ -243,7 +245,7 @@ public class FileDownloaderTest {
         assertTrue(fileDownloader.isDownloading(xyzzy));
         assertFalse(fileDownloader.getFile(xyzzy).isPresent());
         // Receive files to simulate download
-        receiveFile(fileDownloader, xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
+        receiveFile(xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
         // Should not download, since file has already been downloaded
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
         // and file should be available
@@ -254,7 +256,7 @@ public class FileDownloaderTest {
     public void receiveFile() throws IOException {
         FileReference foobar = new FileReference("foobar");
         String filename = "foo.jar";
-        receiveFile(fileDownloader, foobar, filename, FileReferenceData.Type.file, "content");
+        receiveFile(foobar, filename, FileReferenceData.Type.file, "content");
         File downloadedFile = new File(fileReferenceFullPath(downloadDir, foobar), filename);
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
@@ -275,12 +277,11 @@ public class FileDownloaderTest {
         assertEquals(expectedDownloadStatus, downloadStatus, 0.0001);
     }
 
-    private void receiveFile(FileDownloader fileDownloader, FileReference fileReference, String filename,
-                             FileReferenceData.Type type, String content) {
-        receiveFile(fileDownloader, fileReference, filename, type, Utf8.toBytes(content));
+    private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, String content) {
+        receiveFile(fileReference, filename, type, Utf8.toBytes(content));
     }
 
-    private void receiveFile(FileDownloader fileDownloader, FileReference fileReference, String filename,
+    private void receiveFile(FileReference fileReference, String filename,
                              FileReferenceData.Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         FileReceiver.Session session =

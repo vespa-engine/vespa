@@ -104,6 +104,11 @@ public class Downloads {
             return Map.copyOf(downloadStatus);
         }
 
+        @Override
+        public String toString() {
+            return downloadStatus.entrySet().stream().map(entry -> entry.getKey().value() + "=>" + entry.getValue().progress).collect(Collectors.joining(", "));
+        }
+
     }
 
     static class DownloadStatus {
