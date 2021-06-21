@@ -36,7 +36,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.yahoo.vespa.config.ConfigKey.createFull;
 
 /**
- * A config client for generating load against a config server or config proxy.
+ * A client for generating load (config requests) against a config server or config proxy.
  * <p>
  * Log messages from a run will have a # first in the line, the end result will not.
  *
@@ -44,12 +44,29 @@ import static com.yahoo.vespa.config.ConfigKey.createFull;
  */
 public class LoadTester {
 
-    private static boolean debug = false;
     private final Transport transport = new Transport("rpc-client");
     protected Supervisor supervisor = new Supervisor(transport);
     private List<ConfigKey<?>> configs = new ArrayList<>();
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs = new HashMap<>();
     private final CompressionType compressionType = JRTConfigRequestFactory.getCompressionType();
+
+    private final String host;
+    private final int port;
+    private final int iterations;
+    private final int threads;
+    private final String configFile;
+    private final String defPath;
+    private final boolean debug;
+
+    LoadTester(String host, int port, int iterations, int threads, String configFile, String defPath, boolean debug) {
+        this.host = host;
+        this.port = port;
+        this.iterations = iterations;
+        this.threads = threads;
+        this.configFile = configFile;
+        this.defPath = defPath;
+        this.debug = debug;
+    }
 
     /**
      * @param args command-line arguments
@@ -61,27 +78,29 @@ public class LoadTester {
         parser.addRequiredBinarySwitch("-p", "port");
         parser.addRequiredBinarySwitch("-i", "iterations per thread");
         parser.addRequiredBinarySwitch("-t", "threads");
-        parser.addLegalBinarySwitch("-l", "configs file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
+        parser.addLegalBinarySwitch("-l", "config file, on form name,configid. (To get list: vespa-configproxy-cmd -m cache | cut -d ',' -f1-2)");
         parser.addLegalBinarySwitch("-dd", "dir with def files, must be of form name.def");
         parser.parse();
         String host = parser.getBinarySwitches().get("-c");
         int port = Integer.parseInt(parser.getBinarySwitches().get("-p"));
         int iterations = Integer.parseInt(parser.getBinarySwitches().get("-i"));
         int threads = Integer.parseInt(parser.getBinarySwitches().get("-t"));
-        String configsList = parser.getBinarySwitches().get("-l");
+        String configFile = parser.getBinarySwitches().get("-l");
         String defPath = parser.getBinarySwitches().get("-dd");
-        debug = parser.getUnarySwitches().contains("-d");
-        new LoadTester().runLoad(host, port, iterations, threads, configsList, defPath);
+        boolean debug = parser.getUnarySwitches().contains("-d");
+        new LoadTester(host, port, iterations, threads, configFile, defPath, debug)
+                .runLoad();
     }
 
-    private void runLoad(String host, int port, int iterations, int threads,
-                         String configsList, String defPath) throws IOException, InterruptedException {
-        configs = readConfigs(configsList);
+    private void runLoad() throws IOException, InterruptedException {
+        configs = readConfigs(configFile);
         defs = readDefs(defPath);
+        validateConfigs(configs, defs);
+
         List<LoadThread> threadList = new ArrayList<>();
-        long startInNanos = System.nanoTime();
         Metrics m = new Metrics();
 
+        long startInNanos = System.nanoTime();
         for (int i = 0; i < threads; i++) {
             LoadThread lt = new LoadThread(iterations, host, port);
             threadList.add(lt);
@@ -92,7 +111,9 @@ public class LoadTester {
             lt.join();
             m.merge(lt.metrics);
         }
-        printOutput(startInNanos, threads, iterations, m);
+        float durationInSeconds = (float) (System.nanoTime() - startInNanos) / 1_000_000_000f;
+
+        printResults(durationInSeconds, threads, iterations, m);
     }
 
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> readDefs(String defPath) throws IOException {
@@ -122,11 +143,10 @@ public class LoadTester {
         return ret;
     }
 
-    private void printOutput(long startInNanos, long threads, long iterations, Metrics metrics) {
-        float durSec = (float) (System.nanoTime() - startInNanos) / 1_000_000_000f;
+    private void printResults(float durationInSeconds, long threads, long iterations, Metrics metrics) {
         StringBuilder sb = new StringBuilder();
         sb.append("#reqs/sec #avglatency #minlatency #maxlatency #failedrequests\n");
-        sb.append(((float) (iterations * threads)) / durSec).append(",");
+        sb.append(((float) (iterations * threads)) / durationInSeconds).append(",");
         sb.append((metrics.latencyInMillis / threads / iterations)).append(",");
         sb.append((metrics.minLatency)).append(",");
         sb.append((metrics.maxLatency)).append(",");
@@ -149,6 +169,16 @@ public class LoadTester {
         }
         br.close();
         return ret;
+    }
+
+    private void validateConfigs(List<ConfigKey<?>> configs, Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs) {
+        for (ConfigKey<?> configKey : configs) {
+            ConfigDefinitionKey dKey = new ConfigDefinitionKey(configKey);
+            Tuple2<String, String[]> defContent = defs.get(dKey);
+            if (defContent == null)
+                throw new IllegalArgumentException("No matching config definition for " + configKey +
+                                                   ", known config definitions: " + defs.keySet());
+        }
     }
 
     private static class Metrics {
@@ -189,34 +219,28 @@ public class LoadTester {
     private class LoadThread extends Thread {
 
         private final int iterations;
-        private final String host;
-        private final int port;
+        private final Spec spec;
         private final Metrics metrics = new Metrics();
 
         LoadThread(int iterations, String host, int port) {
             this.iterations = iterations;
-            this.host = host;
-            this.port = port;
+            this.spec = new Spec(host, port);
         }
 
         @Override
         public void run() {
-            Spec spec = new Spec(host, port);
             Target target = connect(spec);
-
+            int numberOfConfigs = configs.size();
             for (int i = 0; i < iterations; i++) {
-                ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(configs.size()));
-                ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
-                Tuple2<String, String[]> defContent = defs.get(dKey);
-                if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir
-                    System.out.println("# No def found for " + dKey + ", not sending in request.");
-                }
-                ConfigKey<?> configKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
-                JRTClientConfigRequest request = createRequest(configKey, defContent.second);
-                if (debug) System.out.println("# Requesting: " + reqKey);
+                ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(numberOfConfigs));
+                JRTClientConfigRequest request = createRequest(reqKey);
+                if (debug)
+                    System.out.println("# Requesting: " + reqKey);
+
                 long start = System.nanoTime();
                 target.invokeSync(request.getRequest(), 10.0);
                 long durationInMillis = (System.nanoTime() - start) / 1_000_000;
+
                 if (request.isError()) {
                     target = handleError(request, spec, target);
                 } else {
@@ -225,11 +249,15 @@ public class LoadTester {
             }
         }
 
-        private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey, String[] defContent) {
-            if (defContent == null) defContent = new String[0];
+        private JRTClientConfigRequest createRequest(ConfigKey<?> reqKey) {
+            ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
+            Tuple2<String, String[]> defContent = defs.get(dKey);
+            ConfigKey<?> fullKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
+
             final long serverTimeout = 1000;
-            return JRTClientConfigRequestV3.createWithParams(reqKey, DefContent.fromList(Arrays.asList(defContent)),
-                                                             ConfigUtils.getCanonicalHostName(), "", 0, serverTimeout, Trace.createDummy(),
+            return JRTClientConfigRequestV3.createWithParams(fullKey, DefContent.fromList(List.of(defContent.second)),
+                                                             ConfigUtils.getCanonicalHostName(), "",
+                                                             0, serverTimeout, Trace.createDummy(),
                                                              compressionType, Optional.empty());
         }
 
