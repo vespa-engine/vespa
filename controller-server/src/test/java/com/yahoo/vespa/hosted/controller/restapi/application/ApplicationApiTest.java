@@ -217,6 +217,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).userIdentity(USER_ID),
                               new File("tenant-with-application.json"));
 
+        tester.assertResponse(request("/application/v4/tenant/tenant1", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("activeInstances", "true")),
+                              new File("tenant-without-applications.json"));
+
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", GET).userIdentity(USER_ID),
                               new File("application-list.json"));

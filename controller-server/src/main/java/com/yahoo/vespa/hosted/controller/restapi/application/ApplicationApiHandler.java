@@ -2095,14 +2095,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         for (Application application : applications) {
             DeploymentStatus status = null;
             for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
-                                                                          : application.instances().values())
+                                                                          : application.instances().values()) {
+                if (showOnlyActiveInstances(request) && instance.deployments().isEmpty())
+                    continue;
                 if (recurseOverApplications(request)) {
                     if (status == null) status = controller.jobController().deploymentStatus(application);
                     toSlime(applicationArray.addObject(), instance, status, request);
-                }
-                else {
+                } else {
                     toSlime(instance.id(), applicationArray.addObject(), request);
                 }
+            }
         }
         tenantMetaDataToSlime(tenant, applications, object.setObject("metaData"));
     }
@@ -2391,6 +2393,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static boolean showOnlyProductionInstances(HttpRequest request) {
         return "true".equals(request.getProperty("production"));
+    }
+
+    private static boolean showOnlyActiveInstances(HttpRequest request) {
+        return "true".equals(request.getProperty("activeInstances"));
     }
 
     private static String tenantType(Tenant tenant) {
