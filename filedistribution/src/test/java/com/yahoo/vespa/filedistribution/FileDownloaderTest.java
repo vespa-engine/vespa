@@ -103,7 +103,7 @@ public class FileDownloaderTest {
         {
             // fileReference does not exist on disk, needs to be downloaded)
 
-            FileReference fileReference = new FileReference("fileReference");
+            FileReference fileReference = new FileReference("baz");
             File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
             assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
 
@@ -202,7 +202,7 @@ public class FileDownloaderTest {
         // Delay response so that we can make a second request while downloading the file from the first request
         connection.setResponseHandler(new MockConnection.WaitResponseHandler(Duration.ofSeconds(1)));
 
-        FileReference fileReference = new FileReference("fileReference");
+        FileReference fileReference = new FileReference("fileReference123");
         File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
         FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(fileReference);
 
@@ -252,10 +252,10 @@ public class FileDownloaderTest {
 
     @Test
     public void receiveFile() throws IOException {
-        FileReference foo = new FileReference("foo");
+        FileReference foobar = new FileReference("foobar");
         String filename = "foo.jar";
-        receiveFile(fileDownloader, foo, filename, FileReferenceData.Type.file, "content");
-        File downloadedFile = new File(fileReferenceFullPath(downloadDir, foo), filename);
+        receiveFile(fileDownloader, foobar, filename, FileReferenceData.Type.file, "content");
+        File downloadedFile = new File(fileReferenceFullPath(downloadDir, foobar), filename);
         assertEquals("content", IOUtils.readFile(downloadedFile));
     }
 
