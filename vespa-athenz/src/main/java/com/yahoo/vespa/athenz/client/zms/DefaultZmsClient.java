@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.client.zms;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -112,7 +113,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void addRoleMember(AthenzRole role, AthenzIdentity member) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
-        MembershipEntity membership = new MembershipEntity(member.getFullName(), true, role.roleName(), null);
+        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(member.getFullName(), true, role.roleName(), null);
         HttpUriRequest request = RequestBuilder.put(uri)
                 .setEntity(toJsonStringEntity(membership))
                 .build();
@@ -129,6 +130,18 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public boolean getMembership(AthenzRole role, AthenzIdentity identity) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), identity.getFullName()));
+        HttpUriRequest request = RequestBuilder.get()
+                .setUri(uri)
+                .build();
+        return execute(request, response -> {
+            MembershipEntity membership = readEntity(response, MembershipEntity.GroupMembershipEntity.class);
+            return membership.isMember;
+        });
+    }
+
+    @Override
+    public boolean getGroupMembership(AthenzGroup group, AthenzIdentity identity) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/group/%s/member/%s", group.domain().getName(), group.groupName(), identity.getFullName()));
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(uri)
                 .build();
@@ -223,7 +236,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzUser.getFullName()));
-        MembershipEntity membership = new MembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
+        MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(membership))

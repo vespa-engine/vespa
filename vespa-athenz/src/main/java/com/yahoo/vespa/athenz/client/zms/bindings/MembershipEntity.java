@@ -16,17 +16,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class MembershipEntity {
     public final String memberName;
     public final boolean isMember;
-    public final String roleName;
     public final String expiration;
 
     @JsonCreator
     public MembershipEntity(@JsonProperty("memberName") String memberName,
                             @JsonProperty("isMember") boolean isMember,
-                            @JsonProperty("roleName") String roleName,
                             @JsonProperty("expiration") String expiration) {
         this.memberName = memberName;
         this.isMember = isMember;
-        this.roleName = roleName;
         this.expiration = expiration;
     }
 
@@ -40,13 +37,45 @@ public class MembershipEntity {
         return isMember;
     }
 
-    @JsonGetter("roleName")
-    public String roleName() {
-        return roleName;
-    }
-
     @JsonGetter("expiration")
     public String expiration() {
         return expiration;
+    }
+
+    public static class RoleMembershipEntity extends MembershipEntity {
+        public final String roleName;
+
+        @JsonCreator
+        public RoleMembershipEntity(@JsonProperty("memberName") String memberName,
+                                    @JsonProperty("isMember") boolean isMember,
+                                    @JsonProperty("roleName") String roleName,
+                                    @JsonProperty("expiration") String expiration) {
+            super(memberName, isMember, expiration);
+            this.roleName = roleName;
+        }
+
+        @JsonGetter("roleName")
+        public String roleName() {
+            return roleName;
+        }
+
+    }
+
+    public static class GroupMembershipEntity extends MembershipEntity {
+        public final String groupName;
+
+        @JsonCreator
+        public GroupMembershipEntity(@JsonProperty("memberName") String memberName,
+                                     @JsonProperty("isMember") boolean isMember,
+                                     @JsonProperty("groupName") String groupName,
+                                     @JsonProperty("expiration") String expiration) {
+            super(memberName, isMember, expiration);
+            this.groupName = groupName;
+        }
+
+        @JsonGetter("groupName")
+        public String roleName() {
+            return groupName;
+        }
     }
 }
