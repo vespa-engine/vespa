@@ -1,6 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vector>
+#include <string>
+#include <memory>
+
+class Client;
+
+namespace vespalib { class CryptoEngine; }
+
 /**
  * This is the application class of the fbench program. It controls
  * the operation of the test clients and collects overall results.
@@ -10,29 +18,27 @@
 class FBench
 {
 private:
-    vespalib::CryptoEngine::SP _crypto_engine;
-    std::vector<Client::UP> _clients;
-    int                 _numClients;
-    int                 _ignoreCount;
-    int                 _cycle;
+    std::shared_ptr<vespalib::CryptoEngine> _crypto_engine;
+    std::vector<std::unique_ptr<Client>> _clients;
+    int                      _ignoreCount;
+    int                      _cycle;
     std::vector<std::string> _hostnames;
-    std::vector<int>    _ports;
-    char               *_filenamePattern;
-    char               *_outputPattern;
-    int                 _byteLimit;
-    int                 _restartLimit;
-    int                 _maxLineSize;
-    bool                _keepAlive;
-    bool                _base64Decode;
-    bool                _usePostMode;
-    bool                _headerBenchmarkdataCoverage;
-    int                 _seconds;
-    std::vector<uint64_t> _queryfileOffset;
-    int                 _numberOfQueries;
-    bool                _singleQueryFile;
-    std::string         _queryStringToAppend;
-    std::string         _extraHeaders;
-    std::string         _authority;
+    std::vector<int>         _ports;
+    std::string              _filenamePattern;
+    std::string              _outputPattern;
+    int                      _byteLimit;
+    int                      _restartLimit;
+    int                      _maxLineSize;
+    bool                     _keepAlive;
+    bool                     _base64Decode;
+    bool                     _usePostMode;
+    bool                     _headerBenchmarkdataCoverage;
+    int                      _seconds;
+    std::vector<uint64_t>    _queryfileOffset;
+    bool                     _singleQueryFile;
+    std::string              _queryStringToAppend;
+    std::string              _extraHeaders;
+    std::string              _authority;
 
     bool init_crypto_engine(const std::string &ca_certs_file_name,
                             const std::string &cert_chain_file_name,
