@@ -12,6 +12,7 @@ import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -31,7 +32,7 @@ public interface ZmsClient extends AutoCloseable {
     void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
                                      OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
-    void addRoleMember(AthenzRole role, AthenzIdentity member);
+    void addRoleMember(AthenzRole role, AthenzIdentity member, Optional<String> reason);
 
     void deleteRoleMember(AthenzRole role, AthenzIdentity member);
 
