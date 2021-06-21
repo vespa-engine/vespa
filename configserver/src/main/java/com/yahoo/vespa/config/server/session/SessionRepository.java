@@ -175,7 +175,11 @@ public class SessionRepository {
     private void loadSessions(BooleanFlag loadLocalSessions) {
         ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                 new DaemonThreadFactory("load-sessions-"));
-        if (loadLocalSessions.value())
+        loadSessions(loadLocalSessions.value(), executor);
+    }
+
+    void loadSessions(boolean loadLocalSessions, ExecutorService executor) {
+        if (loadLocalSessions)
             loadLocalSessions(executor);
         loadRemoteSessions(executor);
         try {
