@@ -100,6 +100,7 @@ TEST("require that call node types can be copied") {
     TEST_DO(verify_copy("sigmoid(a)"));
     TEST_DO(verify_copy("elu(a)"));
     TEST_DO(verify_copy("erf(a)"));
+    TEST_DO(verify_copy("bit(a,b)"));
 }
 
 TEST("require that tensor node types can NOT be copied (yet)") {

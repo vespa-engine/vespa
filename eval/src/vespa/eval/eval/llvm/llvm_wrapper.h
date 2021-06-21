@@ -19,6 +19,7 @@ extern "C" {
     double vespalib_eval_relu(double a);
     double vespalib_eval_sigmoid(double a);
     double vespalib_eval_elu(double a);
+    double vespalib_eval_bit(double a, double b);
 };
 
 namespace vespalib::eval {

@@ -115,6 +115,7 @@ TEST(InlineOperationTest, op2_lambdas_are_recognized) {
     EXPECT_EQ(as_op2("fmod(a,b)"),  &Mod::f);
     EXPECT_EQ(as_op2("min(a,b)"),   &Min::f);
     EXPECT_EQ(as_op2("max(a,b)"),   &Max::f);
+    EXPECT_EQ(as_op2("bit(a,b)"),   &Bit::f);
 }
 
 TEST(InlineOperationTest, op2_lambdas_are_recognized_with_different_parameter_names) {

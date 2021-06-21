@@ -218,6 +218,7 @@ TEST("require that various operations resolve appropriate type") {
     TEST_DO(verify_op1("sigmoid(%s)"));  // Sigmoid
     TEST_DO(verify_op1("elu(%s)"));      // Elu
     TEST_DO(verify_op1("erf(%s)"));      // Erf
+    TEST_DO(verify_op2("bit(%s,%s)"));   // Bit
 }
 
 TEST("require that map resolves correct type") {

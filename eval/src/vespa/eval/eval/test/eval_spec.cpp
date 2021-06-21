@@ -158,6 +158,17 @@ EvalSpec::add_function_call_cases() {
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "fmod(a,b)", [](double a, double b){ return std::fmod(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "min(a,b)", [](double a, double b){ return std::min(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "max(a,b)", [](double a, double b){ return std::max(a, b); });
+    add_expression({"a", "b"}, "bit(a,b)")
+        .add_case({-128, 7}, 1.0).add_case({-128, 6}, 0.0).add_case({-128, 5}, 0.0).add_case({-128, 4}, 0.0)
+        .add_case({-128, 3}, 0.0).add_case({-128, 2}, 0.0).add_case({-128, 1}, 0.0).add_case({-128, 0}, 0.0)
+        .add_case({-43, 7}, 1.0).add_case({-43, 6}, 1.0).add_case({-43, 5}, 0.0).add_case({-43, 4}, 1.0)
+        .add_case({-43, 3}, 0.0).add_case({-43, 2}, 1.0).add_case({-43, 1}, 0.0).add_case({-43, 0}, 1.0)
+        .add_case({0, 7}, 0.0).add_case({0, 6}, 0.0).add_case({0, 5}, 0.0).add_case({0, 4}, 0.0)
+        .add_case({0, 3}, 0.0).add_case({0, 2}, 0.0).add_case({0, 1}, 0.0).add_case({0, 0}, 0.0)
+        .add_case({85, 7}, 0.0).add_case({85, 6}, 1.0).add_case({85, 5}, 0.0).add_case({85, 4}, 1.0)
+        .add_case({85, 3}, 0.0).add_case({85, 2}, 1.0).add_case({85, 1}, 0.0).add_case({85, 0}, 1.0)
+        .add_case({127, 7}, 0.0).add_case({127, 6}, 1.0).add_case({127, 5}, 1.0).add_case({127, 4}, 1.0)
+        .add_case({127, 3}, 1.0).add_case({127, 2}, 1.0).add_case({127, 1}, 1.0).add_case({127, 0}, 1.0);
 }
 
 void
