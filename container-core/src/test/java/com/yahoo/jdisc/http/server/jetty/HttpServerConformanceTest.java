@@ -12,11 +12,11 @@ import com.yahoo.jdisc.http.server.jetty.testutils.ConnectorFactoryRegistryModul
 import com.yahoo.jdisc.test.ServerProviderConformanceTest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.Description;
@@ -26,6 +26,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -63,6 +65,8 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @SuppressWarnings("LoggerInitializedWithForeignClass")
     private static Logger httpRequestDispatchLogger = Logger.getLogger(HttpRequestDispatch.class.getName());
     private static Level httpRequestDispatchLoggerOriginalLevel;
+    private static CloseableHttpClient httpClient;
+    private static ExecutorService executorService;
 
     /*
      * Reduce logging of every stack trace for {@link ServerProviderConformanceTest.ConformanceException} thrown.
@@ -72,11 +76,16 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     public static void reduceExcessiveLogging() {
         httpRequestDispatchLoggerOriginalLevel = httpRequestDispatchLogger.getLevel();
         httpRequestDispatchLogger.setLevel(Level.SEVERE);
+        httpClient = HttpClientBuilder.create().build();
+        executorService = Executors.newSingleThreadExecutor();
     }
 
     @AfterClass
-    public static void restoreExcessiveLogging() {
+    public static void restoreExcessiveLogging() throws IOException, InterruptedException {
         httpRequestDispatchLogger.setLevel(httpRequestDispatchLoggerOriginalLevel);
+        httpClient.close();
+        executorService.shutdownNow();
+        executorService.awaitTermination(30, TimeUnit.SECONDS);
     }
 
     @AfterClass
@@ -741,15 +750,12 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
         }
     }
 
-    private class TestRunner implements Adapter<JettyHttpServer, ClientProxy, Future<HttpResponse>> {
+    private class TestRunner implements Adapter<JettyHttpServer, Integer, Future<HttpResponse>> {
 
         private Matcher<ResponseGist> expectedResponse = null;
-        private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         void execute() throws Throwable {
             runTest(this);
-
-            executorService.shutdown();
         }
 
         TestRunner expect(final Matcher<ResponseGist> matcher) {
@@ -784,16 +790,16 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
         }
 
         @Override
-        public ClientProxy newClient(final JettyHttpServer server) throws Throwable {
-            return new ClientProxy(server.getListenPort());
+        public Integer newClient(final JettyHttpServer server) throws Throwable {
+            return server.getListenPort();
         }
 
         @Override
         public Future<HttpResponse> executeRequest(
-                final ClientProxy client,
+                final Integer listenPort,
                 final boolean withRequestContent) throws Throwable {
             final HttpUriRequest request;
-            final URI requestUri = URI.create("http://localhost:" + client.listenPort + "/status.html");
+            final URI requestUri = URI.create("http://localhost:" + listenPort + "/status.html");
             if (!withRequestContent) {
                 HttpGet httpGet = new HttpGet(requestUri);
                 httpGet.setProtocolVersion(HttpVersion.HTTP_1_1);
@@ -804,10 +810,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                 post.setProtocolVersion(HttpVersion.HTTP_1_1);
                 request = post;
             }
-            log.fine(() -> "executorService:"
-                    + " .isShutDown()=" + executorService.isShutdown()
-                    + " .isTerminated()=" + executorService.isTerminated());
-            return executorService.submit(() -> client.delegate.execute(request));
+            return executorService.submit(() -> httpClient.execute(request));
         }
 
         @Override
@@ -823,17 +826,6 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                     response.getStatusLine().getReasonPhrase(),
                     EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
             assertThat(responseGist, expectedResponse);
-        }
-    }
-
-    private static class ClientProxy {
-
-        final HttpClient delegate;
-        final int listenPort;
-
-        ClientProxy(final int listenPort) {
-            this.delegate = HttpClientBuilder.create().build();
-            this.listenPort = listenPort;
         }
     }
 }
