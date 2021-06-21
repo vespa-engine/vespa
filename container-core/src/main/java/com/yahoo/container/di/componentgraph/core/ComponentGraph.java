@@ -258,7 +258,7 @@ public class ComponentGraph {
         if (component.isEmpty()) {
             Object instance;
             try {
-                log.log(Level.INFO, "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
+                log.log(Level.FINE, () -> "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
                 instance = fallbackInjector.getInstance(key);
             } catch (ConfigurationException e) {
                 throw removeStackTrace(new IllegalStateException(
