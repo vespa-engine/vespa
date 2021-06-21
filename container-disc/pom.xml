@@ -59,6 +59,12 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-core</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -178,6 +184,8 @@
                 defaults-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
                 zookeeper-server-jar-with-dependencies.jar,
+                <!-- Apache http client repackaged as bundle -->
+                container-apache-http-client-bundle-jar-with-dependencies.jar,
                 <!-- Jetty -->
                 alpn-api-${jetty-alpn.version}.jar,
                 http2-server-${jetty.version}.jar,

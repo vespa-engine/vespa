@@ -53,6 +53,7 @@
         <module>configserver-flags</module>
         <module>config_test</module>
         <module>container</module>
+        <module>container-apache-http-client-bundle</module>
         <module>container-core</module>
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
