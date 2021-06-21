@@ -23,7 +23,7 @@ public class DynamicThrottler extends StaticThrottler {
     private final AtomicLong targetInflight;
     private long updateNanos = 0;
     private final List<AtomicLong> latencies = new ArrayList<>();
-    private final double weight = 0.8; // Higher weight favours higher (own) throughput, at the cost of (shared) latency.
+    private final double weight = 0.9; // Higher weight favours higher (own) throughput, at the cost of (shared) latency.
 
     public DynamicThrottler(FeedClientBuilder builder) {
         super(builder);
@@ -63,7 +63,7 @@ public class DynamicThrottler extends StaticThrottler {
                     choice = target;
                 }
             }
-            long target = (long) ((random() * 0.15 + 0.95) * choice); // Random walk, skewed towards increase.
+            long target = (long) ((random() * 0.25 + 0.90) * choice); // Random walk, skewed towards increase.
             targetInflight.set(max(minInflight, min(maxInflight, target)));
         });
     }
