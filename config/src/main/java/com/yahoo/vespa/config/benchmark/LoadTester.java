@@ -36,7 +36,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.yahoo.vespa.config.ConfigKey.createFull;
 
 /**
- * A config client for generating load against a config server or config proxy.
+ * A client for generating load (config requests) against a config server or config proxy.
  * <p>
  * Log messages from a run will have a # first in the line, the end result will not.
  *
@@ -78,6 +78,7 @@ public class LoadTester {
                          String configsList, String defPath) throws IOException, InterruptedException {
         configs = readConfigs(configsList);
         defs = readDefs(defPath);
+        validateConfigs(configs, defs);
         List<LoadThread> threadList = new ArrayList<>();
         long startInNanos = System.nanoTime();
         Metrics m = new Metrics();
@@ -151,6 +152,16 @@ public class LoadTester {
         return ret;
     }
 
+    private void validateConfigs(List<ConfigKey<?>> configs, Map<ConfigDefinitionKey, Tuple2<String, String[]>> defs) {
+        for (ConfigKey<?> configKey : configs) {
+            ConfigDefinitionKey dKey = new ConfigDefinitionKey(configKey);
+            Tuple2<String, String[]> defContent = defs.get(dKey);
+            if (defContent == null)
+                throw new IllegalArgumentException("No matching config definition for " + configKey +
+                                                   ", known config definitions: " + defs.keySet());
+        }
+    }
+
     private static class Metrics {
 
         long latencyInMillis = 0;
@@ -189,28 +200,22 @@ public class LoadTester {
     private class LoadThread extends Thread {
 
         private final int iterations;
-        private final String host;
-        private final int port;
+        private final Spec spec;
         private final Metrics metrics = new Metrics();
 
         LoadThread(int iterations, String host, int port) {
             this.iterations = iterations;
-            this.host = host;
-            this.port = port;
+            this.spec = new Spec(host, port);
         }
 
         @Override
         public void run() {
-            Spec spec = new Spec(host, port);
             Target target = connect(spec);
-
+            int numberOfConfigs = configs.size();
             for (int i = 0; i < iterations; i++) {
-                ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(configs.size()));
+                ConfigKey<?> reqKey = configs.get(ThreadLocalRandom.current().nextInt(numberOfConfigs));
                 ConfigDefinitionKey dKey = new ConfigDefinitionKey(reqKey);
                 Tuple2<String, String[]> defContent = defs.get(dKey);
-                if (defContent == null && defs.size() > 0) { // Only complain if we actually did run with a def dir
-                    System.out.println("# No def found for " + dKey + ", not sending in request.");
-                }
                 ConfigKey<?> configKey = createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first);
                 JRTClientConfigRequest request = createRequest(configKey, defContent.second);
                 if (debug) System.out.println("# Requesting: " + reqKey);
