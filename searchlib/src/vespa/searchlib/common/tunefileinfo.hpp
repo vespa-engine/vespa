@@ -26,7 +26,6 @@ TuneFileRandRead::setFromMmapConfig(const MMapConfig & mmapFlags) {
     for (size_t i(0), m(mmapFlags.options.size()); i < m; i++) {
 #ifdef __linux__
         switch (mmapFlags.options[i]) {
-            case MMapConfig::Options::MLOCK:    _mmapFlags |= MAP_LOCKED; break;
             case MMapConfig::Options::POPULATE: _mmapFlags |= MAP_POPULATE; break;
             case MMapConfig::Options::HUGETLB:  _mmapFlags |= MAP_HUGETLB; break;
         }

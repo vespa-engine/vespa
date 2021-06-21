@@ -29,7 +29,7 @@ class BenchmarkDataStoreApp : public FastOS_Application
 void
 BenchmarkDataStoreApp::usage()
 {
-    printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap,mlock>\n", _argv[0]);
+    printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap>\n", _argv[0]);
     fflush(stdout);
 }
 
