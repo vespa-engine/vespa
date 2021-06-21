@@ -93,7 +93,9 @@ public class LoadTester {
             lt.join();
             m.merge(lt.metrics);
         }
-        printOutput(startInNanos, threads, iterations, m);
+        float durationInSeconds = (float) (System.nanoTime() - startInNanos) / 1_000_000_000f;
+
+        printResults(durationInSeconds, threads, iterations, m);
     }
 
     private Map<ConfigDefinitionKey, Tuple2<String, String[]>> readDefs(String defPath) throws IOException {
@@ -123,11 +125,10 @@ public class LoadTester {
         return ret;
     }
 
-    private void printOutput(long startInNanos, long threads, long iterations, Metrics metrics) {
-        float durSec = (float) (System.nanoTime() - startInNanos) / 1_000_000_000f;
+    private void printResults(float durationInSeconds, long threads, long iterations, Metrics metrics) {
         StringBuilder sb = new StringBuilder();
         sb.append("#reqs/sec #avglatency #minlatency #maxlatency #failedrequests\n");
-        sb.append(((float) (iterations * threads)) / durSec).append(",");
+        sb.append(((float) (iterations * threads)) / durationInSeconds).append(",");
         sb.append((metrics.latencyInMillis / threads / iterations)).append(",");
         sb.append((metrics.minLatency)).append(",");
         sb.append((metrics.maxLatency)).append(",");
