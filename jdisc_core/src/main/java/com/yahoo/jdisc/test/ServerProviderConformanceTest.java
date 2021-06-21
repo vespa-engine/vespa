@@ -45,7 +45,7 @@ public abstract class ServerProviderConformanceTest {
 
     private static final Logger log = Logger.getLogger(ServerProviderConformanceTest.class.getName());
 
-    private static final int NUM_RUNS_EACH_TEST = 10;
+    private static final int NUM_RUNS_EACH_TEST = 1;
 
     /**
      * <p>This interface declares the adapter between the general conformance test and an actual <code>ServerProvider</code>
