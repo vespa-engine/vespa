@@ -33,7 +33,7 @@ class HttpRequestStrategyTest {
 
     @Test
     void testConcurrency() {
-        int documents = 1 << 24;
+        int documents = 1 << 16;
         HttpRequest request = new HttpRequest("PUT", "/", null, null);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
