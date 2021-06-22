@@ -170,7 +170,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
     if (config.basicType() == search::attribute::BasicType::Type::TENSOR &&
         config.tensorType().is_dense() && config.hnsw_index_params().has_value())
     {
-        _replay_operation_cost = 100.0; // replaying operations to hnsw index is 100 times more expensive than reading from tls
+        _replay_operation_cost = 400.0; // replaying operations to hnsw index is 400 times more expensive than reading from tls
     }
 }
 
