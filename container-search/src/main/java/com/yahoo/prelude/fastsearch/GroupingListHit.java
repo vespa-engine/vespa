@@ -26,4 +26,5 @@ public class GroupingListHit extends Hit {
 
     private final List<Grouping> groupingList;
     private final DocsumDefinitionSet defs;
+
 }
