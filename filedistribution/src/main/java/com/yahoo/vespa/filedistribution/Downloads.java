@@ -7,6 +7,7 @@ import java.io.File;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,16 +80,14 @@ public class Downloads {
 
         private static final int maxEntries = 100;
 
-        private final Map<FileReference, DownloadStatus> downloadStatus = new ConcurrentHashMap<>();
+        private final Map<FileReference, DownloadStatus> downloadStatus = Collections.synchronizedMap(new HashMap<>());
 
         void add(FileReference fileReference) {
             add(fileReference, 0.0);
         }
 
         void add(FileReference fileReference, double progress) {
-            DownloadStatus ds = new DownloadStatus(fileReference);
-            ds.setProgress(progress);
-            downloadStatus.put(fileReference, ds);
+            downloadStatus.put(fileReference, new DownloadStatus(fileReference, progress));
             if (downloadStatus.size() > maxEntries) {
                 Map.Entry<FileReference, DownloadStatus> oldest =
                         Collections.min(downloadStatus.entrySet(), Comparator.comparing(e -> e.getValue().created));
@@ -116,9 +115,9 @@ public class Downloads {
         private double progress; // between 0 and 1
         private final Instant created;
 
-        DownloadStatus(FileReference fileReference) {
+        DownloadStatus(FileReference fileReference, double progress) {
             this.fileReference = fileReference;
-            this.progress = 0.0;
+            this.progress = progress;
             this.created = Instant.now();
         }
 
