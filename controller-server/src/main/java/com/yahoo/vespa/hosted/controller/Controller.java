@@ -38,6 +38,7 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -227,6 +228,7 @@ public class Controller extends AbstractComponent {
         if (!clouds().contains(cloudName)) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
+        Instant scheduledAt = clock.instant();
         try (Lock lock = curator.lockOsVersions()) {
             Set<OsVersionTarget> targets = new TreeSet<>(curator.readOsVersionTargets());
             if (!force && targets.stream().anyMatch(target -> target.osVersion().cloud().equals(cloudName) &&
@@ -235,7 +237,7 @@ public class Controller extends AbstractComponent {
                                                    version.toFullString());
             }
             targets.removeIf(target -> target.osVersion().cloud().equals(cloudName)); // Only allow a single target per cloud
-            targets.add(new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget));
+            targets.add(new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget, scheduledAt));
             curator.writeOsVersionTargets(targets);
             log.info("Triggered OS upgrade to " + version.toFullString() + " in cloud " +
                      cloudName.value() + ", with upgrade budget " + upgradeBudget);
@@ -287,7 +289,8 @@ public class Controller extends AbstractComponent {
         return secretStore;
     }
 
-    private Set<CloudName> clouds() {
+    /** Clouds present in this system */
+    public Set<CloudName> clouds() {
         return zoneRegistry.zones().all().zones().stream()
                            .map(ZoneApi::getCloudName)
                            .collect(Collectors.toUnmodifiableSet());
