@@ -31,6 +31,12 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Compile -->
         <dependency>
@@ -92,24 +98,6 @@
                     <artifactId>bcprov-jdk15on</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <!-- We explicitly specify the version of httpcore to be used by
-            docker-java so the dependency is declared closer to the root of maven and
-            more likely be the version that is finally being used. -->
-            <version>4.4.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-             <!-- We explicitly specify the version of httpclient to be used by
-            docker-java so the dependency is declared closer to the root of maven and
-            more likely be the version that is finally being used. -->
-            <version>4.5</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- Test -->

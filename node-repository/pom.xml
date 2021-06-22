@@ -26,6 +26,12 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-provisioning</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -77,10 +83,6 @@
             <artifactId>questdb</artifactId>
             <version>6.0.3</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>

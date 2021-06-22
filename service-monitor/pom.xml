@@ -16,14 +16,6 @@
     <description>Service monitor component for hosted vespa.</description>
 
     <dependencies>
-        <!-- compile scope -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5</version>
-            <!-- This is necessary to get 4.4's HostnameVerifier API of SSLConnectionSocketFactory::new -->
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>http-utils</artifactId>
@@ -32,6 +24,12 @@
         </dependency>
 
         <!-- provided scope -->
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config</artifactId>
