@@ -38,8 +38,8 @@ public class Downloads {
 
     void completedDownloading(FileReference fileReference, File file) {
         Optional<FileReferenceDownload> download = get(fileReference);
+        setDownloadStatus(fileReference, 1.0);
         if (download.isPresent()) {
-            downloadStatuses().get(fileReference).ifPresent(Downloads.DownloadStatus::finished);
             downloads.remove(fileReference);
             download.get().future().complete(Optional.of(file));
         } else {

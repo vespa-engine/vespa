@@ -122,7 +122,6 @@ public class FileDownloaderTest {
 
             // Verify download status when downloaded
             System.out.println(downloads.downloadStatuses());
-            double downloadStatus = downloads.downloadStatus(fileReference);
             assertDownloadStatus(fileReference, 1.0);
         }
 
