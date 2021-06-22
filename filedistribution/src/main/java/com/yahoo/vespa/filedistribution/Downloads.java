@@ -30,11 +30,7 @@ public class Downloads {
     public DownloadStatuses downloadStatuses() { return downloadStatuses; }
 
     void setDownloadStatus(FileReference fileReference, double completeness) {
-        Optional<Downloads.DownloadStatus> downloadStatus = downloadStatuses.get(fileReference);
-        if (downloadStatus.isPresent())
-            downloadStatus.get().setProgress(completeness);
-        else
-            downloadStatuses.add(fileReference, completeness);
+        downloadStatuses.put(fileReference, completeness);
     }
 
     void completedDownloading(FileReference fileReference, File file) {
@@ -50,11 +46,11 @@ public class Downloads {
 
     void add(FileReferenceDownload fileReferenceDownload) {
         downloads.put(fileReferenceDownload.fileReference(), fileReferenceDownload);
-        downloadStatuses.add(fileReferenceDownload.fileReference());
+        downloadStatuses.put(fileReferenceDownload.fileReference());
     }
 
     void remove(FileReference fileReference) {
-        downloadStatuses.get(fileReference).ifPresent(d -> d.setProgress(0.0));
+        downloadStatuses.get(fileReference).ifPresent(d -> new DownloadStatus(d.fileReference(), 0.0));
         downloads.remove(fileReference);
     }
 
@@ -82,11 +78,11 @@ public class Downloads {
 
         private final Map<FileReference, DownloadStatus> downloadStatus = Collections.synchronizedMap(new HashMap<>());
 
-        void add(FileReference fileReference) {
-            add(fileReference, 0.0);
+        void put(FileReference fileReference) {
+            put(fileReference, 0.0);
         }
 
-        void add(FileReference fileReference, double progress) {
+        void put(FileReference fileReference, double progress) {
             downloadStatus.put(fileReference, new DownloadStatus(fileReference, progress));
             if (downloadStatus.size() > maxEntries) {
                 Map.Entry<FileReference, DownloadStatus> oldest =
@@ -112,7 +108,7 @@ public class Downloads {
 
     static class DownloadStatus {
         private final FileReference fileReference;
-        private double progress; // between 0 and 1
+        private final double progress; // between 0 and 1
         private final Instant created;
 
         DownloadStatus(FileReference fileReference, double progress) {
@@ -127,14 +123,6 @@ public class Downloads {
 
         public double progress() {
             return progress;
-        }
-
-        public void setProgress(double progress) {
-            this.progress = progress;
-        }
-
-        public void finished() {
-            setProgress(1.0);
         }
 
         public Instant created() {
