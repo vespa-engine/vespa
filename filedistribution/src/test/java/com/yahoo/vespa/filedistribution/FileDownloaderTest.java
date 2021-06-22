@@ -122,7 +122,6 @@ public class FileDownloaderTest {
 
             // Verify download status when downloaded
             System.out.println(downloads.downloadStatuses());
-            double downloadStatus = downloads.downloadStatus(fileReference);
             assertDownloadStatus(fileReference, 1.0);
         }
 
@@ -274,7 +273,10 @@ public class FileDownloaderTest {
 
     private void assertDownloadStatus(FileReference fileReference, double expectedDownloadStatus) {
         double downloadStatus = downloads.downloadStatus(fileReference);
-        assertEquals(expectedDownloadStatus, downloadStatus, 0.0001);
+        assertEquals("Download statuses: " + downloads.downloadStatuses().toString(),
+                     expectedDownloadStatus,
+                     downloadStatus,
+                     0.0001);
     }
 
     private void receiveFile(FileReference fileReference, String filename, FileReferenceData.Type type, String content) {
