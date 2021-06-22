@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
 import com.yahoo.collections.Pair;
@@ -30,13 +30,11 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,10 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
- * Goal which generates Vespa document classes from SD files.
- * @author vegardh
+ * Generates Vespa document classes from schema files.
+ *
+ * @author Vegard Balgaard Havdal
  */
 @Mojo(name = "document-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class DocumentGenMojo extends AbstractMojo {
@@ -60,10 +58,20 @@ public class DocumentGenMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
-     * Directory containing the SD files
+     * Directory containing the searchdefinition files
+     * @deprecated use {@link #schemasDirectory} instead
      */
-    @Parameter(defaultValue = ".", required = true)
+    // TODO: Remove in Vespa 8
+    @Deprecated
+    @Parameter(defaultValue = ".", required = false)
     private File sdDirectory;
+
+    /**
+     * Directory containing the schema files
+     */
+    // TODO: Make this required and with defaultValue "." when sdDirectory is removed in Vespa 8
+    @Parameter
+    private File schemasDirectory;
 
     /**
      * Java package for generated classes
@@ -98,7 +106,7 @@ public class DocumentGenMojo extends AbstractMojo {
     private Map<String, String> structTypes;
     private Map<String, String> annotationTypes;
 
-    void execute(File sdDir, File outputDir, String packageName) {
+    void execute(File schemasDir, File outputDir, String packageName) {
         if ("".equals(packageName)) throw new IllegalArgumentException("You may not use empty package for generated types.");
         searches = new HashMap<>();
         docTypes = new HashMap<>();
@@ -106,7 +114,7 @@ public class DocumentGenMojo extends AbstractMojo {
         annotationTypes = new HashMap<>();
 
         outputDir.mkdirs();
-        SearchBuilder builder = buildSearches(sdDir);
+        SearchBuilder builder = buildSearches(schemasDir);
 
         boolean annotationsExported=false;
         for (NewDocumentType docType : builder.getModel().getDocumentManager().getTypes()) {
@@ -127,10 +135,7 @@ public class DocumentGenMojo extends AbstractMojo {
     }
 
     private SearchBuilder buildSearches(File sdDir) {
-        File[] sdFiles = sdDir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".sd");
-            }});
+        File[] sdFiles = sdDir.listFiles((dir, name) -> name.endsWith(".sd"));
         SearchBuilder builder = new SearchBuilder(true);
         for (File f : sdFiles) {
             try {
@@ -980,7 +985,12 @@ public class DocumentGenMojo extends AbstractMojo {
 
     @Override
     public void execute() {
-        execute(this.sdDirectory, this.outputDirectory, this.packageName);
+        File dir = sdDirectory;
+        // Prefer schemasDirectory if set
+        if (this.schemasDirectory != null)
+            dir = this.schemasDirectory;
+
+        execute(dir, this.outputDirectory, packageName);
     }
 
     Map<String, Search> getSearches() {
@@ -990,4 +1000,5 @@ public class DocumentGenMojo extends AbstractMojo {
     private static String upperCaseFirstChar(String s) {
         return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
+
 }
