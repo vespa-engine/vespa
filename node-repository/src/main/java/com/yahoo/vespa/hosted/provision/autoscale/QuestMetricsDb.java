@@ -108,7 +108,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         synchronized (nodeTable.writeLock) {
             for (var snapshot : snapshots) {
                 Optional<Long> atMillis = nodeTable.adjustOrDiscard(snapshot.getSecond().at());
-                if (atMillis.isEmpty()) return;
+                if (atMillis.isEmpty()) continue;
                 TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
                 row.putStr(0, snapshot.getFirst());
                 // (1 is timestamp)
@@ -145,7 +145,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         synchronized (clusterTable.writeLock) {
             for (var snapshot : snapshots.entrySet()) {
                 Optional<Long> atMillis = clusterTable.adjustOrDiscard(snapshot.getValue().at());
-                if (atMillis.isEmpty()) return;
+                if (atMillis.isEmpty()) continue;
                 TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
                 row.putStr(0, applicationId.serializedForm());
                 row.putStr(1, snapshot.getKey().value());
