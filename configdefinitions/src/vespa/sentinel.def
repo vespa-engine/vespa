@@ -23,10 +23,10 @@ application.region string default="default"
 # if we have more problems than the following limits allow:
 
 ## Percentage of nodes that must be up and fully OK, minimum
-connectivity.minOkPercent int default=0
+connectivity.minOkPercent int default=30
 
 ## Absolute number of nodes with confirmed network connectivity problems, maximum
-connectivity.maxBadCount int default=999999999
+connectivity.maxBadCount int default=3
 
 ## The command to run. This will be run by sh -c, and the following
 ## environment variables are defined: $ROOT, $VESPA_SERVICE_NAME,
