@@ -182,6 +182,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxMergeQueueSize;
         private final int largeRankExpressionLimit;
         private final boolean throwIfResourceLimitsSpecified;
+        private final boolean dryRunOnnxOnSetup;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -209,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
             this.throwIfResourceLimitsSpecified = flagValue(source, appId, Flags.THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED);
+            this.dryRunOnnxOnSetup = flagValue(source, appId, Flags.DRY_RUN_ONNX_ON_SETUP);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -238,6 +240,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
         @Override public boolean throwIfResourceLimitsSpecified() { return throwIfResourceLimitsSpecified; }
+        @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

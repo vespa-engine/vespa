@@ -286,6 +286,13 @@ public class Flags {
             "Whether to load local sessions when bootstrapping config server",
             "Takes effect on restart of config server");
 
+    public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
+            "dry-run-onnx-on-setup", false,
+            List.of("baldersheim"), "2021-06-23", "2021-08-01",
+            "Whether to dry run onnx models on setup for better error checking",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
