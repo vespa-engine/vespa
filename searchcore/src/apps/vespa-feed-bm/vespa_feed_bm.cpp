@@ -288,6 +288,7 @@ class BMParams {
     bool     _use_async_message_handling_on_schedule;
     uint32_t _bucket_db_stripe_bits;
     uint32_t _distributor_stripes;
+    bool     _skip_communicationmanager_thread;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _client_threads) * thread_id + std::min(thread_id, _documents % _client_threads);
     }
@@ -313,7 +314,8 @@ public:
           _use_storage_chain(false),
           _use_async_message_handling_on_schedule(false),
           _bucket_db_stripe_bits(0),
-          _distributor_stripes(0)
+          _distributor_stripes(0),
+          _skip_communicationmanager_thread(false) // Same default as in stor-communicationmanager.def
     {
     }
     BMRange get_range(uint32_t thread_id) const {
@@ -339,6 +341,7 @@ public:
     bool get_use_async_message_handling_on_schedule() const { return _use_async_message_handling_on_schedule; }
     uint32_t get_bucket_db_stripe_bits() const { return _bucket_db_stripe_bits; }
     uint32_t get_distributor_stripes() const { return _distributor_stripes; }
+    bool get_skip_communicationmanager_thread() const { return _skip_communicationmanager_thread; }
     void set_documents(uint32_t documents_in) { _documents = documents_in; }
     void set_max_pending(uint32_t max_pending_in) { _max_pending = max_pending_in; }
     void set_client_threads(uint32_t threads_in) { _client_threads = threads_in; }
@@ -360,6 +363,7 @@ public:
     void set_use_async_message_handling_on_schedule(bool value) { _use_async_message_handling_on_schedule = value; }
     void set_bucket_db_stripe_bits(uint32_t value) { _bucket_db_stripe_bits = value; }
     void set_distributor_stripes(uint32_t value) { _distributor_stripes = value; }
+    void set_skip_communicationmanager_thread(bool value) { _skip_communicationmanager_thread = value; }
     bool check() const;
     bool needs_service_layer() const { return _enable_service_layer || _enable_distributor || _use_storage_chain || _use_message_bus || _use_document_api; }
     bool needs_distributor() const { return _enable_distributor || _use_document_api; }
@@ -508,6 +512,7 @@ struct MyStorageConfig
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
+        stor_communicationmanager.skipThread = params.get_skip_communicationmanager_thread();
 
         stor_status.httpport = status_port;
         make_bucketspaces_config(bucketspaces);
@@ -1383,6 +1388,7 @@ App::usage()
         "[--response-threads threads]\n"
         "[--enable-distributor]\n"
         "[--enable-service-layer]\n"
+        "[--skip-communicationmanager-thread]\n"
         "[--skip-get-spi-bucket-info]\n"
         "[--use-document-api]\n"
         "[--use-async-message-handling]\n"
@@ -1412,6 +1418,7 @@ App::get_options()
         { "rpc-events-before-wakeup", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
+        { "skip-communicationmanager-thread", 0, nullptr, 0 },
         { "skip-get-spi-bucket-info", 0, nullptr, 0 },
         { "update-passes", 1, nullptr, 0 },
         { "use-async-message-handling", 0, nullptr, 0 },
@@ -1435,6 +1442,7 @@ App::get_options()
         LONGOPT_RPC_EVENTS_BEFORE_WAKEUP,
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RPC_TARGETS_PER_NODE,
+        LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD,
         LONGOPT_SKIP_GET_SPI_BUCKET_INFO,
         LONGOPT_UPDATE_PASSES,
         LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
@@ -1495,6 +1503,9 @@ App::get_options()
                 break;
             case LONGOPT_RPC_TARGETS_PER_NODE:
                 _bm_params.set_rpc_targets_per_node(atoi(opt_argument));
+                break;
+            case LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD:
+                _bm_params.set_skip_communicationmanager_thread(true);
                 break;
             case LONGOPT_SKIP_GET_SPI_BUCKET_INFO:
                 _bm_params.set_skip_get_spi_bucket_info(true);
