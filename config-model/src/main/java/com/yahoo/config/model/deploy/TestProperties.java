@@ -63,6 +63,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxMergeQueueSize = 1024;
     private int largeRankExpressionLimit = 0x10000;
     private boolean allowDisableMtls = true;
+    private boolean dryRunOnnxOnSetup = false;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -107,7 +108,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
+    @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
 
+    public TestProperties setDryRunOnnxOnSetup(boolean value) {
+        dryRunOnnxOnSetup = value;
+        return this;
+    }
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
         return this;
