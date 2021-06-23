@@ -46,6 +46,7 @@ OnnxModels::configure(const ModelConfig &config, Model &model)
     for (const auto &output: config.output) {
         model.output_name(output.name, output.as);
     }
+    model.dry_run_on_setup(config.dryRunOnSetup);
 }
 
 }

@@ -188,6 +188,7 @@ struct Setup {
                 out.fmt("model[%zu].output[%zu].as \"%s\"\n", idx, idx2, output.second.c_str());
                 ++idx2;
             }
+            out.fmt("model[%zu].dry_run_on_setup %s\n", idx, entry.second.dry_run_on_setup() ? "true" : "false");
             ++idx;
         }
     }
@@ -269,6 +270,10 @@ struct OnnxSetup : Setup {
                        .input_feature("attribute_tensor", "rankingExpression(at)")
                        .input_feature("bias_tensor", "rankingExpression(bt)")
                        .output_name("output", "result"));
+        add_onnx_model(OnnxModel("fragile", TEST_PATH("../../../../../searchlib/src/tests/features/onnx_feature/fragile.onnx"))
+                       .dry_run_on_setup(true));
+        add_onnx_model(OnnxModel("unfragile", TEST_PATH("../../../../../searchlib/src/tests/features/onnx_feature/fragile.onnx"))
+                       .dry_run_on_setup(false));
     }
 };
 
@@ -415,6 +420,24 @@ TEST_F("require that onnx model can have inputs and outputs mapped", OnnxSetup()
     f.rank_expr("at", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bt", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_valid({"onnxModel(mapped).result"});
+}
+
+TEST_F("require that fragile model can pass verification", OnnxSetup()) {
+    f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
+    f.rank_expr("in2", "tensor<float>(a[2]):[3,4]");
+    f.verify_valid({"onnxModel(fragile)"});
+}
+
+TEST_F("require that broken fragile model fails verification", OnnxSetup()) {
+    f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
+    f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
+    f.verify_invalid({"onnxModel(fragile)"});
+}
+
+TEST_F("require that broken fragile model without dry-run passes verification", OnnxSetup()) {
+    f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
+    f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
+    f.verify_valid({"onnxModel(unfragile)"});
 }
 
 //-----------------------------------------------------------------------------

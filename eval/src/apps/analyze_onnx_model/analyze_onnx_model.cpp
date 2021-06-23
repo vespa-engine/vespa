@@ -172,7 +172,7 @@ int usage(const char *self) {
     return 1;
 }
 
-int main(int argc, char **argv) {
+int my_main(int argc, char **argv) {
     if (argc < 2) {
         return usage(argv[0]);
     }
@@ -205,4 +205,13 @@ int main(int argc, char **argv) {
     double min_time_s = vespalib::BenchmarkTimer::benchmark([&e = *eval_list.back()](){ e.eval(); }, 10.0);    
     fprintf(stderr, "estimated model evaluation time: %g ms\n", min_time_s * 1000.0);
     return 0;
+}
+
+int main(int argc, char **argv) {
+    try {
+        return my_main(argc, argv);
+    } catch (const std::exception &ex) {
+        fprintf(stderr, "got exception: %s\n", ex.what());
+        return 2;
+    }
 }
