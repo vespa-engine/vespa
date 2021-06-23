@@ -94,6 +94,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return ""; }
+        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.424") default boolean enableJdiscHttp2() { return true; }
         @ModelFeatureFlag(owners = {"tokle", "bjorncs"}) default boolean enableCustomAclMapping() { return false; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return false; }
