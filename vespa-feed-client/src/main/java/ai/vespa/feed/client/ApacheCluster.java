@@ -68,7 +68,7 @@ class ApacheCluster implements Cluster {
         endpoint.inflight.incrementAndGet();
         try {
             request.setScheme(endpoint.url.getScheme());
-            request.setAuthority(new URIAuthority(endpoint.url.getHost(), endpoint.url.getPort()));
+            request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
             endpoint.client.execute(request,
                                     new FutureCallback<SimpleHttpResponse>() {
                                         @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }
@@ -136,6 +136,11 @@ class ApacheCluster implements Cluster {
                                                                   .setSoTimeout(Timeout.ofSeconds(10))
                                                                   .build(),
                                                    tlsStrategyBuilder.build());
+    }
+
+    private static int portOf(URI url) {
+        return url.getPort() == -1 ? url.getScheme().equals("http") ? 80 : 443
+                                   : url.getPort();
     }
 
     private static class ApacheHttpResponse implements HttpResponse {
