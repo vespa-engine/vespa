@@ -287,7 +287,7 @@ public class Flags {
             "Takes effect on restart of config server");
 
     public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
-            "dryrun-onnx-on-setup", false,
+            "dry-run-onnx-on-setup", false,
             List.of("baldersheim"), "2021-06-23", "2021-08-01",
             "Whether to dry run onnx models on setup for better error checking",
             "Takes effect on next internal redeployment",
