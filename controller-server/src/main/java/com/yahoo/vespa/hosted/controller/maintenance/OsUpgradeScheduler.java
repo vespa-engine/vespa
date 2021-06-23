@@ -169,7 +169,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
         @Override
         public Duration upgradeBudget() {
-            return system.isCd() ? Duration.ofHours(1) : Duration.ofDays(14);
+            return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
         }
 
     }
