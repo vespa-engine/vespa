@@ -75,6 +75,35 @@ TEST_F("require that strategy is updated when setting new config", Fixture)
     TEST_DO(f.assertStrategyConfig(6, 3, 30));
 }
 
+TEST("require that MemoryFlush::Config equal is correct") {
+    MemoryFlush::Config a, b;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+    a.maxGlobalMemory = 7;
+    EXPECT_FALSE(a.equal(b) || b.equal(a));
+    b.maxGlobalMemory = 7;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+    a.maxMemoryGain = 8;
+    EXPECT_FALSE(a.equal(b) || b.equal(a));
+    b.maxMemoryGain = 8;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+    a.maxGlobalTlsSize = 9;
+    EXPECT_FALSE(a.equal(b) || b.equal(a));
+    b.maxGlobalTlsSize = 9;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+    a.maxTimeGain = 10us;
+    EXPECT_FALSE(a.equal(b) || b.equal(a));
+    b.maxTimeGain = 10us;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+    a.globalDiskBloatFactor = 11;
+    EXPECT_FALSE(a.equal(b) || b.equal(a));
+    b.globalDiskBloatFactor = 11;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+    a.diskBloatFactor = 12;
+    EXPECT_FALSE(a.equal(b) || b.equal(a));
+    b.diskBloatFactor = 12;
+    EXPECT_TRUE(a.equal(b) && b.equal(a));
+}
+
 TEST("require that we use configured memory limits") {
     auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(6, 3, 30), defaultMemory);
     EXPECT_EQUAL(cfg.maxGlobalMemory, 6u);

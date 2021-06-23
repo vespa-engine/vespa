@@ -34,6 +34,14 @@ public:
                uint64_t maxMemoryGain_in,
                double diskBloatFactor_in,
                vespalib::duration maxTimeGain_in);
+        bool equal(const Config & rhs) const {
+            return (maxGlobalMemory == rhs.maxGlobalMemory) &&
+                   (maxGlobalTlsSize == rhs.maxGlobalTlsSize) &&
+                   (globalDiskBloatFactor == rhs.globalDiskBloatFactor) &&
+                   (maxMemoryGain == rhs.maxMemoryGain) &&
+                   (maxTimeGain == rhs.maxTimeGain) &&
+                   (diskBloatFactor == rhs. diskBloatFactor);
+        }
     };
 
     enum OrderType { DEFAULT, MAXAGE, DISKBLOAT, TLSSIZE, MEMORY };
