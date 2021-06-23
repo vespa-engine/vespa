@@ -73,7 +73,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag SKIP_COMMUNICATIONMANAGER_THREAD = defineFeatureFlag(
-            "skip-communicatiomanager-thread", false,
+            "skip-communicationmanager-thread", false,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
             "Should we skip the communicationmanager thread",
             "Takes effect at redeployment",
