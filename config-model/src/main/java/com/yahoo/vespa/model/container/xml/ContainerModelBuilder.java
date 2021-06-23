@@ -434,7 +434,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         HostedSslConnectorFactory connectorFactory;
-        boolean enableHttp2 = deployState.featureFlags().enableJdiscHttp2();
         Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
