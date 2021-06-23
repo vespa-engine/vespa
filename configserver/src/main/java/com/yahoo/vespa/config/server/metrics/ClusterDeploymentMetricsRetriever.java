@@ -142,11 +142,11 @@ public class ClusterDeploymentMetricsRetriever {
                         .ifPresent(docCount -> aggregator.get().addDocumentCount(docCount));
                 break;
             case VESPA_CONTAINER_CLUSTERCONTROLLER:
-                optionalDouble(values.field("cluster-controller.resource_usage.max_memory_utilization.last")).ifPresent(memoryUtil ->
+                optionalDouble(values.field("cluster-controller.resource_usage.max_memory_utilization.max")).ifPresent(memoryUtil ->
                         aggregator.get()
                                 .addMemoryUsage(memoryUtil,
                                         values.field("cluster-controller.resource_usage.memory_limit.last").asDouble())
-                                .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.last").asDouble(),
+                                .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.max").asDouble(),
                                         values.field("cluster-controller.resource_usage.disk_limit.last").asDouble()));
                 optionalDouble(values.field("reindexing.progress.last")).ifPresent(progress -> {
                     if (progress < 0 || progress >= 1) return;
