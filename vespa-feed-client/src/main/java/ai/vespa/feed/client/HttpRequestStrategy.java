@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.CLOSED;
@@ -23,6 +24,8 @@ import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
 // TODO: update doc
@@ -133,37 +136,48 @@ class HttpRequestStrategy implements RequestStrategy {
      */
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
         breaker.failure();
-        log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
-
         if (   (thrown instanceof IOException)               // General IO problems.
             || (thrown instanceof CancellationException)     // TLS session disconnect.
-            || (thrown instanceof CancelledKeyException))    // Selection cancelled.
+            || (thrown instanceof CancelledKeyException)) {  // Selection cancelled.
+            log.log(INFO, thrown, () -> "Failed attempt " + attempt + " at " + request);
             return retry(request, attempt);
+        }
 
+        log.log(WARNING, thrown, () -> "Failed attempt " + attempt + " at " + request);
         return false;
     }
 
     /** Retries throttled requests (429, 503), adjusting the target inflight count, and server errors (500, 502). */
     private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
-        if (response.code() / 100 == 2) {
+        if (response.code() / 100 == 2 || response.code() == 404 || response.code() == 412) {
+            logResponse(FINEST, response, request, attempt);
             breaker.success();
             throttler.success();
             return false;
         }
 
-        log.log(FINE, () -> "Status code " + response.code() + " (" + new String(response.body(), UTF_8) +
-                            ") on attempt " + attempt + " at " + request);
 
         if (response.code() == 429 || response.code() == 503) { // Throttling; reduce target inflight.
+            logResponse(FINE, response, request, attempt);
             throttler.throttled((inflight.get() - delayedCount.get()));
             return true;
         }
 
         breaker.failure();
-        if (response.code() == 500 || response.code() == 502 || response.code() == 504) // Hopefully temporary errors.
+        if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
+            logResponse(INFO, response, request, attempt);
             return retry(request, attempt);
+        }
 
+        logResponse(WARNING, response, request, attempt);
         return false;
+    }
+
+    static void logResponse(Level level, HttpResponse response, HttpRequest request, int attempt) {
+        if (log.isLoggable(level))
+            log.log(level, "Status code " + response.code() +
+                           " (" + (response.body() == null ? "no body" : new String(response.body(), UTF_8)) +
+                           ") on attempt " + attempt + " at " + request);
     }
 
     private void acquireSlot() {
