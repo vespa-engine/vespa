@@ -34,6 +34,8 @@ public:
                uint64_t maxMemoryGain_in,
                double diskBloatFactor_in,
                vespalib::duration maxTimeGain_in);
+        bool operator == (const Config & rhs) const { return equal(rhs); }
+        bool operator != (const Config & rhs) const { return ! equal(rhs); }
         bool equal(const Config & rhs) const {
             return (maxGlobalMemory == rhs.maxGlobalMemory) &&
                    (maxGlobalTlsSize == rhs.maxGlobalTlsSize) &&

@@ -75,7 +75,7 @@ MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard, const char
     considerUseConservativeDiskMode(guard, newConfig);
     considerUseConservativeMemoryMode(guard, newConfig);
     MemoryFlush::Config currentConfig = _flushStrategy->getConfig();
-    if ( ! currentConfig.equal(newConfig) ) {
+    if ( currentConfig != newConfig ) {
         _flushStrategy->setConfig(newConfig);
         LOG(info, "Due to %s (conservative-disk=%d, conservative-memory=%d, retired=%d) flush config updated to "
                   "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),"
