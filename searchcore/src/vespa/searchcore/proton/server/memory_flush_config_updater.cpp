@@ -74,13 +74,16 @@ MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard, const char
     MemoryFlush::Config newConfig = convertConfig(_currConfig, _memory);
     considerUseConservativeDiskMode(guard, newConfig);
     considerUseConservativeMemoryMode(guard, newConfig);
-    _flushStrategy->setConfig(newConfig);
-    LOG(info, "Due to %s (conservative-disk=%d, conservative-memory=%d, retired=%d) flush config updated to "
-              "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),"
-              "max-global-memory(%" PRIu64 "), max-memory-gain(%" PRIu64 ")",
-        why, _useConservativeDiskMode, _useConservativeMemoryMode, _nodeRetired,
-        newConfig.globalDiskBloatFactor, newConfig.maxGlobalTlsSize,
-        newConfig.maxGlobalMemory, newConfig.maxMemoryGain);
+    MemoryFlush::Config currentConfig = _flushStrategy->getConfig();
+    if ( currentConfig != newConfig ) {
+        _flushStrategy->setConfig(newConfig);
+        LOG(info, "Due to %s (conservative-disk=%d, conservative-memory=%d, retired=%d) flush config updated to "
+                  "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),"
+                                                                    "max-global-memory(%" PRIu64 "), max-memory-gain(%" PRIu64 ")",
+            why, _useConservativeDiskMode, _useConservativeMemoryMode, _nodeRetired,
+            newConfig.globalDiskBloatFactor, newConfig.maxGlobalTlsSize,
+            newConfig.maxGlobalMemory, newConfig.maxMemoryGain);
+    }
 }
 
 MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
