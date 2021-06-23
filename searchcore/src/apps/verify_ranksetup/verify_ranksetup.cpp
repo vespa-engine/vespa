@@ -67,7 +67,7 @@ RankingExpressions make_expressions(const RankingExpressionsConfig &expressionsC
         if (auto file = get_file(entry.fileref, myCfg)) {
             expressions.add(entry.name, file.value());
         } else {
-            LOG(warning, "could not find file for ranking expression '%s' (ref:'%s')",
+            LOG(warning, "could not find file name for ranking expression '%s' (ref:'%s')",
                 entry.name.c_str(), entry.fileref.c_str());
         }
     }
@@ -81,7 +81,7 @@ OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupC
             model_list.emplace_back(entry.name, file.value());
             OnnxModels::configure(entry, model_list.back());
         } else {
-            LOG(warning, "could not find file for onnx model '%s' (ref:'%s')",
+            LOG(warning, "could not find file name for onnx model '%s' (ref:'%s')",
                 entry.name.c_str(), entry.fileref.c_str());
         }
     }
