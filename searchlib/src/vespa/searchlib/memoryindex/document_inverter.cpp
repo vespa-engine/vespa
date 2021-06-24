@@ -9,10 +9,7 @@
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
-#include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/util/url.h>
-#include <vespa/vespalib/text/lowercase.h>
-#include <vespa/vespalib/text/utf8.h>
 #include <stdexcept>
 
 #include <vespa/log/log.h>
@@ -85,8 +82,7 @@ DocumentInverter::~DocumentInverter()
 }
 
 void
-DocumentInverter::addFieldPath(const document::DocumentType &docType,
-                               uint32_t fieldId)
+DocumentInverter::addFieldPath(const document::DocumentType &docType, uint32_t fieldId)
 {
     assert(fieldId < _indexedFieldPaths.size());
     std::unique_ptr<FieldPath> fp;
@@ -133,9 +129,9 @@ DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
             fv = doc.getValue(*fieldPath);
         }
         FieldInverter *inverter = _inverters[fieldId].get();
-        _invertThreads.execute(fieldId,
-                               [inverter, docId, fv(std::move(fv))]()
-                               { inverter->invertField(docId, fv); });
+        _invertThreads.execute(fieldId,[inverter, docId, fv(std::move(fv))]() {
+            inverter->invertField(docId, fv);
+        });
     }
     uint32_t urlId = 0;
     for (const auto & fi : _schemaIndexFields._uriFields) {
@@ -148,9 +144,9 @@ DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
             fv = doc.getValue(*fieldPath);
         }
         UrlFieldInverter *inverter = _urlInverters[urlId].get();
-        _invertThreads.execute(fieldId,
-                               [inverter, docId, fv(std::move(fv))]()
-                               { inverter->invertField(docId, fv); });
+        _invertThreads.execute(fieldId,[inverter, docId, fv(std::move(fv))]() {
+            inverter->invertField(docId, fv);
+        });
         ++urlId;
     }
 }
@@ -160,17 +156,17 @@ DocumentInverter::removeDocument(uint32_t docId)
 {
     for (uint32_t fieldId : _schemaIndexFields._textFields) {
         FieldInverter *inverter = _inverters[fieldId].get();
-        _invertThreads.execute(fieldId,
-                               [inverter, docId]()
-                               { inverter->removeDocument(docId); });
+        _invertThreads.execute(fieldId, [inverter, docId]() {
+            inverter->removeDocument(docId);
+        });
     }
     uint32_t urlId = 0;
     for (const auto & fi : _schemaIndexFields._uriFields) {
         uint32_t fieldId = fi._all;
         UrlFieldInverter *inverter = _urlInverters[urlId].get();
-        _invertThreads.execute(fieldId,
-                               [inverter, docId]()
-                               { inverter->removeDocument(docId); });
+        _invertThreads.execute(fieldId,[inverter, docId]() {
+            inverter->removeDocument(docId);
+        });
         ++urlId;
     }
 }
@@ -180,11 +176,10 @@ DocumentInverter::pushDocuments(const std::shared_ptr<vespalib::IDestructorCallb
 {
     uint32_t fieldId = 0;
     for (auto &inverter : _inverters) {
-        _pushThreads.execute(fieldId,
-                             [inverter(inverter.get()),
-                              onWriteDone]()
-                             {   inverter->applyRemoves();
-                                 inverter->pushDocuments(); });
+        _pushThreads.execute(fieldId,[inverter(inverter.get()), onWriteDone]() {
+            inverter->applyRemoves();
+            inverter->pushDocuments();
+        });
         ++fieldId;
     }
 }
