@@ -22,6 +22,20 @@ namespace slobrok {
 
 namespace {
 
+std::string
+createSpec(int port)
+{
+    if (port == 0) {
+        return std::string();
+    }
+    std::ostringstream str;
+    str << "tcp/";
+    str << vespalib::HostName::get();
+    str << ":";
+    str << port;
+    return str.str();
+}
+
 void
 discard(std::vector<std::string> &vec, const std::string & val)
 {
@@ -91,7 +105,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _configurator(shim.factory().create(*this)),
       _shuttingDown(false),
       _partnerList(),
-      _me(),
+      _me(createSpec(_configShim.portNumber())),
       _rpcHooks(*this, _rpcsrvmap, _rpcsrvmanager),
       _selfchecktask(std::make_unique<SelfCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager)),
       _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
@@ -132,20 +146,6 @@ SBEnv::resume()
 
 namespace {
 
-std::string
-createSpec(int port)
-{
-    if (port == 0) {
-        return std::string();
-    }
-    std::ostringstream str;
-    str << "tcp/";
-    str << vespalib::HostName::get();
-    str << ":";
-    str << port;
-    return str.str();
-}
-
 vespalib::string
 toString(const std::vector<std::string> & v) {
     vespalib::asciistream os;
@@ -169,10 +169,6 @@ SBEnv::MainLoop()
     } else {
         LOG(config, "listening on port %d", _configShim.portNumber());
     }
-
-    std::string myspec = createSpec(_configShim.portNumber());
-
-    _me = std::make_unique<ManagedRpcServer>(myspec.c_str(), myspec.c_str(), _rpcsrvmanager);
 
     std::unique_ptr<ReconfigurableStateServer> stateServer;
     if (_configShim.enableStateServer()) {

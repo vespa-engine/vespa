@@ -49,7 +49,7 @@ private:
     void setup(const std::vector<std::string> &cfg) override;
 
     std::vector<std::string>                   _partnerList;
-    std::unique_ptr<ManagedRpcServer>          _me;
+    std::string                                _me;
     RPCHooks                                   _rpcHooks;
     std::unique_ptr<SelfCheck>                 _selfchecktask;
     std::unique_ptr<RemoteCheck>               _remotechecktask;
@@ -73,7 +73,7 @@ public:
     ExchangeManager          _exchanger;
     RpcServerMap             _rpcsrvmap;
 
-    const std::string & mySpec() const { return _me->getSpec(); }
+    const std::string & mySpec() const { return _me; }
 
     bool isSuspended() const { return false; }
     bool isShuttingDown() const { return _shuttingDown; }

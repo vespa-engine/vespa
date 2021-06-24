@@ -2,6 +2,7 @@
 
 #include "managed_rpc_server.h"
 #include "i_rpc_server_manager.h"
+#include "random.h"
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 
@@ -16,17 +17,18 @@ ManagedRpcServer::ManagedRpcServer(const std::string & name,
                                    const std::string & spec,
                                    IRpcServerManager &manager)
     : NamedService(name, spec),
+      FNET_Task(manager.getSupervisor()->GetScheduler()),
       _mmanager(manager),
       _monitor(*this, *manager.getSupervisor()),
       _monitoredServer(nullptr),
       _checkServerReq(nullptr)
 {
+    double seconds = randomIn(0.2, 0.8);
+    LOG(debug, "first healthcheck for %s in %g seconds", name.c_str(), seconds);
+    Schedule(seconds);
 }
 
-
-void
-ManagedRpcServer::healthCheck()
-{
+void ManagedRpcServer::PerformTask() {
     if (_monitoredServer == nullptr) {
         _monitoredServer = _mmanager.getSupervisor()->GetTarget(_spec.c_str());
     }
@@ -35,12 +37,19 @@ ManagedRpcServer::healthCheck()
         _checkServerReq->SetMethodName("slobrok.callback.listNamesServed");
         _monitoredServer->InvokeAsync(_checkServerReq, 25.0, this);
     }
+    double seconds = randomIn(2.5, 2.9);
+    LOG(debug, "next healthcheck for %s in %g seconds", getName().c_str(), seconds);
+    Schedule(seconds);
 }
 
+void ManagedRpcServer::healthCheck() {
+    ScheduleNow();
+}
 
 ManagedRpcServer::~ManagedRpcServer()
 {
     LOG(debug, "(role[%s].~ManagedRpcServer)", _name.c_str());
+    Kill();
     cleanupMonitor();
 }
 

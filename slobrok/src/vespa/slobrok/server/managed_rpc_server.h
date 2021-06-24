@@ -23,6 +23,7 @@ class IRpcServerManager;
 
 class ManagedRpcServer: public NamedService,
                         public FRT_IRequestWait,
+                        public FNET_Task,
                         public IMonitoredServer
 {
 public:
@@ -32,6 +33,7 @@ public:
     ~ManagedRpcServer();
 
     void healthCheck();
+    void PerformTask() override;
 
 private:
     IRpcServerManager      &_mmanager;
