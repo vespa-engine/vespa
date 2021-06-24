@@ -334,8 +334,7 @@
     ],
     "fields": [
       "public static final enum ai.vespa.feed.client.Result$Type success",
-      "public static final enum ai.vespa.feed.client.Result$Type conditionNotMet",
-      "public static final enum ai.vespa.feed.client.Result$Type failure"
+      "public static final enum ai.vespa.feed.client.Result$Type conditionNotMet"
     ]
   },
   "ai.vespa.feed.client.Result": {
