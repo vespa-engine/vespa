@@ -9,6 +9,8 @@ Vespa feed client
                                           connections
     --disable-ssl-hostname-verification   Disable SSL hostname
                                           verification
+    --dryrun                              Enable dryrun mode where each
+                                          operation succeeds after 1ms
     --endpoint <arg>                      URI to feed endpoint
     --file <arg>                          Path to feed file in JSON format
     --header <arg>                        HTTP header on the form 'Name:

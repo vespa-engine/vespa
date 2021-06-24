@@ -175,6 +175,7 @@
       "public ai.vespa.feed.client.FeedClientBuilder setCertificate(java.nio.file.Path, java.nio.file.Path)",
       "public ai.vespa.feed.client.FeedClientBuilder setCertificate(java.util.Collection, java.security.PrivateKey)",
       "public ai.vespa.feed.client.FeedClientBuilder setCertificate(java.security.cert.X509Certificate, java.security.PrivateKey)",
+      "public ai.vespa.feed.client.FeedClientBuilder setDryrun(boolean)",
       "public ai.vespa.feed.client.FeedClientBuilder setCaCertificatesFile(java.nio.file.Path)",
       "public ai.vespa.feed.client.FeedClientBuilder setCaCertificates(java.util.Collection)",
       "public ai.vespa.feed.client.FeedClient build()"
