@@ -61,7 +61,7 @@ public class NodeVersion {
         return Duration.between(suspendedAt.get(), instant).abs();
     }
 
-    /** The most recent time the node referenced by this suspended. This is empty if the node is not suspended. */
+    /** The most recent time the node referenced in this suspended. This is empty if the node is not suspended. */
     public Optional<Instant> suspendedAt() {
         return suspendedAt;
     }
