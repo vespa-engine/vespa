@@ -59,8 +59,6 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
                             counters.incrementDocumentsSkipped(1);
                         } else {
                             String msg = "Failed to feed single document: " + error;
-                            System.out.println(msg);
-                            System.err.println(msg);
                             log.log(Level.WARNING, msg, error);
                             counters.incrementDocumentsFailed(1);
                         }
