@@ -352,6 +352,18 @@
     ],
     "fields": []
   },
+  "ai.vespa.feed.client.ResultException": {
+    "superClass": "ai.vespa.feed.client.FeedException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.String, java.lang.String)",
+      "public java.util.Optional getTrace()"
+    ],
+    "fields": []
+  },
   "ai.vespa.feed.client.ResultParseException": {
     "superClass": "ai.vespa.feed.client.FeedException",
     "interfaces": [],
