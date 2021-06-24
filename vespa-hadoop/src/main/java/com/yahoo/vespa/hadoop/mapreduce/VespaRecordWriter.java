@@ -138,7 +138,7 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
             List<URI> endpoints = endpointUris(config);
             log.info("Using endpoints " + endpoints);
             int streamsPerConnection = streamsPerConnection(config);
-            log.log(Level.INFO, "Using {0} streams per connection", new Object[] {streamsPerConnection});
+            log.log(Level.INFO, "Using {0} max streams per connection", new Object[] {streamsPerConnection});
             log.log(Level.INFO, "Using {0} connections", new Object[] {config.numConnections()});
             FeedClientBuilder feedClientBuilder = FeedClientBuilder.create(endpoints)
                     .setConnectionsPerEndpoint(config.numConnections())
