@@ -200,7 +200,7 @@ public class OsUpgraderTest {
         // New OS version released
         Version version = Version.fromString("7.1");
         tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), Duration.ZERO, false);
-        tester.controller().upgradeOsIn(cloud, version, Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud, version, Duration.ZERO, false); // Replaces existing target
         statusUpdater.maintain();
 
         // zone 1 upgrades

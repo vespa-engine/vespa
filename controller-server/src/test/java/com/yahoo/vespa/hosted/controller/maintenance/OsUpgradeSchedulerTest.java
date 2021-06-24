@@ -118,18 +118,20 @@ public class OsUpgradeSchedulerTest {
         // Enough time passes since promotion of stable release
         tester.clock().advance(Duration.ofDays(14).plus(Duration.ofSeconds(1)));
         scheduler.maintain();
-        OsVersionTarget target = tester.controller().osVersionTarget(cloud).get();
-        assertEquals(version1, target.osVersion().version());
+        OsVersionTarget target0 = tester.controller().osVersionTarget(cloud).get();
+        assertEquals(version1, target0.osVersion().version());
         assertEquals("No budget when upgrading to stable release",
-                     Duration.ZERO, target.upgradeBudget());
+                     Duration.ZERO, target0.upgradeBudget());
 
         // Another version is promoted, but target remains unchanged as the release hasn't aged enough
         tester.clock().advance(Duration.ofDays(1));
         Version version2 = Version.fromString("8.2");
         tester.serviceRegistry().artifactRepository().promoteOsVersion(new StableOsVersion(version2, tester.clock().instant()));
         scheduler.maintain();
+        OsVersionTarget target1 = tester.controller().osVersionTarget(cloud).get();
         assertEquals("Target is unchanged as not enough time has passed", version1,
-                     tester.controller().osVersionTarget(cloud).get().osVersion().version());
+                     target1.osVersion().version());
+        assertEquals("Target is not re-scheduled", target0.scheduledAt(), target1.scheduledAt());
     }
 
     private static ZoneApi zone(String id, CloudName cloud) {
