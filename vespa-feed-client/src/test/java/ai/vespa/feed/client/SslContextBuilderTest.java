@@ -59,6 +59,30 @@ class SslContextBuilderTest {
         assertEquals("TLS", sslContext.getProtocol());
     }
 
+    @Test
+    void successfully_constructs_sslcontext_when_no_builder_parameter_given() {
+        SSLContext sslContext = assertDoesNotThrow(() -> new SslContextBuilder().build());
+        assertEquals("TLS", sslContext.getProtocol());
+    }
+
+    @Test
+    void successfully_constructs_sslcontext_with_only_certificate_file() {
+        SSLContext sslContext = assertDoesNotThrow(() ->
+                new SslContextBuilder()
+                        .withCertificateAndKey(certificateFile, privateKeyFile)
+                        .build());
+        assertEquals("TLS", sslContext.getProtocol());
+    }
+
+    @Test
+    void successfully_constructs_sslcontext_with_only_ca_certificate_file() {
+        SSLContext sslContext = assertDoesNotThrow(() ->
+                new SslContextBuilder()
+                        .withCaCertificates(certificateFile)
+                        .build());
+        assertEquals("TLS", sslContext.getProtocol());
+    }
+
     private static void writePem(Path file, String type, byte[] asn1DerEncodedObject) throws IOException {
         try (BufferedWriter fileWriter = Files.newBufferedWriter(file);
              JcaPEMWriter pemWriter = new JcaPEMWriter(fileWriter)) {
