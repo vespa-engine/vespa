@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class DockerProvisioningCompleteHostCalculatorTest {
+public class VirtualNodeProvisioningCompleteHostCalculatorTest {
 
     @Test
     public void changing_to_different_range_preserves_allocation() {
@@ -117,7 +117,7 @@ public class DockerProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
+        public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
         /**
          * Returns the memory overhead resulting if the given advertised resources are placed on the given node

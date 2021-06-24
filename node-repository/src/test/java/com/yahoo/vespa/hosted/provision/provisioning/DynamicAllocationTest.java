@@ -43,12 +43,12 @@ import static org.junit.Assert.fail;
 /**
  * @author mortent
  */
-public class DynamicDockerAllocationTest {
+public class DynamicAllocationTest {
 
     /**
      * Test relocation of nodes from spare hosts.
      * <p>
-     * Setup 4 docker hosts and allocate one container on each (from two different applications)
+     * Setup 4 hosts and allocate one container on each (from two different applications)
      * getSpareCapacityProd() spares.
      * <p>
      * Check that it relocates containers away from the getSpareCapacityProd() spares
@@ -68,20 +68,20 @@ public class DynamicDockerAllocationTest {
                                                                     .build();
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
+        List<Node> hosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
         ClusterSpec clusterSpec1 = clusterSpec("myContent.t1.a1");
-        addAndAssignNode(application1, "1a", dockerHosts.get(0).hostname(), clusterSpec1, flavor, 0, tester);
-        addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), clusterSpec1, flavor, 1, tester);
+        addAndAssignNode(application1, "1a", hosts.get(0).hostname(), clusterSpec1, flavor, 0, tester);
+        addAndAssignNode(application1, "1b", hosts.get(1).hostname(), clusterSpec1, flavor, 1, tester);
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
         ClusterSpec clusterSpec2 = clusterSpec("myContent.t2.a2");
-        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), clusterSpec2, flavor, 3, tester);
-        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), clusterSpec2, flavor, 4, tester);
+        addAndAssignNode(application2, "2a", hosts.get(2).hostname(), clusterSpec2, flavor, 3, tester);
+        addAndAssignNode(application2, "2b", hosts.get(3).hostname(), clusterSpec2, flavor, 4, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
         deployApp(application1, clusterSpec1, flavor, tester, 2);
@@ -109,7 +109,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        NodeList dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host);
+        NodeList hosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host);
         NodeResources resources = new NodeResources(1, 4, 100, 0.3);
 
         // Application 1
@@ -137,7 +137,7 @@ public class DynamicDockerAllocationTest {
         deployApp(application3, clusterSpec3, resources, tester, 2);
 
         Map<Integer, Integer> numberOfChildrenStat = new HashMap<>();
-        for (Node host : dockerHosts) {
+        for (Node host : hosts) {
             int nofChildren = tester.nodeRepository().nodes().list().childrenOf(host).size();
             if (!numberOfChildrenStat.containsKey(nofChildren)) {
                 numberOfChildrenStat.put(nofChildren, 0);
@@ -188,7 +188,7 @@ public class DynamicDockerAllocationTest {
     /**
      * Test redeployment of nodes that violates spare headroom - but without alternatives
      * <p>
-     * Setup 2 docker hosts and allocate one app with a container on each. 2 spares
+     * Setup 2 hosts and allocate one app with a container on each. 2 spares
      * <p>
      * Initial allocation of app 1 --> final allocation:
      * <p>
@@ -201,14 +201,14 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
+        List<Node> hosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
         ClusterSpec clusterSpec1 = clusterSpec("myContent.t1.a1");
-        addAndAssignNode(application1, "1a", dockerHosts.get(0).hostname(), clusterSpec1, flavor, 0, tester);
-        addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), clusterSpec1, flavor, 1, tester);
+        addAndAssignNode(application1, "1a", hosts.get(0).hostname(), clusterSpec1, flavor, 0, tester);
+        addAndAssignNode(application1, "1b", hosts.get(1).hostname(), clusterSpec1, flavor, 1, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
         deployApp(application1, clusterSpec1, flavor, tester, 2);
@@ -227,7 +227,7 @@ public class DynamicDockerAllocationTest {
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
 
-        //Deploy an application having 6 nodes (3 nodes in 2 groups). We only have 5 docker hosts available
+        //Deploy an application having 6 nodes (3 nodes in 2 groups). We only have 5 hosts available
         ApplicationId application1 = ProvisioningTester.applicationId();
         tester.prepare(application1, clusterSpec("myContent.t1.a1"), 6, 2, new NodeResources(1, 4, 100, 1));
 
@@ -285,7 +285,7 @@ public class DynamicDockerAllocationTest {
     }
 
     @Test
-    public void cd_uses_slow_disk_nodes_for_docker_hosts() {
+    public void cd_uses_slow_disk_hosts() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.test, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(4, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
         tester.activateTenantHosts();

@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  * @author bratseth
  */
-public class DynamicDockerProvisionTest {
+public class DynamicProvisioningTest {
 
     private static final Zone zone = new Zone(
             Cloud.builder().dynamicProvisioning(true).build(),
@@ -396,7 +396,7 @@ public class DynamicDockerProvisionTest {
         List<HostSpec> prepared = tester.prepare(application, clusterSpec, nodes, groups, resources);
         NodeList provisionedHosts = tester.nodeRepository().nodes().list(Node.State.provisioned).nodeType(NodeType.host);
         if (!provisionedHosts.isEmpty()) {
-            tester.nodeRepository().nodes().setReady(provisionedHosts.asList(), Agent.system, DynamicDockerProvisionTest.class.getSimpleName());
+            tester.nodeRepository().nodes().setReady(provisionedHosts.asList(), Agent.system, DynamicProvisioningTest.class.getSimpleName());
             tester.activateTenantHosts();
         }
         tester.activate(application, prepared);

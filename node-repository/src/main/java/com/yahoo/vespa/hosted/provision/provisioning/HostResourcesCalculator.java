@@ -9,8 +9,9 @@ import com.yahoo.vespa.hosted.provision.Nodelike;
 
 /**
  * Some cloud providers advertise that a certain amount of resources are available in a flavor
- * but then actually provide somewhat less. This service provides the mapping between real and advertised
- * resources for all clouds.
+ * but then actually provide less.
+ *
+ * This class converts between real and advertised resources for all clouds.
  *
  * @author freva
  * @author bratseth
@@ -36,8 +37,9 @@ public interface HostResourcesCalculator {
     NodeResources realToRequest(NodeResources realResources, boolean exclusive);
 
     /**
-     * Returns the needed thin pool size in base2 Gb.
+     * Returns the disk space to reserve in base2 GB. This space is reserved for use by the host, e.g. for storing
+     * container images.
      */
-    long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost);
+    long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost);
 
 }
