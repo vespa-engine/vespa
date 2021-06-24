@@ -11,11 +11,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Main method for CLI interface
@@ -86,6 +84,7 @@ public class CliClient {
         cliArgs.certificateAndKey().ifPresent(c -> builder.setCertificate(c.certificateFile, c.privateKeyFile));
         cliArgs.caCertificates().ifPresent(builder::setCaCertificatesFile);
         cliArgs.headers().forEach(builder::addRequestHeader);
+        builder.setDryrun(cliArgs.dryrunEnabled());
         return builder.build();
     }
 

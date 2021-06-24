@@ -38,6 +38,7 @@ class CliArguments {
     private static final String CERTIFICATE_OPTION = "certificate";
     private static final String CONNECTIONS_OPTION = "connections";
     private static final String DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION = "disable-ssl-hostname-verification";
+    private static final String DRYRUN_OPTION = "dryrun";
     private static final String ENDPOINT_OPTION = "endpoint";
     private static final String FILE_OPTION = "file";
     private static final String HEADER_OPTION = "header";
@@ -149,6 +150,8 @@ class CliArguments {
     boolean verboseSpecified() { return has(VERBOSE_OPTION); }
 
     boolean readFeedFromStandardInput() { return has(STDIN_OPTION); }
+
+    boolean dryrunEnabled() { return has(DRYRUN_OPTION); }
 
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
@@ -272,6 +275,10 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(VERBOSE_OPTION)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(DRYRUN_OPTION)
+                        .desc("Enable dryrun mode where each operation succeeds after " + DryrunCluster.DELAY.toMillis() + "ms")
                         .build());
     }
 

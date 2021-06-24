@@ -45,6 +45,7 @@ public class FeedClientBuilder {
     PrivateKey privateKey;
     Collection<X509Certificate> caCertificates;
     boolean benchmark;
+    boolean dryrun;
 
     /** Creates a builder for a single container endpoint **/
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
@@ -156,6 +157,11 @@ public class FeedClientBuilder {
     /** Sets client SSL certificate/key */
     public FeedClientBuilder setCertificate(X509Certificate certificate, PrivateKey privateKey) {
         return setCertificate(Collections.singletonList(certificate), privateKey);
+    }
+
+    public FeedClientBuilder setDryrun(boolean enabled) {
+        this.dryrun = enabled;
+        return this;
     }
 
     /**
