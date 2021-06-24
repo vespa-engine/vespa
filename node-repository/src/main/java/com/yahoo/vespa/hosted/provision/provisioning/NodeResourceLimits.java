@@ -76,13 +76,13 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
-        return minRealDiskGb() + getThinPoolSize(requested.storageType(), exclusive);
+        return minRealDiskGb() + reservedDiskSpaceGb(requested.storageType(), exclusive);
     }
 
     // Note: Assumes node type 'host'
-    private long getThinPoolSize(NodeResources.StorageType storageType, boolean exclusive) {
+    private long reservedDiskSpaceGb(NodeResources.StorageType storageType, boolean exclusive) {
         if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning())
-            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(NodeType.host, ! exclusive);
+            return nodeRepository.resourcesCalculator().reservedDiskSpaceInBase2Gb(NodeType.host, ! exclusive);
         else
             return 4;
     }

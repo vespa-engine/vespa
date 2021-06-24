@@ -771,7 +771,7 @@ public class ProvisioningTester {
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
+        public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 
