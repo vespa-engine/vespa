@@ -235,7 +235,7 @@ public class VirtualNodeProvisioningTest {
     }
 
     @Test
-    public void docker_application_deployment() {
+    public void application_deployment() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(10, resources2).activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId("app1");
@@ -335,7 +335,7 @@ public class VirtualNodeProvisioningTest {
 
     /** Exclusive app first, then non-exclusive: Should give the same result as below */
     @Test
-    public void docker_application_deployment_with_exclusive_app_first() {
+    public void application_deployment_with_exclusive_app_first() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
         NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
@@ -354,7 +354,7 @@ public class VirtualNodeProvisioningTest {
 
     /** Non-exclusive app first, then an exclusive: Should give the same result as above */
     @Test
-    public void docker_application_deployment_with_exclusive_app_last() {
+    public void application_deployment_with_exclusive_app_last() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
         NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
@@ -373,21 +373,11 @@ public class VirtualNodeProvisioningTest {
 
     /** Test making an application exclusive */
     @Test
-    public void docker_application_deployment_change_to_exclusive_and_back() {
+    public void application_deployment_change_to_exclusive_and_back() {
         NodeResources hostResources = new NodeResources(10, 40, 1000, 10);
         NodeResources nodeResources = new NodeResources(1, 4, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         tester.makeReadyHosts(4, hostResources).activateTenantHosts();
-        /*
-        for (int i = 1; i <= 4; i++)
-            tester.makeReadyVirtualDockerNode(i, dockerResources, "host1");
-        for (int i = 5; i <= 8; i++)
-            tester.makeReadyVirtualDockerNode(i, dockerResources, "host2");
-        for (int i = 9; i <= 12; i++)
-            tester.makeReadyVirtualDockerNode(i, dockerResources, "host3");
-        for (int i = 13; i <= 16; i++)
-            tester.makeReadyVirtualDockerNode(i, dockerResources, "host4");
-         */
 
         ApplicationId application1 = ProvisioningTester.applicationId();
         prepareAndActivate(application1, 2, false, nodeResources, tester);
@@ -407,7 +397,7 @@ public class VirtualNodeProvisioningTest {
 
     /** Non-exclusive app first, then an exclusive: Should give the same result as above */
     @Test
-    public void docker_application_deployment_with_exclusive_app_causing_allocation_failure() {
+    public void application_deployment_with_exclusive_app_causing_allocation_failure() {
         ApplicationId application1 = ApplicationId.from("tenant1", "app1", "default");
         ApplicationId application2 = ApplicationId.from("tenant2", "app2", "default");
         ApplicationId application3 = ApplicationId.from("tenant1", "app3", "default");
@@ -444,8 +434,8 @@ public class VirtualNodeProvisioningTest {
             ProvisioningTester tester = new ProvisioningTester.Builder()
                     .zone(new Zone(Environment.prod, RegionName.from("us-east-1"))).build();
             ApplicationId application1 = ProvisioningTester.applicationId("app1");
-            tester.makeReadyChildren(1, resources2, "dockerHost1");
-            tester.makeReadyChildren(1, resources2, "dockerHost2");
+            tester.makeReadyChildren(1, resources2, "host1");
+            tester.makeReadyChildren(1, resources2, "host2");
 
             tester.prepare(application1,
                            ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion("6.42").build(),

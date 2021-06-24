@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class DockerProvisioningCompleteHostCalculatorTest {
+public class VirtualNodeProvisioningCompleteHostCalculatorTest {
 
     @Test
     public void changing_to_different_range_preserves_allocation() {
