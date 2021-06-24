@@ -293,6 +293,12 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
+            "defer-application-encryption", List.of(), String.class,
+            List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
+            "List of applications where encryption of their host should be deferred",
+            "Takes effect on next run of HostEncrypter");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

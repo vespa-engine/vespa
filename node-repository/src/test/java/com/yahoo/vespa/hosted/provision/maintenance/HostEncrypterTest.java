@@ -22,8 +22,10 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,6 +46,35 @@ public class HostEncrypterTest {
         provisionHosts(1);
         encrypter.maintain();
         assertEquals(0, tester.nodeRepository().nodes().list().encrypting().size());
+    }
+
+    @Test
+    public void deferred_hosts_are_not_encrypted() {
+        int hostCount = 4;
+        int proxyHostCount = 1;
+        ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
+        ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
+        provisionHosts(hostCount);
+        deployApplication(app1);
+        deployApplication(app2);
+
+        ApplicationId proxyHostApp = ApplicationId.from("hosted-vespa", "proxy-host", "default");
+        List<Node> proxyHosts = tester.makeReadyNodes(proxyHostCount, "default", NodeType.proxyhost, 10);
+        tester.patchNodes(proxyHosts, (host) -> host.with(host.status().withOsVersion(host.status().osVersion().withCurrent(Optional.of(Version.fromString("8.0"))))));
+        tester.prepareAndActivateInfraApplication(proxyHostApp, NodeType.proxyhost);
+
+        tester.flagSource()
+              .withIntFlag(Flags.MAX_ENCRYPTING_HOSTS.id(), hostCount + proxyHostCount)
+              .withListFlag(Flags.DEFER_APPLICATION_ENCRYPTION.id(), List.of(app2.serializedForm()), String.class);
+        encrypter.maintain();
+        NodeList allNodes = tester.nodeRepository().nodes().list();
+        NodeList encryptingHosts = allNodes.encrypting().parents();
+
+        assertEquals(1, encryptingHosts.size());
+        assertEquals("Host of included application is encrypted", Set.of(app1),
+                     allNodes.childrenOf(encryptingHosts.asList().get(0)).stream()
+                             .map(node -> node.allocation().get().owner())
+                             .collect(Collectors.toSet()));
     }
 
     @Test
