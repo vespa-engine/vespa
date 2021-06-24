@@ -196,10 +196,12 @@ public:
 private:
     // TODO STRIPE: reduce number of friends. DistributorStripe too popular for its own good.
     friend class Distributor;
+    friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
     friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend class MultiThreadedStripeAccessGuard;
+    friend struct DistributorStripeTest;
     friend struct LegacyDistributorTest;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);

@@ -7,7 +7,10 @@
 
 namespace storage {
 
-namespace distributor { class DistributorTestUtil; }
+namespace distributor {
+    class DistributorStripeTestUtil;
+    class DistributorTestUtil;
+}
 
 enum class TrustedUpdate {
     UPDATE,
@@ -200,6 +203,7 @@ public:
     void clear() { _nodes.clear(); }
 
 private:
+    friend class distributor::DistributorStripeTestUtil;
     friend class distributor::DistributorTestUtil;
 
     /**

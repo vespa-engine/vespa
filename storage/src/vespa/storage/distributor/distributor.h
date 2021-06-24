@@ -125,9 +125,11 @@ public:
     };
 
 private:
+    friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
     friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
+    friend struct DistributorStripeTest;
     friend struct LegacyDistributorTest;
 
     void setNodeStateUp();
