@@ -68,18 +68,20 @@ public class CliClient {
                 long startNanos = System.nanoTime();
                 feeder.feedMany(in, new ResultCallback() {
                     @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
-                    @Override public void onError(FeedException error) { fatal.set(error); }
+                    @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
                     @Override public void onComplete() { latch.countDown(); }
                 });
                 if (cliArgs.showProgress()) {
-                    new Thread(() -> {
+                    Thread progressPrinter = new Thread(() -> {
                         try {
                             while ( ! latch.await(10, TimeUnit.SECONDS)) {
                                 synchronized (printMonitor) { printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemError);}
                             }
                         }
                         catch (InterruptedException | IOException ignored) { } // doesn't happen
-                    }).start();
+                    });
+                    progressPrinter.setDaemon(true);
+                    progressPrinter.start();
                 }
                 latch.await();
                 if (cliArgs.benchmarkModeEnabled()) {
