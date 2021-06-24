@@ -24,7 +24,6 @@ namespace slobrok {
 class NamedService;
 class ManagedRpcServer;
 class RPCHooks;
-class SelfCheck;
 class RemoteCheck;
 
 /**
@@ -51,7 +50,6 @@ private:
     std::vector<std::string>                   _partnerList;
     std::string                                _me;
     RPCHooks                                   _rpcHooks;
-    std::unique_ptr<SelfCheck>                 _selfchecktask;
     std::unique_ptr<RemoteCheck>               _remotechecktask;
     vespalib::SimpleHealthProducer             _health;
     MetricsProducer                            _metrics;

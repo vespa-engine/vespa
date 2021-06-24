@@ -2,7 +2,6 @@
 
 #include "reconfigurable_stateserver.h"
 #include "sbenv.h"
-#include "selfcheck.h"
 #include "remote_check.h"
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -107,7 +106,6 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _partnerList(),
       _me(createSpec(_configShim.portNumber())),
       _rpcHooks(*this, _rpcsrvmap, _rpcsrvmanager),
-      _selfchecktask(std::make_unique<SelfCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager)),
       _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
       _health(),
       _metrics(_rpcHooks, *_transport),
