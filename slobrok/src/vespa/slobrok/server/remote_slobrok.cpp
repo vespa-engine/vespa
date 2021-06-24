@@ -62,8 +62,8 @@ RemoteSlobrok::~RemoteSlobrok()
 void
 RemoteSlobrok::doPending()
 {
-    LOG_ASSERT(_remAddReq == nullptr);
-    LOG_ASSERT(_remRemReq == nullptr);
+    if (_remAddReq != nullptr) return;
+    if (_remRemReq != nullptr) return;
 
     if (_remote == nullptr) return;
 
@@ -162,7 +162,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
         _remListReq = nullptr;
 
         // next step is to push the ones I own:
-        if (_remote != nullptr) pushMine();
+        maybePushMine();
     } else if (req == _remAddReq) {
         // handle response after pushing some name that we managed:
         if (req->IsError() && (req->GetErrorCode() == FRTE_RPC_CONNECTION ||
@@ -241,7 +241,7 @@ RemoteSlobrok::fail()
 
 
 void
-RemoteSlobrok::healthCheck()
+RemoteSlobrok::maybePushMine()
 {
     if (_remote != nullptr &&
         _remAddPeerReq == nullptr &&
@@ -267,9 +267,11 @@ RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv)
     // connection was OK, so disable any pending reconnect
     _reconnecter.disable();
 
-    if (_remote == nullptr) {
-        _remote = getSupervisor()->GetTarget(getSpec().c_str());
+    if (_remote != nullptr) {
+        // the rest here should only be done on first notifyOk
+        return;
     }
+    _remote = getSupervisor()->GetTarget(getSpec().c_str());
 
     // at this point, we will do (in sequence):
     // ask peer to connect to us too;
