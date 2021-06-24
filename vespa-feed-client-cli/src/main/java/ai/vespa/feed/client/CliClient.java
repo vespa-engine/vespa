@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
+import ai.vespa.feed.client.JsonFeeder.ResultCallback;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -12,8 +13,10 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Main method for CLI interface
@@ -27,6 +30,7 @@ public class CliClient {
     private final InputStream systemIn;
     private final Properties systemProperties;
     private final Map<String, String> environmentVariables;
+    private final Object printMonitor = new Object();
 
     private CliClient(PrintStream systemOut, PrintStream systemError, InputStream systemIn,
                       Properties systemProperties, Map<String, String> environmentVariables) {
@@ -44,9 +48,10 @@ public class CliClient {
     }
 
     private int run(String[] rawArgs) {
-        CliArguments cliArgs = null;
+        boolean verbose = false;
         try {
-            cliArgs = CliArguments.fromRawArgs(rawArgs);
+            CliArguments cliArgs = CliArguments.fromRawArgs(rawArgs);
+            verbose = cliArgs.verboseSpecified();
             if (cliArgs.helpSpecified()) {
                 cliArgs.printHelp(systemOut);
                 return 0;
@@ -58,19 +63,52 @@ public class CliClient {
             try (InputStream in = createFeedInputStream(cliArgs);
                  FeedClient feedClient = createFeedClient(cliArgs);
                  JsonFeeder feeder = createJsonFeeder(feedClient, cliArgs)) {
+                CountDownLatch latch = new CountDownLatch(1);
+                AtomicReference<FeedException> fatal = new AtomicReference<>();
                 long startNanos = System.nanoTime();
-                feeder.feedMany(in).join();
+                feeder.feedMany(in, new ResultCallback() {
+                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
+                    @Override public void onError(FeedException error) { fatal.set(error); }
+                    @Override public void onComplete() { latch.countDown(); }
+                });
+                if (cliArgs.showProgress()) {
+                    new Thread(() -> {
+                        try {
+                            while ( ! latch.await(10, TimeUnit.SECONDS)) {
+                                synchronized (printMonitor) { printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemError);}
+                            }
+                        }
+                        catch (InterruptedException | IOException ignored) { } // doesn't happen
+                    }).start();
+                }
+                latch.await();
                 if (cliArgs.benchmarkModeEnabled()) {
                     printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemOut);
                 }
+                if (fatal.get() != null) throw fatal.get();
             }
             return 0;
-        } catch (CliArguments.CliArgumentsException | IOException e) {
-            boolean verbose = cliArgs != null && cliArgs.verboseSpecified();
+        } catch (CliArguments.CliArgumentsException | IOException | FeedException e) {
             return handleException(verbose, e);
         } catch (Exception e) {
-            boolean verbose = cliArgs != null && cliArgs.verboseSpecified();
             return handleException(verbose, "Unknown failure: " + e.getMessage(), e);
+        }
+    }
+
+    private void handleResult(Result result, FeedException error, CliArguments args) {
+        if (error != null) {
+            if (args.showErrors()) synchronized (printMonitor) {
+                systemError.println(error.getMessage());
+                if (error instanceof ResultException) ((ResultException) error).getTrace().ifPresent(systemError::println);
+                if (args.verboseSpecified()) error.printStackTrace(systemError);
+            }
+        }
+        else {
+            if (args.showSuccesses()) synchronized (printMonitor) {
+                systemError.println(result.documentId() + ": " + result.type());
+                result.traceMessage().ifPresent(systemError::println);
+                result.resultMessage().ifPresent(systemError::println);
+            }
         }
     }
 
@@ -104,17 +142,10 @@ public class CliClient {
 
     private int handleException(boolean verbose, String message, Exception exception) {
         systemError.println(message);
-        if (debugMode() || verbose) {
+        if (verbose) {
             exception.printStackTrace(systemError);
         }
         return 1;
-    }
-
-    private boolean debugMode() {
-        boolean enabledWithSystemProperty = Boolean.parseBoolean(systemProperties.getProperty("VESPA_DEBUG", Boolean.FALSE.toString()));
-        boolean enabledWithEnvironmentVariable = Optional.ofNullable(environmentVariables.get("VESPA_DEBUG"))
-                .map(Boolean::parseBoolean).orElse(false);
-        return enabledWithSystemProperty || enabledWithEnvironmentVariable;
     }
 
     private static class AcceptAllHostnameVerifier implements HostnameVerifier {
