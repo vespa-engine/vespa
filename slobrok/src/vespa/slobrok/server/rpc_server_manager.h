@@ -43,7 +43,7 @@ private:
             : rpcsrv(d), handler(std::move(h)) {}
     };
     std::vector<MRSandRRSC>         _addManageds;
-    std::vector<std::unique_ptr<ManagedRpcServer>> _deleteList;
+    std::vector<std::unique_ptr<NamedService>> _deleteList;
 public:
     OkState checkPartner(const std::string & remslobrok);
 
