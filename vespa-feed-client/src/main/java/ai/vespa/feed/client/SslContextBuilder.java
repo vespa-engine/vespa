@@ -11,8 +11,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * BouncyCastle integration for creating a {@link SSLContext} instance from PEM encoded material
@@ -72,26 +75,44 @@ class SslContextBuilder {
         try {
             KeyStore keystore = KeyStore.getInstance("PKCS12");
             keystore.load(null);
-            if (certificateFile != null && privateKeyFile != null) {
+            if (hasCertificateFile()) {
                 keystore.setKeyEntry("cert", privateKey(privateKeyFile), new char[0], certificates(certificateFile));
-            } else if (certificate != null && privateKey != null) {
+            } else if (hasCertificateInstance()) {
                 keystore.setKeyEntry("cert", privateKey, new char[0], certificate.toArray(new Certificate[0]));
             }
-            if (caCertificatesFile != null) {
+            if (hasCaCertificateFile()) {
                 addCaCertificates(keystore, Arrays.asList(certificates(caCertificatesFile)));
-            } else if (caCertificates != null) {
+            } else if (hasCaCertificateInstance()) {
                 addCaCertificates(keystore, caCertificates);
             }
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(keystore, new char[0]);
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(keystore);
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            sslContext.init(
+                    createKeyManagers(keystore).orElse(null),
+                    createTrustManagers(keystore).orElse(null),
+                    /*Default secure random algorithm*/null);
             return sslContext;
         } catch (GeneralSecurityException e) {
             throw new IOException(e);
         }
+    }
+
+    private boolean hasCertificateFile() { return certificateFile != null && privateKeyFile != null; }
+    private boolean hasCertificateInstance() { return certificate != null && privateKey != null; }
+    private boolean hasCaCertificateFile() { return caCertificatesFile != null; }
+    private boolean hasCaCertificateInstance() { return caCertificates != null; }
+
+    private Optional<KeyManager[]> createKeyManagers(KeyStore keystore) throws GeneralSecurityException {
+        if (!hasCertificateInstance() && !hasCertificateFile()) return Optional.empty();
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keystore, new char[0]);
+        return Optional.of(kmf.getKeyManagers());
+    }
+
+    private Optional<TrustManager[]> createTrustManagers(KeyStore keystore) throws GeneralSecurityException {
+        if (!hasCaCertificateInstance() && !hasCaCertificateFile()) return Optional.empty();
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(keystore);
+        return Optional.of(tmf.getTrustManagers());
     }
 
     private static void addCaCertificates(KeyStore keystore, Collection<? extends Certificate> certificates) throws KeyStoreException {
