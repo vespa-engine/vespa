@@ -5,10 +5,9 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -40,12 +39,12 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
     private static final Logger LOG = Logger.getLogger(HostEncrypter.class.getName());
 
     private final IntFlag maxEncryptingHosts;
-    private final BooleanFlag deferHostEncryption;
+    private final ListFlag<String> deferApplicationEncryption;
 
     public HostEncrypter(NodeRepository nodeRepository, Duration interval, Metric metric) {
         super(nodeRepository, interval, metric);
         this.maxEncryptingHosts = Flags.MAX_ENCRYPTING_HOSTS.bindTo(nodeRepository.flagSource());
-        this.deferHostEncryption = Flags.DEFER_HOST_ENCRYPTION.bindTo(nodeRepository.flagSource());
+        this.deferApplicationEncryption = Flags.DEFER_APPLICATION_ENCRYPTION.bindTo(nodeRepository.flagSource());
     }
 
     @Override
@@ -82,10 +81,14 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
 
         // Encrypt hosts not containing stateful clusters with retiring nodes, up to limit
         List<Node> hostsToEncrypt = new ArrayList<>(hostLimit);
+
+        Set<ApplicationId> deferredApplications = deferApplicationEncryption.value().stream()
+                                                                            .map(ApplicationId::fromSerializedForm)
+                                                                            .collect(Collectors.toSet());
         NodeList candidates = hostsOfTargetType.state(Node.State.active)
                                                .not().encrypted()
                                                .not().encrypting()
-                                               .not().matching(host -> deferEncryptionOf(host, allNodes))
+                                               .matching(host -> encryptHost(host, allNodes, deferredApplications))
                                                // Require an OS version supporting encryption
                                                .matching(node -> node.status().osVersion().current()
                                                                      .orElse(Version.emptyVersion)
@@ -112,18 +115,15 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
         return Math.max(0, limit - hosts.encrypting().size());
     }
 
-    private boolean deferEncryptionOf(Node host, NodeList allNodes) {
+    private boolean encryptHost(Node host, NodeList allNodes, Set<ApplicationId> deferredApplications) {
         // TODO: Require a minimum number of proxies in Orchestrator. For now skip proxy hosts.
-        if (host.type() == NodeType.proxyhost) return true;
+        if (host.type() == NodeType.proxyhost) return false;
 
         Set<ApplicationId> applicationsOnHost = allNodes.childrenOf(host).stream()
                                                         .filter(node -> node.allocation().isPresent())
                                                         .map(node -> node.allocation().get().owner())
                                                         .collect(Collectors.toSet());
-        return applicationsOnHost.stream()
-                                 .anyMatch(application -> deferHostEncryption.with(FetchVector.Dimension.APPLICATION_ID,
-                                                                                   application.serializedForm())
-                                                                             .value());
+        return Collections.disjoint(applicationsOnHost, deferredApplications);
     }
 
     private void encrypt(Node host, Instant now) {
