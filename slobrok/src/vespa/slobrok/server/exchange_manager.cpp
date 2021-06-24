@@ -108,9 +108,8 @@ ExchangeManager::lookupPartner(const std::string & name) const {
 void
 ExchangeManager::healthCheck()
 {
-    for (const auto & entry : _partners) {
-        RemoteSlobrok *partner = entry.second.get();
-        partner->healthCheck();
+    for (const auto & [ name, partner ] : _partners) {
+        partner->maybePushMine();
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());
 }
