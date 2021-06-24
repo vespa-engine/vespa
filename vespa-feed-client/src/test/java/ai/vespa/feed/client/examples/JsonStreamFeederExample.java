@@ -100,8 +100,6 @@ class JsonStreamFeederExample extends Thread implements AutoCloseable {
                     if (throwable != null) {
                         System.err.printf("Failure for '%s': %s", docId, throwable);
                         throwable.printStackTrace();
-                    } else if (result.type() == Result.Type.failure) {
-                        System.err.printf("Failure for '%s': %s", docId, result.resultMessage().orElse("<no messsage>"));
                     }
                 });
             } catch (InterruptedException e) {
