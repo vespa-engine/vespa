@@ -54,7 +54,7 @@ namespace searchcorespi::index {
  * to sync index field inverter executor before syncing index field
  * writer executor.
  *
- * TODO: * indexFieldWriter and indexFieldWriter can be collapsed to one. Both need sequencing,
+ * TODO: * indexFieldInverter and indexFieldWriter can be collapsed to one. Both need sequencing,
  *         but they sequence on different things so efficiency will be the same and just depends on #threads
  */
 struct IThreadingService : public vespalib::Syncable
