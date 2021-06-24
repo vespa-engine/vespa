@@ -7,10 +7,11 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -54,8 +55,8 @@ public class OsVersionStatusSerializer {
         return new OsVersionStatus(osVersionsFromSlime(slime.get().field(versionsField)));
     }
 
-    private ImmutableMap<OsVersion, NodeVersions> osVersionsFromSlime(Inspector array) {
-        var versions = ImmutableSortedMap.<OsVersion, NodeVersions>naturalOrder();
+    private ImmutableMap<OsVersion, List<NodeVersion>> osVersionsFromSlime(Inspector array) {
+        var versions = ImmutableSortedMap.<OsVersion, List<NodeVersion>>naturalOrder();
         array.traverse((ArrayTraverser) (i, object) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(object);
             versions.put(osVersion, nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), osVersion.version()));

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.deployment;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -109,9 +108,9 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             versionObject.setBool("systemVersion", version.isSystemVersion());
 
             Cursor configServerArray = versionObject.setArray("configServers");
-            for (HostName hostname : version.nodeVersions().hostnames()) {
+            for (var nodeVersion : version.nodeVersions()) {
                 Cursor configServerObject = configServerArray.addObject();
-                configServerObject.setString("hostname", hostname.value());
+                configServerObject.setString("hostname", nodeVersion.hostname().value());
             }
 
             DeploymentStatistics statistics = deploymentStatistics.get(version.versionNumber());

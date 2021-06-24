@@ -235,7 +235,7 @@ public class OsUpgraderTest {
     private List<NodeVersion> nodesOn(Version version) {
         return tester.controller().osVersionStatus().versions().entrySet().stream()
                      .filter(entry -> entry.getKey().version().equals(version))
-                     .flatMap(entry -> entry.getValue().asMap().values().stream())
+                     .flatMap(entry -> entry.getValue().stream())
                      .collect(Collectors.toList());
     }
 
