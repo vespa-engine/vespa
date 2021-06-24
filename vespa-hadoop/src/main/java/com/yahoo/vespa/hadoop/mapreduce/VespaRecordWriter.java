@@ -46,6 +46,7 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
     public void write(Object key, Object data) throws IOException {
         initializeOnFirstWrite();
         String json = data.toString().trim();
+        log.info(json); // TODO(bjorncs) Remove temporary logging of JSON
         feeder.feedSingle(json)
                 .whenComplete((result, error) -> {
                     if (error != null) {
