@@ -2,16 +2,20 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <tests/common/dummystoragelink.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 using namespace ::testing;
 
 namespace storage::distributor {
@@ -515,6 +519,74 @@ TEST_F(PendingMessageTrackerTest, abort_invokes_deferred_tasks_with_aborted_stat
     EXPECT_EQ(state, TaskRunState::OK);
     f.tracker().abort_deferred_tasks();
     EXPECT_EQ(state, TaskRunState::Aborted);
+}
+
+TEST_F(PendingMessageTrackerTest, request_bucket_info_with_no_buckets_tracked_as_null_bucket) {
+    Fixture f;
+    auto msg = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), 0, lib::ClusterState(), "");
+    msg->setAddress(makeStorageAddress(2));
+    f.tracker().insert(msg);
+
+    // Tracked as null bucket
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(document::BucketId()), enumerator);
+        EXPECT_EQ("Request bucket info -> 2\n", enumerator.str());
+    }
+
+    // Nothing to a specific bucket
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(document::BucketId(16, 1234)), enumerator);
+        EXPECT_EQ("", enumerator.str());
+    }
+
+    auto reply = std::shared_ptr<api::StorageReply>(msg->makeReply());
+    f.tracker().reply(*reply);
+
+    // No longer tracked as null bucket
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(document::BucketId()), enumerator);
+        EXPECT_EQ("", enumerator.str());
+    }
+}
+
+TEST_F(PendingMessageTrackerTest, request_bucket_info_with_bucket_tracked_with_superbucket) {
+    Fixture f;
+    document::BucketId bucket(16, 1234);
+    auto msg = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), std::vector<document::BucketId>({bucket}));
+    msg->setAddress(makeStorageAddress(3));
+    f.tracker().insert(msg);
+
+    // Not tracked as null bucket
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(document::BucketId()), enumerator);
+        EXPECT_EQ("", enumerator.str());
+    }
+    // Tracked for superbucket
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(bucket), enumerator);
+        EXPECT_EQ("Request bucket info -> 3\n", enumerator.str());
+    }
+    // Not tracked for other buckets
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(document::BucketId(16, 2345)), enumerator);
+        EXPECT_EQ("", enumerator.str());
+    }
+
+    auto reply = std::shared_ptr<api::StorageReply>(msg->makeReply());
+    f.tracker().reply(*reply);
+
+    // No longer tracked for specified bucket
+    {
+        OperationEnumerator enumerator;
+        f.tracker().checkPendingMessages(makeDocumentBucket(bucket), enumerator);
+        EXPECT_EQ("", enumerator.str());
+    }
 }
 
 }

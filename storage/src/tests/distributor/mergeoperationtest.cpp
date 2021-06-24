@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
@@ -8,14 +10,18 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
+using document::test::makeBucketSpace;
 using namespace ::testing;
 
 namespace storage::distributor {
+
+namespace {
+vespalib::string _g_storage("storage");
+}
 
 struct MergeOperationTest : Test, DistributorTestUtil {
     OperationSequencer _operation_sequencer;
@@ -252,8 +258,7 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     // at will.
     auto msg = std::make_shared<api::SetBucketStateCommand>(
             makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE);
-    vespalib::string storage("storage");
-    msg->setAddress(api::StorageMessageAddress::create(&storage, lib::NodeType::STORAGE, 1));
+    msg->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1));
     pending_message_tracker().insert(msg);
 
     sendReply(op);
@@ -455,6 +460,44 @@ TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {
               "cluster state version: 0, nodes: [0, 1], chain: [], "
               "reasons to start: ) => 0",
               _sender.getLastCommand(true));
+}
+
+TEST_F(MergeOperationTest, merge_operation_is_blocked_by_request_bucket_info_to_any_node_in_chain) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    document::BucketId bucket_id(16, 1);
+    addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enableDistributorClusterState("distributor:1 storage:3");
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    // Not initially blocked
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
+
+    auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(
+            makeBucketSpace(), std::vector<document::BucketId>({bucket_id}));
+    info_cmd->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1)); // 1 is in chain
+    pending_message_tracker().insert(info_cmd);
+
+    // Now blocked by info request
+    EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
+}
+
+TEST_F(MergeOperationTest, merge_operation_is_not_blocked_by_request_bucket_info_to_unrelated_bucket) {
+    getClock().setAbsoluteTimeInSeconds(10);
+    document::BucketId bucket_id(16, 1);
+    document::BucketId other_bucket_id(16, 2);
+    addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
+    enableDistributorClusterState("distributor:1 storage:3");
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
+    op.setIdealStateManager(&getIdealStateManager());
+
+    auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(
+            makeBucketSpace(), std::vector<document::BucketId>({other_bucket_id}));
+    info_cmd->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1));
+    pending_message_tracker().insert(info_cmd);
+
+    // Not blocked; bucket info request is for another bucket
+    EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
 } // storage::distributor
