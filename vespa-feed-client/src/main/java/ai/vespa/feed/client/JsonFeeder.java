@@ -359,16 +359,14 @@ public class JsonFeeder implements Closeable {
         abstract String getDocumentJson(long start, long end);
 
         CompletableFuture<Result> next() throws IOException {
-            if (multipleOperations && !arrayPrefixParsed){
-                expect(START_ARRAY);
-                arrayPrefixParsed = true;
-            }
-
             JsonToken token = parser.nextToken();
+            if (multipleOperations && ! arrayPrefixParsed && token == START_ARRAY) {
+                arrayPrefixParsed = true;
+                token = parser.nextToken();
+            }
             if (token == END_ARRAY && multipleOperations) return null;
-            else if (token == null && !multipleOperations) return null;
-            else if (token == START_OBJECT);
-            else throw new OperationParseException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
+            else if (token == null && ! arrayPrefixParsed) return null;
+            else if (token != START_OBJECT) throw new OperationParseException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
             long start = 0, end = -1;
             OperationType type = null;
             DocumentId id = null;

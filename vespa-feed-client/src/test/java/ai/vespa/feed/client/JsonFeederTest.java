@@ -3,11 +3,13 @@ package ai.vespa.feed.client;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -73,6 +75,48 @@ class JsonFeederTest {
             assertEquals(docs + 1, resultsReceived.get());
             assertTrue(completedSuccessfully.get());
             assertNull(exceptionThrow.get());
+        }
+    }
+
+    @Test
+    public void multipleJsonArrayOperationsAreDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
+        SimpleClient client = new SimpleClient();
+        try (JsonFeeder feeder = JsonFeeder.builder(client).build()) {
+            String json = "[{" +
+                          "  \"put\": \"id:ns:type::abc1\",\n" +
+                          "  \"fields\": {\n" +
+                          "    \"lul\":\"lal\"\n" +
+                          "  }\n" +
+                          "},\n" +
+                          "{" +
+                          "  \"put\": \"id:ns:type::abc2\",\n" +
+                          "  \"fields\": {\n" +
+                          "    \"lul\":\"lal\"\n" +
+                          "  }\n" +
+                          "}]\n";
+            feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8))).get();
+            assertEquals(new HashSet<>(Arrays.asList("abc1", "abc2")), client.ids);
+        }
+    }
+
+    @Test
+    public void multipleJsonLOperationsAreDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
+        SimpleClient client = new SimpleClient();
+        try (JsonFeeder feeder = JsonFeeder.builder(client).build()) {
+            String json = "{" +
+                          "  \"put\": \"id:ns:type::abc1\",\n" +
+                          "  \"fields\": {\n" +
+                          "    \"lul\":\"lal\"\n" +
+                          "  }\n" +
+                          "}\n" +
+                          "{" +
+                          "  \"put\": \"id:ns:type::abc2\",\n" +
+                          "  \"fields\": {\n" +
+                          "    \"lul\":\"lal\"\n" +
+                          "  }\n" +
+                          "}\n";
+            feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8))).get();
+            assertEquals(new HashSet<>(Arrays.asList("abc1", "abc2")), client.ids);
         }
     }
 
