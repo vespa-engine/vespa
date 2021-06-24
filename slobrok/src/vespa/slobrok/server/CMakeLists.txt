@@ -18,7 +18,6 @@ vespa_add_library(slobrok_slobrokserver
     rpchooks.cpp
     rpcmirror.cpp
     sbenv.cpp
-    selfcheck.cpp
     slobrokserver.cpp
     visible_map.cpp
     metrics_producer.cpp
