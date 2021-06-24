@@ -47,6 +47,26 @@ public class HostEncrypterTest {
     }
 
     @Test
+    public void deferred_hosts_are_not_encrypted() {
+        int hostCount = 2;
+        int proxyHostCount = 1;
+        ApplicationId tenantApp = ApplicationId.from("t1", "a1", "i1");
+        provisionHosts(hostCount);
+        deployApplication(tenantApp);
+
+        ApplicationId proxyHostApp = ApplicationId.from("t2", "a2", "i2");
+        List<Node> proxyHosts = tester.makeReadyNodes(proxyHostCount, "default", NodeType.proxyhost, 10);
+        tester.patchNodes(proxyHosts, (host) -> host.with(host.status().withOsVersion(host.status().osVersion().withCurrent(Optional.of(Version.fromString("8.0"))))));
+        tester.prepareAndActivateInfraApplication(proxyHostApp, NodeType.proxyhost);
+
+        tester.flagSource()
+              .withIntFlag(Flags.MAX_ENCRYPTING_HOSTS.id(), hostCount + proxyHostCount)
+              .withBooleanFlag(Flags.DEFER_HOST_ENCRYPTION.id(), true);
+        encrypter.maintain();
+        assertEquals("No hosts are encrypted", 0, tester.nodeRepository().nodes().list().encrypting().size());
+    }
+
+    @Test
     public void encrypt_hosts() {
         tester.flagSource().withIntFlag(Flags.MAX_ENCRYPTING_HOSTS.id(), 3);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
