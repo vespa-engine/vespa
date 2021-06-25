@@ -45,7 +45,7 @@
         "idealCpu": 0.2664285714285714,
         "currentCpu": 0.0,
         "memory" : 0.0,
-        "idealMemory": 0.7,
+        "idealMemory": 0.65,
         "currentMemory": 0.0,
         "disk" : 0.0,
         "idealDisk": 0.6,

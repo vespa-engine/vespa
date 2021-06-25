@@ -218,7 +218,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, resources);
         tester.addMeasurements(0.05f, 0.05f, 0.05f,  0, 120, application1);
         tester.assertResources("Scaling down to limit since resource usage is low",
-                               4, 1, 1.8,  7.4, 10.0,
+                               4, 1, 1.8,  7.7, 10.0,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -453,7 +453,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Increase group size to reduce memory load",
-                               8, 2, 12.4,  89.3, 62.5,
+                               8, 2, 12.4,  96.2, 62.5,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -522,7 +522,7 @@ public class AutoscalingTest {
             tester.clock().advance(Duration.ofMinutes(-10 * 5));
             tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
             tester.assertResources("Scaling up",
-                                   4, 1, 6.7, 20, 200,
+                                   4, 1, 6.7, 20.5, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max).target());
         }
 
@@ -537,7 +537,7 @@ public class AutoscalingTest {
             tester.clock().advance(Duration.ofMinutes(-10 * 5));
             tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
             tester.assertResources("Scaling up",
-                                   4, 1, 6.7, 34, 200,
+                                   4, 1, 6.7, 35.5, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max).target());
         }
     }
