@@ -153,7 +153,7 @@
       "public ai.vespa.feed.client.FeedClientBuilder setMaxStreamPerConnection(int)",
       "public ai.vespa.feed.client.FeedClientBuilder setSslContext(javax.net.ssl.SSLContext)",
       "public ai.vespa.feed.client.FeedClientBuilder setHostnameVerifier(javax.net.ssl.HostnameVerifier)",
-      "public ai.vespa.feed.client.FeedClientBuilder setBenchmarkOn(boolean)",
+      "public ai.vespa.feed.client.FeedClientBuilder noBenchmarking()",
       "public ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.lang.String)",
       "public ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.util.function.Supplier)",
       "public ai.vespa.feed.client.FeedClientBuilder setRetryStrategy(ai.vespa.feed.client.FeedClient$RetryStrategy)",
