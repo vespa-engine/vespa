@@ -25,8 +25,7 @@ public class Result {
 
     public enum Type {
         success,
-        conditionNotMet,
-        failure
+        conditionNotMet
     }
 
     public Type type() { return type; }

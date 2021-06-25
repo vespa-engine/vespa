@@ -38,17 +38,15 @@ class JsonFileFeederExample implements Closeable {
             resultsReceived.incrementAndGet();
             if (error != null) {
                 log.warning("Problems with feeding document "
-                        + error.documentId().map(DocumentId::toString).orElse("<unknown>"));
-                errorsReceived.incrementAndGet();
-            } else if (result.type() == Result.Type.failure) {
-                log.warning("Problems with docID " + result.documentId() + ":" + error);
+                        + error.documentId().map(DocumentId::toString).orElse("<unknown>")
+                        + ": " + error);
                 errorsReceived.incrementAndGet();
             }
         }
 
         @Override
         public void onError(FeedException error) {
-            log.severe("Feeding failed for d: " + error.getMessage());
+            log.severe("Feeding failed fatally: " + error.getMessage());
         }
 
         @Override

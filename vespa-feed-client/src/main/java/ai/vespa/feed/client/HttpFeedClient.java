@@ -85,15 +85,25 @@ class HttpFeedClient implements FeedClient {
                               .thenApply(response -> toResult(request, response, documentId));
     }
 
+    private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
+
+    static Result.Type toResultType(Outcome outcome) {
+        switch (outcome) {
+            case success: return Result.Type.success;
+            case conditionNotMet: return Result.Type.conditionNotMet;
+            default: throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
+        }
+    }
+
     static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
-        Result.Type type;
+        Outcome outcome;
         switch (response.code()) {
-            case 200: type = Result.Type.success; break;
-            case 412: type = Result.Type.conditionNotMet; break;
+            case 200: outcome = Outcome.success; break;
+            case 412: outcome = Outcome.conditionNotMet; break;
             case 502:
             case 504:
-            case 507: type = Result.Type.failure; break;
-            default:  type = null;
+            case 507: outcome = Outcome.vespaFailure; break;
+            default:  outcome = Outcome.transportFailure;
         }
 
         String message = null;
@@ -125,13 +135,16 @@ class HttpFeedClient implements FeedClient {
             throw new ResultParseException(documentId, e);
         }
 
-        if (type == null) // Not a Vespa response, but a failure in the HTTP layer.
-            throw new ResultParseException(
+        if (outcome == Outcome.transportFailure) // Not a Vespa response, but a failure in the HTTP layer.
+            throw new FeedException(
                     documentId,
                     "Status " + response.code() + " executing '" + request + "': "
                             + (message == null ? new String(response.body(), UTF_8) : message));
 
-        return new Result(type, documentId, message, trace);
+        if (outcome == Outcome.vespaFailure)
+            throw new ResultException(documentId, message, trace);
+
+        return new Result(toResultType(outcome), documentId, message, trace);
     }
 
     static String getPath(DocumentId documentId) {

@@ -13,6 +13,7 @@ import java.util.function.BiFunction;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author jonmv
@@ -55,16 +56,19 @@ class HttpFeedClientTest {
                 return failed;
             }
         });
-        Result result = client.put(id,
-                                   "json",
-                                   OperationParameters.empty()
-                                                      .createIfNonExistent(true)
-                                                      .testAndSetCondition("false")
-                                                      .route("route")
-                                                      .timeout(Duration.ofSeconds(5)))
-                              .get();
-        assertEquals("Ooops! ... I did it again.", result.resultMessage().get());
-        assertEquals("I played with your heart. Got lost in the game.", result.traceMessage().get());
+        ExecutionException expected = assertThrows(ExecutionException.class,
+                                                   () ->  client.put(id,
+                                                                     "json",
+                                                                     OperationParameters.empty()
+                                                                                        .createIfNonExistent(true)
+                                                                                        .testAndSetCondition("false")
+                                                                                        .route("route")
+                                                                                        .timeout(Duration.ofSeconds(5)))
+                                                                .get());
+        assertTrue(expected.getCause() instanceof ResultException);
+        ResultException result = (ResultException) expected.getCause();
+        assertEquals("Ooops! ... I did it again.", result.getMessage());
+        assertEquals("I played with your heart. Got lost in the game.", result.getTrace().get());
 
 
         // Handler error is a FeedException.
@@ -90,11 +94,11 @@ class HttpFeedClientTest {
                 return failed;
             }
         });
-        ExecutionException expected = assertThrows(ExecutionException.class,
-                                                   () -> client.put(id,
-                                                                    "json",
-                                                                    OperationParameters.empty())
-                                                               .get());
+        expected = assertThrows(ExecutionException.class,
+                                () -> client.put(id,
+                                                 "json",
+                                                 OperationParameters.empty())
+                                            .get());
         assertEquals("Status 500 executing 'POST /document/v1/ns/type/docid/0': Alla ska i jorden.", expected.getCause().getMessage());
     }
 
