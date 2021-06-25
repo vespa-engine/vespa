@@ -5,4 +5,5 @@
   <component id="com.yahoo.language.simple.SimpleLinguistics" />
 
   <search/>
+  <accesslog type="disabled" />
 </container>
