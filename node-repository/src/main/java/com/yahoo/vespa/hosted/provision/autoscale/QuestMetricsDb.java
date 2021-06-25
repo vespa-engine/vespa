@@ -72,7 +72,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         if (dataDir.startsWith(Defaults.getDefaults().vespaHome())
             && ! new File(Defaults.getDefaults().vespaHome()).exists())
             dataDir = "data"; // We're injected, but not on a node with Vespa installed
-        IOUtils.createDirectory(dataDir);
+        IOUtils.createDirectory(dataDir + "/");
         // silence Questdb's custom logging system
         IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
         System.setProperty("out", dataDir + "/quest-log.conf");
