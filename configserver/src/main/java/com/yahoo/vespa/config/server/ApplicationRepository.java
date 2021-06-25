@@ -604,9 +604,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Set<String> getFileReferencesInUse() {
         Set<String> fileReferencesInUse = new HashSet<>();
         for (var applicationId : listApplications()) {
-            Optional<Application> app = getOptionalApplication(applicationId);
-            if (app.isEmpty()) continue;
-            fileReferencesInUse.addAll(app.get().getModel().fileReferences().stream()
+            Application app = getApplication(applicationId);
+            fileReferencesInUse.addAll(app.getModel().fileReferences().stream()
                                           .map(FileReference::value)
                                           .collect(Collectors.toSet()));
         }
