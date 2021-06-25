@@ -341,7 +341,7 @@ public class JsonFeeder implements Closeable {
 
         @Override
         String getDocumentJson(long start, long end) {
-            return new String(json, (int) start, (int) (end - start), UTF_8);
+            return "{\"fields\":" + new String(json, (int) start, (int) (end - start), UTF_8) + "}";
         }
     }
 

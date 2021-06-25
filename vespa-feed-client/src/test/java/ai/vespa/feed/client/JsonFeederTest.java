@@ -10,18 +10,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,7 +58,7 @@ class JsonFeederTest {
             AtomicInteger resultsReceived = new AtomicInteger();
             AtomicBoolean completedSuccessfully = new AtomicBoolean();
             long startNanos = System.nanoTime();
-            SimpleClient feedClient = new SimpleClient();
+            MockClient feedClient = new MockClient();
             JsonFeeder.builder(feedClient).build()
                     .feedMany(in, 1 << 7,
                             new JsonFeeder.ResultCallback() { // TODO: hangs when buffer is smaller than largest document
@@ -71,7 +74,7 @@ class JsonFeederTest {
                     .join();
 
             System.err.println((json.length() / 1048576.0) + " MB in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
-            assertEquals(docs + 1, feedClient.ids.size());
+            assertEquals(docs + 1, feedClient.putOperations.size());
             assertEquals(docs + 1, resultsReceived.get());
             assertTrue(completedSuccessfully.get());
             assertNull(exceptionThrow.get());
@@ -80,7 +83,7 @@ class JsonFeederTest {
 
     @Test
     public void multipleJsonArrayOperationsAreDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
-        SimpleClient client = new SimpleClient();
+        MockClient client = new MockClient();
         try (JsonFeeder feeder = JsonFeeder.builder(client).build()) {
             String json = "[{" +
                           "  \"put\": \"id:ns:type::abc1\",\n" +
@@ -95,13 +98,15 @@ class JsonFeederTest {
                           "  }\n" +
                           "}]\n";
             feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8))).get();
-            assertEquals(new HashSet<>(Arrays.asList("abc1", "abc2")), client.ids);
+            client.assertPutDocumentIds("abc1", "abc2");
+            client.assertPutOperation("abc1", "{\"fields\":{\n    \"lul\":\"lal\"\n  }}");
+            client.assertPutOperation("abc2", "{\"fields\":{\n    \"lul\":\"lal\"\n  }}");
         }
     }
 
     @Test
     public void multipleJsonLOperationsAreDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
-        SimpleClient client = new SimpleClient();
+        MockClient client = new MockClient();
         try (JsonFeeder feeder = JsonFeeder.builder(client).build()) {
             String json = "{" +
                           "  \"put\": \"id:ns:type::abc1\",\n" +
@@ -116,13 +121,16 @@ class JsonFeederTest {
                           "  }\n" +
                           "}\n";
             feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8))).get();
-            assertEquals(new HashSet<>(Arrays.asList("abc1", "abc2")), client.ids);
+            client.assertPutDocumentIds("abc1", "abc2");
+            client.assertPutOperation("abc1", "{\"fields\":{\n    \"lul\":\"lal\"\n  }}");
+            client.assertPutOperation("abc2", "{\"fields\":{\n    \"lul\":\"lal\"\n  }}");
         }
     }
 
     @Test
     public void singleJsonOperationIsDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
-        try (JsonFeeder feeder = JsonFeeder.builder(new SimpleClient()).build()) {
+        MockClient client = new MockClient();
+        try (JsonFeeder feeder = JsonFeeder.builder(client).build()) {
             String json = "{\"put\": \"id:ns:type::abc1\",\n" +
                     "    \"fields\": {\n" +
                     "      \"lul\":\"lal\"\n" +
@@ -132,15 +140,16 @@ class JsonFeederTest {
             assertEquals(DocumentId.of("id:ns:type::abc1"), result.documentId());
             assertEquals(Result.Type.success, result.type());
             assertEquals("success", result.resultMessage().get());
+            client.assertPutOperation("abc1", "{\"fields\":{\n      \"lul\":\"lal\"\n    }}");
         }
     }
 
-    private static class SimpleClient implements FeedClient {
-        final Set<String> ids = new HashSet<>();
+    private static class MockClient implements FeedClient {
+        final Map<DocumentId, String> putOperations = new LinkedHashMap<>();
 
         @Override
         public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
-            ids.add(documentId.userSpecific());
+            putOperations.put(documentId, documentJson);
             return createSuccessResult(documentId);
         }
 
@@ -162,6 +171,24 @@ class JsonFeederTest {
 
         private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
             return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
+        }
+
+        void assertPutDocumentIds(String... expectedUserSpecificIds) {
+            List<String> expected = Arrays.stream(expectedUserSpecificIds)
+                    .map(userSpecific -> "id:ns:type::" + userSpecific)
+                    .sorted()
+                    .collect(Collectors.toList());
+            List<String> actual = putOperations.keySet().stream()
+                    .map(DocumentId::toString).sorted()
+                    .collect(Collectors.toList());
+            assertEquals(expected, actual, "Document ids must match");
+        }
+
+        void assertPutOperation(String userSpecificId, String expectedJson) {
+            DocumentId docId = DocumentId.of("id:ns:type::" + userSpecificId);
+            String json = putOperations.get(docId);
+            assertNotNull(json);
+            assertEquals(expectedJson.trim(), json.trim());
         }
     }
 
