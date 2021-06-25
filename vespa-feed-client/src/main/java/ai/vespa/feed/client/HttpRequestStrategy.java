@@ -114,7 +114,8 @@ class HttpRequestStrategy implements RequestStrategy {
         /** Complete now with the last result or error. */
         void complete() {
             completion.get().run();
-            if (dependency.get() != null) dependency.getAndSet(null).complete();
+            RetriableFuture<T> toComplete = dependency.getAndSet(null);
+            if (toComplete != null) toComplete.complete();
         }
 
         /** Ensures the dependency is completed whenever this is. */
