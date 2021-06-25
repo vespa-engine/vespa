@@ -57,7 +57,6 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                     for (Deployment deployment : instance.deployments().values()) {
                         attempts.incrementAndGet();
                         try {
-                            if (deployment.version().getMajor() < 7) continue;
                             DeploymentId deploymentId = new DeploymentId(instance.id(), deployment.zone());
                             List<ClusterMetrics> clusterMetrics = controller().serviceRegistry().configServer().getDeploymentMetrics(deploymentId);
                             Instant now = controller().clock().instant();
@@ -80,10 +79,13 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
         );
         pool.shutdown();
         try {
-            pool.awaitTermination(30, TimeUnit.MINUTES);
+            Duration timeout = Duration.ofMinutes(30);
+            if (!pool.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                log.log(Level.WARNING, "Could not shut down metrics collection thread pool within " + timeout);
+            }
             if (lastException.get() != null) {
                 log.log(Level.WARNING,
-                        String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
+                        String.format("Could not gather metrics for %d/%d deployments. Retrying in %s. Last error: %s",
                                       failures.get(),
                                       attempts.get(),
                                       interval(),
@@ -117,4 +119,5 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
 
         return weightedLatency / rateSum;
     }
+
 }
