@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,17 +27,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
-import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
-// TODO: update doc
 /**
- * Controls request execution and retries:
- * <ul>
- *     <li>Whenever throttled (429, 503), set target inflight to 0.9 * current, and retry over a different connection;</li>
- *     <li>retry other transient errors (500, 502 and IOException) a specified number of times, for specified operation types;</li>
- *     <li>and on every successful response, increase target inflight by 0.1.</li>
- * </ul>
+ * Controls request execution and retries.
+ *
+ * This class has all control flow for throttling and dispatching HTTP requests to an injected
+ * HTTP cluster, including error handling and retries, and a circuit breaker mechanism.
  *
  * @author jonmv
  */
@@ -45,10 +42,10 @@ class HttpRequestStrategy implements RequestStrategy {
     private static final Logger log = Logger.getLogger(HttpRequestStrategy.class.getName());
 
     private final Cluster cluster;
-    private final Map<DocumentId, CompletableFuture<?>> inflightById = new ConcurrentHashMap<>();
+    private final Map<DocumentId, RetriableFuture<HttpResponse>> inflightById = new ConcurrentHashMap<>();
     private final RetryStrategy strategy;
     private final CircuitBreaker breaker;
-    final FeedClient.Throttler throttler;
+    private final FeedClient.Throttler throttler;
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
     private final AtomicLong inflight = new AtomicLong(0);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
@@ -89,21 +86,49 @@ class HttpRequestStrategy implements RequestStrategy {
             while (breaker.state() != OPEN && ! destroyed.get()) {
                 while ( ! isInExcess() && poll() && breaker.state() == CLOSED);
                 // Sleep when circuit is half-open, nap when queue is empty, or we are throttled.
-                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10); // TODO: Reduce throughput when turning half-open?
+                Thread.sleep(breaker.state() == HALF_OPEN ? 1000 : 10);
             }
         }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.log(WARNING, "Dispatch thread interrupted; shutting down");
+        catch (Throwable t) {
+            log.log(WARNING, "Dispatch thread threw; shutting down", t);
         }
         destroy();
     }
 
     private void offer(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         delayedCount.incrementAndGet();
-        queue.offer(() -> {
-            cluster.dispatch(request, vessel);
-        });
+        queue.offer(() -> cluster.dispatch(request, vessel));
+    }
+
+
+    /** A completable future which stores a temporary failure result to return upon abortion. */
+    private static class RetriableFuture<T> extends CompletableFuture<T> {
+
+        private final AtomicReference<Runnable> completion = new AtomicReference<>();
+        private final AtomicReference<RetriableFuture<T>> dependency = new AtomicReference<>();
+
+        private RetriableFuture() {
+            completion.set(() -> completeExceptionally(new FeedException("Operation aborted")));
+        }
+
+        /** Complete now with the last result or error. */
+        void complete() {
+            completion.get().run();
+            if (dependency.get() != null) dependency.getAndSet(null).complete();
+        }
+
+        /** Ensures the dependency is completed whenever this is. */
+        void dependOn(RetriableFuture<T> dependency) {
+            this.dependency.set(dependency);
+            if (isDone()) dependency.complete();
+        }
+
+        /** Set the result of the last attempt at completing the computation represented by this. */
+        void set(T result, Throwable thrown) {
+            completion.set(thrown != null ? () -> completeExceptionally(thrown)
+                                          : () -> complete(result));
+        }
+
     }
 
     private boolean poll() {
@@ -208,11 +233,11 @@ class HttpRequestStrategy implements RequestStrategy {
 
     @Override
     public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) {
-        CompletableFuture<HttpResponse> result = new CompletableFuture<>(); // Carries the aggregate result of the operation, including retries.
+        RetriableFuture<HttpResponse> result = new RetriableFuture<>(); // Carries the aggregate result of the operation, including retries.
         CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
-        CompletableFuture<?> previous = inflightById.put(documentId, result);
+        RetriableFuture<HttpResponse> previous = inflightById.put(documentId, result);
         if (destroyed.get()) {
-            result.cancel(true);
+            result.complete();
             return result;
         }
 
@@ -221,13 +246,15 @@ class HttpRequestStrategy implements RequestStrategy {
             offer(request, vessel);
             throttler.sent(inflight.get(), result);
         }
-        else
+        else {
+            result.dependOn(previous); // In case result is aborted, also abort the previous if still inflight.
             previous.whenComplete((__, ___) -> offer(request, vessel));
+        }
 
         handleAttempt(vessel, request, result, 1);
 
         return result.handle((response, error) -> {
-            if (inflightById.compute(documentId, (____, current) -> current == result ? null : current) == null)
+            if (inflightById.compute(documentId, (__, current) -> current == result ? null : current) == null)
                 releaseSlot();
 
             if (error != null) {
@@ -239,29 +266,26 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     /** Handles the result of one attempt at the given operation, retrying if necessary. */
-    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request, CompletableFuture<HttpResponse> result, int attempt) {
+    private void handleAttempt(CompletableFuture<HttpResponse> vessel, HttpRequest request, RetriableFuture<HttpResponse> result, int attempt) {
         vessel.whenCompleteAsync((response, thrown) -> {
+                                     result.set(response, thrown);
                                      // Retry the operation if it failed with a transient error ...
                                      if (thrown != null ? retry(request, thrown, attempt)
                                                         : retry(request, response, attempt)) {
-                                         CircuitBreaker.State state = breaker.state();
                                          CompletableFuture<HttpResponse> retry = new CompletableFuture<>();
                                          offer(request, retry);
-                                         handleAttempt(retry, request, result, attempt + (state == HALF_OPEN ? 0 : 1));
+                                         handleAttempt(retry, request, result, attempt + (breaker.state() == HALF_OPEN ? 0 : 1));
                                      }
                                      // ... or accept the outcome and mark the operation as complete.
-                                     else {
-                                         if (thrown == null) result.complete(response);
-                                         else result.completeExceptionally(thrown);
-                                     }
+                                     else result.complete();
                                  },
                                  resultExecutor);
     }
 
     @Override
     public void destroy() {
-        if ( ! destroyed.getAndSet(true)) {
-            inflightById.values().forEach(result -> result.cancel(true)); // TODO: More informative exception.
+        if (destroyed.compareAndSet(false, true)) {
+            inflightById.values().forEach(RetriableFuture::complete);
             cluster.close();
             resultExecutor.shutdown();
         }
