@@ -5,7 +5,14 @@ import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Asynchronous feed client accepting document operations as JSON
+ * Asynchronous feed client accepting document operations as JSON. The payload should be
+ * the same as the HTTP payload required by the /document/v1 HTTP API, i.e., <pre>
+ *     {
+ *         "fields": {
+ *             ...
+ *         }
+ *     }
+ * </pre>
  *
  * @author bjorncs
  * @author jonmv
@@ -33,7 +40,7 @@ public interface FeedClient extends Closeable {
     OperationStats stats();
 
     /** Current state of the circuit breaker. */
-    default CircuitBreaker.State circuitBreakerState() { return CircuitBreaker.State.CLOSED; }
+    CircuitBreaker.State circuitBreakerState();
 
     /** Shut down, and reject new operations. Operations in flight are allowed to complete normally if graceful. */
     void close(boolean graceful);
@@ -47,19 +54,22 @@ public interface FeedClient extends Closeable {
         /** Whether to retry operations of the given type. */
         default boolean retry(OperationType type) { return true; }
 
-        /** Number of retries per operation for non-backpressure problems. */
-        default int retries() { return 32; }
+        /** Number of retries per operation for assumed transient, non-backpressure problems. */
+        default int retries() { return 10; }
 
     }
 
     /** Allows slowing down or halting completely operations against the configured endpoint on high failure rates. */
     interface CircuitBreaker {
 
+        /** A circuit breaker which is always closed. */
+        CircuitBreaker FUSED = () -> State.CLOSED;
+
         /** Called by the client whenever a successful response is obtained. */
-        void success();
+        default void success() { }
 
         /** Called by the client whenever a transient or fatal error occurs. */
-        void failure();
+        default void failure() { }
 
         /** The current state of the circuit breaker. */
         State state();
@@ -92,22 +102,5 @@ public interface FeedClient extends Closeable {
 
     }
 
-
-    /** Determines the number of requests to have inflight at any point. */
-    interface Throttler {
-
-        /** A request was just sent with {@code vessel}, with {@code inflight} total in flight. */
-        void sent(long inflight, CompletableFuture<HttpResponse> vessel);
-
-        /** A successful response was obtained. */
-        void success();
-
-        /** A throttle signal was obtained from the server. */
-        void throttled(long inflight);
-
-        /** The target inflight operations right now. */
-        long targetInflight();
-
-    }
 
 }

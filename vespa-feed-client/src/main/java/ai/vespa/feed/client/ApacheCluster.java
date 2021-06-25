@@ -49,13 +49,6 @@ class ApacheCluster implements Cluster {
 
     @Override
     public void dispatch(HttpRequest wrapped, CompletableFuture<HttpResponse> vessel) {
-        SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
-        defaultHeaders.forEach(request::setHeader);
-        request.setConfig(defaultConfig);
-        wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
-        if (wrapped.body() != null)
-            request.setBody(wrapped.body(), ContentType.APPLICATION_JSON);
-
         int index = 0;
         int min = Integer.MAX_VALUE;
         for (int i = 0; i < endpoints.size(); i++)
@@ -63,12 +56,19 @@ class ApacheCluster implements Cluster {
                 index = i;
                 min = endpoints.get(i).inflight.get();
             }
-
         Endpoint endpoint = endpoints.get(index);
-        endpoint.inflight.incrementAndGet();
+
         try {
+            SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
             request.setScheme(endpoint.url.getScheme());
             request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
+            request.setConfig(defaultConfig);
+            defaultHeaders.forEach(request::setHeader);
+            wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
+            if (wrapped.body() != null)
+                request.setBody(wrapped.body(), ContentType.APPLICATION_JSON);
+
+            endpoint.inflight.incrementAndGet();
             endpoint.client.execute(request,
                                     new FutureCallback<SimpleHttpResponse>() {
                                         @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }

@@ -79,11 +79,13 @@
       "abstract"
     ],
     "methods": [
-      "public abstract void success()",
-      "public abstract void failure()",
+      "public void success()",
+      "public void failure()",
       "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State state()"
     ],
-    "fields": []
+    "fields": [
+      "public static final ai.vespa.feed.client.FeedClient$CircuitBreaker FUSED"
+    ]
   },
   "ai.vespa.feed.client.FeedClient$OperationType": {
     "superClass": "java.lang.Enum",
@@ -117,22 +119,6 @@
     ],
     "fields": []
   },
-  "ai.vespa.feed.client.FeedClient$Throttler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void sent(long, java.util.concurrent.CompletableFuture)",
-      "public abstract void success()",
-      "public abstract void throttled(long)",
-      "public abstract long targetInflight()"
-    ],
-    "fields": []
-  },
   "ai.vespa.feed.client.FeedClient": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -148,7 +134,7 @@
       "public abstract java.util.concurrent.CompletableFuture update(ai.vespa.feed.client.DocumentId, java.lang.String, ai.vespa.feed.client.OperationParameters)",
       "public abstract java.util.concurrent.CompletableFuture remove(ai.vespa.feed.client.DocumentId, ai.vespa.feed.client.OperationParameters)",
       "public abstract ai.vespa.feed.client.OperationStats stats()",
-      "public ai.vespa.feed.client.FeedClient$CircuitBreaker$State circuitBreakerState()",
+      "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State circuitBreakerState()",
       "public abstract void close(boolean)",
       "public void close()"
     ],
@@ -378,7 +364,7 @@
   "ai.vespa.feed.client.StaticThrottler": {
     "superClass": "java.lang.Object",
     "interfaces": [
-      "ai.vespa.feed.client.FeedClient$Throttler"
+      "ai.vespa.feed.client.Throttler"
     ],
     "attributes": [
       "public"

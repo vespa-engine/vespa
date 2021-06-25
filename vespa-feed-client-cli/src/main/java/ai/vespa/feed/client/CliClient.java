@@ -13,7 +13,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,21 +27,16 @@ public class CliClient {
     private final PrintStream systemOut;
     private final PrintStream systemError;
     private final InputStream systemIn;
-    private final Properties systemProperties;
-    private final Map<String, String> environmentVariables;
     private final Object printMonitor = new Object();
 
-    private CliClient(PrintStream systemOut, PrintStream systemError, InputStream systemIn,
-                      Properties systemProperties, Map<String, String> environmentVariables) {
+    private CliClient(PrintStream systemOut, PrintStream systemError, InputStream systemIn) {
         this.systemOut = systemOut;
         this.systemError = systemError;
         this.systemIn = systemIn;
-        this.systemProperties = systemProperties;
-        this.environmentVariables = environmentVariables;
     }
 
     public static void main(String[] args) {
-        CliClient client = new CliClient(System.out, System.err, System.in, System.getProperties(), System.getenv());
+        CliClient client = new CliClient(System.out, System.err, System.in);
         int exitCode = client.run(args);
         System.exit(exitCode);
     }

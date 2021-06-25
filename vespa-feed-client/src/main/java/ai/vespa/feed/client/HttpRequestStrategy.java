@@ -33,7 +33,13 @@ import static java.util.logging.Level.WARNING;
  * Controls request execution and retries.
  *
  * This class has all control flow for throttling and dispatching HTTP requests to an injected
- * HTTP cluster, including error handling and retries, and a circuit breaker mechanism.
+ * HTTP {@link Cluster}, including error handling and retries through a {@link RetryStrategy},
+ * a {@link CircuitBreaker} mechanism, and a {@link Throttler} for optimal load.
+ *
+ * Dispatch to the provided {@link Cluster} is done by a single dispatch thread. If dispatch ever throws,
+ * or the circuit breaker ever opens completely, the dispatch thread stops and all execution shuts down.
+ * This is done through {@link #destroy()}, which when called also ensures all enqueued operations are
+ * promptly completed, in addition to releasing any resources (threads, and in the provided cluster}.
  *
  * @author jonmv
  */
@@ -45,7 +51,7 @@ class HttpRequestStrategy implements RequestStrategy {
     private final Map<DocumentId, RetriableFuture<HttpResponse>> inflightById = new ConcurrentHashMap<>();
     private final RetryStrategy strategy;
     private final CircuitBreaker breaker;
-    private final FeedClient.Throttler throttler;
+    private final Throttler throttler;
     private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
     private final AtomicLong inflight = new AtomicLong(0);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
@@ -100,38 +106,6 @@ class HttpRequestStrategy implements RequestStrategy {
         queue.offer(() -> cluster.dispatch(request, vessel));
     }
 
-
-    /** A completable future which stores a temporary failure result to return upon abortion. */
-    private static class RetriableFuture<T> extends CompletableFuture<T> {
-
-        private final AtomicReference<Runnable> completion = new AtomicReference<>();
-        private final AtomicReference<RetriableFuture<T>> dependency = new AtomicReference<>();
-
-        private RetriableFuture() {
-            completion.set(() -> completeExceptionally(new FeedException("Operation aborted")));
-        }
-
-        /** Complete now with the last result or error. */
-        void complete() {
-            completion.get().run();
-            RetriableFuture<T> toComplete = dependency.getAndSet(null);
-            if (toComplete != null) toComplete.complete();
-        }
-
-        /** Ensures the dependency is completed whenever this is. */
-        void dependOn(RetriableFuture<T> dependency) {
-            this.dependency.set(dependency);
-            if (isDone()) dependency.complete();
-        }
-
-        /** Set the result of the last attempt at completing the computation represented by this. */
-        void set(T result, Throwable thrown) {
-            completion.set(thrown != null ? () -> completeExceptionally(thrown)
-                                          : () -> complete(result));
-        }
-
-    }
-
     private boolean poll() {
         Runnable task = queue.poll();
         if (task == null) return false;
@@ -139,7 +113,6 @@ class HttpRequestStrategy implements RequestStrategy {
         task.run();
         return true;
     }
-
 
     private boolean isInExcess() {
         return inflight.get() - delayedCount.get() > throttler.targetInflight();
@@ -232,6 +205,37 @@ class HttpRequestStrategy implements RequestStrategy {
         }
     }
 
+
+    /** A completable future which stores a temporary failure result to return upon abortion. */
+    private static class RetriableFuture<T> extends CompletableFuture<T> {
+
+        private final AtomicReference<Runnable> completion = new AtomicReference<>();
+        private final AtomicReference<RetriableFuture<T>> dependency = new AtomicReference<>();
+
+        private RetriableFuture() {
+            completion.set(() -> completeExceptionally(new FeedException("Operation aborted")));
+        }
+
+        /** Complete now with the last result or error. */
+        void complete() {
+            completion.get().run();
+            RetriableFuture<T> toComplete = dependency.getAndSet(null);
+            if (toComplete != null) toComplete.complete();
+        }
+
+        /** Ensures the dependency is completed whenever this is. */
+        void dependOn(RetriableFuture<T> dependency) {
+            this.dependency.set(dependency);
+            if (isDone()) dependency.complete();
+        }
+
+        /** Set the result of the last attempt at completing the computation represented by this. */
+        void set(T result, Throwable thrown) {
+            completion.set(thrown != null ? () -> completeExceptionally(thrown)
+                                          : () -> complete(result));
+        }
+
+    }
     @Override
     public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) {
         RetriableFuture<HttpResponse> result = new RetriableFuture<>(); // Carries the aggregate result of the operation, including retries.

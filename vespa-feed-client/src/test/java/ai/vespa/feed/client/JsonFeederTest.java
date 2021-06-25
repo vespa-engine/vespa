@@ -158,6 +158,9 @@ class JsonFeederTest {
         public OperationStats stats() { return null; }
 
         @Override
+        public CircuitBreaker.State circuitBreakerState() { return null; }
+
+        @Override
         public void close(boolean graceful) { }
 
         private CompletableFuture<Result> createSuccessResult(DocumentId documentId) {
