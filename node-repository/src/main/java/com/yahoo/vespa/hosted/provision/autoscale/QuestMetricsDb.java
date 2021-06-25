@@ -213,9 +213,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureNodeTableIsUpdated() {
         try {
-            if (0 == engine.getStatus(newContext().getCairoSecurityContext(), new Path(), nodeTable.name)) {
-                // Example: nodeTable.ensureColumnExists("write_rate", "float");
-            }
+            // Example: nodeTable.ensureColumnExists("write_rate", "float");
         } catch (Exception e) {
             nodeTable.repair(e);
         }
