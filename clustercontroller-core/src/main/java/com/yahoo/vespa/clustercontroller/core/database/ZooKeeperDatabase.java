@@ -193,20 +193,20 @@ public class ZooKeeperDatabase extends Database {
         }
     }
 
-    public boolean storeMasterVote(int wantedMasterIndex) throws InterruptedException {
+    public boolean storeMasterVote(int wantedMasterIndex) {
         byte[] val = String.valueOf(wantedMasterIndex).getBytes(utf8);
         try{
             session.setData(getMyIndexPath(), val, -1);
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
             return true;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to create our ephemeral node and store master vote");
         }
         return false;
     }
-    public boolean storeLatestSystemStateVersion(int version) throws InterruptedException {
+    public boolean storeLatestSystemStateVersion(int version) {
         byte[] data = Integer.toString(version).getBytes(utf8);
         try{
             log.log(Level.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
@@ -214,7 +214,7 @@ public class ZooKeeperDatabase extends Database {
             lastKnownStateVersionZNodeVersion = stat.getVersion();
             return true;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (KeeperException.BadVersionException e) {
             throw new CasWriteFailed(String.format("version mismatch in cluster state version znode (expected %d): %s",
                     lastKnownStateVersionZNodeVersion, e.getMessage()), e);
@@ -224,7 +224,7 @@ public class ZooKeeperDatabase extends Database {
         }
     }
 
-    public Integer retrieveLatestSystemStateVersion() throws InterruptedException {
+    public Integer retrieveLatestSystemStateVersion() {
         Stat stat = new Stat();
         try{
             log.log(Level.FINE, () -> String.format("Fleetcontroller %d: Fetching latest cluster state at '%slatestversion'",
@@ -236,7 +236,7 @@ public class ZooKeeperDatabase extends Database {
                     "(znode version %d)", nodeIndex, versionNumber, stat.getVersion()));
             return versionNumber;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             // If we return a default, empty version, writes dependent on this bundle should only
             // succeed if the previous znode version is 0, i.e. not yet created.
@@ -246,7 +246,7 @@ public class ZooKeeperDatabase extends Database {
         }
     }
 
-    public boolean storeWantedStates(Map<Node, NodeState> states) throws InterruptedException {
+    public boolean storeWantedStates(Map<Node, NodeState> states) {
         if (states == null) states = new TreeMap<>();
         StringBuilder sb = new StringBuilder();
         for (Node node : states.keySet()) {
@@ -266,14 +266,14 @@ public class ZooKeeperDatabase extends Database {
             session.setData(zooKeeperRoot + "wantedstates", val, -1);
             return true;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to store wanted states in ZooKeeper");
             return false;
         }
     }
 
-    public Map<Node, NodeState> retrieveWantedStates() throws InterruptedException {
+    public Map<Node, NodeState> retrieveWantedStates() {
         try{
             log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Fetching wanted states at '" + zooKeeperRoot + "wantedstates'");
             Stat stat = new Stat();
@@ -296,7 +296,7 @@ public class ZooKeeperDatabase extends Database {
             }
             return wanted;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to retrieve wanted states from ZooKeeper");
             return null;
@@ -304,7 +304,7 @@ public class ZooKeeperDatabase extends Database {
     }
 
     @Override
-    public boolean storeStartTimestamps(Map<Node, Long> timestamps) throws InterruptedException {
+    public boolean storeStartTimestamps(Map<Node, Long> timestamps) {
         if (timestamps == null) timestamps = new TreeMap<>();
         StringBuilder sb = new StringBuilder();
         for (Node n : timestamps.keySet()) {
@@ -317,7 +317,7 @@ public class ZooKeeperDatabase extends Database {
             session.setData(zooKeeperRoot + "starttimestamps", val, -1);
             return true;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to store start timestamps in ZooKeeper");
             return false;
@@ -325,7 +325,7 @@ public class ZooKeeperDatabase extends Database {
     }
 
     @Override
-    public Map<Node, Long> retrieveStartTimestamps() throws InterruptedException {
+    public Map<Node, Long> retrieveStartTimestamps() {
         try{
             log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Fetching start timestamps at '" + zooKeeperRoot + "starttimestamps'");
             Stat stat = new Stat();
@@ -348,7 +348,7 @@ public class ZooKeeperDatabase extends Database {
             }
             return wanted;
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to retrieve start timestamps from ZooKeeper");
             return null;
@@ -356,7 +356,7 @@ public class ZooKeeperDatabase extends Database {
     }
 
     @Override
-    public boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle) throws InterruptedException {
+    public boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle) {
         EnvelopedClusterStateBundleCodec envelopedBundleCodec = new SlimeClusterStateBundleCodec();
         byte[] encodedBundle = envelopedBundleCodec.encodeWithEnvelope(stateBundle);
         try{
@@ -366,7 +366,7 @@ public class ZooKeeperDatabase extends Database {
             var stat = session.setData(zooKeeperRoot + "published_state_bundle", encodedBundle, lastKnownStateBundleZNodeVersion);
             lastKnownStateBundleZNodeVersion = stat.getVersion();
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (KeeperException.BadVersionException e) {
             throw new CasWriteFailed(String.format("version mismatch in cluster state bundle znode (expected %d): %s",
                     lastKnownStateBundleZNodeVersion, e.getMessage()), e);
@@ -378,7 +378,7 @@ public class ZooKeeperDatabase extends Database {
     }
 
     @Override
-    public ClusterStateBundle retrieveLastPublishedStateBundle() throws InterruptedException {
+    public ClusterStateBundle retrieveLastPublishedStateBundle() {
         Stat stat = new Stat();
         try {
             byte[] data = session.getData(zooKeeperRoot + "published_state_bundle", false, stat);
@@ -388,7 +388,7 @@ public class ZooKeeperDatabase extends Database {
                 return envelopedBundleCodec.decodeWithEnvelope(data);
             }
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to retrieve last published cluster state bundle from " +
                     "ZooKeeper, will use an empty state as baseline");

@@ -249,6 +249,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("cluster-controller.idle-tick-time-ms.sum"));
         metrics.add(new Metric("cluster-controller.idle-tick-time-ms.count"));
 
+        metrics.add(new Metric("cluster-controller.work-ms.last"));
+        metrics.add(new Metric("cluster-controller.work-ms.sum"));
+        metrics.add(new Metric("cluster-controller.work-ms.count"));
+
         metrics.add(new Metric("cluster-controller.is-master.last"));
         metrics.add(new Metric("cluster-controller.remote-task-queue.size.last"));
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
