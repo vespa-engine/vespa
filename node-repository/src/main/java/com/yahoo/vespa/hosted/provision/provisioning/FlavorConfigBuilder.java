@@ -13,7 +13,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
  */
 public class FlavorConfigBuilder {
 
-    private FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
+    private final FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
 
     public FlavorsConfig build() {
         return new FlavorsConfig(builder);
@@ -65,4 +65,5 @@ public class FlavorConfigBuilder {
         }
         return new NodeFlavors(flavorConfigBuilder.build());
     }
+
 }

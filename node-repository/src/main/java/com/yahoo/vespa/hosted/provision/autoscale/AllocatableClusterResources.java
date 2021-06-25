@@ -162,8 +162,9 @@ public class AllocatableClusterResources {
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    advertisedResources = advertisedResources.withDiskGb(cappedWantedResources.diskGb());
-                    realResources = realResources.withDiskGb(cappedWantedResources.diskGb());
+                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec.type(), exclusive).diskGb();
+                    advertisedResources = advertisedResources.withDiskGb(diskGb);
+                    realResources = realResources.withDiskGb(diskGb);
                 }
                 if (flavor.resources().bandwidthGbps() >= advertisedResources.bandwidthGbps()) {
                     advertisedResources = advertisedResources.withBandwidthGbps(cappedWantedResources.bandwidthGbps());

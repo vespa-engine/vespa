@@ -26,10 +26,11 @@ public class NodeFlavors {
 
     @Inject
     public NodeFlavors(FlavorsConfig config) {
-        HashMap<String, Flavor> b = new HashMap<>();
-        for (Flavor flavor : toFlavors(config))
-            b.put(flavor.name(), flavor);
-        this.configuredFlavors = Collections.unmodifiableMap(b);
+        this(toFlavors(config));
+    }
+
+    public NodeFlavors(Collection<Flavor> flavors) {
+        configuredFlavors = flavors.stream().collect(Collectors.toUnmodifiableMap(f -> f.name(), f -> f));
     }
 
     public List<Flavor> getFlavors() {
