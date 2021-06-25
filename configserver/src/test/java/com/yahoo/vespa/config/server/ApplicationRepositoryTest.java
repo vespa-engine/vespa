@@ -300,7 +300,9 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, keepFileReferences);
+        List<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir,
+                                                                                                keepFileReferences,
+                                                                                                5);
         Collections.sort(toBeDeleted);
         assertEquals(List.of("bar0", "foo"), toBeDeleted);
         // bar0 and foo are the only ones that will be deleted (keeps 5 newest no matter how old they are)
