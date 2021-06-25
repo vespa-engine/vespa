@@ -266,14 +266,6 @@ class HttpRequestStrategyTest {
             dispatch.get().accept(request, vessel);
         }
 
-        @Override
-        public void close() { }
-
-        @Override
-        public OperationStats stats() {
-            return null;
-        }
-
     }
 
 }

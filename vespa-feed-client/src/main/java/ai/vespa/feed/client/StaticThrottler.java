@@ -12,7 +12,7 @@ import static java.lang.Math.min;
  *
  * @author jonmv
  */
-public class StaticThrottler implements FeedClient.Throttler {
+public class StaticThrottler implements Throttler {
 
     protected final long maxInflight;
     protected final long minInflight;

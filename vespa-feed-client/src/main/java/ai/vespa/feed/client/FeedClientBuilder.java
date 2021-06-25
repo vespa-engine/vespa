@@ -44,8 +44,8 @@ public class FeedClientBuilder {
     Collection<X509Certificate> certificate;
     PrivateKey privateKey;
     Collection<X509Certificate> caCertificates;
-    boolean benchmark;
-    boolean dryrun;
+    boolean benchmark = true;
+    boolean dryrun = false;
 
     /** Creates a builder for a single container endpoint **/
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(Collections.singletonList(endpoint)); }
@@ -66,8 +66,9 @@ public class FeedClientBuilder {
     /**
      * Sets the number of connections this client will use per endpoint.
      *
-     * A reasonable value here is a small multiple of the numbers of containers in the
-     * cluster to feed, so load can be balanced across these.
+     * A reasonable value here is a value that lets all feed clients (if more than one)
+     * collectively have a number of connections which is a small multiple of the numbers
+     * of containers in the cluster to feed, so load can be balanced across these containers.
      * In general, this value should be kept as low as possible, but poor connectivity
      * between feeder and cluster may also warrant a higher number of connections.
      */
@@ -82,7 +83,9 @@ public class FeedClientBuilder {
      *
      * This determines the maximum number of concurrent, inflight requests for this client,
      * which is {@code maxConnections * maxStreamsPerConnection}. Prefer more streams over
-     * more connections, when possible. The server's maximum is usually around 128-256.
+     * more connections, when possible.
+     * The feed client automatically throttles load to achieve the best throughput, and the
+     * actual number of streams per connection is usually lower than the maximum.
      */
     public FeedClientBuilder setMaxStreamPerConnection(int max) {
         if (max < 1) throw new IllegalArgumentException("Max streams per connection must be at least 1, but was " + max);
@@ -102,9 +105,9 @@ public class FeedClientBuilder {
         return this;
     }
 
-    /** Turns on/off benchmarking, aggregated in {@link FeedClient#stats()}. */
-    public FeedClientBuilder setBenchmarkOn(boolean on) {
-        this.benchmark = on;
+    /** Turns off benchmarking. Attempting to get {@link FeedClient#stats()} will result in an exception. */
+    public FeedClientBuilder noBenchmarking() {
+        this.benchmark = false;
         return this;
     }
 
