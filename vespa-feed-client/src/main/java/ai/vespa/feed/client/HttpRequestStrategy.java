@@ -24,6 +24,7 @@ import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
@@ -139,11 +140,11 @@ class HttpRequestStrategy implements RequestStrategy {
         if (   (thrown instanceof IOException)               // General IO problems.
             || (thrown instanceof CancellationException)     // TLS session disconnect.
             || (thrown instanceof CancelledKeyException)) {  // Selection cancelled.
-            log.log(INFO, thrown, () -> "Failed attempt " + attempt + " at " + request);
+            log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
             return retry(request, attempt);
         }
 
-        log.log(WARNING, thrown, () -> "Failed attempt " + attempt + " at " + request);
+        log.log(FINE, thrown, () -> "Failed attempt " + attempt + " at " + request);
         return false;
     }
 
@@ -158,18 +159,17 @@ class HttpRequestStrategy implements RequestStrategy {
 
 
         if (response.code() == 429 || response.code() == 503) { // Throttling; reduce target inflight.
-            logResponse(FINE, response, request, attempt);
+            logResponse(FINER, response, request, attempt);
             throttler.throttled((inflight.get() - delayedCount.get()));
             return true;
         }
 
         breaker.failure();
+        logResponse(FINE, response, request, attempt);
         if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
-            logResponse(INFO, response, request, attempt);
             return retry(request, attempt);
         }
 
-        logResponse(WARNING, response, request, attempt);
         return false;
     }
 

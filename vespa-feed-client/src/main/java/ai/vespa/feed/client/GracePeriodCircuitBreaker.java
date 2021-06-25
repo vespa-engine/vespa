@@ -8,7 +8,7 @@ import java.util.function.LongSupplier;
 import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -48,7 +48,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     public void success() {
         failingSinceMillis.set(NEVER);
         if ( ! open.get() && halfOpen.compareAndSet(true, false))
-            log.log(INFO, "Circuit breaker is now closed");
+            log.log(FINE, "Circuit breaker is now closed");
     }
 
     @Override
@@ -60,7 +60,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     public State state() {
         long failingMillis = clock.getAsLong() - failingSinceMillis.get();
         if (failingMillis > graceMillis && halfOpen.compareAndSet(false, true))
-            log.log(INFO, "Circuit breaker is now half-open");
+            log.log(FINE, "Circuit breaker is now half-open");
 
         if (failingMillis > doomMillis && open.compareAndSet(false, true))
             log.log(WARNING, "Circuit breaker is now open");
