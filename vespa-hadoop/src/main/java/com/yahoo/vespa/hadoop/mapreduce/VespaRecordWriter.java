@@ -92,14 +92,8 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
     }
 
     private void validateConfig() {
-        if (!config.useSSL()) {
-            throw new IllegalArgumentException("SSL is required for this feed client implementation");
-        }
         if (config.dataFormat() != FeedParams.DataFormat.JSON_UTF8) {
             throw new IllegalArgumentException("Only JSON is support by this feed client implementation");
-        }
-        if (config.proxyHost() != null) {
-            log.warning(String.format("Ignoring proxy config (host='%s', port=%d)", config.proxyHost(), config.proxyPort()));
         }
     }
 
