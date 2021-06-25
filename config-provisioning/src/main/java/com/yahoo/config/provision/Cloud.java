@@ -59,7 +59,7 @@ public class Cloud {
         private boolean reprovisionToUpgradeOs = false;
         private boolean requireAccessControl = false;
 
-        private Builder() {}
+        public Builder() {}
 
         public Builder name(CloudName name) {
             this.name = name;
