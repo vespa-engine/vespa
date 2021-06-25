@@ -269,29 +269,15 @@ public class SessionRepositoryTest {
     public void require_that_searchdefinitions_are_written_to_schemas_dir() throws Exception {
         setup();
 
-        // App has schemas in searchdefinitions/, should NOT be moved to schemas/ on deploy
-        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), false);
+        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), true);
         long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
         LocalSession session = sessionRepository.getLocalSession(sessionId);
 
         assertEquals(1, session.applicationPackage.get().getSchemas().size());
 
         ApplicationFile schema = getSchema(session, "schemas");
-        assertFalse(schema.exists());
-        ApplicationFile sd = getSchema(session, "searchdefinitions");
-        assertTrue(sd.exists());
-
-
-        // App has schemas in searchdefinitions/, should be moved to schemas/ on deploy
-        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), true);
-        sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
-        session = sessionRepository.getLocalSession(sessionId);
-
-        assertEquals(1, session.applicationPackage.get().getSchemas().size());
-
-        schema = getSchema(session, "schemas");
         assertTrue(schema.exists());
-        sd = getSchema(session, "searchdefinitions");
+        ApplicationFile sd = getSchema(session, "searchdefinitions");
         assertFalse(sd.exists());
     }
 
