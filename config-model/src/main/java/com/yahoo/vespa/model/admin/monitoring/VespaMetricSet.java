@@ -375,6 +375,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.index.docs_in_memory.last"));
         metrics.add(new Metric("content.proton.documentdb.disk_usage.last"));
         metrics.add(new Metric("content.proton.documentdb.memory_usage.allocated_bytes.max"));
+        metrics.add(new Metric("content.proton.documentdb.heart_beat_age.last"));
         metrics.add(new Metric("content.proton.transport.query.count.rate"));
         metrics.add(new Metric("content.proton.docsum.docs.rate"));
         metrics.add(new Metric("content.proton.docsum.latency.max"));
