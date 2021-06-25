@@ -136,7 +136,7 @@ class HttpFeedClient implements FeedClient {
         }
 
         if (outcome == Outcome.transportFailure) // Not a Vespa response, but a failure in the HTTP layer.
-            throw new ResultParseException(
+            throw new FeedException(
                     documentId,
                     "Status " + response.code() + " executing '" + request + "': "
                             + (message == null ? new String(response.body(), UTF_8) : message));
