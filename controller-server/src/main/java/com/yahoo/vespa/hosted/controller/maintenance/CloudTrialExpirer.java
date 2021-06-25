@@ -41,15 +41,18 @@ public class CloudTrialExpirer extends ControllerMaintainer {
                 .filter(this::tenantHasNoDeployments)        // no running deployments active
                 .collect(Collectors.toList());
 
-        var expiredTenantNames = expiredTenants.stream()
-                .map(Tenant::name)
-                .map(TenantName::value)
-                .collect(Collectors.joining(", "));
+        if (! expiredTenants.isEmpty()) {
+            var expiredTenantNames = expiredTenants.stream()
+                    .map(Tenant::name)
+                    .map(TenantName::value)
+                    .collect(Collectors.joining(", "));
 
-        log.info("Moving expired tenants to 'none' plan: " + expiredTenantNames);
+            log.info("Moving expired tenants to 'none' plan: " + expiredTenantNames);
+        }
+
         expireTenants(expiredTenants);
 
-        return 0;
+        return 1;
     }
 
     private boolean tenantIsCloudTenant(Tenant tenant) {
