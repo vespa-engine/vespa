@@ -175,7 +175,7 @@ public class DatabaseHandler {
 
     private boolean usingZooKeeper() { return (zooKeeperAddress != null); }
 
-    private void connect(ContentCluster cluster, long currentTime) throws InterruptedException {
+    private void connect(ContentCluster cluster, long currentTime) {
         try {
             lastZooKeeperConnectionAttempt = currentTime;
             synchronized (databaseMonitor) {
@@ -200,7 +200,7 @@ public class DatabaseHandler {
             log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Cannot create ephemeral fleetcontroller node. ZooKeeper server "
                     + "not seen old fleetcontroller instance disappear? It already exists. Will retry later: " + e.getMessage());
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (KeeperException.ConnectionLossException e) {
             log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to connect to ZooKeeper at " + zooKeeperAddress
                     + " with session timeout " + zooKeeperSessionTimeout + ": " + e.getMessage());
@@ -218,7 +218,7 @@ public class DatabaseHandler {
      *
      * @return true if we did or attempted any work.
      */
-    public boolean doNextZooKeeperTask(Context context) throws InterruptedException {
+    public boolean doNextZooKeeperTask(Context context) {
         boolean didWork = false;
         synchronized (monitor) {
             if (lostZooKeeperConnectionEvent) {
@@ -278,7 +278,7 @@ public class DatabaseHandler {
         reset(context);
     }
 
-    private boolean performZooKeeperWrites() throws InterruptedException {
+    private boolean performZooKeeperWrites() {
         boolean didWork = false;
         if (pendingStore.masterVote != null) {
             didWork = true;
@@ -373,7 +373,7 @@ public class DatabaseHandler {
         }
     }
 
-    public int getLatestSystemStateVersion() throws InterruptedException {
+    public int getLatestSystemStateVersion() {
         log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Retrieving latest system state version.");
         synchronized (databaseMonitor) {
             if (database != null && !database.isClosed()) {
@@ -390,7 +390,7 @@ public class DatabaseHandler {
         return version;
     }
 
-    public void saveLatestClusterStateBundle(Context context, ClusterStateBundle clusterStateBundle) throws InterruptedException {
+    public void saveLatestClusterStateBundle(Context context, ClusterStateBundle clusterStateBundle) {
         log.log(Level.FINE, () -> String.format("Fleetcontroller %d: Scheduling bundle %s to be saved to ZooKeeper", nodeIndex, clusterStateBundle));
         pendingStore.clusterStateBundle = clusterStateBundle;
         doNextZooKeeperTask(context);
@@ -413,7 +413,7 @@ public class DatabaseHandler {
         }
     }
 
-    public ClusterStateBundle getLatestClusterStateBundle() throws InterruptedException {
+    public ClusterStateBundle getLatestClusterStateBundle() {
         log.log(Level.FINE, () -> String.format("Fleetcontroller %d: Retrieving latest cluster state bundle from ZooKeeper", nodeIndex));
         synchronized (databaseMonitor) {
             if (database != null && !database.isClosed()) {
@@ -424,7 +424,7 @@ public class DatabaseHandler {
         }
     }
 
-    public void saveWantedStates(Context context) throws InterruptedException {
+    public void saveWantedStates(Context context) {
         log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Checking whether wanted states have changed compared to zookeeper version.");
         Map<Node, NodeState> wantedStates = new TreeMap<>();
         for (NodeInfo info : context.getCluster().getNodeInfo()) {
@@ -445,7 +445,7 @@ public class DatabaseHandler {
         }
     }
 
-    public boolean loadWantedStates(Context context) throws InterruptedException {
+    public boolean loadWantedStates(Context context) {
         log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Retrieving node wanted states.");
         synchronized (databaseMonitor) {
             if (database != null && !database.isClosed()) {
@@ -486,13 +486,13 @@ public class DatabaseHandler {
         return altered;
     }
 
-    public void saveStartTimestamps(Context context) throws InterruptedException {
+    public void saveStartTimestamps(Context context) {
         log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Scheduling start timestamps to be stored into zookeeper.");
         pendingStore.startTimestamps = context.getCluster().getStartTimestamps();
         doNextZooKeeperTask(context);
     }
 
-    public boolean loadStartTimestamps(ContentCluster cluster) throws InterruptedException {
+    public boolean loadStartTimestamps(ContentCluster cluster) {
         log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Retrieving start timestamps");
         synchronized (databaseMonitor) {
             if (database == null || database.isClosed()) {

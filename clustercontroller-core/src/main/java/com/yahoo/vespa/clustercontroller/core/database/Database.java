@@ -34,7 +34,7 @@ public abstract class Database {
      *
      * @return True if request succeeded. False if not.
      */
-    public abstract boolean storeMasterVote(int wantedMasterIndex) throws InterruptedException;
+    public abstract boolean storeMasterVote(int wantedMasterIndex);
 
     /**
      * Store the latest system state version used. When the fleetcontroller makes a given version official it should
@@ -48,7 +48,7 @@ public abstract class Database {
      * @throws CasWriteFailed if the expected version of the znode did not match what was actually stored in the DB.
      *                        In this case, the write has NOT been applied.
      */
-    public abstract boolean storeLatestSystemStateVersion(int version) throws InterruptedException;
+    public abstract boolean storeLatestSystemStateVersion(int version);
 
     /**
      * Get the latest system state version used. To keep the version rising, a newly elected master will call this
@@ -56,7 +56,7 @@ public abstract class Database {
      *
      * @return The last system state version used, or null if request failed.
      */
-    public abstract Integer retrieveLatestSystemStateVersion() throws InterruptedException;
+    public abstract Integer retrieveLatestSystemStateVersion();
 
     /**
      * Save our current wanted states in the database. Typically called after processing an RPC request for altering
@@ -64,7 +64,7 @@ public abstract class Database {
      *
      * @return True if the request succeeded. False if not.
      */
-    public abstract boolean storeWantedStates(Map<Node, NodeState> states) throws InterruptedException;
+    public abstract boolean storeWantedStates(Map<Node, NodeState> states);
 
     /**
      * Read wanted states from the database and set wanted states for all nodes in the cluster accordingly.
@@ -72,17 +72,17 @@ public abstract class Database {
      *
      * @return True if wanted states was altered, false if not. Null if request failed.
      */
-    public abstract Map<Node, NodeState> retrieveWantedStates() throws InterruptedException;
+    public abstract Map<Node, NodeState> retrieveWantedStates();
 
     /**
      * Store start times of distributor and service layer nodes in zookeeper.
      */
-    public abstract boolean storeStartTimestamps(Map<Node, Long> timestamps) throws InterruptedException;
+    public abstract boolean storeStartTimestamps(Map<Node, Long> timestamps);
 
     /**
      * Fetch the start times of distributor and service layer nodes.
      */
-    public abstract Map<Node, Long> retrieveStartTimestamps() throws InterruptedException;
+    public abstract Map<Node, Long> retrieveStartTimestamps();
 
     /**
      * Stores the last published cluster state bundle synchronously into ZooKeeper.
@@ -95,8 +95,8 @@ public abstract class Database {
      * @throws CasWriteFailed if the expected version of the znode did not match what was actually stored in the DB.
      *                        In this case, the write has NOT been applied.
      */
-    public abstract boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle) throws InterruptedException;
+    public abstract boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle);
 
-    public abstract ClusterStateBundle retrieveLastPublishedStateBundle() throws InterruptedException;
+    public abstract ClusterStateBundle retrieveLastPublishedStateBundle();
 
 }

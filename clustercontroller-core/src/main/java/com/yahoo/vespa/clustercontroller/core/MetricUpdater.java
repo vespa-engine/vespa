@@ -1,14 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.utils.util.ComponentMetricReporter;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
 
 public class MetricUpdater {
 
@@ -102,5 +108,17 @@ public class MetricUpdater {
 
     public void updateRemoteTaskQueueSize(int size) {
         metricReporter.set("remote-task-queue.size", size);
+    }
+
+    public boolean forWork(String workId, BooleanSupplier work) {
+        long startNanos = System.nanoTime();
+        boolean didWork = work.getAsBoolean();
+        double seconds = Duration.ofNanos(System.nanoTime() - startNanos).toMillis() / 1000.;
+
+        MetricReporter.Context context = createContext(Map.of("didWork", Boolean.toString(didWork),
+                                                              "workId", workId));
+        metricReporter.set("work-ms", seconds, context);
+
+        return didWork;
     }
 }
