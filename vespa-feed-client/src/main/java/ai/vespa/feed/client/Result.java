@@ -4,7 +4,7 @@ package ai.vespa.feed.client;
 import java.util.Optional;
 
 /**
- * Result for a document operation
+ * Result for a document operation which completed normally.
  *
  * @author bjorncs
  * @author jonmv

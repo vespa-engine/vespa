@@ -261,7 +261,7 @@ class HttpRequestStrategy implements RequestStrategy {
     @Override
     public void destroy() {
         if ( ! destroyed.getAndSet(true)) {
-            inflightById.values().forEach(result -> result.cancel(true));
+            inflightById.values().forEach(result -> result.cancel(true)); // TODO: More informative exception.
             cluster.close();
             resultExecutor.shutdown();
         }
