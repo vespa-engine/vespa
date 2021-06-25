@@ -223,6 +223,12 @@ IdealStateOperation::shouldBlockThisOperation(uint32_t messageType,
             return true;
         }
     }
+    // Also block on pending bucket-specific RequestBucketInfo since this usually
+    // means there's a semi-completed merge being processed for the bucket, but
+    // there will not be a pending merge command for it at the time.
+    if (messageType == api::MessageType::REQUESTBUCKETINFO_ID) {
+        return true;
+    }
 
     return false;
 }

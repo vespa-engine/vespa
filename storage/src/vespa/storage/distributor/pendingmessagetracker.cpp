@@ -90,8 +90,13 @@ PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
 {
     std::lock_guard guard(_lock);
     if (msg->getAddress()) {
+        // TODO STRIPE reevaluate if getBucket() on RequestBucketInfo msgs should transparently return superbucket..!
+        document::Bucket bucket = (msg->getType() != api::MessageType::REQUESTBUCKETINFO)
+                ? msg->getBucket()
+                : document::Bucket(msg->getBucket().getBucketSpace(),
+                                   dynamic_cast<api::RequestBucketInfoCommand&>(*msg).super_bucket_id());
         _messages.emplace(currentTime(), msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
-                          msg->getBucket(), msg->getAddress()->getIndex());
+                          bucket, msg->getAddress()->getIndex());
 
         _nodeInfo.incPending(msg->getAddress()->getIndex());
 
@@ -119,7 +124,7 @@ PendingMessageTracker::reply(const api::StorageReply& r)
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
             _nodeInfo.setBusy(r.getAddress()->getIndex(), _nodeBusyDuration);
         }
-        LOG(debug, "Erased message with id %" PRIu64, msgId);
+        LOG(debug, "Erased message with id %" PRIu64 " for bucket %s", msgId, bucket.toString().c_str());
         msgs.erase(msgId);
         auto deferred_tasks = get_deferred_ops_if_bucket_writes_drained(bucket);
         // Deferred tasks may try to send messages, which in turn will invoke the PendingMessageTracker.
