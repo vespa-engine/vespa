@@ -72,14 +72,15 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         if (dataDir.startsWith(Defaults.getDefaults().vespaHome())
             && ! new File(Defaults.getDefaults().vespaHome()).exists())
             dataDir = "data"; // We're injected, but not on a node with Vespa installed
-        IOUtils.createDirectory(dataDir + "/");
+
         // silence Questdb's custom logging system
-        IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
-        System.setProperty("out", dataDir + "/quest-log.conf");
-        CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
+        String logConfig = dataDir + "/quest-log.conf";
+        IOUtils.createDirectory(logConfig);
+        IOUtils.writeFile(new File(logConfig), new byte[0]);
+        System.setProperty("out", logConfig);
 
         this.dataDir = dataDir;
-        engine = new CairoEngine(configuration);
+        engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
         sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine));
         nodeTable = new Table(dataDir, "metrics", clock);
         clusterTable = new Table(dataDir, "clusterMetrics", clock);
