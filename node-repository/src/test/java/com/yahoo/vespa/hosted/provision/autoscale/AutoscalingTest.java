@@ -311,7 +311,7 @@ public class AutoscalingTest {
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> 10.0); // Query traffic only
         Optional<ClusterResources> suggestion = tester.suggest(application1, cluster1.id(), min, max).target();
         tester.assertResources("Choosing the remote disk flavor as it has less disk",
-                               6, 1, 3.0,  100.0, 33.3,
+                               6, 1, 3.0,  100.0, 10.0,
                                suggestion);
         assertEquals("Choosing the remote disk flavor as it has less disk",
                      StorageType.remote, suggestion.get().nodeResources().storageType());

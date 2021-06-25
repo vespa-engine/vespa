@@ -170,8 +170,8 @@ class AutoscalingTester {
             clock().advance(Duration.ofMinutes(5));
             for (Node node : nodes) {
                 Load load = new Load(ClusterModel.idealQueryCpuLoad * otherResourcesLoad,
-                                     value,
-                                     ClusterModel.idealDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
+                                     ClusterModel.idealDiskLoad * otherResourcesLoad,
+                                     value).multiply(oneExtraNodeFactor);
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
                                                                                          load,
