@@ -62,7 +62,7 @@ struct MyDocsumServer : DocsumServer {
 };
 
 struct MyMonitorServer : MonitorServer {
-    MonitorReply::UP ping(MonitorRequest::UP req, MonitorClient &) override {
+    std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> req, MonitorClient &) override {
         (void) req;
         assert(req);
         auto reply = std::make_unique<MonitorReply>();
