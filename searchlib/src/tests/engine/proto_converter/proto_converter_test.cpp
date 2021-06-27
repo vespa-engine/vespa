@@ -492,19 +492,6 @@ TEST_F(DocsumReplyTest, require_that_missing_root_slime_gives_empty_payload) {
 
 //-----------------------------------------------------------------------------
 
-struct MonitorRequestTest : ::testing::Test {
-    Converter::ProtoMonitorRequest proto;
-    MonitorRequest request;
-    void convert() { Converter::monitor_request_from_proto(proto, request); }
-};
-
-TEST_F(MonitorRequestTest, require_that_active_docs_are_always_requested) {
-    convert();
-    EXPECT_TRUE(request.reportActiveDocs);
-}
-
-//-----------------------------------------------------------------------------
-
 struct MonitorReplyTest : ::testing::Test {
     MonitorReply reply;
     Converter::ProtoMonitorReply proto;

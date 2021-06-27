@@ -265,7 +265,6 @@ public class SearchNode extends AbstractService implements
         builder.
             rpcport(getRpcPort()).
             httpport(getHttpPort()).
-            partition(getNodeSpec().partitionId()).
             clustername(getClusterName()).
             basedir(getBaseDir()).
             tlsspec("tcp/" + getHost().getHostname() + ":" + getTransactionLogServer().getTlsPort()).

@@ -2,25 +2,15 @@
 
 #pragma once
 
-#include <memory>
+#include <cstdint>
 
 namespace search::engine {
 
 struct MonitorReply
 {
-    typedef std::unique_ptr<MonitorReply> UP;
-
-    bool                      mld;
-    bool                      activeDocsRequested;
-    uint32_t                  partid;
+    uint64_t                  activeDocs;
     int32_t                   distribution_key;
     uint32_t                  timestamp;
-    uint32_t                  totalNodes;  // mld
-    uint32_t                  activeNodes; // mld
-    uint32_t                  totalParts;  // mld
-    uint32_t                  activeParts; // mld
-    uint64_t                  activeDocs;
-    uint32_t                  flags;
     bool                      is_blocking_writes;
 
     MonitorReply();

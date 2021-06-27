@@ -2,18 +2,10 @@
 
 #pragma once
 
-#include <memory>
-
 namespace search::engine {
 
 struct MonitorRequest
 {
-    typedef std::shared_ptr<MonitorRequest> SP;
-    typedef std::unique_ptr<MonitorRequest> UP;
-
-    bool     reportActiveDocs;
-    uint32_t flags;
-
     MonitorRequest();
 };
 

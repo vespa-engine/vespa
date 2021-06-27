@@ -20,7 +20,7 @@ public:
      *
      * @param reply the monitor reply
      **/
-    virtual void pingDone(MonitorReply::UP reply) = 0;
+    virtual void pingDone(std::unique_ptr<MonitorReply> reply) = 0;
 
     /**
      * Empty, needed for subclassing
@@ -52,7 +52,7 @@ public:
      * @param request object containing request parameters
      * @param client the client to be notified of async completion
      **/
-    virtual MonitorReply::UP ping(MonitorRequest::UP request, MonitorClient &client) = 0;
+    virtual std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> request, MonitorClient &client) = 0;
 
     /**
      * Empty, needed for subclassing

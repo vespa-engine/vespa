@@ -13,9 +13,6 @@ httpport       int default=0 restart
 ## Cluster name
 clustername	string default="" restart
 
-## Partition number
-partition     int default=0 restart
-
 ## Distribution key
 distributionkey int default=-1
 

@@ -60,6 +60,7 @@ using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using vespalib::compression::CompressionConfig;
+using search::engine::MonitorReply;
 
 namespace proton {
 
@@ -698,20 +699,17 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
 }
 
 
-Proton::MonitorReply::UP
-Proton::ping(MonitorRequest::UP request, MonitorClient & client)
+std::unique_ptr<MonitorReply>
+Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
 {
-    (void) client;
     auto reply = std::make_unique<MonitorReply>();
     MonitorReply &ret = *reply;
 
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
-    ret.partid = protonConfig.partition;
     ret.distribution_key = protonConfig.distributionkey;
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
     ret.activeDocs = (_matchEngine->isOnline()) ? getNumActiveDocs() : 0;
-    ret.activeDocsRequested = request->reportActiveDocs;
     ret.is_blocking_writes = !_diskMemUsageSampler->writeFilter().acceptWriteOperation();
     return reply;
 }
