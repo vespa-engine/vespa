@@ -378,6 +378,12 @@ DistributorStripeTestUtil::doc_selection_parser() const {
     return _stripe->_component;
 }
 
+bool
+DistributorStripeTestUtil::tick()
+{
+    return _stripe->tick();
+}
+
 DistributorConfiguration&
 DistributorStripeTestUtil::getConfig() {
     // TODO STRIPE avoid const cast

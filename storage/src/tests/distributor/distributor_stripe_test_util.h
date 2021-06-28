@@ -125,6 +125,8 @@ public:
     storage::distributor::DistributorStripeOperationContext& operation_context();
     const DocumentSelectionParser& doc_selection_parser() const;
 
+    bool tick();
+
     DistributorConfiguration& getConfig();
 
     vdstestlib::DirConfig& getDirConfig() {
