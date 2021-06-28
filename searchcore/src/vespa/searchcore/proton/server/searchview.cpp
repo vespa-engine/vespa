@@ -85,7 +85,7 @@ convertLidsToGids(DocsumReply &reply, const DocsumRequest &request)
         const DocsumRequest::Hit & h = request.hits[i];
         DocsumReply::Docsum & d = reply.docsums[i];
         d.gid = h.gid;
-        LOG(spam, "convertLidToGid(DocsumReply): docsum[%zu]: lid(%u) -> gid(%s)", i, d.docid, d.gid.toString().c_str());
+        LOG(spam, "convertLidToGid(DocsumReply): docsum[%zu]: lid(%u) -> gid(%s)", i, h.docid, d.gid.toString().c_str());
     }
 }
 

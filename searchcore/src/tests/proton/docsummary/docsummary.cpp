@@ -551,13 +551,10 @@ TEST("requireThatDocsumRequestIsProcessed")
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
 
     EXPECT_EQUAL(3u, rep->docsums.size());
-    EXPECT_EQUAL(2u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid2, rep->docsums[0].gid);
     EXPECT_TRUE(assertSlime("{a:20}", *rep, 0, false));
-    EXPECT_EQUAL(4u, rep->docsums[1].docid);
     EXPECT_EQUAL(gid4, rep->docsums[1].gid);
     EXPECT_TRUE(assertSlime("{a:40}", *rep, 1, false));
-    EXPECT_EQUAL(search::endDocId, rep->docsums[2].docid);
     EXPECT_EQUAL(gid9, rep->docsums[2].gid);
     EXPECT_TRUE(rep->docsums[2].data.get() == nullptr);
 }
@@ -1062,7 +1059,6 @@ TEST("requireThatPositionsAreUsed")
     // uint32_t rclass = 5;
 
     EXPECT_EQUAL(1u, rep->docsums.size());
-    EXPECT_EQUAL(1u, rep->docsums[0].docid);
     EXPECT_EQUAL(gid1, rep->docsums[0].gid);
     EXPECT_TRUE(assertSlime("{sp2:'1047758'"
                             ",sp2x:{x:1002, y:1003, latlong:'N0.001003;E0.001002'}"
