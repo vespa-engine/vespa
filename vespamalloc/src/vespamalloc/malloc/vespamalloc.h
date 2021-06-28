@@ -4,7 +4,7 @@
 
 /**
  * Contains the interfaces that vespamalloc offers in addition to the standard
- * allocation interfaces like malloc, aclloc, free, new, delete, etc.
+ * allocation interfaces like malloc, calloc, free, new, delete, etc.
  * Use dlsym(RTLD_NEXT, "function_name") to ensure the existence of the interface.
  **/
 
