@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -84,8 +85,20 @@ class HttpFeedClient implements FeedClient {
                                               requestHeaders,
                                               operationJson == null ? null : operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
 
-        return requestStrategy.enqueue(documentId, request)
-                              .thenApply(response -> toResult(request, response, documentId));
+        CompletableFuture<Result> promise = new CompletableFuture<>();
+        requestStrategy.enqueue(documentId, request)
+                       .thenApply(response -> toResult(request, response, documentId))
+                       .whenComplete((result, thrown) -> {
+                           if (thrown != null) {
+                               while (thrown instanceof CompletionException)
+                                   thrown = thrown.getCause();
+
+                               promise.completeExceptionally(thrown);
+                           }
+                           else
+                               promise.complete(result);
+                       });
+        return promise;
     }
 
     private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
