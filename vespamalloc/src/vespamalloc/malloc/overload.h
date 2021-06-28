@@ -105,6 +105,11 @@ void operator delete[](void* ptr, std::size_t sz, std::align_val_t alignment) no
 
 extern "C" {
 
+unsigned long vespamalloc_datasegment_size() __attribute__((visibility ("default")));
+unsigned long vespamalloc_datasegment_size() {
+    return vespamalloc::_GmemP->dataSegment().dataSize();
+}
+
 void * malloc(size_t sz) {
     return vespamalloc::createAllocator()->malloc(sz);
 }

@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <pthread.h>
+#include <dlfcn.h>
+#include <cassert>
 
 void * run(void * arg)
 {
@@ -10,7 +12,11 @@ void * run(void * arg)
     char * b = new char [1];   // but b should as it not deleted.
     (void) b;
     delete [] a;
-    return NULL;
+    return nullptr;
+}
+
+void verify_that_vespamalloc_datasegment_size_exists() {
+    assert(dlsym(RTLD_NEXT, "vespamalloc_datasegment_size") != nullptr);
 }
 
 int main(int argc, char *argv[])
@@ -22,14 +28,16 @@ int main(int argc, char *argv[])
     (void) b;
     delete [] a;
     pthread_t tid;
-    int retval = pthread_create(&tid, NULL, run, NULL);
+    int retval = pthread_create(&tid, nullptr, run, nullptr);
     if (retval != 0) {
         perror("pthread_create failed");
         abort();
     }
-    retval = pthread_join(tid, NULL);
+    retval = pthread_join(tid, nullptr);
     if (retval != 0) {
         perror("pthread_join failed");
         abort();
     }
+
+    verify_that_vespamalloc_datasegment_size_exists();
 }

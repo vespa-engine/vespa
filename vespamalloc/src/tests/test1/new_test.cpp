@@ -12,7 +12,7 @@ void cmp(const void *base, size_t offset, const void *p) {
 }
 
 template <typename S>
-void veryfy_aligned(S * p) {
+void verify_aligned(S * p) {
     EXPECT_TRUE((uintptr_t(p) % alignof(S)) == 0);
     memset(p, 0, sizeof(S));
 }
@@ -26,7 +26,7 @@ TEST("verify new with normal alignment") {
     static_assert(sizeof(S) == 24);
     static_assert(alignof(S) == 8);
     auto s = std::make_unique<S>();
-    veryfy_aligned(s.get());
+    verify_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 8, &s->b);
     cmp(s.get(), 16, &s->c);
@@ -42,7 +42,7 @@ TEST("verify new with alignment = 16") {
     static_assert(sizeof(S) == 32);
     static_assert(alignof(S) == 16);
     auto s = std::make_unique<S>();
-    veryfy_aligned(s.get());
+    verify_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 16, &s->b);
     cmp(s.get(), 24, &s->c);
@@ -58,7 +58,7 @@ TEST("verify new with alignment = 32") {
     static_assert(sizeof(S) == 64);
     static_assert(alignof(S) == 32);
     auto s = std::make_unique<S>();
-    veryfy_aligned(s.get());
+    verify_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 32, &s->b);
     cmp(s.get(), 40, &s->c);
@@ -74,7 +74,7 @@ TEST("verify new with alignment = 64") {
     static_assert(sizeof(S) == 128);
     static_assert(alignof(S) == 64);
     auto s = std::make_unique<S>();
-    veryfy_aligned(s.get());
+    verify_aligned(s.get());
     cmp(s.get(), &s->a);
     cmp(s.get(), 64, &s->b);
     cmp(s.get(), 72, &s->c);
@@ -88,7 +88,7 @@ TEST("verify new with alignment = 64 with single element") {
     static_assert(sizeof(S) == 64);
     static_assert(alignof(S) == 64);
     auto s = std::make_unique<S>();
-    veryfy_aligned(s.get());
+    verify_aligned(s.get());
     cmp(s.get(), &s->a);
     LOG(info, "&s=%p", s.get());
 }
@@ -100,7 +100,7 @@ TEST("verify new with alignment = 64 with single element") {
     static_assert(sizeof(S) == 64);
     static_assert(alignof(S) == 64);
     auto s = std::make_unique<S>();
-    veryfy_aligned(s.get());
+    verify_aligned(s.get());
     cmp(s.get(), &s->a);
     LOG(info, "&s=%p", s.get());
 }
