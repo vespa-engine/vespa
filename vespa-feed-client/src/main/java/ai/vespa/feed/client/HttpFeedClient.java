@@ -76,6 +76,9 @@ class HttpFeedClient implements FeedClient {
     }
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
+        if (closed.get())
+            throw new IllegalStateException("Client is closed");
+
         HttpRequest request = new HttpRequest(method,
                                               getPath(documentId) + getQuery(params),
                                               requestHeaders,
