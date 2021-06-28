@@ -67,16 +67,16 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     private final BlockingQueue<Response> responses = new LinkedBlockingQueue<>();
     private final ThrottlePolicy throttlePolicy;
     private final SourceSession session;
+    private final String routeForGet;
     private String route;
-    private String routeForGet;
     private int traceLevel;
 
     /**
      * Creates a new async session running on message bus logic.
      *
-     * @param asyncParams Common asyncsession parameters, not used.
-     * @param bus         The message bus on which to run.
-     * @param mbusParams  Parameters concerning message bus configuration.
+     * @param asyncParams common asyncsession parameters, not used
+     * @param bus         the message bus on which to run
+     * @param mbusParams  parameters concerning message bus configuration
      */
     MessageBusAsyncSession(AsyncParameters asyncParams, MessageBus bus, MessageBusParams mbusParams) {
         this(asyncParams, bus, mbusParams, null);
@@ -85,10 +85,10 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     /**
      * Creates a new async session running on message bus logic with a specified reply handler.
      *
-     * @param asyncParams Common asyncsession parameters, not used.
-     * @param bus         The message bus on which to run.
-     * @param mbusParams  Parameters concerning message bus configuration.
-     * @param handler     The external reply handler.
+     * @param asyncParams common asyncsession parameters, not used
+     * @param bus         the message bus on which to run
+     * @param mbusParams  parameters concerning message bus configuration
+     * @param handler     the external reply handler
      */
     MessageBusAsyncSession(AsyncParameters asyncParams, MessageBus bus, MessageBusParams mbusParams,
                            ReplyHandler handler) {

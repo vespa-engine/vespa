@@ -53,9 +53,6 @@ public class Index implements Cloneable, Serializable {
      */
     private Stemming stemming = null;
 
-    /** Whether the content of this index is normalized */
-    private boolean normalized = true;
-
     private Type type = Type.VESPA;
 
     /** The boolean index definition, if set */
@@ -126,20 +123,19 @@ public class Index implements Cloneable, Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         Index index = (Index) o;
         return prefix == index.prefix &&
-                normalized == index.normalized &&
-                interleavedFeatures == index.interleavedFeatures &&
-                Objects.equals(name, index.name) &&
-                rankType == index.rankType &&
-                Objects.equals(aliases, index.aliases) &&
-                stemming == index.stemming &&
-                type == index.type &&
-                Objects.equals(boolIndex, index.boolIndex) &&
-                Objects.equals(hnswIndexParams, index.hnswIndexParams);
+               interleavedFeatures == index.interleavedFeatures &&
+               Objects.equals(name, index.name) &&
+               rankType == index.rankType &&
+               Objects.equals(aliases, index.aliases) &&
+               stemming == index.stemming &&
+               type == index.type &&
+               Objects.equals(boolIndex, index.boolIndex) &&
+               Objects.equals(hnswIndexParams, index.hnswIndexParams);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, rankType, prefix, aliases, stemming, normalized, type, boolIndex, hnswIndexParams, interleavedFeatures);
+        return Objects.hash(name, rankType, prefix, aliases, stemming, type, boolIndex, hnswIndexParams, interleavedFeatures);
     }
 
     public String toString() {

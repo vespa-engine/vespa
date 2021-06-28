@@ -137,8 +137,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
     private Result sendInternal(Message message) {
         synchronized (lock) {
             if (closed) {
-                return new Result(ErrorCode.SEND_QUEUE_CLOSED,
-                                  "Source session is closed.");
+                return new Result(ErrorCode.SEND_QUEUE_CLOSED, "Source session is closed.");
             }
             if (throttlePolicy != null && ! throttlePolicy.canSend(message, pendingCount)) {
                 return new Result(ErrorCode.SEND_QUEUE_FULL,
@@ -152,8 +151,8 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         }
         if (message.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
             message.getTrace().trace(TraceLevel.COMPONENT,
-                                 "Source session accepted a " + message.getApproxSize() + " byte message. " +
-                                 pendingCount + " message(s) now pending.");
+                                     "Source session accepted a " + message.getApproxSize() + " byte message. " +
+                                     pendingCount + " message(s) now pending.");
         }
         message.pushHandler(this);
         sequencer.handleMessage(message);

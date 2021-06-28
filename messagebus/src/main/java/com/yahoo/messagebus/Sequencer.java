@@ -152,4 +152,5 @@ public class Sequencer implements MessageHandler, ReplyHandler {
         ReplyHandler handler = reply.popHandler();
         handler.handleReply(reply);
     }
+
 }

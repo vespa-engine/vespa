@@ -3,12 +3,10 @@ package com.yahoo.searchdefinition.document;
 
 import com.yahoo.language.process.StemMode;
 
-import java.util.logging.Logger;
-
 /**
- * <p>The stemming setting of a field. This describes how the search engine
+ * The stemming setting of a field. This describes how the search engine
  * should transform content of this field into base forms (stems) to increase
- * recall (find "car" when you search for "cars" etc.).</p>
+ * recall (find "car" when you search for "cars" etc.).
  *
  * @author bratseth
  */
@@ -26,8 +24,6 @@ public enum Stemming {
     /** index multiple stems */
     MULTIPLE("multiple");
 
-    private static Logger log=Logger.getLogger(Stemming.class.getName());
-
     private final String name;
 
     /**
@@ -36,7 +32,6 @@ public enum Stemming {
      *
      * @throws IllegalArgumentException if there is no stemming type with the given name
      */
-    @SuppressWarnings("deprecation")
     public static Stemming get(String stemmingName) {
         try {
             return Stemming.valueOf(stemmingName.toUpperCase());
@@ -51,11 +46,11 @@ public enum Stemming {
 
     public String getName() { return name; }
 
+    @Override
     public String toString() {
         return "stemming " + name;
     }
 
-    @SuppressWarnings("deprecation")
     public StemMode toStemMode() {
         switch(this) {
             case SHORTEST: return StemMode.SHORTEST;

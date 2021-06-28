@@ -29,6 +29,7 @@ public class LinguisticsAnnotator {
     private final AnnotatorConfig config;
 
     private static class TermOccurrences {
+
         final Map<String, Integer> termOccurrences = new HashMap<>();
         final int maxOccurrences;
 
@@ -38,14 +39,13 @@ public class LinguisticsAnnotator {
 
         boolean termCountBelowLimit(String term) {
             String lowerCasedTerm = toLowerCase(term);
-            int occurences = termOccurrences.getOrDefault(lowerCasedTerm, 0);
-            if (occurences >= maxOccurrences) {
-                return false;
-            }
+            int occurrences = termOccurrences.getOrDefault(lowerCasedTerm, 0);
+            if (occurrences >= maxOccurrences) return false;
 
-            termOccurrences.put(lowerCasedTerm, occurences + 1);
+            termOccurrences.put(lowerCasedTerm, occurrences + 1);
             return true;
         }
+
     }
 
     /**
@@ -69,16 +69,15 @@ public class LinguisticsAnnotator {
         if (text.getSpanTree(SpanTrees.LINGUISTICS) != null) return true;  // Already annotated with LINGUISTICS.
 
         Tokenizer tokenizer = factory.getTokenizer();
-        String input = (text.getString().length() <=  config.getMaxTokenizeLength())
+        String input = (text.getString().length() <= config.getMaxTokenizeLength())
                 ? text.getString()
                 : text.getString().substring(0, config.getMaxTokenizeLength());
         Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
                                                     config.getRemoveAccents());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
-        for (Token token : tokens) {
-            addAnnotationSpan(text.getString(), tree.spanList(), tokenizer, token, config.getStemMode(), termOccurrences);
-        }
+        for (Token token : tokens)
+            addAnnotationSpan(text.getString(), tree.spanList(), token, config.getStemMode(), termOccurrences);
 
         if (tree.numAnnotations() == 0) return false;
         text.setSpanTree(tree);
@@ -107,11 +106,11 @@ public class LinguisticsAnnotator {
         }
     }
 
-    private static void addAnnotationSpan(String input, SpanList parent, Tokenizer tokenizer, Token token, StemMode mode, TermOccurrences termOccurrences) {
+    private static void addAnnotationSpan(String input, SpanList parent, Token token, StemMode mode, TermOccurrences termOccurrences) {
         if ( ! token.isSpecialToken()) {
             if (token.getNumComponents() > 0) {
                 for (int i = 0; i < token.getNumComponents(); ++i) {
-                    addAnnotationSpan(input, parent, tokenizer, token.getComponent(i), mode, termOccurrences);
+                    addAnnotationSpan(input, parent, token.getComponent(i), mode, termOccurrences);
                 }
                 return;
             }
