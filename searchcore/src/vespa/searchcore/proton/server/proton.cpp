@@ -767,7 +767,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         struct mallinfo mallocInfo = mallinfo();
         // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
         // If we use something else than vespamalloc this must be changed.
-        metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) << 20);
+        metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) * 1_Mi);
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
