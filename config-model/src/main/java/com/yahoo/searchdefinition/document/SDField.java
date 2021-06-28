@@ -482,7 +482,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public void setDataType(DataType type) {
         if (type.equals(DataType.URI)) { // Different defaults, naturally
             normalizing.inferLowercase();
-            stemming=Stemming.NONE;
+            stemming = Stemming.NONE;
         }
         this.dataType = type;
         if ( ! idOverride) {
@@ -672,7 +672,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     @Override
     public Stemming getStemming(Search search) {
-        if (stemming!=null)
+        if (stemming != null)
             return stemming;
         else
             return search.getStemming();
@@ -687,7 +687,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Sets how this field should be stemmed, or set to null to use the default.
      */
     public void setStemming(Stemming stemming) {
-        this.stemming=stemming;
+        this.stemming = stemming;
     }
 
     /** Returns an unmodifiable map of the summary fields defined in this */

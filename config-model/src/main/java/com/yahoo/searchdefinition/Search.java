@@ -23,7 +23,6 @@ import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -48,7 +47,7 @@ import java.util.stream.Stream;
 public class Search implements ImmutableSearch {
 
     private static final String SD_DOC_FIELD_NAME = "sddocname";
-    private static final List<String> RESERVED_NAMES = Arrays.asList(
+    private static final List<String> RESERVED_NAMES = List.of(
             "index", "index_url", "summary", "attribute", "select_input", "host", SummaryClass.DOCUMENT_ID_FIELD,
             "position", "split_foreach", "tokenize", "if", "else", "switch", "case", SD_DOC_FIELD_NAME, "relevancy");
 
