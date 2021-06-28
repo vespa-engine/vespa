@@ -101,11 +101,11 @@ public class FunctionEvaluator {
     }
 
     public Tensor evaluate() {
-        evaluateOnnxModels();
         for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
             checkArgument(argument.getKey(), argument.getValue());
         }
         evaluated = true;
+        evaluateOnnxModels();
         return function.getBody().evaluate(context).asTensor();
     }
 
@@ -126,7 +126,6 @@ public class FunctionEvaluator {
             if (context.get(onnxFeature).equals(context.defaultValue())) {
                 Map<String, Tensor> inputs = new HashMap<>();
                 for (Map.Entry<String, TensorType> input: onnxModel.inputs().entrySet()) {
-                    checkArgument(input.getKey(), input.getValue());
                     inputs.put(input.getKey(), context.get(input.getKey()).asTensor());
                 }
                 Tensor result = onnxModel.evaluate(inputs, function.getName());  // Function name is output of model
