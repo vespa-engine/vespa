@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <dlfcn.h>
 #include <cassert>
+#include <malloc.h>
 
 void * run(void * arg)
 {
@@ -16,7 +17,18 @@ void * run(void * arg)
 }
 
 void verify_that_vespamalloc_datasegment_size_exists() {
-    assert(dlsym(RTLD_NEXT, "vespamalloc_datasegment_size") != nullptr);
+    struct mallinfo info = mallinfo();
+    printf("Malloc used %dm of memory\n",info.arena);
+    assert(info.arena == 24);
+    assert(info.fordblks == 0);
+    assert(info.fsmblks == 0);
+    assert(info.hblkhd == 0);
+    assert(info.hblks == 0);
+    assert(info.keepcost == 0);
+    assert(info.ordblks == 0);
+    assert(info.smblks == 0);
+    assert(info.uordblks == 0);
+    assert(info.usmblks == 0);
 }
 
 int main(int argc, char *argv[])
