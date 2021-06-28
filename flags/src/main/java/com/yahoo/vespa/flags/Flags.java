@@ -260,7 +260,7 @@ public class Flags {
             "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
 
     public static final UnboundBooleanFlag REQUIRE_CONNECTIVITY_CHECK = defineFeatureFlag(
-            "require-connectivity-check", false,
+            "require-connectivity-check", true,
             List.of("arnej"), "2021-06-03", "2021-09-01",
             "Require that config-sentinel connectivity check passes with good quality before starting services",
             "Takes effect on next restart",
