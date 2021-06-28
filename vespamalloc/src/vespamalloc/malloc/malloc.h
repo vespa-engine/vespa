@@ -39,6 +39,9 @@ public:
     }
     size_t getMinSizeForAlignment(size_t align, size_t sz) const { return MemBlockPtrT::getMinSizeForAlignment(align, sz); }
     size_t sizeClass(const void *ptr) const { return _segment.sizeClass(ptr); }
+    size_t usable_size(void *ptr) const {
+        return MemBlockPtrT::usable_size(ptr, _segment.getMaxSize(ptr));
+    }
 
     void *calloc(size_t nelm, size_t esz) {
         void * ptr = malloc(nelm * esz);

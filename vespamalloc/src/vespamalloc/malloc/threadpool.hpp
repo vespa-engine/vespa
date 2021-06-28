@@ -62,7 +62,7 @@ mallocHelper(size_t exactSize,
         af._allocFrom->sub(mem);
         PARANOID_CHECK2( if (!mem.ptr()) { *(int *)0 = 0; } );
     } else {
-        if ( ! this->alwaysReuse(sc) ) {
+        if ( ! alwaysReuse(sc) ) {
             af._allocFrom = _allocPool->exchangeAlloc(sc, af._allocFrom);
             _stat[sc].incExchangeAlloc();
             if (af._allocFrom) {
@@ -93,9 +93,7 @@ ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT >
-ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT()
-{
-}
+ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT & mem)

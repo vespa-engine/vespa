@@ -31,4 +31,11 @@ dumpInfo(size_t level)
 
 }
 
+extern "C" {
+
+int is_vespamalloc() __attribute__((visibility ("default")));
+int is_vespamalloc() { return 1; }
+
+}
+
 #include <vespamalloc/malloc/overload.h>
