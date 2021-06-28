@@ -18,14 +18,9 @@ public:
     class Hit
     {
     public:
-        Hit() noexcept : gid(), metric(0), path(0), _distributionKey(0) {}
-        void setDistributionKey(uint32_t key) { _distributionKey = key; }
-        uint32_t getDistributionKey() const { return _distributionKey; }
+        Hit() noexcept : gid(), metric(0) {}
         document::GlobalId gid;
         search::HitRank    metric;
-        uint32_t           path; // wide
-    private:
-        int32_t            _distributionKey; // wide
     };
 
     class Coverage {
@@ -65,21 +60,14 @@ public:
         uint16_t _nodesReplied;
     };
 
-    // set to false to indicate 'talk to the hand' behavior
-    bool                  valid;
-
-    // normal results
-    uint32_t              offset;
 private:
-    uint32_t _distributionKey;
+    uint32_t              _distributionKey;
 public:
     uint64_t              totalHitCount;
-    search::HitRank       maxRank;
     std::vector<uint32_t> sortIndex;
     std::vector<char>     sortData;
     vespalib::Array<char> groupResult;
     Coverage              coverage;
-    bool                  useWideHits;
     std::vector<Hit>      hits;
     PropertiesMap         propertiesMap;
 

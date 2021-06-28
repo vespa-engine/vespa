@@ -66,7 +66,6 @@ public:
         for (size_t i = 0; i < request.hits.size(); i++) {
             const DocsumRequest::Hit &h = request.hits[i];
             DocsumReply::Docsum docsum;
-            docsum.docid = 10 + i;
             docsum.gid = h.gid;
             docsum.setData(_reply.data(), _reply.size());
             retval->docsums.push_back(docsum);
@@ -140,7 +139,6 @@ TEST("requireThatGetDocsumsExecute") {
         reply = client.getReply(10000);
         EXPECT_TRUE(reply);
         EXPECT_EQUAL(1u, reply->docsums.size());
-        EXPECT_EQUAL(10u, reply->docsums[0].docid);
         EXPECT_EQUAL(GlobalId("aaaaaaaaaaaa"), reply->docsums[0].gid);
         EXPECT_EQUAL("myreply", std::string(reply->docsums[0].data.c_str(), reply->docsums[0].data.size()));
     }

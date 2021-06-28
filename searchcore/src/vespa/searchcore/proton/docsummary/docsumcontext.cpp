@@ -74,7 +74,6 @@ DocsumContext::createReply()
     for (uint32_t i = 0; i < _docsumState._docsumcnt; ++i) {
         buf.reset();
         uint32_t docId = _docsumState._docsumbuf[i];
-        reply->docsums[i].docid = docId;
         if (docId != search::endDocId && !rci.mustSkip) {
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);

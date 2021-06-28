@@ -18,13 +18,12 @@ struct DocsumReply
     using Blob = vespalib::MallocPtr;
 
     struct Docsum {
-        uint32_t docid;
         document::GlobalId gid;
         Blob     data;
 
-        Docsum() noexcept : docid(0), gid(), data(0) {}
-        Docsum(document::GlobalId gid_) noexcept : docid(0), gid(gid_), data(0) { }
-        Docsum(document::GlobalId gid_, const char *buf, uint32_t len) noexcept : docid(0), gid(gid_), data(len) {
+        Docsum() noexcept : gid(), data(0) {}
+        Docsum(document::GlobalId gid_) noexcept : gid(gid_), data(0) { }
+        Docsum(document::GlobalId gid_, const char *buf, uint32_t len) noexcept : gid(gid_), data(len) {
             memcpy(data.str(), buf, len);
         }
         Docsum & setData(const char *buf, uint32_t len) {
