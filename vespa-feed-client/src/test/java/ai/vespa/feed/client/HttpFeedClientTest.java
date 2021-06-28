@@ -79,8 +79,22 @@ class HttpFeedClientTest {
                                                         ("{\n" +
                                                          "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
                                                          "  \"id\": \"id:ns:type::0\",\n" +
-                                                         "  \"message\": \"Relax, take it easy,\",\n" +
-                                                         "  \"trace\": \"for there is nothing that we can do.\"\n" +
+                                                         "  \"message\": \"Relax, take it easy.\",\n" +
+                                                         "  \"trace\": [\n" +
+                                                         "    {\n" +
+                                                         "      \"message\": \"For there is nothing that we can do.\"\n" +
+                                                         "    },\n" +
+                                                         "    {\n" +
+                                                         "      \"fork\": [\n" +
+                                                         "        {\n" +
+                                                         "          \"message\": \"Relax, take is easy.\"\n" +
+                                                         "        },\n" +
+                                                         "        {\n" +
+                                                         "          \"message\": \"Blame it on me or blame it on you.\"\n" +
+                                                         "        }\n" +
+                                                         "      ]\n" +
+                                                         "    }\n" +
+                                                         "  ]\n" +
                                                          "}").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
@@ -95,8 +109,22 @@ class HttpFeedClientTest {
                        .get();
         assertEquals(Result.Type.conditionNotMet, result.type());
         assertEquals(id, result.documentId());
-        assertEquals(Optional.of("Relax, take it easy,"), result.resultMessage());
-        assertEquals(Optional.of("for there is nothing that we can do."), result.traceMessage());
+        assertEquals(Optional.of("Relax, take it easy."), result.resultMessage());
+        assertEquals(Optional.of("[\n" +
+                                 "    {\n" +
+                                 "      \"message\": \"For there is nothing that we can do.\"\n" +
+                                 "    },\n" +
+                                 "    {\n" +
+                                 "      \"fork\": [\n" +
+                                 "        {\n" +
+                                 "          \"message\": \"Relax, take is easy.\"\n" +
+                                 "        },\n" +
+                                 "        {\n" +
+                                 "          \"message\": \"Blame it on me or blame it on you.\"\n" +
+                                 "        }\n" +
+                                 "      ]\n" +
+                                 "    }\n" +
+                                 "  ]"), result.traceMessage());
 
         // Put is a POST, and a Vespa error is a ResultException.
         dispatch.set((documentId, request) -> {
@@ -111,7 +139,7 @@ class HttpFeedClientTest {
                                                          "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
                                                          "  \"id\": \"id:ns:type::0\",\n" +
                                                          "  \"message\": \"Ooops! ... I did it again.\",\n" +
-                                                         "  \"trace\": \"I played with your heart. Got lost in the game.\"\n" +
+                                                         "  \"trace\": [ { \"message\": \"I played with your heart. Got lost in the game.\" } ]\n" +
                                                          "}").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
@@ -132,7 +160,7 @@ class HttpFeedClientTest {
                                                                 .get());
         assertTrue(expected.getCause() instanceof ResultException);
         assertEquals("Ooops! ... I did it again.", expected.getCause().getMessage());
-        assertEquals("I played with your heart. Got lost in the game.", ((ResultException) expected.getCause()).getTrace().get());
+        assertEquals("[ { \"message\": \"I played with your heart. Got lost in the game.\" } ]", ((ResultException) expected.getCause()).getTrace().get());
 
 
         // Handler error is a FeedException.
@@ -148,7 +176,7 @@ class HttpFeedClientTest {
                                                          "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
                                                          "  \"id\": \"id:ns:type::0\",\n" +
                                                          "  \"message\": \"Alla ska i jorden.\",\n" +
-                                                         "  \"trace\": \"Din tid den kom, och senn så for den. \"\n" +
+                                                         "  \"trace\": [ { \"message\": \"Din tid den kom, och senn så for den.\" } ]\n" +
                                                          "}").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
