@@ -71,7 +71,6 @@
         <module>controller-api</module>
         <module>controller-server</module>
         <module>defaults</module>
-        <module>docker-api</module>
         <module>docproc</module>
         <module>docprocs</module>
         <module>document</module>
