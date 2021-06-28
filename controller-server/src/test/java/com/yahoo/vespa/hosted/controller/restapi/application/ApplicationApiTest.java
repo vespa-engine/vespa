@@ -233,7 +233,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .properties(Map.of("recursive", "true",
                                                          "production", "true")),
-                              new File("tenant-without-applications.json"));
+                              new File("tenant-with-empty-application.json"));
         // GET at an application, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
                                       .userIdentity(USER_ID)

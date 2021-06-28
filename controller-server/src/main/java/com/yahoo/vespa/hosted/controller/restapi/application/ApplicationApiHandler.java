@@ -128,6 +128,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -2094,8 +2095,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor applicationArray = object.setArray("applications");
         for (Application application : applications) {
             DeploymentStatus status = null;
-            for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
-                                                                          : application.instances().values()) {
+            Collection<Instance> instances = showOnlyProductionInstances(request) ? application.productionInstances().values()
+                                                                                  : application.instances().values();
+
+            if (instances.isEmpty() && !showOnlyActiveInstances(request))
+                toSlime(application.id(), applicationArray.addObject(), request);
+
+            for (Instance instance : instances) {
                 if (showOnlyActiveInstances(request) && instance.deployments().isEmpty())
                     continue;
                 if (recurseOverApplications(request)) {
