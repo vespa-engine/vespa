@@ -183,6 +183,8 @@ TEST(ServiceMapHistoryTest, handlers_test) {
         EXPECT_EQ(handler1.got_gen, GenCnt(1));
         EXPECT_EQ(handler1.got_removes, 0ul);
         EXPECT_EQ(handler1.got_updates, 0ul);
+        bool cantCancel = p.cancel(&handler1);
+        EXPECT_FALSE(cantCancel);
 
         handler1.got_update = false;
         p.update(ServiceMapping{"foo", "bar"});
@@ -206,7 +208,8 @@ TEST(ServiceMapHistoryTest, handlers_test) {
         EXPECT_FALSE(handler4.got_update);
         p.asyncGenerationDiff(&handler5, GenCnt(3));
         EXPECT_FALSE(handler5.got_update);
-        p.cancel(&handler4);
+        bool couldCancel = p.cancel(&handler4);
+        EXPECT_TRUE(couldCancel);
 
         handler1.got_update = false;
         handler2.got_update = false;
