@@ -67,6 +67,7 @@ public:
         _threadList.setParams(alwayReuseLimit, threadCacheLimit);
         _allocPool.setParams(alwayReuseLimit, threadCacheLimit);
     }
+    const DataSegment<MemBlockPtrT> & dataSegment() const { return _segment; }
 private:
     void freeSC(void *ptr, SizeClassT sc);
     void crash() __attribute__((noinline));;

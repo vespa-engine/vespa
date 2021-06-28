@@ -3,8 +3,7 @@
 #include "threadproxy.h"
 #include <dlfcn.h>
 #include <pthread.h>
-#include <stdio.h>
-#include <errno.h>
+#include <cstdio>
 
 namespace vespamalloc {
 
