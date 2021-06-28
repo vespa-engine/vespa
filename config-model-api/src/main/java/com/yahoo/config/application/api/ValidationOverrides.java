@@ -73,7 +73,6 @@ public class ValidationOverrides {
 
     /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
     public boolean allows(ValidationId validationId, Instant now) {
-        validate(now);
         for (Allow override : overrides) {
             if (override.allows(validationId, now))
                 return true;
