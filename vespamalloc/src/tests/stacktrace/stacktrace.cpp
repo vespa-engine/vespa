@@ -17,7 +17,12 @@ void * run(void * arg)
 }
 
 void verify_that_vespamalloc_datasegment_size_exists() {
+#pragma GCC diagnostic push
+#if __GNUC_PREREQ(2, 33)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
     struct mallinfo info = mallinfo();
+#pragma GCC diagnostic push
     printf("Malloc used %dm of memory\n",info.arena);
     assert(info.arena >= 10);
     assert(info.arena < 10000);
