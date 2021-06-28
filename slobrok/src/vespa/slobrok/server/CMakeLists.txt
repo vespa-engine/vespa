@@ -5,23 +5,26 @@ vespa_add_library(slobrok_slobrokserver
     configshim.cpp
     exchange_manager.cpp
     history.cpp
-    i_rpc_server_manager.cpp
     i_monitored_server.cpp
+    i_rpc_server_manager.cpp
     managed_rpc_server.cpp
+    map_diff.cpp
+    metrics_producer.cpp
     monitor.cpp
     named_service.cpp
+    reconfigurable_stateserver.cpp
     remote_check.cpp
     remote_slobrok.cpp
     reserved_name.cpp
-    rpc_server_manager.cpp
-    rpc_server_map.cpp
     rpchooks.cpp
     rpcmirror.cpp
+    rpc_server_manager.cpp
+    rpc_server_map.cpp
     sbenv.cpp
+    service_map_history.cpp
+    service_mapping.cpp
     slobrokserver.cpp
     visible_map.cpp
-    metrics_producer.cpp
-    reconfigurable_stateserver.cpp
     INSTALL lib64
     DEPENDS
     slobrok
