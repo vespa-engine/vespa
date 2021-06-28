@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "visible_map.h"
+#include "service_map_history.h"
 #include <vespa/fnet/task.h>
+#include <vespa/vespalib/util/gencnt.h>
 
 class FRT_RPCRequest;
 class FRT_Supervisor;
@@ -10,24 +11,23 @@ class FRT_Supervisor;
 namespace slobrok {
 
 class IncrementalFetch : public FNET_Task,
-                         public VisibleMap::IUpdateListener
+                         public ServiceMapHistory::DiffCompletionHandler
 {
 private:
-    FRT_RPCRequest  *_req;
-    VisibleMap      &_map;
+    FRT_RPCRequest *_req;
+    ServiceMapHistory &_smh;
     vespalib::GenCnt _gen;
 
 public:
     IncrementalFetch(const IncrementalFetch &) = delete;
     IncrementalFetch& operator=(const IncrementalFetch &) = delete;
 
-    IncrementalFetch(FRT_Supervisor *orb, FRT_RPCRequest *req, VisibleMap &map, vespalib::GenCnt gen);
+    IncrementalFetch(FRT_Supervisor *orb, FRT_RPCRequest *req, ServiceMapHistory &smh, vespalib::GenCnt gen);
     ~IncrementalFetch();
 
-    void completeReq();
+    void completeReq(MapDiff diff);
     void PerformTask() override;
-    void updated(VisibleMap &map) override;
-    void aborted(VisibleMap &map) override;
+    void handle(MapDiff diff) override;
     void invoke(uint32_t msTimeout);
 };
 
