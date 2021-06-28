@@ -144,8 +144,8 @@ func enqueue(operation): future
         dispatch(operation, result, 1)
     else:
         previous.when_complete(ignored => dispatch(operation, result, 1))
-        result.when_complete(ignored => inflight.remove_value(result)) # remove mapping unless it has been replaced
-        return result
+    result.when_complete(ignored => inflight.remove_value(result)) # remove mapping unless it has been replaced
+    return result
 ```
 
 Apply synchronization as necessary. The `inflight` map is used to serialise multiple operations
