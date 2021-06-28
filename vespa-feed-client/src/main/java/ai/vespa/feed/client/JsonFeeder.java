@@ -201,9 +201,9 @@ public class JsonFeeder implements Closeable {
 
         private final byte[] b = new byte[1];
         private final InputStream in;
-        private final byte[] data;
-        private final int size;
         private final Object lock = new Object();
+        private byte[] data;
+        private int size;
         private IOException thrown = null;
         private long tail = 0;
         private long pos = 0;
@@ -231,6 +231,9 @@ public class JsonFeeder implements Closeable {
             try {
                 int ready;
                 synchronized (lock) {
+                    if (pos - tail == size) // Buffer exhausted, nothing left to read, nowhere left to write.
+                        expand();
+
                     while ((ready = (int) (head - pos)) == 0 && ! done)
                         lock.wait();
                 }
@@ -254,6 +257,23 @@ public class JsonFeeder implements Closeable {
 
         public CompletableFuture<Result> next() throws IOException {
            return parserAndExecutor.next();
+        }
+
+        private void expand() {
+            int newSize = size * 2;
+            if (newSize <= size)
+                throw new IllegalStateException("Maximum buffer size exceeded; want to double " + size + ", but that's too much");
+
+            byte[] newData = new byte[newSize];
+            int offset = (int) (tail % size);
+            int newOffset = (int) (tail % newSize);
+            int toWrite = size - offset;
+            System.arraycopy(data, offset, newData, newOffset, toWrite);
+            if (toWrite < size)
+                System.arraycopy(data, 0, newData, newOffset + toWrite, size - toWrite);
+            size = newSize;
+            data = newData;
+            lock.notify();
         }
 
         private final byte[] prefix = "{\"fields\":".getBytes(UTF_8);
@@ -287,7 +307,7 @@ public class JsonFeeder implements Closeable {
                 while (true) {
                     int free;
                     synchronized (lock) {
-                        while ((free = (int) (tail + size - head)) <= 0 && !done)
+                        while ((free = (int) (tail + size - head)) <= 0 && ! done)
                             lock.wait();
                     }
                     if (done) break;

@@ -127,6 +127,7 @@ class JsonFeederTest {
                           "}\n";
 
             feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8)),
+                            3, // Mini-buffer, which needs to expand.
                             new JsonFeeder.ResultCallback() { })
                   .get();
             client.assertRemoveDocumentIds("abc1");
