@@ -74,10 +74,18 @@ public class ValidationOverrides {
     /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
     public boolean allows(ValidationId validationId, Instant now) {
         for (Allow override : overrides) {
-            if (now.plus(Duration.ofDays(30)).isBefore(override.until))
-                throw new IllegalArgumentException(override + " is too far in the future: Max 30 days is allowed");
             if (override.allows(validationId, now))
                 return true;
+        }
+        return false;
+    }
+
+    /** Validates overrides (checks 'until' date') */
+    public boolean validate(Instant now) {
+        for (Allow override : overrides) {
+            if (now.plus(Duration.ofDays(30)).isBefore(override.until))
+                throw new IllegalArgumentException("validation-overrides is invalid: " + override +
+                                                   " is too far in the future: Max 30 days is allowed");
         }
         return false;
     }
@@ -116,23 +124,18 @@ public class ValidationOverrides {
     public static ValidationOverrides fromXml(String xmlForm) {
         if ( xmlForm.isEmpty()) return ValidationOverrides.empty;
 
-        try {
-            // Assume valid structure is ensured by schema validation
-            Element root = XML.getDocument(xmlForm).getDocumentElement();
-            List<ValidationOverrides.Allow> overrides = new ArrayList<>();
-            for (Element allow : XML.getChildren(root, "allow")) {
-                Instant until = LocalDate.parse(allow.getAttribute("until"), DateTimeFormatter.ISO_DATE)
-                        .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
-                        .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
-                Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
-                // skip unknown ids as they may be valid for other model versions
-                validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
-            }
-            return new ValidationOverrides(overrides, xmlForm);
+        // Assume valid structure is ensured by schema validation
+        Element root = XML.getDocument(xmlForm).getDocumentElement();
+        List<ValidationOverrides.Allow> overrides = new ArrayList<>();
+        for (Element allow : XML.getChildren(root, "allow")) {
+            Instant until = LocalDate.parse(allow.getAttribute("until"), DateTimeFormatter.ISO_DATE)
+                                     .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
+                                     .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
+            Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
+            // skip unknown ids as they may be valid for other model versions
+            validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
         }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("validation-overrides is invalid", e);
-        }
+        return new ValidationOverrides(overrides, xmlForm);
     }
 
     /** A validation override which allows a particular change. Immutable. */
