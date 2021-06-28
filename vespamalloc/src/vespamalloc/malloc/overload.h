@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <new>
 #include <stdlib.h>
+#include <malloc.h>
 
 class CreateAllocator
 {
@@ -105,9 +106,20 @@ void operator delete[](void* ptr, std::size_t sz, std::align_val_t alignment) no
 
 extern "C" {
 
-unsigned long vespamalloc_datasegment_size() __attribute__((visibility ("default")));
-unsigned long vespamalloc_datasegment_size() {
-    return vespamalloc::_GmemP->dataSegment().dataSize();
+struct mallinfo mallinfo() __THROW __attribute__((visibility ("default")));
+struct mallinfo mallinfo() __THROW {
+    struct mallinfo info;
+    info.arena = (vespamalloc::_GmemP->dataSegment().dataSize() >> 20); // Note reporting in 1M blocks
+    info.ordblks = 0;
+    info.smblks = 0;
+    info.hblks = 0;
+    info.hblkhd = 0;
+    info.usmblks = 0;
+    info.fsmblks = 0;
+    info.uordblks = 0;
+    info.fordblks = 0;
+    info.keepcost = 0;
+    return info;
 }
 
 void * malloc(size_t sz) {
@@ -124,8 +136,8 @@ void * realloc(void * ptr, size_t sz)
     return vespamalloc::createAllocator()->realloc(ptr, sz);
 }
 
-void* memalign(size_t align, size_t sz) __attribute__((visibility ("default")));
-void* memalign(size_t align, size_t sz)
+void* memalign(size_t align, size_t sz) __THROW __attribute__((visibility ("default")));
+void* memalign(size_t align, size_t sz) __THROW
 {
     void *ptr(nullptr);
     size_t align_1(align - 1);
@@ -137,7 +149,6 @@ void* memalign(size_t align, size_t sz)
 }
 
 int posix_memalign(void** ptr, size_t align, size_t sz) __THROW __nonnull((1)) __attribute__((visibility ("default")));
-
 int posix_memalign(void** ptr, size_t align, size_t sz) __THROW
 {
     int retval(0);
@@ -186,7 +197,8 @@ void cfree(void *)                                   __THROW __attribute__((leaf
 void  __libc_free(void* ptr)                         __THROW __attribute__((leaf)) ALIAS("free");
 void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
 #endif
-void* __libc_memalign(size_t align, size_t s)        ALIAS("memalign");
+struct mallinfo __libc_mallinfo()                    __THROW  ALIAS("mallinfo");
+void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("memalign");
 int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign");
 #undef ALIAS
 
