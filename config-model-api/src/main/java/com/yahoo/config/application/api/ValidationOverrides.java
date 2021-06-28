@@ -49,7 +49,6 @@ public class ValidationOverrides {
     private ValidationOverrides(List<Allow> overrides, String xmlForm) {
         this.overrides = ImmutableList.copyOf(overrides);
         this.xmlForm = xmlForm;
-        validate(Instant.now());
     }
 
     /** Throws a ValidationException unless all given validation is overridden at this time */
@@ -74,6 +73,7 @@ public class ValidationOverrides {
 
     /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
     public boolean allows(ValidationId validationId, Instant now) {
+        validate(now);
         for (Allow override : overrides) {
             if (override.allows(validationId, now))
                 return true;

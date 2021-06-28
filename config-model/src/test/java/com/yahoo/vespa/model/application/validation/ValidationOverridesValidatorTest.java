@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
@@ -35,7 +36,8 @@ public class ValidationOverridesValidatorTest {
                                      "  </validation-overrides>";
 
         var deployState = createDeployState(validationOverridesXml);
-        new VespaModel(new NullConfigModelRegistry(), deployState);
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+        Validation.validate(model, new ValidationParameters(), deployState);
     }
 
     @Test
@@ -55,7 +57,8 @@ public class ValidationOverridesValidatorTest {
     private static void assertValidationError(String message, String validationOverridesXml) {
         try {
             var deployState = createDeployState(validationOverridesXml);
-            new VespaModel(new NullConfigModelRegistry(), deployState);
+            VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+            Validation.validate(model, new ValidationParameters(), deployState);
             fail("Did not get expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals(message, e.getMessage());

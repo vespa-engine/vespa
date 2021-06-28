@@ -22,8 +22,8 @@ public class ValidationOverridesValidator extends Validator {
         Optional<Reader> overrides = deployState.getApplicationPackage().getValidationOverrides();
         if (overrides.isEmpty()) return;
 
-        // Dates are validated in constructor
-        ValidationOverrides.fromXml(overrides.get());
+        ValidationOverrides validationOverrides = ValidationOverrides.fromXml(overrides.get());
+        validationOverrides.validate(deployState.now());
     }
 
 }
