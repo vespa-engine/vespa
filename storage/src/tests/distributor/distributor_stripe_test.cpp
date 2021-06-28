@@ -123,11 +123,11 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     void assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const vespalib::string& bucketSpace,
                                 const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats);
 
-    SimpleMaintenanceScanner::PendingMaintenanceStats distributor_maintenance_stats() {
+    SimpleMaintenanceScanner::PendingMaintenanceStats stripe_maintenance_stats() {
         return _stripe->pending_maintenance_stats();
     }
 
-    BucketSpacesStatsProvider::PerNodeBucketSpacesStats distributor_bucket_spaces_stats() {
+    BucketSpacesStatsProvider::PerNodeBucketSpacesStats stripe_bucket_spaces_stats() {
         return _stripe->getBucketSpacesStats();
     }
 
@@ -144,7 +144,7 @@ DistributorStripeTest::~DistributorStripeTest() = default;
 
 TEST_F(DistributorStripeTest, operation_generation)
 {
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     document::BucketId bid;
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
@@ -163,7 +163,7 @@ TEST_F(DistributorStripeTest, operation_generation)
 
 TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicates)
 {
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     for (uint32_t i = 0; i < 6; ++i) {
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
@@ -179,28 +179,29 @@ TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicate
 // TODO STRIPE also need to impl/test cross-stripe cluster state changes
 TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 {
-    setupDistributor(Redundancy(1), NodeCount(2),
-                     "storage:1 .0.s:d distributor:1");
-    enableDistributorClusterState("storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(2),
+                 "storage:1 .0.s:d distributor:1");
+    enable_cluster_state("storage:1 distributor:1");
 
-    EXPECT_TRUE(distributor_is_in_recovery_mode());
+    EXPECT_TRUE(stripe_is_in_recovery_mode());
     for (uint32_t i = 0; i < 3; ++i) {
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
     }
     for (int i = 0; i < 3; ++i) {
         tick();
-        EXPECT_TRUE(distributor_is_in_recovery_mode());
+        EXPECT_TRUE(stripe_is_in_recovery_mode());
     }
     tick();
-    EXPECT_FALSE(distributor_is_in_recovery_mode());
+    EXPECT_FALSE(stripe_is_in_recovery_mode());
 
-    enableDistributorClusterState("storage:2 distributor:1");
-    EXPECT_TRUE(distributor_is_in_recovery_mode());
+    enable_cluster_state("storage:2 distributor:1");
+    EXPECT_TRUE(stripe_is_in_recovery_mode());
 }
 
 // TODO STRIPE how to throttle across stripes?
-TEST_F(DistributorStripeTest, operations_are_throttled) {
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+TEST_F(DistributorStripeTest, operations_are_throttled)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     getConfig().setMinPendingMaintenanceOps(1);
     getConfig().setMaxPendingMaintenanceOps(1);
 
@@ -213,7 +214,7 @@ TEST_F(DistributorStripeTest, operations_are_throttled) {
 
 TEST_F(DistributorStripeTest, handle_unknown_maintenance_reply)
 {
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     {
         auto cmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(document::BucketId(16, 1234)));
@@ -233,7 +234,7 @@ TEST_F(DistributorStripeTest, handle_unknown_maintenance_reply)
 
 TEST_F(DistributorStripeTest, update_bucket_database)
 {
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     EXPECT_EQ("BucketId(0x4000000000000001) : "
               "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
@@ -281,7 +282,7 @@ TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_confi
 {
     using namespace vespa::config::content::core;
 
-    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     ConfigBuilder builder;
     builder.priorityMergeMoveToIdealNode = 1;
@@ -316,7 +317,7 @@ TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_confi
 
 TEST_F(DistributorStripeTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time)
 {
-    setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
+    setup_stripe(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     getClock().setAbsoluteTimeInSeconds(101234);
     document::BucketId bucket(16, 7654);
 
@@ -330,8 +331,8 @@ TEST_F(DistributorStripeTest, added_db_buckets_without_gc_timestamp_implicitly_g
 
 TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iteration)
 {
-    setupDistributor(Redundancy(2), NodeCount(3), "storage:3 distributor:1");
-    // Copies out of sync. Not possible for distributor to _reliably_ tell
+    setup_stripe(Redundancy(2), NodeCount(3), "storage:3 distributor:1");
+    // Copies out of sync. Not possible for stripe to _reliably_ tell
     // which direction(s) data will flow, so for simplicity assume that we
     // must sync both copies.
     // Note that we mark certain copies as active to prevent the bucketstate
@@ -351,7 +352,7 @@ TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iterat
     // added to existing.
     tickDistributorNTimes(50);
 
-    const auto& stats = distributor_maintenance_stats();
+    const auto& stats = stripe_maintenance_stats();
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
@@ -372,7 +373,7 @@ TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iterat
         wanted.total = 1;
         EXPECT_EQ(wanted, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
-    auto bucketStats = distributor_bucket_spaces_stats();
+    auto bucketStats = stripe_bucket_spaces_stats();
     ASSERT_EQ(3, bucketStats.size());
     assertBucketSpaceStats(1, 3, 0, "default", bucketStats);
     assertBucketSpaceStats(0, 1, 1, "default", bucketStats);
@@ -402,7 +403,7 @@ DistributorStripeTest::assertBucketSpaceStats(size_t expBucketPending, size_t ex
  */
 TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
 {
-    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // For this test it suffices to have a single bucket with multiple aspects
     // wrong about it. In this case, let a bucket be both out of sync _and_
     // missing an active copy. This _should_ give a statistic with both nodes 0
@@ -410,7 +411,7 @@ TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
     // by activation, we'll see no merge stats at all.
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1,1=2/2/2");
     tickDistributorNTimes(50);
-    const auto& stats = distributor_maintenance_stats();
+    const auto& stats = stripe_maintenance_stats();
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
@@ -427,13 +428,13 @@ TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
 
 TEST_F(DistributorStripeTest, replica_counting_mode_is_configured_to_trusted_by_default)
 {
-    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
 TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config)
 {
-    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.maxConsecutivelyInhibitedMaintenanceTicks = 123;
     getConfig().configure(builder);
@@ -442,7 +443,7 @@ TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_conf
 
 TEST_F(DistributorStripeTest, bucket_activation_is_enabled_by_default)
 {
-    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_FALSE(getConfig().isBucketActivationDisabled());
 }
 
@@ -450,7 +451,7 @@ TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distribu
 {
     using namespace vespa::config::content::core;
 
-    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     ConfigBuilder builder;
     builder.disableBucketActivation = true;
@@ -461,7 +462,7 @@ TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distribu
 
 TEST_F(DistributorStripeTest, external_client_requests_are_handled_individually_in_priority_order)
 {
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
 
     std::vector<api::StorageMessage::Priority> priorities({50, 255, 10, 40, 0});
@@ -492,7 +493,7 @@ TEST_F(DistributorStripeTest, internal_messages_are_started_in_fifo_order_batch)
     // To test internal request ordering, we use NotifyBucketChangeCommand
     // for the reason that it explicitly updates the bucket database for
     // each individual invocation.
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     document::BucketId bucket(16, 1);
     addNodesToBucketDB(bucket, "0=1/1/1/t");
 
@@ -519,7 +520,7 @@ TEST_F(DistributorStripeTest, internal_messages_are_started_in_fifo_order_batch)
 // TODO STRIPE also test that closing distributor closes stripes
 TEST_F(DistributorStripeTest, closing_aborts_priority_queued_client_requests)
 {
-    setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
+    setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     document::BucketId bucket(16, 1);
     addNodesToBucketDB(bucket, "0=1/1/1/t");
 
@@ -561,19 +562,19 @@ void assert_invalid_stats_for_all_spaces(
 TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
 {
     // Set up a cluster state + DB contents which implies merge maintenance ops
-    setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    setup_stripe(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
     addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
     addNodesToBucketDB(document::BucketId(16, 3), "0=2/2/2/t/a");
 
     tickDistributorNTimes(5); // 1/3rds into second round through database
 
-    enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
-    EXPECT_TRUE(distributor_is_in_recovery_mode());
+    enable_cluster_state("version:2 distributor:1 storage:3 .1.s:d");
+    EXPECT_TRUE(stripe_is_in_recovery_mode());
     // Bucket space stats should now be invalid per space per node, pending stats
     // from state version 2. Exposing stats from version 1 risks reporting stale
     // information back to the cluster controller.
-    const auto stats = distributor_bucket_spaces_stats();
+    const auto stats = stripe_bucket_spaces_stats();
     ASSERT_EQ(2, stats.size());
 
     assert_invalid_stats_for_all_spaces(stats, 0);
