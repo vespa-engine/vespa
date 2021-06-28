@@ -10,6 +10,7 @@ namespace slobrok {
 struct ServiceMapping {
     vespalib::string name;
     vespalib::string spec;
+    ServiceMapping(const vespalib::string & name_, const vespalib::string & spec_) noexcept : name(name_), spec(spec_) { }
     ~ServiceMapping();
 };
 

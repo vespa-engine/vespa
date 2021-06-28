@@ -23,16 +23,16 @@ public:
     /**
      * @brief Create a generation counter with value 0
      **/
-    GenCnt() : _val(0) {}
+    GenCnt() noexcept : _val(0) {}
 
     /**
      * @brief Create a generation counter with the given value
      *
      * @param val initial value
      **/
-    GenCnt(uint32_t val) : _val(val) {}
+    GenCnt(uint32_t val) noexcept : _val(val) {}
 
-    GenCnt(const GenCnt &rhs) : _val(rhs.getAsInt()) {}
+    GenCnt(const GenCnt &rhs) noexcept : _val(rhs.getAsInt()) {}
 
     /**
      * @brief empty destructor
