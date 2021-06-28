@@ -79,7 +79,7 @@ class HttpFeedClient implements FeedClient {
         HttpRequest request = new HttpRequest(method,
                                               getPath(documentId) + getQuery(params),
                                               requestHeaders,
-                                              operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
+                                              operationJson == null ? null : operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
 
         return requestStrategy.enqueue(documentId, request)
                               .thenApply(response -> toResult(request, response, documentId));
