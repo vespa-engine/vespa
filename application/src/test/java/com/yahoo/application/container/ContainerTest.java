@@ -34,6 +34,7 @@ import static org.junit.Assert.fail;
  */
 public class ContainerTest {
 
+    
     @Test
     public void jdisc_can_be_used_as_top_level_element() {
         try (JDisc container = fromServicesXml("<container version=\"1.0\">" + //
