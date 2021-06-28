@@ -78,7 +78,6 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
-import com.yahoo.vespa.model.container.jersey.xml.RestApiBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.GUIHandler;
@@ -185,7 +184,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        addRestApis(deployState, spec, cluster);
+        throwUponRestApi(spec);  // TODO: remove
         addServlets(deployState, spec, cluster);
         addModelEvaluation(spec, cluster, context);
 
@@ -517,10 +516,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return http;
     }
 
-    private void addRestApis(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        for (Element restApiElem : XML.getChildren(spec, "rest-api")) {
-            cluster.addRestApi(
-                    new RestApiBuilder().build(deployState, cluster, restApiElem));
+    private void throwUponRestApi(Element spec) {
+        if(! XML.getChildren(spec, "rest-api").isEmpty()) {
+            throw new IllegalArgumentException("The 'rest-api' element is no longer allowed in services.xml.");
         }
     }
 
