@@ -92,71 +92,71 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> snapshots) {
-        try (TableWriter writer = nodeTable.getWriter()) {
-            addNodeMetrics(snapshots, writer);
+        try {
+            addNodeMetricsBody(snapshots);
         }
         catch (CairoException e) {
             if (e.getMessage().contains("Cannot read offset")) {
                 // This error seems non-recoverable
                 nodeTable.repair(e);
-                try (TableWriter writer = nodeTable.getWriter()) {
-                    addNodeMetrics(snapshots, writer);
-                }
+                addNodeMetricsBody(snapshots);
             }
         }
     }
 
-    private void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> snapshots, TableWriter writer) {
+    private void addNodeMetricsBody(Collection<Pair<String, NodeMetricSnapshot>> snapshots) {
         synchronized (nodeTable.writeLock) {
-            for (var snapshot : snapshots) {
-                Optional<Long> atMillis = nodeTable.adjustOrDiscard(snapshot.getSecond().at());
-                if (atMillis.isEmpty()) continue;
-                TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
-                row.putStr(0, snapshot.getFirst());
-                // (1 is timestamp)
-                row.putFloat(2, (float) snapshot.getSecond().load().cpu());
-                row.putFloat(3, (float) snapshot.getSecond().load().memory());
-                row.putFloat(4, (float) snapshot.getSecond().load().disk());
-                row.putLong(5, snapshot.getSecond().generation());
-                row.putBool(6, snapshot.getSecond().inService());
-                row.putBool(7, snapshot.getSecond().stable());
-                row.putFloat(8, (float) snapshot.getSecond().queryRate());
-                row.append();
+            try (TableWriter writer = nodeTable.getWriter()) {
+                for (var snapshot : snapshots) {
+                    Optional<Long> atMillis = nodeTable.adjustOrDiscard(snapshot.getSecond().at());
+                    if (atMillis.isEmpty()) continue;
+                    TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
+                    row.putStr(0, snapshot.getFirst());
+                    // (1 is timestamp)
+                    row.putFloat(2, (float) snapshot.getSecond().load().cpu());
+                    row.putFloat(3, (float) snapshot.getSecond().load().memory());
+                    row.putFloat(4, (float) snapshot.getSecond().load().disk());
+                    row.putLong(5, snapshot.getSecond().generation());
+                    row.putBool(6, snapshot.getSecond().inService());
+                    row.putBool(7, snapshot.getSecond().stable());
+                    row.putFloat(8, (float) snapshot.getSecond().queryRate());
+                    row.append();
+                }
+                writer.commit();
             }
-            writer.commit();
         }
     }
 
     @Override
     public void addClusterMetrics(ApplicationId application, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots) {
-        try (TableWriter writer = clusterTable.getWriter()) {
-            addClusterMetrics(application, snapshots, writer);
+        try {
+            addClusterMetricsBody(application, snapshots);
         }
         catch (CairoException e) {
             if (e.getMessage().contains("Cannot read offset")) {
                 // This error seems non-recoverable
                 clusterTable.repair(e);
-                try (TableWriter writer = clusterTable.getWriter()) {
-                    addClusterMetrics(application, snapshots, writer);
-                }
+                addClusterMetricsBody(application, snapshots);
             }
         }
     }
 
-    private void addClusterMetrics(ApplicationId applicationId, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots, TableWriter writer) {
+    private void addClusterMetricsBody(ApplicationId applicationId, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots) {
         synchronized (clusterTable.writeLock) {
-            for (var snapshot : snapshots.entrySet()) {
-                Optional<Long> atMillis = clusterTable.adjustOrDiscard(snapshot.getValue().at());
-                if (atMillis.isEmpty()) continue;
-                TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
-                row.putStr(0, applicationId.serializedForm());
-                row.putStr(1, snapshot.getKey().value());
-                // (2 is timestamp)
-                row.putFloat(3, (float) snapshot.getValue().queryRate());
-                row.putFloat(4, (float) snapshot.getValue().writeRate());
-                row.append();
+            try (TableWriter writer = clusterTable.getWriter()) {
+                for (var snapshot : snapshots.entrySet()) {
+                    Optional<Long> atMillis = clusterTable.adjustOrDiscard(snapshot.getValue().at());
+                    if (atMillis.isEmpty()) continue;
+                    TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
+                    row.putStr(0, applicationId.serializedForm());
+                    row.putStr(1, snapshot.getKey().value());
+                    // (2 is timestamp)
+                    row.putFloat(3, (float) snapshot.getValue().queryRate());
+                    row.putFloat(4, (float) snapshot.getValue().writeRate());
+                    row.append();
+                }
+                writer.commit();
             }
-            writer.commit();
         }
     }
 
