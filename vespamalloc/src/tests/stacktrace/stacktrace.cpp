@@ -19,7 +19,8 @@ void * run(void * arg)
 void verify_that_vespamalloc_datasegment_size_exists() {
     struct mallinfo info = mallinfo();
     printf("Malloc used %dm of memory\n",info.arena);
-    assert(info.arena == 24);
+    assert(info.arena >= 10);
+    assert(info.arena < 10000);
     assert(info.fordblks == 0);
     assert(info.fsmblks == 0);
     assert(info.hblkhd == 0);
