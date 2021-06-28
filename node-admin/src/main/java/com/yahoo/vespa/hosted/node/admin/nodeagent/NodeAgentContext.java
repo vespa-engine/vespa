@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerNetworkMode;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
