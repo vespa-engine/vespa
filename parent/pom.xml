@@ -196,6 +196,7 @@
                     <configuration>
                         <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
                         <systemPropertyVariables>
+                            <config_model.ip_check>false</config_model.ip_check>
                             <jdisc.logger.level>INFO</jdisc.logger.level>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>
