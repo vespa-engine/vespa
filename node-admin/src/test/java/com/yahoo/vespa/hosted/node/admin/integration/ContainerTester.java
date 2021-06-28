@@ -1,26 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.integrationTests;
+package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.TerminalImpl;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -35,6 +32,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
@@ -44,20 +42,20 @@ import static org.mockito.Mockito.when;
  * @author musum
  */
 // Need to deconstruct nodeAdminStateUpdater
-public class DockerTester implements AutoCloseable {
-    private static final Logger log = Logger.getLogger(DockerTester.class.getName());
+public class ContainerTester implements AutoCloseable {
+
+    private static final Logger log = Logger.getLogger(ContainerTester.class.getName());
     private static final Duration INTERVAL = Duration.ofMillis(10);
     private static final Path PATH_TO_VESPA_HOME = Paths.get("/opt/vespa");
-    static final String NODE_PROGRAM = PATH_TO_VESPA_HOME.resolve("bin/vespa-nodectl").toString();
     static final HostName HOST_HOSTNAME = HostName.from("host.test.yahoo.com");
 
     private final Thread loopThread;
 
-    final ContainerEngine containerEngine = spy(new ContainerEngineMock());
+    final ContainerOperationsMock containerOperations = spy(new ContainerOperationsMock());
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    final InOrder inOrder = Mockito.inOrder(containerEngine, nodeRepository, orchestrator, storageMaintainer);
+    final InOrder inOrder = Mockito.inOrder(containerOperations, nodeRepository, orchestrator, storageMaintainer);
     final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     final NodeAdminStateUpdater nodeAdminStateUpdater;
@@ -67,7 +65,7 @@ public class DockerTester implements AutoCloseable {
     private volatile NodeAdminStateUpdater.State wantedState = NodeAdminStateUpdater.State.RESUMED;
 
 
-    DockerTester() {
+    ContainerTester() {
         when(storageMaintainer.diskUsageFor(any())).thenReturn(Optional.empty());
 
         IPAddressesMock ipAddresses = new IPAddressesMock();
@@ -75,15 +73,12 @@ public class DockerTester implements AutoCloseable {
         ipAddresses.addAddress(HOST_HOSTNAME.value(), "f000::");
         for (int i = 1; i < 4; i++) ipAddresses.addAddress("host" + i + ".test.yahoo.com", "f000::" + i);
 
-        TerminalImpl terminal = new TerminalImpl(command -> new TestChildProcess2(0, ""));
-
         NodeSpec hostSpec = NodeSpec.Builder.testSpec(HOST_HOSTNAME.value()).type(NodeType.host).build();
         nodeRepository.updateNodeRepositoryNode(hostSpec);
 
         Clock clock = Clock.systemUTC();
         Metrics metrics = new Metrics();
         FileSystem fileSystem = TestFileSystem.create();
-        ContainerOperations containerOperations = new ContainerOperationsImpl(containerEngine, terminal, ipAddresses, fileSystem);
 
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
@@ -129,6 +124,10 @@ public class DockerTester implements AutoCloseable {
         return inOrder.verify(t, timeout(5000));
     }
 
+    public static NodeAgentContext containerMatcher(ContainerName containerName) {
+        return argThat((ctx) -> ctx.containerName().equals(containerName));
+    }
+
     @Override
     public void close() {
         // First, stop NodeAdmin and all the NodeAgents
@@ -143,4 +142,5 @@ public class DockerTester implements AutoCloseable {
             }
         } while (loopThread.isAlive());
     }
+
 }

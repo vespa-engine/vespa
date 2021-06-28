@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.integrationTests;
+package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -8,11 +8,11 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.OptionalLong;
 
-import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.HOST_HOSTNAME;
-import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
+import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.HOST_HOSTNAME;
+import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.containerMatcher;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 /**
@@ -27,10 +27,11 @@ public class RebootTest {
 
     @Test
     public void test() {
-        try (DockerTester tester = new DockerTester()) {
+        try (ContainerTester tester = new ContainerTester()) {
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
-            tester.inOrder(tester.containerEngine).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
+            ContainerName host1 = new ContainerName("host1");
+            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any(), any());
 
             try {
                 tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
@@ -38,9 +39,9 @@ public class RebootTest {
 
             tester.inOrder(tester.orchestrator).suspend(
                     eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));
-            tester.inOrder(tester.containerEngine).executeInContainerAsUser(
-                    eq(new ContainerName("host1")), eq("root"), eq(OptionalLong.empty()), eq(NODE_PROGRAM), eq("stop"));
+            tester.inOrder(tester.containerOperations).stopServices(containerMatcher(host1));
             assertTrue(tester.nodeAdmin.setFrozen(true));
         }
     }
+
 }

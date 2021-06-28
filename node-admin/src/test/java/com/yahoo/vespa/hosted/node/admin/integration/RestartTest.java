@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.integrationTests;
+package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import org.junit.Test;
 
-import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
+import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.containerMatcher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -20,13 +20,15 @@ public class RestartTest {
 
     @Test
     public void test() {
-        try (DockerTester tester = new DockerTester()) {
+        try (ContainerTester tester = new ContainerTester()) {
             String hostname = "host1.test.yahoo.com";
             DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage:1.2.3");
 
-            tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
+            NodeSpec nodeSpec = NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build();
+            tester.addChildNodeRepositoryNode(nodeSpec);
 
-            tester.inOrder(tester.containerEngine).createContainerCommand(eq(dockerImage), eq(new ContainerName("host1")));
+            ContainerName host1 = new ContainerName("host1");
+            tester.inOrder(tester.containerOperations).createContainer(containerMatcher(host1), any(), any());
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
                     eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion())));
 
@@ -35,10 +37,10 @@ public class RestartTest {
                     .wantedRestartGeneration(2).build());
 
             tester.inOrder(tester.orchestrator).suspend(eq(hostname));
-            tester.inOrder(tester.containerEngine).executeInContainerAsUser(
-                    eq(new ContainerName("host1")), any(), any(), eq(NODE_PROGRAM), eq("restart-vespa"));
+            tester.inOrder(tester.containerOperations).restartVespa(containerMatcher(host1));
             tester.inOrder(tester.nodeRepository).updateNodeAttributes(
                     eq(hostname), eq(new NodeAttributes().withRestartGeneration(2)));
         }
     }
+
 }
