@@ -7,7 +7,7 @@
 
 class Client;
 
-namespace vespalib { class CryptoEngine; }
+namespace vespalib { struct CryptoEngine; }
 
 /**
  * This is the application class of the fbench program. It controls
