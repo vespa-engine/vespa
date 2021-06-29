@@ -273,13 +273,6 @@ public class Flags {
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR = defineFeatureFlag(
-            "move-search-definitions-to-schemas-dir", true,
-            List.of("hmusum"), "2021-06-09", "2021-08-09",
-            "Whether to move files in searchdefinitions/ to schemas/ when deploying an application",
-            "Takes effect on next deployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING = defineFeatureFlag(
             "load-local-sessions-when-bootstrapping", true,
             List.of("hmusum"), "2021-06-15", "2021-07-15",

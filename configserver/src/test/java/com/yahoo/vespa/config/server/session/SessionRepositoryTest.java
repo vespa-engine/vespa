@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -269,7 +268,6 @@ public class SessionRepositoryTest {
     public void require_that_searchdefinitions_are_written_to_schemas_dir() throws Exception {
         setup();
 
-        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), true);
         long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
         LocalSession session = sessionRepository.getLocalSession(sessionId);
 
