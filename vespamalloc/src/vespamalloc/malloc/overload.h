@@ -106,23 +106,6 @@ void operator delete[](void* ptr, std::size_t sz, std::align_val_t alignment) no
 
 extern "C" {
 
-#if __GLIBC_PREREQ(2, 33)
-struct mallinfo2 mallinfo2() __THROW __attribute__((visibility ("default")));
-struct mallinfo2 mallinfo2() __THROW {
-    struct mallinfo2 info;
-    info.arena = vespamalloc::_GmemP->dataSegment().dataSize();
-    info.ordblks = 0;
-    info.smblks = 0;
-    info.hblks = 0;
-    info.hblkhd = 0;
-    info.usmblks = 0;
-    info.fsmblks = 0;
-    info.uordblks = 0;
-    info.fordblks = 0;
-    info.keepcost = 0;
-    return info;
-}
-#else
 struct mallinfo mallinfo() __THROW __attribute__((visibility ("default")));
 struct mallinfo mallinfo() __THROW {
     struct mallinfo info;
@@ -138,7 +121,6 @@ struct mallinfo mallinfo() __THROW {
     info.keepcost = 0;
     return info;
 }
-#endif
 
 void * malloc(size_t sz) {
     return vespamalloc::createAllocator()->malloc(sz);
@@ -151,17 +133,6 @@ void * calloc(size_t nelem, size_t esz)
 
 void * realloc(void * ptr, size_t sz)
 {
-    return vespamalloc::createAllocator()->realloc(ptr, sz);
-}
-
-void * reallocarray(void * ptr, size_t nemb, size_t elemSize) __THROW __attribute__((visibility ("default")));
-void * reallocarray(void * ptr, size_t nemb, size_t elemSize) __THROW
-{
-    size_t sz = nemb * elemSize;
-    if (nemb != 0 && (sz/nemb != elemSize)) {
-        errno = ENOMEM;
-        return nullptr;
-    }
     return vespamalloc::createAllocator()->realloc(ptr, sz);
 }
 
@@ -202,6 +173,7 @@ void *valloc(size_t size) __THROW
   return memalign(sysconf(_SC_PAGESIZE),size);
 }
 
+
 void free(void * ptr) {
     if (ptr) { vespamalloc::_GmemP->free(ptr); }
 }
@@ -215,8 +187,7 @@ size_t malloc_usable_size (void * ptr) __THROW  {
 #ifdef __clang__
 void* __libc_malloc(size_t sz)                       __THROW __attribute__((malloc, alloc_size(1))) ALIAS("malloc");
 void* __libc_realloc(void* ptr, size_t sz)           __THROW __attribute__((malloc, alloc_size(2))) ALIAS("realloc");
-void* __libc_reallocarray(void* ptr, size_t nemb, size_t sz) __THROW __attribute__((malloc, alloc_size(2,3))) ALIAS("reallocarray");
-void* __libc_calloc(size_t n, size_t sz)             __THROW __attribute__((malloc, alloc_size(1,2))) ALIAS("calloc");
+void* __libc_calloc(size_t n, size_t sz)             __THROW __attribute__((malloc, alloc_size(2))) ALIAS("calloc");
 void cfree(void *)                                   __THROW ALIAS("free");
 void  __libc_free(void* ptr)                         __THROW ALIAS("free");
 #pragma clang diagnostic push
@@ -226,20 +197,15 @@ void  __libc_cfree(void* ptr)                        __THROW ALIAS("cfree");
 #else
 void* __libc_malloc(size_t sz)                       __THROW __attribute__((leaf, malloc, alloc_size(1))) ALIAS("malloc");
 void* __libc_realloc(void* ptr, size_t sz)           __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("realloc");
-void* __libc_reallocarray(void* ptr, size_t nemb, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2,3))) ALIAS("reallocarray");
-void* __libc_calloc(size_t n, size_t sz)             __THROW __attribute__((leaf, malloc, alloc_size(1,2))) ALIAS("calloc");
+void* __libc_calloc(size_t n, size_t sz)             __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("calloc");
 void cfree(void *)                                   __THROW __attribute__((leaf)) ALIAS("free");
 void  __libc_free(void* ptr)                         __THROW __attribute__((leaf)) ALIAS("free");
 void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
 #endif
+struct mallinfo __libc_mallinfo()                    __THROW  ALIAS("mallinfo");
 size_t  __libc_malloc_usable_size(void *ptr)         __THROW  ALIAS("malloc_usable_size");
 void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("memalign");
 int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign");
-#if __GLIBC_PREREQ(2, 33)
-struct mallinfo2 __libc_mallinfo2()                  __THROW  ALIAS("mallinfo2");
-#else
-struct mallinfo __libc_mallinfo()                    __THROW  ALIAS("mallinfo");
-#endif
 #undef ALIAS
 
 }
