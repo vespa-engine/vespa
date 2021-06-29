@@ -19,9 +19,9 @@ void * run(void * arg)
 void verify_that_vespamalloc_datasegment_size_exists() {
 #if __GLIBC_PREREQ(2, 33)
     struct mallinfo2 info = mallinfo2();
-    printf("Malloc used %zm of memory\n", info.arena);
-    assert(info.arena >= 10 * 0x100000);
-    assert(info.arena < 10000 * 0x100000);
+    printf("Malloc used %zdm of memory\n", info.arena);
+    assert(info.arena >= 10 * 0x100000ul);
+    assert(info.arena < 10000 * 0x100000ul);
     assert(info.fordblks == 0);
     assert(info.fsmblks == 0);
     assert(info.hblkhd == 0);
