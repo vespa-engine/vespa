@@ -125,6 +125,8 @@ public:
     storage::distributor::DistributorStripeOperationContext& operation_context();
     const DocumentSelectionParser& doc_selection_parser() const;
 
+    bool tick();
+
     DistributorConfiguration& getConfig();
 
     vdstestlib::DirConfig& getDirConfig() {
@@ -141,8 +143,8 @@ public:
     const DistributorBucketSpaceRepo& getBucketSpaceRepo() const;
     DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo();
     const DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() const;
-    [[nodiscard]] bool distributor_is_in_recovery_mode() const noexcept;
-    [[nodiscard]] const lib::ClusterStateBundle& current_distributor_cluster_state_bundle() const noexcept;
+    [[nodiscard]] bool stripe_is_in_recovery_mode() const noexcept;
+    [[nodiscard]] const lib::ClusterStateBundle& current_cluster_state_bundle() const noexcept;
     [[nodiscard]] std::string active_ideal_state_operations() const;
     [[nodiscard]] const PendingMessageTracker& pending_message_tracker() const noexcept;
     [[nodiscard]] PendingMessageTracker& pending_message_tracker() noexcept;
@@ -154,17 +156,17 @@ public:
     DistributorComponentRegister& getComponentRegister() { return _node->getComponentRegister(); }
     DistributorComponentRegisterImpl& getComponentRegisterImpl() { return _node->getComponentRegister(); }
 
-    void setupDistributor(int redundancy,
-                          int nodeCount,
-                          const std::string& systemState,
-                          uint32_t earlyReturn = false,
-                          bool requirePrimaryToBeWritten = true);
+    void setup_stripe(int redundancy,
+                      int nodeCount,
+                      const std::string& systemState,
+                      uint32_t earlyReturn = false,
+                      bool requirePrimaryToBeWritten = true);
 
-    void setup_distributor(int redundancy,
-                           int node_count,
-                           const lib::ClusterStateBundle& state,
-                           uint32_t early_return = false,
-                           bool require_primary_to_be_written = true);
+    void setup_stripe(int redundancy,
+                      int node_count,
+                      const lib::ClusterStateBundle& state,
+                      uint32_t early_return = false,
+                      bool require_primary_to_be_written = true);
 
     // Implements DoneInitializeHandler
     void notifyDoneInitializing() override {}
@@ -219,8 +221,8 @@ protected:
     };
     MessageSenderImpl _messageSender;
 
-    void enableDistributorClusterState(vespalib::stringref state);
-    void enable_distributor_cluster_state(const lib::ClusterStateBundle& state);
+    void enable_cluster_state(vespalib::stringref state);
+    void enable_cluster_state(const lib::ClusterStateBundle& state);
 };
 
 }

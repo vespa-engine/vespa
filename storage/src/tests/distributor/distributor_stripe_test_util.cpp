@@ -51,21 +51,21 @@ DistributorStripeTestUtil::createLinks()
 }
 
 void
-DistributorStripeTestUtil::setupDistributor(int redundancy,
-                                            int nodeCount,
-                                            const std::string& systemState,
-                                            uint32_t earlyReturn,
-                                            bool requirePrimaryToBeWritten)
+DistributorStripeTestUtil::setup_stripe(int redundancy,
+                                        int nodeCount,
+                                        const std::string& systemState,
+                                        uint32_t earlyReturn,
+                                        bool requirePrimaryToBeWritten)
 {
-    setup_distributor(redundancy, nodeCount, lib::ClusterStateBundle(lib::ClusterState(systemState)), earlyReturn, requirePrimaryToBeWritten);
+    setup_stripe(redundancy, nodeCount, lib::ClusterStateBundle(lib::ClusterState(systemState)), earlyReturn, requirePrimaryToBeWritten);
 }
 
 void
-DistributorStripeTestUtil::setup_distributor(int redundancy,
-                                             int node_count,
-                                             const lib::ClusterStateBundle& state,
-                                             uint32_t early_return,
-                                             bool require_primary_to_be_written)
+DistributorStripeTestUtil::setup_stripe(int redundancy,
+                                        int node_count,
+                                        const lib::ClusterStateBundle& state,
+                                        uint32_t early_return,
+                                        bool require_primary_to_be_written)
 {
     lib::Distribution::DistributionConfigBuilder config(
             lib::Distribution::getDefaultDistributionConfig(redundancy, node_count).get());
@@ -74,7 +74,7 @@ DistributorStripeTestUtil::setup_distributor(int redundancy,
     config.ensurePrimaryPersisted = require_primary_to_be_written;
     auto distribution = std::make_shared<lib::Distribution>(config);
     _node->getComponentRegister().setDistribution(distribution);
-    enable_distributor_cluster_state(state);
+    enable_cluster_state(state);
 
     // TODO STRIPE: Update this comment now that stripe is used instead.
     // This is for all intents and purposes a hack to avoid having the
@@ -378,6 +378,12 @@ DistributorStripeTestUtil::doc_selection_parser() const {
     return _stripe->_component;
 }
 
+bool
+DistributorStripeTestUtil::tick()
+{
+    return _stripe->tick();
+}
+
 DistributorConfiguration&
 DistributorStripeTestUtil::getConfig() {
     // TODO STRIPE avoid const cast
@@ -430,12 +436,12 @@ DistributorStripeTestUtil::getReadOnlyBucketSpaceRepo() const {
 }
 
 bool
-DistributorStripeTestUtil::distributor_is_in_recovery_mode() const noexcept {
+DistributorStripeTestUtil::stripe_is_in_recovery_mode() const noexcept {
     return _stripe->isInRecoveryMode();
 }
 
 const lib::ClusterStateBundle&
-DistributorStripeTestUtil::current_distributor_cluster_state_bundle() const noexcept {
+DistributorStripeTestUtil::current_cluster_state_bundle() const noexcept {
     return _stripe->getClusterStateBundle();
 }
 
@@ -475,14 +481,14 @@ DistributorStripeTestUtil::getBucketSpaces() const
 }
 
 void
-DistributorStripeTestUtil::enableDistributorClusterState(vespalib::stringref state)
+DistributorStripeTestUtil::enable_cluster_state(vespalib::stringref state)
 {
     getBucketDBUpdater().simulate_cluster_state_bundle_activation(
             lib::ClusterStateBundle(lib::ClusterState(state)));
 }
 
 void
-DistributorStripeTestUtil::enable_distributor_cluster_state(const lib::ClusterStateBundle& state)
+DistributorStripeTestUtil::enable_cluster_state(const lib::ClusterStateBundle& state)
 {
     getBucketDBUpdater().simulate_cluster_state_bundle_activation(state);
 }
