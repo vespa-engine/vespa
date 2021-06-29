@@ -97,7 +97,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.424") default boolean enableJdiscHttp2() { return true; }
         @ModelFeatureFlag(owners = {"tokle", "bjorncs"}) default boolean enableCustomAclMapping() { return false; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean throwIfResourceLimitsSpecified() { return false; }
     }
 
