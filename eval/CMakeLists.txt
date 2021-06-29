@@ -63,9 +63,9 @@ vespa_define_module(
     src/tests/instruction/generic_reduce
     src/tests/instruction/generic_rename
     src/tests/instruction/index_lookup_table
+    src/tests/instruction/inplace_map_function
     src/tests/instruction/join_with_number
     src/tests/instruction/mixed_inner_product_function
-    src/tests/instruction/inplace_map_function
     src/tests/instruction/mixed_simple_join_function
     src/tests/instruction/pow_as_map_optimizer
     src/tests/instruction/remove_trivial_dimension_optimizer
@@ -74,6 +74,7 @@ vespa_define_module(
     src/tests/instruction/sparse_merge_function
     src/tests/instruction/sparse_no_overlap_join_function
     src/tests/instruction/sum_max_dot_product_function
+    src/tests/instruction/unpack_bits_function
     src/tests/instruction/vector_from_doubles_function
     src/tests/streamed/value
     src/tests/tensor/binary_format
