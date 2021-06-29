@@ -95,23 +95,17 @@ TEST("verify new with alignment = 64 with single element") {
     LOG(info, "&s=%p", s.get());
 }
 
-#if __GLIBC_PREREQ(2, 26)
-TEST("verify realloarray") {
-    void *arr = calloc(5,5);
-    errno = 0;
-    void *arr2 = reallocarray(arr, 800, 5);
-    int myErrno = errno;
-    EXPECT_NOT_EQUAL(arr, arr2);
-    EXPECT_NOT_EQUAL(nullptr, arr2);
-    EXPECT_NOT_EQUAL(ENOMEM, myErrno);
-
-    errno = 0;
-    void *arr3 = reallocarray(arr2, 1ul << 33, 1ul << 33);
-    myErrno = errno;
-    EXPECT_EQUAL(nullptr, arr3);
-    EXPECT_EQUAL(ENOMEM, myErrno);
+TEST("verify new with alignment = 64 with single element") {
+    struct alignas(64) S {
+        long a;
+    };
+    static_assert(sizeof(S) == 64);
+    static_assert(alignof(S) == 64);
+    auto s = std::make_unique<S>();
+    verify_aligned(s.get());
+    cmp(s.get(), &s->a);
+    LOG(info, "&s=%p", s.get());
 }
-#endif
 
 void verify_vespamalloc_usable_size() {
     struct AllocInfo { size_t requested; size_t usable;};
