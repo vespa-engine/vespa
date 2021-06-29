@@ -152,7 +152,7 @@ public class NotificationsDb {
     private static Optional<Notification> createReindexNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
         if (metric.reindexingProgress().isEmpty()) return Optional.empty();
         List<String> messages = metric.reindexingProgress().entrySet().stream()
-                .map(entry -> String.format("document type '%s' (%.1f%% done)", entry.getKey(), 100 * entry.getValue()))
+                .map(entry -> String.format(Locale.US, "document type '%s' (%.1f%% done)", entry.getKey(), 100 * entry.getValue()))
                 .sorted()
                 .collect(Collectors.toUnmodifiableList());
         return Optional.of(new Notification(at, Type.reindex, Level.info, source, messages));
