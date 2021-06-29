@@ -204,40 +204,6 @@ public class Mirror implements IMirror {
     }
     
     private void handleUpdate() {
-        if (req.errorCode() == ErrorCode.NONE &&
-            req.returnValues().satisfies("SSi") &&
-            req.returnValues().get(0).count() == req.returnValues().get(1).count())
-        {
-            Values answer = req.returnValues();
-
-            if (specsGeneration != answer.get(2).asInt32()) {
-
-                int      numNames = answer.get(0).count();
-                String[]        n = answer.get(0).asStringArray();
-                String[]        s = answer.get(1).asStringArray();
-                Entry[]  newSpecs = new Entry[numNames];
-
-                for (int idx = 0; idx < numNames; idx++) {
-                    newSpecs[idx] = new Entry(n[idx], s[idx]);
-                }
-                if (logOnSuccess) {
-                    log.log(Level.INFO, "successfully connected to location broker "+currSlobrok+
-                            "(mirror initialized with "+numNames+" service names)");
-                    logOnSuccess = false;
-                }
-                specs.set(newSpecs);
-
-                specsGeneration = answer.get(2).asInt32();
-                int u = (updates + 1);
-                if (u == 0) {
-                    u++;
-                }
-                updates = u;
-            }
-            backOff.reset();
-            updateTask.schedule(0.1); // be nice
-            return;
-        }
         if (!req.checkReturnTypes("iSSSi")
             || (req.returnValues().get(2).count() !=
                 req.returnValues().get(3).count()))
@@ -251,7 +217,6 @@ public class Mirror implements IMirror {
             updateTask.scheduleNow(); // try next slobrok
             return;
         }
-
         Values answer = req.returnValues();
 
         int diffFromGeneration = answer.get(0).asInt32();
