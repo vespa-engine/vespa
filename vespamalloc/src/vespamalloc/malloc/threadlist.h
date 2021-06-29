@@ -15,8 +15,8 @@ template <typename MemBlockPtrT, typename ThreadStatT>
 class ThreadListT
 {
 public:
-    typedef ThreadPoolT<MemBlockPtrT, ThreadStatT > ThreadPool;
-    typedef AllocPoolT<MemBlockPtrT> AllocPool;
+    using ThreadPool = ThreadPoolT<MemBlockPtrT, ThreadStatT >;
+    using AllocPool = AllocPoolT<MemBlockPtrT>;
     ThreadListT(AllocPool & pool);
     ~ThreadListT();
     void setParams(size_t alwayReuseLimit, size_t threadCacheLimit) {

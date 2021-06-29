@@ -62,7 +62,7 @@ private:
         ChunkSList *_freeTo;
     };
     void mallocHelper(size_t exactSize, SizeClassT sc, AllocFree & af, MemBlockPtrT & mem) __attribute__ ((noinline));
-    bool alwaysReuse(SizeClassT sc) { return sc > _alwaysReuseSCLimit; }
+    static bool alwaysReuse(SizeClassT sc) { return sc > _alwaysReuseSCLimit; }
 
     AllocPool   * _allocPool;
     AllocFree     _memList[NUM_SIZE_CLASSES];

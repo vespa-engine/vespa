@@ -122,11 +122,17 @@ AllocPoolT<MemBlockPtrT>::exchangeAlloc(SizeClassT sc, typename AllocPoolT<MemBl
 }
 
 template <typename MemBlockPtrT>
+size_t
+AllocPoolT<MemBlockPtrT>::computeExactSize(size_t sz) {
+    return (((sz + (_alwaysReuseLimit - 1)) / _alwaysReuseLimit) * _alwaysReuseLimit);
+}
+
+template <typename MemBlockPtrT>
 typename AllocPoolT<MemBlockPtrT>::ChunkSList *
 AllocPoolT<MemBlockPtrT>::exactAlloc(size_t exactSize, SizeClassT sc,
                                      typename AllocPoolT<MemBlockPtrT>::ChunkSList * csl)
 {
-    size_t adjustedSize((( exactSize + (_alwaysReuseLimit - 1))/_alwaysReuseLimit)*_alwaysReuseLimit);
+    size_t adjustedSize = computeExactSize(exactSize);
     void *exactBlock = _dataSegment.getBlock(adjustedSize, sc);
     MemBlockPtrT mem(exactBlock, MemBlockPtrT::unAdjustSize(adjustedSize));
     csl->add(mem);

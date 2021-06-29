@@ -28,6 +28,7 @@ public:
     void enableThreadSupport() __attribute__((noinline));
 
     static void setParams(size_t alwaysReuseLimit, size_t threadCacheLimit);
+    static size_t computeExactSize(size_t sz);
 
     void info(FILE * os, size_t level=0) __attribute__((noinline));
 private:

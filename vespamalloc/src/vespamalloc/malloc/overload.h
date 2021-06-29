@@ -178,6 +178,11 @@ void free(void * ptr) {
     if (ptr) { vespamalloc::_GmemP->free(ptr); }
 }
 
+size_t malloc_usable_size(void *) __THROW __attribute__((visibility ("default")));
+size_t malloc_usable_size (void * ptr) __THROW  {
+    return (ptr) ? vespamalloc::_GmemP->usable_size(ptr) : 0;
+}
+
 #define ALIAS(x) __attribute__ ((weak, alias (x), visibility ("default")))
 #ifdef __clang__
 void* __libc_malloc(size_t sz)                       __THROW __attribute__((malloc, alloc_size(1))) ALIAS("malloc");
@@ -198,93 +203,9 @@ void  __libc_free(void* ptr)                         __THROW __attribute__((leaf
 void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
 #endif
 struct mallinfo __libc_mallinfo()                    __THROW  ALIAS("mallinfo");
+size_t  __libc_malloc_usable_size(void *ptr)         __THROW  ALIAS("malloc_usable_size");
 void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("memalign");
 int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign");
 #undef ALIAS
-
-#if 0
-#include <dlfcn.h>
-
-typedef void * (*dlopen_function) (const char *filename, int flag);
-
-extern "C" VESPA_DLL_EXPORT void * local_dlopen(const char *filename, int flag) __asm__("dlopen");
-
-VESPA_DLL_EXPORT void * local_dlopen(const char *filename, int flag)
-{
-    // A pointer to the library version of dlopen.
-    static dlopen_function real_dlopen = nullptr;
-
-    const char * dlopenName = "dlopen";
-
-    if (real_dlopen == nullptr) {
-        real_dlopen = (dlopen_function) dlsym (RTLD_NEXT, dlopenName);
-        if (real_dlopen == nullptr) {
-            fprintf (stderr, "Could not find the dlopen function!\n");
-            abort();
-        }
-    }
-    //flag = (flag & ~RTLD_DEEPBIND & ~RTLD_NOW) | RTLD_LAZY;
-    //fprintf(stderr, "modified dlopen('%s', %0x)\n", filename, flag);
-    void * handle = real_dlopen(filename, flag);
-    fprintf(stderr, "dlopen('%s', %0x) = %p\n", filename, flag, handle);
-    return handle;
-}
-
-typedef int (*dlclose_function) (void * handle);
-extern "C" VESPA_DLL_EXPORT int local_dlclose(void * handle) __asm__("dlclose");
-VESPA_DLL_EXPORT int local_dlclose(void * handle)
-{
-    // A pointer to the library version of dlclose.
-    static dlclose_function real_dlclose = nullptr;
-
-    const char * dlcloseName = "dlclose";
-
-    if (real_dlclose == nullptr) {
-        real_dlclose = (dlclose_function) dlsym (RTLD_NEXT, dlcloseName);
-        if (real_dlclose == nullptr) {
-            fprintf (stderr, "Could not find the dlclose function!\n");
-            abort();
-        }
-    }
-    int retval = real_dlclose(handle);
-    fprintf(stderr, "dlclose(%p) = %d\n", handle, retval);
-    return retval;
-}
-
-typedef void * (*dlsym_function) (void * handle, const char * symbol);
-extern "C" VESPA_DLL_EXPORT void * local_dlsym(void * handle, const char * symbol) __asm__("dlsym");
-VESPA_DLL_EXPORT void * local_dlsym(void * handle, const char * symbol)
-{
-    // A pointer to the library version of dlsym.
-    static dlsym_function real_dlsym = nullptr;
-
-    const char * dlsymName = "dlsym";
-
-    if (real_dlsym == nullptr) {
-        real_dlsym = (dlsym_function) dlvsym (RTLD_NEXT, dlsymName, "GLIBC_2.2.5");
-        if (real_dlsym == nullptr) {
-            fprintf (stderr, "Could not find the dlsym function!\n");
-            abort();
-        }
-    }
-    if (handle == RTLD_NEXT) {
-        fprintf(stderr, "dlsym(RTLD_NEXT, %s)\n", symbol);
-    } else if (handle == RTLD_DEFAULT) {
-        fprintf(stderr, "dlsym(RTLD_DEFAULT, %s)\n", symbol);
-    } else {
-        fprintf(stderr, "dlsym(%p, %s)\n", handle, symbol);
-    }
-    void * retval = real_dlsym(handle, symbol);
-    if (handle == RTLD_NEXT) {
-        fprintf(stderr, "dlsym(RTLD_NEXT, %s) = %p\n", symbol, retval);
-    } else if (handle == RTLD_DEFAULT) {
-        fprintf(stderr, "dlsym(RTLD_DEFAULT, %s) = %p\n", symbol, retval);
-    } else {
-        fprintf(stderr, "dlsym(%p, %s) = %p\n", handle, symbol, retval);
-    }
-    return retval;
-}
-
-#endif
 
 }

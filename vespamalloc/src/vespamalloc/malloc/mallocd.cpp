@@ -29,4 +29,11 @@ template void MemBlockBoundsCheckBaseT<20, 0>::dumpInfo(size_t);
 
 }
 
+extern "C" {
+
+int is_vespamallocd() __attribute__((visibility ("default")));
+int is_vespamallocd() { return 1; }
+
+}
+
 #include <vespamalloc/malloc/overload.h>
