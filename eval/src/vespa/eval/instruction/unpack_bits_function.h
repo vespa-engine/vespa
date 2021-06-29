@@ -9,26 +9,27 @@ namespace vespalib::eval {
 /**
  * Tensor function unpacking bits into separate values.
  *
- * Both the tensor containing the packed bits and the result tensor
- * must have cell type 'int8'. The bits must be unpacked in canonical
- * order; bytes are unpacked with increasing index, bits within a byte
- * are unpacked from most to least significant.
+ * The tensor containing the packed bits must be a vector (dense
+ * tensor with 1 dimension) with cell type 'int8'. Bytes must be
+ * processed with increasing index. Bits may be unpacked in either
+ * 'big' or 'little' order. The result must be a vector (dense tensor
+ * with 1 dimension) where the dimension is 8 times larger than the
+ * input (since there are 8 bits packed into each int8 value).
  *
- * The baseline expression looks like this:
+ * Baseline expression for 'big' bitorder (most significant bit first):
+ * (Note: this is the default order used by numpy unpack_bits)
+ * 'tensor<int8>(x[64])(bit(packed{x:(x/8)},7-(x%8)))'
  *
- * tensor<int8>(x[64])(bit(packed{x:(x/8)},7-(x%8)))
- *
- * in this case 'packed' must be a tensor with type
- * 'tensor<int8>(x[8])' (the inner result dimension is always 8 times
- * larger than the inner input dimension).
- *
- * Unpacking of bits from multi-dimensional tensors will currently not
- * be optimized.
+ * Baseline expression for 'little' bitorder (least significant bit first):
+ * (Note: make sure this is the actual order of your bits)
+ * 'tensor<int8>(x[64])(bit(packed{x:(x/8)},x%8))'
  **/
 class UnpackBitsFunction : public tensor_function::Op1
 {
+private:
+    bool _big_bitorder;
 public:
-    UnpackBitsFunction(const ValueType &res_type_in, const TensorFunction &packed);
+    UnpackBitsFunction(const ValueType &res_type_in, const TensorFunction &packed, bool big);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
