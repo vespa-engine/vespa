@@ -98,14 +98,18 @@ TEST("verify new with alignment = 64 with single element") {
 #if __GLIBC_PREREQ(2, 26)
 TEST("verify realloarray") {
     void *arr = calloc(5,5);
+    errno = 0;
     void *arr2 = reallocarray(arr, 800, 5);
+    int myErrno = errno;
     EXPECT_NOT_EQUAL(arr, arr2);
     EXPECT_NOT_EQUAL(nullptr, arr2);
-    EXPECT_NOT_EQUAL(ENOMEM, errno);
+    EXPECT_NOT_EQUAL(ENOMEM, myErrno);
 
-    void *arr3 = reallocarray(arr2, 1u << 33, 1u << 33);
+    errno = 0;
+    void *arr3 = reallocarray(arr2, 1ul << 33, 1ul << 33);
+    myErrno = errno;
     EXPECT_EQUAL(nullptr, arr3);
-    EXPECT_EQUAL(ENOMEM, errno);
+    EXPECT_EQUAL(ENOMEM, myErrno);
 }
 #endif
 
