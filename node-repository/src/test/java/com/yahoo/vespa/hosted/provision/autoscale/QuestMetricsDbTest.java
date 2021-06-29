@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the Quest metrics db.
@@ -164,25 +163,21 @@ public class QuestMetricsDbTest {
         String dataDir = "data/QuestMetricsDbGc";
         IOUtils.recursiveDeleteDir(new File(dataDir));
         IOUtils.createDirectory(dataDir + "/metrics");
-        ManualClock clock = new ManualClock();
-        int days = 10; // The first metrics are this many days in the past
-        clock.retreat(Duration.ofDays(10));
-        Instant startTime = clock.instant();
-
+        ManualClock clock = new ManualClock("2020-10-01T00:00:00");
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
+        Instant startTime = clock.instant();
+        int dayOffset = 3;
+        clock.advance(Duration.ofHours(dayOffset));
+        db.addNodeMetrics(nodeTimeseries(24 * 10, Duration.ofHours(1), clock, "host1", "host2", "host3"));
 
-        db.addNodeMetrics(nodeTimeseries(24 * days, Duration.ofHours(1), clock, "host1", "host2", "host3"));
-
-        var application1 = ApplicationId.from("t1", "a1", "i1");
-        var cluster1 = new ClusterSpec.Id("cluster1");
-        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 30.0, 15.0)));
-
-        assertEquals(24 * days, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
-                                                              Set.of("host1")).get(0).size());
+        assertEquals(24 * 10, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
+                                                   Set.of("host1")).get(0).size());
         db.gc();
-        assertTrue(db.getNodeTimeseries(Duration.between(startTime, clock.instant()), Set.of("host1")).get(0).size() < 24 * 4);
+        assertEquals(75, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
+                                                              Set.of("host1")).get(0).size());
         db.gc(); // no-op
-        assertTrue(db.getNodeTimeseries(Duration.between(startTime, clock.instant()), Set.of("host1")).get(0).size() < 24 * 4);
+        assertEquals(75, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
+                                                              Set.of("host1")).get(0).size());
     }
 
     /** To manually test that we can read existing data */
