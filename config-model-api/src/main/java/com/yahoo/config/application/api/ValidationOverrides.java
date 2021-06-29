@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -33,9 +32,6 @@ import java.util.stream.Collectors;
 public class ValidationOverrides {
 
     public static final ValidationOverrides empty = new ValidationOverrides(ImmutableList.of(), "<validation-overrides/>");
-
-    /** A special instance which behaves as if it contained a valid allow override for every (valid) validation id */
-    public static final ValidationOverrides all = new AllowAllValidationOverrides();
 
     private final List<Allow> overrides;
 
@@ -177,46 +173,6 @@ public class ValidationOverrides {
                                                toAllowMessage(messages.getKey()))
                               .collect(Collectors.joining("\n")));
         }
-
-    }
-
-    // TODO: Remove this class after June 2021
-    public static class AllowAllValidationOverrides extends ValidationOverrides {
-
-        private final DeployLogger logger;
-        private final ValidationOverrides wrapped;
-
-        /** Create an instance of this which doesn't log */
-        public AllowAllValidationOverrides() {
-            this(null, null);
-        }
-
-        /** Creates an instance of this which logs what is allows to the given deploy logger */
-        public AllowAllValidationOverrides(ValidationOverrides wrapped, DeployLogger logger) {
-            super(List.of());
-            this.wrapped = wrapped;
-            this.logger = logger;
-        }
-
-        @Override
-        public void invalid(ValidationId validationId, String message, Instant now) {
-            // Log if would otherwise be invalid
-            if (wrapped != null && logger != null && ! wrapped.allows(validationId, now))
-                logger.log(Level.WARNING, "Possibly destructive change '" + validationId + "' allowed");
-        }
-
-        /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
-        @Override
-        public boolean allows(ValidationId validationId, Instant now) {
-            return true;
-        }
-
-        /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
-        @Override
-        public String xmlForm() { return null; }
-
-        @Override
-        public String toString() { return "(A validation override which allows everything)"; }
 
     }
 

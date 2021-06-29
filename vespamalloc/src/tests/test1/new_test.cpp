@@ -111,7 +111,6 @@ TEST("verify realloarray") {
     EXPECT_EQUAL(nullptr, arr3);
     EXPECT_EQUAL(ENOMEM, myErrno);
 }
-#endif
 
 void verify_vespamalloc_usable_size() {
     struct AllocInfo { size_t requested; size_t usable;};

@@ -19,8 +19,8 @@ public:
     using AllocPool = AllocPoolT<MemBlockPtrT>;
     ThreadListT(AllocPool & pool);
     ~ThreadListT();
-    void setParams(size_t alwayReuseLimit, size_t threadCacheLimit) {
-        ThreadPool::setParams(alwayReuseLimit, threadCacheLimit);
+    void setParams(size_t threadCacheLimit) {
+        ThreadPool::setParams(threadCacheLimit);
     }
     bool quitThisThread();
     bool initThisThread();

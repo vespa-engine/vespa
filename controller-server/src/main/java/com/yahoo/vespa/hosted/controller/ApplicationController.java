@@ -67,6 +67,7 @@ import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
@@ -868,12 +869,15 @@ public class ApplicationController {
             throw new IllegalArgumentException("Not allowed to launch Athenz service " + athenzService.getFullName());
     }
 
-    /** Returns the latest known version within the given major. */
+    /** Returns the latest known version within the given major, which is not newer than the system version. */
     public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
-        return controller.readVersionStatus().versions().stream()
-                         .map(VespaVersion::versionNumber)
-                         .filter(version -> version.getMajor() == targetMajorVersion)
-                         .max(naturalOrder());
+        VersionStatus versions = controller.readVersionStatus();
+        Version systemVersion = controller.systemVersion(versions);
+        return versions.versions().stream()
+                       .map(VespaVersion::versionNumber)
+                       .filter(version -> version.getMajor() == targetMajorVersion)
+                       .filter(version -> ! version.isAfter(systemVersion))
+                       .max(naturalOrder());
     }
 
     /** Extract deployment warnings metric from deployment result */

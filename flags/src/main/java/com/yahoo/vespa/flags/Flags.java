@@ -158,7 +158,7 @@ public class Flags {
 
     public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "metrics-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-01", "2021-07-01",
+            List.of("hmusum"), "2021-03-01", "2021-07-15",
             "JVM max heap size for metrics proxy in Mb",
             "Takes effect when restarting metrics proxy",
             CLUSTER_TYPE);
@@ -275,7 +275,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING = defineFeatureFlag(
             "load-local-sessions-when-bootstrapping", true,
-            List.of("hmusum"), "2021-06-15", "2021-07-15",
+            List.of("hmusum"), "2021-06-15", "2021-08-15",
             "Whether to load local sessions when bootstrapping config server",
             "Takes effect on restart of config server");
 
