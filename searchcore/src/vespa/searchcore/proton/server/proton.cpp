@@ -40,7 +40,9 @@
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/size_literals.h>
+#ifdef __linux__
 #include <malloc.h>
+#endif
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -764,6 +766,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
+#ifdef __linux__
 #pragma GCC diagnostic push
 #if __GLIBC_PREREQ(2, 33)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -773,6 +776,9 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
         // If we use something else than vespamalloc this must be changed.
         metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) * 1_Mi);
+#else
+        metrics.resourceUsage.mallocArena.set(UINT64_C(0));
+#endif
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
