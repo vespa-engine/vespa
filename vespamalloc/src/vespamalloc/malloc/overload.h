@@ -109,7 +109,7 @@ extern "C" {
 #if __GLIBC_PREREQ(2, 33)
 struct mallinfo2 mallinfo2() __THROW __attribute__((visibility ("default")));
 struct mallinfo2 mallinfo2() __THROW {
-    struct mallinfo info;
+    struct mallinfo2 info;
     info.arena = vespamalloc::_GmemP->dataSegment().dataSize();
     info.ordblks = 0;
     info.smblks = 0;
