@@ -124,6 +124,19 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ReturnDesc("denied", "non-zero if request was denied");
     rb.ReturnDesc("reason", "reason for denial");
     //-------------------------------------------------------------------------
+    rb.DefineMethod("slobrok.internal.fetchLocalView", "ii", "iSSSi",
+                    FRT_METHOD(RPCHooks::rpc_fetchLocalView), this);
+    rb.MethodDesc("Fetch or update peer mirror of local view");
+    rb.ParamDesc("gencnt",  "generation already known by peer");
+    rb.ParamDesc("timeout", "How many milliseconds to wait for changes"
+                 "before returning if nothing has changed (max=10000)");
+
+    rb.ReturnDesc("oldgen",  "Generation already known by peer");
+    rb.ReturnDesc("removed", "Array of NamedService names to remove");
+    rb.ReturnDesc("names",   "Array of NamedService names with new values");
+    rb.ReturnDesc("specs",   "Array of connection specifications (same order)");
+    rb.ReturnDesc("newgen",  "Generation count for new version of the map");
+    //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
@@ -481,6 +494,15 @@ RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)
 
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req,
                                              _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
+}
+
+void RPCHooks::rpc_fetchLocalView(FRT_RPCRequest *req) {
+    _cnts.mirrorReqs++;
+    FRT_Values &args = *req->GetParams();
+    vespalib::GenCnt gencnt(args[0]._intval32);
+    uint32_t msTimeout = args[1]._intval32;
+    req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req,
+                                             _rpcsrvmap.localView(), gencnt).invoke(msTimeout);
 }
 
 

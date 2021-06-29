@@ -39,6 +39,7 @@ private:
 public:
     typedef std::vector<const NamedService *> RpcSrvlist;
 
+    ServiceMapHistory& localView() { return _visible_map; }
     ServiceMapHistory& visibleMap() { return _visible_map; }
 
     ManagedRpcServer *lookupManaged(const std::string & name) const;

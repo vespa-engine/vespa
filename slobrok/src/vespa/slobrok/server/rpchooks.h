@@ -69,6 +69,7 @@ private:
     void rpc_wantAdd(FRT_RPCRequest *req);
     void rpc_doAdd(FRT_RPCRequest *req);
     void rpc_doRemove(FRT_RPCRequest *req);
+    void rpc_fetchLocalView(FRT_RPCRequest *req);
 
     void rpc_listNamesServed(FRT_RPCRequest *req);
     void rpc_getRpcServerHistory(FRT_RPCRequest *req);
