@@ -154,10 +154,14 @@ void * realloc(void * ptr, size_t sz)
     return vespamalloc::createAllocator()->realloc(ptr, sz);
 }
 
-void * reallocarray(void * ptr, size_t nemb, size_t sz) __THROW __attribute__((visibility ("default")));
-void * reallocarray(void * ptr, size_t nemb, size_t sz) __THROW
+void * reallocarray(void * ptr, size_t nemb, size_t elemSize) __THROW __attribute__((visibility ("default")));
+void * reallocarray(void * ptr, size_t nemb, size_t elemSize) __THROW
 {
-    return vespamalloc::createAllocator()->realloc(ptr, sz*nemb);
+    size_t sz = nemb * elemSize;
+    if (nemb != 0 && (sz/nemb != elemSize)) {
+        return nullptr;
+    }
+    return vespamalloc::createAllocator()->realloc(ptr, sz);
 }
 
 void* memalign(size_t align, size_t sz) __THROW __attribute__((visibility ("default")));
