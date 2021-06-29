@@ -53,16 +53,11 @@ public:
 
     void info(FILE * os, size_t level=0) __attribute__ ((noinline));
 
-    void setupSegmentLog(size_t noMemLogLevel,
-                         size_t bigMemLogLevel,
-                         size_t bigLimit,
-                         size_t bigIncrement,
-                         size_t allocs2Show)
+    void setupSegmentLog(size_t bigMemLogLevel, size_t bigLimit, size_t bigIncrement, size_t allocs2Show)
     {
-        _segment.setupLog(noMemLogLevel, bigMemLogLevel, bigLimit, bigIncrement, allocs2Show);
+        _segment.setupLog(bigMemLogLevel, bigLimit, bigIncrement, allocs2Show);
     }
-    void setupLog(size_t invalidMem, size_t prAllocLimit) {
-        _invalidMemLogLevel = invalidMem;
+    void setupLog(size_t prAllocLimit) {
         _prAllocLimit = prAllocLimit;
     }
     void setParams(size_t alwayReuseLimit, size_t threadCacheLimit) {
@@ -75,7 +70,6 @@ private:
     void crash() __attribute__((noinline));;
     typedef AllocPoolT<MemBlockPtrT> AllocPool;
     typedef typename ThreadListT::ThreadPool  ThreadPool;
-    size_t                     _invalidMemLogLevel;
     size_t                     _prAllocLimit;
     DataSegment<MemBlockPtrT>  _segment;
     AllocPool                  _allocPool;
@@ -85,7 +79,6 @@ private:
 template <typename MemBlockPtrT, typename ThreadListT>
 MemoryManager<MemBlockPtrT, ThreadListT>::MemoryManager(size_t logLimitAtStart) :
     IAllocator(),
-    _invalidMemLogLevel(1),
     _prAllocLimit(logLimitAtStart),
     _segment(),
     _allocPool(_segment),

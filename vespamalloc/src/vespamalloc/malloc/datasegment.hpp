@@ -13,7 +13,6 @@ DataSegment<MemBlockPtrT>::~DataSegment() = default;
 template<typename MemBlockPtrT>
 DataSegment<MemBlockPtrT>::DataSegment() :
     _osMemory(BlockSize),
-    _noMemLogLevel(1),
     _bigSegmentLogLevel(0),
     _bigIncrement (0x4000000),
     _allocs2Show (8),
@@ -98,8 +97,6 @@ void * DataSegment<MemBlockPtrT>::getBlock(size_t & oldBlockSize, SizeClassT sc)
         if (recurse++ == 0) {
             perror("Failed extending datasegment: ");
             assert(false);
-            MemBlockPtrT::dumpInfo(_noMemLogLevel);
-            sleep(2);
         }
         return nullptr;
     }
