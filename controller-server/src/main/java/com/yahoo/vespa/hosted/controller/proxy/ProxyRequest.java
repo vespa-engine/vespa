@@ -33,7 +33,7 @@ public class ProxyRequest {
                  String path) {
         Objects.requireNonNull(url);
         if (!url.getPath().endsWith(path)) {
-            throw new IllegalArgumentException(Text.fmt("Request path '%s' does not end with proxy path '%s'", url.getPath(), path));
+            throw new IllegalArgumentException(Text.format("Request path '%s' does not end with proxy path '%s'", url.getPath(), path));
         }
         if (targets.isEmpty()) {
             throw new IllegalArgumentException("targets must be non-empty");

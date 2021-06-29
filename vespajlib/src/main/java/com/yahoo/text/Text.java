@@ -187,7 +187,7 @@ public final class Text {
         return s.substring(0, length - 4) + " ...";
     }
 
-    public static String fmt(String format, Object... args) {
+    public static String format(String format, Object... args) {
 	return String.format(Locale.US, format, args);
     }
 }

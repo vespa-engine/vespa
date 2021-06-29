@@ -167,7 +167,7 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
-        this.athenzIdentityAttributes = Text.fmt("athenz-domain='%s' athenz-service='%s'", domain.value(),
+        this.athenzIdentityAttributes = Text.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
                                                       service.value());
         return this;
     }

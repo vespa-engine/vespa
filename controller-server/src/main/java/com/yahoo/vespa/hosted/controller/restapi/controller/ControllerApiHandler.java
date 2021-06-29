@@ -126,8 +126,8 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         // Trigger deployment to include operator cert
         Optional<JobId> jobId = controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
         return new MessageResponse(
-                jobId.map(id -> Text.fmt("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
-                        .orElseGet(() -> Text.fmt("Operator %s granted access and job trigger queued", principal.getName())));
+                jobId.map(id -> Text.format("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
+                        .orElseGet(() -> Text.format("Operator %s granted access and job trigger queued", principal.getName())));
     }
 
     private <T> T requireField(Inspector inspector, String field, Function<String, T> mapper) {

@@ -44,7 +44,7 @@ public class Rotation {
 
     @Override
     public String toString() {
-        return Text.fmt("rotation %s -> %s", id().asString(), name());
+        return Text.format("rotation %s -> %s", id().asString(), name());
     }
 
 }

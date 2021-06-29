@@ -167,7 +167,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
 
         if (shouldRetire(changeRequest, hostAction)) {
             if (!node.wantToRetire()) {
-                logger.info(Text.fmt("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
+                logger.info(Text.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
                 // TODO: Remove try/catch once retirement is stabilized
                 try {
                     setWantToRetire(changeRequest.getZoneId(), node, true);
@@ -309,7 +309,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
     }
 
     private void updateReport(ZoneId zoneId, Node node, VCMRReport report) {
-        logger.info(Text.fmt("Updating report for %s: %s", node.hostname(), report));
+        logger.info(Text.format("Updating report for %s: %s", node.hostname(), report));
         var newNode = new NodeRepositoryNode();
         newNode.setReports(report.toNodeReports());
         nodeRepository.patchNode(zoneId, node.hostname().value(), newNode);

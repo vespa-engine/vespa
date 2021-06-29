@@ -153,7 +153,7 @@ public class NotificationsDb {
     private static Optional<Notification> createReindexNotification(NotificationSource source, Instant at, ClusterMetrics metric) {
         if (metric.reindexingProgress().isEmpty()) return Optional.empty();
         List<String> messages = metric.reindexingProgress().entrySet().stream()
-                .map(entry -> Text.fmt("document type '%s' (%.1f%% done)", entry.getKey(), 100 * entry.getValue()))
+                .map(entry -> Text.format("document type '%s' (%.1f%% done)", entry.getKey(), 100 * entry.getValue()))
                 .sorted()
                 .collect(Collectors.toUnmodifiableList());
         return Optional.of(new Notification(at, Type.reindex, Level.info, source, messages));
@@ -170,7 +170,7 @@ public class NotificationsDb {
         double utilRelativeToLimit = util.get() / feedBlockLimit.get();
         if (utilRelativeToLimit < 0.9) return Optional.empty();
 
-        String message = Text.fmt("%s (usage: %.1f%%, feed block limit: %.1f%%)",
+        String message = Text.format("%s (usage: %.1f%%, feed block limit: %.1f%%)",
                 resource, 100 * util.get(), 100 * feedBlockLimit.get());
         if (utilRelativeToLimit < 1) return Optional.of(new Pair<>(Level.warning, message));
         return Optional.of(new Pair<>(Level.error, message));

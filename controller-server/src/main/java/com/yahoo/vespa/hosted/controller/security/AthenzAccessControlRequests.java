@@ -78,7 +78,7 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
         Principal principal = request.getUserPrincipal();
         Objects.requireNonNull(principal, "Expected a user principal");
         if ( ! (principal instanceof AthenzPrincipal))
-            throw new RuntimeException(Text.fmt("Expected principal of type %s, got %s",
+            throw new RuntimeException(Text.format("Expected principal of type %s, got %s",
                                                      AthenzPrincipal.class.getSimpleName(), principal.getClass().getName()));
         return (AthenzPrincipal) principal;
     }

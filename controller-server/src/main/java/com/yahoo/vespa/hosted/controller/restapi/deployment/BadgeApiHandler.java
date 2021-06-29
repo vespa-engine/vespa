@@ -69,7 +69,7 @@ public class BadgeApiHandler extends LoggingRequestHandler {
         if (path.matches("/badge/v1/{tenant}/{application}/{instance}")) return overviewBadge(path.get("tenant"), path.get("application"), path.get("instance"));
         if (path.matches("/badge/v1/{tenant}/{application}/{instance}/{jobName}")) return historyBadge(path.get("tenant"), path.get("application"), path.get("instance"), path.get("jobName"), request.getProperty("historyLength"));
 
-        return ErrorResponse.notFoundError(Text.fmt("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 

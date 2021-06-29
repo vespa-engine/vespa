@@ -32,7 +32,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<Version> {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        log.info(Text.fmt("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+        log.info(Text.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
         controller().applications().deploy(application, zone.getId(), target);
     }
 

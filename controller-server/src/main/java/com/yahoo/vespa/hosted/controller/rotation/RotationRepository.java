@@ -166,7 +166,7 @@ public class RotationRepository {
         Map<RotationId, Rotation> availableRotations = availableRotations(lock);
         // Return first available rotation
         RotationId rotation = requireNonEmpty(availableRotations.keySet()).iterator().next();
-        log.info(Text.fmt("Offering %s to application %s", rotation, id));
+        log.info(Text.format("Offering %s to application %s", rotation, id));
         return allRotations.get(rotation);
     }
 

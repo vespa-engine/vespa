@@ -3099,7 +3099,7 @@
       "public static boolean isDisplayable(int)",
       "public static java.lang.String stripInvalidCharacters(java.lang.String)",
       "public static java.lang.String truncate(java.lang.String, int)",
-      "public static varargs java.lang.String fmt(java.lang.String, java.lang.Object[])"
+      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])"
     ],
     "fields": []
   },

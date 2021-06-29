@@ -396,7 +396,7 @@ public final class ControllerTester {
     private static RotationsConfig defaultRotationsConfig() {
         RotationsConfig.Builder builder = new RotationsConfig.Builder();
         for (int i = 1; i <= availableRotations; i++) {
-            String id = Text.fmt("%02d", i);
+            String id = Text.format("%02d", i);
             builder = builder.rotations("rotation-id-" + id, "rotation-fqdn-" + id);
         }
         return new RotationsConfig(builder);

@@ -23,7 +23,7 @@ public class NotExistsException extends IllegalArgumentException {
      *
      */
     public NotExistsException(String capitalizedType, String id) {
-        super(Text.fmt("%s '%s' does not exist", capitalizedType, id));
+        super(Text.format("%s '%s' does not exist", capitalizedType, id));
     }
 
     public NotExistsException(Identifier id) {

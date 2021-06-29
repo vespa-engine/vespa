@@ -44,7 +44,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     @Override
     protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
         Duration zoneUpgradeBudget = zoneBudgetOf(target.upgradeBudget(), zone);
-        log.info(Text.fmt("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(),
+        log.info(Text.format("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(),
                                target.osVersion().version().toFullString(),
                                zone.getVirtualId(), zone.getCloudName(),
                                " with time budget " + zoneUpgradeBudget));

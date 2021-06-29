@@ -121,7 +121,7 @@ public class ChangeManagementAssessor {
     private static Cluster clusterKey(NodeRepositoryNode node) {
         if (node.getOwner() == null)
             return Cluster.EMPTY;
-        String appId = Text.fmt("%s:%s:%s", node.getOwner().tenant, node.getOwner().application, node.getOwner().instance);
+        String appId = Text.format("%s:%s:%s", node.getOwner().tenant, node.getOwner().application, node.getOwner().instance);
         return new Cluster(Node.ClusterType.valueOf(node.getMembership().clustertype), node.getMembership().clusterid, appId, node.getType());
     }
 

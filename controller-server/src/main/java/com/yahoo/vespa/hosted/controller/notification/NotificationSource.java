@@ -53,7 +53,7 @@ public class NotificationSource {
         if (jobType.isPresent() && instance.isEmpty())
             throw new IllegalArgumentException("Instance name must be present with job type");
         if (jobType.isPresent() != runNumber.isPresent())
-            throw new IllegalArgumentException(Text.fmt("Run number (%s) must be 1-to-1 with job type (%s)",
+            throw new IllegalArgumentException(Text.format("Run number (%s) must be 1-to-1 with job type (%s)",
                     runNumber.isPresent() ? "present" : "missing", jobType.map(i -> "present").orElse("missing")));
     }
 

@@ -58,7 +58,7 @@ public class EndpointCertificates {
         metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));
         Duration duration = Duration.between(start, clock.instant());
         if (duration.toSeconds() > 30)
-            log.log(Level.INFO, Text.fmt("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
+            log.log(Level.INFO, Text.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
         return metadata;
     }
 

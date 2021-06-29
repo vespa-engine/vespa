@@ -157,7 +157,7 @@ public class ApplicationController {
                 });
                 count++;
             }
-            log.log(Level.INFO, Text.fmt("Wrote %d applications in %s", count,
+            log.log(Level.INFO, Text.format("Wrote %d applications in %s", count,
                                               Duration.between(start, clock.instant())));
         });
     }
@@ -810,7 +810,7 @@ public class ApplicationController {
         boolean revisionIsOlder = revision.compareTo(deployment.applicationVersion()) < 0 &&
                                   !(revision.isUnknown() && controller.system().isCd());
         if (platformIsOlder || revisionIsOlder)
-            throw new IllegalArgumentException(Text.fmt("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
+            throw new IllegalArgumentException(Text.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
                                                              " are older than the currently deployed (platform: %s, application: %s).",
                                                              job.application(), zone, platform, revision, deployment.version(), deployment.applicationVersion()));
     }

@@ -88,7 +88,7 @@ public class Versions {
 
     @Override
     public String toString() {
-        return Text.fmt("platform %s%s, application %s%s",
+        return Text.format("platform %s%s, application %s%s",
                              sourcePlatform.filter(source -> !source.equals(targetPlatform))
                                            .map(source -> source + " -> ").orElse(""),
                              targetPlatform,

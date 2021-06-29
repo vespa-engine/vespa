@@ -74,6 +74,6 @@ public class TextTestCase {
 
     @Test
     public void testFormat() {
-	assertEquals("foo 3.14", Text.fmt("%s %.2f", "foo", 3.1415926536));
+	assertEquals("foo 3.14", Text.format("%s %.2f", "foo", 3.1415926536));
     }
 }

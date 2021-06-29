@@ -167,7 +167,7 @@ class JobControllerApiHandlerHelper {
         catch (RuntimeException ignored) { } // Return response when this fails, which it does when, e.g., logserver is booting.
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
-                .orElseThrow(() -> new NotExistsException(Text.fmt(
+                .orElseThrow(() -> new NotExistsException(Text.format(
                         "No run details exist for application: %s, job type: %s, number: %d",
                         runId.application().toShortString(), runId.type().jobName(), runId.number())));
 

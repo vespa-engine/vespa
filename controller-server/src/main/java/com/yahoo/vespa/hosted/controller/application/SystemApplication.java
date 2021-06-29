@@ -106,7 +106,7 @@ public enum SystemApplication {
 
     @Override
     public String toString() {
-        return Text.fmt("system application %s of type %s", id, nodeType);
+        return Text.format("system application %s of type %s", id, nodeType);
     }
 
     private static class Constants {

@@ -223,7 +223,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public URI getConfigServerVipUri(ZoneId zoneId) {
-        return URI.create(Text.fmt("https://cfg.%s.test.vip:4443/", zoneId.value()));
+        return URI.create(Text.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
     }
 
     @Override

@@ -75,14 +75,14 @@ public class AthenzApiHandler extends LoggingRequestHandler {
         if (path.matches("/athenz/v1/domains")) return domainList(request);
         if (path.matches("/athenz/v1/properties")) return properties();
 
-        return ErrorResponse.notFoundError(Text.fmt("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/athenz/v1/user")) return signup(request);
-        return ErrorResponse.notFoundError(Text.fmt("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 

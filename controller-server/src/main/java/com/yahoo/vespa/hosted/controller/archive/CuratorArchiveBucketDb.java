@@ -50,7 +50,7 @@ public class CuratorArchiveBucketDb {
 
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
         if (enabled) {
-            return Optional.of(URI.create(Text.fmt("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
+            return Optional.of(URI.create(Text.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
         } else {
             return Optional.empty();
         }

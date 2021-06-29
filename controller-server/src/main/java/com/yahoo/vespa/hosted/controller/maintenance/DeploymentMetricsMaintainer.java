@@ -86,7 +86,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
             }
             if (lastException.get() != null) {
                 log.log(Level.WARNING,
-                        Text.fmt("Could not gather metrics for %d/%d deployments. Retrying in %s. Last error: %s",
+                        Text.format("Could not gather metrics for %d/%d deployments. Retrying in %s. Last error: %s",
                                       failures.get(),
                                       attempts.get(),
                                       interval(),

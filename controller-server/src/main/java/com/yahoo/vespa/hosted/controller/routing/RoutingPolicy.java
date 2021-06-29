@@ -133,7 +133,7 @@ public class RoutingPolicy {
 
     @Override
     public String toString() {
-        return Text.fmt("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
+        return Text.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
                              id.zone().value());
     }

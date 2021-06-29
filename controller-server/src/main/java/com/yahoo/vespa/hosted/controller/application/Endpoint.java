@@ -157,7 +157,7 @@ public class Endpoint {
 
     @Override
     public String toString() {
-        return Text.fmt("endpoint %s [scope=%s, legacy=%s, routingMethod=%s]", url, scope, legacy, routingMethod);
+        return Text.format("endpoint %s [scope=%s, legacy=%s, routingMethod=%s]", url, scope, legacy, routingMethod);
     }
 
     private static String endpointOrClusterAsString(EndpointId id, ClusterSpec.Id cluster) {

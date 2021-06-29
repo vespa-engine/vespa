@@ -870,7 +870,7 @@ public class InternalStepRunner implements StepRunner {
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
-        String resourceString = Text.fmt(
+        String resourceString = Text.format(
                                               "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
                                               resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
 

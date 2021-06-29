@@ -121,7 +121,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                 errorBuilder.append("Talking to server ").append(url.getHost());
                 errorBuilder.append(", got ").append(status).append(" ")
                         .append(content).append("\n");
-                LOG.log(Level.FINE, () -> Text.fmt("Got response from %s with status code %d and content:\n %s",
+                LOG.log(Level.FINE, () -> Text.format("Got response from %s with status code %d and content:\n %s",
                                                         url.getHost(), status, content));
                 return Optional.empty();
             }

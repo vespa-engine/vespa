@@ -66,7 +66,7 @@ class SystemFlagsDeployer  {
             try {
                 results.add(future.get());
             } catch (InterruptedException | ExecutionException e) {
-                log.log(Level.SEVERE, Text.fmt("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
+                log.log(Level.SEVERE, Text.format("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
                 throw new RuntimeException(e);
             }
         });
@@ -86,7 +86,7 @@ class SystemFlagsDeployer  {
             currentFlagData = lookupTable(client.listFlagData(target));
             definedFlags = client.listDefinedFlags(target);
         } catch (Exception e) {
-            log.log(Level.WARNING, Text.fmt("Failed to list flag data for target '%s': %s", target, e.getMessage()), e);
+            log.log(Level.WARNING, Text.format("Failed to list flag data for target '%s': %s", target, e.getMessage()), e);
             return new SystemFlagsDeployResult(List.of(OperationError.listFailed(e.getMessage(), target)));
         }
 
@@ -120,7 +120,7 @@ class SystemFlagsDeployer  {
                     dryRunFlagDataValidation(data);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, Text.fmt("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
+                log.log(Level.WARNING, Text.format("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
                 errors.add(OperationError.createFailed(e.getMessage(), target, data));
                 return;
             }
@@ -146,7 +146,7 @@ class SystemFlagsDeployer  {
                     dryRunFlagDataValidation(wantedData);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, Text.fmt("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
+                log.log(Level.WARNING, Text.format("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
                 errors.add(OperationError.updateFailed(e.getMessage(), target, wantedData));
                 return;
             }
@@ -168,7 +168,7 @@ class SystemFlagsDeployer  {
                 try {
                     client.deleteFlagData(target, id);
                 } catch (Exception e) {
-                    log.log(Level.WARNING, Text.fmt("Failed to delete flag '%s' for target '%s': %s", id, target, e.getMessage()), e);
+                    log.log(Level.WARNING, Text.format("Failed to delete flag '%s' for target '%s': %s", id, target, e.getMessage()), e);
                     errors.add(OperationError.deleteFailed(e.getMessage(), target, id));
                     return;
                 }

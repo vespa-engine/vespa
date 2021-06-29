@@ -1513,7 +1513,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         setGlobalRotationStatus(deploymentId, inService, request);
         setGlobalEndpointStatus(deploymentId, inService, request);
 
-        return new MessageResponse(Text.fmt("Successfully set %s in %s %s service",
+        return new MessageResponse(Text.format("Successfully set %s in %s %s service",
                                                  instance.id().toShortString(), zone, inService ? "in" : "out of"));
     }
 

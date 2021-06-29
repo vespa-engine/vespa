@@ -478,8 +478,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
-        String cfgHostname = Text.fmt("https://cfg.%s.%s.test.vip:4443", environment, region);
-        String cfgServiceUrlPrefix = Text.fmt("%s/serviceview/v1/tenant/%s/application/%s/environment/%s/region/%s/instance/%s/service",
+        String cfgHostname = Text.format("https://cfg.%s.%s.test.vip:4443", environment, region);
+        String cfgServiceUrlPrefix = Text.format("%s/serviceview/v1/tenant/%s/application/%s/environment/%s/region/%s/instance/%s/service",
                                                    cfgHostname, tenantName, applicationName,
                                                    environment, region, instanceName);
         ApplicationView applicationView = new ApplicationView();

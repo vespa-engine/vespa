@@ -58,7 +58,7 @@ public class TenantController {
                 lockIfPresent(name, LockedTenant.class, this::store);
                 count++;
             }
-            log.log(Level.INFO, Text.fmt("Wrote %d tenants in %s", count,
+            log.log(Level.INFO, Text.format("Wrote %d tenants in %s", count,
                                               Duration.between(start, controller.clock().instant())));
         });
     }
