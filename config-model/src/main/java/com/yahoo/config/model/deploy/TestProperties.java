@@ -54,7 +54,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
     private boolean useExternalRankExpression = false;
-    private int clusterControllerMaxHeapSizeInMb = 128;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
@@ -96,7 +95,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
-    @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
@@ -229,11 +227,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties enableFeedBlockInDistributor(boolean enabled) {
         enableFeedBlockInDistributor = enabled;
-        return this;
-    }
-
-    public TestProperties clusterControllerMaxHeapSizeInMb(int heapSize) {
-        clusterControllerMaxHeapSizeInMb = heapSize;
         return this;
     }
 
