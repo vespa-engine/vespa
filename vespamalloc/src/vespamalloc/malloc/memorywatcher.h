@@ -61,7 +61,6 @@ private:
             atend_loglevel,
             pralloc_loglimit,
             atnomem_loglevel,
-            atdoubledelete_loglevel,
             atinvalid_loglevel,
             bigsegment_loglevel,
             bigsegment_limit,
@@ -126,7 +125,6 @@ MemoryWatcher<T, S>::Params::Params()
     _params[         atend_loglevel] = NameValuePair("atend_loglevel", "1");
     _params[       pralloc_loglimit] = NameValuePair("pralloc_loglimit", "0x2000000");
     _params[       atnomem_loglevel] = NameValuePair("atnomem_loglevel", "1");
-    _params[atdoubledelete_loglevel] = NameValuePair("atdoubledelete_loglevel", "1");
     _params[     atinvalid_loglevel] = NameValuePair("atinvalid_loglevel", "1");
     _params[    bigsegment_loglevel] = NameValuePair("bigsegment_loglevel", "1");
     _params[       bigsegment_limit] = NameValuePair("bigsegment_limit", "0x1000000000");  // 64GM
@@ -212,8 +210,7 @@ void MemoryWatcher<T, S>::activateOptions()
                     _params[Params::bigsegment_limit].valueAsLong(),
                     _params[Params::bigsegment_increment].valueAsLong(),
                     _params[Params::allocs2show].valueAsLong());
-    this->setupLog(_params[Params::atdoubledelete_loglevel].valueAsLong(),
-                   _params[Params::atinvalid_loglevel].valueAsLong(),
+    this->setupLog(_params[Params::atinvalid_loglevel].valueAsLong(),
                    _params[Params::pralloc_loglimit].valueAsLong());
     this->setParams(_params[Params::alwaysreuselimit].valueAsLong(),
                     _params[Params::threadcachelimit].valueAsLong());
