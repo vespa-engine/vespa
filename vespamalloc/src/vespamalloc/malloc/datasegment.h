@@ -30,11 +30,8 @@ public:
     size_t textSize()                         const { return size_t(start()); }
     size_t infoThread(FILE * os, int level, uint32_t thread, SizeClassT sct, uint32_t maxThreadId=0) const __attribute__((noinline));
     void info(FILE * os, size_t level) __attribute__((noinline));
-    void setupLog(size_t noMemLogLevel, size_t bigMemLogLevel,
-                  size_t bigLimit, size_t bigIncrement,
-                  size_t allocs2Show)
+    void setupLog(size_t bigMemLogLevel, size_t bigLimit, size_t bigIncrement, size_t allocs2Show)
     {
-        _noMemLogLevel = noMemLogLevel;
         _bigSegmentLogLevel = bigMemLogLevel;
         if ((size_t(end()) < _nextLogLimit) || (size_t(end()) < (size_t(start()) + bigLimit))) {
             _nextLogLimit = size_t(start()) + bigLimit;
@@ -114,7 +111,6 @@ private:
     typedef BlockT BlockList[BlockCount];
     typedef FreeListT<BlockCount/2> FreeList;
     OSMemory     _osMemory;
-    size_t       _noMemLogLevel;
     size_t       _bigSegmentLogLevel;
     size_t       _bigIncrement;
     size_t       _allocs2Show;
