@@ -725,7 +725,7 @@ TEST_F(LegacyDistributorTest, replica_counting_mode_is_configured_to_trusted_by_
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
-// TODO STRIPE -> stripe test
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
@@ -772,7 +772,7 @@ LegacyDistributorTest::configureMaxClusterClockSkew(int seconds) {
     _distributor->enableNextConfig();
 }
 
-// TODO STRIPE -> stripe test
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, max_clock_skew_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -867,7 +867,7 @@ void LegacyDistributorTest::configure_mutation_sequencing(bool enabled) {
     _distributor->enableNextConfig();
 }
 
-// TODO STRIPE -> stripe test
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, sequencing_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -893,7 +893,7 @@ LegacyDistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
     _distributor->enableNextConfig();
 }
 
-// TODO STRIPE -> stripe test
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -901,7 +901,7 @@ TEST_F(LegacyDistributorTest, merge_busy_inhibit_duration_config_is_propagated_t
     EXPECT_EQ(getConfig().getInhibitMergesOnBusyNodeDuration(), std::chrono::seconds(7));
 }
 
-// TODO STRIPE -> stripe test
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
