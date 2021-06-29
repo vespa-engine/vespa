@@ -70,15 +70,11 @@ private:
     void rpc_doAdd(FRT_RPCRequest *req);
     void rpc_doRemove(FRT_RPCRequest *req);
 
-    void rpc_forceUnregisterRpcServer(FRT_RPCRequest *req);
     void rpc_listNamesServed(FRT_RPCRequest *req);
-    void rpc_notifyUnregistered(FRT_RPCRequest *req);
     void rpc_getRpcServerHistory(FRT_RPCRequest *req);
 
     void rpc_stop(FRT_RPCRequest *req);
-    void rpc_suspend(FRT_RPCRequest *req);
     void rpc_version(FRT_RPCRequest *req);
-    void rpc_resume(FRT_RPCRequest *req);
 };
 
 } // namespace slobrok

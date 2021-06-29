@@ -73,14 +73,6 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     FRT_ReflectionBuilder rb(supervisor);
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.system.resume", "", "",
-                    FRT_METHOD(RPCHooks::rpc_resume), this);
-    rb.MethodDesc("Enable something - currently NOP");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.system.suspend", "", "",
-                    FRT_METHOD(RPCHooks::rpc_suspend), this);
-    rb.MethodDesc("Disable something - currently NOP");
-    //-------------------------------------------------------------------------
     rb.DefineMethod("slobrok.system.version", "", "s",
                     FRT_METHOD(RPCHooks::rpc_version), this);
     rb.MethodDesc("Get location broker version");
@@ -138,11 +130,6 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcservers served");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "",
-                    FRT_METHOD(RPCHooks::rpc_notifyUnregistered), this);
-    rb.MethodDesc("Notify a server about removed registration");
-    rb.ParamDesc("name", "NamedService name");
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
@@ -222,17 +209,6 @@ RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
     _cnts.otherReqs++;
     return;
 }
-
-void
-RPCHooks::rpc_notifyUnregistered(FRT_RPCRequest *req)
-{
-    FRT_Values &args   = *req->GetParams();
-    const char *dName  = args[0]._string._str;
-    LOG(warning, "got notifyUnregistered '%s'", dName);
-    _cnts.otherReqs++;
-    return;
-}
-
 
 void
 RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req)
@@ -577,23 +553,5 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
     return;
 }
 
-
-void
-RPCHooks::rpc_suspend(FRT_RPCRequest *req)
-{
-    _cnts.adminReqs++;
-    req->SetError(FRTE_RPC_METHOD_FAILED, "not implemented");
-    LOG(debug, "RPC suspend command received (ignored)");
-}
-
-
-void
-RPCHooks::rpc_resume(FRT_RPCRequest *req)
-{
-    _cnts.adminReqs++;
-    // XXX always ignored
-    (void) req;
-    LOG(debug, "RPC resume command received (ignored)");
-}
 
 } // namespace slobrok
