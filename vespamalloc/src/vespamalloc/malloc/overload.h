@@ -159,6 +159,7 @@ void * reallocarray(void * ptr, size_t nemb, size_t elemSize) __THROW
 {
     size_t sz = nemb * elemSize;
     if (nemb != 0 && (sz/nemb != elemSize)) {
+        errno = ENOMEM;
         return nullptr;
     }
     return vespamalloc::createAllocator()->realloc(ptr, sz);

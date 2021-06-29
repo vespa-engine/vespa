@@ -101,9 +101,11 @@ TEST("verify realloarray") {
     void *arr2 = reallocarray(arr, 800, 5);
     EXPECT_NOT_EQUAL(arr, arr2);
     EXPECT_NOT_EQUAL(nullptr, arr2);
+    EXPECT_NOT_EQUAL(ENOMEM, errno);
 
     void *arr3 = reallocarray(arr2, 1u << 33, 1u << 33);
     EXPECT_EQUAL(nullptr, arr3);
+    EXPECT_EQUAL(ENOMEM, errno);
 }
 #endif
 
