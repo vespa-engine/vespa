@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
-import io.questdb.cairo.CairoConfiguration;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
@@ -370,7 +369,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
                     partitions++;
                     DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
-                    Instant partitionDay = Instant.from(formatter.parse(dirEntry + "T00:00:00"));
+                    Instant partitionDay = Instant.from(formatter.parse(dirEntry.substring(0, 10) + "T00:00:00"));
                     if (partitionDay.isBefore(oldestToKeep))
                         removeList.add(dirEntry);
 
