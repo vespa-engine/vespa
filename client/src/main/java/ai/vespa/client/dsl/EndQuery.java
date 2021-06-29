@@ -163,8 +163,8 @@ public class EndQuery {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         String orderStr = order.stream().map(array -> A.empty().equals(array[0])
-                                                      ? String.format("%s %s", array[1], array[2])
-                                                      : String.format("[%s]%s %s", array[0], array[1], array[2]))
+                                                      ? Text.format("%s %s", array[1], array[2])
+                                                      : Text.format("[%s]%s %s", array[0], array[1], array[2]))
             .collect(Collectors.joining(", "));
 
         String others = map.entrySet().stream()

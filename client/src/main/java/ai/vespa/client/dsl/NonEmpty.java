@@ -17,7 +17,7 @@ public class NonEmpty extends QueryChain {
 
     @Override
     public String toString() {
-        return String.format("nonEmpty(%s)", query);
+        return Text.format("nonEmpty(%s)", query);
     }
 
     @Override
