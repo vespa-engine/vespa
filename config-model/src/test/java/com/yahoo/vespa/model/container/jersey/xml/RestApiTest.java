@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.jersey.RestApiContext;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilderTestBase;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -31,6 +32,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
  * @author gjoranv
  * @author bjorncs
  */
+@Ignore // TODO: remove test
 public class RestApiTest extends ContainerModelBuilderTestBase {
     private static final String PATH = "rest/api";
     private static final String REST_API_CONTEXT_ID = RestApiContext.CONTAINER_CLASS + "-" + RestApi.idFromPath(PATH);
