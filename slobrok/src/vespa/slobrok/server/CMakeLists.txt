@@ -4,7 +4,6 @@ vespa_add_library(slobrok_slobrokserver
     cmd.cpp
     configshim.cpp
     exchange_manager.cpp
-    history.cpp
     i_monitored_server.cpp
     i_rpc_server_manager.cpp
     managed_rpc_server.cpp
@@ -24,7 +23,6 @@ vespa_add_library(slobrok_slobrokserver
     service_map_history.cpp
     service_mapping.cpp
     slobrokserver.cpp
-    visible_map.cpp
     INSTALL lib64
     DEPENDS
     slobrok

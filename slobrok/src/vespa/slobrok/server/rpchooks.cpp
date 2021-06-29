@@ -504,7 +504,7 @@ RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)
     uint32_t msTimeout = args[1]._intval32;
 
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req,
-                                              _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
+                                             _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
 }
 
 
