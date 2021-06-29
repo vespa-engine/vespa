@@ -41,14 +41,6 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag DOCKER_VERSION = defineStringFlag(
-            "docker-version", "1.13.1-102.git7f2769b",
-            "The version of the docker to use of the format VERSION-REL: The YUM package to be installed will be " +
-                    "2:docker-VERSION-REL.el7.centos.x86_64 in AWS (and without '.centos' otherwise). " +
-                    "If docker-version is not of this format, it must be parseable by YumPackageName::fromString.",
-            "Takes effect on next tick.",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
             "fleet-canary", false,
             "Whether the host is a fleet canary.",
