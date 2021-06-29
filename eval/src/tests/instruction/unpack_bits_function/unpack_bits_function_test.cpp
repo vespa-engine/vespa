@@ -46,40 +46,49 @@ void assert_not_optimized(const vespalib::string &expr) {
 
 //-----------------------------------------------------------------------------
 
-TEST(UnpackBitsTest, expression_can_be_optimized) {
+TEST(UnpackBitsTest, expression_can_be_optimized_with_big_bitorder) {
     assert_optimized("tensor<int8>(x[2048])(bit(full{x:(x/8)},7-x%8))");
     assert_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7-x%8))");
 }
 
+TEST(UnpackBitsTest, expression_can_be_optimized_with_small_bitorder) {
+    assert_optimized("tensor<int8>(x[2048])(bit(full{x:(x/8)},x%8))");
+    assert_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},x%8))");
+}
+
 TEST(UnpackBitsTest, unpack_bits_can_rename_dimension) {
     assert_optimized("tensor<int8>(x[64])(bit(vy8{y:(x/8)},7-x%8))");
+    assert_optimized("tensor<int8>(x[64])(bit(vy8{y:(x/8)},x%8))");
+}
+
+TEST(UnpackBitsTest, result_may_have_other_cell_types_than_int8) {
+    assert_optimized("tensor<bfloat16>(x[64])(bit(vx8{x:(x/8)},7-x%8))");
+    assert_optimized("tensor<float>(x[64])(bit(vx8{x:(x/8)},7-x%8))");
+    assert_optimized("tensor<double>(x[64])(bit(vx8{x:(x/8)},7-x%8))");
+
+    assert_optimized("tensor<bfloat16>(x[64])(bit(vx8{x:(x/8)},x%8))");
+    assert_optimized("tensor<float>(x[64])(bit(vx8{x:(x/8)},x%8))");
+    assert_optimized("tensor<double>(x[64])(bit(vx8{x:(x/8)},x%8))");
 }
 
 //-----------------------------------------------------------------------------
+
+TEST(UnpackBitsTest, source_must_be_int8) {
+    assert_not_optimized("tensor<int8>(x[64])(bit(vxf{x:(x/8)},7-x%8))");
+}
 
 TEST(UnpackBitsTest, dimension_sizes_must_be_appropriate) {
     assert_not_optimized("tensor<int8>(x[60])(bit(vx8{x:(x/8)},7-x%8))");
     assert_not_optimized("tensor<int8>(x[68])(bit(vx8{x:(x/8)},7-x%8))");
 }
 
-TEST(UnpackBitsTest, source_must_be_int8) {
-    assert_not_optimized("tensor<int8>(x[64])(bit(vxf{x:(x/8)},7-x%8))");
-}
-
-TEST(UnpackBitsTest, result_must_be_int8) {
-    assert_not_optimized("tensor<float>(x[64])(bit(vx8{x:(x/8)},7-x%8))");
-}
-
 TEST(UnpackBitsTest, similar_expressions_are_not_optimized) {
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7-x%7))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7-x%9))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/7)},7-x%8))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/9)},7-x%8))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},x%8-7))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(8/x)},7-x%8))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7+x%8))");
     assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x*8)},7-x%8))");
-    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},(7-x)%8))");
+    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/9)},7-x%8))");
+    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},8-x%8))");
+    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7+x%8))");
+    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7-x/8))");
+    assert_not_optimized("tensor<int8>(x[64])(bit(vx8{x:(x/8)},7-x%9))");
 }
 
 //-----------------------------------------------------------------------------
