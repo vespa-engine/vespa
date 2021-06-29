@@ -767,15 +767,15 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
 #ifdef __linux__
+#pragma GCC diagnostic push
 #if __GLIBC_PREREQ(2, 33)
-        struct mallinfo2 mallocInfo = mallinfo2();
-        metrics.resourceUsage.mallocArena.set(mallocInfo.arena);
-#else
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
         struct mallinfo mallocInfo = mallinfo();
+#pragma GCC diagnostic pop
         // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
         // If we use something else than vespamalloc this must be changed.
         metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) * 1_Mi);
-#endif
 #else
         metrics.resourceUsage.mallocArena.set(UINT64_C(0));
 #endif
