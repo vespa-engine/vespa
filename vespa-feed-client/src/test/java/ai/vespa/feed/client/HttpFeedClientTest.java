@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,6 +13,7 @@ import java.util.function.BiFunction;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,7 +35,98 @@ class HttpFeedClientTest {
         }
         FeedClient client = new HttpFeedClient(FeedClientBuilder.create(URI.create("https://dummy:123")), new MockRequestStrategy());
 
-        // Vespa error is an error result.
+        // Update is a PUT, and 200 OK is a success.
+        dispatch.set((documentId, request) -> {
+            try {
+                assertEquals(id, documentId);
+                assertEquals("/document/v1/ns/type/docid/0",
+                             request.path());
+                assertEquals("PUT", request.method());
+                assertEquals("json", new String(request.body(), UTF_8));
+
+                HttpResponse response = HttpResponse.of(200,
+                                                        ("{\n" +
+                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
+                                                         "  \"id\": \"id:ns:type::0\"\n" +
+                                                         "}").getBytes(UTF_8));
+                return CompletableFuture.completedFuture(response);
+            }
+            catch (Throwable thrown) {
+                CompletableFuture<HttpResponse> failed = new CompletableFuture<>();
+                failed.completeExceptionally(thrown);
+                return failed;
+            }
+        });
+        Result result = client.update(id,
+                                      "json",
+                                      OperationParameters.empty())
+                              .get();
+        assertEquals(Result.Type.success, result.type());
+        assertEquals(id, result.documentId());
+        assertEquals(Optional.empty(), result.resultMessage());
+        assertEquals(Optional.empty(), result.traceMessage());
+
+        // Remove is a DELETE, and 412 OK is a conditionNotMet.
+        dispatch.set((documentId, request) -> {
+            try {
+                assertEquals(id, documentId);
+                assertEquals("/document/v1/ns/type/docid/0?tracelevel=1",
+                             request.path());
+                assertEquals("DELETE", request.method());
+                assertNull(request.body());
+
+                HttpResponse response = HttpResponse.of(412,
+                                                        ("{\n" +
+                                                         "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
+                                                         "  \"id\": \"id:ns:type::0\",\n" +
+                                                         "  \"message\": \"Relax, take it easy.\",\n" +
+                                                         "  \"trace\": [\n" +
+                                                         "    {\n" +
+                                                         "      \"message\": \"For there is nothing that we can do.\"\n" +
+                                                         "    },\n" +
+                                                         "    {\n" +
+                                                         "      \"fork\": [\n" +
+                                                         "        {\n" +
+                                                         "          \"message\": \"Relax, take is easy.\"\n" +
+                                                         "        },\n" +
+                                                         "        {\n" +
+                                                         "          \"message\": \"Blame it on me or blame it on you.\"\n" +
+                                                         "        }\n" +
+                                                         "      ]\n" +
+                                                         "    }\n" +
+                                                         "  ]\n" +
+                                                         "}").getBytes(UTF_8));
+                return CompletableFuture.completedFuture(response);
+            }
+            catch (Throwable thrown) {
+                CompletableFuture<HttpResponse> failed = new CompletableFuture<>();
+                failed.completeExceptionally(thrown);
+                return failed;
+            }
+        });
+        result = client.remove(id,
+                               OperationParameters.empty().tracelevel(1))
+                       .get();
+        assertEquals(Result.Type.conditionNotMet, result.type());
+        assertEquals(id, result.documentId());
+        assertEquals(Optional.of("Relax, take it easy."), result.resultMessage());
+        assertEquals(Optional.of("[\n" +
+                                 "    {\n" +
+                                 "      \"message\": \"For there is nothing that we can do.\"\n" +
+                                 "    },\n" +
+                                 "    {\n" +
+                                 "      \"fork\": [\n" +
+                                 "        {\n" +
+                                 "          \"message\": \"Relax, take is easy.\"\n" +
+                                 "        },\n" +
+                                 "        {\n" +
+                                 "          \"message\": \"Blame it on me or blame it on you.\"\n" +
+                                 "        }\n" +
+                                 "      ]\n" +
+                                 "    }\n" +
+                                 "  ]"), result.traceMessage());
+
+        // Put is a POST, and a Vespa error is a ResultException.
         dispatch.set((documentId, request) -> {
             try {
                 assertEquals(id, documentId);
@@ -46,7 +139,7 @@ class HttpFeedClientTest {
                                                          "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
                                                          "  \"id\": \"id:ns:type::0\",\n" +
                                                          "  \"message\": \"Ooops! ... I did it again.\",\n" +
-                                                         "  \"trace\": \"I played with your heart. Got lost in the game.\"\n" +
+                                                         "  \"trace\": [ { \"message\": \"I played with your heart. Got lost in the game.\" } ]\n" +
                                                          "}").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }
@@ -66,9 +159,8 @@ class HttpFeedClientTest {
                                                                                         .timeout(Duration.ofSeconds(5)))
                                                                 .get());
         assertTrue(expected.getCause() instanceof ResultException);
-        ResultException result = (ResultException) expected.getCause();
-        assertEquals("Ooops! ... I did it again.", result.getMessage());
-        assertEquals("I played with your heart. Got lost in the game.", result.getTrace().get());
+        assertEquals("Ooops! ... I did it again.", expected.getCause().getMessage());
+        assertEquals("[ { \"message\": \"I played with your heart. Got lost in the game.\" } ]", ((ResultException) expected.getCause()).getTrace().get());
 
 
         // Handler error is a FeedException.
@@ -84,7 +176,7 @@ class HttpFeedClientTest {
                                                          "  \"pathId\": \"/document/v1/ns/type/docid/0\",\n" +
                                                          "  \"id\": \"id:ns:type::0\",\n" +
                                                          "  \"message\": \"Alla ska i jorden.\",\n" +
-                                                         "  \"trace\": \"Din tid den kom, och senn så for den. \"\n" +
+                                                         "  \"trace\": [ { \"message\": \"Din tid den kom, och senn så for den.\" } ]\n" +
                                                          "}").getBytes(UTF_8));
                 return CompletableFuture.completedFuture(response);
             }

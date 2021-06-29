@@ -8,10 +8,12 @@ import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -76,13 +78,28 @@ class HttpFeedClient implements FeedClient {
     }
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
+        if (closed.get())
+            throw new IllegalStateException("Client is closed");
+
         HttpRequest request = new HttpRequest(method,
                                               getPath(documentId) + getQuery(params),
                                               requestHeaders,
-                                              operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
+                                              operationJson == null ? null : operationJson.getBytes(UTF_8)); // TODO: make it bytes all the way?
 
-        return requestStrategy.enqueue(documentId, request)
-                              .thenApply(response -> toResult(request, response, documentId));
+        CompletableFuture<Result> promise = new CompletableFuture<>();
+        requestStrategy.enqueue(documentId, request)
+                       .thenApply(response -> toResult(request, response, documentId))
+                       .whenComplete((result, thrown) -> {
+                           if (thrown != null) {
+                               while (thrown instanceof CompletionException)
+                                   thrown = thrown.getCause();
+
+                               promise.completeExceptionally(thrown);
+                           }
+                           else
+                               promise.complete(result);
+                       });
+        return promise;
     }
 
     private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
@@ -113,14 +130,27 @@ class HttpFeedClient implements FeedClient {
             if (parser.nextToken() != JsonToken.START_OBJECT)
                 throw new ResultParseException(
                         documentId,
-                        "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: "
-                                + new String(response.body(), UTF_8));
+                        "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " +
+                        new String(response.body(), UTF_8));
 
             String name;
             while ((name = parser.nextFieldName()) != null) {
                 switch (name) {
                     case "message": message = parser.nextTextValue(); break;
-                    case "trace": trace = parser.nextTextValue(); break;
+                    case "trace": {
+                        if (parser.nextToken() != JsonToken.START_ARRAY)
+                            throw new ResultParseException(documentId,
+                                                           "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
+                                                           new String(response.body(), UTF_8));
+                        int start = (int) parser.getTokenLocation().getByteOffset();
+                        int depth = 1;
+                        while (depth > 0) switch (parser.nextToken()) {
+                            case START_ARRAY: ++depth; break;
+                            case END_ARRAY:   --depth; break;
+                        }
+                        int end = (int) parser.getTokenLocation().getByteOffset() + 1;
+                        trace = new String(response.body(), start, end - start, UTF_8);
+                    }; break;
                     default: parser.nextToken();
                 }
             }

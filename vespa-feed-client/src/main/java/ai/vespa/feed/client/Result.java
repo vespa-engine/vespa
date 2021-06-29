@@ -33,4 +33,14 @@ public class Result {
     public Optional<String> resultMessage() { return Optional.ofNullable(resultMessage); }
     public Optional<String> traceMessage() { return Optional.ofNullable(traceMessage); }
 
+    @Override
+    public String toString() {
+        return "Result{" +
+               "type=" + type +
+               ", documentId=" + documentId +
+               ", resultMessage='" + resultMessage + '\'' +
+               ", traceMessage='" + traceMessage + '\'' +
+               '}';
+    }
+
 }

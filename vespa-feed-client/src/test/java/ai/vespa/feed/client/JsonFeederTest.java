@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonFeederTest {
@@ -60,8 +62,8 @@ class JsonFeederTest {
             long startNanos = System.nanoTime();
             MockClient feedClient = new MockClient();
             JsonFeeder.builder(feedClient).build()
-                    .feedMany(in, 1 << 7,
-                            new JsonFeeder.ResultCallback() { // TODO: hangs when buffer is smaller than largest document
+                    .feedMany(in, 1 << 10,
+                            new JsonFeeder.ResultCallback() {
                                 @Override
                                 public void onNextResult(Result result, FeedException error) { resultsReceived.incrementAndGet(); }
 
@@ -108,22 +110,31 @@ class JsonFeederTest {
     public void multipleJsonLOperationsAreDispatchedToFeedClient() throws IOException, ExecutionException, InterruptedException {
         MockClient client = new MockClient();
         try (JsonFeeder feeder = JsonFeeder.builder(client).build()) {
-            String json = "{" +
-                          "  \"put\": \"id:ns:type::abc1\",\n" +
-                          "  \"fields\": {\n" +
-                          "    \"lul\":\"lal\"\n" +
-                          "  }\n" +
+            String json = "{\n" +
+                          "  \"remove\": \"id:ns:type::abc1\"\n" +
                           "}\n" +
-                          "{" +
-                          "  \"put\": \"id:ns:type::abc2\",\n" +
+                          "{\n" +
                           "  \"fields\": {\n" +
-                          "    \"lul\":\"lal\"\n" +
+                          "    \"lul\": { \"assign\": \"lal\" }\n" +
+                          "  },\n" +
+                          "  \"update\": \"id:ns:type::abc2\"\n" +
+                          "}\n" +
+                          "{\n" +
+                          "  \"put\": \"id:ns:type::abc3\",\n" +
+                          "  \"fields\": {\n" +
+                          "    \"lul\": \"lal\"\n" +
                           "  }\n" +
                           "}\n";
-            feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8))).get();
-            client.assertPutDocumentIds("abc1", "abc2");
-            client.assertPutOperation("abc1", "{\"fields\":{\n    \"lul\":\"lal\"\n  }}");
-            client.assertPutOperation("abc2", "{\"fields\":{\n    \"lul\":\"lal\"\n  }}");
+
+            feeder.feedMany(new ByteArrayInputStream(json.getBytes(UTF_8)),
+                            3, // Mini-buffer, which needs to expand.
+                            new JsonFeeder.ResultCallback() { })
+                  .get();
+            client.assertRemoveDocumentIds("abc1");
+            client.assertUpdateDocumentIds("abc2");
+            client.assertUpdateOperation("abc2", "{\"fields\":{\n    \"lul\": { \"assign\": \"lal\" }\n  }}");
+            client.assertPutDocumentIds("abc3");
+            client.assertPutOperation("abc3", "{\"fields\":{\n    \"lul\": \"lal\"\n  }}");
         }
     }
 
@@ -146,6 +157,8 @@ class JsonFeederTest {
 
     private static class MockClient implements FeedClient {
         final Map<DocumentId, String> putOperations = new LinkedHashMap<>();
+        final Map<DocumentId, String> updateOperations = new LinkedHashMap<>();
+        final Map<DocumentId, String> removeOperations = new LinkedHashMap<>();
 
         @Override
         public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
@@ -155,11 +168,13 @@ class JsonFeederTest {
 
         @Override
         public CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params) {
+            updateOperations.put(documentId, updateJson);
             return createSuccessResult(documentId);
         }
 
         @Override
         public CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params) {
+            removeOperations.put(documentId, null);
             return createSuccessResult(documentId);
         }
 
@@ -176,15 +191,27 @@ class JsonFeederTest {
             return CompletableFuture.completedFuture(new Result(Result.Type.success, documentId, "success", null));
         }
 
-        void assertPutDocumentIds(String... expectedUserSpecificIds) {
+        void assertDocumentIds(Collection<DocumentId> keys, String... expectedUserSpecificIds) {
             List<String> expected = Arrays.stream(expectedUserSpecificIds)
-                    .map(userSpecific -> "id:ns:type::" + userSpecific)
-                    .sorted()
-                    .collect(Collectors.toList());
-            List<String> actual = putOperations.keySet().stream()
-                    .map(DocumentId::toString).sorted()
-                    .collect(Collectors.toList());
+                                          .map(userSpecific -> "id:ns:type::" + userSpecific)
+                                          .sorted()
+                                          .collect(Collectors.toList());
+            List<String> actual = keys.stream()
+                                      .map(DocumentId::toString).sorted()
+                                      .collect(Collectors.toList());
             assertEquals(expected, actual, "Document ids must match");
+        }
+
+        void assertPutDocumentIds(String... expectedUserSpecificIds) {
+            assertDocumentIds(putOperations.keySet(), expectedUserSpecificIds);
+        }
+
+        void assertUpdateDocumentIds(String... expectedUserSpecificIds) {
+            assertDocumentIds(updateOperations.keySet(), expectedUserSpecificIds);
+        }
+
+        void assertRemoveDocumentIds(String... expectedUserSpecificIds) {
+            assertDocumentIds(removeOperations.keySet(), expectedUserSpecificIds);
         }
 
         void assertPutOperation(String userSpecificId, String expectedJson) {
@@ -193,6 +220,14 @@ class JsonFeederTest {
             assertNotNull(json);
             assertEquals(expectedJson.trim(), json.trim());
         }
+
+        void assertUpdateOperation(String userSpecificId, String expectedJson) {
+            DocumentId docId = DocumentId.of("id:ns:type::" + userSpecificId);
+            String json = updateOperations.get(docId);
+            assertNotNull(json);
+            assertEquals(expectedJson.trim(), json.trim());
+        }
+
     }
 
 }

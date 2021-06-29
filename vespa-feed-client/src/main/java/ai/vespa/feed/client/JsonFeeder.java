@@ -3,6 +3,7 @@ package ai.vespa.feed.client;
 
 import ai.vespa.feed.client.FeedClient.OperationType;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
@@ -200,9 +201,9 @@ public class JsonFeeder implements Closeable {
 
         private final byte[] b = new byte[1];
         private final InputStream in;
-        private final byte[] data;
-        private final int size;
         private final Object lock = new Object();
+        private byte[] data;
+        private int size;
         private IOException thrown = null;
         private long tail = 0;
         private long pos = 0;
@@ -230,6 +231,9 @@ public class JsonFeeder implements Closeable {
             try {
                 int ready;
                 synchronized (lock) {
+                    if (pos - tail == size) // Buffer exhausted, nothing left to read, nowhere left to write.
+                        expand();
+
                     while ((ready = (int) (head - pos)) == 0 && ! done)
                         lock.wait();
                 }
@@ -253,6 +257,23 @@ public class JsonFeeder implements Closeable {
 
         public CompletableFuture<Result> next() throws IOException {
            return parserAndExecutor.next();
+        }
+
+        private void expand() {
+            int newSize = size * 2;
+            if (newSize <= size)
+                throw new IllegalStateException("Maximum buffer size exceeded; want to double " + size + ", but that's too much");
+
+            byte[] newData = new byte[newSize];
+            int offset = (int) (tail % size);
+            int newOffset = (int) (tail % newSize);
+            int toWrite = size - offset;
+            System.arraycopy(data, offset, newData, newOffset, toWrite);
+            if (toWrite < size)
+                System.arraycopy(data, 0, newData, newOffset + toWrite, size - toWrite);
+            size = newSize;
+            data = newData;
+            lock.notify();
         }
 
         private final byte[] prefix = "{\"fields\":".getBytes(UTF_8);
@@ -286,7 +307,7 @@ public class JsonFeeder implements Closeable {
                 while (true) {
                     int free;
                     synchronized (lock) {
-                        while ((free = (int) (tail + size - head)) <= 0 && !done)
+                        while ((free = (int) (tail + size - head)) <= 0 && ! done)
                             lock.wait();
                     }
                     if (done) break;
@@ -358,6 +379,12 @@ public class JsonFeeder implements Closeable {
 
         abstract String getDocumentJson(long start, long end);
 
+        OperationParseException parseException(String error) {
+            JsonLocation location = parser.getTokenLocation();
+            return new OperationParseException(error + " at offset " + location.getByteOffset() +
+                                               " (line " + location.getLineNr() + ", column " + location.getColumnNr() + ")");
+        }
+
         CompletableFuture<Result> next() throws IOException {
             JsonToken token = parser.nextToken();
             if (multipleOperations && ! arrayPrefixParsed && token == START_ARRAY) {
@@ -366,7 +393,7 @@ public class JsonFeeder implements Closeable {
             }
             if (token == END_ARRAY && multipleOperations) return null;
             else if (token == null && ! arrayPrefixParsed) return null;
-            else if (token != START_OBJECT) throw new OperationParseException("Unexpected token '" + parser.currentToken() + "' at offset " + parser.getTokenLocation().getByteOffset());
+            else if (token != START_OBJECT) throw parseException("Unexpected token '" + parser.currentToken() + "'");
             long start = 0, end = -1;
             OperationType type = null;
             DocumentId id = null;
@@ -392,8 +419,7 @@ public class JsonFeeder implements Closeable {
                                 end = parser.getTokenLocation().getByteOffset() + 1;
                                 break;
                             }
-                            default: throw new OperationParseException("Unexpected field name '" + parser.getText() + "' at offset " +
-                                    parser.getTokenLocation().getByteOffset());
+                            default: throw parseException("Unexpected field name '" + parser.getText() + "'");
                         }
                         break;
 
@@ -401,15 +427,20 @@ public class JsonFeeder implements Closeable {
                         break loop;
 
                     default:
-                        throw new OperationParseException("Unexpected token '" + parser.currentToken() + "' at offset " +
-                                parser.getTokenLocation().getByteOffset());
+                        throw parseException("Unexpected token '" + parser.currentToken() + "'");
                 }
             }
             if (id == null)
-                throw new OperationParseException("No document id for document at offset " + start);
+                throw parseException("No document id for document");
+            if (type == REMOVE) {
+                if (end >= start)
+                    throw parseException("Illegal 'fields' object for remove operation");
+                else
+                    start = end = parser.getTokenLocation().getByteOffset(); // getDocumentJson advances buffer overwrite head.
+            }
+            else if (end < start)
+                throw parseException("No 'fields' object for document");
 
-            if (end < start)
-                throw new OperationParseException("No 'fields' object for document at offset " + parser.getTokenLocation().getByteOffset());
             String payload = getDocumentJson(start, end);
             switch (type) {
                 case PUT:    return client.put   (id, payload, parameters);
@@ -479,4 +510,5 @@ public class JsonFeeder implements Closeable {
         }
 
     }
+
 }

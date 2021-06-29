@@ -333,7 +333,8 @@
       "public ai.vespa.feed.client.Result$Type type()",
       "public ai.vespa.feed.client.DocumentId documentId()",
       "public java.util.Optional resultMessage()",
-      "public java.util.Optional traceMessage()"
+      "public java.util.Optional traceMessage()",
+      "public java.lang.String toString()"
     ],
     "fields": []
   },
