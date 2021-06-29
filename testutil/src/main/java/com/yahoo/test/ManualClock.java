@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ManualClock extends Clock {
 
-    private final AtomicReference<Instant> currentTime = new AtomicReference<>(Instant.now());
+    private AtomicReference<Instant> currentTime = new AtomicReference<>(Instant.now());
 
     @Inject
     public ManualClock() {}
@@ -33,11 +33,6 @@ public class ManualClock extends Clock {
 
     public void advance(TemporalAmount temporal) {
         currentTime.updateAndGet(time -> time.plus(temporal));
-    }
-
-    /** Move time backwards by the given amount */
-    public void retreat(TemporalAmount temporal) {
-        currentTime.updateAndGet(time -> time.minus(temporal));
     }
 
     public void setInstant(Instant time) {
