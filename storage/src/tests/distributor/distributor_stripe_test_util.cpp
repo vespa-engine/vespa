@@ -91,6 +91,26 @@ DistributorStripeTestUtil::setup_stripe(int redundancy,
     _stripe->update_distribution_config(new_configs);
 }
 
+std::shared_ptr<DistributorConfiguration>
+DistributorStripeTestUtil::make_config() const
+{
+    return std::make_shared<DistributorConfiguration>(_stripe->_component);
+}
+
+void
+DistributorStripeTestUtil::configure_stripe(std::shared_ptr<const DistributorConfiguration> config)
+{
+    _stripe->update_total_distributor_config(config);
+}
+
+void
+DistributorStripeTestUtil::configure_stripe(const ConfigBuilder& builder)
+{
+    auto config = make_config();
+    config->configure(builder);
+    configure_stripe(config);
+}
+
 void
 DistributorStripeTestUtil::receive_set_system_state_command(const vespalib::string& state_str)
 {
@@ -343,9 +363,9 @@ DistributorStripeTestUtil::getBucket(const document::BucketId& bId) const
 void
 DistributorStripeTestUtil::disableBucketActivationInConfig(bool disable)
 {
-    vespa::config::content::core::StorDistributormanagerConfigBuilder config;
-    config.disableBucketActivation = disable;
-    getConfig().configure(config);
+    ConfigBuilder builder;
+    builder.disableBucketActivation = disable;
+    configure_stripe(builder);
 }
 
 StripeBucketDBUpdater&
@@ -384,10 +404,9 @@ DistributorStripeTestUtil::tick()
     return _stripe->tick();
 }
 
-DistributorConfiguration&
+const DistributorConfiguration&
 DistributorStripeTestUtil::getConfig() {
-    // TODO STRIPE avoid const cast
-    return const_cast<DistributorConfiguration&>(_stripe->getConfig());
+    return _stripe->getConfig();
 }
 
 DistributorBucketSpace&

@@ -131,6 +131,15 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         return _stripe->getBucketSpacesStats();
     }
 
+    bool stripe_handle_message(const std::shared_ptr<api::StorageMessage>& msg) {
+        // TODO: Avoid using private DistributorStripe functions
+        return _stripe->handleMessage(msg);
+    }
+
+    void configureMaxClusterClockSkew(int seconds);
+    void configure_mutation_sequencing(bool enabled);
+    void configure_merge_busy_inhibit_duration(int seconds);
+
 };
 
 DistributorStripeTest::DistributorStripeTest()
@@ -202,8 +211,10 @@ TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 TEST_F(DistributorStripeTest, operations_are_throttled)
 {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
-    getConfig().setMinPendingMaintenanceOps(1);
-    getConfig().setMaxPendingMaintenanceOps(1);
+    auto config = make_config();
+    config->setMinPendingMaintenanceOps(1);
+    config->setMaxPendingMaintenanceOps(1);
+    configure_stripe(config);
 
     for (uint32_t i = 0; i < 6; ++i) {
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
@@ -298,7 +309,7 @@ TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_confi
     builder.priorityGarbageCollection = 11;
     builder.priorityMergeGlobalBuckets = 12;
 
-    getConfig().configure(builder);
+    configure_stripe(builder);
 
     const auto& mp = getConfig().getMaintenancePriorities();
     EXPECT_EQ(1, static_cast<int>(mp.mergeMoveToIdealNode));
@@ -432,12 +443,21 @@ TEST_F(DistributorStripeTest, replica_counting_mode_is_configured_to_trusted_by_
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
+TEST_F(DistributorStripeTest, replica_counting_mode_config_is_propagated_to_metric_updater)
+{
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    ConfigBuilder builder;
+    builder.minimumReplicaCountingMode = ConfigBuilder::MinimumReplicaCountingMode::ANY;
+    configure_stripe(builder);
+    EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::ANY, currentReplicaCountingMode());
+}
+
 TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config)
 {
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.maxConsecutivelyInhibitedMaintenanceTicks = 123;
-    getConfig().configure(builder);
+    configure_stripe(builder);
     EXPECT_EQ(getConfig().max_consecutively_inhibited_maintenance_ticks(), 123);
 }
 
@@ -455,9 +475,102 @@ TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distribu
 
     ConfigBuilder builder;
     builder.disableBucketActivation = true;
-    getConfig().configure(builder);
+    configure_stripe(builder);
 
     EXPECT_TRUE(getConfig().isBucketActivationDisabled());
+}
+
+void
+DistributorStripeTest::configureMaxClusterClockSkew(int seconds)
+{
+    ConfigBuilder builder;
+    builder.maxClusterClockSkewSec = seconds;
+    configure_stripe(builder);
+}
+
+TEST_F(DistributorStripeTest, max_clock_skew_config_is_propagated_to_distributor_config)
+{
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+
+    configureMaxClusterClockSkew(5);
+    EXPECT_EQ(getConfig().getMaxClusterClockSkew(), std::chrono::seconds(5));
+}
+
+namespace {
+
+auto makeDummyRemoveCommand() {
+    return std::make_shared<api::RemoveCommand>(
+            makeDocumentBucket(document::BucketId(0)),
+            document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+            api::Timestamp(0));
+}
+
+}
+
+void
+DistributorStripeTest::configure_mutation_sequencing(bool enabled)
+{
+    ConfigBuilder builder;
+    builder.sequenceMutatingOperations = enabled;
+    configure_stripe(builder);
+}
+
+TEST_F(DistributorStripeTest, sequencing_config_is_propagated_to_distributor_config)
+{
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+
+    // Should be enabled by default
+    EXPECT_TRUE(getConfig().getSequenceMutatingOperations());
+
+    // Explicitly disabled.
+    configure_mutation_sequencing(false);
+    EXPECT_FALSE(getConfig().getSequenceMutatingOperations());
+
+    // Explicitly enabled.
+    configure_mutation_sequencing(true);
+    EXPECT_TRUE(getConfig().getSequenceMutatingOperations());
+}
+
+void
+DistributorStripeTest::configure_merge_busy_inhibit_duration(int seconds)
+{
+    ConfigBuilder builder;
+    builder.inhibitMergeSendingOnBusyNodeDurationSec = seconds;
+    configure_stripe(builder);
+}
+
+TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config)
+{
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+
+    configure_merge_busy_inhibit_duration(7);
+    EXPECT_EQ(getConfig().getInhibitMergesOnBusyNodeDuration(), std::chrono::seconds(7));
+}
+
+TEST_F(DistributorStripeTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker)
+{
+    setup_stripe(Redundancy(2), NodeCount(2), "storage:1 distributor:1");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
+
+    configure_merge_busy_inhibit_duration(100);
+    auto cmd = makeDummyRemoveCommand(); // Remove is for bucket 1
+    stripe_handle_message(cmd);
+
+    // Should send to content node 0
+    ASSERT_EQ(1, _sender.commands().size());
+    ASSERT_EQ(api::MessageType::REMOVE, _sender.command(0)->getType());
+    auto& fwd_cmd = dynamic_cast<api::RemoveCommand&>(*_sender.command(0));
+    auto reply = fwd_cmd.makeReply();
+    reply->setResult(api::ReturnCode(api::ReturnCode::BUSY));
+    _stripe->handleReply(std::shared_ptr<api::StorageReply>(std::move(reply)));
+
+    auto& node_info = pending_message_tracker().getNodeInfo();
+
+    EXPECT_TRUE(node_info.isBusy(0));
+    getClock().addSecondsToTime(99);
+    EXPECT_TRUE(node_info.isBusy(0));
+    getClock().addSecondsToTime(2);
+    EXPECT_FALSE(node_info.isBusy(0));
 }
 
 TEST_F(DistributorStripeTest, external_client_requests_are_handled_individually_in_priority_order)
