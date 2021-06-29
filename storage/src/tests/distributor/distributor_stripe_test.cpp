@@ -202,8 +202,10 @@ TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 TEST_F(DistributorStripeTest, operations_are_throttled)
 {
     setup_stripe(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
-    getConfig().setMinPendingMaintenanceOps(1);
-    getConfig().setMaxPendingMaintenanceOps(1);
+    auto config = make_config();
+    config->setMinPendingMaintenanceOps(1);
+    config->setMaxPendingMaintenanceOps(1);
+    configure_stripe(config);
 
     for (uint32_t i = 0; i < 6; ++i) {
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
@@ -298,7 +300,7 @@ TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_confi
     builder.priorityGarbageCollection = 11;
     builder.priorityMergeGlobalBuckets = 12;
 
-    getConfig().configure(builder);
+    configure_stripe(builder);
 
     const auto& mp = getConfig().getMaintenancePriorities();
     EXPECT_EQ(1, static_cast<int>(mp.mergeMoveToIdealNode));
@@ -437,7 +439,7 @@ TEST_F(DistributorStripeTest, max_consecutively_inhibited_maintenance_ticks_conf
     setup_stripe(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.maxConsecutivelyInhibitedMaintenanceTicks = 123;
-    getConfig().configure(builder);
+    configure_stripe(builder);
     EXPECT_EQ(getConfig().max_consecutively_inhibited_maintenance_ticks(), 123);
 }
 
@@ -455,7 +457,7 @@ TEST_F(DistributorStripeTest, bucket_activation_config_is_propagated_to_distribu
 
     ConfigBuilder builder;
     builder.disableBucketActivation = true;
-    getConfig().configure(builder);
+    configure_stripe(builder);
 
     EXPECT_TRUE(getConfig().isBucketActivationDisabled());
 }

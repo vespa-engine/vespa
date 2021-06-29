@@ -127,7 +127,7 @@ public:
 
     bool tick();
 
-    DistributorConfiguration& getConfig();
+    const DistributorConfiguration& getConfig();
 
     vdstestlib::DirConfig& getDirConfig() {
         return _config;
@@ -167,6 +167,12 @@ public:
                       const lib::ClusterStateBundle& state,
                       uint32_t early_return = false,
                       bool require_primary_to_be_written = true);
+
+    using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
+
+    std::shared_ptr<DistributorConfiguration> make_config() const;
+    void configure_stripe(std::shared_ptr<const DistributorConfiguration> config);
+    void configure_stripe(const ConfigBuilder& builder);
 
     // Implements DoneInitializeHandler
     void notifyDoneInitializing() override {}
