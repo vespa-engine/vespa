@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.DimensionMetrics;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;

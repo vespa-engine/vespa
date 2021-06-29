@@ -5,8 +5,7 @@
     <!-- Please update container test when changing this file -->
     <accesslog type="json"  fileNamePattern="logs/vespa/node-admin/access-json.log.%Y%m%d%H%M%S" symlinkName="access-json.log" compressOnRotation="true" compressionType="zstd" bufferSize='262144' queueSize='1024'/>
 
-    <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerEngine" bundle="docker-api"/>
-    <component id="metrics" class="com.yahoo.vespa.hosted.dockerapi.metrics.Metrics" bundle="docker-api"/>
+    <component id="metrics" class="com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics" bundle="node-admin"/>
 
     <preprocess:include file="variant.xml" required="false"/>
   </container>

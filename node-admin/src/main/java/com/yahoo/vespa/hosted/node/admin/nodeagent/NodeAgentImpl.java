@@ -10,11 +10,6 @@ import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
-import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
-import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -22,8 +17,11 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
-import com.yahoo.vespa.hosted.node.admin.docker.RegistryCredentialsProvider;
+import com.yahoo.vespa.hosted.node.admin.container.Container;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
@@ -284,13 +282,9 @@ public class NodeAgentImpl implements NodeAgent {
     private void stopServices(NodeAgentContext context) {
         context.log(logger, "Stopping services");
         if (containerState == ABSENT) return;
-        try {
-            hasStartedServices = hasResumedNode = false;
-            firstSuccessfulHealthCheckInstant = Optional.empty();
-            containerOperations.stopServices(context);
-        } catch (ContainerNotFoundException e) {
-            containerState = ABSENT;
-        }
+        hasStartedServices = hasResumedNode = false;
+        firstSuccessfulHealthCheckInstant = Optional.empty();
+        containerOperations.stopServices(context);
     }
 
     @Override
@@ -307,8 +301,6 @@ public class NodeAgentImpl implements NodeAgent {
             if (!output.isBlank()) {
                 context.log(logger, "Suspend services output: " + output);
             }
-        } catch (ContainerNotFoundException e) {
-            containerState = ABSENT;
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
@@ -424,12 +416,6 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, Level.INFO, "Converged");
         } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
-        } catch (ContainerNotFoundException e) {
-            containerState = ABSENT;
-            context.log(logger, Level.WARNING, "Container unexpectedly gone, resetting containerState to " + containerState);
-        } catch (DockerException e) {
-            numberOfUnhandledException++;
-            context.log(logger, Level.SEVERE, "Caught a DockerException", e);
         } catch (Throwable e) {
             numberOfUnhandledException++;
             context.log(logger, Level.SEVERE, "Unhandled exception, ignoring", e);

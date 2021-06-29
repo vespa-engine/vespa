@@ -33,7 +33,7 @@ public class ExternalMetrics {
 
     private static final Logger log = Logger.getLogger(ExternalMetrics.class.getName());
 
-    // NOTE: node service id must be kept in sync with the same constant _value_ used in docker-api:Metrics.java
+    // NOTE: node service id must be kept in sync with the same constant _value_ used in node-admin:Metrics.java
     public static final ServiceId VESPA_NODE_SERVICE_ID = toServiceId("vespa.node");
 
     public static final DimensionId ROLE_DIMENSION = toDimensionId("role");
