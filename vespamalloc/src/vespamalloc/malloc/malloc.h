@@ -53,16 +53,15 @@ public:
 
     void info(FILE * os, size_t level=0) __attribute__ ((noinline));
 
-    void setupSegmentLog(size_t bigMemLogLevel, size_t bigLimit, size_t bigIncrement, size_t allocs2Show)
-    {
+    void setupSegmentLog(size_t bigMemLogLevel, size_t bigLimit, size_t bigIncrement, size_t allocs2Show) {
         _segment.setupLog(bigMemLogLevel, bigLimit, bigIncrement, allocs2Show);
     }
     void setupLog(size_t prAllocLimit) {
         _prAllocLimit = prAllocLimit;
     }
-    void setParams(size_t alwayReuseLimit, size_t threadCacheLimit) {
-        _threadList.setParams(alwayReuseLimit, threadCacheLimit);
-        _allocPool.setParams(alwayReuseLimit, threadCacheLimit);
+    void setParams(size_t threadCacheLimit) {
+        _threadList.setParams(threadCacheLimit);
+        _allocPool.setParams(threadCacheLimit);
     }
     const DataSegment<MemBlockPtrT> & dataSegment() const { return _segment; }
 private:

@@ -54,7 +54,6 @@ private:
     class Params {
     public:
         enum {
-            alwaysreuselimit = 0,
             threadcachelimit,
             logfile,
             sigprof_loglevel,
@@ -106,8 +105,6 @@ private:
         NameValuePair _params[numberofentries];
     };
     FILE * _logFile;
-    int    _infoAtAbort;
-    int    _infoAtNOMEM;
 
     Params _params;
     struct sigaction _oldSig;
@@ -116,7 +113,6 @@ private:
 template <typename T, typename S>
 MemoryWatcher<T, S>::Params::Params()
 {
-    _params[       alwaysreuselimit] = NameValuePair("alwaysreuselimit", "0x200000"); // 2M for allignment with hugepage size.
     _params[       threadcachelimit] = NameValuePair("threadcachelimit", "0x10000");  // 64K
     _params[                logfile] = NameValuePair("logfile", "stderr");
     _params[       sigprof_loglevel] = NameValuePair("sigprof_loglevel", "1");
@@ -157,9 +153,7 @@ void MemoryWatcher<T, S>::NameValuePair::value(const char * v) {
 template <typename T, typename S>
 MemoryWatcher<T, S>::MemoryWatcher(int infoAtEnd, size_t prAllocAtStart) :
     MemoryManager<T, S>(prAllocAtStart),
-    _logFile(stderr),
-    _infoAtAbort(-1),
-    _infoAtNOMEM(1)
+    _logFile(stderr)
 {
     _manager = this;
     char tmp[16];
@@ -206,8 +200,7 @@ void MemoryWatcher<T, S>::activateOptions()
                           _params[Params::bigsegment_increment].valueAsLong(),
                           _params[Params::allocs2show].valueAsLong());
     this->setupLog(_params[Params::pralloc_loglimit].valueAsLong());
-    this->setParams(_params[Params::alwaysreuselimit].valueAsLong(),
-                    _params[Params::threadcachelimit].valueAsLong());
+    this->setParams(_params[Params::threadcachelimit].valueAsLong());
     T::bigBlockLimit(_params[Params::bigblocklimit].valueAsLong());
     T::setFill(_params[Params::fillvalue].valueAsLong());
 
