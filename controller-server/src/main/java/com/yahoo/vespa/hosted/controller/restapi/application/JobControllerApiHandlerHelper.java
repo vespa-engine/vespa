@@ -10,6 +10,7 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
@@ -166,7 +167,7 @@ class JobControllerApiHandlerHelper {
         catch (RuntimeException ignored) { } // Return response when this fails, which it does when, e.g., logserver is booting.
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
-                .orElseThrow(() -> new NotExistsException(String.format(
+                .orElseThrow(() -> new NotExistsException(Text.format(
                         "No run details exist for application: %s, job type: %s, number: %d",
                         runId.application().toShortString(), runId.type().jobName(), runId.number())));
 

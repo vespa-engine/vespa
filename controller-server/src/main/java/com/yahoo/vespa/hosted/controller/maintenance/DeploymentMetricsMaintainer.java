@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -85,7 +86,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
             }
             if (lastException.get() != null) {
                 log.log(Level.WARNING,
-                        String.format("Could not gather metrics for %d/%d deployments. Retrying in %s. Last error: %s",
+                        Text.format("Could not gather metrics for %d/%d deployments. Retrying in %s. Last error: %s",
                                       failures.get(),
                                       attempts.get(),
                                       interval(),

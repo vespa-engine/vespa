@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -52,7 +53,7 @@ public class NotificationSource {
         if (jobType.isPresent() && instance.isEmpty())
             throw new IllegalArgumentException("Instance name must be present with job type");
         if (jobType.isPresent() != runNumber.isPresent())
-            throw new IllegalArgumentException(String.format("Run number (%s) must be 1-to-1 with job type (%s)",
+            throw new IllegalArgumentException(Text.format("Run number (%s) must be 1-to-1 with job type (%s)",
                     runNumber.isPresent() ? "present" : "missing", jobType.map(i -> "present").orElse("missing")));
     }
 

@@ -6,6 +6,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -266,7 +267,7 @@ public class AthenzFacade implements AccessControl {
         log("getMembership(domain=%s, role=%s, principal=%s)", domain, "admin", identity);
         if ( ! zmsClient.getMembership(new AthenzRole(domain, "admin"), identity))
             throw new ForbiddenException(
-                    String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), domain.getName()));
+                    Text.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), domain.getName()));
     }
 
     public List<AthenzDomain> getDomainList(String prefix) {
@@ -294,7 +295,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     private String resourceStringPrefix(AthenzDomain tenantDomain) {
-        return String.format("%s:service.%s.tenant.%s",
+        return Text.format("%s:service.%s.tenant.%s",
                              service.getDomain().getName(), service.getName(), tenantDomain.getName());
     }
 

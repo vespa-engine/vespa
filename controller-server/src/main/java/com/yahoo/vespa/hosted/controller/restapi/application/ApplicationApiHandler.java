@@ -36,6 +36,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -1512,7 +1513,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         setGlobalRotationStatus(deploymentId, inService, request);
         setGlobalEndpointStatus(deploymentId, inService, request);
 
-        return new MessageResponse(String.format("Successfully set %s in %s %s service",
+        return new MessageResponse(Text.format("Successfully set %s in %s %s service",
                                                  instance.id().toShortString(), zone, inService ? "in" : "out of"));
     }
 

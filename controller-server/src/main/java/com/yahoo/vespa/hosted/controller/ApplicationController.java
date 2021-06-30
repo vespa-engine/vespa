@@ -12,6 +12,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -157,7 +158,7 @@ public class ApplicationController {
                 });
                 count++;
             }
-            log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
+            log.log(Level.INFO, Text.format("Wrote %d applications in %s", count,
                                               Duration.between(start, clock.instant())));
         });
     }
@@ -810,7 +811,7 @@ public class ApplicationController {
         boolean revisionIsOlder = revision.compareTo(deployment.applicationVersion()) < 0 &&
                                   !(revision.isUnknown() && controller.system().isCd());
         if (platformIsOlder || revisionIsOlder)
-            throw new IllegalArgumentException(String.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
+            throw new IllegalArgumentException(Text.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
                                                              " are older than the currently deployed (platform: %s, application: %s).",
                                                              job.application(), zone, platform, revision, deployment.version(), deployment.applicationVersion()));
     }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -57,7 +58,7 @@ public class EndpointCertificates {
         metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));
         Duration duration = Duration.between(start, clock.instant());
         if (duration.toSeconds() > 30)
-            log.log(Level.INFO, String.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
+            log.log(Level.INFO, Text.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
         return metadata;
     }
 

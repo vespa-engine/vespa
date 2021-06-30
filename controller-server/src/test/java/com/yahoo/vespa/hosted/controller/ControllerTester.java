@@ -12,6 +12,7 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -395,7 +396,7 @@ public final class ControllerTester {
     private static RotationsConfig defaultRotationsConfig() {
         RotationsConfig.Builder builder = new RotationsConfig.Builder();
         for (int i = 1; i <= availableRotations; i++) {
-            String id = String.format("%02d", i);
+            String id = Text.format("%02d", i);
             builder = builder.rotations("rotation-id-" + id, "rotation-fqdn-" + id);
         }
         return new RotationsConfig(builder);

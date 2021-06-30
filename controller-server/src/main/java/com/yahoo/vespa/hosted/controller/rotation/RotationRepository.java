@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -165,7 +166,7 @@ public class RotationRepository {
         Map<RotationId, Rotation> availableRotations = availableRotations(lock);
         // Return first available rotation
         RotationId rotation = requireNonEmpty(availableRotations.keySet()).iterator().next();
-        log.info(String.format("Offering %s to application %s", rotation, id));
+        log.info(Text.format("Offering %s to application %s", rotation, id));
         return allRotations.get(rotation);
     }
 

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.container.jdisc.HttpRequest;
 
+import com.yahoo.text.Text;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,7 +33,7 @@ public class ProxyRequest {
                  String path) {
         Objects.requireNonNull(url);
         if (!url.getPath().endsWith(path)) {
-            throw new IllegalArgumentException(String.format("Request path '%s' does not end with proxy path '%s'", url.getPath(), path));
+            throw new IllegalArgumentException(Text.format("Request path '%s' does not end with proxy path '%s'", url.getPath(), path));
         }
         if (targets.isEmpty()) {
             throw new IllegalArgumentException("targets must be non-empty");

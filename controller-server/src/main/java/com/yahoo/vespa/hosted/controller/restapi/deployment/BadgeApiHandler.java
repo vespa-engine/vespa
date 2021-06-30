@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -68,7 +69,7 @@ public class BadgeApiHandler extends LoggingRequestHandler {
         if (path.matches("/badge/v1/{tenant}/{application}/{instance}")) return overviewBadge(path.get("tenant"), path.get("application"), path.get("instance"));
         if (path.matches("/badge/v1/{tenant}/{application}/{instance}/{jobName}")) return historyBadge(path.get("tenant"), path.get("application"), path.get("instance"), path.get("jobName"), request.getProperty("historyLength"));
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 

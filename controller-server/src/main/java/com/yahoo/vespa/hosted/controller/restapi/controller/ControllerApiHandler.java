@@ -15,6 +15,7 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -125,8 +126,8 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         // Trigger deployment to include operator cert
         Optional<JobId> jobId = controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
         return new MessageResponse(
-                jobId.map(id -> String.format("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
-                        .orElseGet(() -> String.format("Operator %s granted access and job trigger queued", principal.getName())));
+                jobId.map(id -> Text.format("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
+                        .orElseGet(() -> Text.format("Operator %s granted access and job trigger queued", principal.getName())));
     }
 
     private <T> T requireField(Inspector inspector, String field, Function<String, T> mapper) {

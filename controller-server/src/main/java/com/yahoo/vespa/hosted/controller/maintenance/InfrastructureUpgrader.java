@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -57,12 +58,12 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
                 } catch (UnreachableNodeRepositoryException e) {
                     failures++;
                     converged = false;
-                    log.warning(String.format("%s: Failed to communicate with node repository in %s, continuing with next parallel zone: %s",
+                    log.warning(Text.format("%s: Failed to communicate with node repository in %s, continuing with next parallel zone: %s",
                                               this, zone, Exceptions.toMessageString(e)));
                 } catch (Exception e) {
                     failures++;
                     converged = false;
-                    log.warning(String.format("%s: Failed to upgrade zone: %s, continuing with next parallel zone: %s",
+                    log.warning(Text.format("%s: Failed to upgrade zone: %s, continuing with next parallel zone: %s",
                                               this, zone, Exceptions.toMessageString(e)));
                 }
             }
@@ -117,7 +118,7 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
                                .map(versionField)
                                .min(Comparator.naturalOrder());
         } catch (Exception e) {
-            throw new UnreachableNodeRepositoryException(String.format("Failed to get version for %s in %s: %s",
+            throw new UnreachableNodeRepositoryException(Text.format("Failed to get version for %s in %s: %s",
                                                                        application.id(), zone, Exceptions.toMessageString(e)));
         }
     }

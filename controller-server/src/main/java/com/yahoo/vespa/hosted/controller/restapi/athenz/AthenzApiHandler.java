@@ -13,6 +13,7 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -74,14 +75,14 @@ public class AthenzApiHandler extends LoggingRequestHandler {
         if (path.matches("/athenz/v1/domains")) return domainList(request);
         if (path.matches("/athenz/v1/properties")) return properties();
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/athenz/v1/user")) return signup(request);
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 

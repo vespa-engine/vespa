@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -87,7 +88,7 @@ public class Versions {
 
     @Override
     public String toString() {
-        return String.format("platform %s%s, application %s%s",
+        return Text.format("platform %s%s, application %s%s",
                              sourcePlatform.filter(source -> !source.equals(targetPlatform))
                                            .map(source -> source + " -> ").orElse(""),
                              targetPlatform,

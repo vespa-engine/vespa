@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
@@ -42,7 +43,7 @@ public class CloudEventReporter extends ControllerMaintainer {
         for (var region : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(region);
             for (var event : events) {
-                log.info(String.format("Retrieved event %s, affecting the following instances: %s",
+                log.info(Text.format("Retrieved event %s, affecting the following instances: %s",
                                        event.instanceEventId,
                                        event.affectedInstances));
                 deprovisionAffectedHosts(region, event);

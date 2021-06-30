@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -31,7 +32,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<Version> {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+        log.info(Text.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
         controller().applications().deploy(application, zone.getId(), target);
     }
 
