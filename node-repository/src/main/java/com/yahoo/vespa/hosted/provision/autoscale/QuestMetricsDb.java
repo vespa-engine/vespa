@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -55,10 +57,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private final Clock clock;
     private final String dataDir;
-    private final CairoEngine engine;
+    private final AtomicReference<CairoEngine> engine = new AtomicReference<>();
+    // TODO Is this safe, or even possible. ThreadLocal members should be static
+    //
     private final ThreadLocal<SqlCompiler> sqlCompiler;
-
-    private volatile int nullRecords = 0;
+    private final AtomicInteger nullRecords = new AtomicInteger();
 
     @Inject
     public QuestMetricsDb() {
@@ -79,8 +82,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         System.setProperty("out", logConfig);
 
         this.dataDir = dataDir;
-        engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
-        sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine));
+        engine.set(new CairoEngine(new DefaultCairoConfiguration(dataDir)));
+        sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine.get()));
         nodeTable = new Table(dataDir, "metrics", clock);
         clusterTable = new Table(dataDir, "clusterMetrics", clock);
         ensureTablesExist();
@@ -182,11 +185,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
-    public int getNullRecordsCount() { return nullRecords; }
+    public int getNullRecordsCount() { return nullRecords.get(); }
 
     @Override
     public void gc() {
-        nullRecords = 0;
+        nullRecords.set(0);
         nodeTable.gc();
         clusterTable.gc();
     }
@@ -196,8 +199,12 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void close() {
-        if (engine != null)
-            engine.close();
+        synchronized (clusterTable.writeLock) {
+            CairoEngine myEngine = engine.getAndSet(null);
+            if (myEngine != null) {
+                myEngine.close();
+            }
+        }
     }
 
     private void ensureTablesExist() {
@@ -222,7 +229,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureClusterTableIsUpdated() {
         try {
-            if (0 == engine.getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.name)) {
+            if (0 == engine.get().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.name)) {
                 // Example: clusterTable.ensureColumnExists("write_rate", "float");
             }
         } catch (Exception e) {
@@ -278,7 +285,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
                     if (record == null || record.getStr(0) == null) { // Observed to happen. QuestDb bug?
-                        nullRecords++;
+                        nullRecords.incrementAndGet();
                         continue;
                     }
                     String hostname = record.getStr(0).toString();
@@ -327,7 +334,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private SqlExecutionContext newContext() {
-        return new SqlExecutionContextImpl(engine, 1);
+        return new SqlExecutionContextImpl(engine.get(), 1);
     }
 
     /** A questDb table */
@@ -349,11 +356,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
 
         boolean exists() {
-            return 0 == engine.getStatus(newContext().getCairoSecurityContext(), new Path(), name);
+            return 0 == engine.get().getStatus(newContext().getCairoSecurityContext(), new Path(), name);
         }
 
         TableWriter getWriter() {
-            return engine.getWriter(newContext().getCairoSecurityContext(), name);
+            return engine.get().getWriter(newContext().getCairoSecurityContext(), name);
         }
 
         void gc() {
