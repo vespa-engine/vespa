@@ -83,55 +83,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         LoadTypeSet getLoadTypeSet();
     }
 
-    private static class MessageBusVisitorSessionFactory implements VisitorSessionFactory {
-        private static final Object initMonitor = new Object();
-        private static final AtomicReference<MessageBusVisitorSessionFactory> instance = new AtomicReference<>();
-
-        private final LoadTypeSet loadTypes;
-        private final DocumentAccess access;
-
-        private MessageBusVisitorSessionFactory() {
-            loadTypes = new LoadTypeSet("client");
-            access = new MessageBusDocumentAccess(new MessageBusParams(loadTypes));
-        }
-
-        @Override
-        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
-            return access.createVisitorSession(params);
-        }
-
-        @Override
-        public LoadTypeSet getLoadTypeSet() {
-            return loadTypes;
-        }
-
-        /**
-         * Returns a single, shared instance of this class which is lazily created in a thread-safe
-         * manner the first time this method is invoked.
-         *
-         * May throw any config-related exception if subscription fails.
-         */
-        static MessageBusVisitorSessionFactory sharedInstance() {
-            var ref = instance.getAcquire();
-            if (ref != null) {
-                return ref;
-            }
-            synchronized (initMonitor) {
-                ref = instance.getAcquire();
-                if (ref != null) {
-                    return ref;
-                }
-                ref = new MessageBusVisitorSessionFactory();
-                instance.setRelease(ref);
-            }
-            return ref;
-        }
-    }
-
-    public VdsVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-        this(query, searchCluster, route, documentType, MessageBusVisitorSessionFactory.sharedInstance(), traceLevelOverride);
-    }
-
     public VdsVisitor(Query query, String searchCluster, Route route,
                       String documentType, VisitorSessionFactory visitorSessionFactory,
                       int traceLevelOverride)
@@ -264,9 +215,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     static int getQueryFlags(Query query) {
         int flags = 0;
 
-        boolean requestCoverage=true; // Always request coverage information
+        boolean requestCoverage = true; // Always request coverage information
 
-        flags |= 0; // was collapse
         flags |= query.properties().getBoolean(Model.ESTIMATE) ? 0x00000080 : 0;
         flags |= (query.getRanking().getFreshness() != null) ? 0x00002000 : 0;
         flags |= requestCoverage ? 0x00008000 : 0;
@@ -344,9 +294,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
-            }
+            log.log(Level.FINE, () -> "VdsVisitor completed successfully for " + query + " with selection " + params.getDocumentSelection());
         } else {
             throw new IllegalArgumentException("Query failed: " +
                                                params.getControlHandler().getResult().code + ": " +

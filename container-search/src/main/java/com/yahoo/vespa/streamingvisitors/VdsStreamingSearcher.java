@@ -1,9 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorSession;
+import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
+import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
@@ -53,15 +58,15 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     private Route route;
     /** The configId used to access the searchcluster. */
-    private String searchClusterConfigId = null;
+    private String searchClusterName = null;
     private String documentType;
     /** The route to the storage cluster. */
     private String storageClusterRouteSpec = null;
 
-    private String getSearchClusterConfigId() { return searchClusterConfigId; }
+    private String getSearchClusterName() { return searchClusterName; }
     private String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
-    public final void setSearchClusterConfigId(String clusterName) {
-        this.searchClusterConfigId = clusterName;
+    public final void setSearchClusterName(String clusterName) {
+        this.searchClusterName = clusterName;
     }
     public final void setDocumentType(String documentType) {
         this.documentType = documentType;
@@ -71,16 +76,35 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         this.storageClusterRouteSpec = storageClusterRouteSpec;
     }
 
-    private static class VdsVisitorFactory implements VisitorFactory {
+    private static class VespaVisitorFactory implements VdsVisitor.VisitorSessionFactory, VisitorFactory {
+
+        private final VespaDocumentAccess access;
+
+        private VespaVisitorFactory(VespaDocumentAccess access) {
+            this.access = access;
+        }
+
+        @Override
+        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
+            return access.createVisitorSession(params);
+        }
+
+        @Override
+        public LoadTypeSet getLoadTypeSet() {
+            return ((MessageBusDocumentAccess) access.delegate()).getParams().getLoadTypes();
+        }
+
         @Override
         public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-            return new VdsVisitor(query, searchCluster, route, documentType, traceLevelOverride);
+            return new VdsVisitor(query, searchCluster, route, documentType, this, traceLevelOverride);
         }
+
     }
 
-    public VdsStreamingSearcher() {
-        this(new VdsVisitorFactory());
+    public VdsStreamingSearcher(VespaDocumentAccess access) {
+        this(new VespaVisitorFactory(access));
     }
+
     VdsStreamingSearcher(VisitorFactory visitorFactory) {
         this.visitorFactory = visitorFactory;
         tracingOptions = TracingOptions.DEFAULT;
@@ -146,11 +170,11 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                     "only one of these query parameters to be set: streaming.userid, streaming.groupname, " +
                     "streaming.selection"));
         }
-        query.trace("Routing to search cluster " + getSearchClusterConfigId() + " and document type " + documentType, 4);
+        query.trace("Routing to search cluster " + getSearchClusterName() + " and document type " + documentType, 4);
         long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
         int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
 
-        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterConfigId(), route, documentType, effectiveTraceLevel);
+        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterName(), route, documentType, effectiveTraceLevel);
         try {
             visitor.doSearch();
         } catch (ParseException e) {

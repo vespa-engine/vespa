@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -61,13 +64,15 @@ public class ClusterSearcher extends Searcher {
 
     private VespaBackEndSearcher server = null;
 
+    @Inject
     public ClusterSearcher(ComponentId id,
                            QrSearchersConfig qrsConfig,
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
                            ComponentRegistry<Dispatcher> dispatchers,
                            QrConfig qrConfig,
-                           VipStatus vipStatus) {
+                           VipStatus vipStatus,
+                           VespaDocumentAccess access) {
         super(id);
 
         int searchClusterIndex = clusterConfig.clusterId();
@@ -93,7 +98,7 @@ public class ClusterSearcher extends Searcher {
 
         if (searchClusterConfig.indexingmode() == STREAMING) {
             VdsStreamingSearcher searcher = vdsCluster(qrConfig.discriminator(), searchClusterIndex,
-                                                       searchClusterConfig, docSumParams, documentDbConfig);
+                                                       searchClusterConfig, docSumParams, documentDbConfig, access);
             addBackendSearcher(searcher);
             vipStatus.addToRotation(searcher.getName());
         } else {
@@ -139,13 +144,14 @@ public class ClusterSearcher extends Searcher {
                                                    int searchclusterIndex,
                                                    QrSearchersConfig.Searchcluster searchClusterConfig,
                                                    SummaryParameters docSumParams,
-                                                   DocumentdbInfoConfig documentdbInfoConfig) {
+                                                   DocumentdbInfoConfig documentdbInfoConfig,
+                                                   VespaDocumentAccess access) {
         if (searchClusterConfig.searchdef().size() != 1) {
             throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
         }
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
-        VdsStreamingSearcher searcher = new VdsStreamingSearcher();
-        searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
+        VdsStreamingSearcher searcher = new VdsStreamingSearcher(access);
+        searcher.setSearchClusterName(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
         searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig);
