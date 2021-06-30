@@ -7,8 +7,7 @@
 #include "named_symbol_lookup.h"
 #include "named_symbol_inserter.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 Cursor &
 ObjectValue::setLeaf(Symbol sym, const ValueFactory &input) {
@@ -77,4 +76,3 @@ Symbol
 ObjectValue::resolve(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
 
 } // namespace vespalib::slime
-} // namespace vespalib

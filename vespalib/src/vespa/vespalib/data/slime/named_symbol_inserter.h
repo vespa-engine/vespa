@@ -5,8 +5,7 @@
 #include "symbol_inserter.h"
 #include "symbol_table.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class used to insert the name of a field into a symbol table.
@@ -26,5 +25,4 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
 

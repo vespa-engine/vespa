@@ -16,7 +16,7 @@ namespace vespalib::slime {
 struct ExternalMemory {
     using UP = std::unique_ptr<ExternalMemory>;
     virtual Memory get() const = 0;   
-    virtual ~ExternalMemory();
+    virtual ~ExternalMemory() = default;
 };
 
 } // namespace vespalib::slime

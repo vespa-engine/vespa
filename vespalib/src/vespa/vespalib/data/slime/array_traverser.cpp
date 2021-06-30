@@ -2,8 +2,6 @@
 
 #include "array_traverser.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 } // namespace vespalib::slime
-} // namespace vespalib

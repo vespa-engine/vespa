@@ -5,8 +5,7 @@
 #include "array_traverser.h"
 #include <cassert>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 class Equal {
 public:
@@ -91,4 +90,3 @@ std::ostream & operator << (std::ostream & os, const Inspector & inspector)
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

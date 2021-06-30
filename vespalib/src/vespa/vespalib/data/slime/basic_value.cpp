@@ -2,8 +2,7 @@
 
 #include "basic_value.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 namespace {
 
@@ -28,4 +27,3 @@ BasicDataValue::BasicDataValue(Memory m, Stash & stash)
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

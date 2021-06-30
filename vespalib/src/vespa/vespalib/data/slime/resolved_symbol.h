@@ -5,8 +5,7 @@
 #include "symbol_lookup.h"
 #include "symbol_inserter.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class containing the pre-resolved symbol for a field. Since the
@@ -31,5 +30,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

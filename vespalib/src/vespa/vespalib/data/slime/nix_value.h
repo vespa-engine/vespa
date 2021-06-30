@@ -4,8 +4,7 @@
 
 #include "value.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class representing a value containing absolutely nothing.
@@ -23,5 +22,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

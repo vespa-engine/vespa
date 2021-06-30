@@ -5,8 +5,7 @@
 #include "type.h"
 #include "cursor.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 class SymbolTable;
 struct SymbolLookup;
@@ -85,5 +84,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

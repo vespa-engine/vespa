@@ -9,8 +9,7 @@
 #include <vespa/vespalib/data/simple_buffer.h>
 #include "json_format.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 bool
 Value::valid() const {
@@ -148,4 +147,3 @@ Symbol
 Value::resolve(Memory) { return Symbol(); }
 
 } // namespace vespalib::slime
-} // namespace vespalib

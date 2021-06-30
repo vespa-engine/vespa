@@ -4,8 +4,7 @@
 
 #include <string>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 extern std::string strfmt(const char *fmt, ...)
 #ifdef __GNUC__
@@ -15,5 +14,3 @@ extern std::string strfmt(const char *fmt, ...)
     ;
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

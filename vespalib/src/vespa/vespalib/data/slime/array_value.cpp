@@ -4,8 +4,7 @@
 #include "array_traverser.h"
 #include "empty_value_factory.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 void
 ArrayValue::traverse(ArrayTraverser &at) const {
@@ -29,4 +28,3 @@ Symbol
 ArrayValue::resolve(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
 
 } // namespace vespalib::slime
-} // namespace vespalib

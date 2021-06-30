@@ -7,8 +7,7 @@
 #include <vespa/vespalib/util/traits.h>
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Classes representing a single basic value.
@@ -60,7 +59,6 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
 
 VESPA_CAN_SKIP_DESTRUCTION(vespalib::slime::BasicBoolValue);
 VESPA_CAN_SKIP_DESTRUCTION(vespalib::slime::BasicLongValue);

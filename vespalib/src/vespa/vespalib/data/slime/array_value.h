@@ -9,8 +9,7 @@
 #include <vector>
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class representing a collection of ordered values that can be
@@ -51,9 +50,7 @@ public:
     Cursor &addObject() override;
     Symbol resolve(Memory symbol_name) override;
 
-    ~ArrayValue() { }
+    ~ArrayValue() override = default;
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

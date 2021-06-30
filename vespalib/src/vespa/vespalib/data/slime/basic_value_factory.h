@@ -6,8 +6,7 @@
 #include "basic_value.h"
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 struct BoolValueFactory : public ValueFactory {
     bool input;
@@ -40,5 +39,3 @@ struct DataValueFactory : public ValueFactory {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

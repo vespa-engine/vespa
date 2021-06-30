@@ -9,8 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.data.slime.inject");
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 namespace {
 
@@ -81,4 +80,3 @@ void inject(const Inspector &inspector, const Inserter &inserter) {
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

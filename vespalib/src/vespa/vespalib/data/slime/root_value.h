@@ -6,8 +6,7 @@
 #include "object_value.h"
 #include "value_factory.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 class RootValue
 {
@@ -45,5 +44,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

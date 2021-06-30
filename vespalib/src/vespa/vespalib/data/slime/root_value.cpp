@@ -2,8 +2,6 @@
 
 #include "root_value.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 } // namespace vespalib::slime
-} // namespace vespalib
