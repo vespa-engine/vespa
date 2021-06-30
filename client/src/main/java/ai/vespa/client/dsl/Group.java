@@ -17,7 +17,7 @@ public class Group implements IGroup, IGroupOperation {
 
     @Override
     public String toString() {
-        return String.format("%s(%s)",
+        return Text.format("%s(%s)",
                              type,
                              Stream.of(operations).map(Objects::toString).collect(Collectors.joining(" ")));
     }

@@ -55,9 +55,9 @@ public class WeakAnd extends QueryChain {
         boolean hasAnnotation = A.hasAnnotation(annotation);
         String
             s =
-            String.format("weakAnd(%s, %s)", fieldName,
+            Text.format("weakAnd(%s, %s)", fieldName,
                           value.queries.stream().map(Object::toString).collect(Collectors.joining(", ")));
-        return hasAnnotation ? String.format("([%s]%s)", annotation, s) : s;
+        return hasAnnotation ? Text.format("([%s]%s)", annotation, s) : s;
     }
 }
 

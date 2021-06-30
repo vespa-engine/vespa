@@ -49,8 +49,8 @@ public class UserInput extends QueryChain {
     public String toString() {
         //([{"defaultIndex": "shpdescfree"}](userInput(@_shpdescfree_1)))
         return setDefaultIndex
-               ? String.format("([%s]userInput(@%s))", annotation, placeholder)
-               : String.format("userInput(@%s)", placeholder);
+               ? Text.format("([%s]userInput(@%s))", annotation, placeholder)
+               : Text.format("userInput(@%s)", placeholder);
     }
 
 

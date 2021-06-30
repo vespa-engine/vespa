@@ -613,8 +613,8 @@ public class Field extends QueryChain {
                     .collect(Collectors.joining(", "));
 
                 return hasAnnotation
-                       ? String.format("([%s]range(%s, %s))", annotation, fieldName, valuesStr)
-                       : String.format("range(%s, %s)", fieldName, valuesStr);
+                       ? Text.format("([%s]range(%s, %s))", annotation, fieldName, valuesStr)
+                       : Text.format("range(%s, %s)", fieldName, valuesStr);
             case "near":
             case "onear":
             case "phrase":
@@ -622,23 +622,23 @@ public class Field extends QueryChain {
             case "uri":
                 valuesStr = values.stream().map(Object::toString).collect(Collectors.joining(", "));
                 return hasAnnotation
-                       ? String.format("%s contains ([%s]%s(%s))", fieldName, annotation, relation, valuesStr)
-                       : String.format("%s contains %s(%s)", fieldName, relation, valuesStr);
+                       ? Text.format("%s contains ([%s]%s(%s))", fieldName, annotation, relation, valuesStr)
+                       : Text.format("%s contains %s(%s)", fieldName, relation, valuesStr);
             case "sameElement":
-                return String.format("%s contains %s(%s)", fieldName, relation,
+                return Text.format("%s contains %s(%s)", fieldName, relation,
                                      ((Query) values.get(0)).toCommaSeparatedAndQueries());
             case "nearestNeighbor":
                 valuesStr = values.stream().map(i -> (String) i).collect(Collectors.joining(", "));
 
                 return hasAnnotation
-                    ? String.format("([%s]nearestNeighbor(%s, %s))", annotation, fieldName, valuesStr)
-                    : String.format("nearestNeighbor(%s, %s)", fieldName, valuesStr);
+                    ? Text.format("([%s]nearestNeighbor(%s, %s))", annotation, fieldName, valuesStr)
+                    : Text.format("nearestNeighbor(%s, %s)", fieldName, valuesStr);
             default:
                 Object value = values.get(0);
                 valuesStr = value instanceof Long ? value.toString() + "L" : value.toString();
                 return hasAnnotation
-                       ? String.format("%s %s ([%s]%s)", fieldName, relation, annotation, valuesStr)
-                       : String.format("%s %s %s", fieldName, relation, valuesStr);
+                       ? Text.format("%s %s ([%s]%s)", fieldName, relation, annotation, valuesStr)
+                       : Text.format("%s %s %s", fieldName, relation, valuesStr);
         }
     }
 
