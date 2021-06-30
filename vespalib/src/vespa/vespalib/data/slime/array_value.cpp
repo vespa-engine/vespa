@@ -7,6 +7,14 @@
 
 namespace vespalib::slime {
 
+ArrayValue::ArrayValue(SymbolTable &table, Stash & stash)
+    : _symbolTable(table),
+      _stash(stash),
+      _values()
+{}
+
+ArrayValue::~ArrayValue() = default;
+
 void
 ArrayValue::traverse(ArrayTraverser &at) const {
     for (size_t i = 0; i < _values.size(); ++i) {
@@ -16,8 +24,8 @@ ArrayValue::traverse(ArrayTraverser &at) const {
 
 
 Cursor &
-ArrayValue::addArray() {
-    return addLeaf(ArrayValueFactory(_symbolTable));
+ArrayValue::addArray(size_t reserve) {
+    return addLeaf(ArrayValueFactory(_symbolTable, reserve));
 }
 
 Cursor &

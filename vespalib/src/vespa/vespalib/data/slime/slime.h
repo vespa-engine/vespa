@@ -155,7 +155,10 @@ public:
         return _root.set(slime::ExternalDataValueFactory(std::move(data)));
     }
     Cursor &setArray() {
-        return _root.set(slime::ArrayValueFactory(*_names));
+        return setArray(0);
+    }
+    Cursor &setArray(size_t reserve) {
+        return _root.set(slime::ArrayValueFactory(*_names, reserve));
     }
     Cursor &setObject() {
         return _root.set(slime::ObjectValueFactory(*_names));

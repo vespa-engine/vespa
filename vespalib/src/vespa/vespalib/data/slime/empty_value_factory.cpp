@@ -9,7 +9,9 @@ namespace vespalib::slime {
 
 Value *
 ArrayValueFactory::create(Stash & stash) const {
-    return & stash.create<ArrayValue>(symbolTable, stash);
+    ArrayValue & arr = stash.create<ArrayValue>(symbolTable, stash);
+    arr.reserve(_reserve);
+    return &arr;
 }
 
 Value *

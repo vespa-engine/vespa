@@ -72,10 +72,10 @@ public:
     Cursor &operator[](Symbol sym) const override;
     Cursor &operator[](Memory name) const override;
 
-    Cursor &setArray(Symbol sym) override;
+    Cursor &setArray(Symbol sym, size_t reserve) override;
     Cursor &setObject(Symbol sym) override;
 
-    Cursor &setArray(Memory name) override;
+    Cursor &setArray(Memory name, size_t reserve) override;
     Cursor &setObject(Memory name) override;
     Symbol resolve(Memory symbol_name) override;
 

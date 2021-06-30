@@ -210,9 +210,9 @@ MultiAttrDFW<DataType>::insertField(uint32_t docid, GetDocsumsState* state, ResT
         return;  // Don't insert empty fields
     }
 
-    Cursor &arr = target.insertArray();
     std::vector<DataType> elements(entries);
     entries = std::min(entries, attr.get(docid, elements.data(), entries));
+    Cursor &arr = target.insertArray(entries);
 
     if (_filter_elements) {
         const auto& matching_elems = state->get_matching_elements(*_matching_elems_fields)

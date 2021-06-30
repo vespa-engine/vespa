@@ -28,7 +28,7 @@ protected:
     }
 
 public:
-    ArrayValue(SymbolTable &table, Stash & stash) : _symbolTable(table), _stash(stash), _values() {}
+    ArrayValue(SymbolTable &table, Stash & stash);
     ArrayValue(const ArrayValue &) = delete;
     ArrayValue &operator=(const ArrayValue &) = delete;
 
@@ -36,6 +36,7 @@ public:
     size_t children() const override { return _values.size(); }
     size_t entries() const override { return _values.size(); }
     void traverse(ArrayTraverser &at) const override;
+    void reserve(size_t sz) { _values.reserve(sz); }
 
     Cursor &operator[](size_t idx) const override {
         if (idx < _values.size()) {
@@ -44,11 +45,11 @@ public:
         return *NixValue::invalid();
     }
 
-    Cursor &addArray() override;
+    Cursor &addArray(size_t reserve) override;
     Cursor &addObject() override;
     Symbol resolve(Memory symbol_name) override;
 
-    ~ArrayValue() override = default;
+    ~ArrayValue() override;
 };
 
 } // namespace vespalib::slime

@@ -27,9 +27,13 @@ struct Inserter {
     virtual Cursor &insertString(Memory value) const = 0;
     virtual Cursor &insertData(Memory value) const = 0;
     virtual Cursor &insertData(ExternalMemory::UP value) const = 0;
-    virtual Cursor &insertArray() const = 0;
+    virtual Cursor &insertArray(size_t reserved) const = 0;
     virtual Cursor &insertObject() const = 0;
-    virtual ~Inserter() {}
+    virtual ~Inserter() = default;
+
+    Cursor &insertArray() const {
+        return insertArray(0);
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -45,7 +49,7 @@ struct SlimeInserter : Inserter {
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
     Cursor &insertData(ExternalMemory::UP value) const override;
-    Cursor &insertArray() const override;
+    Cursor &insertArray(size_t reserved) const override;
     Cursor &insertObject() const override;
 };
 
@@ -60,7 +64,7 @@ struct ArrayInserter : Inserter {
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
     Cursor &insertData(ExternalMemory::UP value) const override;
-    Cursor &insertArray() const override;
+    Cursor &insertArray(size_t reserved) const override;
     Cursor &insertObject() const override;
 };
 
@@ -76,7 +80,7 @@ struct ObjectSymbolInserter : Inserter {
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
     Cursor &insertData(ExternalMemory::UP value) const override;
-    Cursor &insertArray() const override;
+    Cursor &insertArray(size_t reserved) const override;
     Cursor &insertObject() const override;
 };
 
@@ -92,7 +96,7 @@ struct ObjectInserter : Inserter {
     Cursor &insertString(Memory value) const override;
     Cursor &insertData(Memory value) const override;
     Cursor &insertData(ExternalMemory::UP value) const override;
-    Cursor &insertArray() const override;
+    Cursor &insertArray(size_t reserved) const override;
     Cursor &insertObject() const override;
 };
 

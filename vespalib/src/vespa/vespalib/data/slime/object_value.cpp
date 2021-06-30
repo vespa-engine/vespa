@@ -53,8 +53,8 @@ ObjectValue::operator[](Memory name) const {
 
 
 Cursor &
-ObjectValue::setArray(Symbol symbol) {
-    return setLeaf(symbol, ArrayValueFactory(_symbolTable));
+ObjectValue::setArray(Symbol symbol, size_t reserve) {
+    return setLeaf(symbol, ArrayValueFactory(_symbolTable, reserve));
 }
 
 Cursor &
@@ -63,8 +63,8 @@ ObjectValue::setObject(Symbol symbol) {
 }
 
 Cursor &
-ObjectValue::setArray(Memory name) {
-    return setLeaf(name, ArrayValueFactory(_symbolTable));
+ObjectValue::setArray(Memory name, size_t reserve) {
+    return setLeaf(name, ArrayValueFactory(_symbolTable, reserve));
 }
 
 Cursor &

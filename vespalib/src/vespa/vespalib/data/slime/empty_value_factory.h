@@ -13,7 +13,8 @@ struct NixValueFactory : public ValueFactory {
 
 struct ArrayValueFactory : public ValueFactory {
     SymbolTable &symbolTable;
-    ArrayValueFactory(SymbolTable &table) : symbolTable(table) {}
+    size_t _reserve;
+    ArrayValueFactory(SymbolTable &table, size_t reserve) : symbolTable(table), _reserve(reserve) {}
     Value *create(Stash & stash) const override;
 };
 
