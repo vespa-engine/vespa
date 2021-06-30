@@ -3,6 +3,7 @@
 #include <vespa/log/log.h>
 #include <malloc.h>
 #include <dlfcn.h>
+#include <functional>
 
 LOG_SETUP("new_test");
 
@@ -96,7 +97,8 @@ TEST("verify new with alignment = 64 with single element") {
 }
 
 #if __GLIBC_PREREQ(2, 26)
-TEST("verify realloarray") {
+TEST("verify reallocarray") {
+    std::function<void*(void*,size_t,size_t)> call_reallocarray = [](void *ptr, size_t nmemb, size_t size) noexcept { return reallocarray(ptr, nmemb, size); };
     void *arr = calloc(5,5);
     //Used to ensure that 'arr' can not resized in place.
     std::vector<std::unique_ptr<char[]>> dummies;
@@ -104,14 +106,14 @@ TEST("verify realloarray") {
         dummies.push_back(std::make_unique<char[]>(5*5));
     }
     errno = 0;
-    void *arr2 = reallocarray(arr, 800, 5);
+    void *arr2 = call_reallocarray(arr, 800, 5);
     int myErrno = errno;
     EXPECT_NOT_EQUAL(arr, arr2);
     EXPECT_NOT_EQUAL(nullptr, arr2);
     EXPECT_NOT_EQUAL(ENOMEM, myErrno);
 
     errno = 0;
-    void *arr3 = reallocarray(arr2, 1ul << 33, 1ul << 33);
+    void *arr3 = call_reallocarray(arr2, 1ul << 33, 1ul << 33);
     myErrno = errno;
     EXPECT_EQUAL(nullptr, arr3);
     EXPECT_EQUAL(ENOMEM, myErrno);
