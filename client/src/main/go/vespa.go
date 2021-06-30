@@ -7,19 +7,26 @@ import (
 )
 
 func main() {
-    resp, err := http.Get("http://localhost:19071/ApplicationStatus")
+    status()
+}
+
+func status() {
+    resp, err := http.Get("http://127.0.0.1:19071/ApplicationStatus")
     if err != nil {
-        panic(err)
+        fmt.Println(err)
+        return
     }
     defer resp.Body.Close()
 
     fmt.Println("Response status: ", resp.Status)
     scanner := bufio.NewScanner(resp.Body)
-    for i := 0; scanner.Scan() && i < 5; i++ {
-        fmt.Println(scanner.Text())
-    }
 
     if err := scanner.Err(); err != nil {
-        panic(err)
+        fmt.Println(err)
+    }
+    else {
+        for i := 0; scanner.Scan() && i < 5; i++ {
+            fmt.Println(scanner.Text())
+        }
     }
 }
