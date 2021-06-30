@@ -2,6 +2,8 @@
 package ai.vespa.feed.client;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Statistics for feed operations over HTTP against a Vespa cluster.
@@ -32,6 +34,23 @@ public class OperationStats {
         this.maxLatencyMillis = maxLatencyMillis;
         this.bytesSent = bytesSent;
         this.bytesReceived = bytesReceived;
+    }
+
+    /** Returns the difference between this and the initial. Min and max latency are not modified. */
+    public OperationStats since(OperationStats initial) {
+        return new OperationStats(requests - initial.requests,
+                                  responsesByCode.entrySet().stream()
+                                                 .collect(Collectors.toMap(entry -> entry.getKey(),
+                                                                           entry -> entry.getValue() - initial.responsesByCode.getOrDefault(entry.getKey(), 0L))),
+                                  exceptions - initial.exceptions,
+                                  inflight - initial.inflight,
+                                  responsesByCode.size() == initial.responsesByCode.size() ? 0 :
+                                    (averageLatencyMillis * responsesByCode.size() - initial.averageLatencyMillis * initial.responsesByCode.size())
+                                  / (responsesByCode.size() - initial.responsesByCode.size()),
+                                  minLatencyMillis,
+                                  maxLatencyMillis,
+                                  bytesSent - initial.bytesSent,
+                                  bytesReceived - initial.bytesReceived);
     }
 
     public long requests() {
@@ -76,6 +95,19 @@ public class OperationStats {
 
     public long bytesReceived() {
         return bytesReceived;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OperationStats that = (OperationStats) o;
+        return requests == that.requests && inflight == that.inflight && exceptions == that.exceptions && averageLatencyMillis == that.averageLatencyMillis && minLatencyMillis == that.minLatencyMillis && maxLatencyMillis == that.maxLatencyMillis && bytesSent == that.bytesSent && bytesReceived == that.bytesReceived && responsesByCode.equals(that.responsesByCode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(requests, responsesByCode, inflight, exceptions, averageLatencyMillis, minLatencyMillis, maxLatencyMillis, bytesSent, bytesReceived);
     }
 
     @Override
