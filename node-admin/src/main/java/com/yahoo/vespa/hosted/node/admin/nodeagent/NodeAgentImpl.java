@@ -263,7 +263,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<String> shouldRestartServices( NodeAgentContext context, Container existingContainer) {
         NodeSpec node = context.node();
-        if (!existingContainer.state.isRunning() || node.state() != NodeState.active) return Optional.empty();
+        if (!existingContainer.state().isRunning() || node.state() != NodeState.active) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
         if (currentRestartGeneration.get() < node.wantedRestartGeneration().get()) {
@@ -315,12 +315,12 @@ public class NodeAgentImpl implements NodeAgent {
             reasons.add("Node in state " + nodeState + ", container should no longer be running");
 
         if (context.node().wantedDockerImage().isPresent() &&
-                !context.node().wantedDockerImage().get().equals(existingContainer.image)) {
+                !context.node().wantedDockerImage().get().equals(existingContainer.image())) {
             reasons.add("The node is supposed to run a new Docker image: "
-                    + existingContainer.image.asString() + " -> " + context.node().wantedDockerImage().get().asString());
+                        + existingContainer.image().asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
 
-        if (!existingContainer.state.isRunning())
+        if (!existingContainer.state().isRunning())
             reasons.add("Container no longer running");
 
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
@@ -329,9 +329,9 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         ContainerResources wantedContainerResources = getContainerResources(context);
-        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
+        if (!wantedContainerResources.equalsMemory(existingContainer.resources())) {
             reasons.add("Container should be running with different memory allocation, wanted: " +
-                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+                        wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources().toStringMemory());
         }
 
         if (containerState == STARTING)
@@ -343,7 +343,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void removeContainer(NodeAgentContext context, Container existingContainer, List<String> reasons, boolean alreadySuspended) {
         context.log(logger, "Will remove container: " + String.join(", ", reasons));
 
-        if (existingContainer.state.isRunning()) {
+        if (existingContainer.state().isRunning()) {
             if (!alreadySuspended) {
                 orchestratorSuspendNode(context);
             }
@@ -373,12 +373,12 @@ public class NodeAgentImpl implements NodeAgent {
                 .orElse(true))
             return existingContainer;
 
-        if (wantedContainerResources.equalsCpu(existingContainer.resources)) return existingContainer;
+        if (wantedContainerResources.equalsCpu(existingContainer.resources())) return existingContainer;
         context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
-                wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
+                    wantedContainerResources.toStringCpu(), existingContainer.resources().toStringCpu());
 
         // Only update CPU resources
-        containerOperations.updateContainer(context, existingContainer.id(), wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
+        containerOperations.updateContainer(context, existingContainer.id(), wantedContainerResources.withMemoryBytes(existingContainer.resources().memoryBytes()));
         return containerOperations.getContainer(context).orElseThrow(() ->
                 new ConvergenceException("Did not find container that was just updated"));
     }
@@ -402,7 +402,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private boolean downloadImageIfNeeded(NodeAgentContext context, Optional<Container> container) {
         NodeSpec node = context.node();
-        if (node.wantedDockerImage().equals(container.map(c -> c.image))) return false;
+        if (node.wantedDockerImage().equals(container.map(c -> c.image()))) return false;
 
         RegistryCredentials credentials = registryCredentialsProvider.get();
         return node.wantedDockerImage()
@@ -480,7 +480,7 @@ public class NodeAgentImpl implements NodeAgent {
                         firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
 
                     Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context)));
-                    if (!container.get().resources.equalsCpu(getContainerResources(context)))
+                    if (!container.get().resources().equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }

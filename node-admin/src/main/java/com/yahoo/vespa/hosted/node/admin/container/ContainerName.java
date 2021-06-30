@@ -9,7 +9,8 @@ import java.util.regex.Pattern;
  *
  * @author bakksjo
  */
-public class ContainerName {
+public class ContainerName implements Comparable<ContainerName> {
+
     private static final Pattern LEGAL_CONTAINER_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9-]+$");
     private final String name;
 
@@ -51,4 +52,10 @@ public class ContainerName {
                 + " name=" + name
                 + " }";
     }
+
+    @Override
+    public int compareTo(ContainerName o) {
+        return name.compareTo(o.name);
+    }
+
 }

@@ -33,6 +33,7 @@ import org.mockito.InOrder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -762,12 +763,17 @@ public class NodeAgentImplTest {
             return dockerImage != null ?
                     Optional.of(new Container(
                             containerId,
-                            hostName,
-                            dockerImage,
-                            containerResources,
                             ContainerName.fromHostname(hostName),
-                            isRunning ? Container.State.RUNNING : Container.State.EXITED,
-                            isRunning ? 1 : 0)) :
+                            isRunning ? Container.State.running : Container.State.exited,
+                            "image-id-1",
+                            dockerImage,
+                            Map.of(),
+                            42,
+                            43,
+                            hostName,
+                            containerResources,
+                            List.of(),
+                            true)) :
                     Optional.empty();
         }).when(containerOperations).getContainer(any());
     }

@@ -4,11 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.integration;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
-import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerEngineMock;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -23,8 +25,6 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
@@ -46,12 +46,11 @@ public class ContainerTester implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ContainerTester.class.getName());
     private static final Duration INTERVAL = Duration.ofMillis(10);
-    private static final Path PATH_TO_VESPA_HOME = Paths.get("/opt/vespa");
     static final HostName HOST_HOSTNAME = HostName.from("host.test.yahoo.com");
 
     private final Thread loopThread;
 
-    final ContainerOperationsMock containerOperations = spy(new ContainerOperationsMock());
+    final ContainerOperations containerOperations = spy(new ContainerOperations(new ContainerEngineMock(), TestFileSystem.create()));
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
