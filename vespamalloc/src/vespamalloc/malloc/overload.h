@@ -140,15 +140,18 @@ struct mallinfo mallinfo() __THROW {
 }
 #endif
 
+void * malloc(size_t sz) __attribute((visibility("default")));
 void * malloc(size_t sz) {
     return vespamalloc::createAllocator()->malloc(sz);
 }
 
+void * calloc(size_t nelem, size_t esz) __attribute((visibility("default")));
 void * calloc(size_t nelem, size_t esz)
 {
     return vespamalloc::createAllocator()->calloc(nelem, esz);
 }
 
+void * realloc(void * ptr, size_t sz) __attribute((visibility("default")));
 void * realloc(void * ptr, size_t sz)
 {
     return vespamalloc::createAllocator()->realloc(ptr, sz);
@@ -202,6 +205,7 @@ void *valloc(size_t size) __THROW
   return memalign(sysconf(_SC_PAGESIZE),size);
 }
 
+void free(void * ptr) __attribute__((visibility ("default")));
 void free(void * ptr) {
     if (ptr) { vespamalloc::_GmemP->free(ptr); }
 }
