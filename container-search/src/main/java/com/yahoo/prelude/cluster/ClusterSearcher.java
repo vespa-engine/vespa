@@ -9,6 +9,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -70,6 +71,7 @@ public class ClusterSearcher extends Searcher {
                            DocumentdbInfoConfig documentDbConfig,
                            ComponentRegistry<Dispatcher> dispatchers,
                            QrConfig qrConfig,
+                           VipStatus vipStatus,
                            VespaDocumentAccess access) {
         super(id);
 

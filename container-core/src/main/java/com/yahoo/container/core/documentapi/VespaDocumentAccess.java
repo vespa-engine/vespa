@@ -27,7 +27,7 @@ import com.yahoo.vespa.config.content.LoadTypeConfig;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Wraps a lazily initialised MessageBusDocumentAccess. Lazy to allow it to always be set up.
+ * Wraps a lazily initialised {@link DocumentAccess}. Lazy to allow it to always be set up.
  * Inject this class directly (instead of DocumentAccess) for use in internal code.
  *
  * @author jonmv
@@ -36,7 +36,7 @@ public class VespaDocumentAccess extends DocumentAccess {
 
     private final MessageBusParams parameters;
 
-    private final AtomicReference<MessageBusDocumentAccess> delegate = new AtomicReference<>();
+    private final AtomicReference<DocumentAccess> delegate = new AtomicReference<>();
     private boolean shutDown = false;
 
     VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
@@ -53,8 +53,8 @@ public class VespaDocumentAccess extends DocumentAccess {
         this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);
     }
 
-    public MessageBusDocumentAccess delegate() {
-        MessageBusDocumentAccess access = delegate.getAcquire();
+    public DocumentAccess delegate() {
+        DocumentAccess access = delegate.getAcquire();
         return access != null ? access : delegate.updateAndGet(value -> {
             if (value != null)
                 return value;
