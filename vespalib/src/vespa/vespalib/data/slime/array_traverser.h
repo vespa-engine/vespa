@@ -4,8 +4,7 @@
 
 #include "inspector.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Interface used when traversing all the entries of an array value.
@@ -16,5 +15,3 @@ struct ArrayTraverser {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

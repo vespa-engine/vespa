@@ -5,8 +5,7 @@
 #include "symbol_lookup.h"
 #include "symbol_table.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Class used to look up the name of a field in a symbol table.
@@ -26,5 +25,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

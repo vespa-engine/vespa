@@ -2,8 +2,7 @@
 
 #include "empty_value_factory.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 Value *
 ArrayValueFactory::create(Stash & stash) const {
@@ -16,4 +15,3 @@ ObjectValueFactory::create(Stash & stash) const {
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

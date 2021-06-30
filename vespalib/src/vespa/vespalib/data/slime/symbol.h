@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * A Symbol may be used to look up a field within an OBJECT.
@@ -27,5 +26,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

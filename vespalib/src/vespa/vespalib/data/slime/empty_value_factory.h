@@ -8,8 +8,7 @@
 #include "object_value.h"
 #include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 struct NixValueFactory : public ValueFactory {
     Value *create(Stash &) const override { return NixValue::instance(); }
@@ -28,5 +27,3 @@ struct ObjectValueFactory : public ValueFactory {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

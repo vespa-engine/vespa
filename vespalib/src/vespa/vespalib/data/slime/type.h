@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Enumeration of slime data types.
@@ -50,5 +49,3 @@ extern template struct TypeType<ARRAY::ID>;
 extern template struct TypeType<OBJECT::ID>;
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

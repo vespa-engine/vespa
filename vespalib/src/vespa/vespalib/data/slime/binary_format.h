@@ -9,11 +9,9 @@
 #include <vespa/vespalib/data/output_writer.h>
 #include <string>
 
-namespace vespalib {
+namespace vespalib { class Slime; }
 
-class Slime;
-
-namespace slime {
+namespace vespalib::slime {
 
 struct BinaryFormat {
     static void encode(const Slime &slime, Output &output);
@@ -130,4 +128,3 @@ uint64_t read_bytes(InputReader &in, uint32_t bytes)
 } // namespace vespalib::slime::binary_format
 
 } // namespace vespalib::slime
-} // namespace vespalib

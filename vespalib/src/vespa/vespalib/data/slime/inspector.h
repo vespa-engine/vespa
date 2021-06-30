@@ -6,8 +6,7 @@
 #include "symbol.h"
 #include <vespa/vespalib/data/memory.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 struct ArrayTraverser;
 struct ObjectSymbolTraverser;
@@ -44,5 +43,3 @@ std::ostream & operator << (std::ostream & os, const Inspector & inspector);
 
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

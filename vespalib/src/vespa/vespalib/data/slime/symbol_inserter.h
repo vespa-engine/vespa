@@ -4,8 +4,7 @@
 
 #include "symbol.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * Interface used to obtain the symbol for a field, and insert it into
@@ -17,5 +16,4 @@ struct SymbolInserter {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
 

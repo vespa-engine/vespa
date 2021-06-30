@@ -3,8 +3,7 @@
 #include "inserter.h"
 #include "slime.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 using ExtMemUP = ExternalMemory::UP;
 
@@ -48,5 +47,4 @@ Cursor &ObjectInserter::insertData(ExtMemUP value) const { return cursor.setData
 Cursor &ObjectInserter::insertArray()              const { return cursor.setArray(name); }
 Cursor &ObjectInserter::insertObject()             const { return cursor.setObject(name); }
 
-} // namespace slime
-} // namespace vespalib
+} // namespace vespalib::slime

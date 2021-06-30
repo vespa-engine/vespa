@@ -2,11 +2,9 @@
 
 #pragma once
 
-namespace vespalib {
+namespace vespalib { class Stash; }
 
-class Stash;
-
-namespace slime {
+namespace vespalib::slime {
 
 class Value;
 
@@ -20,5 +18,3 @@ struct ValueFactory {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

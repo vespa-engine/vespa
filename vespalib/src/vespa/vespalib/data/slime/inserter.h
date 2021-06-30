@@ -7,11 +7,9 @@
 #include "symbol.h"
 #include "external_memory.h"
 
-namespace vespalib {
+namespace vespalib { class Slime; }
 
-class Slime;
-
-namespace slime {
+namespace vespalib::slime {
 
 struct Cursor;
 
@@ -98,6 +96,4 @@ struct ObjectInserter : Inserter {
     Cursor &insertObject() const override;
 };
 
-} // namespace slime
-} // namespace vespalib
-
+} // namespace vespalib::slime
