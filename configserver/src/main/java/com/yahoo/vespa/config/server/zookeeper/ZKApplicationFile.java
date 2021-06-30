@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,21 +61,17 @@ class ZKApplicationFile extends ApplicationFile {
     @Override
     public Reader createReader() throws FileNotFoundException {
         String zkPath = getZKPath(path);
-        String data = zkApp.getData(zkPath);
-        if (data == null) {
-            throw new FileNotFoundException("No such path: " + path);
-        }
-        return new StringReader(data);
+        if ( ! zkApp.exists(zkPath)) throw new FileNotFoundException("No such path: " + path);
+
+        return new StringReader(zkApp.getData(zkPath));
     }
 
     @Override
     public InputStream createInputStream() throws FileNotFoundException {
         String zkPath = getZKPath(path);
-        byte[] data = zkApp.getBytes(zkPath);
-        if (data == null) {
-            throw new FileNotFoundException("No such path: " + path);
-        }
-        return new ByteArrayInputStream(data);
+        if ( ! zkApp.exists(zkPath)) throw new FileNotFoundException("No such path: " + path);
+
+        return new ByteArrayInputStream(zkApp.getBytes(zkPath));
     }
 
     @Override

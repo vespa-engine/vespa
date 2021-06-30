@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.io.reader.NamedReader;
@@ -9,7 +9,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Responsible for providing data from an application subtree in zookeeper.
@@ -75,18 +74,12 @@ public class ZKApplication {
      * @return a Reader that can be used to get the data
      */
     Reader getDataReader(String path, String node) {
-        String data = getData(path, node);
-        if (data == null) {
-            throw new IllegalArgumentException("No node for " + getFullPath(path) + "/" + node + " exists");
-        }
-        return reader(data);
-    }
-
-    Optional<Reader> getOptionalDataReader(String path, String node) {
-        return Optional.ofNullable(getData(path, node)).map(data -> reader(data));
+        return reader(getData(path, node));
     }
 
     public String getData(String path, String node) {
+        if ( ! exists(path, node)) throw new IllegalArgumentException("No node for " + getFullPath(path) + "/" + node + " exists");
+
         try {
             return zk.getData(getFullPath(path), node);
         } catch (Exception e) {
@@ -96,6 +89,8 @@ public class ZKApplication {
     }
 
     public String getData(String path) {
+        if ( ! exists(path)) throw new IllegalArgumentException("No node for " + getFullPath(path) + " exists");
+
         try {
             return zk.getData(getFullPath(path));
         } catch (RuntimeException e) {

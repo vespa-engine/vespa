@@ -1,9 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.*;
 
@@ -146,7 +148,7 @@ public class ConfigCuratorTest {
     }
 
     private ConfigCurator deployApp() {
-        ConfigCurator zkIf = getFacade();
+        ConfigCurator zkIf = create();
         initAndClearZK(zkIf);
         zkIf.putData(ConfigCurator.DEFCONFIGS_ZK_SUBPATH, defKey1, payload1);
         // zkIf.putData(ConfigCurator.USERCONFIGS_ZK_SUBPATH, cfgKey1, payload3);
@@ -159,9 +161,12 @@ public class ConfigCuratorTest {
         return zkIf;
     }
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Test
     public void testZKInterface() {
-        ConfigCurator zkIf = getFacade();
+        ConfigCurator zkIf = create();
         zkIf.putData("", "test", "foo");
         zkIf.putData("/test", "me", "bar");
         zkIf.putData("", "test;me;now,then", "baz");
@@ -171,16 +176,20 @@ public class ConfigCuratorTest {
     }
 
     @Test
-    public void testWatcher() {
-        ConfigCurator zkIf = getFacade();
+    public void testNonExistingPath() {
+        ConfigCurator configCurator = create();
 
-        String data = zkIf.getData("/nothere");
-        assertNull(data);
-        zkIf.putData("", "/nothere", "foo");
-        assertEquals(zkIf.getData("/nothere"), "foo");
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Cannot read data from path /non-existing, it does not exist");
+        configCurator.getData("/non-existing");
+    }
+
+    @Test
+    public void testWatcher() {
+        ConfigCurator zkIf = create();
 
         zkIf.putData("", "test", "foo");
-        data = zkIf.getData("/test");
+        String data = zkIf.getData("/test");
         assertEquals(data, "foo");
         zkIf.putData("", "/test", "bar");
         data = zkIf.getData("/test");
@@ -190,7 +199,7 @@ public class ConfigCuratorTest {
         zkIf.putData("", "test2", "foo2");
     }
 
-    private ConfigCurator getFacade() {
+    private ConfigCurator create() {
         return ConfigCurator.create(new MockCurator());
     }
 
@@ -202,14 +211,14 @@ public class ConfigCuratorTest {
 
     @Test
     public void testEmptyData() {
-        ConfigCurator zkIf = getFacade();
+        ConfigCurator zkIf = create();
         zkIf.createNode("/empty", "data");
         assertEquals("", zkIf.getData("/empty", "data"));
     }
 
     @Test
     public void testRecursiveDelete() {
-        ConfigCurator configCurator = getFacade();
+        ConfigCurator configCurator = create();
         configCurator.putData("/foo", Utf8.toBytes("sadsdfsdfsdfsdf"));
         configCurator.putData("/foo/bar", Utf8.toBytes("dsfsdffds"));
         configCurator.putData("/foo/baz",

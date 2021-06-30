@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -257,9 +256,12 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
-        String fileName = zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + pathRelativeToAppDir.getRelative());
+        String path = ConfigCurator.USERAPP_ZK_SUBPATH + "/" + pathRelativeToAppDir.getRelative();
+
         // File does not exist: Manufacture a non-existing file
-        return new File(Objects.requireNonNullElseGet(fileName, pathRelativeToAppDir::getRelative));
+        if ( ! zkApplication.exists(path)) return new File(pathRelativeToAppDir.getRelative());
+
+        return new File(zkApplication.getData(path));
     }
 
     @Override
