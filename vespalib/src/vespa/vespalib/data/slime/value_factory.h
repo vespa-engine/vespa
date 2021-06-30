@@ -14,7 +14,7 @@ class Value;
  **/
 struct ValueFactory {
     virtual Value *create(Stash & stash) const = 0;
-    virtual ~ValueFactory() {}
+    virtual ~ValueFactory() = default;
 };
 
 } // namespace vespalib::slime
