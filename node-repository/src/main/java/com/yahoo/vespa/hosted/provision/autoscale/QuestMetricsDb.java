@@ -9,6 +9,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
+import com.yahoo.yolean.concurrent.ResourceFactory;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
@@ -58,9 +60,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private final Clock clock;
     private final String dataDir;
     private final AtomicReference<CairoEngine> engine = new AtomicReference<>();
-    // TODO Is this safe, or even possible. ThreadLocal members should be static
-    //
-    private final ThreadLocal<SqlCompiler> sqlCompiler;
+    private final ConcurrentResourcePool<SqlCompiler> sqlCompilerPool;
     private final AtomicInteger nullRecords = new AtomicInteger();
 
     @Inject
@@ -83,7 +83,12 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         this.dataDir = dataDir;
         engine.set(new CairoEngine(new DefaultCairoConfiguration(dataDir)));
-        sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine.get()));
+        sqlCompilerPool = new ConcurrentResourcePool<>(new ResourceFactory<>() {
+            @Override
+            public SqlCompiler create() {
+                return new SqlCompiler(engine.get());
+            }
+        });
         nodeTable = new Table(dataDir, "metrics", clock);
         clusterTable = new Table(dataDir, "clusterMetrics", clock);
         ensureTablesExist();
@@ -199,11 +204,12 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void close() {
-        synchronized (clusterTable.writeLock) {
-            CairoEngine myEngine = engine.getAndSet(null);
-            if (myEngine != null) {
-                myEngine.close();
-            }
+        CairoEngine myEngine = engine.getAndSet(null);
+        for (SqlCompiler sqlCompiler : sqlCompilerPool) {
+            sqlCompiler.close();
+        }
+        if (myEngine != null) {
+            myEngine.close();
         }
     }
 
@@ -330,7 +336,12 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     /** Issues an SQL statement against the QuestDb engine */
     private CompiledQuery issue(String sql, SqlExecutionContext context) throws SqlException {
-        return sqlCompiler.get().compile(sql, context);
+        SqlCompiler sqlCompiler = sqlCompilerPool.alloc();
+        try {
+            return sqlCompiler.compile(sql, context);
+        } finally {
+            sqlCompilerPool.free(sqlCompiler);
+        }
     }
 
     private SqlExecutionContext newContext() {
