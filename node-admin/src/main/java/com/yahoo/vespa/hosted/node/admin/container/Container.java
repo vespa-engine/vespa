@@ -1,80 +1,100 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.config.provision.DockerImage;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author stiankri
+ * A Podman container.
+ *
+ * @author mpolden
  */
-public class Container {
-    private final ContainerId id;
-    public final String hostname;
-    public final DockerImage image;
-    public final ContainerResources resources;
-    public final ContainerName name;
-    public final State state;
-    public final int pid;
+public class Container extends PartialContainer {
 
-    public Container(
-            final ContainerId id,
-            final String hostname,
-            final DockerImage image,
-            final ContainerResources resources,
-            final ContainerName containerName,
-            final State state,
-            final int pid) {
-        this.id = id;
-        this.hostname = hostname;
-        this.image = image;
-        this.resources = resources;
-        this.name = containerName;
-        this.state = state;
-        this.pid = pid;
+    private final String hostname;
+    private final ContainerResources resources;
+    private final int conmonPid;
+    private final List<Network> networks;
+
+    public Container(ContainerId id, ContainerName name, State state, String imageId, DockerImage image,
+                     Map<String, String> labels, int pid, int conmonPid, String hostname,
+                     ContainerResources resources, List<Network> networks, boolean managed) {
+        super(id, name, state, imageId, image, labels, pid, managed);
+        this.hostname = Objects.requireNonNull(hostname);
+        this.resources = Objects.requireNonNull(resources);
+        this.conmonPid = conmonPid;
+        this.networks = List.copyOf(Objects.requireNonNull(networks));
     }
 
-    public ContainerId id() {
-        return id;
+    /** The hostname of this, if any */
+    public String hostname() {
+        return hostname;
+    }
+
+    /** Resource limits for this*/
+    public ContainerResources resources() {
+        return resources;
+    }
+
+    /** Pid of the conmon process for this container */
+    public int conmonPid() {
+        return conmonPid;
+    }
+
+    /** The networks used by this */
+    public List<Network> networks() {
+        return networks;
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (!(obj instanceof Container)) {
-            return false;
-        }
-        final Container other = (Container) obj;
-        return Objects.equals(id, other.id)
-                && Objects.equals(hostname, other.hostname)
-                && Objects.equals(image, other.image)
-                && Objects.equals(resources, other.resources)
-                && Objects.equals(name, other.name)
-                && Objects.equals(pid, other.pid);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        Container that = (Container) o;
+        return conmonPid == that.conmonPid && hostname.equals(that.hostname) && resources.equals(that.resources) && networks.equals(that.networks);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, image, resources, name, pid);
+        return Objects.hash(super.hashCode(), hostname, resources, conmonPid, networks);
     }
 
-    @Override
-    public String toString() {
-        return "Container {"
-                + " id=" + id
-                + " hostname=" + hostname
-                + " image=" + image
-                + " resources=" + resources
-                + " name=" + name
-                + " state=" + state
-                + " pid=" + pid
-                + "}";
-    }
+    /** The network of a container */
+    public static class Network {
 
-    public enum State {
-        CREATED, RESTARTING, RUNNING, REMOVING, PAUSED, EXITED, DEAD, UNKNOWN, CONFIGURED, STOPPED;
+        private final String name;
+        private final String ipv4Address;
 
-        public boolean isRunning() {
-            return this == RUNNING;
+        public Network(String name, String ipv4Address) {
+            this.name = Objects.requireNonNull(name);
+            this.ipv4Address = Objects.requireNonNull(ipv4Address);
         }
+
+        public String name() {
+            return name;
+        }
+
+        public String ipv4Address() {
+            return ipv4Address;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Network network = (Network) o;
+            return name.equals(network.name) && ipv4Address.equals(network.ipv4Address);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, ipv4Address);
+        }
+
     }
+
 }

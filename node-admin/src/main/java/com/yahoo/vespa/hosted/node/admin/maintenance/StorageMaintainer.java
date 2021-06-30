@@ -227,7 +227,7 @@ public class StorageMaintainer {
     }
 
     private String getDockerImage(NodeAgentContext context, Optional<Container> container) {
-        return container.map(c -> c.image.asString())
+        return container.map(c -> c.image().asString())
                 .orElse(context.node().currentDockerImage()
                         .map(DockerImage::asString)
                         .orElse("<none>")
