@@ -68,7 +68,7 @@ public class Group {
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
             long deviation = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
-            boolean isDeviationSmall = deviation <= (activeDocs * MAX_UNBALANCE);
+            boolean isDeviationSmall = deviation <= maxUnbalance(activeDocs);
             if ((!isContentWellBalanced.get() || isDeviationSmall != isContentWellBalanced.get()) && (activeDocs > 0)) {
                 log.info("Content is " + (isDeviationSmall ? "" : "not ") + "well balanced. Current deviation = " + deviation*100/activeDocs + " %" +
                          ". activeDocs = " + activeDocs + ", deviation = " + deviation + ", average = " + average);
@@ -77,6 +77,10 @@ public class Group {
         } else {
             isContentWellBalanced.set(true);
         }
+    }
+
+    double maxUnbalance(long activeDocs) {
+        return Math.max(1, activeDocs * MAX_UNBALANCE);
     }
 
     /** Returns the active documents on this group. If unknown, 0 is returned. */
