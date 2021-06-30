@@ -12,6 +12,7 @@ namespace slobrok {
 class SBEnv;
 class RpcServerMap;
 class RpcServerManager;
+class ServiceMapHistory;
 
 /**
  * @class RPCHooks
@@ -41,6 +42,8 @@ private:
     SBEnv &_env;
     RpcServerMap &_rpcsrvmap;
     RpcServerManager &_rpcsrvmanager;
+    ServiceMapHistory &_globalHistory;
+    ServiceMapHistory &_localHistory;
 
     Metrics _cnts;
     std::unique_ptr<FNET_Task> _m_reporter;

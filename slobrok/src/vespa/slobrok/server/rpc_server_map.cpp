@@ -29,7 +29,7 @@ RpcServerMap::remove(const std::string & name)
 {
     auto service = std::move(_myrpcsrv_map[name]);
     auto spec = service->getSpec();
-    _visible_map.remove(ServiceMapping{name, spec});
+    _proxy.remove(ServiceMapping{name, spec});
     _myrpcsrv_map.erase(name);
     return service;
 }
@@ -68,7 +68,7 @@ RpcServerMap::add(NamedService *rpcsrv)
     LOG_ASSERT(_myrpcsrv_map.find(name) == _myrpcsrv_map.end());
 
     removeReservation(name);
-    _visible_map.add(ServiceMapping{name, rpcsrv->getSpec()});
+    _proxy.add(ServiceMapping{name, rpcsrv->getSpec()});
 }
 
 void
@@ -82,7 +82,7 @@ RpcServerMap::addNew(std::unique_ptr<ManagedRpcServer> rpcsrv)
     if (oldman) {
         const ReservedName *oldres = _reservations[name].get();
         const std::string &spec = rpcsrv->getSpec();
-        _visible_map.remove(ServiceMapping{name, spec});
+        _proxy.remove(ServiceMapping{name, spec});
         const std::string &oldname = oldman->getName();
         const std::string &oldspec = oldman->getSpec();
         if (spec != oldspec)  {
@@ -133,11 +133,7 @@ RpcServerMap::getReservation(const std::string &name) const {
     return (found == _reservations.end()) ? nullptr : found->second.get();
 }
 
-RpcServerMap::RpcServerMap()
-    : _myrpcsrv_map(),
-      _reservations()
-{
-}
+RpcServerMap::RpcServerMap() = default;
 
 RpcServerMap::~RpcServerMap() = default;
 
