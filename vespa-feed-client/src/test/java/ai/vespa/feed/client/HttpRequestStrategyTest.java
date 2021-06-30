@@ -91,6 +91,7 @@ class HttpRequestStrategyTest {
                                                                                 .setConnectionsPerEndpoint(1)
                                                                                 .setMaxStreamPerConnection(minStreams),
                                                                new BenchmarkingCluster(cluster));
+        OperationStats initial = strategy.stats();
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
@@ -176,6 +177,11 @@ class HttpRequestStrategyTest {
         codes.put(500, 3L);
         assertEquals(codes, strategy.stats().responsesByCode());
         assertEquals(3, strategy.stats().exceptions());
+
+        assertEquals(strategy.stats(), strategy.stats().since(initial));
+        assertEquals(0, strategy.stats().since(strategy.stats()).averageLatencyMillis());
+        assertEquals(0, strategy.stats().since(strategy.stats()).requests());
+        assertEquals(0, strategy.stats().since(strategy.stats()).bytesSent());
     }
 
     @Test

@@ -291,6 +291,7 @@
     ],
     "methods": [
       "public void <init>(long, java.util.Map, long, long, long, long, long, long, long)",
+      "public ai.vespa.feed.client.OperationStats since(ai.vespa.feed.client.OperationStats)",
       "public long requests()",
       "public long responses()",
       "public long successes()",
@@ -302,6 +303,8 @@
       "public long maxLatencyMillis()",
       "public long bytesSent()",
       "public long bytesReceived()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields": []
