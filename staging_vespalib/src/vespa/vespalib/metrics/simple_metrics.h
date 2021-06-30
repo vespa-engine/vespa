@@ -11,7 +11,6 @@
 #include "dimension.h"
 #include "dummy_metrics_manager.h"
 #include "gauge.h"
-#include "json_formatter.h"
 #include "label.h"
 #include "metric_id.h"
 #include "metrics_manager.h"

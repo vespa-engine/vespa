@@ -4,9 +4,6 @@
 
 #include "value_factory.h"
 #include "nix_value.h"
-#include "array_value.h"
-#include "object_value.h"
-#include <vespa/vespalib/util/stash.h>
 
 namespace vespalib::slime {
 

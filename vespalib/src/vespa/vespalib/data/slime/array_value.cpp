@@ -3,6 +3,7 @@
 #include "array_value.h"
 #include "array_traverser.h"
 #include "empty_value_factory.h"
+#include "symbol_table.h"
 
 namespace vespalib::slime {
 

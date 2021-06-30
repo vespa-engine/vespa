@@ -5,9 +5,7 @@
 #include "value.h"
 #include "nix_value.h"
 #include "value_factory.h"
-#include "symbol_table.h"
 #include <vector>
-#include <vespa/vespalib/util/stash.h>
 
 namespace vespalib::slime {
 
