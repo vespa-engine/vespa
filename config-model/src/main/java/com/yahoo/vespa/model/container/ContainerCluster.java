@@ -358,6 +358,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void setDocproc(ContainerDocproc containerDocproc) {
         this.containerDocproc = containerDocproc;
+        addSimpleComponent("com.yahoo.container.jdisc.messagebus.SessionCache");
     }
 
     public ContainerDocumentApi getDocumentApi() {

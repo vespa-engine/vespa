@@ -3,6 +3,8 @@ package com.yahoo.messagebus.shared;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.jdisc.AbstractResource;
+
+import java.util.Objects;
 import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.IntermediateSessionParams;
@@ -25,8 +27,7 @@ public class SharedMessageBus extends AbstractResource {
     private final MessageBus mbus;
 
     public SharedMessageBus(MessageBus mbus) {
-        mbus.getClass(); // throws NullPointerException
-        this.mbus = mbus;
+        this.mbus = Objects.requireNonNull(mbus);
     }
 
     public MessageBus messageBus() {
