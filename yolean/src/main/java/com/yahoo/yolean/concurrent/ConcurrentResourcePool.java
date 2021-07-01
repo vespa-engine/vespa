@@ -4,24 +4,41 @@ package com.yahoo.yolean.concurrent;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Supplier;
 
 /**
+ * A pool of a resource. This create new instances of the resource on request until enough are created
+ * to deliver a unique one to all threads needing one concurrently and then reuse those instances
+ * in subsequent requests.
+ *
  * @author baldersheim
  */
 public class ConcurrentResourcePool<T> implements Iterable<T> {
 
     private final Queue<T> pool = new ConcurrentLinkedQueue<>();
-    private final ResourceFactory<T> factory;
+    private final Supplier<T> factory;
 
+    // TODO: Deprecate
     public ConcurrentResourcePool(ResourceFactory<T> factory) {
+        this.factory = factory.asSupplier();
+    }
+
+    public ConcurrentResourcePool(Supplier<T> factory) {
         this.factory = factory;
     }
 
+    /**
+     * Allocates an instance of the resource to the requestor.
+     * The resource will be allocated exclusively to the requestor until it calls free(instance).
+     *
+     * @return a reused or newly created instance of the resource
+     */
     public final T alloc() {
-        final T e = pool.poll();
-        return e != null ? e : factory.create();
+        T e = pool.poll();
+        return e != null ? e : factory.get();
     }
 
+    /** Frees an instance previously acquired bty alloc */
     public final void free(T e) {
         pool.offer(e);
     }
@@ -30,4 +47,5 @@ public class ConcurrentResourcePool<T> implements Iterable<T> {
     public Iterator<T> iterator() {
         return pool.iterator();
     }
+
 }

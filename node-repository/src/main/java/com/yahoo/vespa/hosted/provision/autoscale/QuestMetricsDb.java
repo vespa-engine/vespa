@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -56,9 +58,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private final Clock clock;
     private final String dataDir;
     private final CairoEngine engine;
-    private final ThreadLocal<SqlCompiler> sqlCompiler;
+    private final ConcurrentResourcePool<SqlCompiler> sqlCompilerPool;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private volatile int nullRecords = 0;
 
     @Inject
     public QuestMetricsDb() {
@@ -80,10 +82,16 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         this.dataDir = dataDir;
         engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
-        sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine));
+        sqlCompilerPool = new ConcurrentResourcePool<>(() -> new SqlCompiler(engine()));
         nodeTable = new Table(dataDir, "metrics", clock);
         clusterTable = new Table(dataDir, "clusterMetrics", clock);
         ensureTablesExist();
+    }
+
+    private CairoEngine engine() {
+        if (closed.get())
+            throw new IllegalStateException("Attempted to access QuestDb after calling close");
+        return engine;
     }
 
     @Override
@@ -182,11 +190,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
-    public int getNullRecordsCount() { return nullRecords; }
-
     @Override
     public void gc() {
-        nullRecords = 0;
         nodeTable.gc();
         clusterTable.gc();
     }
@@ -196,8 +201,14 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void close() {
-        if (engine != null)
-            engine.close();
+        if (closed.getAndSet(true)) return;
+        synchronized (nodeTable.writeLock) {
+            synchronized (clusterTable.writeLock) {
+                for (SqlCompiler sqlCompiler : sqlCompilerPool)
+                    sqlCompiler.close();
+                engine.close();
+            }
+        }
     }
 
     private void ensureTablesExist() {
@@ -222,7 +233,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private void ensureClusterTableIsUpdated() {
         try {
-            if (0 == engine.getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.name)) {
+            if (0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.name)) {
                 // Example: clusterTable.ensureColumnExists("write_rate", "float");
             }
         } catch (Exception e) {
@@ -277,10 +288,6 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
-                    if (record == null || record.getStr(0) == null) { // Observed to happen. QuestDb bug?
-                        nullRecords++;
-                        continue;
-                    }
                     String hostname = record.getStr(0).toString();
                     if (hostnames.isEmpty() || hostnames.contains(hostname)) {
                         snapshots.put(hostname,
@@ -323,11 +330,16 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     /** Issues an SQL statement against the QuestDb engine */
     private CompiledQuery issue(String sql, SqlExecutionContext context) throws SqlException {
-        return sqlCompiler.get().compile(sql, context);
+        SqlCompiler sqlCompiler = sqlCompilerPool.alloc();
+        try {
+            return sqlCompiler.compile(sql, context);
+        } finally {
+            sqlCompilerPool.free(sqlCompiler);
+        }
     }
 
     private SqlExecutionContext newContext() {
-        return new SqlExecutionContextImpl(engine, 1);
+        return new SqlExecutionContextImpl(engine(), 1);
     }
 
     /** A questDb table */
@@ -349,11 +361,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
 
         boolean exists() {
-            return 0 == engine.getStatus(newContext().getCairoSecurityContext(), new Path(), name);
+            return 0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), name);
         }
 
         TableWriter getWriter() {
-            return engine.getWriter(newContext().getCairoSecurityContext(), name);
+            return engine().getWriter(newContext().getCairoSecurityContext(), name);
         }
 
         void gc() {
