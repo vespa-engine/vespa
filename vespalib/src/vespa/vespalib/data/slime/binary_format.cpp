@@ -90,12 +90,14 @@ struct BinaryEncoder : public ArrayTraverser,
 };
 
 void
-BinaryEncoder::entry(size_t, const Inspector &inspector) {
+BinaryEncoder::entry(size_t, const Inspector &inspector)
+{
     encodeValue(inspector);
 }
 
 void
-BinaryEncoder::field(const Symbol &symbol, const Inspector &inspector) {
+BinaryEncoder::field(const Symbol &symbol, const Inspector &inspector)
+{
     write_cmpr_ulong_impl(out, symbol.getValue());
     encodeValue(inspector);
 }
@@ -130,12 +132,12 @@ struct MappedSymbols {
     }
 };
 
-template<bool remap_symbols>
+template <bool remap_symbols>
 struct SymbolHandler {
     typedef typename std::conditional<remap_symbols, MappedSymbols, DirectSymbols>::type type;
 };
 
-template<bool remap_symbols>
+template <bool remap_symbols>
 struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
 
     InputReader &in;
@@ -212,9 +214,10 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
     }
 };
 
-template<bool remap_symbols>
+template <bool remap_symbols>
 Cursor &
-BinaryDecoder<remap_symbols>::decodeArray(const Inserter &inserter, uint32_t meta) {
+BinaryDecoder<remap_symbols>::decodeArray(const Inserter &inserter, uint32_t meta)
+{
     Cursor &cursor = inserter.insertArray();
     ArrayInserter childInserter(cursor);
     uint64_t size = read_size(in, meta);
@@ -224,9 +227,10 @@ BinaryDecoder<remap_symbols>::decodeArray(const Inserter &inserter, uint32_t met
     return cursor;
 }
 
-template<bool remap_symbols>
+template <bool remap_symbols>
 Cursor &
-BinaryDecoder<remap_symbols>::decodeObject(const Inserter &inserter, uint32_t meta) {
+BinaryDecoder<remap_symbols>::decodeObject(const Inserter &inserter, uint32_t meta)
+{
     Cursor &cursor = inserter.insertObject();
     uint64_t size = read_size(in, meta);
     for (size_t i = 0; i < size; ++i) {
