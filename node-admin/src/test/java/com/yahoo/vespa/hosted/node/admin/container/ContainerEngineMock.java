@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,12 +19,19 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 /**
+ * A mock implementation of {@link ContainerEngine}.
+ *
+ * Container operations are multi-thread safe. Note that this is a requirement since tests may use this through a real
+ * (multi-threaded) node-admin instance.
+ *
  * @author mpolden
  */
 public class ContainerEngineMock implements ContainerEngine {
 
-    private final Map<ContainerName, Container> containers = new ConcurrentHashMap<>();
+    private final Map<ContainerName, Container> containers = new HashMap<>();
     private final Map<String, ImageDownload> images = new ConcurrentHashMap<>();
+    private final Object monitor = new Object();
+
     private boolean asyncImageDownload = false;
 
     public ContainerEngineMock asyncImageDownload(boolean enabled) {
@@ -50,56 +58,72 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     public ContainerEngineMock addContainers(List<Container> containers) {
-        for (var container : containers) {
-            if (this.containers.containsKey(container.name())) {
-                throw new IllegalArgumentException("Container " + container.name() + " already exists");
+        synchronized (monitor) {
+            for (var container : containers) {
+                if (this.containers.containsKey(container.name())) {
+                    throw new IllegalArgumentException("Container " + container.name() + " already exists");
+                }
+                this.containers.put(container.name(), container);
             }
-            this.containers.put(container.name(), container);
+            return this;
         }
-        return this;
     }
 
     public ContainerEngineMock addContainer(Container container) {
-        return addContainers(List.of(container));
+        synchronized (monitor) {
+            return addContainers(List.of(container));
+        }
     }
 
     @Override
     public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
-        addContainer(createContainer(context, PartialContainer.State.created, containerResources));
+        synchronized (monitor) {
+            addContainer(createContainer(context, PartialContainer.State.created, containerResources));
+        }
     }
 
     @Override
     public void startContainer(NodeAgentContext context) {
-        Container container = requireContainer(context.containerName(), PartialContainer.State.created);
-        Container newContainer = createContainer(context, PartialContainer.State.running, container.resources());
-        containers.put(newContainer.name(), newContainer);
+        synchronized (monitor) {
+            Container container = requireContainer(context.containerName(), PartialContainer.State.created);
+            Container newContainer = createContainer(context, PartialContainer.State.running, container.resources());
+            containers.put(newContainer.name(), newContainer);
+        }
     }
 
     @Override
     public void removeContainer(TaskContext context, PartialContainer container) {
-        requireContainer(container.name());
-        containers.remove(container.name());
+        synchronized (monitor) {
+            requireContainer(container.name());
+            containers.remove(container.name());
+        }
     }
 
     @Override
     public void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources) {
-        Container container = requireContainer(context.containerName());
-        containers.put(container.name(), new Container(containerId, container.name(), container.state(),
-                                                       container.imageId(), container.image(),
-                                                       container.labels(), container.pid(),
-                                                       container.conmonPid(), container.hostname(),
-                                                       containerResources, container.networks(),
-                                                       container.managed()));
+        synchronized (monitor) {
+            Container container = requireContainer(context.containerName());
+            containers.put(container.name(), new Container(containerId, container.name(), container.state(),
+                                                           container.imageId(), container.image(),
+                                                           container.labels(), container.pid(),
+                                                           container.conmonPid(), container.hostname(),
+                                                           containerResources, container.networks(),
+                                                           container.managed()));
+        }
     }
 
     @Override
     public Optional<Container> getContainer(NodeAgentContext context) {
-        return Optional.ofNullable(containers.get(context.containerName()));
+        synchronized (monitor) {
+            return Optional.ofNullable(containers.get(context.containerName()));
+        }
     }
 
     @Override
     public List<PartialContainer> listContainers(TaskContext context) {
-        return List.copyOf(containers.values());
+        synchronized (monitor) {
+            return List.copyOf(containers.values());
+        }
     }
 
     @Override
