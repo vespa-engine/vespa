@@ -183,6 +183,8 @@ public class ModelContextImpl implements ModelContext {
         private final int largeRankExpressionLimit;
         private final boolean throwIfResourceLimitsSpecified;
         private final boolean dryRunOnnxOnSetup;
+        private final double resourceLimitDisk;
+        private final double resourceLimitMemory;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -211,6 +213,8 @@ public class ModelContextImpl implements ModelContext {
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
             this.throwIfResourceLimitsSpecified = flagValue(source, appId, Flags.THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED);
             this.dryRunOnnxOnSetup = flagValue(source, appId, Flags.DRY_RUN_ONNX_ON_SETUP);
+            this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
+            this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -241,6 +245,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
         @Override public boolean throwIfResourceLimitsSpecified() { return throwIfResourceLimitsSpecified; }
         @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
+        @Override public double resourceLimitDisk() { return resourceLimitDisk; }
+        @Override public double resourceLimitMemory() { return resourceLimitMemory; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

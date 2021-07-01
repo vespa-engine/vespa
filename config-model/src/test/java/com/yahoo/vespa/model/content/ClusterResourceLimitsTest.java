@@ -2,7 +2,9 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -61,10 +63,13 @@ public class ClusterResourceLimitsTest {
             return this;
         }
         public ClusterResourceLimits build() {
+            ModelContext.FeatureFlags featureFlags = new TestProperties();
             var builder = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
                                                             hostedVespa,
                                                             throwIfSpecified,
-                                                            new BaseDeployLogger());
+                                                            new BaseDeployLogger(),
+                                                            featureFlags.resourceLimitDisk(),
+                                                            featureFlags.resourceLimitMemory());
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
             return builder.build();
@@ -139,7 +144,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    @Ignore // TODO: Remove hosted_limits_are_used_if_app_is_allowed_to_set_limits and enable this when code is fixed to do sp
+    @Ignore // TODO: Remove hosted_limits_are_used_if_app_is_allowed_to_set_limits and enable this when code is fixed to do so
     public void hosted_log_when_resource_limits_are_specified() {
         TestableDeployLogger logger = new TestableDeployLogger();
 
@@ -160,7 +165,7 @@ public class ClusterResourceLimitsTest {
     }
 
     @Test
-    // TODO: Remove this and enable hosted_log_when_resource_limits_are_specified when code is fixed
+    // TODO: Remove this and enable hosted_log_when_resource_limits_are_specified when code is fixed to do so
     public void hosted_limits_are_used_if_app_is_allowed_to_set_limits() {
         TestableDeployLogger logger = new TestableDeployLogger();
 
@@ -173,8 +178,38 @@ public class ClusterResourceLimitsTest {
         assertLimits(0.9, 0.96, limits.getContentNodeLimits());
     }
 
+    @Test
+    public void hosted_limits_from_feature_flag_are_used() {
+        TestableDeployLogger logger = new TestableDeployLogger();
+
+        TestProperties featureFlags = new TestProperties();
+        featureFlags.setResourceLimitDisk(0.85);
+        featureFlags.setResourceLimitMemory(0.90);
+        var limits = hostedBuild(false, logger, featureFlags, false);
+
+        // Verify that limits from feature flags are used
+        assertLimits(0.85, 0.90, limits.getClusterControllerLimits());
+        assertLimits(0.925, 0.95, limits.getContentNodeLimits());
+    }
+
+    @Test
+    public void exception_is_thrown_when_resource_limits_are_out_of_range() {
+        TestableDeployLogger logger = new TestableDeployLogger();
+
+        TestProperties featureFlags = new TestProperties();
+        featureFlags.setResourceLimitDisk(1.1);
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(containsString("Resource limit for disk is set to illegal value 1.1, but must be in the range [0.0, 1.0]"));
+        hostedBuild(false, logger, featureFlags, false);
+
+        featureFlags = new TestProperties();
+        featureFlags.setResourceLimitDisk(-0.1);
+        expectedException.expectMessage(containsString("Resource limit for disk is set to illegal value -0.1, but must be in the range [0.0, 1.0]"));
+        hostedBuild(false, logger, featureFlags, false);
+    }
+
     private void hostedBuildAndThrowIfSpecified() {
-        hostedBuild(true, new TestableDeployLogger());
+        hostedBuild(true, new TestableDeployLogger(), new TestProperties(), true);
     }
 
     private ClusterResourceLimits hostedBuildAndLogIfSpecified(DeployLogger deployLogger) {
@@ -182,6 +217,13 @@ public class ClusterResourceLimitsTest {
     }
 
     private ClusterResourceLimits hostedBuild(boolean throwIfSpecified, DeployLogger deployLogger) {
+        return hostedBuild(throwIfSpecified, deployLogger, new TestProperties(), true);
+    }
+
+    private ClusterResourceLimits hostedBuild(boolean throwIfSpecified,
+                                              DeployLogger deployLogger,
+                                              ModelContext.FeatureFlags featureFlags,
+                                              boolean limitsInXml) {
         Document clusterXml = XML.getDocument("<cluster id=\"test\">" +
                                               "  <tuning>\n" +
                                               "    <resource-limits>\n" +
@@ -190,11 +232,16 @@ public class ClusterResourceLimitsTest {
                                               "  </tuning>\n" +
                                               "</cluster>");
 
+        Document noLimitsXml = XML.getDocument("<cluster id=\"test\">" +
+                                              "</cluster>");
+
         ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true,
                                                                                   true,
                                                                                   throwIfSpecified,
-                                                                                  deployLogger);
-        return builder.build(new ModelElement(clusterXml.getDocumentElement()));
+                                                                                  deployLogger,
+                                                                                  featureFlags.resourceLimitDisk(),
+                                                                                  featureFlags.resourceLimitMemory());
+        return builder.build(new ModelElement((limitsInXml ? clusterXml : noLimitsXml).getDocumentElement()));
     }
 
     private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk, Double expNodeMemory, Fixture f) {
