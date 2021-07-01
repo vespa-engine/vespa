@@ -10,6 +10,7 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.net.HostName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -57,6 +58,7 @@ public class SearchHandlerTest {
 
     private RequestHandlerTestDriver driver = null;
     private HandlersConfigurerTestWrapper configurer = null;
+    private MockMetric metric;
     private SearchHandler searchHandler;
 
     @Before
@@ -70,6 +72,7 @@ public class SearchHandlerTest {
 
         configurer = new HandlersConfigurerTestWrapper(new Container(), configId);
         searchHandler = (SearchHandler)configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
+        metric = (MockMetric) searchHandler.metric();
         driver = new RequestHandlerTestDriver(searchHandler);
     }
 
@@ -287,6 +290,7 @@ public class SearchHandlerTest {
         assertEquals(expected, response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals(selfHostname, response.getResponse().headers().get(myHostnameHeader).get(0));
+        assertTrue(metric.metrics().containsKey(SearchHandler.RENDER_LATENCY_METRIC));
     }
 
     @Test

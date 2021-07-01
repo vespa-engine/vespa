@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.ExtendedResponse;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.processing.execution.Execution.Trace.LogValue;
@@ -21,6 +22,7 @@ import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,20 +37,21 @@ public class HttpSearchResponse extends ExtendedResponse {
     private final Result result;
     private final Query query;
     private final Renderer<Result> rendererCopy;
+    private final Metric metric;
     private final Timing timing;
     private final HitCounts hitCounts;
     private final TraceNode trace;
 
     public HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer) {
-        this(status, result, query, renderer, null);
+        this(status, result, query, renderer, null, null);
     }
 
-    HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer, TraceNode trace) {
+    HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer, TraceNode trace, Metric metric) {
         super(status);
         this.query = query;
         this.result = result;
         this.rendererCopy = renderer;
-
+        this.metric = metric;
         this.timing = SearchResponse.createTiming(query, result);
         this.hitCounts = SearchResponse.createHitCounts(query, result);
         this.trace = trace;
@@ -98,7 +101,10 @@ public class HttpSearchResponse extends ExtendedResponse {
         }
         try {
             try {
-                waitableRender(output);
+                ListenableFuture<Boolean> promise = waitableRender(output);
+                if (metric != null) {
+                    promise.addListener(new RendererLatencyReporter(), Runnable::run);
+                }
             } finally {
                 if (!(rendererCopy instanceof AsynchronousSectionedRenderer)) {
                     output.flush();
@@ -176,6 +182,20 @@ public class HttpSearchResponse extends ExtendedResponse {
         return context == null
                 ? Collections::emptyIterator
                 : context::logValueIterator;
+    }
+
+    private class RendererLatencyReporter implements Runnable {
+
+        final long nanoStart = System.nanoTime();
+
+        @Override
+        public void run() {
+            long latencyMillis = Duration.ofNanos(System.nanoTime() - nanoStart).toMillis();
+            Metric.Context ctx = metric.createContext(Map.of(
+                    SearchHandler.RENDERER_DIMENSION, rendererCopy.getClassName(),
+                    SearchHandler.MIME_DIMENSION, rendererCopy.getMimeType()));
+            metric.set(SearchHandler.RENDER_LATENCY_METRIC, latencyMillis, ctx);
+        }
     }
 
 }

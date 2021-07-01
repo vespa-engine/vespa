@@ -13,7 +13,9 @@ import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 
@@ -139,6 +141,7 @@ public class HandlersConfigurerTestWrapper {
                 // Needed by e.g. SearchHandler
                 bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
                 bind(ContainerThreadPool.class).to(SimpleContainerThreadpool.class);
+                bind(Metric.class).to(MockMetric.class);
             }
         });
     }

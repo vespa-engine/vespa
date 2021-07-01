@@ -87,6 +87,9 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
+    static final String RENDER_LATENCY_METRIC = "jdisc.search.render_latency";
+    static final String MIME_DIMENSION = "mime";
+    static final String RENDERER_DIMENSION = "renderer";
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
@@ -229,6 +232,8 @@ public class SearchHandler extends LoggingRequestHandler {
              new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers));
     }
 
+    Metric metric() { return metric; }
+
     private static int examineExecutor(Executor executor) {
         if (executor instanceof ThreadPoolExecutor) {
             return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
@@ -330,7 +335,8 @@ public class SearchHandler extends LoggingRequestHandler {
         Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
-                                                             extractTraceNode(query));
+                                                             extractTraceNode(query),
+                                                             metric);
         response.setRequestType(Request.RequestType.READ);
         hostResponseHeaderKey.ifPresent(key -> response.headers().add(key, selfHostname));
 
