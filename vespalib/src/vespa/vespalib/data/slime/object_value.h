@@ -23,7 +23,7 @@ private:
     struct hasher {
         size_t operator () (const Symbol & s) const { return s.getValue(); }
     };
-    typedef vector_map<Symbol, Value*> SymbolValueMap;
+    using SymbolValueMap = vector_map<Symbol, Value*>;
     SymbolTable    &_symbolTable;
     Stash          &_stash;
     SymbolValueMap  _fields;
