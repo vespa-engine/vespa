@@ -13,7 +13,7 @@ namespace vespalib::slime {
  * Class representing a collection of ordered values that can be
  * looked up by index.
  **/
-class ArrayValue : public Value
+class ArrayValue final : public Value
 {
 private:
     SymbolTable         &_symbolTable;

@@ -17,7 +17,7 @@ namespace vespalib::slime {
  * Class representing a collection of unordered values that can be
  * looked up by symbol.
  **/
-class ObjectValue : public Value
+class ObjectValue final : public Value
 {
 private:
     struct hasher {

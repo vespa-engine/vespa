@@ -24,18 +24,16 @@ ObjectValue::setLeaf(Memory name, const ValueFactory &input) {
 
 void
 ObjectValue::traverse(ObjectSymbolTraverser &ot) const {
-    typedef SymbolValueMap::const_iterator ITR;
-    for (ITR pos = _fields.begin(); pos != _fields.end(); ++pos) {
-        ot.field(pos->first, *pos->second);
+    for (const auto & field : _fields) {
+        ot.field(field.first, *field.second);
     }
 }
 
 void
 ObjectValue::traverse(ObjectTraverser &ot) const {
-    typedef SymbolValueMap::const_iterator ITR;
-    for (ITR pos = _fields.begin(); pos != _fields.end(); ++pos) {
-        Memory symbol = _symbolTable.inspect(pos->first);
-        ot.field(symbol, *pos->second);
+    for (const auto & field : _fields) {
+        Memory symbol = _symbolTable.inspect(field.first);
+        ot.field(symbol, *field.second);
     }
 }
 

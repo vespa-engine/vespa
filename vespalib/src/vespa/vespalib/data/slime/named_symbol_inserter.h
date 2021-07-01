@@ -10,14 +10,14 @@ namespace vespalib::slime {
 /**
  * Class used to insert the name of a field into a symbol table.
  **/
-class NamedSymbolInserter : public SymbolInserter
+class NamedSymbolInserter final : public SymbolInserter
 {
 private:
     SymbolTable &_table;
     const Memory &_name;
 
 public:
-    NamedSymbolInserter(SymbolTable &table, const Memory &name)
+    NamedSymbolInserter(SymbolTable &table, const Memory &name) noexcept
         : _table(table), _name(name) {}
     Symbol insert() override {
         return _table.insert(_name);
