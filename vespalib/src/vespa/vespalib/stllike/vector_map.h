@@ -28,18 +28,23 @@ public:
     typedef K key_type;
     typedef V mapped_type;
 private:
-    typedef std::vector< value_type> OrderedList;
+    using OrderedList = std::vector<value_type>;
     friend bool operator < (const std::pair<K, V> & a, const std::pair<K, V> & b) {
         LT lt;
         return lt(a.first, b.first);
     }
-    LT _lt;
+    struct KeyOrder {
+        bool operator () (const std::pair<K, V> & a, const K & b) {
+            LT lt;
+            return lt(a.first, b);
+        }
+    };
     OrderedList _ht;
 public:
-    typedef typename OrderedList::iterator iterator;
-    typedef typename OrderedList::const_iterator const_iterator;
+    using iterator = typename OrderedList::iterator;
+    using const_iterator = typename OrderedList::const_iterator;
 public:
-    vector_map(size_t reserveSize=0) : _ht(reserveSize) { }
+    vector_map() : _ht() { }
     iterator begin()                         { return _ht.begin(); }
     iterator end()                           { return _ht.end(); }
     const_iterator begin()             const { return _ht.begin(); }
@@ -47,26 +52,17 @@ public:
     size_t capacity()                  const { return _ht.capacity(); }
     size_t size()                      const { return _ht.size(); }
     bool empty()                       const { return _ht.empty(); }
-    V & operator [] (const K & key) const    { return _ht.find(key)->second; }
-    V & operator [] (const K & key)          {
-        value_type v(key, V());
-        LT lt;
-        iterator f = std::lower_bound(begin(), end(), v);
-        if ((f == end()) || lt(key, f->first)) {
-            f = _ht.insert(f, v);
-        }
-        return f->second; 
-    }
+    V & operator [] (const K & key);
     void erase(const K & key)                { return _ht.erase(find(key)); }
     void erase(iterator it)                  { return _ht.erase(it); }
     void erase(const_iterator it)            { return _ht.erase(it); }
     iterator find(const K & key)             {
-        iterator f = std::lower_bound(begin(), end(), value_type(key, V()));
+        iterator f = std::lower_bound(begin(), end(), key, KeyOrder());
         LT lt;
         return ((f != end()) && !lt(key, f->first)) ? f : end();
     }
     const_iterator find(const K & key) const {
-        const_iterator f = std::lower_bound(begin(), end(), value_type(key, V()));
+        const_iterator f = std::lower_bound(begin(), end(), key, KeyOrder());
         LT lt;
         return ((f != end()) && !lt(key, f->first)) ? f : end();
     }
@@ -82,6 +78,19 @@ void swap(vector_map<K, V, LT> & a, vector_map<K, V, LT> & b)
     a.swap(b);
 }
 
+template< typename K, typename V, typename LT >
+V &
+vector_map<K, V, LT>::operator[](const K &key) {
+    LT lt;
+    iterator f = std::lower_bound(begin(), end(), key, KeyOrder());
+    if (f == end()) {
+        _ht.template emplace_back(key, V());
+        return _ht.rbegin()->second;
+    } else if (lt(key, f->first)) {
+        f = _ht.template emplace(f, key, V());
+    }
+    return f->second;
+}
 
 }
 

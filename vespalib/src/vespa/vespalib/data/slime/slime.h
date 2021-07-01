@@ -3,7 +3,6 @@
 #pragma once
 
 #include "array_traverser.h"
-#include "array_value.h"
 #include "basic_value.h"
 #include "basic_value_factory.h"
 #include "binary_format.h"
@@ -18,7 +17,6 @@
 #include "named_symbol_lookup.h"
 #include "nix_value.h"
 #include "object_traverser.h"
-#include "object_value.h"
 #include "resolved_symbol.h"
 #include "root_value.h"
 #include "symbol.h"

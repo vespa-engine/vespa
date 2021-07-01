@@ -5,7 +5,8 @@
 #include "value.h"
 #include "memory.h"
 #include <vespa/vespalib/util/traits.h>
-#include <vespa/vespalib/util/stash.h>
+
+namespace vespalib { class Stash; }
 
 namespace vespalib::slime {
 

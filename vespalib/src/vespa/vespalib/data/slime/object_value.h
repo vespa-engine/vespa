@@ -6,12 +6,11 @@
 #include "nix_value.h"
 #include "symbol.h"
 #include "symbol_lookup.h"
-#include "symbol_table.h"
 #include "value_factory.h"
 #include "symbol_inserter.h"
 #include <vespa/vespalib/stllike/vector_map.h>
-#include <vespa/vespalib/util/stash.h>
 
+namespace vespalib { class Stash; }
 namespace vespalib::slime {
 
 /**

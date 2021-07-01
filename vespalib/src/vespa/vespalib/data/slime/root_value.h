@@ -3,7 +3,6 @@
 #pragma once
 
 #include "nix_value.h"
-#include "object_value.h"
 #include "value_factory.h"
 
 namespace vespalib::slime {
@@ -35,12 +34,8 @@ public:
         _value = value;
         return *value;
     }
-    Value *wrap(SymbolTable &table, SymbolInserter &symbol) {
-        Value *value = & _stash->create<ObjectValue>(table, *_stash, symbol, _value);
-        _value = value;
-        return _value;
-    }
-    ~RootValue() { }
+    Value *wrap(SymbolTable &table, SymbolInserter &symbol);
+    ~RootValue() = default;
 };
 
 } // namespace vespalib::slime
