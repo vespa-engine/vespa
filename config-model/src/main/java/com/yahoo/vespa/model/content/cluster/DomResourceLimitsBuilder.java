@@ -24,10 +24,12 @@ public class DomResourceLimitsBuilder {
 
         if (hostedVespa) {
             String message = "Element '" + resourceLimits + "' is not allowed to be set";
-            if (throwIfSpecified)
-                throw new IllegalArgumentException(message);
-            else
-                deployLogger.logApplicationPackage(Level.WARNING, message);
+            if (throwIfSpecified) throw new IllegalArgumentException(message);
+
+
+            deployLogger.logApplicationPackage(Level.WARNING, message);
+            // TODO: return (default values will then be used). Cannot be done now as an app needs current behavior
+            //return builder;
         }
 
         if (resourceLimits.child("disk") != null) {
