@@ -101,9 +101,10 @@ public class HttpSearchResponse extends ExtendedResponse {
         }
         try {
             try {
+                long nanoStart = System.nanoTime();
                 ListenableFuture<Boolean> promise = waitableRender(output);
                 if (metric != null) {
-                    promise.addListener(new RendererLatencyReporter(), Runnable::run);
+                    promise.addListener(new RendererLatencyReporter(nanoStart), Runnable::run);
                 }
             } finally {
                 if (!(rendererCopy instanceof AsynchronousSectionedRenderer)) {
@@ -186,7 +187,9 @@ public class HttpSearchResponse extends ExtendedResponse {
 
     private class RendererLatencyReporter implements Runnable {
 
-        final long nanoStart = System.nanoTime();
+        final long nanoStart;
+
+        RendererLatencyReporter(long nanoStart) { this.nanoStart = nanoStart; }
 
         @Override
         public void run() {
