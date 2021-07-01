@@ -176,8 +176,6 @@
                 docprocs-jar-with-dependencies.jar,
                 hosted-zone-api-jar-with-dependencies.jar,
                 jdisc-security-filters-jar-with-dependencies.jar,
-                model-evaluation-jar-with-dependencies.jar,
-                model-integration-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
                 security-utils-jar-with-dependencies.jar,
