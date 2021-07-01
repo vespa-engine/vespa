@@ -8,6 +8,25 @@
 LOG_SETUP(".vespalib.data.slime.binary_format");
 
 namespace vespalib::slime::binary_format {
+namespace {
+
+void
+write_cmpr_ulong_impl(OutputWriter &out, uint64_t value) {
+    out.commit(encode_cmpr_ulong(out.reserve(10), value));
+}
+
+void
+write_type_and_size_impl(OutputWriter &out, uint32_t type, uint64_t size) {
+    char *start = out.reserve(11); // max size
+    char *pos = start;
+    if (size <= 30) {
+        *pos++ = encode_type_and_meta(type, size + 1);
+    } else {
+        *pos++ = encode_type_and_meta(type, 0);
+        pos += encode_cmpr_ulong(pos, size);
+    }
+    out.commit(pos - start);
+}
 
 struct BinaryEncoder : public ArrayTraverser,
                        public ObjectSymbolTraverser
@@ -27,21 +46,21 @@ struct BinaryEncoder : public ArrayTraverser,
         write_type_and_bytes<true>(out, DOUBLE::ID, encode_double(value));
     }
     void encodeString(const Memory &memory) {
-        write_type_and_size(out, STRING::ID, memory.size);
+        write_type_and_size_impl(out, STRING::ID, memory.size);
         out.write(memory.data, memory.size);
     }
     void encodeData(const Memory &memory) {
-        write_type_and_size(out, DATA::ID, memory.size);
+        write_type_and_size_impl(out, DATA::ID, memory.size);
         out.write(memory.data, memory.size);
     }
     void encodeArray(const Inspector &inspector) {
         ArrayTraverser &array_traverser = *this;
-        write_type_and_size(out, ARRAY::ID, inspector.children());
+        write_type_and_size_impl(out, ARRAY::ID, inspector.children());
         inspector.traverse(array_traverser);
     }
     void encodeObject(const Inspector &inspector) {
         ObjectSymbolTraverser &object_traverser = *this;
-        write_type_and_size(out, OBJECT::ID, inspector.children());
+        write_type_and_size_impl(out, OBJECT::ID, inspector.children());
         inspector.traverse(object_traverser);
     }
     void encodeValue(const Inspector &inspector) {
@@ -59,10 +78,10 @@ struct BinaryEncoder : public ArrayTraverser,
     }
     void encodeSymbolTable(const Slime &slime) {
         size_t numSymbols = slime.symbols();
-        write_cmpr_ulong(out, numSymbols);
+        write_cmpr_ulong_impl(out, numSymbols);
         for (size_t i = 0; i < numSymbols; ++i) {
             Memory image = slime.inspect(Symbol(i));
-            write_cmpr_ulong(out, image.size);
+            write_cmpr_ulong_impl(out, image.size);
             out.write(image.data, image.size);
         }
     }
@@ -79,7 +98,7 @@ BinaryEncoder::entry(size_t, const Inspector &inspector)
 void
 BinaryEncoder::field(const Symbol &symbol, const Inspector &inspector)
 {
-    write_cmpr_ulong(out, symbol.getValue());
+    write_cmpr_ulong_impl(out, symbol.getValue());
     encodeValue(inspector);
 }
 
@@ -108,8 +127,8 @@ struct MappedSymbols {
     }
     Symbol map_symbol(Symbol symbol) const {
         return (symbol.getValue() < symbol_mapping.size())
-            ? symbol_mapping[symbol.getValue()]
-            : symbol;
+               ? symbol_mapping[symbol.getValue()]
+               : symbol;
     }
 };
 
@@ -175,9 +194,7 @@ struct BinaryDecoder : SymbolHandler<remap_symbols>::type {
 
     void decodeValue(const Inserter &inserter) {
         char byte = in.read();
-        Cursor &cursor = decodeValue(inserter,
-                                    decode_type(byte),
-                                    decode_meta(byte));
+        Cursor &cursor = decodeValue(inserter, decode_type(byte), decode_meta(byte));
         if (!cursor.valid()) {
             in.fail("failed to decode value");
         }
@@ -239,22 +256,16 @@ size_t decode(const Memory &memory, Slime &slime, const Inserter &inserter) {
     return input.failed() ? 0 : input.get_offset();
 }
 
+}
+
 void
 write_cmpr_ulong(OutputWriter &out, uint64_t value) {
-    out.commit(encode_cmpr_ulong(out.reserve(10), value));
+    write_cmpr_ulong_impl(out, value);
 }
 
 void
 write_type_and_size(OutputWriter &out, uint32_t type, uint64_t size) {
-    char *start = out.reserve(11); // max size
-    char *pos = start;
-    if (size <= 30) {
-        *pos++ = encode_type_and_meta(type, size + 1);
-    } else {
-        *pos++ = encode_type_and_meta(type, 0);
-        pos += encode_cmpr_ulong(pos, size);
-    }
-    out.commit(pos - start);
+    write_type_and_size_impl(out, type, size);
 }
 
 }
