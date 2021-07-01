@@ -31,12 +31,12 @@ public:
     ArrayValue(SymbolTable &table, Stash & stash);
     ArrayValue(const ArrayValue &) = delete;
     ArrayValue &operator=(const ArrayValue &) = delete;
+    void reserve(size_t sz) { _values.reserve(sz); }
 
     Type type() const override { return ARRAY::instance; }
     size_t children() const override { return _values.size(); }
     size_t entries() const override { return _values.size(); }
     void traverse(ArrayTraverser &at) const override;
-    void reserve(size_t sz) { _values.reserve(sz); }
 
     Cursor &operator[](size_t idx) const override {
         if (idx < _values.size()) {
