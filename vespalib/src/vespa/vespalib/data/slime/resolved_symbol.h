@@ -13,14 +13,14 @@ namespace vespalib::slime {
  * appropriate symbol table. Thus, this class can satisfy both the
  * symbol lookup and inserter interfaces.
  **/
-class ResolvedSymbol : public SymbolLookup,
-                       public SymbolInserter
+class ResolvedSymbol final : public SymbolLookup,
+                             public SymbolInserter
 {
 private:
     Symbol _symbol;
 
 public:
-    ResolvedSymbol(const Symbol &symbol) : _symbol(symbol) {}
+    ResolvedSymbol(const Symbol &symbol) noexcept : _symbol(symbol) {}
     Symbol lookup() const override {
         return _symbol;
     }
