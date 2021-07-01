@@ -1,17 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListMap;
-import com.yahoo.container.jdisc.ExtendedResponse;
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
+import com.yahoo.container.jdisc.ExtendedResponse;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.jdisc.HeaderFields;
@@ -24,6 +18,12 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.yolean.trace.TraceNode;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Wrap the result of a query as an HTTP response.
@@ -39,11 +39,11 @@ public class HttpSearchResponse extends ExtendedResponse {
     private final HitCounts hitCounts;
     private final TraceNode trace;
 
-    public HttpSearchResponse(int status, Result result, Query query, Renderer renderer) {
+    public HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer) {
         this(status, result, query, renderer, null);
     }
 
-    HttpSearchResponse(int status, Result result, Query query, Renderer renderer, TraceNode trace) {
+    HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer, TraceNode trace) {
         super(status);
         this.query = query;
         this.result = result;
