@@ -27,8 +27,10 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-%if 0%{?centos}
+%if 0%{?centos} || 0%{?rocky}
 BuildRequires: epel-release
+%endif
+%if 0%{?centos}
 %if 0%{?el7} && ! 0%{?amzn2}
 BuildRequires: centos-release-scl
 %endif
@@ -62,6 +64,7 @@ BuildRequires: maven
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
+BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
@@ -69,6 +72,7 @@ BuildRequires: libatomic
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python3-devel
+BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el7}
 BuildRequires: cmake3
@@ -92,9 +96,11 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
+%if 0%{?centos} || 0%{?rocky}
 %if 0%{?centos}
 # Current cmake on CentOS 8 is broken and manually requires libarchive install
 BuildRequires: libarchive
+%endif
 %define _command_cmake cmake
 BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
 %else
@@ -219,7 +225,7 @@ Requires: vespa-valgrind >= 3.17.0-1
 %endif
 %endif
 %if 0%{?el8}
-%if 0%{?centos}
+%if 0%{?centos} || 0%{?rocky}
 %define _vespa_llvm_version 11
 %else
 %define _vespa_llvm_version 10
@@ -290,7 +296,7 @@ Vespa - The open big data serving engine - base
 
 Summary: Vespa - The open big data serving engine - base C++ libraries
 
-%if 0%{?centos}
+%if 0%{?centos} || 0%{?rocky}
 Requires: epel-release
 %endif
 %if 0%{?amzn2}
@@ -307,6 +313,7 @@ Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-libzstd >= 1.4.5-2
 %if 0%{?el8}
 Requires: openblas
+Requires: glibc-langpack-en
 %else
 %if 0%{?amzn2}
 Requires: vespa-openblas = 0.3.15
@@ -318,6 +325,9 @@ Requires: openblas-serial
 Requires: vespa-re2 = 20190801
 %else
 Requires: re2
+%endif
+%if 0%{?fedora}
+Requires: glibc-langpack-en
 %endif
 
 %description base-libs
@@ -347,7 +357,7 @@ Requires: libicu
 Requires: openssl-libs
 %endif
 %if 0%{?el8}
-%if 0%{?centos}
+%if 0%{?centos} || 0%{?rocky}
 Requires: (llvm-libs >= 11.0.0 and llvm-libs < 12)
 %else
 Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
