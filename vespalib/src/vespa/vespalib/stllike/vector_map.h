@@ -52,7 +52,6 @@ public:
     size_t capacity()                  const { return _ht.capacity(); }
     size_t size()                      const { return _ht.size(); }
     bool empty()                       const { return _ht.empty(); }
-    V & operator [] (const K & key) const    { return find(key)->second; }
     V & operator [] (const K & key);
     void erase(const K & key)                { return _ht.erase(find(key)); }
     void erase(iterator it)                  { return _ht.erase(it); }
