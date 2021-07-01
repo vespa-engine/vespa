@@ -13,7 +13,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".sbenv");
+LOG_SETUP(".slobrok.server.sbenv");
 
 using namespace std::chrono_literals;
 

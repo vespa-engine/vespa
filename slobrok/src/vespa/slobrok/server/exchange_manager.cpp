@@ -6,7 +6,7 @@
 #include <vespa/fnet/frt/supervisor.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".slobrok.server.exchange_manager");
 
 namespace slobrok {
 

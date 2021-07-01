@@ -7,7 +7,7 @@
 #include <vespa/fnet/frt/target.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".slobrok.server.managed_rpc_server");
 
 namespace slobrok {
 

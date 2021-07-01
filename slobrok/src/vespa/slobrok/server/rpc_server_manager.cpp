@@ -9,7 +9,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".slobrok.server.rpc_server_manager");
 
 using vespalib::make_string_short::fmt;
 

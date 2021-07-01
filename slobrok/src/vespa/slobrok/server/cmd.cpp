@@ -8,7 +8,7 @@
 #include "sbenv.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".cmd");
+LOG_SETUP(".slobrok.server.cmd");
 
 namespace slobrok {
 

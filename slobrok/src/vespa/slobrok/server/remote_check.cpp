@@ -9,7 +9,7 @@
 #include "exchange_manager.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".remcheck");
+LOG_SETUP(".slobrok.server.remote_check");
 
 namespace slobrok {
 
