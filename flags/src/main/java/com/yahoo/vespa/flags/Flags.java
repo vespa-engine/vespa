@@ -151,7 +151,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2021-07-01",
+            List.of("geirst"), "2021-01-27", "2021-09-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -184,7 +184,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2021-07-01",
+            List.of("vekterli"), "2021-02-19", "2021-09-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -199,7 +199,7 @@ public class Flags {
 
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
-            List.of("geirst", "vekterli"), "2021-04-20", "2021-07-01",
+            List.of("geirst", "vekterli"), "2021-04-20", "2021-09-01",
             "Specifies the number of stripes used by the distributor. When 0, legacy single stripe behavior is used.",
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
