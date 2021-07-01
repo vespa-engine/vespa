@@ -64,6 +64,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowDisableMtls = true;
     private boolean dryRunOnnxOnSetup = false;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
+    private double resourceLimitDisk = 0.8;
+    private double resourceLimitMemory = 0.8;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -107,6 +109,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
     @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
+    @Override public double resourceLimitDisk() { return resourceLimitDisk; }
+    @Override public double resourceLimitMemory() { return resourceLimitMemory; }
 
     public TestProperties setDryRunOnnxOnSetup(boolean value) {
         dryRunOnnxOnSetup = value;
@@ -257,6 +261,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setOperatorCertificates(List<X509Certificate> operatorCertificates) {
         this.operatorCertificates = List.copyOf(operatorCertificates);
+        return this;
+    }
+
+    public TestProperties setResourceLimitDisk(double value) {
+        this.resourceLimitDisk = value;
+        return this;
+    }
+
+    public TestProperties setResourceLimitMemory(double value) {
+        this.resourceLimitMemory = value;
         return this;
     }
 
