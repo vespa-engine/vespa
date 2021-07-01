@@ -206,35 +206,35 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
             "max-concurrent-merges-per-node", 16,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2021-09-01",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
             "max-merge-queue-size", 1024,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2021-09-01",
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "use-external-rank-expression", false,
-            List.of("baldersheim"), "2021-05-24", "2021-07-01",
+            List.of("baldersheim"), "2021-05-24", "2021-09-01",
             "Whether to use distributed external rank expression or inline in rankproperties",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISTRIBUTE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "distribute-external-rank-expression", false,
-            List.of("baldersheim"), "2021-05-27", "2021-07-01",
+            List.of("baldersheim"), "2021-05-27", "2021-09-01",
             "Whether to use distributed external rank expression files by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 0x10000,
-            List.of("baldersheim"), "2021-06-09", "2021-07-01",
+            List.of("baldersheim"), "2021-06-09", "2021-09-01",
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -281,7 +281,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
             "dry-run-onnx-on-setup", false,
-            List.of("baldersheim"), "2021-06-23", "2021-08-01",
+            List.of("baldersheim"), "2021-06-23", "2021-09-01",
             "Whether to dry run onnx models on setup for better error checking",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
