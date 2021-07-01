@@ -3,7 +3,7 @@
 #include "service_map_history.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".slobrok.publisher");
+LOG_SETUP(".slobrok.server.service_map_history");
 
 namespace slobrok {
 

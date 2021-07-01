@@ -6,7 +6,7 @@
 #include "sbenv.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcsrvmap");
+LOG_SETUP(".slobrok.server.rpc_server_map");
 
 namespace slobrok {
 

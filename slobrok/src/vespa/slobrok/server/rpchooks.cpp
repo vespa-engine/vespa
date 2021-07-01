@@ -12,7 +12,7 @@
 #include <vespa/vespalib/component/vtag.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpchooks");
+LOG_SETUP(".slobrok.server.rpchooks");
 
 namespace slobrok {
 

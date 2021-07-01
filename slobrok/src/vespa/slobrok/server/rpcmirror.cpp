@@ -5,7 +5,7 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcmirror");
+LOG_SETUP(".slobrok.server.rpcmirror");
 
 namespace slobrok {
 

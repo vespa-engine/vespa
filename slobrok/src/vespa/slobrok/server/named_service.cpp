@@ -3,7 +3,7 @@
 #include "named_service.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".slobrok.server.named_service");
 
 namespace slobrok {
 
