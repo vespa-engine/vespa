@@ -201,8 +201,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void close() {
-        if (closed.get()) return;
-        closed.set(true);
+        if (closed.getAndSet(true)) return;
         synchronized (nodeTable.writeLock) {
             synchronized (clusterTable.writeLock) {
                 for (SqlCompiler sqlCompiler : sqlCompilerPool)
