@@ -16,16 +16,17 @@ import java.util.logging.Logger;
  */
 public class Group {
 
+    private static final Logger log = Logger.getLogger(Group.class.getName());
+    private final static double maxContentSkew = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
+    private final static int minDocsPerNodeToRequireLowSkew = 100;
+
     private final int id;
     private final ImmutableList<Node> nodes;
-
     private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
     private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
     private final AtomicBoolean isBalanced = new AtomicBoolean(true);
-    private final static double MAX_UNBALANCE = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
-    private static final Logger log = Logger.getLogger(Group.class.getName());
 
     public Group(int id, List<Node> nodes) {
         this.id = id;
@@ -67,24 +68,22 @@ public class Group {
         int numWorkingNodes = workingNodes();
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
-            long deviation = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
-            boolean isDeviationSmall = deviation <= maxUnbalance(activeDocs);
-            if ((!isBalanced.get() || isDeviationSmall != isBalanced.get()) && (activeDocs > 0)) {
-                log.info("Content is " + (isDeviationSmall ? "" : "not ") + "well balanced. Current deviation = " + deviation*100/activeDocs + " %" +
-                         ". activeDocs = " + activeDocs + ", deviation = " + deviation + ", average = " + average);
-                isBalanced.set(isDeviationSmall);
+            long skew = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
+            boolean skewIsLow = skew <= activeDocs * maxContentSkew;
+            if (!isBalanced.get() || skewIsLow != isBalanced.get()) {
+                if (!isSparse())
+                    log.info("Content is " + (skewIsLow ? "" : "not ") + "well balanced. Current deviation = " +
+                             skew * 100 / activeDocs + " %. activeDocs = " + activeDocs + ", skew = " + skew +
+                             ", average = " + average);
+                isBalanced.set(skewIsLow);
             }
         } else {
             isBalanced.set(true);
         }
     }
 
-    double maxUnbalance(long activeDocs) {
-        return Math.max(1, activeDocs * MAX_UNBALANCE);
-    }
-
     /** Returns the active documents on this group. If unknown, 0 is returned. */
-    long getActiveDocuments() { return activeDocuments.get(); }
+    long activeDocuments() { return activeDocuments.get(); }
 
     /** Returns whether any node in this group is currently blocking write operations */
     public boolean isBlockingWrites() { return isBlockingWrites.get(); }
@@ -92,7 +91,10 @@ public class Group {
     /** Returns whether the nodes in the group have about the same number of documents */
     public boolean isBalanced() { return isBalanced.get(); }
 
-    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
+    /** Returns whether this group has too few documents per node to expect it to be balanced */
+    public boolean isSparse() { return activeDocuments.get() / nodes.size() < minDocsPerNodeToRequireLowSkew; }
+
+    public boolean fullCoverageStatusChanged(boolean hasFullCoverageNow) {
         boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
         return previousState != hasFullCoverageNow;
     }

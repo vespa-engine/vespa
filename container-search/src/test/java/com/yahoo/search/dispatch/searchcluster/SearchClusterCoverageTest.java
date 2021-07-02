@@ -101,7 +101,7 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
-    public void one_group_few_docs_has_well_balanced_content() {
+    public void one_group_few_docs_unbalanced() {
         var tester = new SearchClusterTester(1, 2);
 
         Node node0 = tester.group(0).nodes().get(0);
@@ -115,7 +115,27 @@ public class SearchClusterCoverageTest {
         node1.setActiveDocuments(0);
 
         tester.pingIterationCompleted();
-        assertTrue(tester.group(0).isBalanced());
+        assertFalse(tester.group(0).isBalanced());
+        assertTrue(tester.group(0).isSparse());
+    }
+
+    @Test
+    public void one_group_many_docs_unbalanced() {
+        var tester = new SearchClusterTester(1, 2);
+
+        Node node0 = tester.group(0).nodes().get(0);
+        Node node1 = tester.group(0).nodes().get(1);
+
+        // 1 document
+        node0.setWorking(true);
+        node1.setWorking(true);
+
+        node0.setActiveDocuments(1000000);
+        node1.setActiveDocuments(100000);
+
+        tester.pingIterationCompleted();
+        assertFalse(tester.group(0).isBalanced());
+        assertFalse(tester.group(0).isSparse());
     }
 
 }
