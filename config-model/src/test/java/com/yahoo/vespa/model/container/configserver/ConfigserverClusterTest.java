@@ -9,7 +9,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.StatisticsConfig;
-import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
@@ -17,7 +16,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import com.yahoo.vespa.model.container.xml.ConfigServerContainerModelBuilder;
 import org.junit.Test;
@@ -29,8 +27,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -126,14 +122,6 @@ public class ConfigserverClusterTest {
         assertEquals("localhost", config.server().get(0).hostname());
         assertEquals(2181, config.server().get(0).port());
         assertTrue(config.zookeeperLocalhostAffinity());
-    }
-
-    @Test
-    public void model_integration_bundle_is_deployed_but_not_model_evaluation() {
-        PlatformBundlesConfig config = getConfig(PlatformBundlesConfig.class);
-        System.out.println(config.toString());
-        assertThat(config.bundlePaths(), hasItem(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString()));
-        assertThat(config.bundlePaths(), not(hasItem(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString())));
     }
 
     @SuppressWarnings("varargs")

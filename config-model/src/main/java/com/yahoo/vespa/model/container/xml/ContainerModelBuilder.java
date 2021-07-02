@@ -187,7 +187,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         throwUponRestApi(spec);  // TODO: remove
         addServlets(deployState, spec, cluster);
         addModelEvaluation(spec, cluster, context);
-        addModelEvaluationBundles(cluster);
 
         addProcessing(deployState, spec, cluster);
         addSearch(deployState, spec, cluster);
@@ -564,14 +563,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         RankProfileList profiles =
                 context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
-    }
-
-    protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {
-        /* These bundles are added to all application container clusters, even if they haven't
-         * declared 'model-evaluation' in services.xml, because there are many public API packages
-         * in the model-evaluation bundle that could be used by customer code. */
-        cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE);
-        cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
     }
 
     private void addProcessing(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
