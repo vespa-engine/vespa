@@ -337,45 +337,45 @@ public class SearchClusterTest {
     @Test
     public void requireThatEmptyGroupIsInBalance() {
         Group group = new Group(0, new ArrayList<>());
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
         group.aggregateNodeValues();
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
     }
 
     @Test
     public void requireThatSingleNodeGroupIsInBalance() {
         Group group = new Group(0, Arrays.asList(new Node(1, "n", 1)));
         group.nodes().forEach(node -> node.setWorking(true));
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
         group.aggregateNodeValues();
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
         group.nodes().get(0).setActiveDocuments(1000);
         group.aggregateNodeValues();
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
     }
 
     @Test
     public void requireThatMultiNodeGroupDetectsBalance() {
         Group group = new Group(0, Arrays.asList(new Node(1, "n1", 1), new Node(2, "n2", 1)));
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
         group.nodes().forEach(node -> node.setWorking(true));
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
         group.aggregateNodeValues();
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
         group.nodes().get(0).setActiveDocuments(1000);
         group.aggregateNodeValues();
-        assertFalse(group.isContentWellBalanced());
+        assertFalse(group.isBalanced());
         group.nodes().get(1).setActiveDocuments(100);
         group.aggregateNodeValues();
-        assertFalse(group.isContentWellBalanced());
+        assertFalse(group.isBalanced());
         group.nodes().get(1).setActiveDocuments(800);
         group.aggregateNodeValues();
-        assertFalse(group.isContentWellBalanced());
+        assertFalse(group.isBalanced());
         group.nodes().get(1).setActiveDocuments(818);
         group.aggregateNodeValues();
-        assertFalse(group.isContentWellBalanced());
+        assertFalse(group.isBalanced());
         group.nodes().get(1).setActiveDocuments(819);
         group.aggregateNodeValues();
-        assertTrue(group.isContentWellBalanced());
+        assertTrue(group.isBalanced());
     }
 }

@@ -115,7 +115,7 @@ public class SearchClusterCoverageTest {
         node1.setActiveDocuments(0);
 
         tester.pingIterationCompleted();
-        assertTrue(tester.group(0).isContentWellBalanced());
+        assertTrue(tester.group(0).isBalanced());
     }
 
 }

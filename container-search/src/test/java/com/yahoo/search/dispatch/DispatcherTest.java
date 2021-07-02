@@ -157,7 +157,6 @@ public class DispatcherTest {
         @Override
         public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
                                                            Query query,
-                                                           OptionalInt groupId,
                                                            List<Node> nodes,
                                                            boolean acceptIncompleteCoverage,
                                                            int maxHitsPerNode) {
@@ -167,7 +166,7 @@ public class DispatcherTest {
             boolean nonEmpty = events[step].returnInvoker(nodes, acceptIncompleteCoverage);
             step++;
             if (nonEmpty) {
-                return Optional.of(new MockInvoker(nodes.get(0).key(), groupId));
+                return Optional.of(new MockInvoker(nodes.get(0).key()));
             } else {
                 return Optional.empty();
             }

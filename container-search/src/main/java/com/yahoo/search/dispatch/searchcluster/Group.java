@@ -23,7 +23,7 @@ public class Group {
     private final AtomicBoolean hasFullCoverage = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
     private final AtomicBoolean isBlockingWrites = new AtomicBoolean(false);
-    private final AtomicBoolean isContentWellBalanced = new AtomicBoolean(true);
+    private final AtomicBoolean isBalanced = new AtomicBoolean(true);
     private final static double MAX_UNBALANCE = 0.10; // If documents on a node is more than 10% off from the average the group is unbalanced
     private static final Logger log = Logger.getLogger(Group.class.getName());
 
@@ -69,13 +69,13 @@ public class Group {
             long average = activeDocs / numWorkingNodes;
             long deviation = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
             boolean isDeviationSmall = deviation <= maxUnbalance(activeDocs);
-            if ((!isContentWellBalanced.get() || isDeviationSmall != isContentWellBalanced.get()) && (activeDocs > 0)) {
+            if ((!isBalanced.get() || isDeviationSmall != isBalanced.get()) && (activeDocs > 0)) {
                 log.info("Content is " + (isDeviationSmall ? "" : "not ") + "well balanced. Current deviation = " + deviation*100/activeDocs + " %" +
                          ". activeDocs = " + activeDocs + ", deviation = " + deviation + ", average = " + average);
-                isContentWellBalanced.set(isDeviationSmall);
+                isBalanced.set(isDeviationSmall);
             }
         } else {
-            isContentWellBalanced.set(true);
+            isBalanced.set(true);
         }
     }
 
@@ -88,7 +88,9 @@ public class Group {
 
     /** Returns whether any node in this group is currently blocking write operations */
     public boolean isBlockingWrites() { return isBlockingWrites.get(); }
-    public boolean isContentWellBalanced() { return isContentWellBalanced.get(); }
+
+    /** Returns whether the nodes in the group have about the same number of documents */
+    public boolean isBalanced() { return isBalanced.get(); }
 
     public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
         boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
