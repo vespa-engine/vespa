@@ -364,7 +364,36 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void test_any_disk_prefers_remote() {
+    public void test_any_disk_prefers_remote_for_container() {
+        int memoryTax = 3;
+        int localDiskTax = 55;
+        // Disk tax is not included in flavor resources but memory tax is
+        List<Flavor> flavors = List.of(new Flavor("2x",  new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, local)),
+                                       new Flavor("4x",  new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, local)),
+                                       new Flavor("2xl", new NodeResources(2, 20 - memoryTax, 200, 0.1, fast, remote)),
+                                       new Flavor("4xl", new NodeResources(4, 40 - memoryTax, 400, 0.1, fast, remote)));
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone)
+                                                                    .flavors(flavors)
+                                                                    .hostProvisioner(new MockHostProvisioner(flavors, memoryTax))
+                                                                    .nameResolver(nameResolver)
+                                                                    .resourcesCalculator(memoryTax, localDiskTax)
+                                                                    .build();
+
+        tester.activateTenantHosts();
+
+        ApplicationId app1 = ProvisioningTester.applicationId("app1");
+        ClusterSpec cluster1 = ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id("cluster1")).vespaVersion("7").build();
+
+        tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, StorageType.any),
+                                                      resources(6, 3, 3, 25, 400, fast, StorageType.any)));
+        tester.assertNodes("'any' selects a flavor with remote storage since it produces higher fulfilment",
+                           4, 2, 2, 20, 200, fast, remote,
+                           app1, cluster1);
+    }
+
+    @Test
+    public void test_any_disk_prefers_local_for_content() {
         int memoryTax = 3;
         int localDiskTax = 55;
         // Disk tax is not included in flavor resources but memory tax is
@@ -387,8 +416,8 @@ public class DynamicProvisioningTest {
 
         tester.activate(app1, cluster1, Capacity.from(resources(4, 2, 2, 10, 200, fast, StorageType.any),
                                                       resources(6, 3, 3, 25, 400, fast, StorageType.any)));
-        tester.assertNodes("'any' selects a flavor with remote storage since it produces higher fulfilment",
-                           4, 2, 2, 20, 200, fast, remote,
+        tester.assertNodes("'any' selects a flavor with local storage",
+                           6, 2, 2, 20, 200, fast, local,
                            app1, cluster1);
     }
 
