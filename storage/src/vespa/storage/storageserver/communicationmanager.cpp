@@ -17,14 +17,11 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 #include <string_view>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".communication.manager");
 
 using vespalib::make_string;
@@ -396,6 +393,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         mbus::RPCNetworkParams params(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
         params.setNumThreads(std::max(1, config->mbus.numThreads));
+        params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
         params.setTcpNoDelay(config->mbus.optimizeFor == CommunicationManagerConfig::Mbus::OptimizeFor::LATENCY);

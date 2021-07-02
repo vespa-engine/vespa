@@ -20,6 +20,7 @@ private:
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
     uint32_t          _numThreads;
+    uint32_t          _numNetworkThreads;
     bool              _tcpNoDelay;
     bool              _dispatchOnEncode;
     bool              _dispatchOnDecode;
@@ -32,6 +33,19 @@ public:
     RPCNetworkParams();
     RPCNetworkParams(config::ConfigUri configUri);
     ~RPCNetworkParams();
+
+    /**
+     * Sets number of threads for the network.
+     *
+     * @param numNetworkThreads number of threads for the network
+     * @return This, to allow chaining.
+     */
+     RPCNetworkParams &setNumNetworkThreads(uint32_t numNetworkThreads) {
+         _numNetworkThreads = numNetworkThreads;
+         return *this;
+     }
+
+    uint32_t getNumNetworkThreads() const { return _numNetworkThreads; }
 
     /**
      * Returns the identity to use for the network.
