@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.node.admin.integration;
 
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -19,11 +21,12 @@ public class MultiContainerTest {
 
     @Test
     public void test() {
-        try (ContainerTester tester = new ContainerTester()) {
-            DockerImage image1 = DockerImage.fromString("registry.example.com/image1");
+        DockerImage image1 = DockerImage.fromString("registry.example.com/image1");
+        DockerImage image2 = DockerImage.fromString("registry.example.com/image2");
+        try (ContainerTester tester = new ContainerTester(List.of(image1, image2))) {
             addAndWaitForNode(tester, "host1.test.yahoo.com", image1);
             NodeSpec nodeSpec2 = addAndWaitForNode(
-                    tester, "host2.test.yahoo.com", DockerImage.fromString("registry.example.com/image2"));
+                    tester, "host2.test.yahoo.com", image2);
 
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(nodeSpec2.hostname(), NodeState.dirty).build());
 

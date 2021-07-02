@@ -27,7 +27,7 @@ public class RebootTest {
 
     @Test
     public void test() {
-        try (ContainerTester tester = new ContainerTester()) {
+        try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             tester.addChildNodeRepositoryNode(NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build());
 
             ContainerName host1 = new ContainerName("host1");

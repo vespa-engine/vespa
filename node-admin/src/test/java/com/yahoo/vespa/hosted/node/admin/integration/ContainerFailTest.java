@@ -8,6 +8,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import org.junit.Test;
 
+import java.util.List;
+
 import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.containerMatcher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -20,8 +22,8 @@ public class ContainerFailTest {
 
     @Test
     public void test() {
-        try (ContainerTester tester = new ContainerTester()) {
-            DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage");
+        DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage");
+        try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             ContainerName containerName = new ContainerName("host1");
             String hostname = "host1.test.yahoo.com";
             NodeSpec nodeSpec = NodeSpec.Builder
