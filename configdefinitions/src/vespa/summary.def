@@ -4,5 +4,6 @@ namespace=vespa.config.search
 defaultsummaryid int default=-1
 classes[].id int
 classes[].name string
+classes[].omitsummaryfeatures bool default=false
 classes[].fields[].name string
 classes[].fields[].type string
