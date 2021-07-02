@@ -16,7 +16,9 @@ RPCTargetPool::Entry::getTarget(const LockGuard &, uint64_t now) {
         _next = 0;
     }
     RPCTarget::SP target =  _targets[_next++];
-    if ( ! target->isValid()) return RPCTarget::SP();
+    if ( ! target->isValid()) {
+        return RPCTarget::SP();
+    }
     _lastUse = now;
     return target;
 }
@@ -24,7 +26,9 @@ RPCTargetPool::Entry::getTarget(const LockGuard &, uint64_t now) {
 bool
 RPCTargetPool::Entry::inUse(const LockGuard &) const {
     for (const auto & target : _targets) {
-        if (target.use_count() > 1) return true;
+        if (target.use_count() > 1) {
+            return true;
+        }
     }
     return false;
 }
