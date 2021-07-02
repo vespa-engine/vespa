@@ -4,13 +4,12 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 import com.yahoo.component.Version;
 
 /**
- * Red Hat versions and their associated Yum major version.
+ * Red Hat versions and their associated Yum/DNF major version.
  *
  * @author mpolden
  */
 public enum YumVersion {
 
-    rhel7(3),
     rhel8(4);
 
     private final Version version;
