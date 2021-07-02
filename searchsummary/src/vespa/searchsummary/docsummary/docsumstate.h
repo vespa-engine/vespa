@@ -84,6 +84,7 @@ public:
     // used by SummaryFeaturesDFW
     FeatureSet::SP _summaryFeatures;
     bool           _summaryFeaturesCached;
+    bool           _omit_summary_features;
 
     // used by RankFeaturesDFW
     FeatureSet::SP _rankFeatures;

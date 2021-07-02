@@ -14,6 +14,7 @@ import java.util.List;
 public class DocumentSummary extends FieldView {
 
     private boolean fromDisk = false;
+    private boolean omitSummaryFeatures = false;
     private DocumentSummary inherited;
 
     /**
@@ -29,6 +30,14 @@ public class DocumentSummary extends FieldView {
 
     /** Returns whether the user has noted explicitly that this summary accesses disk */
     public boolean isFromDisk() { return fromDisk; }
+
+    public void setOmitSummaryFeatures(boolean value) {
+        omitSummaryFeatures = value;
+    }
+
+    public boolean omitSummaryFeatures() {
+        return omitSummaryFeatures;
+    }
 
     /**
      * The model is constrained to ensure that summary fields of the same name

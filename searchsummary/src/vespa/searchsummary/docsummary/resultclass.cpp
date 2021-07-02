@@ -15,7 +15,8 @@ ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & field
       _nameMap(),
       _fieldEnum(fieldEnum),
       _enumMap(),
-      _dynInfo(NULL)
+      _dynInfo(NULL),
+      _omit_summary_features(false)
 { }
 
 
