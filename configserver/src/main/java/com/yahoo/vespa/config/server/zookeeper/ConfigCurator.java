@@ -14,14 +14,13 @@ import java.util.logging.Level;
  * and knows about how config content is mapped to node names and stored.
  * <p>
  * Usage details:
- * Config ids are stored as foo#bar#c0 instead of foo/bar/c0, for simplicity.
  * Keep the amount of domain-specific logic here to a minimum.
  * Data for one application x is stored on this form:
  * /config/v2/tenants/x/sessions/y/defconfigs
  * /config/v2/tenants/x/sessions/y/userapp
  * <p>
  * The user application structure is exactly the same as in the user's app dir during deploy.
- * The current live app id (for example y) is stored in the node //config/v2/tenants/x/applications/&lt;application-id&gt;
+ * The current active session for an application is stored in the node /config/v2/tenants/x/applications/&lt;application-id&gt;
  * It is updated outside this class, typically in config server when activating config
  *
  * @author Vegard Havdal
@@ -93,7 +92,7 @@ public class ConfigCurator {
         }
     }
 
-    /** Returns the data at a path and node. Replaces / by # in node names. */
+    /** Returns the data at a path and node. */
     public String getData(String path, String node) {
         return getData(createFullPath(path, node));
     }
@@ -142,16 +141,16 @@ public class ConfigCurator {
             createRecurse(path);
     }
 
-    /** Creates a Zookeeper node synchronously. Replaces / by # in node names. */
+    /** Creates a Zookeeper node. */
     public void createNode(String path, String node) {
         createNode(createFullPath(path, node));
     }
 
     private String createFullPath(String path, String node) {
-        return path + "/" + toConfigserverName(node);
+        return path + (node.startsWith("/") ? node : "/" + node);
     }
 
-    /** Sets data at a given path and name. Replaces / by # in node names. Creates the node if it doesn't exist */
+    /** Sets data at a given path and name. Creates the node if it doesn't exist */
     public void putData(String path, String node, String data) {
         putData(path, node, Utf8.toBytes(data));
     }
@@ -168,7 +167,7 @@ public class ConfigCurator {
         }
     }
 
-    /** Sets data at a given path and name. Replaces / by # in node names. Creates the node if it doesn't exist */
+    /** Sets data at a given path and name. Creates the node if it doesn't exist */
     private void putData(String path, String node, byte[] data) {
         putData(createFullPath(path, node), data);
     }
@@ -185,17 +184,6 @@ public class ConfigCurator {
         catch (Exception e) {
             throw new RuntimeException("Exception writing to path " + path + " in ZooKeeper", e);
         }
-    }
-
-    /**
-     * Replaces / with # in the given node.
-     *
-     * @param node a zookeeper node name
-     * @return a config server node name
-     */
-    private String toConfigserverName(String node) {
-        if (node.startsWith("/")) node = node.substring(1);
-        return node.replaceAll("/", "#");
     }
 
     /**
@@ -240,11 +228,10 @@ public class ConfigCurator {
             curator.framework().checkExists().forPath("/dummy");
         }
         catch (Exception e) {
-            log.log(Level.SEVERE, "Unable to connect to ZooKeeper on " + curator.connectionSpec() +
-                    ". Please verify that VESPA_CONFIGSERVERS points to the correct configserver(s) " +
-                    "on all config server nodes and are the same config server(s) as in services.xml, " +
-                    "and that they are started. " +
-                    "Check the log(s) for config server errors. Aborting.", e);
+            log.log(Level.SEVERE, "Unable to connect to ZooKeeper on " + curator.connectionSpec() + "." +
+                                  " Please verify that VESPA_CONFIGSERVERS points to the correct config servers" +
+                                  " on all config server nodes and are the same config servers as in services.xml" +
+                                  " and that they are running.  Check vespa log for config server errors. Aborting.", e);
         }
     }
 
