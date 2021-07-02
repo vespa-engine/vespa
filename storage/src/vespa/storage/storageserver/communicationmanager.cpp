@@ -394,9 +394,10 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
         params.setNumThreads(std::max(1, config->mbus.numThreads));
         params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
+        params.setNumRpcTargets(std::max(1, config->mbus.numRpcTargets));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
         params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
-        params.setTcpNoDelay(config->mbus.optimizeFor == CommunicationManagerConfig::Mbus::OptimizeFor::LATENCY);
+        params.setTcpNoDelay(config->mbus.tcpNoDelay);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
         if (config->mbusport != -1) {
