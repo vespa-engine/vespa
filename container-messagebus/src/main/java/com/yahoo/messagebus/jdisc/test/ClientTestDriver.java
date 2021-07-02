@@ -33,7 +33,7 @@ public class ClientTestDriver {
         this.server = server;
 
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
-        RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(server.slobrokId());
+        RPCNetworkParams netParams = new RPCNetworkParams().setSlobroksConfig(server.slobroksConfig());
         SharedMessageBus mbus = SharedMessageBus.newInstance(mbusParams, netParams);
         session = mbus.newSourceSession(new SourceSessionParams());
         client = new MbusClient(session);
@@ -128,7 +128,4 @@ public class ClientTestDriver {
         return new ClientTestDriver(RemoteServer.newInstanceWithInternSlobrok(), protocol);
     }
 
-    public static ClientTestDriver newInstanceWithExternSlobrok(String slobrokId) {
-        return new ClientTestDriver(RemoteServer.newInstanceWithExternSlobrok(slobrokId), new SimpleProtocol());
-    }
 }
