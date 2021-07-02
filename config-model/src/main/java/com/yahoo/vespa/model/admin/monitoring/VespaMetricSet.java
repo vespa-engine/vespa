@@ -322,6 +322,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("documents_total.count"));
         metrics.add(new Metric("dispatch_internal.rate"));
         metrics.add(new Metric("dispatch_fdispatch.rate"));
+        addMetric(metrics, "jdisc.search.render_latency", Set.of("min", "max", "count", "sum", "last"));
 
         metrics.add(new Metric("totalhits_per_query.max"));
         metrics.add(new Metric("totalhits_per_query.sum"));
@@ -783,7 +784,7 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static void addMetric(Set<Metric> metrics, String metricName, List<String> aggregateSuffices) {
+    private static void addMetric(Set<Metric> metrics, String metricName, Iterable<String> aggregateSuffices) {
         for (String suffix : aggregateSuffices) {
             metrics.add(new Metric(metricName + "." + suffix));
         }

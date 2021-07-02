@@ -1,20 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListMap;
-import com.yahoo.container.jdisc.ExtendedResponse;
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
+import com.yahoo.container.jdisc.ExtendedResponse;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.processing.execution.Execution.Trace.LogValue;
@@ -24,6 +19,13 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.yolean.trace.TraceNode;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Wrap the result of a query as an HTTP response.
@@ -35,20 +37,21 @@ public class HttpSearchResponse extends ExtendedResponse {
     private final Result result;
     private final Query query;
     private final Renderer<Result> rendererCopy;
+    private final Metric metric;
     private final Timing timing;
     private final HitCounts hitCounts;
     private final TraceNode trace;
 
-    public HttpSearchResponse(int status, Result result, Query query, Renderer renderer) {
-        this(status, result, query, renderer, null);
+    public HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer) {
+        this(status, result, query, renderer, null, null);
     }
 
-    HttpSearchResponse(int status, Result result, Query query, Renderer renderer, TraceNode trace) {
+    HttpSearchResponse(int status, Result result, Query query, Renderer<Result> renderer, TraceNode trace, Metric metric) {
         super(status);
         this.query = query;
         this.result = result;
         this.rendererCopy = renderer;
-
+        this.metric = metric;
         this.timing = SearchResponse.createTiming(query, result);
         this.hitCounts = SearchResponse.createHitCounts(query, result);
         this.trace = trace;
@@ -98,7 +101,11 @@ public class HttpSearchResponse extends ExtendedResponse {
         }
         try {
             try {
-                waitableRender(output);
+                long nanoStart = System.nanoTime();
+                ListenableFuture<Boolean> promise = waitableRender(output);
+                if (metric != null) {
+                    promise.addListener(new RendererLatencyReporter(nanoStart), Runnable::run);
+                }
             } finally {
                 if (!(rendererCopy instanceof AsynchronousSectionedRenderer)) {
                     output.flush();
@@ -176,6 +183,22 @@ public class HttpSearchResponse extends ExtendedResponse {
         return context == null
                 ? Collections::emptyIterator
                 : context::logValueIterator;
+    }
+
+    private class RendererLatencyReporter implements Runnable {
+
+        final long nanoStart;
+
+        RendererLatencyReporter(long nanoStart) { this.nanoStart = nanoStart; }
+
+        @Override
+        public void run() {
+            long latencyMillis = Duration.ofNanos(System.nanoTime() - nanoStart).toMillis();
+            Metric.Context ctx = metric.createContext(Map.of(
+                    SearchHandler.RENDERER_DIMENSION, rendererCopy.getClassName(),
+                    SearchHandler.MIME_DIMENSION, rendererCopy.getMimeType()));
+            metric.set(SearchHandler.RENDER_LATENCY_METRIC, latencyMillis, ctx);
+        }
     }
 
 }

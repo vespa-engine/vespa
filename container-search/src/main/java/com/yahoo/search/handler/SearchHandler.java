@@ -11,6 +11,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpMethodAclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -21,8 +22,6 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
-import com.yahoo.container.jdisc.AclMapping;
-import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.language.Linguistics;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
@@ -88,6 +87,9 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
+    static final String RENDER_LATENCY_METRIC = "jdisc.search.render_latency";
+    static final String MIME_DIMENSION = "mime";
+    static final String RENDERER_DIMENSION = "renderer";
 
     private static final String JSON_CONTENT_TYPE = "application/json";
 
@@ -230,6 +232,8 @@ public class SearchHandler extends LoggingRequestHandler {
              new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers));
     }
 
+    Metric metric() { return metric; }
+
     private static int examineExecutor(Executor executor) {
         if (executor instanceof ThreadPoolExecutor) {
             return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
@@ -273,7 +277,7 @@ public class SearchHandler extends LoggingRequestHandler {
     private HttpResponse errorResponse(HttpRequest request, ErrorMessage errorMessage) {
         Query query = new Query();
         Result result = new Result(query, errorMessage);
-        Renderer renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
+        Renderer<Result> renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
 
         return new HttpSearchResponse(getHttpResponseStatus(request, result), result, query, renderer);
     }
@@ -328,10 +332,11 @@ public class SearchHandler extends LoggingRequestHandler {
         }
 
         // Transform result to response
-        Renderer renderer = toRendererCopy(query.getPresentation().getRenderer());
+        Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
         HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
                                                              result, query, renderer,
-                                                             extractTraceNode(query));
+                                                             extractTraceNode(query),
+                                                             metric);
         response.setRequestType(Request.RequestType.READ);
         hostResponseHeaderKey.ifPresent(key -> response.headers().add(key, selfHostname));
 

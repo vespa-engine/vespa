@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.handler.test;
+package com.yahoo.search.handler;
 
 import com.yahoo.container.Container;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
@@ -10,12 +10,11 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.net.HostName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.handler.HttpSearchResponse;
-import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.rendering.XmlRenderer;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -45,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  */
-public class SearchHandlerTestCase {
+public class SearchHandlerTest {
 
     private static final String testDir = "src/test/java/com/yahoo/search/handler/test/config";
     private static final String myHostnameHeader = "my-hostname-header";
@@ -59,6 +58,7 @@ public class SearchHandlerTestCase {
 
     private RequestHandlerTestDriver driver = null;
     private HandlersConfigurerTestWrapper configurer = null;
+    private MockMetric metric;
     private SearchHandler searchHandler;
 
     @Before
@@ -72,6 +72,7 @@ public class SearchHandlerTestCase {
 
         configurer = new HandlersConfigurerTestWrapper(new Container(), configId);
         searchHandler = (SearchHandler)configurer.getRequestHandlerRegistry().getComponent(SearchHandler.class.getName());
+        metric = (MockMetric) searchHandler.metric();
         driver = new RequestHandlerTestDriver(searchHandler);
     }
 
@@ -289,6 +290,7 @@ public class SearchHandlerTestCase {
         assertEquals(expected, response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals(selfHostname, response.getResponse().headers().get(myHostnameHeader).get(0));
+        assertTrue(metric.metrics().containsKey(SearchHandler.RENDER_LATENCY_METRIC));
     }
 
     @Test
@@ -310,7 +312,7 @@ public class SearchHandlerTestCase {
     }
 
     private void assertHandlerResponse(int status, String responseData, String handlerName) throws Exception {
-        RequestHandler forwardingHandler = configurer.getRequestHandlerRegistry().getComponent("com.yahoo.search.handler.test.SearchHandlerTestCase$" + handlerName + "Handler");
+        RequestHandler forwardingHandler = configurer.getRequestHandlerRegistry().getComponent("com.yahoo.search.handler.SearchHandlerTest$" + handlerName + "Handler");
         try (RequestHandlerTestDriver forwardingDriver = new RequestHandlerTestDriver(forwardingHandler)) {
             RequestHandlerTestDriver.MockResponseHandler response = forwardingDriver.sendRequest("http://localhost/" + handlerName + "?query=test");
             response.awaitResponse();
