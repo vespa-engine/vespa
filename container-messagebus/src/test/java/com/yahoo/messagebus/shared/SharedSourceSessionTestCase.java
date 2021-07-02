@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.shared;
 
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.Message;
@@ -8,6 +9,7 @@ import com.yahoo.messagebus.MessageBusParams;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.jdisc.test.RemoteServer;
 import com.yahoo.messagebus.jdisc.test.ReplyQueue;
+import com.yahoo.messagebus.jdisc.test.TestUtils;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.SimpleMessage;
@@ -59,7 +61,7 @@ public class SharedSourceSessionTestCase {
     @Test
     public void requireThatSessionCanSendMessage() throws InterruptedException {
         RemoteServer server = RemoteServer.newInstanceWithInternSlobrok();
-        SharedSourceSession session = newSourceSession(server.slobrokId(),
+        SharedSourceSession session = newSourceSession(server.slobroksConfig(),
                                                        new SourceSessionParams());
         ReplyQueue queue = new ReplyQueue();
         Message msg = new SimpleMessage("foo").setRoute(Route.parse(server.connectionSpec()));
@@ -80,11 +82,11 @@ public class SharedSourceSessionTestCase {
         } catch (ListenFailedException e) {
             fail();
         }
-        return newSourceSession(slobrok.configId(), params);
+        return newSourceSession(TestUtils.configFor(slobrok), params);
     }
 
-    private static SharedSourceSession newSourceSession(String slobrokId, SourceSessionParams params) {
-        RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(slobrokId);
+    private static SharedSourceSession newSourceSession(SlobroksConfig slobroksConfig, SourceSessionParams params) {
+        RPCNetworkParams netParams = new RPCNetworkParams().setSlobroksConfig(slobroksConfig);
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(new SimpleProtocol());
         SharedMessageBus mbus = SharedMessageBus.newInstance(mbusParams, netParams);
         SharedSourceSession session = mbus.newSourceSession(params);
