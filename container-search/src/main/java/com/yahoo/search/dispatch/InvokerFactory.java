@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 
 /**
@@ -39,8 +39,7 @@ public abstract class InvokerFactory {
      *
      * @param searcher the searcher processing the query
      * @param query the search query being processed
-     * @param groupId the id of the node group to which the nodes belong
-     * @param nodes pre-selected list of content nodes
+     * @param nodes pre-selected list of content nodes, all in a group or a subset of a group
      * @param acceptIncompleteCoverage if some of the nodes are unavailable and this parameter is
      *                                 false, verify that the remaining set of nodes has sufficient coverage
      * @return the invoker or empty if some node in the
@@ -48,10 +47,10 @@ public abstract class InvokerFactory {
      */
     Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
                                                 Query query,
-                                                OptionalInt groupId,
                                                 List<Node> nodes,
                                                 boolean acceptIncompleteCoverage,
                                                 int maxHits) {
+        Group group = searchCluster.group(nodes.get(0).group()).get(); // Nodes must be of the same group
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
@@ -90,7 +89,7 @@ public abstract class InvokerFactory {
         if (invokers.size() == 1 && failed == null) {
             return Optional.of(invokers.get(0));
         } else {
-            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster.isGroupWellBalanced(groupId), searchCluster, failed));
+            return Optional.of(new InterleavedSearchInvoker(invokers, searchCluster, group, failed));
         }
     }
 

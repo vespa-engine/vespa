@@ -186,8 +186,8 @@ public class Dispatcher extends AbstractComponent {
             if (nodes.isEmpty()) return Optional.empty();
 
             query.trace(false, 2, "Dispatching with search path ", searchPath);
-            return invokerFactory.createSearchInvoker(searcher, query,
-                                                      OptionalInt.empty(),
+            return invokerFactory.createSearchInvoker(searcher,
+                                                      query,
                                                       nodes,
                                                       true,
                                                       maxHitsPerNode);
@@ -203,7 +203,6 @@ public class Dispatcher extends AbstractComponent {
             query.trace(false, 2, "Dispatching to ", node);
             return invokerFactory.createSearchInvoker(searcher,
                                                       query,
-                                                      OptionalInt.empty(),
                                                       List.of(node),
                                                       true,
                                                       maxHitsPerNode)
@@ -222,7 +221,6 @@ public class Dispatcher extends AbstractComponent {
             boolean acceptIncompleteCoverage = (i == max - 1);
             Optional<SearchInvoker> invoker = invokerFactory.createSearchInvoker(searcher,
                                                                                  query,
-                                                                                 OptionalInt.of(group.id()),
                                                                                  group.nodes(),
                                                                                  acceptIncompleteCoverage,
                                                                                  maxHitsPerNode);

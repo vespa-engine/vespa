@@ -41,7 +41,7 @@ public class SearchPath {
         if (sp.isPresent()) {
             return sp.get().mapToNodes(cluster);
         } else {
-            return Collections.emptyList();
+            return List.of();
         }
     }
 
@@ -75,7 +75,7 @@ public class SearchPath {
 
     private List<Node> mapToNodes(SearchCluster cluster) {
         if (cluster.groups().isEmpty()) {
-            return Collections.emptyList();
+            return List.of();
         }
 
         Group selectedGroup = selectGroup(cluster);
