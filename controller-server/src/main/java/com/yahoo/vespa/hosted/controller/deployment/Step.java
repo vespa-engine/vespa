@@ -34,7 +34,7 @@ public enum Step {
     installTester(false, deployTester),
 
     /** Download and deploy the initial real application, for staging tests. */
-    deployInitialReal(false, deployTester),
+    deployInitialReal(false),
 
     /** See that the real application has had its nodes converge to the initial state. */
     installInitialReal(false, deployInitialReal),
@@ -46,7 +46,7 @@ public enum Step {
     endStagingSetup(false, startStagingSetup),
 
     /** Download and deploy real application, restarting services if required. */
-    deployReal(false, endStagingSetup, deployTester),
+    deployReal(false, endStagingSetup),
 
     /** See that real application has had its nodes converge to the wanted version and generation. */
     installReal(false, deployReal),
