@@ -27,7 +27,6 @@ import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
-import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.handler.VipStatusHandler;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
@@ -53,7 +52,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
@@ -124,14 +122,6 @@ import static org.junit.Assert.fail;
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Rule
     public TemporaryFolder applicationFolder = new TemporaryFolder();
-
-    @Test
-    public void model_evaluation_bundles_are_deployed() {
-        createBasicContainerModel();
-        PlatformBundlesConfig config = root.getConfig(PlatformBundlesConfig.class, "default");
-        assertThat(config.bundlePaths(), hasItem(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString()));
-        assertThat(config.bundlePaths(), hasItem(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString()));
-    }
 
     @Test
     public void deprecated_jdisc_tag_is_allowed() {
@@ -254,7 +244,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void verify_bindings_for_builtin_handlers() {
-        createBasicContainerModel();
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0' />"
+        );
+        createModel(root, clusterElem);
         JdiscBindingsConfig config = root.getConfig(JdiscBindingsConfig.class, "default/container.0");
 
         JdiscBindingsConfig.Handlers defaultRootHandler = config.handlers(BindingsOverviewHandler.class.getName());
