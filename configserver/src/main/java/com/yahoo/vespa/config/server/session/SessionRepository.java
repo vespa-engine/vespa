@@ -661,8 +661,7 @@ public class SessionRepository {
     private Optional<ApplicationSet> getApplicationSet(long sessionId) {
         Optional<ApplicationSet> applicationSet = Optional.empty();
         try {
-            RemoteSession session = getRemoteSession(sessionId);
-            applicationSet = Optional.ofNullable(ensureApplicationLoaded(session));
+            applicationSet = Optional.ofNullable(getRemoteSession(sessionId)).map(this::ensureApplicationLoaded);
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
         }
