@@ -200,17 +200,6 @@ public class ConfigCurator {
         }
     }
 
-    /**
-     * Puts config definition data and metadata into ZK.
-     *
-     * @param name    The config definition name (including namespace)
-     * @param path    /zoopath
-     * @param data    The contents to write to ZK (as a byte array)
-     */
-    public void putDefData(String name, String path, byte[] data) {
-            putData(path, name, data);
-    }
-
     /** Deletes the node at the given path, and any children it may have. If the node does not exist this does nothing */
     public void deleteRecurse(String path) {
         try {

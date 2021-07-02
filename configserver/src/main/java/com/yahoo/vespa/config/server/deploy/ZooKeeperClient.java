@@ -225,7 +225,7 @@ public class ZooKeeperClient {
     }
 
     private void writeConfigDefinition(String name, String namespace, String path, String data) {
-        configCurator.putDefData(namespace + "." + name, path, com.yahoo.text.Utf8.toBytes(data));
+        configCurator.putData(path, namespace + "." + name, data);
     }
 
     private void write(Version vespaVersion, FileRegistry fileRegistry) {
