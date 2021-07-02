@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integration;
 
+import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -28,6 +29,7 @@ import java.nio.file.FileSystem;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -50,7 +52,8 @@ public class ContainerTester implements AutoCloseable {
 
     private final Thread loopThread;
 
-    final ContainerOperations containerOperations = spy(new ContainerOperations(new ContainerEngineMock(), TestFileSystem.create()));
+    private final ContainerEngineMock containerEngine = new ContainerEngineMock();
+    final ContainerOperations containerOperations = spy(new ContainerOperations(containerEngine, TestFileSystem.create()));
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     final Orchestrator orchestrator = mock(Orchestrator.class);
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
@@ -64,7 +67,8 @@ public class ContainerTester implements AutoCloseable {
     private volatile NodeAdminStateUpdater.State wantedState = NodeAdminStateUpdater.State.RESUMED;
 
 
-    ContainerTester() {
+    ContainerTester(List<DockerImage> images) {
+        images.forEach(image -> containerEngine.pullImage(null, image, RegistryCredentials.none));
         when(storageMaintainer.diskUsageFor(any())).thenReturn(Optional.empty());
 
         IPAddressesMock ipAddresses = new IPAddressesMock();
@@ -110,6 +114,12 @@ public class ContainerTester implements AutoCloseable {
 
     /** Adds a node to node-repository mock that is running on this host */
     void addChildNodeRepositoryNode(NodeSpec nodeSpec) {
+        if (nodeSpec.wantedDockerImage().isPresent()) {
+            if (!containerEngine.hasImage(null, nodeSpec.wantedDockerImage().get())) {
+                throw new IllegalArgumentException("Want to use image " + nodeSpec.wantedDockerImage().get() +
+                                                   ", but that image does not exist in the container engine");
+            }
+        }
         nodeRepository.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
                 .parentHostname(HOST_HOSTNAME.value())
                 .build());

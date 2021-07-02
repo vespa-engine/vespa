@@ -7,6 +7,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import org.junit.Test;
 
+import java.util.List;
+
 import static com.yahoo.vespa.hosted.node.admin.integration.ContainerTester.containerMatcher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -20,10 +22,9 @@ public class RestartTest {
 
     @Test
     public void test() {
-        try (ContainerTester tester = new ContainerTester()) {
+        DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage:1.2.3");
+        try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             String hostname = "host1.test.yahoo.com";
-            DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage:1.2.3");
-
             NodeSpec nodeSpec = NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build();
             tester.addChildNodeRepositoryNode(nodeSpec);
 
