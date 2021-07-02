@@ -291,6 +291,7 @@ TOKEN :
 | < TO: "to" >
 | < DIRECT: "direct" >
 | < FROMDISK: "from-disk" >
+| < OMITSUMMARYFEATURES: "omit-summary-features" >
 | < ALWAYS: "always" >
 | < ONDEMAND: "on-demand" >
 | < NEVER: "never" >
@@ -1767,6 +1768,7 @@ Object documentSummary(Search search) :
       lbrace()
          (
            <FROMDISK> { summary.setFromDisk(true); } |
+           <OMITSUMMARYFEATURES> { summary.setOmitSummaryFeatures(true); } |
            documentSummaryItem(summary) |
            <NL>
          )*
