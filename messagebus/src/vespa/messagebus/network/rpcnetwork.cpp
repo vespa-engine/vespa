@@ -133,7 +133,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
-    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
+    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs(), params.getNumRpcTargets())),
     _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
     _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 64_Ki)),

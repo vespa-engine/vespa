@@ -16,24 +16,30 @@ namespace mbus {
  */
 class RPCTargetPool {
 private:
+    using LockGuard = std::lock_guard<std::mutex>;
     /**
      * Implements a helper class holds the necessary reference and token counter
      * for a JRT target to keep connections open as long as they get used from
      * time to time.
      */
-    struct Entry {
-        RPCTarget::SP _target;
-        uint64_t      _lastUse;
-
-        Entry(RPCTarget::SP target, uint64_t lastUse);
+    class Entry {
+    public:
+        Entry(std::vector<RPCTarget::SP> targets, uint64_t lastUse);
+        RPCTarget::SP getTarget(const LockGuard & guard, uint64_t now);
+        uint64_t lastUse() const { return _lastUse; }
+        bool inUse(const LockGuard & guard) const;
+    private:
+        std::vector<RPCTarget::SP> _targets;
+        uint64_t                   _lastUse;
+        size_t                     _next;
     };
     using TargetMap = std::map<string, Entry>;
-    using LockGuard = std::lock_guard<std::mutex>;
 
     std::mutex     _lock;
     TargetMap      _targets;
     ITimer::UP     _timer;
     uint64_t       _expireMillis;
+    size_t         _numTargetsPerSpec;
 
 public:
     RPCTargetPool(const RPCTargetPool &) = delete;
@@ -46,7 +52,7 @@ public:
      * @param expireSecs The number of seconds until an idle connection is
      *                   closed.
      */
-    RPCTargetPool(double expireSecs);
+    RPCTargetPool(double expireSecs, size_t numTargetsPerSpec);
 
     /**
      * Constructs a new instance of this class, using the given {@link Timer}
@@ -57,7 +63,7 @@ public:
      * @param expireSecs The number of seconds until an idle connection is
      *                   closed.
      */
-    RPCTargetPool(ITimer::UP timer, double expireSecs);
+    RPCTargetPool(ITimer::UP timer, double expireSecs, size_t numTargetsPerSpec);
 
     /**
      * Destructor. Frees any allocated resources.
