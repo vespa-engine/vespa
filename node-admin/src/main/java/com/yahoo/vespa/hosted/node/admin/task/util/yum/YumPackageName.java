@@ -233,11 +233,17 @@ public class YumPackageName {
         StringBuilder builder = new StringBuilder();
         boolean isBare = version.isEmpty() && release.isEmpty() && architecture.isEmpty();
         char nextDelimiter;
-        builder.append(name);
-        // Fully versioned package names must always include epoch in Yum 4
-        epoch.or(() -> Optional.of("0").filter(v -> !isBare))
-             .ifPresent(ep -> builder.append('-').append(ep));
-        nextDelimiter = ':';
+        if (yumVersion.getMajor() < 4) {
+            epoch.ifPresent(ep -> builder.append(ep).append(':'));
+            builder.append(name);
+            nextDelimiter = '-';
+        } else {
+            builder.append(name);
+            // Fully versioned package names must always include epoch in Yum 4
+            epoch.or(() -> Optional.of("0").filter(v -> !isBare))
+                 .ifPresent(ep -> builder.append('-').append(ep));
+            nextDelimiter = ':';
+        }
         version.ifPresent(s -> builder.append(nextDelimiter).append(s));
         release.ifPresent(s -> builder.append('-').append(s));
         architecture.ifPresent(arch -> builder.append('.').append(arch));

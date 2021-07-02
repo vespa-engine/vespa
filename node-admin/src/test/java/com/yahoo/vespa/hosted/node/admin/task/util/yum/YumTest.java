@@ -92,7 +92,7 @@ public class YumTest {
 
         // RHEL 8
         mockRpmQuery("package-1", null);
-        mockYumVersion();
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
                 0,
@@ -115,7 +115,7 @@ public class YumTest {
                 .converge(taskContext));
 
         // RHEL 8
-        mockYumVersion();
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum upgrade --assumeyes --setopt skip_missing_names_on_update=False package-1 package-2 2>&1",
                 0,
@@ -140,7 +140,7 @@ public class YumTest {
 
         // RHEL 8
         mockRpmQuery("package-1", YumPackageName.fromString("package-1-1.2.3-1"));
-        mockYumVersion();
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum remove --assumeyes package-1 package-2 2>&1",
                 0,
@@ -196,22 +196,22 @@ public class YumTest {
     @Test
     public void testWithVersionLock() {
         mockYumVersion();
-        terminal.expectCommand("yum versionlock list 2>&1",
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
                         "0:chef-12.21.1-1.el7.*\n");
-        terminal.expectCommand("yum versionlock add --assumeyes \"package-0:0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock add --assumeyes \"0:package-1-0.10-654.el7.*\" 2>&1");
         terminal.expectCommand(
-                "yum install --assumeyes package-0:0.10-654.el7.x86_64 2>&1",
+                "yum install --assumeyes 0:package-1-0.10-654.el7.x86_64 2>&1",
                 0,
                 "installing");
 
-        assertTrue(yum.installFixedVersion(YumPackageName.fromString("package-0:0.10-654.el7.x86_64")).converge(taskContext));
+        assertTrue(yum.installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7.x86_64")).converge(taskContext));
     }
 
     @Test
     public void testWithVersionLockYum4() {
-        mockYumVersion();
+        mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand("yum versionlock list 2>&1",
                                0,
                                "Last metadata expiration check: 0:51:26 ago on Thu 14 Jan 2021 09:39:24 AM UTC.\n");
@@ -233,24 +233,24 @@ public class YumTest {
     @Test
     public void testWithDifferentVersionLock() {
         mockYumVersion();
-        terminal.expectCommand("yum versionlock list 2>&1",
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
-                        "chef-0:12.21.1-1.el7.*\n" +
-                        "package-0:0.1-8.el7.*\n");
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.1-8.el7.*\n");
 
-        terminal.expectCommand("yum versionlock delete \"package-0:0.1-8.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock delete \"0:package-1-0.1-8.el7.*\" 2>&1");
 
-        terminal.expectCommand("yum versionlock add --assumeyes --enablerepo=somerepo \"package-0:0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand("yum versionlock add --assumeyes --enablerepo=somerepo \"0:package-1-0.10-654.el7.*\" 2>&1");
 
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=somerepo package-0:0.10-654.el7 2>&1",
+                "yum install --assumeyes --enablerepo=somerepo 0:package-1-0.10-654.el7 2>&1",
                 0,
                 "Nothing to do\n");
 
 
         assertTrue(yum
-                .installFixedVersion(YumPackageName.fromString("package-0:0.10-654.el7"))
+                .installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7"))
                 .enableRepo("somerepo")
                 .converge(taskContext));
     }
@@ -258,37 +258,37 @@ public class YumTest {
     @Test
     public void testWithExistingVersionLock() {
         mockYumVersion();
-        terminal.expectCommand("yum versionlock list 2>&1",
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
-                        "chef-0:12.21.1-1.el7.*\n" +
-                        "package-0:0.10-654.el7.*\n");
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.10-654.el7.*\n");
         terminal.expectCommand(
-                "yum install --assumeyes package-0:0.10-654.el7 2>&1",
+                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
                 0,
                 "Nothing to do\n");
 
-        assertFalse(yum.installFixedVersion(YumPackageName.fromString("package-0:0.10-654.el7")).converge(taskContext));
+        assertFalse(yum.installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7")).converge(taskContext));
     }
 
     @Test
     public void testWithDowngrade() {
         mockYumVersion();
-        terminal.expectCommand("yum versionlock list 2>&1",
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
                 0,
                 "Repository chef_rpms-release is listed more than once in the configuration\n" +
-                        "chef-0:12.21.1-1.el7.*\n" +
-                        "package-0:0.10-654.el7.*\n");
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.10-654.el7.*\n");
 
         terminal.expectCommand(
-                "yum install --assumeyes package-0:0.10-654.el7 2>&1",
+                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
                 0,
-                "Package matching package-=.0.10-654.el7 already installed. Checking for update.\n" +
+                "Package matching package-1-0.10-654.el7 already installed. Checking for update.\n" +
                         "Nothing to do\n");
 
-        terminal.expectCommand("yum downgrade --assumeyes package-0:0.10-654.el7 2>&1");
+        terminal.expectCommand("yum downgrade --assumeyes 0:package-1-0.10-654.el7 2>&1");
 
-        assertTrue(yum.installFixedVersion(YumPackageName.fromString("package-0:0.10-654.el7")).converge(taskContext));
+        assertTrue(yum.installFixedVersion(YumPackageName.fromString("0:package-1-0.10-654.el7")).converge(taskContext));
     }
 
     @Test(expected = ChildProcessFailureException.class)
@@ -342,8 +342,12 @@ public class YumTest {
         yum.upgrade().converge(taskContext);
     }
 
+    private void mockYumVersion(YumVersion yumVersion) {
+        terminal.expectCommand("yum --version 2>&1", 0, yumVersion.asVersion().toFullString() + "\ntrailing garbage\n");
+    }
+
     private void mockYumVersion() {
-        terminal.expectCommand("yum --version 2>&1", 0, YumVersion.rhel8.asVersion().toFullString() + "\ntrailing garbage\n");
+        mockYumVersion(YumVersion.rhel7);
     }
 
     private void mockRpmQuery(String packageName, YumPackageName installedOrNull) {
