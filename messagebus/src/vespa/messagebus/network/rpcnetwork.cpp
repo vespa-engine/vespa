@@ -82,7 +82,7 @@ struct TargetPoolTask : public FNET_Task {
 
 TransportConfig
 toFNETConfig(const RPCNetworkParams & params) {
-    return TransportConfig()
+    return TransportConfig(params.getNumNetworkThreads())
               .maxInputBufferSize(params.getMaxInputBufferSize())
               .maxOutputBufferSize(params.getMaxOutputBufferSize())
               .tcpNoDelay(params.getTcpNoDelay());
@@ -125,7 +125,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
+    _threadPool(std::make_unique<FastOS_ThreadPool>(128_Ki, 0)),
     _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),

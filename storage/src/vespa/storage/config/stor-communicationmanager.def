@@ -29,7 +29,16 @@ mbus.compress.type enum {NONE, LZ4, ZSTD} default=LZ4 restart
 ## TTL for rpc target cache
 mbus.rpctargetcache.ttl double default = 600 restart
 
-## Number of threads for mbus threadpool
+## Number of rpc targets per spec
+mbus.num_rpc_targets int default=1 restart
+
+## Use tcpNoDelay for mbus network writes
+mbus.tcp_no_delay bool default=true restart
+
+## Number of threads for network.
+mbus.num_network_threads int default=1 restart
+
+## Number of workers threads for messagebus
 ## Any value below 1 will be 1.
 mbus.num_threads int default=4 restart
 
