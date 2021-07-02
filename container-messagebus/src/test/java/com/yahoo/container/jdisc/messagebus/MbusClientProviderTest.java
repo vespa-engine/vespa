@@ -1,9 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
+import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.container.jdisc.messagebus.MbusClientProvider;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
+import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.messagebus.MessagebusConfig;
+import com.yahoo.vespa.config.content.DistributionConfig;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -30,7 +37,15 @@ public class MbusClientProviderTest {
     }
 
     private void testClient(SessionConfig config) {
-        MbusClientProvider p = new MbusClientProvider(new SessionCache("dir:src/test/resources/config/clientprovider"), config);
+        SessionCache cache = new SessionCache(new ContainerMbusConfig.Builder().build(),
+                                              new DocumentmanagerConfig.Builder().build(),
+                                              new LoadTypeConfig.Builder().build(),
+                                              new SlobroksConfig.Builder().build(),
+                                              new MessagebusConfig.Builder().build(),
+                                              new DocumentProtocolPoliciesConfig.Builder().build(),
+                                              new DistributionConfig.Builder().build(),
+                                              "test");
+        MbusClientProvider p = new MbusClientProvider(cache, config);
         assertNotNull(p.get());
         p.deconstruct();
     }

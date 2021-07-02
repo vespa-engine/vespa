@@ -23,10 +23,6 @@ public class ClientTestDriverTestCase {
         driver = ClientTestDriver.newInstanceWithProtocol(new SimpleProtocol());
         assertNotNull(driver);
         assertTrue(driver.close());
-
-        Slobrok slobrok = new Slobrok();
-        driver = ClientTestDriver.newInstanceWithExternSlobrok(slobrok.configId());
-        assertNotNull(driver);
-        assertTrue(driver.close());
     }
+
 }
