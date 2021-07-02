@@ -90,4 +90,5 @@ public class ExpressionTestCase {
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);
     }
+
 }

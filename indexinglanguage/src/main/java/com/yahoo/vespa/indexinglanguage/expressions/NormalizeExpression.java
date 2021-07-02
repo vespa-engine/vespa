@@ -45,14 +45,10 @@ public final class NormalizeExpression extends Expression {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof NormalizeExpression)) {
-            return false;
-        }
-        NormalizeExpression rhs = (NormalizeExpression)obj;
-        if (linguistics != rhs.linguistics) {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (!(o instanceof NormalizeExpression)) return false;
+        NormalizeExpression other = (NormalizeExpression)o;
+        if (linguistics != other.linguistics) return false;
         return true;
     }
 
@@ -60,4 +56,5 @@ public final class NormalizeExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode();
     }
+
 }
