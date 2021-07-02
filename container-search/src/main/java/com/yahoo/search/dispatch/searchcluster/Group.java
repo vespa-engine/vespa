@@ -61,7 +61,7 @@ public class Group {
         return (int) nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).count();
     }
 
-    void aggregateNodeValues() {
+    public void aggregateNodeValues() {
         long activeDocs = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(Node::getActiveDocuments).sum();
         activeDocuments.set(activeDocs);
         isBlockingWrites.set(nodes.stream().anyMatch(Node::isBlockingWrites));
@@ -69,13 +69,13 @@ public class Group {
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
             long skew = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
-            boolean skewIsLow = skew <= activeDocs * maxContentSkew;
-            if (!isBalanced.get() || skewIsLow != isBalanced.get()) {
+            boolean balanced = skew <= activeDocs * maxContentSkew;
+            if (!isBalanced.get() || balanced != isBalanced.get()) {
                 if (!isSparse())
-                    log.info("Content is " + (skewIsLow ? "" : "not ") + "well balanced. Current deviation = " +
+                    log.info("Content is " + (balanced ? "" : "not ") + "well balanced. Current deviation = " +
                              skew * 100 / activeDocs + " %. activeDocs = " + activeDocs + ", skew = " + skew +
                              ", average = " + average);
-                isBalanced.set(skewIsLow);
+                isBalanced.set(balanced);
             }
         } else {
             isBalanced.set(true);
@@ -92,7 +92,10 @@ public class Group {
     public boolean isBalanced() { return isBalanced.get(); }
 
     /** Returns whether this group has too few documents per node to expect it to be balanced */
-    public boolean isSparse() { return activeDocuments.get() / nodes.size() < minDocsPerNodeToRequireLowSkew; }
+    public boolean isSparse() {
+        if (nodes.isEmpty()) return false;
+        return activeDocuments.get() / nodes.size() < minDocsPerNodeToRequireLowSkew;
+    }
 
     public boolean fullCoverageStatusChanged(boolean hasFullCoverageNow) {
         boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
