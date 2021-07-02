@@ -20,7 +20,7 @@ public class YumTester extends Yum {
     private final Version yumVersion;
 
     public YumTester(TestTerminal terminal) {
-        this(terminal, YumVersion.rhel8);
+        this(terminal, YumVersion.rhel7);
     }
 
     public YumTester(TestTerminal terminal, YumVersion yumVersion) {
@@ -130,10 +130,11 @@ public class YumTester extends Yum {
 
         @Override
         public YumTester andReturn(boolean value) {
-            // Pretend package is already correctly version-locked to simplify expectations
+            // Pretend package is already correctly version locked to simplify expectations
             terminal.expectCommand("yum --version 2>&1", 0, yumVersion.toFullString() + "\ntrailing garbage\n");
 
-            terminal.expectCommand("yum versionlock list 2>&1", 0, packages.get(0).toVersionLockName(yumVersion));
+            String quiet = yumVersion.getMajor() < 4 ? " --quiet" : "";
+            terminal.expectCommand("yum" + quiet +" versionlock list 2>&1", 0, packages.get(0).toVersionLockName(yumVersion));
             return super.andReturn(value);
         }
 

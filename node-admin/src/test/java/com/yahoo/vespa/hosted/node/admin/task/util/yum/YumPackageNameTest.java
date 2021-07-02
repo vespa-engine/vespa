@@ -26,6 +26,7 @@ public class YumPackageNameTest {
                 .setRelease("71.git3e8e77d.el7.centos.1")
                 .setArchitecture("x86_64")
                 .build();
+        assertEquals("2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64", yumPackage.toName(Version.fromString("3")));
         assertEquals("docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64", yumPackage.toName(Version.fromString("4")));
     }
 
@@ -61,28 +62,28 @@ public class YumPackageNameTest {
                 null,
                 null,
                 "x86_64",
-                "docker-engine-selinux-0.x86_64",
+                "docker-engine-selinux.x86_64",
                 null);
 
         // name-ver-rel
-        verifyPackageName("docker-engine-selinux-0:1.12.6-1.el7",
-                "0",
+        verifyPackageName("docker-engine-selinux-1.12.6-1.el7",
+                null,
                 "docker-engine-selinux",
                 "1.12.6",
                 "1.el7",
                 null,
-                "docker-engine-selinux-0:1.12.6-1.el7",
-                "docker-engine-selinux-0:1.12.6-1.el7.*");
+                "docker-engine-selinux-1.12.6-1.el7",
+                "0:docker-engine-selinux-1.12.6-1.el7.*");
 
         // name-ver-rel.arch
-        verifyPackageName("docker-engine-selinux-0:1.12.6-1.el7.x86_64",
-                "0",
+        verifyPackageName("docker-engine-selinux-1.12.6-1.el7.x86_64",
+                null,
                 "docker-engine-selinux",
                 "1.12.6",
                 "1.el7",
                 "x86_64",
-                "docker-engine-selinux-0:1.12.6-1.el7.x86_64",
-                "docker-engine-selinux-0:1.12.6-1.el7.*");
+                "docker-engine-selinux-1.12.6-1.el7.x86_64",
+                "0:docker-engine-selinux-1.12.6-1.el7.*");
 
         // name-epoch:ver-rel.arch
         verifyPackageName(
@@ -92,19 +93,30 @@ public class YumPackageNameTest {
                 "1.12.6",
                 "71.git3e8e77d.el7.centos.1",
                 "x86_64",
-                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
-                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.*");
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
 
         // epoch:name-ver-rel.arch
         verifyPackageName(
-                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
                 "2",
                 "docker",
                 "1.12.6",
                 "71.git3e8e77d.el7.centos.1",
                 "x86_64",
-                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
-                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.*");
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
+
+        // name-ver-rel.arch (RHEL 8)
+        verifyPackageName("podman-1.9.3-2.module+el8.2.1+6867+366c07d6.x86_64",
+                          null,
+                          "podman",
+                          "1.9.3",
+                          "2.module+el8.2.1+6867+366c07d6",
+                          "x86_64",
+                          "podman-0:1.9.3-2.module+el8.2.1+6867+366c07d6.x86_64",
+                          "podman-0:1.9.3-2.module+el8.2.1+6867+366c07d6.*",
+                          YumVersion.rhel8);
     }
 
     private void verifyPackageName(String packageName,
@@ -115,7 +127,18 @@ public class YumPackageNameTest {
                                    String architecture,
                                    String toName,
                                    String toVersionName) {
-        YumVersion yumVersion = YumVersion.rhel8;
+        verifyPackageName(packageName, epoch, name, version, release, architecture, toName, toVersionName, YumVersion.rhel7);
+    }
+
+    private void verifyPackageName(String packageName,
+                                   String epoch,
+                                   String name,
+                                   String version,
+                                   String release,
+                                   String architecture,
+                                   String toName,
+                                   String toVersionName,
+                                   YumVersion yumVersion) {
         YumPackageName yumPackageName = YumPackageName.fromString(packageName);
         verifyValue(epoch, yumPackageName.getEpoch());
         verifyValue(name, Optional.of(yumPackageName.getName()));
