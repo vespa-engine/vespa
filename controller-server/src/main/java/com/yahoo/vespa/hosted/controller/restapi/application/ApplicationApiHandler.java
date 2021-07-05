@@ -245,7 +245,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), Optional.ofNullable(request.getProperty("limit")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/package")) return devApplicationPackage(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
@@ -546,28 +546,32 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (controller.tenants().get(tenantName).isEmpty())
             return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
+        List<Application> applications = applicationName.isEmpty() ?
+                controller.applications().asList(tenant) :
+                controller.applications().getApplication(TenantAndApplicationId.from(tenantName, applicationName.get()))
+                    .map(List::of)
+                    .orElseThrow(() -> new NotExistsException("Application '" + applicationName.get() + "' does not exist"));
+
         Slime slime = new Slime();
         Cursor applicationArray = slime.setArray();
-        for (Application application : controller.applications().asList(tenant)) {
-            if (applicationName.map(application.id().application().value()::equals).orElse(true)) {
-                Cursor applicationObject = applicationArray.addObject();
-                applicationObject.setString("tenant", application.id().tenant().value());
-                applicationObject.setString("application", application.id().application().value());
-                applicationObject.setString("url", withPath("/application/v4" +
-                                                            "/tenant/" + application.id().tenant().value() +
-                                                            "/application/" + application.id().application().value(),
-                                                            request.getUri()).toString());
-                Cursor instanceArray = applicationObject.setArray("instances");
-                for (InstanceName instance : showOnlyProductionInstances(request) ? application.productionInstances().keySet()
-                                                                                  : application.instances().keySet()) {
-                    Cursor instanceObject = instanceArray.addObject();
-                    instanceObject.setString("instance", instance.value());
-                    instanceObject.setString("url", withPath("/application/v4" +
-                                                             "/tenant/" + application.id().tenant().value() +
-                                                             "/application/" + application.id().application().value() +
-                                                             "/instance/" + instance.value(),
-                                                             request.getUri()).toString());
-                }
+        for (Application application : applications) {
+            Cursor applicationObject = applicationArray.addObject();
+            applicationObject.setString("tenant", application.id().tenant().value());
+            applicationObject.setString("application", application.id().application().value());
+            applicationObject.setString("url", withPath("/application/v4" +
+                                                        "/tenant/" + application.id().tenant().value() +
+                                                        "/application/" + application.id().application().value(),
+                                                        request.getUri()).toString());
+            Cursor instanceArray = applicationObject.setArray("instances");
+            for (InstanceName instance : showOnlyProductionInstances(request) ? application.productionInstances().keySet()
+                                                                              : application.instances().keySet()) {
+                Cursor instanceObject = instanceArray.addObject();
+                instanceObject.setString("instance", instance.value());
+                instanceObject.setString("url", withPath("/application/v4" +
+                                                         "/tenant/" + application.id().tenant().value() +
+                                                         "/application/" + application.id().application().value() +
+                                                         "/instance/" + instance.value(),
+                                                         request.getUri()).toString());
             }
         }
         return new SlimeJsonResponse(slime);
@@ -1387,7 +1391,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
@@ -1396,18 +1399,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
                 toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
 
-            JobType.from(controller.system(), deployment.zone())
-                   .map(type -> new JobId(instance.id(), type))
-                   .map(status.jobSteps()::get)
-                   .ifPresent(stepStatus -> {
-                       JobControllerApiHandlerHelper.applicationVersionToSlime(
-                               response.setObject("applicationVersion"), deployment.applicationVersion());
-                       if (!status.jobsToRun().containsKey(stepStatus.job().get()))
-                           response.setString("status", "complete");
-                       else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
-                           response.setString("status", "pending");
-                       else response.setString("status", "running");
-                   });
+            if (!deployment.zone().environment().isManuallyDeployed()) {
+                DeploymentStatus status = controller.jobController().deploymentStatus(application);
+                JobType.from(controller.system(), deployment.zone())
+                        .map(type -> new JobId(instance.id(), type))
+                        .map(status.jobSteps()::get)
+                        .ifPresent(stepStatus -> {
+                            JobControllerApiHandlerHelper.applicationVersionToSlime(
+                                    response.setObject("applicationVersion"), deployment.applicationVersion());
+                            if (!status.jobsToRun().containsKey(stepStatus.job().get()))
+                                response.setString("status", "complete");
+                            else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
+                                response.setString("status", "pending");
+                            else response.setString("status", "running");
+                        });
+            }
         }
 
         response.setDouble("quota", deployment.quota().rate());
