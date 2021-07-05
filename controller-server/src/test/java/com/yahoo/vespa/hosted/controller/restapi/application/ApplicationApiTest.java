@@ -225,6 +225,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", GET).userIdentity(USER_ID),
                               new File("application-list.json"));
+        // GET tenant application instances for application that does not exist
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/fake-app/instance/", GET).userIdentity(USER_ID),
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Application 'fake-app' does not exist\"}", 404);
+
         // GET tenant applications (instances of "application1" only)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/", GET).userIdentity(USER_ID),
                               new File("application-list.json"));
