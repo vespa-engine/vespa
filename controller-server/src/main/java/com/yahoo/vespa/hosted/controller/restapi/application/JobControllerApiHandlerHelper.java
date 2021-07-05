@@ -40,10 +40,12 @@ import java.time.Instant;
 import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
@@ -126,7 +128,9 @@ class JobControllerApiHandlerHelper {
             runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
         else {
             int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
-            toSlime(cursor.setArray("runs"), runs.values(), limit, baseUriForJobType);
+            toSlime(cursor.setArray("runs"), runs.values().stream()
+                    .sorted(Comparator.comparing((Run run) -> run.id().number()).reversed())
+                    .collect(Collectors.toUnmodifiableList()), limit, baseUriForJobType);
         }
 
         return new SlimeJsonResponse(slime);
