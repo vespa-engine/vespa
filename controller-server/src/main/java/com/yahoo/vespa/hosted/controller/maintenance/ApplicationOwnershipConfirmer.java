@@ -17,7 +17,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -112,20 +111,29 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
     }
 
     private double updateConfirmedApplicationOwners() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
         applications()
-                       .withProjectId()
-                       .withProductionDeployment()
-                       .asList()
-                       .stream()
-                       .filter(application -> application.ownershipIssueId().isPresent())
-                       .forEach(application -> {
-                           IssueId ownershipIssueId = application.ownershipIssueId().get();
-                           ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
-                               controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
-                                       controller().applications().store(lockedApplication.withOwner(owner)));
-                           });
-                       });
-        return 1.0;
+                .withProjectId()
+                .withProductionDeployment()
+                .asList()
+                .stream()
+                .filter(application -> application.ownershipIssueId().isPresent())
+                .forEach(application -> {
+                    attempts.incrementAndGet();
+                    IssueId issueId = application.ownershipIssueId().get();
+                    try {
+                        ownershipIssues.getConfirmedOwner(issueId).ifPresent(owner -> {
+                            controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
+                                    controller().applications().store(lockedApplication.withOwner(owner)));
+                        });
+                    }
+                    catch (RuntimeException e) {
+                        failures.incrementAndGet();
+                        log.log(Level.INFO, "Exception caught when attempting to find confirmed owner of issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
+                    }
+                });
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     private ApplicationList applications() {
