@@ -102,7 +102,12 @@ BuildRequires: cmake >= 3.11.4-3
 BuildRequires: libarchive
 %endif
 %define _command_cmake cmake
+%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
+%if 0%{?_centos_stream}
+BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
+%else
 BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
+%endif
 %else
 BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
 %endif
@@ -226,7 +231,11 @@ Requires: vespa-valgrind >= 3.17.0-1
 %endif
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
+%if 0%{?_centos_stream}
+%define _vespa_llvm_version 12
+%else
 %define _vespa_llvm_version 11
+%endif
 %else
 %define _vespa_llvm_version 10
 %endif
@@ -358,7 +367,11 @@ Requires: openssl-libs
 %endif
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
+%if 0%{?_centos_stream}
+Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
+%else
 Requires: (llvm-libs >= 11.0.0 and llvm-libs < 12)
+%endif
 %else
 Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
 %endif
