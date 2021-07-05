@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -77,14 +78,15 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
 
     private ApplicationSummary summaryOf(TenantAndApplicationId application) {
         var app = applications.requireApplication(application);
-        var metrics = new HashMap<ZoneId, ApplicationSummary.Metric>();
+        var metrics = new HashMap<DeploymentId, ApplicationSummary.Metric>();
         for (Instance instance : app.instances().values()) {
             for (var kv : instance.deployments().entrySet()) {
                 var zone = kv.getKey();
                 var deploymentMetrics = kv.getValue().metrics();
-                metrics.put(zone, new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
-                                                                deploymentMetrics.queriesPerSecond(),
-                                                                deploymentMetrics.writesPerSecond()));
+                metrics.put(new DeploymentId(instance.id(), zone),
+                            new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
+                                                          deploymentMetrics.queriesPerSecond(),
+                                                          deploymentMetrics.writesPerSecond()));
             }
         }
         return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(),
