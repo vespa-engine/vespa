@@ -63,6 +63,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -94,7 +98,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
-    private RuntimeException prepareException = null;
+    private Consumer<ApplicationId> prepareException = null;
     private ConfigChangeActions configChangeActions = null;
     private Supplier<String> log = () -> "INFO - All good";
 
@@ -206,9 +210,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Optional.ofNullable(lastPrepareVersion);
     }
 
+    /** Sets a function that may throw, determined by app id. */
+    public void throwOnPrepare(Consumer<ApplicationId> prepareThrower) {
+        this.prepareException = prepareThrower;
+    }
+
     /** The exception to throw on the next prepare run, or null to continue normally */
     public void throwOnNextPrepare(RuntimeException prepareException) {
-        this.prepareException = prepareException;
+        this.prepareException = prepareException == null ? null : id -> { this.prepareException = null; throw prepareException; };
     }
 
     /** Set version for an application in a given zone */
@@ -367,11 +376,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public PreparedApplication deploy(DeploymentData deployment) {
         lastPrepareVersion = deployment.platform();
-        if (prepareException != null) {
-            RuntimeException prepareException = this.prepareException;
-            this.prepareException = null;
-            throw prepareException;
-        }
+        if (prepareException != null)
+            prepareException.accept(ApplicationId.from(deployment.instance().tenant(),
+                                                       deployment.instance().application(),
+                                                       deployment.instance().instance()));
         DeploymentId id = new DeploymentId(deployment.instance(), deployment.zone());
 
         applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage())));
