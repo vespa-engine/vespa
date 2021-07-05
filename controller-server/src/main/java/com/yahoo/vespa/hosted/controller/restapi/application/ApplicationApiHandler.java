@@ -1391,7 +1391,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
@@ -1400,18 +1399,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             if (!instance.rotations().isEmpty() && deployment.zone().environment() == Environment.prod)
                 toSlime(instance.rotations(), instance.rotationStatus(), deployment, response);
 
-            JobType.from(controller.system(), deployment.zone())
-                   .map(type -> new JobId(instance.id(), type))
-                   .map(status.jobSteps()::get)
-                   .ifPresent(stepStatus -> {
-                       JobControllerApiHandlerHelper.applicationVersionToSlime(
-                               response.setObject("applicationVersion"), deployment.applicationVersion());
-                       if (!status.jobsToRun().containsKey(stepStatus.job().get()))
-                           response.setString("status", "complete");
-                       else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
-                           response.setString("status", "pending");
-                       else response.setString("status", "running");
-                   });
+            if (!deployment.zone().environment().isManuallyDeployed()) {
+                DeploymentStatus status = controller.jobController().deploymentStatus(application);
+                JobType.from(controller.system(), deployment.zone())
+                        .map(type -> new JobId(instance.id(), type))
+                        .map(status.jobSteps()::get)
+                        .ifPresent(stepStatus -> {
+                            JobControllerApiHandlerHelper.applicationVersionToSlime(
+                                    response.setObject("applicationVersion"), deployment.applicationVersion());
+                            if (!status.jobsToRun().containsKey(stepStatus.job().get()))
+                                response.setString("status", "complete");
+                            else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
+                                response.setString("status", "pending");
+                            else response.setString("status", "running");
+                        });
+            }
         }
 
         response.setDouble("quota", deployment.quota().rate());
