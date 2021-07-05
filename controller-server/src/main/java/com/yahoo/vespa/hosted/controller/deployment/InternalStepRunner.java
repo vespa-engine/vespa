@@ -88,7 +88,9 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
@@ -189,12 +191,20 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
+        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
         return deploy(() -> controller.applications().deploy(id.job(), setTheStage),
                       controller.jobController().run(id).get()
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
-                      logger,
-                      false);
+                      logger)
+                .filter(result -> {
+                    // If no tester cert, or deployment failed, propagate original result.
+                    if (testerCertificate.isEmpty() || result != running)
+                        return true;
+                    // If tester cert, ensure real is deployed with the tester cert whose key was successfully deployed.
+                    return    controller.jobController().run(id).get().stepStatus(deployTester).get() == succeeded
+                           && testerCertificate.equals(controller.jobController().run(id).get().testerCertificate());
+                });
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
@@ -207,12 +217,10 @@ public class InternalStepRunner implements StepRunner {
                       controller.jobController().run(id).get()
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
-                      logger,
-                      true);
+                      logger);
     }
 
-    private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger,
-                                       boolean failOnAnyError) {
+    private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if (prepareResponse.log != null)
@@ -231,7 +239,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (ConfigServerException e) {
             // Retry certain failures for up to one hour.
-            Optional<RunStatus> result = failOnAnyError || startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+            Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.code()) {
                 case CERTIFICATE_NOT_READY:
