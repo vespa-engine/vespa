@@ -805,7 +805,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET system test job overview.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test", GET)
-                                      .userIdentity(USER_ID),
+                                      .userIdentity(USER_ID).properties(Map.of("limit", "100")),
                               new File("system-test-job.json"));
 
         // GET system test run 1 details.

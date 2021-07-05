@@ -84,7 +84,7 @@ class JobControllerApiHandlerHelper {
 
                   Cursor jobObject = jobsArray.addObject();
                   jobObject.setString("jobName", job.type().jobName());
-                  toSlime(jobObject.setArray("runs"), runs, baseUriForJobs);
+                  toSlime(jobObject.setArray("runs"), runs, 10, baseUriForJobs);
               });
 
         return new SlimeJsonResponse(slime);
@@ -117,11 +117,17 @@ class JobControllerApiHandlerHelper {
     }
 
     /** Returns a response with the runs for the given job type. */
-    static HttpResponse runResponse(Map<RunId, Run> runs, URI baseUriForJobType) {
+    static HttpResponse runResponse(Map<RunId, Run> runs, Optional<String> limitStr, URI baseUriForJobType) {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
 
-        runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
+        // TODO (freva): Remove after console migrated to use new format
+        if (limitStr.isEmpty())
+            runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
+        else {
+            int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
+            toSlime(cursor.setArray("runs"), runs.values(), limit, baseUriForJobType);
+        }
 
         return new SlimeJsonResponse(slime);
     }
@@ -377,7 +383,7 @@ class JobControllerApiHandlerHelper {
                     toSlime(runObject.setObject("versions"), versions);
                 }
 
-                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), baseUriForJob);
+                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), 10, baseUriForJob);
             });
         }
 
@@ -428,8 +434,8 @@ class JobControllerApiHandlerHelper {
         return Optional.of(versions.get(i));
     }
 
-    private static void toSlime(Cursor runsArray, Collection<Run> runs, URI baseUriForJob) {
-        runs.stream().limit(10).forEach(run -> {
+    private static void toSlime(Cursor runsArray, Collection<Run> runs, int limit, URI baseUriForJob) {
+        runs.stream().limit(limit).forEach(run -> {
             Cursor runObject = runsArray.addObject();
             runObject.setLong("id", run.id().number());
             runObject.setString("url", baseUriForJob.resolve(baseUriForJob.getPath() + "/run/" + run.id().number()).toString());
