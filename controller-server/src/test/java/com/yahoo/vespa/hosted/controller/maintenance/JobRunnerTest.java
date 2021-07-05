@@ -131,8 +131,8 @@ public class JobRunnerTest {
         Map<Step, Status> steps = run.get().stepStatuses();
         runner.maintain();
         assertEquals(steps, run.get().stepStatuses());
-        assertEquals(List.of(deployTester), run.get().readySteps());
-        assertStepsWithStartTime(run.get(), deployTester);
+        assertEquals(List.of(deployTester, deployReal), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal);
 
         outcomes.put(deployTester, running);
         runner.maintain();

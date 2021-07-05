@@ -193,7 +193,8 @@ public class InternalStepRunner implements StepRunner {
                       controller.jobController().run(id).get()
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
-                      logger);
+                      logger,
+                      false);
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
@@ -206,10 +207,12 @@ public class InternalStepRunner implements StepRunner {
                       controller.jobController().run(id).get()
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
-                      logger);
+                      logger,
+                      true);
     }
 
-    private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger) {
+    private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger,
+                                       boolean failOnAnyError) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if (prepareResponse.log != null)
@@ -228,7 +231,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (ConfigServerException e) {
             // Retry certain failures for up to one hour.
-            Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
+            Optional<RunStatus> result = failOnAnyError || startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                                          ? Optional.of(deploymentFailed) : Optional.empty();
             switch (e.code()) {
                 case CERTIFICATE_NOT_READY:
@@ -250,7 +253,7 @@ public class InternalStepRunner implements StepRunner {
                 case OUT_OF_CAPACITY:
                     logger.log(e.message());
                     return controller.system().isCd() && startTime.plus(timeouts.capacity()).isAfter(controller.clock().instant())
-                           ? Optional.empty()
+                           ? result
                            : Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
