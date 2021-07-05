@@ -50,8 +50,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence.broken;
@@ -92,55 +90,15 @@ class JobControllerApiHandlerHelper {
         return new SlimeJsonResponse(slime);
     }
 
-    private static void runToSlime(Cursor runObject, Run run, URI baseUriForJobType) {
-        runObject.setLong("id", run.id().number());
-        runObject.setString("status", nameOf(run.status()));
-        runObject.setLong("start", run.start().toEpochMilli());
-        run.end().ifPresent(instant -> runObject.setLong("end", instant.toEpochMilli()));
-
-        versionsToSlime(runObject, run.versions());
-
-        Cursor stepsObject = runObject.setObject("steps");
-        run.steps().forEach((step, info) -> stepsObject.setString(step.name(), info.status().name()));
-        Cursor tasksObject = runObject.setObject("tasks");
-        taskStatus(deployReal, run).ifPresent(status -> tasksObject.setString("deploy", status));
-        taskStatus(Step.installReal, run).ifPresent(status -> tasksObject.setString("install", status));
-        taskStatus(Step.endTests, run).ifPresent(status -> tasksObject.setString("test", status));
-
-        runObject.setString("log", baseUriForJobType.resolve(baseUriForJobType.getPath() + "/run/" + run.id().number()).normalize().toString());
-    }
-
-    /** Returns the status of the task represented by the given step, if it has started. */
-    private static Optional<String> taskStatus(Step step, Run run) {
-        return run.readySteps().contains(step) ? Optional.of("running")
-                                               : Optional.ofNullable(run.steps().get(step))
-                                                         .filter(info -> info.status() != unfinished)
-                                                         .map(info -> info.status().name());
-    }
-
     /** Returns a response with the runs for the given job type. */
     static HttpResponse runResponse(Map<RunId, Run> runs, Optional<String> limitStr, URI baseUriForJobType) {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
 
-        // TODO (freva): Remove after console migrated to use new format
-        if (limitStr.isEmpty())
-            runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
-        else {
-            int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
-            toSlime(cursor.setArray("runs"), runs.values().stream()
-                    .sorted(Comparator.comparing((Run run) -> run.id().number()).reversed())
-                    .collect(Collectors.toUnmodifiableList()), limit, baseUriForJobType);
-        }
+        int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
+        toSlime(cursor.setArray("runs"), runs.values(), limit, baseUriForJobType);
 
         return new SlimeJsonResponse(slime);
-    }
-
-    private static void versionsToSlime(Cursor runObject, Versions versions) {
-        runObject.setString("wantedPlatform", versions.targetPlatform().toString());
-        applicationVersionToSlime(runObject.setObject("wantedApplication"), versions.targetApplication());
-        versions.sourcePlatform().ifPresent(version -> runObject.setString("currentPlatform", version.toString()));
-        versions.sourceApplication().ifPresent(version -> applicationVersionToSlime(runObject.setObject("currentApplication"), version));
     }
 
     static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {

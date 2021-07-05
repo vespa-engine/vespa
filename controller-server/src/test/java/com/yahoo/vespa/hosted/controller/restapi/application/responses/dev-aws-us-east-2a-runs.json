@@ -1,22 +1,29 @@
 {
-  "1": {
-    "id": 1,
-    "status": "success",
-    "start": 14503000,
-    "end": 14503000,
-    "wantedPlatform": "7.1",
-    "wantedApplication": {
-      "hash": "unknown"
-    },
-    "steps": {
-      "deployReal": "succeeded",
-      "installReal": "succeeded",
-      "copyVespaLogs": "succeeded"
-    },
-    "tasks": {
-      "deploy": "succeeded",
-      "install": "succeeded"
-    },
-    "log": "https://some.url:43/root/run/1"
-  }
+  "runs": [
+    {
+      "id": 1,
+      "url": "https://some.url:43/root/run/1",
+      "start": 14503000,
+      "end": 14503000,
+      "status": "success",
+      "versions": {
+        "targetPlatform": "7.1.0",
+        "targetApplication": {}
+      },
+      "steps": [
+        {
+          "name": "deployReal",
+          "status": "succeeded"
+        },
+        {
+          "name": "installReal",
+          "status": "succeeded"
+        },
+        {
+          "name": "copyVespaLogs",
+          "status": "succeeded"
+        }
+      ]
+    }
+  ]
 }
