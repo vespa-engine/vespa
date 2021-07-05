@@ -89,6 +89,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
@@ -635,6 +636,19 @@ public class InternalStepRunner implements StepRunner {
         if (deployment(id.application(), id.type()).isPresent())
             try {
                 controller.jobController().updateVespaLog(id);
+            }
+            // Hitting a config server which doesn't have this particular app loaded causes a 404.
+            catch (ConfigServerException e) {
+                Instant doom = controller.jobController().run(id).get().stepInfo(copyVespaLogs).get().startTime().get()
+                                         .plus(Duration.ofMinutes(3));
+                if (e.code() == ConfigServerException.ErrorCode.NOT_FOUND && controller.clock().instant().isBefore(doom)) {
+                    logger.log(INFO, "Found no logs, but will retry");
+                    return Optional.empty();
+                }
+                else {
+                    logger.log(INFO, "Failure getting vespa logs for " + id, e);
+                    return Optional.of(error);
+                }
             }
             catch (Exception e) {
                 logger.log(INFO, "Failure getting vespa logs for " + id, e);
