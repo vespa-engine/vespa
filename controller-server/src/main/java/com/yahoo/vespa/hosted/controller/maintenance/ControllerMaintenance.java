@@ -42,6 +42,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(upgrader);
         maintainers.addAll(osUpgraders(controller, intervals.osUpgrader));
         maintainers.add(new DeploymentExpirer(controller, intervals.defaultInterval));
+        maintainers.add(new DeploymentUpgrader(controller, intervals.defaultInterval));
         maintainers.add(new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval));
         maintainers.add(new MetricsReporter(controller, metric));
         maintainers.add(new OutstandingChangeDeployer(controller, intervals.outstandingChangeDeployer));

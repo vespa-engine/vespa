@@ -30,6 +30,7 @@ public class Run {
     private final RunId id;
     private final Map<Step, StepInfo> steps;
     private final Versions versions;
+    private final boolean isRedeployment;
     private final Instant start;
     private final Optional<Instant> end;
     private final RunStatus status;
@@ -40,12 +41,13 @@ public class Run {
     private final Optional<X509Certificate> testerCertificate;
 
     // For deserialisation only -- do not use!
-    public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, Instant start, Optional<Instant> end,
+    public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, boolean isRedeployment, Instant start, Optional<Instant> end,
                RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp, Optional<Instant> noNodesDownSince,
                Optional<ConvergenceSummary> convergenceSummary, Optional<X509Certificate> testerCertificate) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
+        this.isRedeployment = isRedeployment;
         this.start = start;
         this.end = end;
         this.status = status;
@@ -56,10 +58,10 @@ public class Run {
         this.testerCertificate = testerCertificate;
     }
 
-    public static Run initial(RunId id, Versions versions, Instant now, JobProfile profile) {
+    public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
-        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running,
+        return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(), running,
                        -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty());
     }
 
@@ -73,7 +75,7 @@ public class Run {
 
         EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
-        return new Run(id, steps, versions, start, end, this.status == running ? status : this.status,
+        return new Run(id, steps, versions, isRedeployment, start, end, this.status == running ? status : this.status,
                        lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
@@ -88,49 +90,49 @@ public class Run {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), stepInfo.with(startTime));
 
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
                        noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run finished(Instant now) {
         requireActive();
-        return new Run(id, steps, versions, start, Optional.of(now), status == running ? success : status,
+        return new Run(id, steps, versions, isRedeployment, start, Optional.of(now), status == running ? success : status,
                        lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty());
     }
 
     public Run aborted() {
         requireActive();
-        return new Run(id, steps, versions, start, end, aborted, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, aborted, lastTestRecord, lastVespaLogTimestamp,
                        noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
                        noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
                        noNodesDownSince, convergenceSummary, testerCertificate);
     }
 
     public Run noNodesDownSince(Instant noNodesDownSince) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
                        Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate);
     }
 
     public Run withSummary(ConvergenceSummary convergenceSummary) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
                        noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
-        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp,
+        return new Run(id, steps, versions, isRedeployment, start, end, status, lastTestRecord, lastVespaLogTimestamp,
                        noNodesDownSince, convergenceSummary, Optional.of(testerCertificate));
     }
 
@@ -220,6 +222,11 @@ public class Run {
     /** Returns the tester certificate for this run, or empty. */
     public Optional<X509Certificate> testerCertificate() {
         return testerCertificate;
+    }
+
+    /** Whether this is a automatic redeployment. */
+    public boolean isRedeployment() {
+        return isRedeployment;
     }
 
     @Override
