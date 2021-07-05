@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -95,7 +96,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
     private ConfigChangeActions configChangeActions = null;
-    private String log = "INFO - All good";
+    private Supplier<String> log = () -> "INFO - All good";
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
@@ -554,7 +555,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
-        return new ByteArrayInputStream(log.getBytes(StandardCharsets.UTF_8));
+        return new ByteArrayInputStream(log.get().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -562,7 +563,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return new ProxyResponse("{\"path\":\"" + path + "\"}", "application/json", 200);
     }
 
-    public void setLogStream(String log) {
+    public void setLogStream(Supplier<String> log) {
         this.log = log;
     }
 

@@ -54,6 +54,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.app
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -383,23 +384,39 @@ public class InternalStepRunnerTest {
 
     @Test
     public void vespaLogIsCopied() {
+        // Tests fail. We should get logs. This fails too, on the first attempt.
         RunId id = app.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.ERROR);
-        tester.configServer().setLogStream(vespaLog);
+        tester.configServer().setLogStream(() -> { throw new ConfigServerException(ConfigServerException.ErrorCode.NOT_FOUND, "404", "context"); });
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.copyVespaLogs));
         assertTestLogEntries(id, Step.copyVespaLogs,
-                             new LogEntry(lastId + 2, Instant.EPOCH.plus(3554970337935104L, ChronoUnit.MICROS), info,
+                             new LogEntry(lastId + 2, tester.clock().instant(), info,
+                                          "Found no logs, but will retry"),
+                             new LogEntry(lastId + 4, tester.clock().instant(), info,
+                                          "Found no logs, but will retry"));
+
+        // Config servers now provide the log, and we get it.
+        tester.configServer().setLogStream(() -> vespaLog);
+        tester.runner().run();
+        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertTestLogEntries(id, Step.copyVespaLogs,
+                             new LogEntry(lastId + 2, tester.clock().instant(), info,
+                                          "Found no logs, but will retry"),
+                             new LogEntry(lastId + 4, tester.clock().instant(), info,
+                                          "Found no logs, but will retry"),
+                             new LogEntry(lastId + 5, Instant.EPOCH.plus(3554970337935104L, ChronoUnit.MICROS), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 3, Instant.EPOCH.plus(3554970337947777L, ChronoUnit.MICROS), info,
+                             new LogEntry(lastId + 6, Instant.EPOCH.plus(3554970337947777L, ChronoUnit.MICROS), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 4, Instant.EPOCH.plus(3554970337947820L, ChronoUnit.MICROS), info,
+                             new LogEntry(lastId + 7, Instant.EPOCH.plus(3554970337947820L, ChronoUnit.MICROS), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 5, Instant.EPOCH.plus(3554970337947845L, ChronoUnit.MICROS), warning,
+                             new LogEntry(lastId + 8, Instant.EPOCH.plus(3554970337947845L, ChronoUnit.MICROS), warning,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstderr\n" +
                                           "java.lang.NullPointerException\n\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\n\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)"));
     }
