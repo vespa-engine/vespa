@@ -5,10 +5,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceUsage;
 
 import java.math.BigDecimal;
 import java.time.Instant;

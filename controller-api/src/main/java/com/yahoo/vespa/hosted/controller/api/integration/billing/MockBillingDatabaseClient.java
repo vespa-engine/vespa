@@ -2,13 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.billing;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 
 import java.time.Clock;
 import java.time.LocalDate;
