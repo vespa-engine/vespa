@@ -22,13 +22,13 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     private final Clock clock;
     private final PlanRegistry planRegistry;
     private final Map<TenantName, Plan> tenantPlans = new HashMap<>();
-    private final Map<Invoice.Id, TenantName> invoices = new HashMap<>();
-    private final Map<Invoice.Id, List<Invoice.LineItem>> lineItems = new HashMap<>();
-    private final Map<TenantName, List<Invoice.LineItem>> uncommittedLineItems = new HashMap<>();
+    private final Map<Bill.Id, TenantName> invoices = new HashMap<>();
+    private final Map<Bill.Id, List<Bill.LineItem>> lineItems = new HashMap<>();
+    private final Map<TenantName, List<Bill.LineItem>> uncommittedLineItems = new HashMap<>();
 
-    private final Map<Invoice.Id, Invoice.StatusHistory> statuses = new HashMap<>();
-    private final Map<Invoice.Id, ZonedDateTime> startTimes = new HashMap<>();
-    private final Map<Invoice.Id, ZonedDateTime> endTimes = new HashMap<>();
+    private final Map<Bill.Id, Bill.StatusHistory> statuses = new HashMap<>();
+    private final Map<Bill.Id, ZonedDateTime> startTimes = new HashMap<>();
+    private final Map<Bill.Id, ZonedDateTime> endTimes = new HashMap<>();
 
     private final ZonedDateTime startTime = LocalDate.of(2020, 4, 1).atStartOfDay(ZoneId.of("UTC"));
     private final ZonedDateTime endTime = LocalDate.of(2020, 5, 1).atStartOfDay(ZoneId.of("UTC"));
@@ -53,32 +53,32 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                 .findFirst();
     }
 
-    public String getStatus(Invoice.Id invoiceId) {
+    public String getStatus(Bill.Id invoiceId) {
         return statuses.get(invoiceId).current();
     }
 
     @Override
-    public Invoice.Id createInvoice(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent) {
-        var invoiceId = Invoice.Id.generate();
+    public Bill.Id createBill(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent) {
+        var invoiceId = Bill.Id.generate();
         invoices.put(invoiceId, tenant);
-        statuses.computeIfAbsent(invoiceId, l -> Invoice.StatusHistory.open(clock));
+        statuses.computeIfAbsent(invoiceId, l -> Bill.StatusHistory.open(clock));
         startTimes.put(invoiceId, startTime);
         endTimes.put(invoiceId, endTime);
         return invoiceId;
     }
 
     @Override
-    public Optional<Invoice> readInvoice(Invoice.Id invoiceId) {
-        var invoice = Optional.ofNullable(invoices.get(invoiceId));
-        var lines = lineItems.getOrDefault(invoiceId, List.of());
-        var status = statuses.getOrDefault(invoiceId, Invoice.StatusHistory.open(clock));
-        var start = startTimes.getOrDefault(invoiceId, startTime);
-        var end = endTimes.getOrDefault(invoiceId, endTime);
-        return invoice.map(tenant -> new Invoice(invoiceId, tenant, status, lines, start, end));
+    public Optional<Bill> readBill(Bill.Id billId) {
+        var invoice = Optional.ofNullable(invoices.get(billId));
+        var lines = lineItems.getOrDefault(billId, List.of());
+        var status = statuses.getOrDefault(billId, Bill.StatusHistory.open(clock));
+        var start = startTimes.getOrDefault(billId, startTime);
+        var end = endTimes.getOrDefault(billId, endTime);
+        return invoice.map(tenant -> new Bill(billId, tenant, status, lines, start, end));
     }
 
     @Override
-    public String addLineItem(TenantName tenantName, Invoice.LineItem lineItem, Optional<Invoice.Id> invoiceId) {
+    public String addLineItem(TenantName tenantName, Bill.LineItem lineItem, Optional<Bill.Id> invoiceId) {
         var lineItemId = UUID.randomUUID().toString();
         invoiceId.ifPresentOrElse(
                 invoice -> lineItems.computeIfAbsent(invoice, l -> new ArrayList<>()).add(lineItem),
@@ -88,14 +88,14 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     }
 
     @Override
-    public void setStatus(Invoice.Id invoiceId, String agent, String status) {
-        statuses.computeIfAbsent(invoiceId, k -> Invoice.StatusHistory.open(clock))
+    public void setStatus(Bill.Id invoiceId, String agent, String status) {
+        statuses.computeIfAbsent(invoiceId, k -> Bill.StatusHistory.open(clock))
                 .getHistory()
                 .put(ZonedDateTime.now(), status);
     }
 
     @Override
-    public List<Invoice.LineItem> getUnusedLineItems(TenantName tenantName) {
+    public List<Bill.LineItem> getUnusedLineItems(TenantName tenantName) {
         return uncommittedLineItems.getOrDefault(tenantName, new ArrayList<>());
     }
 
@@ -108,7 +108,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     }
 
     @Override
-    public void commitLineItems(TenantName tenantName, Invoice.Id invoiceId) {
+    public void commitLineItems(TenantName tenantName, Bill.Id invoiceId) {
 
     }
 
@@ -148,7 +148,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
     }
 
     @Override
-    public List<Invoice> readInvoicesForTenant(TenantName tenant) {
+    public List<Bill> readBillsForTenant(TenantName tenant) {
         return invoices.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(tenant))
                 .map(Map.Entry::getKey)
@@ -157,13 +157,13 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                     var status = statuses.get(invoiceId);
                     var start = startTimes.get(invoiceId);
                     var end = endTimes.get(invoiceId);
-                    return new Invoice(invoiceId, tenant, status, items, start, end);
+                    return new Bill(invoiceId, tenant, status, items, start, end);
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Invoice> readInvoices() {
+    public List<Bill> readBills() {
         return invoices.keySet().stream()
                 .map(invoiceId -> {
                     var tenant = invoices.get(invoiceId);
@@ -171,7 +171,7 @@ public class BillingDatabaseClientMock implements BillingDatabaseClient {
                     var status = statuses.get(invoiceId);
                     var start = startTimes.get(invoiceId);
                     var end = endTimes.get(invoiceId);
-                    return new Invoice(invoiceId, tenant, status, items, start, end);
+                    return new Bill(invoiceId, tenant, status, items, start, end);
                 })
                 .collect(Collectors.toList());
     }

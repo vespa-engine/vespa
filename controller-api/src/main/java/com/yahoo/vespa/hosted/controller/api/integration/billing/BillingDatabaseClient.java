@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Interface that talks about invoices in the billing API.  It is a layer on top of the SQL
+ * Interface that talks about bills in the billing API.  It is a layer on top of the SQL
  * database where we store data about bills.
  *
  * @author olaa
@@ -22,75 +22,75 @@ public interface BillingDatabaseClient {
     Optional<InstrumentOwner> getDefaultPaymentInstrumentForTenant(TenantName from);
 
     /**
-     * Create a completely new Invoice in the open state with no LineItems.
+     * Create a completely new Bill in the open state with no LineItems.
      *
-     * @param tenant The name of the tenant the invoice is for
-     * @param agent  The agent that created the invoice
-     * @return The Id of the new invoice
+     * @param tenant The name of the tenant the bill is for
+     * @param agent  The agent that created the bill
+     * @return The Id of the new bill
      */
-    Invoice.Id createInvoice(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
+    Bill.Id createBill(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
 
     /**
-     * Read the given invoice from the data source
+     * Read the given bill from the data source
      *
-     * @param invoiceId The Id of the invoice to retrieve
-     * @return The Invoice if it exists, Optional.empty() if not.
+     * @param billId The Id of the bill to retrieve
+     * @return The Bill if it exists, Optional.empty() if not.
      */
-    Optional<Invoice> readInvoice(Invoice.Id invoiceId);
+    Optional<Bill> readBill(Bill.Id billId);
 
     /**
-     * Get all invoices for a given tenant, ordered by date
+     * Get all bills for a given tenant, ordered by date
      *
      * @param tenant The name of the tenant
-     * @return List of all invoices ordered by date
+     * @return List of all bills ordered by date
      */
-    List<Invoice> readInvoicesForTenant(TenantName tenant);
+    List<Bill> readBillsForTenant(TenantName tenant);
 
     /**
-     * Read all invoices, ordered by date
-     * @return List of all invoices ordered by date
+     * Read all bills, ordered by date
+     * @return List of all bills ordered by date
      */
-    List<Invoice> readInvoices();
+    List<Bill> readBills();
 
     /**
-     * Add a line item to an open Invoice
+     * Add a line item to an open bill
      *
      * @param lineItem
-     * @param invoiceId    The optional ID of the invoice this line item is for
+     * @param billId    The optional ID of the bill this line item is for
      * @return The Id of the new line item
-     * @throws RuntimeException if the invoice is not in OPEN state
+     * @throws RuntimeException if the bill is not in OPEN state
      */
-    String addLineItem(TenantName tenantName, Invoice.LineItem lineItem, Optional<Invoice.Id> invoiceId);
+    String addLineItem(TenantName tenantName, Bill.LineItem lineItem, Optional<Bill.Id> billId);
 
     /**
-     * Set status for the given invoice
+     * Set status for the given bill
      *
-     * @param invoiceId The ID of the invoice this status is for
+     * @param billId The ID of the bill this status is for
      * @param agent     The agent that added the status
-     * @param status    The new status of the invoice
+     * @param status    The new status of the bill
      */
-    void setStatus(Invoice.Id invoiceId, String agent, String status);
+    void setStatus(Bill.Id billId, String agent, String status);
 
-    List<Invoice.LineItem> getUnusedLineItems(TenantName tenantName);
+    List<Bill.LineItem> getUnusedLineItems(TenantName tenantName);
 
     /**
      * Delete a line item
-     * This is only allowed if the line item has not yet been associated with an invoice
+     * This is only allowed if the line item has not yet been associated with an bill
      *
      * @param lineItemId The ID of the line item
-     * @throws RuntimeException if the line item is associated with an invoice
+     * @throws RuntimeException if the line item is associated with an bill
      */
     void deleteLineItem(String lineItemId);
 
     /**
-     * Associate all uncommitted line items to a given invoice
-     * This is only allowed if the line item has not already been associated with an invoice
+     * Associate all uncommitted line items to a given bill
+     * This is only allowed if the line item has not already been associated with an bill
      *
      * @param tenantName The tenant we want to commit line items for
-     * @param invoiceId  The ID of the line item
-     * @throws RuntimeException if the line item is already associated with an invoice
+     * @param billId  The ID of the line item
+     * @throws RuntimeException if the line item is already associated with an bill
      */
-    void commitLineItems(TenantName tenantName, Invoice.Id invoiceId);
+    void commitLineItems(TenantName tenantName, Bill.Id billId);
 
     /**
      * Return the plan for the given tenant

@@ -18,9 +18,9 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
@@ -99,23 +99,23 @@ public class BillingApiHandler extends LoggingRequestHandler {
         if (path.matches("/billing/v1/tenant/{tenant}/billing")) return getBilling(path.get("tenant"), request.getProperty("until"));
         if (path.matches("/billing/v1/tenant/{tenant}/plan")) return getPlan(path.get("tenant"));
         if (path.matches("/billing/v1/billing")) return getBillingAllTenants(request.getProperty("until"));
-        if (path.matches("/billing/v1/invoice/export")) return getAllInvoices();
+        if (path.matches("/billing/v1/invoice/export")) return getAllBills();
         if (path.matches("/billing/v1/invoice/tenant/{tenant}/line-item")) return getLineItems(path.get("tenant"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse getAllInvoices() {
-        var invoices = billingController.getInvoices();
+    private HttpResponse getAllBills() {
+        var bills = billingController.getBills();
         var headers = new String[]{ "ID", "Tenant", "From", "To", "CpuHours", "MemoryHours", "DiskHours", "Cpu", "Memory", "Disk", "Additional" };
-        var rows = invoices.stream()
-                .map(invoice -> {
+        var rows = bills.stream()
+                .map(bill -> {
                     return new Object[] {
-                            invoice.id().value(), invoice.tenant().value(),
-                            invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
-                            invoice.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
-                            invoice.sumCpuHours(), invoice.sumMemoryHours(), invoice.sumDiskHours(),
-                            invoice.sumCpuCost(), invoice.sumMemoryCost(), invoice.sumDiskCost(),
-                            invoice.sumAdditionalCost()
+                            bill.id().value(), bill.tenant().value(),
+                            bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            bill.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            bill.sumCpuHours(), bill.sumMemoryHours(), bill.sumDiskHours(),
+                            bill.sumCpuCost(), bill.sumMemoryCost(), bill.sumDiskCost(),
+                            bill.sumAdditionalCost()
                     };
                 })
                 .collect(Collectors.toList());
@@ -138,8 +138,8 @@ public class BillingApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePOST(Path path, HttpRequest request, String userId) {
-        if (path.matches("/billing/v1/invoice")) return createInvoice(request, userId);
-        if (path.matches("/billing/v1/invoice/{invoice-id}/status")) return setInvoiceStatus(request, path.get("invoice-id"));
+        if (path.matches("/billing/v1/invoice")) return createBill(request, userId);
+        if (path.matches("/billing/v1/invoice/{invoice-id}/status")) return setBillStatus(request, path.get("invoice-id"));
         if (path.matches("/billing/v1/invoice/tenant/{tenant}/line-item")) return addLineItem(request, path.get("tenant"));
         return ErrorResponse.notFoundError("Nothing at " + path);
 
@@ -190,7 +190,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     private HttpResponse getBillingAllTenants(String until) {
         try {
             var untilDate = untilParameter(until);
-            var uncommittedInvoices = billingController.createUncommittedInvoices(untilDate);
+            var uncommittedBills = billingController.createUncommittedBills(untilDate);
 
             var slime = new Slime();
             var root = slime.setObject();
@@ -198,12 +198,12 @@ public class BillingApiHandler extends LoggingRequestHandler {
             var tenants = root.setArray("tenants");
 
             tenantController.asList().stream().sorted(Comparator.comparing(Tenant::name)).forEach(tenant -> {
-                var invoice = uncommittedInvoices.get(tenant.name());
+                var bill = uncommittedBills.get(tenant.name());
                 var tc = tenants.addObject();
                 tc.setString("tenant", tenant.name().value());
                 getPlanForTenant(tc, tenant.name());
                 getCollectionForTenant(tc, tenant.name());
-                renderCurrentUsage(tc.setObject("current"), invoice);
+                renderCurrentUsage(tc.setObject("current"), bill);
                 renderAdditionalItems(tc.setObject("additional").setArray("items"), billingController.getUnusedLineItems(tenant.name()));
 
                 billingController.getDefaultInstrument(tenant.name()).ifPresent(card ->
@@ -232,14 +232,14 @@ public class BillingApiHandler extends LoggingRequestHandler {
         return new MessageResponse("Added line item for tenant " + tenant);
     }
 
-    private HttpResponse setInvoiceStatus(HttpRequest request, String invoiceId) {
+    private HttpResponse setBillStatus(HttpRequest request, String billId) {
         Inspector inspector = inspectorOrThrow(request);
         String status = getInspectorFieldOrThrow(inspector, "status");
-        billingController.updateInvoiceStatus(Invoice.Id.of(invoiceId), userIdOrThrow(request), status);
-        return new MessageResponse("Updated status of invoice " + invoiceId);
+        billingController.updateBillStatus(Bill.Id.of(billId), userIdOrThrow(request), status);
+        return new MessageResponse("Updated status of invoice " + billId);
     }
 
-    private HttpResponse createInvoice(HttpRequest request, String userId) {
+    private HttpResponse createBill(HttpRequest request, String userId) {
         Inspector inspector = inspectorOrThrow(request);
         TenantName tenantName = TenantName.from(getInspectorFieldOrThrow(inspector, "tenant"));
 
@@ -248,12 +248,12 @@ public class BillingApiHandler extends LoggingRequestHandler {
         ZonedDateTime startTime = startDate.atStartOfDay(ZoneId.of("UTC"));
         ZonedDateTime endTime = endDate.atStartOfDay(ZoneId.of("UTC"));
 
-        var invoiceId = billingController.createInvoiceForPeriod(tenantName, startTime, endTime, userId);
+        var billId = billingController.createBillForPeriod(tenantName, startTime, endTime, userId);
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        root.setString("message", "Created invoice with ID " + invoiceId.value());
-        root.setString("id", invoiceId.value());
+        root.setString("message", "Created invoice with ID " + billId.value());
+        root.setString("id", billId.value());
         return new SlimeJsonResponse(slime);
     }
 
@@ -278,7 +278,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
             getPlanForTenant(root, tenantId);
             renderCurrentUsage(root.setObject("current"), getCurrentUsageForTenant(tenantId, untilDate));
             renderAdditionalItems(root.setObject("additional").setArray("items"), billingController.getUnusedLineItems(tenantId));
-            renderInvoices(root.setArray("bills"), getInvoicesForTenant(tenantId));
+            renderBills(root.setArray("bills"), getBillsForTenant(tenantId));
 
             billingController.getDefaultInstrument(tenantId).ifPresent( card ->
                 renderInstrument(root.setObject("payment"), card)
@@ -328,7 +328,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
 
     }
 
-    private void renderCurrentUsage(Cursor cursor, Invoice currentUsage) {
+    private void renderCurrentUsage(Cursor cursor, Bill currentUsage) {
         if (currentUsage == null) return;
         cursor.setString("amount", currentUsage.sum().toPlainString());
         cursor.setString("status", "accrued");
@@ -340,46 +340,46 @@ public class BillingApiHandler extends LoggingRequestHandler {
         });
     }
 
-    private void renderAdditionalItems(Cursor cursor, List<Invoice.LineItem> items) {
+    private void renderAdditionalItems(Cursor cursor, List<Bill.LineItem> items) {
         items.forEach(item -> {
             renderLineItemToCursor(cursor.addObject(), item);
         });
     }
 
-    private Invoice getCurrentUsageForTenant(TenantName tenant, LocalDate until) {
-        return billingController.createUncommittedInvoice(tenant, until);
+    private Bill getCurrentUsageForTenant(TenantName tenant, LocalDate until) {
+        return billingController.createUncommittedBill(tenant, until);
     }
 
-    private List<Invoice> getInvoicesForTenant(TenantName tenant) {
-        return billingController.getInvoicesForTenant(tenant);
+    private List<Bill> getBillsForTenant(TenantName tenant) {
+        return billingController.getBillsForTenant(tenant);
     }
 
-    private void renderInvoices(Cursor cursor, List<Invoice> invoices) {
-        invoices.forEach(invoice -> {
-            var invoiceCursor = cursor.addObject();
-            renderInvoiceToCursor(invoiceCursor, invoice);
+    private void renderBills(Cursor cursor, List<Bill> bills) {
+        bills.forEach(bill -> {
+            var billCursor = cursor.addObject();
+            renderBillToCursor(billCursor, bill);
         });
     }
 
-    private void renderInvoiceToCursor(Cursor invoiceCursor, Invoice invoice) {
-        invoiceCursor.setString("id", invoice.id().value());
-        invoiceCursor.setString("from", invoice.getStartTime().format(DATE_TIME_FORMATTER));
-        invoiceCursor.setString("to", invoice.getEndTime().format(DATE_TIME_FORMATTER));
+    private void renderBillToCursor(Cursor billCursor, Bill bill) {
+        billCursor.setString("id", bill.id().value());
+        billCursor.setString("from", bill.getStartTime().format(DATE_TIME_FORMATTER));
+        billCursor.setString("to", bill.getEndTime().format(DATE_TIME_FORMATTER));
 
-        invoiceCursor.setString("amount", invoice.sum().toString());
-        invoiceCursor.setString("status", invoice.status());
-        var statusCursor = invoiceCursor.setArray("statusHistory");
-        renderStatusHistory(statusCursor, invoice.statusHistory());
+        billCursor.setString("amount", bill.sum().toString());
+        billCursor.setString("status", bill.status());
+        var statusCursor = billCursor.setArray("statusHistory");
+        renderStatusHistory(statusCursor, bill.statusHistory());
 
 
-        var lineItemsCursor = invoiceCursor.setArray("items");
-        invoice.lineItems().forEach(lineItem -> {
+        var lineItemsCursor = billCursor.setArray("items");
+        bill.lineItems().forEach(lineItem -> {
             var itemCursor = lineItemsCursor.addObject();
             renderLineItemToCursor(itemCursor, lineItem);
         });
     }
 
-    private void renderStatusHistory(Cursor cursor, Invoice.StatusHistory statusHistory) {
+    private void renderStatusHistory(Cursor cursor, Bill.StatusHistory statusHistory) {
         statusHistory.getHistory()
                 .entrySet()
                 .stream()
@@ -390,7 +390,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
                 });
     }
 
-    private void renderLineItemToCursor(Cursor cursor, Invoice.LineItem lineItem) {
+    private void renderLineItemToCursor(Cursor cursor, Bill.LineItem lineItem) {
         cursor.setString("id", lineItem.id());
         cursor.setString("description", lineItem.description());
         cursor.setString("amount", lineItem.amount().toString());

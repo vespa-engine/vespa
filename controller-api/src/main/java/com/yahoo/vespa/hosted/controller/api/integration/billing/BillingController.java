@@ -62,7 +62,7 @@ public interface BillingController {
      * @param agent The agent that creates the bill
      * @return The ID of the new bill.
      */
-    Invoice.Id createInvoiceForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
+    Bill.Id createBillForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent);
 
     /**
      * Create an unpersisted bill of unbilled use for the given tenant from the end of last bill until the given date.
@@ -71,13 +71,13 @@ public interface BillingController {
      * @param until The end date of the unbilled use period.
      * @return A bill with the resource use and cost.
      */
-    Invoice createUncommittedInvoice(TenantName tenant, LocalDate until);
+    Bill createUncommittedBill(TenantName tenant, LocalDate until);
 
-    /** Run {createUncommittedInvoice} for all tenants with unbilled use */
-    Map<TenantName, Invoice> createUncommittedInvoices(LocalDate until);
+    /** Run {createUncommittedBill} for all tenants with unbilled use */
+    Map<TenantName, Bill> createUncommittedBills(LocalDate until);
 
     /** Get line items that have been manually added to a tenant, but is not yet part of a bill */
-    List<Invoice.LineItem> getUnusedLineItems(TenantName tenant);
+    List<Bill.LineItem> getUnusedLineItems(TenantName tenant);
 
     /** Get the payment instrument for the given tenant */
     Optional<PaymentInstrument> getDefaultInstrument(TenantName tenant);
@@ -89,7 +89,7 @@ public interface BillingController {
     boolean deleteInstrument(TenantName tenant, String userId, String instrumentId);
 
     /** Change the status of the given bill */
-    void updateInvoiceStatus(Invoice.Id invoiceId, String agent, String status);
+    void updateBillStatus(Bill.Id billId, String agent, String status);
 
     /** Add a line item to the given bill */
     void addLineItem(TenantName tenant, String description, BigDecimal amount, String agent);
@@ -104,10 +104,10 @@ public interface BillingController {
     InstrumentList listInstruments(TenantName tenant, String userId);
 
     /** Get all bills for the given tenant */
-    List<Invoice> getInvoicesForTenant(TenantName tenant);
+    List<Bill> getBillsForTenant(TenantName tenant);
 
     /** Get all bills from the system */
-    List<Invoice> getInvoices();
+    List<Bill> getBills();
 
     /** Delete billing contact information from the tenant */
     void deleteBillingInfo(TenantName tenant, Set<User> users, boolean isPrivileged);
