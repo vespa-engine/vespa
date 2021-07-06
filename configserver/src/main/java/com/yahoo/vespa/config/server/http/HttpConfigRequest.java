@@ -18,8 +18,8 @@ import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.http.v2.HttpConfigRequests;
-import com.yahoo.vespa.config.server.http.v2.TenantRequest;
+import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
+import com.yahoo.vespa.config.server.http.v2.request.TenantRequest;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 /**

@@ -25,6 +25,7 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.http.v2.request.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.http.v2.response.ApplicationSuspendedResponse;
 import com.yahoo.vespa.config.server.http.v2.response.DeleteApplicationResponse;
 import com.yahoo.vespa.config.server.http.v2.response.GetApplicationResponse;

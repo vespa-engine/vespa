@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
+import com.yahoo.vespa.config.server.http.v2.request.SessionContentRequestV2;
 
 /**
  * A handler that will return content or content status for files or directories

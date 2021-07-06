@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http.v2;
+package com.yahoo.vespa.config.server.http.v2.request;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
@@ -18,12 +18,12 @@ public class ApplicationContentRequest extends ContentRequest {
     private final ApplicationId applicationId;
     private final Zone zone;
 
-    ApplicationContentRequest(HttpRequest request,
-                              long sessionId,
-                              ApplicationId applicationId,
-                              Zone zone,
-                              String contentPath,
-                              ApplicationFile applicationFile) {
+    public ApplicationContentRequest(HttpRequest request,
+                                     long sessionId,
+                                     ApplicationId applicationId,
+                                     Zone zone,
+                                     String contentPath,
+                                     ApplicationFile applicationFile) {
         super(request, sessionId, contentPath, applicationFile);
         this.applicationId = applicationId;
         this.zone = zone;
