@@ -863,6 +863,7 @@
         -->
         <curator.version>5.1.0</curator.version>
         <jna.version>4.5.2</jna.version>
+        <commons.codec.version>1.15</commons.codec.version>
         <commons.math3.version>3.6.1</commons.math3.version>
         <junit.version>5.7.0</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>

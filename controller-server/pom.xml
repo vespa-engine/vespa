@@ -20,6 +20,13 @@
         <!-- provided -->
 
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>controller-api</artifactId>
           <version>${project.version}</version>
@@ -128,16 +135,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <exclusions>
@@ -164,6 +161,14 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>http-utils</artifactId>
             <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <!-- required by java-jwt -->
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
             <scope>compile</scope>
         </dependency>
 
