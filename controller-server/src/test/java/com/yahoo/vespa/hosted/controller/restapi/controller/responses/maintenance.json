@@ -43,6 +43,9 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
+      "name": "DeploymentUpgrader"
+    },
+    {
       "name": "EndpointCertificateMaintainer"
     },
     {

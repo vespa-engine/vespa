@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -228,6 +229,14 @@ public class JobController {
     /** Returns an immutable map of all known runs for the given application and job type. */
     public NavigableMap<RunId, Run> runs(JobId id) {
         return runs(id.application(), id.type());
+    }
+
+    /** Lists the start time of non-redeployment runs of the given job, in order of increasing age. */
+    public List<Instant> jobStarts(JobId id) {
+        return runs(id).descendingMap().values().stream()
+                       .filter(run -> ! run.isRedeployment())
+                       .map(Run::start)
+                       .collect(toUnmodifiableList());
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */

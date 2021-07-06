@@ -92,10 +92,10 @@ public class DeploymentUpgraderTest {
 
     @Test
     public void testNight() {
-        assertEquals(14, mostLikelyWeeHour(new int[]{ 0, 1, 2, 3, 4, 5, 6 }));
-        assertEquals(12, mostLikelyWeeHour(new int[]{ 22, 23, 0, 1, 2, 3, 4 }));
+        assertEquals(16, mostLikelyWeeHour(new int[]{ 0, 1, 2, 3, 4, 5, 6 }));
+        assertEquals(14, mostLikelyWeeHour(new int[]{ 22, 23, 0, 1, 2, 3, 4 }));
         assertEquals(18, mostLikelyWeeHour(new int[]{ 6, 5, 4, 3, 2, 1, 0 }));
-        assertEquals(13, mostLikelyWeeHour(new int[]{ 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 12 }));
+        assertEquals(20, mostLikelyWeeHour(new int[]{ 0, 12, 0, 12, 0, 12, 0, 12, 0, 12, 0, 11 }));
     }
 
 }
