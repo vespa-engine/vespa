@@ -20,8 +20,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationReindexing;
-import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
@@ -451,78 +449,6 @@ public class ApplicationHandler extends HttpHandler {
         return (vespaVersion == null || vespaVersion.isEmpty())
                 ? Optional.empty()
                 : Optional.of(Version.fromString(vespaVersion));
-    }
-
-    private static class DeleteApplicationResponse extends JSONResponse {
-        DeleteApplicationResponse(int status, ApplicationId applicationId) {
-            super(status);
-            object.setString("message", "Application '" + applicationId + "' deleted");
-        }
-    }
-
-    private static class GetApplicationResponse extends JSONResponse {
-        GetApplicationResponse(int status, long generation, List<Version> modelVersions, Optional<String> applicationPackageReference) {
-            super(status);
-            object.setLong("generation", generation);
-            object.setString("applicationPackageFileReference", applicationPackageReference.orElse(""));
-            Cursor modelVersionArray = object.setArray("modelVersions");
-            modelVersions.forEach(version -> modelVersionArray.addString(version.toFullString()));
-        }
-    }
-
-    private static class ApplicationSuspendedResponse extends JSONResponse {
-        ApplicationSuspendedResponse(boolean suspended) {
-            super(Response.Status.OK);
-            object.setBool("suspended", suspended);
-        }
-    }
-
-    private static class QuotaUsageResponse extends JSONResponse {
-        QuotaUsageResponse(double usageRate) {
-            super(Response.Status.OK);
-            object.setDouble("rate", usageRate);
-        }
-    }
-
-    static class ReindexingResponse extends JSONResponse {
-        ReindexingResponse(Map<String, Set<String>> documentTypes, ApplicationReindexing reindexing,
-                           Map<String, ClusterReindexing> clusters) {
-            super(Response.Status.OK);
-            object.setBool("enabled", reindexing.enabled());
-            Cursor clustersObject = object.setObject("clusters");
-            documentTypes.forEach((cluster, types) -> {
-                Cursor clusterObject = clustersObject.setObject(cluster);
-                Cursor pendingObject = clusterObject.setObject("pending");
-                Cursor readyObject = clusterObject.setObject("ready");
-
-                for (String type : types) {
-                    Cursor statusObject = readyObject.setObject(type);
-                    if (reindexing.clusters().containsKey(cluster)) {
-                        if (reindexing.clusters().get(cluster).pending().containsKey(type))
-                            pendingObject.setLong(type, reindexing.clusters().get(cluster).pending().get(type));
-
-                        if (reindexing.clusters().get(cluster).ready().containsKey(type))
-                            setStatus(statusObject, reindexing.clusters().get(cluster).ready().get(type));
-                    }
-                    if (clusters.containsKey(cluster))
-                        if (clusters.get(cluster).documentTypeStatus().containsKey(type))
-                            setStatus(statusObject, clusters.get(cluster).documentTypeStatus().get(type));
-                }
-            });
-        }
-
-    private static void setStatus(Cursor object, ApplicationReindexing.Status readyStatus) {
-            object.setLong("readyMillis", readyStatus.ready().toEpochMilli());
-        }
-
-        private static void setStatus(Cursor object, ClusterReindexing.Status status) {
-            object.setLong("startedMillis", status.startedAt().toEpochMilli());
-            status.endedAt().ifPresent(endedAt -> object.setLong("endedMillis", endedAt.toEpochMilli()));
-            status.state().map(ClusterReindexing.State::asString).ifPresent(state -> object.setString("state", state));
-            status.message().ifPresent(message -> object.setString("message", message));
-            status.progress().ifPresent(progress -> object.setDouble("progress", progress));
-        }
-
     }
 
     private static JSONResponse createMessageResponse(String message) {
