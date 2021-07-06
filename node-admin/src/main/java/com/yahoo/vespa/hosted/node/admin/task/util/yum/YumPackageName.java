@@ -124,7 +124,7 @@ public class YumPackageName {
      * @throws IllegalArgumentException if spec does not specify a package name.
      * @see #parseString(String)
      */
-    public static YumPackageName fromString(final String packageSpec) {
+    public static YumPackageName fromString(String packageSpec) {
         String spec = packageSpec;
         Optional<String> epoch = Optional.empty();
         String name = null;

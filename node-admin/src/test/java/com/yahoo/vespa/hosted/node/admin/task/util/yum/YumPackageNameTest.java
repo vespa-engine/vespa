@@ -96,7 +96,7 @@ public class YumPackageNameTest {
 
         // epoch:name-ver-rel.arch
         verifyPackageName(
-                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
                 "2",
                 "docker",
                 "1.12.6",
@@ -106,7 +106,7 @@ public class YumPackageNameTest {
                 "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.*");
     }
 
-    private void verifyPackageName(String packageName,
+    private void verifyPackageName(String input,
                                    String epoch,
                                    String name,
                                    String version,
@@ -114,7 +114,7 @@ public class YumPackageNameTest {
                                    String architecture,
                                    String toName,
                                    String toVersionName) {
-        YumPackageName yumPackageName = YumPackageName.fromString(packageName);
+        YumPackageName yumPackageName = YumPackageName.fromString(input);
         verifyValue(epoch, yumPackageName.getEpoch());
         verifyValue(name, Optional.of(yumPackageName.getName()));
         verifyValue(version, yumPackageName.getVersion());
