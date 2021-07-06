@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http.v2;
+package com.yahoo.vespa.config.server.http.v2.response;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -9,19 +9,20 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActionsSlimeConverter;
+import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 
 /**
  * Creates a response for SessionPrepareHandler.
  *
  * @author hmusum
  */
-class SessionPrepareResponse extends SlimeJsonResponse {
+public class SessionPrepareResponse extends SlimeJsonResponse {
 
-    SessionPrepareResponse(TenantName tenantName, HttpRequest request, long sessionId) {
+    public SessionPrepareResponse(TenantName tenantName, HttpRequest request, long sessionId) {
         this(new Slime(), tenantName, request, sessionId, new ConfigChangeActions());
     }
 
-    SessionPrepareResponse(PrepareResult result, TenantName tenantName, HttpRequest request) {
+    public SessionPrepareResponse(PrepareResult result, TenantName tenantName, HttpRequest request) {
         this(result.deployLogger().slime(), tenantName, request, result.sessionId(), result.configChangeActions());
     }
 

@@ -14,6 +14,7 @@ import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.http.v2.response.SessionActiveResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;

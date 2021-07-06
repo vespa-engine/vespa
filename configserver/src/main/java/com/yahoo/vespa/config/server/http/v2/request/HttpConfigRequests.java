@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http.v2;
+package com.yahoo.vespa.config.server.http.v2.request;
 
 import java.net.URI;
 
@@ -45,7 +45,7 @@ public class HttpConfigRequests {
     }
 
 
-    static RequestHandler getRequestHandler(TenantRepository tenantRepository, TenantRequest request) {
+    public static RequestHandler getRequestHandler(TenantRepository tenantRepository, TenantRequest request) {
         Tenant tenant = tenantRepository.getTenant(request.getApplicationId().tenant());
         if (tenant==null) throw new NotFoundException("No such tenant: "+request.getApplicationId().tenant());
         return tenant.getRequestHandler();

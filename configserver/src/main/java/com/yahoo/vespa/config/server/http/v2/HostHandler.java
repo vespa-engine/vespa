@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
+import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
 
 /**
  * Handler for getting tenant and application for a given hostname.
