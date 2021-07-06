@@ -16,7 +16,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -97,7 +96,7 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (applicationRepository.delete(applicationId))
-            return new DeleteApplicationResponse(Response.Status.OK, applicationId);
+            return new DeleteApplicationResponse(applicationId);
 
         return HttpErrorResponse.notFoundError("Unable to delete " + applicationId.toFullString() + ": Not found");
     }
