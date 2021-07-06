@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.metrics;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.http.v2.ProtonMetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.response.ProtonMetricsResponse;
 import java.net.URI;
 import java.util.Collection;
 import java.util.function.Predicate;

@@ -1,4 +1,5 @@
-package com.yahoo.vespa.config.server.http.v2;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.server.http.v2.response;
 
 import com.yahoo.jdisc.Response;
 import com.yahoo.slime.Cursor;
@@ -9,8 +10,8 @@ import com.yahoo.vespa.config.server.http.JSONResponse;
 import java.util.Map;
 import java.util.Set;
 
-class ReindexingResponse extends JSONResponse {
-    ReindexingResponse(Map<String, Set<String>> documentTypes, ApplicationReindexing reindexing,
+public class ReindexingResponse extends JSONResponse {
+    public ReindexingResponse(Map<String, Set<String>> documentTypes, ApplicationReindexing reindexing,
                        Map<String, ClusterReindexing> clusters) {
         super(Response.Status.OK);
         object.setBool("enabled", reindexing.enabled());
