@@ -18,6 +18,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorMock;
@@ -77,6 +79,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockChangeRequestClient changeRequestClient = new MockChangeRequestClient();
     private final AccessControlService accessControlService = new MockAccessControlService();
     private final HorizonClient horizonClient = new MockHorizonClient();
+    private final PlanRegistry planRegistry = new PlanRegistryMock();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -241,6 +244,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public HorizonClient horizonClient() {
         return horizonClient;
+    }
+
+    @Override
+    public PlanRegistry planRegistry() {
+        return planRegistry;
     }
 
     public ConfigServerMock configServerMock() {
