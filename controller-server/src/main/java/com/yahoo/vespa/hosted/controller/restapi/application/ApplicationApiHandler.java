@@ -1678,9 +1678,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse service(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
 
-        if ("container-clustercontroller".equals((serviceName)) && restPath.contains("/status/")) {
+        if (restPath.contains("/status/")) {
             String[] parts = restPath.split("/status/");
-            String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, parts[0], parts[1]);
+            String result = controller.serviceRegistry().configServer().getServiceStatusPage(deploymentId, serviceName, parts[0], parts[1]);
             return new HtmlResponse(result);
         }
 
