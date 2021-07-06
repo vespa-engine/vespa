@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
-import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 
@@ -17,20 +16,10 @@ import java.util.stream.Stream;
 public class YumTester extends Yum {
 
     private final TestTerminal terminal;
-    private final Version yumVersion;
 
     public YumTester(TestTerminal terminal) {
-        this(terminal, YumVersion.rhel7);
-    }
-
-    public YumTester(TestTerminal terminal, YumVersion yumVersion) {
         super(terminal);
         this.terminal = terminal;
-        this.yumVersion = yumVersion.asVersion();
-    }
-
-    public Version yumVersion() {
-        return yumVersion;
     }
 
     public GenericYumCommandExpectation expectInstall(String... packages) {
@@ -81,10 +70,6 @@ public class YumTester extends Yum {
             }
         }
 
-        protected void expectYumVersion() {
-            terminal.expectCommand("yum --version 2>&1", 0, yumVersion.toFullString() + "\ntrailing garbage\n");
-        }
-
         private YumTester execute(String output) {
             if (commandType == CommandType.install)
                 terminal.interceptCommand("rpm query", cmd -> new TestChildProcess2(1, "Not installed"));
@@ -106,7 +91,7 @@ public class YumTester extends Yum {
             if (commandType == CommandType.upgrade && packages.size() > 1)
                 cmd.append(" --setopt skip_missing_names_on_update=False");
             packages.forEach(pkg -> {
-                String name = pkg.toName(yumVersion);
+                String name = pkg.toName();
                 if (name.contains("(") || name.contains(")")) { // Ugly hack to handle implicit quoting done in com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine
                     name = "\"" + name + "\"";
                 }
@@ -114,27 +99,20 @@ public class YumTester extends Yum {
             });
             cmd.append(" 2>&1");
 
-            expectYumVersion();
             terminal.expectCommand(cmd.toString(), 0, output);
             return YumTester.this;
         }
     }
 
     public class InstallFixedCommandExpectation extends GenericYumCommandExpectation {
+
         private InstallFixedCommandExpectation(String yumPackage) {
             super(CommandType.installFixed, yumPackage);
         }
 
         @Override
-        protected void expectYumVersion() {}
-
-        @Override
         public YumTester andReturn(boolean value) {
-            // Pretend package is already correctly version locked to simplify expectations
-            terminal.expectCommand("yum --version 2>&1", 0, yumVersion.toFullString() + "\ntrailing garbage\n");
-
-            String quiet = yumVersion.getMajor() < 4 ? " --quiet" : "";
-            terminal.expectCommand("yum" + quiet +" versionlock list 2>&1", 0, packages.get(0).toVersionLockName(yumVersion));
+            terminal.expectCommand("yum versionlock list 2>&1", 0, packages.get(0).toVersionLockName());
             return super.andReturn(value);
         }
 
