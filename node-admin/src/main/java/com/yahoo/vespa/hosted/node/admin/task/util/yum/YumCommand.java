@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
-import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
@@ -57,16 +56,6 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
     public abstract boolean converge(TaskContext context);
 
-    /** Returns the version of Yum itself  */
-    protected final Version version(TaskContext context) {
-        return terminal.newCommandLine(context).add("yum", "--version")
-                       .executeSilently()
-                       .getOutputLinesStream()
-                       .findFirst()
-                       .map(Version::fromString).orElseThrow(() -> new IllegalStateException("Failed to detect Yum version"));
-    }
-
-
     public static class GenericYumCommand extends YumCommand<GenericYumCommand> {
         private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile("(?dm)^No package ([^ ]+) available\\.$");
 
@@ -111,11 +100,10 @@ public abstract class YumCommand<T extends YumCommand<T>> {
             if (yumCommand == CommandType.remove)
                 if (packages.stream().noneMatch(pkg -> isInstalled(context, pkg))) return false;
 
-            Version yumVersion = version(context);
             CommandLine commandLine = terminal.newCommandLine(context);
             commandLine.add("yum", yumCommand.name());
             addParametersToCommandLine(commandLine);
-            commandLine.add(packages.stream().map(pkg -> pkg.toName(yumVersion)).collect(Collectors.toList()));
+            commandLine.add(packages.stream().map(pkg -> pkg.toName()).collect(Collectors.toList()));
 
             // There's no way to figure out whether a yum command would have been a no-op.
             // Therefore, run the command and parse the output to decide.
@@ -168,15 +156,10 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
         @Override
         public boolean converge(TaskContext context) {
-            Version yumVersion = version(context);
-            String targetVersionLockName = yumPackage.toVersionLockName(yumVersion);
+            String targetVersionLockName = yumPackage.toVersionLockName();
 
             List<String> command = new ArrayList<>(4);
             command.add("yum");
-            // Using --quiet on Yum 4 always results in an empty list, even if locks exist...
-            if (yumVersion.getMajor() < 4) {
-                command.add("--quiet");
-            }
             command.add("versionlock");
             command.add("list");
 
@@ -193,7 +176,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
                         if (packageName.getName().equals(yumPackage.getName())) {
                             // If existing lock doesn't exactly match the full package name,
                             // it means it's locked to another version and we must remove that lock.
-                            String versionLockName = packageName.toVersionLockName(yumVersion);
+                            String versionLockName = packageName.toVersionLockName();
                             if (versionLockName.equals(targetVersionLockName)) {
                                 return true;
                             } else {
@@ -231,7 +214,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
 
             var installCommand = terminal.newCommandLine(context).add("yum", "install");
             addParametersToCommandLine(installCommand);
-            installCommand.add(yumPackage.toName(yumVersion));
+            installCommand.add(yumPackage.toName());
 
             String output = installCommand.executeSilently().getUntrimmedOutput();
 
@@ -240,7 +223,7 @@ public abstract class YumCommand<T extends YumCommand<T>> {
                     // case 3.
                     var upgradeCommand = terminal.newCommandLine(context).add("yum", "downgrade");
                     addParametersToCommandLine(upgradeCommand);
-                    upgradeCommand.add(yumPackage.toName(yumVersion)).execute();
+                    upgradeCommand.add(yumPackage.toName()).execute();
                     modified = true;
                 } else {
                     // case 2.

@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
-import com.yahoo.component.Version;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -26,7 +25,7 @@ public class YumPackageNameTest {
                 .setRelease("71.git3e8e77d.el7.centos.1")
                 .setArchitecture("x86_64")
                 .build();
-        assertEquals("docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64", yumPackage.toName(Version.fromString("4")));
+        assertEquals("docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64", yumPackage.toName());
     }
 
     @Test
@@ -115,24 +114,23 @@ public class YumPackageNameTest {
                                    String architecture,
                                    String toName,
                                    String toVersionName) {
-        YumVersion yumVersion = YumVersion.rhel8;
         YumPackageName yumPackageName = YumPackageName.fromString(packageName);
         verifyValue(epoch, yumPackageName.getEpoch());
         verifyValue(name, Optional.of(yumPackageName.getName()));
         verifyValue(version, yumPackageName.getVersion());
         verifyValue(release, yumPackageName.getRelease());
         verifyValue(architecture, yumPackageName.getArchitecture());
-        verifyValue(toName, Optional.of(yumPackageName.toName(yumVersion.asVersion())));
+        verifyValue(toName, Optional.of(yumPackageName.toName()));
 
         if (toVersionName == null) {
             try {
-                yumPackageName.toVersionLockName(yumVersion.asVersion());
+                yumPackageName.toVersionLockName();
                 fail();
             } catch (IllegalStateException e) {
                 assertThat(e.getMessage(), containsStringIgnoringCase("Version is missing "));
             }
         } else {
-            assertEquals(toVersionName, yumPackageName.toVersionLockName(yumVersion.asVersion()));
+            assertEquals(toVersionName, yumPackageName.toVersionLockName());
         }
     }
 

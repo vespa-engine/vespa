@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.google.common.base.Strings;
-import com.yahoo.component.Version;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -79,8 +78,8 @@ public class YumPackageName {
          *
          * <p>WARNING: Should only be invoked if the YUM package actually has an epoch. Typically
          * YUM packages doesn't have one explicitly set, and in case "0" will be used with
-         * {@link #toVersionLockName(Version)} (otherwise it fails), but it will be absent from an
-         * install with {@link #toName(Version)} (otherwise it fails). This typically means that
+         * {@link #toVersionLockName()} (otherwise it fails), but it will be absent from an
+         * install with {@link #toName()} (otherwise it fails). This typically means that
          * you should set this only if the epoch is != "0".</p>
          */
         public Builder setEpoch(String epoch) { this.epoch = Optional.of(epoch); return this; }
@@ -229,7 +228,7 @@ public class YumPackageName {
     public Optional<String> getArchitecture() { return architecture; }
 
     /** Return package name, omitting components that are not specified. */
-    public String toName(Version yumVersion) {
+    public String toName() {
         StringBuilder builder = new StringBuilder();
         boolean isBare = version.isEmpty() && release.isEmpty() && architecture.isEmpty();
         char nextDelimiter;
@@ -249,7 +248,7 @@ public class YumPackageName {
      *
      * @throws IllegalStateException if any field required for the version lock spec is missing
      */
-    public String toVersionLockName(Version yumVersion) {
+    public String toVersionLockName() {
         Builder b = new Builder(this).setArchitecture("*");
         if (epoch.isEmpty()) {
             b.setEpoch("0");
@@ -257,7 +256,7 @@ public class YumPackageName {
         YumPackageName lockSpec = b.build();
         if (lockSpec.getVersion().isEmpty()) throw new IllegalStateException("Version is missing for YUM package " + name);
         if (lockSpec.getRelease().isEmpty()) throw new IllegalStateException("Release is missing for YUM package " + name);
-        return lockSpec.toName(yumVersion);
+        return lockSpec.toName();
     }
 
     public boolean isSubsetOf(YumPackageName other) {
