@@ -164,6 +164,14 @@
             <scope>compile</scope>
         </dependency>
 
+        <dependency>
+            <!-- required by java-jwt -->
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- test -->
 
         <dependency>
