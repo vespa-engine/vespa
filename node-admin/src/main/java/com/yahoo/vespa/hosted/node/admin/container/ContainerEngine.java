@@ -25,7 +25,7 @@ public interface ContainerEngine {
     /** Start a created container */
     void startContainer(NodeAgentContext context);
 
-    /** Update an existing container */
+    /** Update an existing container with new resources */
     void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources);
 
     /** Remove given container. The container will be stopped if necessary */
@@ -34,25 +34,25 @@ public interface ContainerEngine {
     /** Get container for given context */
     Optional<Container> getContainer(NodeAgentContext context);
 
-    /** List containers managed by this */
+    /** Returns all containers known by this */
     List<PartialContainer> listContainers(TaskContext context);
 
     /** Returns the network interface used by container in given context */
     String networkInterface(NodeAgentContext context);
 
-    /** Executes a command in inside container as root user, throws on non-zero exit code */
+    /** Execute command inside container as root. Ignores non-zero exit code */
     CommandResult executeAsRoot(NodeAgentContext context, Duration timeout, String... command);
 
-    /** Executes a command in inside containers network namespace, throws on non-zero exit code */
+    /** Execute command inside the container's network namespace. Throws on non-zero exit code */
     CommandResult executeInNetworkNamespace(NodeAgentContext context, String... command);
 
-    /** Download giving image */
+    /** Download given image */
     void pullImage(TaskContext context, DockerImage image, RegistryCredentials registryCredentials);
 
     /** Returns whether given image is already downloaded */
     boolean hasImage(TaskContext context, DockerImage image);
 
-    /** Remove given image */
+    /** Remove image by id */
     void removeImage(TaskContext context, String id);
 
     /** Returns images available in this */
