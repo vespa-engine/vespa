@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * @author olaa
  */
-public class MockBillingDatabaseClient implements BillingDatabaseClient {
+public class BillingDatabaseClientMock implements BillingDatabaseClient {
     private final Clock clock;
     private final PlanRegistry planRegistry;
     private final Map<TenantName, Plan> tenantPlans = new HashMap<>();
@@ -36,7 +36,7 @@ public class MockBillingDatabaseClient implements BillingDatabaseClient {
     private final List<InstrumentOwner> paymentInstruments = new ArrayList<>();
     private final Map<TenantName, CollectionMethod> collectionMethods = new HashMap<>();
 
-    public MockBillingDatabaseClient(Clock clock, PlanRegistry planRegistry) {
+    public BillingDatabaseClientMock(Clock clock, PlanRegistry planRegistry) {
         this.clock = clock;
         this.planRegistry = planRegistry;
     }

@@ -26,14 +26,14 @@ import java.util.stream.Collectors;
 /**
  * @author olaa
  */
-public class MockDatabaseClient implements ResourceDatabaseClient {
+public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
 
     PlanRegistry planRegistry;
     Map<TenantName, Plan> planMap = new HashMap<>();
     List<ResourceSnapshot> resourceSnapshots = new ArrayList<>();
     private boolean hasRefreshedMaterializedView = false;
 
-    public MockDatabaseClient(PlanRegistry planRegistry) {
+    public ResourceDatabaseClientMock(PlanRegistry planRegistry) {
         this.planRegistry = planRegistry;
     }
 

@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingDatabaseClient;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
@@ -32,7 +32,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClie
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MockDatabaseClient;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
@@ -84,8 +84,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final AccessControlService accessControlService = new MockAccessControlService();
     private final HorizonClient horizonClient = new MockHorizonClient();
     private final PlanRegistry planRegistry = new PlanRegistryMock();
-    private final ResourceDatabaseClient resourceDb = new MockDatabaseClient(planRegistry);
-    private final BillingDatabaseClient billingDb = new MockBillingDatabaseClient(clock, planRegistry);
+    private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
+    private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
