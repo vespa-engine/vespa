@@ -60,7 +60,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -72,10 +71,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author hmusum
@@ -341,27 +338,6 @@ public class ApplicationHandlerTest {
     public void testConverge() throws Exception {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         converge(applicationId, Zone.defaultZone());
-    }
-
-    @Test
-    public void testClusterControllerStatus() throws Exception {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
-        String host = "foo.yahoo.com";
-        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
-        HttpProxy mockHttpProxy = mock(HttpProxy.class);
-        ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
-                .withTenantRepository(tenantRepository)
-                .withHostProvisionerProvider(HostProvisionerProvider.empty())
-                .withOrchestrator(orchestrator)
-                .withTesterClient(testerClient)
-                .withHttpProxy(mockHttpProxy)
-                .build();
-        ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
-        when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName), eq("clustercontroller-status/v1/clusterName1")))
-                .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
-
-        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
-        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>...</html>");
     }
 
     @Test
