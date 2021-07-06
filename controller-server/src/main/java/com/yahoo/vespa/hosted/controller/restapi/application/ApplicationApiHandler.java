@@ -1387,9 +1387,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", deployment.applicationVersion().id());
-        response.setLong("deployTimeEpochMs", deployment.at().toEpochMilli());
+        Instant lastDeploymentStart = lastDeploymentStart(deploymentId.applicationId(), deployment);
+        response.setLong("deployTimeEpochMs", lastDeploymentStart.toEpochMilli());
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
-                .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
+                  .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", lastDeploymentStart.plus(deploymentTimeToLive).toEpochMilli()));
 
         application.projectId().ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
@@ -1439,6 +1440,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
         metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
+    }
+
+    private Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
+        return controller.jobController().jobStarts(new JobId(instanceId, JobType.from(controller.system(), deployment.zone()).get()))
+                         .stream().findFirst().orElse(deployment.at());
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
@@ -2193,9 +2199,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private void tenantMetaDataToSlime(Tenant tenant, List<Application> applications, Cursor object) {
         Optional<Instant> lastDev = applications.stream()
                                                 .flatMap(application -> application.instances().values().stream())
-                                                .flatMap(instance -> instance.deployments().values().stream())
-                                                .filter(deployment -> deployment.zone().environment() == Environment.dev)
-                                                .map(Deployment::at)
+                                                .flatMap(instance -> instance.deployments().values().stream()
+                                                                             .filter(deployment -> deployment.zone().environment() == Environment.dev)
+                                                                             .map(deployment -> lastDeploymentStart(instance.id(), deployment)))
                                                 .max(Comparator.naturalOrder())
                                                 .or(() -> applications.stream()
                                                                       .flatMap(application -> application.instances().values().stream())
