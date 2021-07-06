@@ -55,7 +55,7 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, String restPath);
 
-    String getClusterControllerStatus(DeploymentId deployment, String node, String subPath);
+    String getServiceStatusPage(DeploymentId deployment, String serviceName, String node, String subPath);
 
     /**
      * Gets the Vespa logs of the given deployment.

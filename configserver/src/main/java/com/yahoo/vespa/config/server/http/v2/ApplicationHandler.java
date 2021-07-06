@@ -68,13 +68,13 @@ public class ApplicationHandler extends HttpHandler {
 
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}")) return getApplicationResponse(ApplicationId.from(path.get("tenant"), path.get("application"), InstanceName.defaultName().value()));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}")) return getApplicationResponse(applicationId(path));
-        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/clustercontroller/{hostname}/status/{*}")) return clusterControllerStatusPage(applicationId(path), path.get("hostname"), path.getRest());
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/content/{*}")) return content(applicationId(path), path.getRest(), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/filedistributionstatus")) return filedistributionStatus(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/logs")) return logs(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/deployment")) return deploymentMetrics(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/proton")) return protonMetrics(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return getReindexingStatus(applicationId(path));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/status/{*}")) return serviceStatusPage(applicationId(path), path.get("service"), path.get("hostname"), path.getRest());
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge")) return listServiceConverge(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge/{hostAndPort}")) return checkServiceConverge(applicationId(path), path.get("hostAndPort"), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/suspended")) return isSuspended(applicationId(path));
@@ -115,8 +115,8 @@ public class ApplicationHandler extends HttpHandler {
                 getTimeoutFromRequest(request), getVespaVersionFromRequest(request));
     }
 
-    private HttpResponse clusterControllerStatusPage(ApplicationId applicationId, String hostname, String pathSuffix) {
-        return applicationRepository.clusterControllerStatusPage(applicationId, hostname, pathSuffix);
+    private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, String pathSuffix) {
+        return applicationRepository.serviceStatusPage(applicationId, hostname, service, pathSuffix);
     }
 
     private HttpResponse content(ApplicationId applicationId, String contentPath, HttpRequest request) {

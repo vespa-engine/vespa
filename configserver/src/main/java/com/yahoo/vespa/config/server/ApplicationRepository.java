@@ -547,15 +547,27 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse clusterControllerStatusPage(ApplicationId applicationId, String hostName, String pathSuffix) {
+    public HttpResponse serviceStatusPage(ApplicationId applicationId, String hostName, String serviceName, String pathSuffix) {
         // WARNING: pathSuffix may be given by the external user. Make sure no security issues arise...
         // We should be OK here, because at most, pathSuffix may change the parent path, but cannot otherwise
         // change the hostname and port. Exposing other paths on the cluster controller should be fine.
         // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
-        String relativePath = "clustercontroller-status/" + pathSuffix;
+        String pathPrefix;
+        switch (serviceName) {
+            case "container-clustercontroller": {
+                pathPrefix = "clustercontroller-status/v1/";
+                break;
+            }
+            case "distributor":
+            case "storagenode": {
+                pathPrefix = "";
+                break;
+            }
+            default:
+                throw new NotFoundException("No status page for service: " + serviceName);
+        }
 
-        return httpProxy.get(getApplication(applicationId), hostName,
-                             CLUSTERCONTROLLER_CONTAINER.serviceName, relativePath);
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, pathPrefix + pathSuffix);
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
