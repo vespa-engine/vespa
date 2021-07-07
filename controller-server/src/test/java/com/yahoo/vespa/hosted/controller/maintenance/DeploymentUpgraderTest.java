@@ -63,19 +63,19 @@ public class DeploymentUpgraderTest {
         assertEquals(start, tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
         assertEquals(start, tester.jobs().last(prodApp.instanceId(), productionUsWest1).get().start());
 
-        // 13 hours pass, but not upgraded before a day has passed since last deployment
-        tester.clock().advance(Duration.ofHours(13));
+        // 14 hours pass, but not upgraded before a day has passed since last deployment
+        tester.clock().advance(Duration.ofHours(14));
         upgrader.maintain();
         assertEquals(start, tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
         assertEquals(start, tester.jobs().last(prodApp.instanceId(), productionUsWest1).get().start());
 
-        // 34 hours pass, but not upgraded since it's not likely in the middle of the night
+        // 35 hours pass, but not upgraded since it's not likely in the middle of the night
         tester.clock().advance(Duration.ofHours(21));
         upgrader.maintain();
         assertEquals(start, tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
         assertEquals(start, tester.jobs().last(prodApp.instanceId(), productionUsWest1).get().start());
 
-        // 37 hours pass, and the dev deployment, only, is upgraded
+        // 38 hours pass, and the dev deployment, only, is upgraded
         tester.clock().advance(Duration.ofHours(3));
         upgrader.maintain();
         assertEquals(tester.clock().instant().truncatedTo(MILLIS), tester.jobs().last(devApp.instanceId(), devUsEast1).get().start());
