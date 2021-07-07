@@ -11,6 +11,7 @@ vespa_add_library(searchcore_server STATIC
     ddbstate.cpp
     disk_mem_usage_filter.cpp
     disk_mem_usage_forwarder.cpp
+    disk_mem_usage_metrics.cpp
     disk_mem_usage_sampler.cpp
     docstorevalidator.cpp
     document_db_config_owner.cpp
