@@ -2091,12 +2091,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         controller.serviceRegistry().roleService().getTenantRole(tenant.name()),
                         cloudTenant.tenantSecretStores());
 
-                var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
-                var usedQuota = applications.stream()
-                        .map(Application::quotaUsage)
-                        .reduce(QuotaUsage.none, QuotaUsage::add);
+                try {
+                    var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
+                    var usedQuota = applications.stream()
+                            .map(Application::quotaUsage)
+                            .reduce(QuotaUsage.none, QuotaUsage::add);
 
-                toSlime(tenantQuota, usedQuota, object.setObject("quota"));
+                    toSlime(tenantQuota, usedQuota, object.setObject("quota"));
+                } catch (Exception e) {
+                    log.warning(String.format("Failed to get quota for tenant %s: %s", tenant.name(), Exceptions.toMessageString(e)));
+                }
 
                 cloudTenant.archiveAccessRole().ifPresent(role -> object.setString("archiveAccessRole", role));
 
