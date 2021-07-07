@@ -66,7 +66,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -88,7 +87,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
@@ -98,6 +96,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialRea
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.INFO;
@@ -709,6 +708,12 @@ public class InternalStepRunner implements StepRunner {
         catch (IllegalStateException e) {
             logger.log(INFO, "Job '" + id.type() + "' no longer supposed to run?", e);
             return Optional.of(error);
+        }
+        catch (RuntimeException e) {
+            Instant start = controller.jobController().run(id).get().stepInfo(report).get().startTime().get();
+            return (controller.clock().instant().isAfter(start.plusSeconds(180)))
+                   ? Optional.empty()
+                   : Optional.of(error);
         }
         return Optional.of(running);
     }
