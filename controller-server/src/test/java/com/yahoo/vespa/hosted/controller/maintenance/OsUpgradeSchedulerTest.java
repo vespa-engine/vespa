@@ -132,6 +132,16 @@ public class OsUpgradeSchedulerTest {
         assertEquals("Target is unchanged as not enough time has passed", version1,
                      target1.osVersion().version());
         assertEquals("Target is not re-scheduled", target0.scheduledAt(), target1.scheduledAt());
+
+        // A newer version is triggered manually
+        Version version3 = Version.fromString("8.3");
+        tester.controller().upgradeOsIn(cloud, version3, Duration.ZERO, false);
+
+        // Enough time passes for stable version to be promoted. Nothing happens as stable is now before the manually
+        // triggered version
+        tester.clock().advance(Duration.ofDays(14).plus(Duration.ofSeconds(1)));
+        scheduler.maintain();
+        assertEquals(version3, tester.controller().osVersionTarget(cloud).get().osVersion().version());
     }
 
     private static ZoneApi zone(String id, CloudName cloud) {
