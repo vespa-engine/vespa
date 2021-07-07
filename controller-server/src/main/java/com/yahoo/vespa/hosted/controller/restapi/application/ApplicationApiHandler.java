@@ -1679,7 +1679,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
 
         if (restPath.contains("/status/")) {
-            String[] parts = restPath.split("/status/");
+            String[] parts = restPath.split("/status/", 2);
             String result = controller.serviceRegistry().configServer().getServiceStatusPage(deploymentId, serviceName, parts[0], parts[1]);
             return new HtmlResponse(result);
         }
