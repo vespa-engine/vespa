@@ -4,6 +4,7 @@
 
 #include "i_disk_mem_usage_notifier.h"
 #include "disk_mem_usage_state.h"
+#include "disk_mem_usage_metrics.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
@@ -40,16 +41,18 @@ public:
     };
 
 private:
-    mutable Mutex _lock; // protect _memoryStats, _usedDiskSizeBytes, _config, _state
+    mutable Mutex                _lock;
     HwInfo                       _hwInfo;
+    std::atomic<bool>            _acceptWrite;
+    // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
     size_t                       _transient_memory_usage;
     size_t                       _transient_disk_usage;
     Config                       _config;
     State                        _state;
-    std::atomic<bool>            _acceptWrite;
     DiskMemUsageState            _dmstate;
+    mutable DiskMemUsageMetrics  _disk_mem_usage_metrics;
     std::vector<IDiskMemUsageListener *> _listeners;
 
     void recalcState(const Guard &guard); // called with _lock held
@@ -73,6 +76,7 @@ public:
     Config getConfig() const;
     const HwInfo &getHwInfo() const { return _hwInfo; }
     DiskMemUsageState usageState() const;
+    DiskMemUsageMetrics get_metrics() const;
     bool acceptWriteOperation() const override;
     State getAcceptState() const override;
     void addDiskMemUsageListener(IDiskMemUsageListener *listener) override;
