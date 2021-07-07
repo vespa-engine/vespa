@@ -368,7 +368,7 @@ public class JobController {
         List<Lock> locks = new ArrayList<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            for (Step step : report.allPrerequisites())
+            for (Step step : report.allPrerequisites(run(id).get().steps().keySet()))
                 locks.add(curator.lock(id.application(), id.type(), step));
 
             locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
@@ -588,7 +588,7 @@ public class JobController {
     /** Locks the given step and checks none of its prerequisites are running, then performs the given actions. */
     public void locked(ApplicationId id, JobType type, Step step, Consumer<LockedStep> action) throws TimeoutException {
         try (Lock lock = curator.lock(id, type, step)) {
-            for (Step prerequisite : step.allPrerequisites()) // Check that no prerequisite is still running.
+            for (Step prerequisite : step.allPrerequisites(last(id, type).get().steps().keySet())) // Check that no prerequisite is still running.
                 try (Lock __ = curator.lock(id, type, prerequisite)) { ; }
 
             action.accept(new LockedStep(lock, step));
