@@ -104,8 +104,8 @@ public class PartialContainer {
         stopped,
         paused,
         exited,
-        removing;
-
+        removing,
+        stopping;
 
         public boolean isRunning() {
             return this == running;
@@ -121,6 +121,7 @@ public class PartialContainer {
                 case "paused": return paused;
                 case "exited": return exited;
                 case "removing": return removing;
+                case "stopping": return stopping;
             }
             throw new IllegalArgumentException("Invalid state '" + state + "'");
         }
