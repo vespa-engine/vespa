@@ -1680,6 +1680,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         if ("container-clustercontroller".equals((serviceName)) && restPath.contains("/status/")) {
             String[] parts = restPath.split("/status/");
+            if (parts.length < 2) throw new IllegalArgumentException("Invalid path '" + restPath + "'");
             String result = controller.serviceRegistry().configServer().getClusterControllerStatus(deploymentId, parts[0], parts[1]);
             return new HtmlResponse(result);
         }
