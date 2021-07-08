@@ -1,15 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -33,7 +34,7 @@ public class ZooKeeperDeployerTest {
 
     @Test
     public void require_that_deployer_is_initialized() throws IOException {
-        ConfigCurator zkfacade = ConfigCurator.create(new MockCurator());
+        Curator curator = new MockCurator();
         File serverdbDir = folder.newFolder("serverdb");
         File defsDir = new File(serverdbDir, "serverdefs");
         try {
@@ -42,21 +43,22 @@ public class ZooKeeperDeployerTest {
             e.printStackTrace();
             fail();
         }
-        deploy(FilesApplicationPackage.fromFile(new File("src/test/apps/content")), zkfacade, Path.fromString("/1"));
-        deploy(FilesApplicationPackage.fromFile(new File("src/test/apps/content")), zkfacade, Path.fromString("/2"));
+        deploy(FilesApplicationPackage.fromFile(new File("src/test/apps/content")), curator, Path.fromString("/1"));
+        deploy(FilesApplicationPackage.fromFile(new File("src/test/apps/content")), curator, Path.fromString("/2"));
     }
 
-    public void deploy(ApplicationPackage applicationPackage, ConfigCurator configCurator, Path appPath) throws IOException {
+    public void deploy(ApplicationPackage applicationPackage, Curator curator, Path appPath) throws IOException {
         MockDeployLogger logger = new MockDeployLogger();
-        ZooKeeperClient client = new ZooKeeperClient(configCurator, logger, appPath);
+        ZooKeeperClient client = new ZooKeeperClient(curator, logger, appPath);
         ZooKeeperDeployer deployer = new ZooKeeperDeployer(client);
 
         deployer.deploy(applicationPackage, Collections.singletonMap(new Version(1, 0, 0), new MockFileRegistry()), AllocatedHosts.withHosts(Collections.emptySet()));
-        assertTrue(configCurator.exists(appPath.getAbsolute()));
+        assertTrue(curator.exists(appPath));
     }
 
     private static class MockDeployLogger implements DeployLogger {
         @Override
         public void log(Level level, String message) { }
     }
+
 }

@@ -591,7 +591,7 @@ public class SessionRepository {
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (configCurator.exists(sessionPath.getAbsolute())) {
+        if (curator.exists(sessionPath)) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
