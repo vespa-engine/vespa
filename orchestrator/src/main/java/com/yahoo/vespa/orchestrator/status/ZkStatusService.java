@@ -3,7 +3,6 @@ package com.yahoo.vespa.orchestrator.status;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.path.Path;
@@ -54,16 +53,10 @@ public class ZkStatusService implements StatusService {
     private final ConcurrentHashMap<Map<String, String>, Metric.Context> cachedContexts = new ConcurrentHashMap<>();
 
     @Inject
-    public ZkStatusService(
-            @Component Curator curator,
-            @Component Metric metric,
-            @Component Timer timer,
-            @Component AntiServiceMonitor antiServiceMonitor) {
-        this(curator,
-                metric,
-                timer,
-                new HostInfosCache(curator, new HostInfosServiceImpl(curator, timer)),
-                antiServiceMonitor);
+    public ZkStatusService(Curator curator, Metric metric, Timer timer, AntiServiceMonitor antiServiceMonitor) {
+        this(curator, metric, timer,
+             new HostInfosCache(curator, new HostInfosServiceImpl(curator, timer)),
+             antiServiceMonitor);
     }
 
     /** Non-private for testing only. */
