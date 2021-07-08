@@ -191,6 +191,7 @@ public class VespaConfiguration {
         sb.append(MAX_IN_FLIGHT_REQUESTS + ": " +  maxInFlightRequests() +"\n");
         sb.append(RANDOM_STARTUP_SLEEP + ": " +  randomStartupSleepMs() +"\n");
         sb.append(NUM_RETRIES + ": " +  numRetries() +"\n");
+        sb.append(USE_LEGACY_CLIENT + ": " +  useLegacyClient() +"\n");
         return sb.toString();
     }
 
