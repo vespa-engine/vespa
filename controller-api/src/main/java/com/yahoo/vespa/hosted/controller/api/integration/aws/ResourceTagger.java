@@ -16,7 +16,7 @@ public interface ResourceTagger {
     /**
      * Returns number of tagged resources
      */
-    int tagResources(ZoneApi zone, Map<HostName, Optional<ApplicationId>> ownerOfHosts);
+    int tagResources(ZoneApi zone, Map<HostName, ApplicationId> ownerOfHosts);
 
     static ResourceTagger empty() {
         return (zone, tenantOfHosts) -> 0;
