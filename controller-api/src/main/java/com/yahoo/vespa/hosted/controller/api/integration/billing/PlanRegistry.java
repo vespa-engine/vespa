@@ -15,4 +15,9 @@ public interface PlanRegistry {
     /** Get a plan given a plan ID */
     Optional<Plan> plan(PlanId planId);
 
+    /** Get a plan give a plan ID */
+    default Optional<Plan> plan(String planId) {
+        return plan(PlanId.from(planId));
+    }
+
 }

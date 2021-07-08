@@ -11,9 +11,9 @@ import java.util.stream.Stream;
 
 public class PlanRegistryMock implements PlanRegistry {
 
-    private final Plan freeTrial = new MockPlan("trial", false, 0, 0, 0, 200, "Free Trial - for testing purposes");
-    private final Plan paidPlan  = new MockPlan("paid", true, 3, 6, 9, 500, "Paid Plan - for testing purposes");
-    private final Plan nonePlan  = new MockPlan("none", false, 0, 0, 0, 0, "None Plan - for testing purposes");
+    public static final Plan freeTrial = new MockPlan("trial", false, 0, 0, 0, 200, "Free Trial - for testing purposes");
+    public static final Plan paidPlan  = new MockPlan("paid", true, "0.09", "0.009", "0.0003", 500, "Paid Plan - for testing purposes");
+    public static final Plan nonePlan  = new MockPlan("none", false, 0, 0, 0, 0, "None Plan - for testing purposes");
 
     @Override
     public Plan defaultPlan() {
@@ -34,12 +34,20 @@ public class PlanRegistryMock implements PlanRegistry {
         private final QuotaCalculator quotaCalculator;
         private final boolean billed;
 
-        public MockPlan(String planId, boolean billed, int cpuPrice, int memPrice, int dgbPrice, int quota, String description) {
-            this.planId = PlanId.from(planId);
-            this.description = description;
-            this.costCalculator = new MockCostCalculator(BigDecimal.valueOf(cpuPrice), BigDecimal.valueOf(memPrice), BigDecimal.valueOf(dgbPrice));
-            this.quotaCalculator = () -> Quota.unlimited().withBudget(quota);
+        public MockPlan(String planId, boolean billed, double cpuPrice, double memPrice, double dgbPrice, int quota, String description) {
+            this(PlanId.from(planId), billed, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
+        }
+
+        public MockPlan(String planId, boolean billed, String cpuPrice, String memPrice, String dgbPrice, int quota, String description) {
+            this(PlanId.from(planId), billed, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
+        }
+
+        public MockPlan(PlanId planId, boolean billed, MockCostCalculator calculator, QuotaCalculator quota, String description) {
+            this.planId = planId;
             this.billed = billed;
+            this.costCalculator = calculator;
+            this.quotaCalculator = quota;
+            this.description = description;
         }
 
         @Override
@@ -74,10 +82,12 @@ public class PlanRegistryMock implements PlanRegistry {
         private final BigDecimal memHourCost;
         private final BigDecimal dgbHourCost;
 
-        public MockCostCalculator() {
-            this(BigDecimal.valueOf(3, 2),
-                 BigDecimal.valueOf(5, 3),
-                 BigDecimal.valueOf(3, 4));
+        public MockCostCalculator(String cpuPrice, String memPrice, String dgbPrice) {
+            this(new BigDecimal(cpuPrice), new BigDecimal(memPrice), new BigDecimal(dgbPrice));
+        }
+
+        public MockCostCalculator(double cpuPrice, double memPrice, double dgbPrice) {
+            this(BigDecimal.valueOf(cpuPrice), BigDecimal.valueOf(memPrice), BigDecimal.valueOf(dgbPrice));
         }
 
         public MockCostCalculator(BigDecimal cpuPrice, BigDecimal memPrice, BigDecimal dgbPrice) {
@@ -88,9 +98,9 @@ public class PlanRegistryMock implements PlanRegistry {
 
         @Override
         public CostInfo calculate(ResourceUsage usage) {
-            var cpuCost = usage.getCpuMillis().divide(millisPerHour, RoundingMode.HALF_UP).multiply(cpuHourCost);
-            var memCost = usage.getMemoryMillis().divide(millisPerHour, RoundingMode.HALF_UP).multiply(memHourCost);
-            var dgbCost = usage.getDiskMillis().divide(millisPerHour, RoundingMode.HALF_UP).multiply(dgbHourCost);
+            var cpuCost = usage.getCpuMillis().multiply(cpuHourCost).divide(millisPerHour, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+            var memCost = usage.getMemoryMillis().multiply(memHourCost).divide(millisPerHour, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+            var dgbCost = usage.getDiskMillis().multiply(dgbHourCost).divide(millisPerHour, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
 
             return new CostInfo(
                     usage.getApplicationId(),
