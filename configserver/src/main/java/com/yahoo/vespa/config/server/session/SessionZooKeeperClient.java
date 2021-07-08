@@ -95,7 +95,7 @@ public class SessionZooKeeperClient {
             return Session.Status.parse(data);
         } catch (Exception e) {
             log.log(Level.INFO, "Failed to read session status at " + sessionStatusPath.getAbsolute() +
-                    ", will assume session has been removed: " + e.getMessage());
+                    ", will assume session has been removed: ", e);
             return Session.Status.NONE;
         }
     }
