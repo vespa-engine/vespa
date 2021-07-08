@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -141,7 +142,7 @@ public class SessionZooKeeperClient {
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {
-        return new UserConfigDefinitionRepo(configCurator, sessionPath.append(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute());
+        return new UserConfigDefinitionRepo(curator, sessionPath.append(USER_DEFCONFIGS_ZK_SUBPATH));
     }
 
     private Path applicationIdPath() {

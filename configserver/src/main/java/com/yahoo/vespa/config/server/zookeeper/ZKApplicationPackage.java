@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.vespa.curator.Curator;
 
 import java.io.File;
 import java.io.Reader;
@@ -50,7 +51,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     private final ApplicationMetaData metaData;
 
     public ZKApplicationPackage(ConfigCurator zk, Path sessionPath) {
-        verifyAppPath(zk, sessionPath);
+        verifyAppPath(zk.curator(), sessionPath);
         zkApplication = new ZKApplication(zk, sessionPath);
         metaData = readMetaDataFromLiveApp(zkApplication);
         importFileRegistries();
@@ -104,8 +105,8 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return metaData;
     }
 
-    private static void verifyAppPath(ConfigCurator zk, Path appPath) {
-        if (!zk.exists(appPath.getAbsolute()))
+    private static void verifyAppPath(Curator zk, Path appPath) {
+        if (!zk.exists(appPath))
             throw new RuntimeException("App with path " + appPath + " does not exist");
     }
 
