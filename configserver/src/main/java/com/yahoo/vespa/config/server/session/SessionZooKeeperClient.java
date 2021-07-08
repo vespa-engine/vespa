@@ -91,8 +91,8 @@ public class SessionZooKeeperClient {
 
     public Session.Status readStatus() {
         try {
-            String data = configCurator.getData(sessionStatusPath.getAbsolute());
-            return Session.Status.parse(data);
+            Optional<byte[]> data = curator.getData(sessionStatusPath);
+            return data.map(d -> Session.Status.parse(Utf8.toString(d))).orElse(Session.Status.NONE);
         } catch (Exception e) {
             log.log(Level.INFO, "Failed to read session status at " + sessionStatusPath.getAbsolute() +
                     ", will assume session has been removed: ", e);
