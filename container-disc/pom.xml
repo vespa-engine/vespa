@@ -170,7 +170,6 @@
                 configgen.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
-                container-jersey2-jar-with-dependencies.jar,
                 container-search-and-docproc-jar-with-dependencies.jar,
                 container-search-gui-jar-with-dependencies.jar,
                 docprocs-jar-with-dependencies.jar,
