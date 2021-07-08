@@ -5,6 +5,7 @@ import (
     "fmt"
     "net/http"
     "strings"
+    "time"
 )
 
 func main() {
@@ -12,19 +13,18 @@ func main() {
 }
 
 func status() {
-    // See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
-    // colorReset := "\033[0m"
-    colorRed := "\033[31m"
-    colorGreen := "\033[32m"
-    // colorBlue := "\033[34m"
-    colorYellow := "\033[33m"
+    host := "http://127.0.0.1:19071"
+    path := "/ApplicationStatus"
+    description := "Config server"
+    //response := request(host, path, description)
 
-    target := "http://127.0.0.1:19071"
-    targetName := "Config server"
-    resp, err := http.Get(target + "/ApplicationStatus")
+    client := &http.Client{
+	    Timeout: time.Second * 30,
+    }
+    resp, err := client.Get(host + path)
     if err != nil {
-        fmt.Println(colorRed + "Could not connect to", strings.ToLower(targetName), "at", target)
-        fmt.Println(colorYellow + err.Error())
+        error("Could not connect to", strings.ToLower(description), "at", host)
+        detail(err.Error())
         return
     }
     defer resp.Body.Close()
@@ -32,12 +32,36 @@ func status() {
     scanner := bufio.NewScanner(resp.Body)
 
     if err := scanner.Err(); err != nil {
-        fmt.Println(colorRed + "Error reading data from", strings.ToLower(targetName), "at", target)
-        fmt.Println(colorYellow + err.Error())
+        error("Error reading data from", strings.ToLower(description), "at", host)
+        detail(err.Error())
     } else if resp.StatusCode != 200 {
-        fmt.Println(colorRed + targetName, "at", target, " is not handling requests")
-        fmt.Println(colorYellow + "Response status", resp.StatusCode)
+        error(description, "at", host, "is not ready")
+        detail("Response status:", resp.Status)
     } else {
-        fmt.Println(colorGreen + targetName, "at", target, "is UP")
+        success(description, "at", host, "is ready")
     }
+}
+
+func request(host string, path string, description string) {
+}
+
+func error(messages ...string) {
+    print("\033[31m", messages)
+}
+
+func success(messages ...string) {
+    print("\033[32m", messages)
+}
+
+func detail(messages ...string) {
+    print("\033[33m", messages)
+}
+
+func print(prefix string, messages []string) {
+   fmt.Print(prefix)
+    for i := 0; i < len(messages); i++ {
+        fmt.Print(messages[i])
+        fmt.Print(" ")
+    }
+    fmt.Println("")
 }
