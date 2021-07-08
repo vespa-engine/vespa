@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
+import org.apache.zookeeper.KeeperException;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -88,7 +89,10 @@ public class ConfigCurator {
             if (exists(path)) return;
             curator.framework().create().creatingParentsIfNeeded().forPath(path);
         }
-        catch (Exception e) {
+        catch (KeeperException.NodeExistsException e) {
+            // Ignore, path already exists
+        }
+        catch(Exception e){
             throw new RuntimeException("Exception creating path " + path + " in ZooKeeper", e);
         }
     }
