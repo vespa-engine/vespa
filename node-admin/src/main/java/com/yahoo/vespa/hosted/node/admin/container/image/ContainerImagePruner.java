@@ -40,11 +40,10 @@ import java.util.stream.Stream;
  *   <li>Deleting a tag of an image with multiple tags will only remove the tag, the image with the
  *       remaining tags will remain</li>
  *   <li>Deleting the last tag of an image will delete the entire image.</li>
- *   <li>Image cannot be deleted if:</li>
- *   <ol>
- *     <li>It has 1 or more children</li>
- *     <li>A container uses it</li>
- *   </ol>
+ *   <li>Image cannot be deleted if:
+ *     <p>- It has 1 or more children
+ *     <p>- A container uses it
+ *   </li>
  * </ol>
  *
  * @author freva
