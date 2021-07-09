@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class ContainerImageDownloader {
 
-    private final Logger LOG = Logger.getLogger(ContainerImageDownloader.class.getName());
+    private static final Logger LOG = Logger.getLogger(ContainerImageDownloader.class.getName());
 
     private final ContainerEngine containerEngine;
 
