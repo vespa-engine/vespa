@@ -39,7 +39,7 @@ import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -160,7 +160,7 @@ public class SessionPreparerTest {
                         .build(),
                 sessionId);
         Path sessionPath = sessionPath(sessionId);
-        assertFalse(curator.exists(sessionPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml")));
+        assertFalse(curator.exists(sessionPath.append(ZKApplication.USERAPP_ZK_SUBPATH).append("services.xml")));
     }
 
     @Test
@@ -179,7 +179,7 @@ public class SessionPreparerTest {
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertTrue(curator.exists(sessionPath(1).append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml")));
+        assertTrue(curator.exists(sessionPath(1).append(ZKApplication.USERAPP_ZK_SUBPATH).append("services.xml")));
     }
 
     @Test(expected = InvalidApplicationException.class)

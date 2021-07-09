@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.SESSIONSTATE_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;

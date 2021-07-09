@@ -32,10 +32,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.fromJson;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.DEFCONFIGS_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.META_ZK_PATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;

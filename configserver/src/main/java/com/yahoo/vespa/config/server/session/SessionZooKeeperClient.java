@@ -24,7 +24,7 @@ import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -73,7 +73,7 @@ public class SessionZooKeeperClient {
         this.tenantName = tenantName;
         this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
-        this.sessionStatusPath = sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        this.sessionStatusPath = sessionPath.append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
     }
 
     public void writeStatus(Session.Status sessionStatus) {

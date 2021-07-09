@@ -19,6 +19,16 @@ import java.util.List;
  */
 public class ZKApplication {
 
+    /** Path for def files, under one app */
+    public static final String DEFCONFIGS_ZK_SUBPATH = "/defconfigs";
+    /** Path for def files, under one app */
+    public static final String USER_DEFCONFIGS_ZK_SUBPATH = "/userdefconfigs";
+    /** Path for metadata about an application */
+    public static final String META_ZK_PATH = "/meta";
+    /** Path for the app package's dir structure, under one app */
+    public static final String USERAPP_ZK_SUBPATH = "/userapp";
+    /** Path for session state */
+    public static final String SESSIONSTATE_ZK_SUBPATH = "/sessionState";
     private final Curator curator;
     private final Path appPath;
 

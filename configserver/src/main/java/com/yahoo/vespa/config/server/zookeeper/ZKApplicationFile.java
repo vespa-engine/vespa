@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 
 /**
  * @author Ulf Lilleengen

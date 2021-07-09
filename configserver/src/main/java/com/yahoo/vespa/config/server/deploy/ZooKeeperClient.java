@@ -30,10 +30,10 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import static com.yahoo.config.application.api.ApplicationPackage.*;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.DEFCONFIGS_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.META_ZK_PATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 
 /**
  * Reads and writes application package to and from ZooKeeper.

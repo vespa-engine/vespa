@@ -32,8 +32,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.META_ZK_PATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.DEFCONFIGS_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 
 /**
  * Represents an application residing in zookeeper.
@@ -95,7 +95,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     private ApplicationMetaData readMetaDataFromLiveApp(ZKApplication liveApp) {
-        Path metaPath = Path.fromString(ConfigCurator.META_ZK_PATH);
+        Path metaPath = Path.fromString(ZKApplication.META_ZK_PATH);
         String metaDataString = liveApp.getData(metaPath);
         if (metaDataString == null || metaDataString.isEmpty()) {
             return null;

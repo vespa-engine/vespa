@@ -37,8 +37,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -773,7 +773,7 @@ public class SessionRepository {
     }
 
     Path getSessionStatePath(long sessionId) {
-        return getSessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        return getSessionPath(sessionId).append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
