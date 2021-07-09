@@ -97,11 +97,10 @@ public class Reindexer {
 
         // Keep metrics in sync across cluster controller containers.
         AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing(cluster.name()));
-        database.writeReindexing(reindexing.get(), cluster.name());
         metrics.dump(reindexing.get());
 
         try (Lock lock = database.lockReindexing(cluster.name())) {
-            reindexing.set(updateWithReady(ready, reindexing.get(), clock.instant()));
+            reindexing.set(updateWithReady(ready, database.readReindexing(cluster.name()), clock.instant()));
             database.writeReindexing(reindexing.get(), cluster.name());
             metrics.dump(reindexing.get());
 
@@ -178,8 +177,7 @@ public class Reindexer {
         sessionShutdown.run();  // Shutdown aborts the session unless already complete, then waits for it to terminate normally.
                                 // Only as a last resort will we be interrupted here, and the wait for outstanding replies terminate.
 
-        CompletionCode result = control.getResult() != null ? control.getResult().getCode()
-                                                            : CompletionCode.ABORTED;
+        CompletionCode result = control.getResult() != null ? control.getResult().getCode() : CompletionCode.ABORTED;
         switch (result) {
             default:
                 log.log(WARNING, "Unexpected visitor result '" + control.getResult().getCode() + "'");
