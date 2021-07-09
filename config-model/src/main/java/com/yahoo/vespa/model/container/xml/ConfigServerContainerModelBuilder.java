@@ -6,6 +6,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
@@ -59,6 +60,11 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     protected void addHttp(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
         super.addHttp(deployState, spec, cluster, context);
         cluster.getHttp().getHttpServer().get().setHostedVespa(isHosted());
+    }
+
+    @Override
+    protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {
+        // Model evaluation bundles are pre-installed in the standalone container.
     }
 
     /** Note: using {@link CloudConfigOptions} as {@link DeployState#isHosted()} returns <em>false</em> for hosted configserver/controller */

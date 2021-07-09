@@ -1,10 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -34,7 +36,7 @@ public enum Step {
     installTester(false, deployTester),
 
     /** Download and deploy the initial real application, for staging tests. */
-    deployInitialReal(false, deployTester),
+    deployInitialReal(false),
 
     /** See that the real application has had its nodes converge to the initial state. */
     installInitialReal(false, deployInitialReal),
@@ -46,7 +48,7 @@ public enum Step {
     endStagingSetup(false, startStagingSetup),
 
     /** Download and deploy real application, restarting services if required. */
-    deployReal(false, endStagingSetup, deployTester),
+    deployReal(false, endStagingSetup),
 
     /** See that real application has had its nodes converge to the wanted version and generation. */
     installReal(false, deployReal),
@@ -72,24 +74,24 @@ public enum Step {
 
     private final boolean alwaysRun;
     private final List<Step> prerequisites;
-    private final List<Step> allPrerequisites;
 
     Step(boolean alwaysRun, Step... prerequisites) {
         this.alwaysRun = alwaysRun;
         this.prerequisites = List.of(prerequisites);
-        this.allPrerequisites = Stream.concat(Stream.of(prerequisites),
-                                              Stream.of(prerequisites).flatMap(pre -> pre.allPrerequisites().stream()))
-                                      .sorted()
-                                      .distinct()
-                                      .collect(toUnmodifiableList());
     }
 
     /** Returns whether this is a cleanup-step, and should always run, regardless of job outcome, when specified in a job. */
     public boolean alwaysRun() { return alwaysRun; }
 
-    /** Returns all prerequisite steps for this, recursively. */
-    public List<Step> allPrerequisites() {
-        return allPrerequisites;
+    /** Returns all prerequisite steps for this, including transient ones, in a job profile containing the given steps. */
+    public List<Step> allPrerequisites(Collection<Step> among) {
+        return prerequisites.stream()
+                            .filter(among::contains)
+                            .flatMap(pre -> Stream.concat(Stream.of(pre),
+                                                          pre.allPrerequisites(among).stream()))
+                            .sorted()
+                            .distinct()
+                            .collect(toList());
     }
 
 

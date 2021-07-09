@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
@@ -40,7 +41,10 @@ public class NodeResourceLimits {
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository, cluster.isExclusive()),
+        // This node is allocated exclusively if that has been explicitly requested, or if the host of the node was
+        // provisioned exclusively
+        boolean exclusive = cluster.isExclusive() || candidateNode.parent.flatMap(Node::exclusiveTo).isPresent();
+        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository, exclusive),
                                   cluster.type());
     }
 

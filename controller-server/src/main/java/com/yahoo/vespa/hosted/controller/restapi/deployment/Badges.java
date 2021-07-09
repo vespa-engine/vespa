@@ -113,7 +113,7 @@ public class Badges {
         List<Run> runs = status.runs().descendingMap().values().stream()
                                .filter(Run::hasEnded)
                                .skip(1)
-                               .limit(length + (lastTriggered.hasEnded() ? 0 : 1))
+                               .limit(length)
                                .collect(toList());
 
         boolean isOk = status.lastCompleted().map(run -> run.status() == RunStatus.success).orElse(true);

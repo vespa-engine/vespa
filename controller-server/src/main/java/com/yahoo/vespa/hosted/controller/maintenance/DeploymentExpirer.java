@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -62,9 +63,8 @@ public class DeploymentExpirer extends ControllerMaintainer {
                                        .map(type -> new JobId(instance, type));
         if (jobId.isEmpty()) return false;
 
-        return controller().jobController().last(jobId.get())
-                           .flatMap(Run::end)
-                           .map(end -> end.plus(ttl.get()).isBefore(controller().clock().instant()))
+        return controller().jobController().jobStarts(jobId.get()).stream().findFirst()
+                           .map(start -> start.plus(ttl.get()).isBefore(controller().clock().instant()))
                            .orElse(false);
     }
 

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.time.Instant;
 import java.util.Map;
@@ -20,10 +21,10 @@ public class ApplicationSummary {
     private final Optional<Instant> lastQueried;
     private final Optional<Instant> lastWritten;
     private final Optional<Instant> lastBuilt;
-    private final Map<ZoneId, Metric> metrics;
+    private final Map<DeploymentId, Metric> metrics;
 
     public ApplicationSummary(ApplicationId application, Optional<Instant> lastQueried, Optional<Instant> lastWritten,
-                              Optional<Instant> lastBuilt, Map<ZoneId, Metric> metrics) {
+                              Optional<Instant> lastBuilt, Map<DeploymentId, Metric> metrics) {
         this.application = Objects.requireNonNull(application);
         this.lastQueried = Objects.requireNonNull(lastQueried);
         this.lastWritten = Objects.requireNonNull(lastWritten);
@@ -47,7 +48,7 @@ public class ApplicationSummary {
         return lastBuilt;
     }
 
-    public Map<ZoneId, Metric> metrics() {
+    public Map<DeploymentId, Metric> metrics() {
         return metrics;
     }
 

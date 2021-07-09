@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
@@ -24,7 +23,6 @@ import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -150,7 +148,7 @@ public class DynamicAllocationTest {
     }
 
     @Test
-    public void test_allocation_balancing() {
+    public void allocation_balancing() {
         // Here we test balancing between cpu and memory and ignore disk
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
@@ -234,14 +232,12 @@ public class DynamicAllocationTest {
         fail("Two groups have been allocated to the same parent host");
     }
 
-    @Ignore // TODO: Re-enable if we reintroduce spare capacity requirement
     @Test
     public void spare_capacity_used_only_when_replacement() {
-        // Use spare capacity only when replacement (i.e one node is failed)
-        // Test should allocate as much capacity as possible, verify that it is not possible to allocate one more unit
-        // Verify that there is still capacity (available spare)
-        // Fail one node and redeploy, Verify that one less node is empty.
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .flavorsConfig(flavorsConfig())
+                                                                    .spareCount(2)
+                                                                    .build();
 
         // Setup test
         ApplicationId application1 = ProvisioningTester.applicationId();
@@ -252,7 +248,7 @@ public class DynamicAllocationTest {
         // Deploy initial state (can max deploy 3 nodes due to redundancy requirements)
         ClusterSpec clusterSpec = clusterSpec("myContent.t1.a1");
         List<HostSpec> hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
+        tester.activate(application1, Set.copyOf(hosts));
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
         assertEquals(2, initialSpareCapacity.size());
@@ -264,10 +260,9 @@ public class DynamicAllocationTest {
 
         tester.fail(hosts.get(0));
         hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
+        tester.activate(application1, Set.copyOf(hosts));
 
         List<Node> finalSpareCapacity = findSpareCapacity(tester);
-
         assertEquals(1, finalSpareCapacity.size());
     }
 
@@ -278,7 +273,7 @@ public class DynamicAllocationTest {
         tester.activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId();
         List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 3, 1, new NodeResources(1, 4, 100, 1));
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
+        tester.activate(application1, Set.copyOf(hosts));
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
         assertEquals(0, initialSpareCapacity.size());
@@ -291,7 +286,7 @@ public class DynamicAllocationTest {
         tester.activateTenantHosts();
         ApplicationId application1 = ProvisioningTester.applicationId();
         List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 3, 1, new NodeResources(1, 4, 100, 1));
-        tester.activate(application1, ImmutableSet.copyOf(hosts));
+        tester.activate(application1, Set.copyOf(hosts));
     }
 
     @Test(expected = OutOfCapacityException.class)
@@ -315,8 +310,8 @@ public class DynamicAllocationTest {
         tester.activate(application, hosts);
 
         NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
-        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
-        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
     }
 
     @Test
@@ -374,7 +369,7 @@ public class DynamicAllocationTest {
     }
 
     @Test
-    public void nodeResourcesAreRelaxedInDev() {
+    public void node_resources_are_relaxed_in_dev() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
         tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 8, 120, 1, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
@@ -394,7 +389,7 @@ public class DynamicAllocationTest {
     }
 
     @Test
-    public void testSwitchingFromLegacyFlavorSyntaxToResourcesDoesNotCauseReallocation() {
+    public void switching_from_legacy_flavor_syntax_to_resources_does_not_cause_reallocation() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, new Flavor(new NodeResources(5, 20, 1400, 3)), NodeType.host, 10, true);
         tester.activateTenantHosts();
@@ -413,7 +408,7 @@ public class DynamicAllocationTest {
     }
 
     @Test
-    public void testPreferExclusiveNetworkSwitch() {
+    public void prefer_exclusive_network_switch() {
         // Hosts are provisioned, without switch information
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         NodeResources hostResources = new NodeResources(32, 128, 2000, 10);

@@ -16,8 +16,7 @@
           <process-resources>org.apache.maven.plugins:maven-resources-plugin:resources</process-resources>
           <compile>org.apache.maven.plugins:maven-compiler-plugin:compile</compile>
           <process-test-resources>
-              org.apache.maven.plugins:maven-resources-plugin:testResources,
-              com.yahoo.vespa:bundle-plugin:generate-bundle-classpath-mappings
+              org.apache.maven.plugins:maven-resources-plugin:testResources
           </process-test-resources>
           <test-compile>org.apache.maven.plugins:maven-compiler-plugin:testCompile</test-compile>
           <test>org.apache.maven.plugins:maven-surefire-plugin:test</test>

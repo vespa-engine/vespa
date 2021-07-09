@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -17,7 +18,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -78,14 +78,15 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
 
     private ApplicationSummary summaryOf(TenantAndApplicationId application) {
         var app = applications.requireApplication(application);
-        var metrics = new HashMap<ZoneId, ApplicationSummary.Metric>();
+        var metrics = new HashMap<DeploymentId, ApplicationSummary.Metric>();
         for (Instance instance : app.instances().values()) {
             for (var kv : instance.deployments().entrySet()) {
                 var zone = kv.getKey();
                 var deploymentMetrics = kv.getValue().metrics();
-                metrics.put(zone, new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
-                                                                deploymentMetrics.queriesPerSecond(),
-                                                                deploymentMetrics.writesPerSecond()));
+                metrics.put(new DeploymentId(instance.id(), zone),
+                            new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
+                                                          deploymentMetrics.queriesPerSecond(),
+                                                          deploymentMetrics.writesPerSecond()));
             }
         }
         return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(),
@@ -112,20 +113,29 @@ public class ApplicationOwnershipConfirmer extends ControllerMaintainer {
     }
 
     private double updateConfirmedApplicationOwners() {
+        AtomicInteger attempts = new AtomicInteger(0);
+        AtomicInteger failures = new AtomicInteger(0);
         applications()
-                       .withProjectId()
-                       .withProductionDeployment()
-                       .asList()
-                       .stream()
-                       .filter(application -> application.ownershipIssueId().isPresent())
-                       .forEach(application -> {
-                           IssueId ownershipIssueId = application.ownershipIssueId().get();
-                           ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
-                               controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
-                                       controller().applications().store(lockedApplication.withOwner(owner)));
-                           });
-                       });
-        return 1.0;
+                .withProjectId()
+                .withProductionDeployment()
+                .asList()
+                .stream()
+                .filter(application -> application.ownershipIssueId().isPresent())
+                .forEach(application -> {
+                    attempts.incrementAndGet();
+                    IssueId issueId = application.ownershipIssueId().get();
+                    try {
+                        ownershipIssues.getConfirmedOwner(issueId).ifPresent(owner -> {
+                            controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
+                                    controller().applications().store(lockedApplication.withOwner(owner)));
+                        });
+                    }
+                    catch (RuntimeException e) {
+                        failures.incrementAndGet();
+                        log.log(Level.INFO, "Exception caught when attempting to find confirmed owner of issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
+                    }
+                });
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     private ApplicationList applications() {

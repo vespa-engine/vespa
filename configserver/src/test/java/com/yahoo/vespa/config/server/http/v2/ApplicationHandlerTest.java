@@ -32,7 +32,7 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.StaticResponse;
-import com.yahoo.vespa.config.server.http.v2.ApplicationHandler.ReindexingResponse;
+import com.yahoo.vespa.config.server.http.v2.response.ReindexingResponse;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -60,7 +60,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
 import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -72,9 +71,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author hmusum
@@ -343,10 +341,9 @@ public class ApplicationHandlerTest {
     }
 
     @Test
-    public void testClusterControllerStatus() throws Exception {
+    public void testServiceStatus() throws Exception {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         String host = "foo.yahoo.com";
-        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/clustercontroller/" + host + "/status/v1/clusterName1";
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -356,11 +353,19 @@ public class ApplicationHandlerTest {
                 .withHttpProxy(mockHttpProxy)
                 .build();
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
-        when(mockHttpProxy.get(any(), eq(host), eq(CLUSTERCONTROLLER_CONTAINER.serviceName), eq("clustercontroller-status/v1/clusterName1")))
-                .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
+        doAnswer(invoc -> new StaticResponse(200, "text/html", "<html>" +
+                "host=" + invoc.getArgument(1, String.class) + "," +
+                "service=" + invoc.getArgument(2, String.class) + "," +
+                "path=" + invoc.getArgument(3, String.class) + "</html>")).when(mockHttpProxy).get(any(), any(), any(), any());
 
-        HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
-        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>...</html>");
+        HttpResponse response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/container-clustercontroller/" + host + "/status/some/path/clusterName1", GET));
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=container-clustercontroller,path=clustercontroller-status/v1/some/path/clusterName1</html>");
+
+        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/distributor/" + host + "/status/something", GET));
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=something</html>");
+
+        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/fake-service/" + host + "/status/something", GET));
+        assertHttpStatusCodeAndMessage(response, 404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No status page for service: fake-service\"}");
     }
 
     @Test

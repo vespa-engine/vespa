@@ -53,6 +53,8 @@ public class BadgeApiTest extends ControllerContainerTest {
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default"),
                               Files.readString(Paths.get(responseFiles + "overview.svg")), 200);
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=0"),
+                              Files.readString(Paths.get(responseFiles + "single-running.svg")), 200);
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
                               Files.readString(Paths.get(responseFiles + "history.svg")), 200);
 
@@ -66,6 +68,9 @@ public class BadgeApiTest extends ControllerContainerTest {
         tester.serviceRegistry().clock().advance(Duration.ofSeconds(1));
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
                               Files.readString(Paths.get(responseFiles + "history2.svg")), 200);
+
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=0"),
+                              Files.readString(Paths.get(responseFiles + "single-done.svg")), 200);
     }
 
 }

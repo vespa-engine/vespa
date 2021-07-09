@@ -28,6 +28,7 @@ public class SummaryClass extends Derived {
     /** True if this summary class needs to access summary information on disk */
     private boolean accessingDiskSummary = false;
     private final boolean rawAsBase64;
+    private final boolean omitSummaryFeatures;
 
     /** The summary fields of this indexed by name */
     private Map<String,SummaryClassField> fields = new java.util.LinkedHashMap<>();
@@ -44,6 +45,7 @@ public class SummaryClass extends Derived {
     public SummaryClass(Search search, DocumentSummary summary, DeployLogger deployLogger) {
         this.deployLogger = deployLogger;
         this.rawAsBase64 = search.isRawAsBase64();
+        this.omitSummaryFeatures = summary.omitSummaryFeatures();
         deriveName(summary);
         deriveFields(search,summary);
         deriveImplicitFields(summary);
@@ -128,7 +130,8 @@ public class SummaryClass extends Derived {
         }
         classBuilder.
             id(id).
-            name(getName());
+            name(getName()).
+            omitsummaryfeatures(omitSummaryFeatures);
         for (SummaryClassField field : fields.values() ) {
             classBuilder.fields(new SummaryConfig.Classes.Fields.Builder().
                     name(field.getName()).

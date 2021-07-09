@@ -37,7 +37,7 @@ TEST("targetpool_test") {
     FRT_Supervisor & orb = server.supervisor();
     std::unique_ptr<PoolTimer> ptr(new PoolTimer());
     PoolTimer &timer = *ptr;
-    RPCTargetPool pool(std::move(ptr), 0.666);
+    RPCTargetPool pool(std::move(ptr), 0.666, 1 );
 
     // Assert that all connections expire.
     RPCTarget::SP target;

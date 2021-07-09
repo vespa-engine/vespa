@@ -6,6 +6,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.vespa.config.search.SummaryConfig;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.util.Iterator;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests summary extraction
@@ -149,6 +151,32 @@ public class SummaryTestCase extends SchemaTestCase {
                 "}"));
         builder.build();
         return builder.getSearch("ad");
+    }
+
+    @Test
+    public void omit_summary_features_specified_for_document_summary() throws ParseException {
+        String sd = joinLines(
+                "schema test {",
+                "  document test {",
+                "    field foo type string { indexing: summary }",
+                "  }",
+                "  document-summary bar {",
+                "    summary foo type string {}",
+                "    omit-summary-features",
+                "  }",
+                "  document-summary baz {",
+                "    summary foo type string {}",
+                "  }",
+                "}");
+        var search = SearchBuilder.createFromString(sd).getSearch();
+        assertOmitSummaryFeatures(true, search, "bar");
+        assertOmitSummaryFeatures(false, search, "baz");
+    }
+
+    private void assertOmitSummaryFeatures(boolean expected, Search search, String summaryName) {
+        var summary = new SummaryClass(search, search.getSummary(summaryName), new BaseDeployLogger());
+        var config = new SummaryConfig.Classes(summary.getSummaryClassConfig());
+        assertEquals(expected, config.omitsummaryfeatures());
     }
 
 }

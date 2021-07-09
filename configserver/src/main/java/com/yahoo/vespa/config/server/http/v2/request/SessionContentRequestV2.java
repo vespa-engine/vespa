@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http.v2;
+package com.yahoo.vespa.config.server.http.v2.request;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
@@ -20,7 +20,7 @@ public class SessionContentRequestV2 extends ContentRequest {
     private final TenantName tenantName;
     private final long sessionId;
 
-    SessionContentRequestV2(HttpRequest request,
+    public SessionContentRequestV2(HttpRequest request,
                             long sessionId,
                             TenantName tenantName,
                             String path,
@@ -35,7 +35,7 @@ public class SessionContentRequestV2 extends ContentRequest {
         return "/application/v2/tenant/" + tenantName.value() + "/session/" + sessionId;
     }
 
-    static String getContentPath(HttpRequest request) {
+    public static String getContentPath(HttpRequest request) {
         BindingMatch<?> bm = Utils.getBindingMatch(request, uriPattern);
         return bm.group(4);
     }

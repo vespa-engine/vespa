@@ -1133,7 +1133,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                             default:
                                 response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
                                 if (getVisitorStatistics() != null)
-                                    response.writeDocumentCount(getVisitorStatistics().getDocumentsReturned());
+                                    response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
 
                                 response.respond(Response.Status.BAD_GATEWAY);
                         }

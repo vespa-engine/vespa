@@ -86,14 +86,14 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     /**
-     * If it's been a week since the cert has been refreshed, re-trigger all prod deployment jobs.
+     * If it's been four days since the cert has been refreshed, re-trigger all prod deployment jobs.
      */
     private void deployRefreshedCertificates() {
         var now = clock.instant();
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
                                                                      endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
                                                                          Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
-                                                                         if (now.isAfter(refreshTime.plus(7, ChronoUnit.DAYS))) {
+                                                                         if (now.isAfter(refreshTime.plus(4, ChronoUnit.DAYS))) {
                                                                              controller().applications().getInstance(applicationId)
                                                                                          .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
                                                                                              if (deployment.at().isBefore(refreshTime)) {

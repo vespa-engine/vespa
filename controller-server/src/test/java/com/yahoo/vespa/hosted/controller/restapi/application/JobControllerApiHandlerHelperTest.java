@@ -131,14 +131,14 @@ public class JobControllerApiHandlerHelperTest {
         // Only us-east-3 is verified, on revision1.
         // staging-test has 5 runs: one success without sources on revision1, one success from revision1 to revision2,
         // one success from revision2 to revision3 and two failures from revision1 to revision3.
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(app.instanceId(), stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(app.instanceId(), stagingTest), Optional.empty(), URI.create("https://some.url:43/root")), "staging-runs.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), stagingTest).get().id(), "0"), "staging-test-log.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")), "overview.json");
 
         var userApp = tester.newDeploymentContext(app.instanceId().tenant().value(), app.instanceId().application().value(), "user");
         userApp.runJob(devAwsUsEast2a, applicationPackage);
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), Optional.empty(), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
         assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "deployment-overview-2.json");
     }
@@ -151,10 +151,10 @@ public class JobControllerApiHandlerHelperTest {
 
         ZoneId zone = JobType.devUsEast1.zone(tester.controller().system());
         tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
-        tester.configServer().setLogStream("1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n");
+        tester.configServer().setLogStream(() -> "1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), null), "dev-us-east-1-log-first-part.json");
 
-        tester.configServer().setLogStream("Nope, this won't be logged");
+        tester.configServer().setLogStream(() -> "Nope, this won't be logged");
         tester.configServer().convergeServices(app.instanceId(), zone);
         tester.runner().run();
 

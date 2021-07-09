@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -230,6 +231,14 @@ public class JobController {
         return runs(id.application(), id.type());
     }
 
+    /** Lists the start time of non-redeployment runs of the given job, in order of increasing age. */
+    public List<Instant> jobStarts(JobId id) {
+        return runs(id).descendingMap().values().stream()
+                       .filter(run -> ! run.isRedeployment())
+                       .map(Run::start)
+                       .collect(toUnmodifiableList());
+    }
+
     /** Returns an immutable map of all known runs for the given application and job type. */
     public NavigableMap<RunId, Run> runs(ApplicationId id, JobType type) {
         ImmutableSortedMap.Builder<RunId, Run> runs = ImmutableSortedMap.orderedBy(Comparator.comparing(RunId::number));
@@ -359,7 +368,7 @@ public class JobController {
         List<Lock> locks = new ArrayList<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            for (Step step : report.allPrerequisites())
+            for (Step step : report.allPrerequisites(run(id).get().steps().keySet()))
                 locks.add(curator.lock(id.application(), id.type(), step));
 
             locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
@@ -440,18 +449,23 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
-        start(id, type, versions, JobProfile.of(type));
+        start(id, type, versions, false);
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, JobProfile profile) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment) {
+        start(id, type, versions, isRedeployment, JobProfile.of(type));
+    }
+
+    /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile) {
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
             if (last.flatMap(run -> active(run.id())).isPresent())
                 throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant(), profile));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile));
             metric.jobStarted(newId.job());
         });
     }
@@ -477,6 +491,7 @@ public class JobController {
                                ApplicationVersion.unknown,
                                Optional.empty(),
                                Optional.empty()),
+                  false,
                   JobProfile.development);
         });
 
@@ -573,7 +588,7 @@ public class JobController {
     /** Locks the given step and checks none of its prerequisites are running, then performs the given actions. */
     public void locked(ApplicationId id, JobType type, Step step, Consumer<LockedStep> action) throws TimeoutException {
         try (Lock lock = curator.lock(id, type, step)) {
-            for (Step prerequisite : step.allPrerequisites()) // Check that no prerequisite is still running.
+            for (Step prerequisite : step.allPrerequisites(last(id, type).get().steps().keySet())) // Check that no prerequisite is still running.
                 try (Lock __ = curator.lock(id, type, prerequisite)) { ; }
 
             action.accept(new LockedStep(lock, step));

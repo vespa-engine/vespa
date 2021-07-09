@@ -4,23 +4,45 @@
 
 namespace mbus {
 
-RPCTargetPool::Entry::Entry(RPCTarget::SP target, uint64_t lastUse) :
-    _target(target),
-    _lastUse(lastUse)
+RPCTargetPool::Entry::Entry(std::vector<RPCTarget::SP> targets, uint64_t lastUse)
+    : _targets(std::move(targets)),
+      _lastUse(lastUse),
+      _next(0)
 { }
 
-RPCTargetPool::RPCTargetPool(double expireSecs) :
-    _lock(),
-    _targets(),
-    _timer(new SteadyTimer()),
-    _expireMillis(static_cast<uint64_t>(expireSecs * 1000))
+RPCTarget::SP
+RPCTargetPool::Entry::getTarget(const LockGuard &, uint64_t now) {
+    if (_next >= _targets.size()) {
+        _next = 0;
+    }
+    RPCTarget::SP target =  _targets[_next++];
+    if ( ! target->isValid()) {
+        return RPCTarget::SP();
+    }
+    _lastUse = now;
+    return target;
+}
+
+bool
+RPCTargetPool::Entry::inUse(const LockGuard &) const {
+    for (const auto & target : _targets) {
+        if (target.use_count() > 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+RPCTargetPool::RPCTargetPool(double expireSecs, size_t numTargetsPerSpec)
+    : RPCTargetPool(std::make_unique<SteadyTimer>(), expireSecs, numTargetsPerSpec)
 { }
 
-RPCTargetPool::RPCTargetPool(ITimer::UP timer, double expireSecs) :
+RPCTargetPool::RPCTargetPool(ITimer::UP timer, double expireSecs, size_t numTargetsPerSpec) :
     _lock(),
     _targets(),
     _timer(std::move(timer)),
-    _expireMillis(static_cast<uint64_t>(expireSecs * 1000))
+    _expireMillis(static_cast<uint64_t>(expireSecs * 1000)),
+    _numTargetsPerSpec(numTargetsPerSpec)
 { }
 
 RPCTargetPool::~RPCTargetPool()
@@ -35,21 +57,12 @@ RPCTargetPool::flushTargets(bool force)
     LockGuard guard(_lock);
     TargetMap::iterator it = _targets.begin();
     while (it != _targets.end()) {
-        Entry &entry = it->second;
-        if (entry._target.get() != nullptr) {
-            if (entry._target.use_count() > 1) {
-                entry._lastUse = currentTime;
-                ++it;
-                continue; // someone is using this
-            }
-            if (!force) {
-                if (entry._lastUse + _expireMillis > currentTime) {
-                    ++it;
-                    continue; // not sufficiently idle
-                }
-            }
+        const Entry &entry = it->second;
+        if ( ! entry.inUse(guard) && (force || ((entry.lastUse() + _expireMillis) < currentTime))) {
+            _targets.erase(it++); // postfix increment to move the iterator
+        } else {
+            ++it;
         }
-        _targets.erase(it++); // postfix increment to move the iterator
     }
 }
 
@@ -68,16 +81,19 @@ RPCTargetPool::getTarget(FRT_Supervisor &orb, const RPCServiceAddress &address)
     LockGuard guard(_lock);
     auto it = _targets.find(spec);
     if (it != _targets.end()) {
-        Entry &entry = it->second;
-        if (entry._target->isValid()) {
-            entry._lastUse = currentTime;
-            return entry._target;
+        RPCTarget::SP target = it->second.getTarget(guard, currentTime);
+        if (target) {
+            return target;
         }
         _targets.erase(it);
     }
-    auto ret = std::make_shared<RPCTarget>(spec, orb);
-    _targets.insert(TargetMap::value_type(spec, Entry(ret, currentTime)));
-    return ret;
+    std::vector<RPCTarget::SP> targets;
+    targets.reserve(_numTargetsPerSpec);
+    for (size_t i(0); i < _numTargetsPerSpec; i++) {
+        targets.push_back(std::make_shared<RPCTarget>(spec, orb));
+    }
+    _targets.insert(TargetMap::value_type(spec, Entry(std::move(targets), currentTime)));
+    return _targets.find(spec)->second.getTarget(guard, currentTime);
 }
 
 } // namespace mbus

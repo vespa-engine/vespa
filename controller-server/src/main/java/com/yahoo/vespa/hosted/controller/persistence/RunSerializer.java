@@ -83,6 +83,7 @@ class RunSerializer {
     private static final String endField = "end";
     private static final String statusField = "status";
     private static final String versionsField = "versions";
+    private static final String isRedeploymentField = "isRedeployment";
     private static final String platformVersionField = "platform";
     private static final String repositoryField = "repository";
     private static final String branchField = "branch";
@@ -131,6 +132,7 @@ class RunSerializer {
                                  runObject.field(numberField).asLong()),
                        steps,
                        versionsFromSlime(runObject.field(versionsField)),
+                       runObject.field(isRedeploymentField).asBool(),
                        SlimeUtils.instant(runObject.field(startField)),
                        SlimeUtils.optionalInstant(runObject.field(endField)),
                        runStatusOf(runObject.field(statusField).asString()),
@@ -177,7 +179,7 @@ class RunSerializer {
                                       compileVersion, buildTime, sourceUrl, commit);
     }
 
-    // Don't change this — introduce a separate array instead.
+    // Don't change this — introduce a separate array instead.
     private Optional<ConvergenceSummary> convergenceSummaryFrom(Inspector summaryArray) {
         if ( ! summaryArray.valid()) return Optional.empty();
 
@@ -215,6 +217,7 @@ class RunSerializer {
     private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
         runObject.setString(jobTypeField, run.id().type().jobName());
+        runObject.setBool(isRedeploymentField, run.isRedeployment());
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));

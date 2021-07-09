@@ -39,6 +39,8 @@ public class GenerateTestDescriptorMojo extends AbstractMojo {
     }
 
     private void analyzeTestClasses(TestAnnotationAnalyzer analyzer) throws MojoExecutionException {
+        if (! Files.exists(testClassesDirectory())) return;
+
         try (Stream<Path> files = Files.walk(testClassesDirectory())) {
             files
                     .filter(f -> f.toString().endsWith(".class"))

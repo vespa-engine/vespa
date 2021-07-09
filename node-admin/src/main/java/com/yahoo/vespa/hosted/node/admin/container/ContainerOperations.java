@@ -70,16 +70,15 @@ public class ContainerOperations {
         return executeCommandInContainerAsRoot(context, CommandLine.DEFAULT_TIMEOUT.toSeconds(), command);
     }
 
-    /** Executes a command inside container identified by given context. Does NOT throw on non-zero exit code */
+    /** Execute command inside container identified by given context. Does NOT throw on non-zero exit code */
     public CommandResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command) {
         return containerEngine.executeAsRoot(context, Duration.ofSeconds(timeoutSeconds), command);
     }
 
-    /** Executes a command in inside containers network namespace, throws on non-zero exit code */
+    /** Execute command in inside containers network namespace, identified by given context. Throws on non-zero exit code */
     public CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command) {
         return containerEngine.executeInNetworkNamespace(context, command);
     }
-
 
     /** Resume node. Resuming a node means that it is ready to receive traffic */
     public String resumeNode(NodeAgentContext context) {

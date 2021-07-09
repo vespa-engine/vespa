@@ -137,12 +137,6 @@ public class Flags {
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
-            "encrypt-disk", false,
-            List.of("hakonhall"), "2021-05-05", "2021-08-05",
-            "Allow migrating an unencrypted data partition to being encrypted.",
-            "Takes effect on next host-admin tick.");
-
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
             List.of("hakonhall"), "2021-05-14", "2021-08-05",
@@ -291,6 +285,12 @@ public class Flags {
             List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
             "List of applications where encryption of their host should be deferred",
             "Takes effect on next run of HostEncrypter");
+
+    public static final UnboundBooleanFlag PODMAN3 = defineFeatureFlag(
+            "podman3", false,
+            List.of("mpolden"), "2021-07-05", "2021-09-01",
+            "Whether to use Podman 3 on supported hosts",
+            "Takes effect on host-admin restart");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

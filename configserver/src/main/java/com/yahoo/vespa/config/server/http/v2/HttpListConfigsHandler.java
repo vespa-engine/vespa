@@ -15,6 +15,8 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.RequestHandler;
+import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
+import com.yahoo.vespa.config.server.http.v2.request.HttpListConfigsRequest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;

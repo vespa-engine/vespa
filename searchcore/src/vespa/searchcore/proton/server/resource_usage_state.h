@@ -18,7 +18,7 @@ private:
 
 public:
     ResourceUsageState()
-        : _limit(0),
+        : _limit(1.0),
           _usage(0)
     {
     }
