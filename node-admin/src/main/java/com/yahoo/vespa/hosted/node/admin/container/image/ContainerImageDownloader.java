@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Download a container image asynchronously.
@@ -20,6 +22,8 @@ import java.util.concurrent.Executors;
  * @author mpolden
  */
 public class ContainerImageDownloader {
+
+    private static final Logger LOG = Logger.getLogger(ContainerImageDownloader.class.getName());
 
     private final ContainerEngine containerEngine;
 
@@ -42,6 +46,8 @@ public class ContainerImageDownloader {
         executorService.submit(() -> {
             try {
                 containerEngine.pullImage(context, image, registryCredentials);
+            } catch (RuntimeException e) {
+                LOG.log(Level.SEVERE, "Failed to download container image " + image, e);
             } finally {
                 pendingDownloads.remove(image);
             }
