@@ -54,7 +54,7 @@ public class CuratorDatabase {
     public CuratorDatabase(Curator curator, Path root, boolean useCache) {
         this.useCache = useCache;
         this.curator = curator;
-        changeGenerationCounter = new CuratorCounter(curator, root.append("changeCounter").getAbsolute());
+        changeGenerationCounter = new CuratorCounter(curator, root.append("changeCounter"));
         cache.set(newCache(changeGenerationCounter.get()));
     }
 
