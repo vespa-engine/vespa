@@ -198,7 +198,7 @@ public class InternalStepRunner implements StepRunner {
                       logger)
                 .filter(result -> {
                     // If no tester cert, or deployment failed, propagate original result.
-                    if (testerCertificate.isEmpty() || result != running)
+                    if ( ! useTesterCertificate(id) || result != running)
                         return true;
                     // If tester cert, ensure real is deployed with the tester cert whose key was successfully deployed.
                     return    controller.jobController().run(id).get().stepStatus(deployTester).get() == succeeded
@@ -828,16 +828,20 @@ public class InternalStepRunner implements StepRunner {
         return deployment.at().isBefore(controller.clock().instant().minus(timeout.minus(Duration.ofMinutes(1))));
     }
 
+    private boolean useTesterCertificate(RunId id) {
+        return controller.system().isPublic() && id.type().environment().isTest();
+    }
+
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
-        boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
+        boolean useTesterCertificate = useTesterCertificate(id);
         boolean useOsgiBasedTestRuntime = testerPlatformVersion(id).isAfter(new Version(7, 247, 11));
 
-        byte[] servicesXml = servicesXml(! controller.system().isPublic(),
+        byte[] servicesXml = servicesXml( ! controller.system().isPublic(),
                                          useTesterCertificate,
                                          useOsgiBasedTestRuntime,
                                          testerResourcesFor(zone, spec.requireInstance(id.application().instance())),
