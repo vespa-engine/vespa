@@ -76,9 +76,9 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  */
 public class JobController {
 
-    public static final int historyLength = 64;
     public static final Duration maxHistoryAge = Duration.ofDays(60);
 
+    private final int historyLength;
     private final Controller controller;
     private final CuratorDb curator;
     private final BufferedLogStore logs;
@@ -88,6 +88,7 @@ public class JobController {
     private final AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
     public JobController(Controller controller) {
+        this.historyLength = controller.system().isCd() ? 256 : 64;
         this.controller = controller;
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
