@@ -116,7 +116,7 @@ public class OsUpgradeSchedulerTest {
                      tester.controller().osVersionTarget(cloud).get().osVersion().version());
 
         // Enough time passes since promotion of stable release
-        tester.clock().advance(Duration.ofDays(14).plus(Duration.ofSeconds(1)));
+        tester.clock().advance(Duration.ofDays(7).plus(Duration.ofSeconds(1)));
         scheduler.maintain();
         OsVersionTarget target0 = tester.controller().osVersionTarget(cloud).get();
         assertEquals(version1, target0.osVersion().version());
@@ -139,7 +139,7 @@ public class OsUpgradeSchedulerTest {
 
         // Enough time passes for stable version to be promoted. Nothing happens as stable is now before the manually
         // triggered version
-        tester.clock().advance(Duration.ofDays(14).plus(Duration.ofSeconds(1)));
+        tester.clock().advance(Duration.ofDays(7).plus(Duration.ofSeconds(1)));
         scheduler.maintain();
         assertEquals(version3, tester.controller().osVersionTarget(cloud).get().osVersion().version());
     }

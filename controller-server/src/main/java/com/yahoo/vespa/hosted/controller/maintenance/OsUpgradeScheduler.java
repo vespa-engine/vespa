@@ -111,7 +111,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
         /** The cool-down period that must pass before a stable version can be used */
         private Duration cooldown() {
-            return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
+            return system.isCd() ? Duration.ZERO : Duration.ofDays(7);
         }
 
     }
