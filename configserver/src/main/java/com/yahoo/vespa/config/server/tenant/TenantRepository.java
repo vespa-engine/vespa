@@ -256,7 +256,7 @@ public class TenantRepository {
         return metaData.orElse(new TenantMetaData(tenant.getName(), tenant.getCreatedTime(), tenant.getCreatedTime()));
     }
 
-    private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
+    private static Set<TenantName> readTenantsFromZooKeeper(com.yahoo.vespa.curator.Curator curator) {
         return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
     }
 
@@ -528,7 +528,7 @@ public class TenantRepository {
     }
 
     public void close() {
-        directoryCache.ifPresent(Curator.DirectoryCache::close);
+        directoryCache.ifPresent(com.yahoo.vespa.curator.Curator.DirectoryCache::close);
         try {
             zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();
@@ -601,6 +601,6 @@ public class TenantRepository {
         return barriersPath;
     }
 
-    public Curator getCurator() { return curator; }
+    public com.yahoo.vespa.curator.Curator getCurator() { return curator; }
 
 }

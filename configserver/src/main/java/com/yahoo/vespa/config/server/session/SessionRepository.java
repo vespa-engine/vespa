@@ -114,7 +114,6 @@ public class SessionRepository {
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
-    private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
@@ -142,7 +141,6 @@ public class SessionRepository {
                              ModelFactoryRegistry modelFactoryRegistry,
                              ConfigDefinitionRepo configDefinitionRepo) {
         this.tenantName = tenantName;
-        this.configCurator = configCurator;
         sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
@@ -780,7 +778,7 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
@@ -798,7 +796,7 @@ public class SessionRepository {
     private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
         SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
         if (sessionStateWatcher == null) {
-            Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
+            com.yahoo.vespa.curator.Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
             sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metricUpdater, zkWatcherExecutor, this));
         } else {

@@ -63,19 +63,13 @@ public class SessionZooKeeperClient {
     private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
 
     private final Curator curator;
-    private final ConfigCurator configCurator;
     private final TenantName tenantName;
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
 
-    public SessionZooKeeperClient(Curator curator,
-                                  ConfigCurator configCurator,
-                                  TenantName tenantName,
-                                  long sessionId,
-                                  String serverId) {
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId) {
         this.curator = curator;
-        this.configCurator = configCurator;
         this.tenantName = tenantName;
         this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
@@ -138,7 +132,7 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(configCurator, sessionPath);
+        return new ZKApplicationPackage(curator, sessionPath);
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {

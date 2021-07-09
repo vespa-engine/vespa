@@ -171,7 +171,6 @@ public class SessionZooKeeperClientTest {
 
     private SessionZooKeeperClient createSessionZKClient(long sessionId) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
-                                                                ConfigCurator.create(curator),
                                                                 tenantName,
                                                                 sessionId,
                                                                 ConfigUtils.getCanonicalHostName());

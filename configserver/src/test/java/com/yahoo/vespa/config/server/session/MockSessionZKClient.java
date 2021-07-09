@@ -8,7 +8,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
-import com.yahoo.vespa.curator.Curator;
 
 import java.util.Optional;
 
@@ -22,18 +21,17 @@ public class MockSessionZKClient extends SessionZooKeeperClient {
     private final ApplicationPackage app;
     private Optional<AllocatedHosts> info = Optional.empty();
 
-    public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId) {
+    public MockSessionZKClient(com.yahoo.vespa.curator.Curator curator, TenantName tenantName, long sessionId) {
         this(curator, tenantName, sessionId, (ApplicationPackage) null);
     }
 
-    public MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, Optional<AllocatedHosts> allocatedHosts) {
+    public MockSessionZKClient(com.yahoo.vespa.curator.Curator curator, TenantName tenantName, long sessionId, Optional<AllocatedHosts> allocatedHosts) {
         this(curator, tenantName, sessionId);
         this.info = allocatedHosts;
     }
 
-    MockSessionZKClient(Curator curator, TenantName tenantName, long sessionId, ApplicationPackage application) {
+    MockSessionZKClient(com.yahoo.vespa.curator.Curator curator, TenantName tenantName, long sessionId, ApplicationPackage application) {
         super(curator,
-              ConfigCurator.create(curator),
               tenantName,
               sessionId,
               ConfigUtils.getCanonicalHostName());

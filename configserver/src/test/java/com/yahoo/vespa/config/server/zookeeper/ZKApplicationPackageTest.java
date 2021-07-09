@@ -62,20 +62,20 @@ public class ZKApplicationPackageTest {
                                     Optional.of(DockerImage.fromString(dockerImage)))));
     }
 
-    private ConfigCurator configCurator;
+    private Curator curator;
 
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
 
     @Before
     public void setup() {
-        configCurator = ConfigCurator.create(new MockCurator());
+        curator = new MockCurator();
     }
 
     @Test
     public void testBasicZKFeed() throws IOException {
-        feed(configCurator.curator(), new File(APP));
-        ZKApplicationPackage zkApp = new ZKApplicationPackage(configCurator, Path.fromString("/0"));
+        feed(curator, new File(APP));
+        ZKApplicationPackage zkApp = new ZKApplicationPackage(curator, Path.fromString("/0"));
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getServices())).matches());
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
@@ -106,7 +106,7 @@ public class ZKApplicationPackageTest {
         assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
     }
 
-    private void feed(Curator zk, File dirToFeed) throws IOException {
+    private void feed(com.yahoo.vespa.curator.Curator zk, File dirToFeed) throws IOException {
         assertTrue(dirToFeed.isDirectory());
         Path sessionPath = Path.fromString("/0");
         feedZooKeeper(zk, dirToFeed, sessionPath.append(USERAPP_ZK_SUBPATH), null, true);
@@ -135,7 +135,7 @@ public class ZKApplicationPackageTest {
      * @param filenameFilter A FilenameFilter which decides which files in dir are fed to zookeeper
      * @param recurse        recurse subdirectories
      */
-    static void feedZooKeeper(Curator zk, File dir, Path path, FilenameFilter filenameFilter, boolean recurse) {
+    static void feedZooKeeper(com.yahoo.vespa.curator.Curator zk, File dir, Path path, FilenameFilter filenameFilter, boolean recurse) {
         try {
             if (filenameFilter == null) {
                 filenameFilter = acceptsAllFileNameFilter;

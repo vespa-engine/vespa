@@ -472,7 +472,6 @@ public class ApplicationRepositoryTest {
                                                       sessionId,
                                                       FilesApplicationPackage.fromFile(testApp),
                                                       new SessionZooKeeperClient(curator,
-                                                                                 configCurator,
                                                                                  tenant1,
                                                                                  sessionId,
                                                                                  ConfigUtils.getCanonicalHostName()));
