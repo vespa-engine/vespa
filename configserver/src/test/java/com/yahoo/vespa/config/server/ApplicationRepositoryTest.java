@@ -21,6 +21,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
@@ -58,6 +59,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
@@ -104,7 +106,6 @@ public class ApplicationRepositoryTest {
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
-    private ConfigCurator configCurator;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -115,7 +116,6 @@ public class ApplicationRepositoryTest {
     @Before
     public void setup() throws IOException {
         curator = new MockCurator();
-        configCurator = ConfigCurator.create(curator);
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
@@ -331,8 +331,8 @@ public class ApplicationRepositoryTest {
             assertNotNull(applicationData.getApplicationId());
             assertNotNull(sessionRepository.getLocalSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
-            assertTrue(configCurator.exists(sessionNode));
+            Path sessionNode = sessionRepository.getSessionPath(sessionId);
+            assertTrue(curator.exists(sessionNode));
             TenantFileSystemDirs tenantFileSystemDirs = tenant.getApplicationRepo().getTenantFileSystemDirs();
             File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
             assertTrue(sessionFile.exists());
@@ -344,8 +344,8 @@ public class ApplicationRepositoryTest {
             assertTrue(provisioner.removed());
             assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId());
-            assertTrue(configCurator.exists(sessionNode));
-            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
+            assertTrue(curator.exists(sessionNode));
+            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertTrue(sessionFile.exists());
 
             assertFalse(applicationRepository.delete(applicationId()));
@@ -395,8 +395,8 @@ public class ApplicationRepositoryTest {
             assertTrue(applicationRepository.delete(applicationId()));
 
             // Session should be in state DELETE
-            String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
-            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
+            Path sessionNode = sessionRepository.getSessionPath(sessionId);
+            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertNotNull(sessionRepository.getRemoteSession(sessionId)); // session still exists
             assertNull(applicationRepository.getActiveSession(applicationId())); // but it is not active
             try {

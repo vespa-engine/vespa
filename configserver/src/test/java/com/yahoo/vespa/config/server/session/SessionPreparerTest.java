@@ -87,7 +87,6 @@ public class SessionPreparerTest {
             Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(12345)).build();
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private MockCurator curator;
-    private ConfigCurator configCurator;
     private SessionPreparer preparer;
     private final MockSecretStore secretStore = new MockSecretStore();
     private ConfigserverConfig configserverConfig;
@@ -101,7 +100,6 @@ public class SessionPreparerTest {
     @Before
     public void setUp() throws IOException {
         curator = new MockCurator();
-        configCurator = ConfigCurator.create(curator);
         configserverConfig = new ConfigserverConfig.Builder()
                 .fileReferencesDir(folder.newFolder().getAbsolutePath())
                 .configServerDBDir(folder.newFolder().getAbsolutePath())
@@ -162,7 +160,7 @@ public class SessionPreparerTest {
                         .build(),
                 sessionId);
         Path sessionPath = sessionPath(sessionId);
-        assertFalse(configCurator.exists(sessionPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
+        assertFalse(curator.exists(sessionPath.append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml")));
     }
 
     @Test
@@ -181,7 +179,7 @@ public class SessionPreparerTest {
     @Test
     public void require_that_application_is_prepared() throws Exception {
         prepare(testApp);
-        assertTrue(configCurator.exists(sessionPath(1).append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml").getAbsolute()));
+        assertTrue(curator.exists(sessionPath(1).append(ConfigCurator.USERAPP_ZK_SUBPATH).append("services.xml")));
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -234,7 +232,7 @@ public class SessionPreparerTest {
     @Test
     public void require_that_file_reference_of_application_package_is_written_to_zk() throws Exception {
         prepare(testApp);
-        assertTrue(configCurator.exists(sessionPath(1).append(APPLICATION_PACKAGE_REFERENCE_PATH).getAbsolute()));
+        assertTrue(curator.exists(sessionPath(1).append(APPLICATION_PACKAGE_REFERENCE_PATH)));
     }
 
     @Test

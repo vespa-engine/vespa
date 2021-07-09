@@ -27,7 +27,6 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -208,7 +207,7 @@ public class TenantRepositoryTest {
 
         public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
             super(new HostRegistry(),
-                  ConfigCurator.create(new MockCurator()),
+                  new MockCurator(),
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new StripedExecutor<>(new InThreadExecutorService()),
