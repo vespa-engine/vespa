@@ -5,7 +5,6 @@ import ai.vespa.reindexing.Reindexing.Status;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -17,7 +16,6 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -126,7 +124,7 @@ public class ReindexingCurator {
                                             .collect(toUnmodifiableMap(object -> require(TYPE, object, field -> types.getDocumentType(field.asString())),
                                                                        object -> new Status(require(STARTED_MILLIS, object, field -> Instant.ofEpochMilli(field.asLong())),
                                                                                             get(ENDED_MILLIS, object, field -> Instant.ofEpochMilli(field.asLong())),
-                                                                                            get(PROGRESS, object, field -> ProgressToken.fromSerializedString(field.asString())),
+                                                                                            get(PROGRESS, object, field -> field.asString()),
                                                                                             require(STATE, object, field -> toState(field.asString())),
                                                                                             get(MESSAGE, object, field -> field.asString())))));
         }
