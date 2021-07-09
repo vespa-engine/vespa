@@ -107,7 +107,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.AthenzIdentityProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider");
         addSimpleComponent(com.yahoo.container.core.documentapi.DocumentAccessProvider.class.getName());
-        addSimpleComponent("com.yahoo.container.jdisc.messagebus.SessionCache");
 
         addMetricsHandlers();
         addTestrunnerComponentsIfTester(deployState);
