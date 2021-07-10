@@ -180,9 +180,7 @@ public class HttpSearchResponse extends ExtendedResponse {
     @Override
     public Iterable<LogValue> getLogValues() {
         QueryContext context = query.getContext(false);
-        return context == null
-                ? Collections::emptyIterator
-                : context::logValueIterator;
+        return context == null ? Collections::emptyIterator : context::logValueIterator;
     }
 
     private class RendererLatencyReporter implements Runnable {
