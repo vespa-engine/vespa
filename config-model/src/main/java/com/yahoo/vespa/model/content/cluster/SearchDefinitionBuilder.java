@@ -12,6 +12,7 @@ import java.util.TreeMap;
 * @author Thomas Gundersen
 */
 public class SearchDefinitionBuilder {
+
     public Map<String, NewDocumentType> build(DocumentTypeRepo repo, ModelElement elem) {
         Map<String, NewDocumentType> docTypes = new TreeMap<>();
 
