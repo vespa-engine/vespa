@@ -16,44 +16,51 @@ func status() {
     host := "http://127.0.0.1:19071"
     path := "/ApplicationStatus"
     description := "Config server"
-    //response := request(host, path, description)
+    response := request(host, path, description)
+    if (response == nil) {
+        return
+    }
 
+    if response.StatusCode != 200 {
+        printError(description, "at", host, "is not ready")
+        printDetail("Response status:", response.Status)
+    } else {
+        printSuccess(description, "at", host, "is ready")
+    }
+}
+
+func request(host string, path string, description string) (response *http.Response) {
     client := &http.Client{
 	    Timeout: time.Second * 30,
     }
-    resp, err := client.Get(host + path)
-    if err != nil {
-        error("Could not connect to", strings.ToLower(description), "at", host)
-        detail(err.Error())
+    response, error := client.Get(host + path)
+    if error != nil {
+        printError("Could not connect to", strings.ToLower(description), "at", host)
+        printDetail(error.Error())
         return
     }
-    defer resp.Body.Close()
+    defer response.Body.Close()
 
-    scanner := bufio.NewScanner(resp.Body)
+    scanner := bufio.NewScanner(response.Body)
 
-    if err := scanner.Err(); err != nil {
-        error("Error reading data from", strings.ToLower(description), "at", host)
-        detail(err.Error())
-    } else if resp.StatusCode != 200 {
-        error(description, "at", host, "is not ready")
-        detail("Response status:", resp.Status)
+    if error := scanner.Err(); error != nil {
+        printError("Error reading data from", strings.ToLower(description), "at", host)
+        printDetail(error.Error())
+        return nil
     } else {
-        success(description, "at", host, "is ready")
+        return response
     }
 }
 
-func request(host string, path string, description string) {
-}
-
-func error(messages ...string) {
+func printError(messages ...string) {
     print("\033[31m", messages)
 }
 
-func success(messages ...string) {
+func printSuccess(messages ...string) {
     print("\033[32m", messages)
 }
 
-func detail(messages ...string) {
+func printDetail(messages ...string) {
     print("\033[33m", messages)
 }
 
