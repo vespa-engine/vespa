@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
@@ -54,7 +54,7 @@ public class Curator implements VespaCurator, AutoCloseable {
 
     private static final Logger LOG = Logger.getLogger(Curator.class.getName());
     private static final File ZK_CLIENT_CONFIG_FILE = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
-    private static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration ZK_SESSION_TIMEOUT = Duration.ofSeconds(60);
     private static final Duration ZK_CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration BASE_SLEEP_TIME = Duration.ofSeconds(1);
     private static final int MAX_RETRIES = 10;
