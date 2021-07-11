@@ -1,21 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <container id='qrsCluster_1' version='1.0'>
-  <rest-api path="jersey1">
-    <components bundle="my-bundle" />
-    <components bundle="other-bundle" />
-<!--
-    <inject component="foo-component" for-name="com.yahoo.Foo" />
-    <inject component="bar-component" for-name="com.yahoo.Bar" />
--->
-  </rest-api>
-  <rest-api path="jersey/2">
-    <components bundle="my-bundle" />
-    <components bundle="other-bundle">
-      <package>com.yahoo.foo</package>
-      <package>com.yahoo.bar</package>
-    </components>
-  </rest-api>
 
   <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
     <path>p/a/t/h</path>

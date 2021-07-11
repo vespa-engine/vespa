@@ -184,7 +184,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        throwUponRestApi(spec);  // TODO: remove
         addServlets(deployState, spec, cluster);
         addModelEvaluation(spec, cluster, context);
         addModelEvaluationBundles(cluster);
@@ -515,12 +514,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             http.removeAllServers();
 
         return http;
-    }
-
-    private void throwUponRestApi(Element spec) {
-        if(! XML.getChildren(spec, "rest-api").isEmpty()) {
-            throw new IllegalArgumentException("The 'rest-api' element is no longer allowed in services.xml.");
-        }
     }
 
     private void addServlets(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {

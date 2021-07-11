@@ -96,11 +96,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-jersey2</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespa_jersey2</artifactId>
       <version>${project.version}</version>
       <type>pom</type>
