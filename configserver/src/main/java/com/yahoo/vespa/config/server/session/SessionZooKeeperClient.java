@@ -67,13 +67,19 @@ public class SessionZooKeeperClient {
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
+    private final int maxNodeSize;
 
-    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId) {
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId, int maxNodeSize) {
         this.curator = curator;
         this.tenantName = tenantName;
         this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
         this.sessionStatusPath = sessionPath.append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
+        this.maxNodeSize = maxNodeSize;
+    }
+
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId) {
+        this(curator, tenantName, sessionId, serverId, 10 * 1024 * 1024);
     }
 
     public void writeStatus(Session.Status sessionStatus) {
@@ -132,7 +138,7 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(curator, sessionPath);
+        return new ZKApplicationPackage(curator, sessionPath, maxNodeSize);
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {

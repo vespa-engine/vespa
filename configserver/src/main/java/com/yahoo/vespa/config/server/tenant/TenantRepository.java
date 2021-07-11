@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
@@ -118,6 +119,7 @@ public class TenantRepository {
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
     private final Optional<Curator.DirectoryCache> directoryCache;
+    private final ZookeeperServerConfig zookeeperServerConfig;
 
     /**
      * Creates a new tenant repository
@@ -135,7 +137,8 @@ public class TenantRepository {
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
                             ReloadListener reloadListener,
-                            TenantListener tenantListener) {
+                            TenantListener tenantListener,
+                            ZookeeperServerConfig zookeeperServerConfig) {
         this(hostRegistry,
              curator,
              metrics,
@@ -153,7 +156,8 @@ public class TenantRepository {
              modelFactoryRegistry,
              configDefinitionRepo,
              reloadListener,
-             tenantListener);
+             tenantListener,
+             zookeeperServerConfig);
     }
 
     public TenantRepository(HostRegistry hostRegistry,
@@ -173,7 +177,8 @@ public class TenantRepository {
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
                             ReloadListener reloadListener,
-                            TenantListener tenantListener) {
+                            TenantListener tenantListener,
+                            ZookeeperServerConfig zookeeperServerConfig) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
@@ -195,6 +200,7 @@ public class TenantRepository {
         this.configDefinitionRepo = configDefinitionRepo;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
+        this.zookeeperServerConfig = zookeeperServerConfig;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -354,7 +360,8 @@ public class TenantRepository {
                                                                     zone,
                                                                     clock,
                                                                     modelFactoryRegistry,
-                                                                    configDefinitionRepo);
+                                                                    configDefinitionRepo,
+                                                                    zookeeperServerConfig.juteMaxBuffer());
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, Instant.now()));
         Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);

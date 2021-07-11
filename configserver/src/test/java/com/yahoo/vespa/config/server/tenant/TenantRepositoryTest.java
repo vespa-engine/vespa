@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
@@ -223,7 +224,8 @@ public class TenantRepositoryTest {
                   new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
                   new TestConfigDefinitionRepo(),
                   new TenantApplicationsTest.MockReloadListener(),
-                  new MockTenantListener());
+                  new MockTenantListener(),
+                  new ZookeeperServerConfig.Builder().myid(0).build());
         }
 
         @Override

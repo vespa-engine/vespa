@@ -31,10 +31,17 @@ public class ZKApplication {
     public static final String SESSIONSTATE_ZK_SUBPATH = "/sessionState";
     private final Curator curator;
     private final Path appPath;
+    /** The maximum size of a ZooKeeper node */
+    private final int maxNodeSize;
 
-    ZKApplication(Curator curator, Path appPath) {
+    ZKApplication(Curator curator, Path appPath, int maxNodeSize) {
         this.curator = curator;
         this.appPath = appPath;
+        this.maxNodeSize = maxNodeSize;
+    }
+
+    ZKApplication(Curator curator, Path appPath) {
+        this(curator, appPath, 10 * 1024 * 1024);
     }
 
     /**
@@ -105,10 +112,19 @@ public class ZKApplication {
     }
 
     void putData(Path path, String data) {
+        byte[] bytes = Utf8.toBytes(data);
+        ensureDataIsNotTooLarge(bytes, path);
         try {
-            curator.set(getFullPath(path), Utf8.toBytes(data));
+            curator.set(getFullPath(path), bytes);
         } catch (RuntimeException e) {
             throw new IllegalArgumentException("Could not put data to node '" + getFullPath(path) + "' in zookeeper", e);
+        }
+    }
+
+    private void ensureDataIsNotTooLarge(byte[] toPut, Path path) {
+        if (toPut.length >= maxNodeSize) {
+            throw new IllegalArgumentException("Error: too much zookeeper data in node: "
+                                               + "[" + toPut.length + " bytes] (path " + path + ")");
         }
     }
 

@@ -52,12 +52,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public static final String allocatedHostsNode = "allocatedHosts";
     private final ApplicationMetaData metaData;
 
-    public ZKApplicationPackage(Curator curator, Path sessionPath) {
+    public ZKApplicationPackage(Curator curator, Path sessionPath, int maxNodeSize) {
         verifyAppPath(curator, sessionPath);
-        zkApplication = new ZKApplication(curator, sessionPath);
+        zkApplication = new ZKApplication(curator, sessionPath, maxNodeSize);
         metaData = readMetaDataFromLiveApp(zkApplication);
         importFileRegistries();
         allocatedHosts = importAllocatedHosts();
+    }
+
+    // For testing
+    ZKApplicationPackage(Curator curator, Path sessionPath) {
+        this(curator, sessionPath, 10 * 1024 * 1024);
     }
 
     private Optional<AllocatedHosts> importAllocatedHosts() {

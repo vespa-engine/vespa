@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -62,7 +63,8 @@ public class TestTenantRepository extends TenantRepository {
               modelFactoryRegistry,
               configDefinitionRepo,
               reloadListener,
-              tenantListener);
+              tenantListener,
+              new ZookeeperServerConfig.Builder().myid(0).build());
     }
 
     public static class Builder {

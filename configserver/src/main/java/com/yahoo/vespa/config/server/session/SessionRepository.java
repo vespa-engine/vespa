@@ -122,6 +122,7 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
+    private final int maxNodeSize;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -139,7 +140,8 @@ public class SessionRepository {
                              Zone zone,
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
-                             ConfigDefinitionRepo configDefinitionRepo) {
+                             ConfigDefinitionRepo configDefinitionRepo,
+                             int maxNodeSize) {
         this.tenantName = tenantName;
         sessionCounter = new SessionCounter(curator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
@@ -161,6 +163,7 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
+        this.maxNodeSize = maxNodeSize;
 
         loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -778,7 +781,7 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId, maxNodeSize);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {
