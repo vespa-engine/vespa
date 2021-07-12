@@ -3,8 +3,11 @@ package com.yahoo.restapi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -38,6 +41,7 @@ class RestApiImpl implements RestApi {
     private final List<RequestMapperHolder<?>> requestMappers;
     private final List<Filter> filters;
     private final ObjectMapper jacksonJsonMapper;
+    private final boolean disableDefaultAclMapping;
 
     private RestApiImpl(RestApi.Builder builder) {
         BuilderImpl builderImpl = (BuilderImpl) builder;
@@ -52,13 +56,15 @@ class RestApiImpl implements RestApi {
                 builderImpl.requestMappers, jacksonJsonMapper);
         this.filters = List.copyOf(builderImpl.filters);
         this.jacksonJsonMapper = jacksonJsonMapper;
+        this.disableDefaultAclMapping = Boolean.TRUE.equals(builderImpl.disableDefaultAclMapping);
     }
 
     @Override
     public HttpResponse handleRequest(HttpRequest request) {
         Path pathMatcher = new Path(request.getUri());
         Route resolvedRoute = resolveRoute(pathMatcher);
-        RequestContextImpl requestContext = new RequestContextImpl(request, pathMatcher, jacksonJsonMapper);
+        AclMapping.Action aclAction = getAclMapping(request.getMethod(), request.getUri());
+        RequestContextImpl requestContext = new RequestContextImpl(request, pathMatcher, aclAction, jacksonJsonMapper);
         FilterContextImpl filterContext =
                 createFilterContextRecursive(
                         resolvedRoute, requestContext, filters,
@@ -72,8 +78,33 @@ class RestApiImpl implements RestApi {
 
     @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
 
+    @Override
+    public RequestHandlerSpec requestHandlerSpec() {
+        return RequestHandlerSpec.builder()
+                .withAclMapping(requestView -> getAclMapping(requestView.method(), requestView.uri()))
+                .build();
+    }
+
+    private AclMapping.Action getAclMapping(Method method, URI uri) {
+        Path pathMatcher = new Path(uri);
+        Route route = resolveRoute(pathMatcher);
+        HandlerHolder<?> handler = resolveHandler(method, route);
+        AclMapping.Action aclAction = handler.config.aclAction;
+        if (aclAction != null) return aclAction;
+        if (!disableDefaultAclMapping) {
+            // Fallback to default request handler spec which is used by the default implementation of
+            // HttpRequestHandler.requestHandlerSpec().
+            return RequestHandlerSpec.DEFAULT_INSTANCE.aclMapping().get(
+                    new RequestView() {
+                        @Override public Method method() { return method; }
+                        @Override public URI uri() { return uri; }
+                    });
+        }
+        throw new IllegalStateException(String.format("No ACL mapping configured for '%s' to '%s'", method, route.name));
+    }
+
     private HttpResponse dispatchToRoute(Route route, RequestContextImpl context) {
-        HandlerHolder<?> resolvedHandler = resolveHandler(context, route);
+        HandlerHolder<?> resolvedHandler = resolveHandler(context.request.getMethod(), route);
         RequestMapperHolder<?> resolvedRequestMapper = resolveRequestMapper(resolvedHandler);
         Object requestEntity;
         try {
@@ -96,8 +127,8 @@ class RestApiImpl implements RestApi {
         }
     }
 
-    private HandlerHolder<?> resolveHandler(RequestContextImpl context, Route route) {
-        HandlerHolder<?> resolvedHandler = route.handlerPerMethod.get(context.request().getMethod());
+    private HandlerHolder<?> resolveHandler(Method method, Route route) {
+        HandlerHolder<?> resolvedHandler = route.handlerPerMethod.get(method);
         return resolvedHandler == null ? route.defaultHandler : resolvedHandler;
     }
 
@@ -236,6 +267,7 @@ class RestApiImpl implements RestApi {
         private ObjectMapper jacksonJsonMapper;
         private Boolean disableDefaultExceptionMappers;
         private Boolean disableDefaultResponseMappers;
+        private Boolean disableDefaultAclMapping;
 
         @Override public RestApi.Builder setObjectMapper(ObjectMapper mapper) { this.jacksonJsonMapper = mapper; return this; }
         @Override public RestApi.Builder setDefaultRoute(RestApi.RouteBuilder route) { this.defaultRoute = ((RouteBuilderImpl)route).build(); return this; }
@@ -264,6 +296,7 @@ class RestApiImpl implements RestApi {
 
         @Override public Builder disableDefaultExceptionMappers() { this.disableDefaultExceptionMappers = true; return this; }
         @Override public Builder disableDefaultResponseMappers() { this.disableDefaultResponseMappers = true; return this; }
+        @Override public Builder disableDefaultAclMapping() { this.disableDefaultAclMapping = true; return this; }
 
         @Override public RestApi build() { return new RestApiImpl(this); }
     }
@@ -369,11 +402,23 @@ class RestApiImpl implements RestApi {
     }
 
     static class HandlerConfigBuilderImpl implements HandlerConfigBuilder {
+        private AclMapping.Action aclAction;
+
+        @Override public HandlerConfigBuilder withReadAclAction() { return withCustomAclAction(AclMapping.Action.READ); }
+        @Override public HandlerConfigBuilder withWriteAclAction() { return withCustomAclAction(AclMapping.Action.WRITE); }
+        @Override public HandlerConfigBuilder withCustomAclAction(AclMapping.Action action) {
+            this.aclAction = action; return this;
+        }
+
         HandlerConfig build() { return new HandlerConfig(this); }
     }
 
     private static class HandlerConfig {
-        HandlerConfig(HandlerConfigBuilderImpl builder) {}
+        final AclMapping.Action aclAction;
+
+        HandlerConfig(HandlerConfigBuilderImpl builder) {
+            this.aclAction = builder.aclAction;
+        }
 
         static HandlerConfig empty() { return new HandlerConfigBuilderImpl().build(); }
     }
@@ -387,12 +432,14 @@ class RestApiImpl implements RestApi {
         final Headers headers = new HeadersImpl();
         final Attributes attributes = new AttributesImpl();
         final RequestContent requestContent;
+        final AclMapping.Action aclAction;
 
-        RequestContextImpl(HttpRequest request, Path pathMatcher, ObjectMapper jacksonJsonMapper) {
+        RequestContextImpl(HttpRequest request, Path pathMatcher, AclMapping.Action aclAction, ObjectMapper jacksonJsonMapper) {
             this.request = request;
             this.pathMatcher = pathMatcher;
             this.jacksonJsonMapper = jacksonJsonMapper;
             this.requestContent = request.getData() != null ? new RequestContentImpl() : null;
+            this.aclAction = aclAction;
         }
 
         @Override public HttpRequest request() { return request; }
@@ -412,6 +459,7 @@ class RestApiImpl implements RestApi {
                     ? new UriBuilder(uri.getScheme() + "://" + uri.getHost() + ':' + uriPort)
                     : new UriBuilder(uri.getScheme() + "://" + uri.getHost());
         }
+        @Override public AclMapping.Action aclAction() { return aclAction; }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override
@@ -486,6 +534,7 @@ class RestApiImpl implements RestApi {
                 return dispatchToRoute(route, requestContext);
             }
         }
+
     }
 
     private static class ExceptionMapperHolder<EXCEPTION extends RuntimeException> {

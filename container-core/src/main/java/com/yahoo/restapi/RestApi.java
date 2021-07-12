@@ -2,8 +2,10 @@
 package com.yahoo.restapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 
 import java.io.InputStream;
 import java.util.List;
@@ -25,6 +27,9 @@ public interface RestApi {
     HttpResponse handleRequest(HttpRequest request);
     ObjectMapper jacksonJsonMapper();
 
+    /** @see com.yahoo.container.jdisc.HttpRequestHandler#requestHandlerSpec() */
+    RequestHandlerSpec requestHandlerSpec();
+
     interface Builder {
         Builder setObjectMapper(ObjectMapper mapper);
         Builder setDefaultRoute(RouteBuilder route);
@@ -37,6 +42,7 @@ public interface RestApi {
         <REQUEST_ENTITY> Builder registerJacksonRequestEntity(Class<REQUEST_ENTITY> type);
         Builder disableDefaultExceptionMappers();
         Builder disableDefaultResponseMappers();
+        Builder disableDefaultAclMapping();
         RestApi build();
     }
 
@@ -101,7 +107,11 @@ public interface RestApi {
 
     @FunctionalInterface interface Filter { HttpResponse filterRequest(FilterContext context); }
 
-    interface HandlerConfigBuilder {}
+    interface HandlerConfigBuilder {
+        HandlerConfigBuilder withReadAclAction();
+        HandlerConfigBuilder withWriteAclAction();
+        HandlerConfigBuilder withCustomAclAction(AclMapping.Action action);
+    }
 
     interface RequestContext {
         HttpRequest request();
@@ -113,6 +123,7 @@ public interface RestApi {
         RequestContent requestContentOrThrow();
         ObjectMapper jacksonJsonMapper();
         UriBuilder uriBuilder();
+        AclMapping.Action aclAction();
 
         interface Parameters {
             Optional<String> getString(String name);
