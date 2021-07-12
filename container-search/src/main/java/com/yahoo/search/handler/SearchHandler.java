@@ -87,7 +87,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** Event name for number of connections to the search subsystem */
     private static final String SEARCH_CONNECTIONS = "search_connections";
-    static final String RENDER_LATENCY_METRIC = "jdisc.search.render_latency";
+    static final String RENDER_LATENCY_METRIC = "jdisc.render.latency";
     static final String MIME_DIMENSION = "mime";
     static final String RENDERER_DIMENSION = "renderer";
 
