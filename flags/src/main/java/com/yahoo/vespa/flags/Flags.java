@@ -287,7 +287,7 @@ public class Flags {
             "Takes effect on next run of HostEncrypter");
 
     public static final UnboundBooleanFlag PODMAN3 = defineFeatureFlag(
-            "podman3", false,
+            "podman3", true,
             List.of("mpolden"), "2021-07-05", "2021-09-01",
             "Whether to use Podman 3 on supported hosts",
             "Takes effect on host-admin restart");
