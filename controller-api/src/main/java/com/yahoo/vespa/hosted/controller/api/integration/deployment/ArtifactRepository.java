@@ -15,4 +15,7 @@ public interface ArtifactRepository {
     /** Returns the system application package of the given version. */
     byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version);
 
+    /** Returns the current stable OS version for the given major version */
+    StableOsVersion stableOsVersion(int major);
+
 }

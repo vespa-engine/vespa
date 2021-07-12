@@ -5,41 +5,41 @@
 #include "value.h"
 #include "memory.h"
 #include <vespa/vespalib/util/traits.h>
-#include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib { class Stash; }
+
+namespace vespalib::slime {
 
 /**
  * Classes representing a single basic value.
  **/
-class BasicBoolValue : public Value {
+class BasicBoolValue final : public Value {
     bool _value;
 public:
-    BasicBoolValue(bool bit) : _value(bit) {}
+    BasicBoolValue(bool bit) noexcept : _value(bit) {}
     bool asBool() const override { return _value; }
     Type type() const override { return BOOL::instance; }
 };
 
-class BasicLongValue : public Value {
+class BasicLongValue final : public Value {
     int64_t _value;
 public:
-    BasicLongValue(int64_t l) : _value(l) {}
+    BasicLongValue(int64_t l) noexcept : _value(l) {}
     int64_t asLong() const override { return _value; }
     double asDouble() const override { return _value; }
     Type type() const override { return LONG::instance; }
 };
 
-class BasicDoubleValue : public Value {
+class BasicDoubleValue final : public Value {
     double _value;
 public:
-    BasicDoubleValue(double d) : _value(d) {}
+    BasicDoubleValue(double d) noexcept : _value(d) {}
     double asDouble() const override { return _value; }
     int64_t asLong() const override { return _value; }
     Type type() const override { return DOUBLE::instance; }
 };
 
-class BasicStringValue : public Value {
+class BasicStringValue final : public Value {
     Memory _value;
 public:
     BasicStringValue(Memory str, Stash & stash);
@@ -49,7 +49,7 @@ public:
     Type type() const override { return STRING::instance; }
 };
 
-class BasicDataValue : public Value {
+class BasicDataValue final : public Value {
     Memory _value;
 public:
     BasicDataValue(Memory data, Stash & stash);
@@ -60,7 +60,6 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
 
 VESPA_CAN_SKIP_DESTRUCTION(vespalib::slime::BasicBoolValue);
 VESPA_CAN_SKIP_DESTRUCTION(vespalib::slime::BasicLongValue);

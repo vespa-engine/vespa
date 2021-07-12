@@ -5,8 +5,7 @@
 #include <stdio.h>
 #include <cassert>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 std::string strfmt(const char *fmt, ...)
 {
@@ -25,4 +24,3 @@ std::string strfmt(const char *fmt, ...)
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

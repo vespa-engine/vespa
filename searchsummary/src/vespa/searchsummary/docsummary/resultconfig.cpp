@@ -127,25 +127,27 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
-        if (cfg.classes[i].name.empty()) {
+        const auto& cfg_class = cfg.classes[i];
+        if (cfg_class.name.empty()) {
             LOG(warning, "%s classes[%d]: empty name", configId, i);
         }
-        int classID = cfg.classes[i].id;
+        int classID = cfg_class.id;
         if (classID < 0 || classID > maxclassID) {
             LOG(error, "%s classes[%d]: bad id %d", configId, i, classID);
             rc = false;
             break;
         }
-        ResultClass *resClass = AddResultClass(cfg.classes[i].name.c_str(), classID);
+        ResultClass *resClass = AddResultClass(cfg_class.name.c_str(), classID);
         if (resClass == nullptr) {
-            LOG(error,"%s: unable to add classes[%d] name %s", configId, i, cfg.classes[i].name.c_str());
+            LOG(error,"%s: unable to add classes[%d] name %s", configId, i, cfg_class.name.c_str());
             rc = false;
             break;
         }
-        for (unsigned int j = 0; rc && (j < cfg.classes[i].fields.size()); j++) {
-            const char *fieldtype = cfg.classes[i].fields[j].type.c_str();
-            const char *fieldname = cfg.classes[i].fields[j].name.c_str();
-            LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg.classes[i].name.c_str(), fieldname, fieldtype);
+        resClass->set_omit_summary_features(cfg_class.omitsummaryfeatures);
+        for (unsigned int j = 0; rc && (j < cfg_class.fields.size()); j++) {
+            const char *fieldtype = cfg_class.fields[j].type.c_str();
+            const char *fieldname = cfg_class.fields[j].name.c_str();
+            LOG(debug, "Reconfiguring class '%s' field '%s' of type '%s'", cfg_class.name.c_str(), fieldname, fieldtype);
             if (strcmp(fieldtype, "integer") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_INT);
             } else if (strcmp(fieldtype, "short") == 0) {
@@ -179,12 +181,12 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
             } else if (strcmp(fieldtype, "featuredata") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_FEATUREDATA);
             } else {
-                LOG(error, "%s %s.fields[%d]: unknown type '%s'", configId, cfg.classes[i].name.c_str(), j, fieldtype);
+                LOG(error, "%s %s.fields[%d]: unknown type '%s'", configId, cfg_class.name.c_str(), j, fieldtype);
                 rc = false;
                 break;
             }
             if (!rc) {
-                LOG(error, "%s %s.fields[%d]: duplicate name '%s'", configId, cfg.classes[i].name.c_str(), j, fieldname);
+                LOG(error, "%s %s.fields[%d]: duplicate name '%s'", configId, cfg_class.name.c_str(), j, fieldname);
                 break;
             }
         }

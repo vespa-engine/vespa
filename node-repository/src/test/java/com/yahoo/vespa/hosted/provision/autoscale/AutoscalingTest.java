@@ -4,11 +4,14 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeResources.DiskSpeed;
+import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -215,7 +218,7 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 5, 1, resources);
         tester.addMeasurements(0.05f, 0.05f, 0.05f,  0, 120, application1);
         tester.assertResources("Scaling down to limit since resource usage is low",
-                               4, 1, 1.8,  7.4, 10.0,
+                               4, 1, 1.8,  7.7, 10.0,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -280,6 +283,38 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofDays(1));
         tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         assertTrue(tester.autoscale(application1, cluster1.id(), min, max).isEmpty());
+    }
+
+    @Test
+    public void prefers_remote_disk_when_no_local_match() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(3, 100, 50, 1));
+        ClusterResources max = min;
+        // AutoscalingTester hardcodes 3Gb memory overhead:
+        Flavor localFlavor  = new Flavor("local",  new NodeResources(3, 97,  75, 1, DiskSpeed.fast, StorageType.local));
+        Flavor remoteFlavor = new Flavor("remote", new NodeResources(3, 97,  50, 1, DiskSpeed.fast, StorageType.remote));
+
+        var tester = new AutoscalingTester(new Zone(new Cloud.Builder().dynamicProvisioning(true).build(),
+                                                    SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()),
+                                           List.of(localFlavor, remoteFlavor));
+        tester.provisioning().makeReadyNodes(5, localFlavor.name(),  NodeType.host, 8);
+        tester.provisioning().makeReadyNodes(5, remoteFlavor.name(), NodeType.host, 8);
+        tester.provisioning().activateTenantHosts();
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 3, 1, min.nodeResources());
+        tester.addDiskMeasurements(0.01f, 1f, 120, application1);
+        tester.clock().advance(Duration.ofMinutes(-10 * 5));
+        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> 10.0); // Query traffic only
+        Optional<ClusterResources> suggestion = tester.suggest(application1, cluster1.id(), min, max).target();
+        tester.assertResources("Choosing the remote disk flavor as it has less disk",
+                               6, 1, 3.0,  100.0, 10.0,
+                               suggestion);
+        assertEquals("Choosing the remote disk flavor as it has less disk",
+                     StorageType.remote, suggestion.get().nodeResources().storageType());
     }
 
     @Test
@@ -418,7 +453,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Increase group size to reduce memory load",
-                               8, 2, 12.4,  89.3, 62.5,
+                               8, 2, 12.4,  96.2, 62.5,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -487,7 +522,7 @@ public class AutoscalingTest {
             tester.clock().advance(Duration.ofMinutes(-10 * 5));
             tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
             tester.assertResources("Scaling up",
-                                   4, 1, 6.7, 20, 200,
+                                   4, 1, 6.7, 20.5, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max).target());
         }
 
@@ -502,7 +537,7 @@ public class AutoscalingTest {
             tester.clock().advance(Duration.ofMinutes(-10 * 5));
             tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
             tester.assertResources("Scaling up",
-                                   4, 1, 6.7, 34, 200,
+                                   4, 1, 6.7, 35.5, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max).target());
         }
     }
@@ -732,7 +767,7 @@ public class AutoscalingTest {
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
+        public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 

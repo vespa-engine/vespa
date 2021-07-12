@@ -169,7 +169,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
         private final boolean enableFeedBlockInDistributor;
-        private final ToIntFunction<ClusterSpec.Type> metricsProxyMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
@@ -182,6 +181,9 @@ public class ModelContextImpl implements ModelContext {
         private final int maxMergeQueueSize;
         private final int largeRankExpressionLimit;
         private final boolean throwIfResourceLimitsSpecified;
+        private final boolean dryRunOnnxOnSetup;
+        private final double resourceLimitDisk;
+        private final double resourceLimitMemory;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -196,7 +198,6 @@ public class ModelContextImpl implements ModelContext {
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
-            this.metricsProxyMaxHeapSizeInMb = type -> Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB.bindTo(source).with(CLUSTER_TYPE, type.name()).value();
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
@@ -209,6 +210,9 @@ public class ModelContextImpl implements ModelContext {
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
             this.throwIfResourceLimitsSpecified = flagValue(source, appId, Flags.THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED);
+            this.dryRunOnnxOnSetup = flagValue(source, appId, Flags.DRY_RUN_ONNX_ON_SETUP);
+            this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
+            this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -223,7 +227,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
-        @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb.applyAsInt(type); }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
@@ -238,6 +241,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
         @Override public boolean throwIfResourceLimitsSpecified() { return throwIfResourceLimitsSpecified; }
+        @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
+        @Override public double resourceLimitDisk() { return resourceLimitDisk; }
+        @Override public double resourceLimitMemory() { return resourceLimitMemory; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -298,6 +304,7 @@ public class ModelContextImpl implements ModelContext {
         private final StringFlag jvmGCOptionsFlag;
         private final boolean allowDisableMtls;
         private final List<X509Certificate> operatorCertificates;
+        private final List<String> tlsCiphersOverride;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -336,6 +343,8 @@ public class ModelContextImpl implements ModelContext {
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.operatorCertificates = operatorCertificates;
+            this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -408,6 +417,8 @@ public class ModelContextImpl implements ModelContext {
         public List<X509Certificate> operatorCertificates() {
             return operatorCertificates;
         }
+
+        @Override public List<String> tlsCiphersOverride() { return tlsCiphersOverride; }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
             return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))

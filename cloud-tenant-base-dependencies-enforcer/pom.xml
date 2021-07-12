@@ -152,7 +152,6 @@
                                         <include>com.yahoo.vespa:container-dev:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-disc:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-documentapi:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:container-jersey2:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-messagebus:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-search-and-docproc:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-search:*:jar:provided</include>

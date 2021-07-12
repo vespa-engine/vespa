@@ -57,8 +57,7 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
         }
 
         @Override
-        protected void recordCompletion(String job, Long consecutiveFailures, double successFactor) {
-            metric.set("maintenance.consecutiveFailures", consecutiveFailures, metric.createContext(Map.of("job", job)));
+        public void completed(String job, double successFactor) {
             metric.set("maintenance.successFactor", successFactor, metric.createContext(Map.of("job", job)));
         }
 

@@ -72,11 +72,11 @@ public class Reindexing {
 
         private final Instant startedAt;
         private final Instant endedAt;
-        private final ProgressToken progress;
+        private final String progress;
         private final State state;
         private final String message;
 
-        Status(Instant startedAt, Instant endedAt, ProgressToken progress, State state, String message) {
+        Status(Instant startedAt, Instant endedAt, String progress, State state, String message) {
             this.startedAt = startedAt;
             this.endedAt = endedAt;
             this.progress = progress;
@@ -100,7 +100,9 @@ public class Reindexing {
         public Status progressed(ProgressToken progress) {
             if (state != State.RUNNING)
                 throw new IllegalStateException("Current state must be RUNNING when updating progress");
-            return new Status(startedAt, null, requireNonNull(progress), state, null);
+            synchronized (progress) {
+                return new Status(startedAt, null, progress.serializeToString(), state, null);
+            }
         }
 
         /** Returns a copy of this in state HALTED. */
@@ -133,7 +135,7 @@ public class Reindexing {
         }
 
         public Optional<ProgressToken> progress() {
-            return Optional.ofNullable(progress);
+            return Optional.ofNullable(progress).map(ProgressToken::fromSerializedString);
         }
 
         public State state() {

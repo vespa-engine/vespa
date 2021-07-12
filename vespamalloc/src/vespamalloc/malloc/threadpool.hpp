@@ -6,8 +6,6 @@
 namespace vespamalloc {
 
 template <typename MemBlockPtrT, typename ThreadStatT>
-SizeClassT ThreadPoolT<MemBlockPtrT, ThreadStatT>::_alwaysReuseSCLimit __attribute__((visibility("hidden"))) = MemBlockPtrT::sizeClass(0x200000);
-template <typename MemBlockPtrT, typename ThreadStatT>
 size_t ThreadPoolT<MemBlockPtrT, ThreadStatT>::_threadCacheLimit __attribute__((visibility("hidden"))) = 0x10000;
 
 template <typename MemBlockPtrT, typename ThreadStatT>
@@ -62,7 +60,7 @@ mallocHelper(size_t exactSize,
         af._allocFrom->sub(mem);
         PARANOID_CHECK2( if (!mem.ptr()) { *(int *)0 = 0; } );
     } else {
-        if ( ! this->alwaysReuse(sc) ) {
+        if ( ! alwaysReuse(sc) ) {
             af._allocFrom = _allocPool->exchangeAlloc(sc, af._allocFrom);
             _stat[sc].incExchangeAlloc();
             if (af._allocFrom) {
@@ -93,9 +91,7 @@ ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT() :
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT >
-ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT()
-{
-}
+ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;
 
 template <typename MemBlockPtrT, typename ThreadStatT >
 void ThreadPoolT<MemBlockPtrT, ThreadStatT>::malloc(size_t sz, MemBlockPtrT & mem)
@@ -190,10 +186,8 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::init(int thrId)
 }
 
 template <typename MemBlockPtrT, typename ThreadStatT >
-void ThreadPoolT<MemBlockPtrT, ThreadStatT>::setParams(size_t alwaysReuseLimit, size_t threadCacheLimit)
+void ThreadPoolT<MemBlockPtrT, ThreadStatT>::setParams(size_t threadCacheLimit)
 {
-    _alwaysReuseSCLimit = std::max(MemBlockPtrT::sizeClass(alwaysReuseLimit),
-                                   SizeClassT(MemBlockPtrT::SizeClassSpan));
     _threadCacheLimit = threadCacheLimit;
 }
 

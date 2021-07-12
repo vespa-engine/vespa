@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
+import org.apache.zookeeper.KeeperException;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -88,17 +89,20 @@ public class ConfigCurator {
             if (exists(path)) return;
             curator.framework().create().creatingParentsIfNeeded().forPath(path);
         }
-        catch (Exception e) {
+        catch (KeeperException.NodeExistsException e) {
+            // Ignore, path already exists
+        }
+        catch(Exception e){
             throw new RuntimeException("Exception creating path " + path + " in ZooKeeper", e);
         }
     }
 
-    /** Returns the data at a path and node. Replaces / by # in node names. Returns null if the path doesn't exist. */
+    /** Returns the data at a path and node. Replaces / by # in node names. */
     public String getData(String path, String node) {
         return getData(createFullPath(path, node));
     }
 
-    /** Returns the data at a path. Returns null if the path doesn't exist. */
+    /** Returns the data at a path */
     public String getData(String path) {
         byte[] data = getBytes(path);
         return (data == null) ? null : Utf8.toString(data);
@@ -111,8 +115,9 @@ public class ConfigCurator {
      * @return a byte array with data.
      */
     public byte[] getBytes(String path) {
+        if ( ! exists(path)) throw new IllegalArgumentException("Cannot read data from path " + path + ", it does not exist");
+
         try {
-            if ( ! exists(path)) return null; // TODO: Ugh
             return curator.framework().getData().forPath(path);
         }
         catch (Exception e) {

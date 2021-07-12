@@ -9,6 +9,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import javax.security.auth.x500.X500Principal;
@@ -166,7 +167,7 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
-        this.athenzIdentityAttributes = String.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
+        this.athenzIdentityAttributes = Text.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
                                                       service.value());
         return this;
     }

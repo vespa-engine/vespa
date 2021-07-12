@@ -4,10 +4,7 @@
 
 namespace search::engine {
 
-MonitorRequest::MonitorRequest()
-    : reportActiveDocs(false), flags(0)
-{
-}
+MonitorRequest::MonitorRequest() = default;
 
 }
 

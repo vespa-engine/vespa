@@ -107,7 +107,7 @@ filter_matching_elements_in_input_field(const Slime& input_field, const std::vec
 {
     SlimeInserter output_inserter(output_field);
     Inspector& input_inspector = input_field.get();
-    ArrayInserter array_inserter(output_inserter.insertArray());
+    ArrayInserter array_inserter(output_inserter.insertArray(matching_elems.size()));
     auto elems_itr = matching_elems.begin();
     for (size_t i = 0; (i < input_inspector.entries()) && (elems_itr != matching_elems.end()); ++i) {
         assert(*elems_itr >= i);

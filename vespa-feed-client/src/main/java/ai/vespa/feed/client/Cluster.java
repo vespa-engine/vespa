@@ -6,16 +6,18 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Allows dispatch to a Vespa cluster.
+ * Allows dispatch of HTTP requests to a remote Vespa cluster.
+ *
+ * @author jonmv
  */
 interface Cluster extends Closeable {
 
-    /** Dispatch the request to the cluster, causing the response vessel to complete at a later time. May not throw. */
+    /** Dispatch the request to the cluster, causing the response vessel to complete at a later time. May not throw! */
     void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel);
 
     @Override
     default void close() { }
 
-    default OperationStats stats() { return new OperationStats(0, Collections.emptyMap(), 0, 0, 0, 0, 0, 0, 0); }
+    default OperationStats stats() { throw new UnsupportedOperationException("Benchmarking has been disabled"); }
 
 }

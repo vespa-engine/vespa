@@ -10,6 +10,10 @@ import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.http.v2.response.ListTenantsResponse;
+import com.yahoo.vespa.config.server.http.v2.response.TenantCreateResponse;
+import com.yahoo.vespa.config.server.http.v2.response.TenantDeleteResponse;
+import com.yahoo.vespa.config.server.http.v2.response.TenantGetResponse;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.yolean.Exceptions;
 

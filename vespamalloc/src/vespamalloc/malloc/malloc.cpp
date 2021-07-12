@@ -11,11 +11,11 @@ typedef ThreadListT<MemBlock, NoStat> ThreadList;
 typedef MemoryWatcher<MemBlock, ThreadList> Allocator;
 
 static char _Gmem[sizeof(Allocator)];
-static Allocator *_GmemP = NULL;
+static Allocator *_GmemP = nullptr;
 
 static Allocator * createAllocator()
 {
-    if (_GmemP == NULL) {
+    if (_GmemP == nullptr) {
         _GmemP = (Allocator *)1;
         _GmemP = new (_Gmem) Allocator(-1, 0x7fffffffffffffffl);
     }
@@ -28,6 +28,13 @@ dumpInfo(size_t level)
 {
     _GmemP->info(_logFile, level);
 }
+
+}
+
+extern "C" {
+
+int is_vespamalloc() __attribute__((visibility ("default")));
+int is_vespamalloc() { return 1; }
 
 }
 

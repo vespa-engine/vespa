@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.versions;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -22,10 +23,12 @@ public class OsVersionTarget implements Comparable<OsVersionTarget> {
 
     private final OsVersion osVersion;
     private final Duration upgradeBudget;
+    private final Instant scheduledAt;
 
-    public OsVersionTarget(OsVersion osVersion, Duration upgradeBudget) {
+    public OsVersionTarget(OsVersion osVersion, Duration upgradeBudget, Instant scheduledAt) {
         this.osVersion = Objects.requireNonNull(osVersion);
         this.upgradeBudget = Objects.requireNonNull(upgradeBudget);
+        this.scheduledAt = Objects.requireNonNull(scheduledAt);
         if (upgradeBudget.isNegative()) throw new IllegalArgumentException("upgradeBudget cannot be negative");
     }
 
@@ -39,18 +42,22 @@ public class OsVersionTarget implements Comparable<OsVersionTarget> {
         return upgradeBudget;
     }
 
+    /** Returns when this target was scheduled */
+    public Instant scheduledAt() {
+        return scheduledAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         OsVersionTarget that = (OsVersionTarget) o;
-        return osVersion.equals(that.osVersion) &&
-               upgradeBudget.equals(that.upgradeBudget);
+        return osVersion.equals(that.osVersion) && upgradeBudget.equals(that.upgradeBudget) && scheduledAt.equals(that.scheduledAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(osVersion, upgradeBudget);
+        return Objects.hash(osVersion, upgradeBudget, scheduledAt);
     }
 
     @Override

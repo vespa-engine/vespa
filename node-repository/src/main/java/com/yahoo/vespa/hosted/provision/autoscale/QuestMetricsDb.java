@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
-import io.questdb.cairo.CairoConfiguration;
+import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import io.questdb.cairo.CairoEngine;
 import io.questdb.cairo.CairoException;
 import io.questdb.cairo.DefaultCairoConfiguration;
@@ -34,7 +34,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -49,17 +51,16 @@ import java.util.stream.Collectors;
 public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private static final Logger log = Logger.getLogger(QuestMetricsDb.class.getName());
-    private static final String nodeTable    = "metrics";
-    private static final String clusterTable = "clusterMetrics";
+
+    private final Table nodeTable;
+    private final Table clusterTable;
 
     private final Clock clock;
     private final String dataDir;
-    private CairoEngine engine;
-    private ThreadLocal<SqlCompiler> sqlCompiler;
+    private final CairoEngine engine;
+    private final ConcurrentResourcePool<SqlCompiler> sqlCompilerPool;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private long highestTimestampAdded = 0;
-
-    private volatile int nullRecords = 0;
 
     @Inject
     public QuestMetricsDb() {
@@ -72,25 +73,25 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         if (dataDir.startsWith(Defaults.getDefaults().vespaHome())
             && ! new File(Defaults.getDefaults().vespaHome()).exists())
             dataDir = "data"; // We're injected, but not on a node with Vespa installed
-        this.dataDir = dataDir;
-        initializeDb();
-    }
-
-    private void initializeDb() {
-        IOUtils.createDirectory(dataDir + "/" + nodeTable);
-        IOUtils.createDirectory(dataDir + "/" + clusterTable);
-
-        // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
-        new File(dataDir + "/" + nodeTable + "/_txn_scoreboard").delete();
-        new File(dataDir + "/" + clusterTable + "/_txn_scoreboard").delete();
 
         // silence Questdb's custom logging system
-        IOUtils.writeFile(new File(dataDir, "quest-log.conf"), new byte[0]);
-        System.setProperty("out", dataDir + "/quest-log.conf");
-        CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
-        engine = new CairoEngine(configuration);
-        sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine));
+        String logConfig = dataDir + "/quest-log.conf";
+        IOUtils.createDirectory(logConfig);
+        IOUtils.writeFile(new File(logConfig), new byte[0]);
+        System.setProperty("out", logConfig);
+
+        this.dataDir = dataDir;
+        engine = new CairoEngine(new DefaultCairoConfiguration(dataDir));
+        sqlCompilerPool = new ConcurrentResourcePool<>(() -> new SqlCompiler(engine()));
+        nodeTable = new Table(dataDir, "metrics", clock);
+        clusterTable = new Table(dataDir, "clusterMetrics", clock);
         ensureTablesExist();
+    }
+
+    private CairoEngine engine() {
+        if (closed.get())
+            throw new IllegalStateException("Attempted to access QuestDb after calling close");
+        return engine;
     }
 
     @Override
@@ -98,70 +99,72 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> snapshots) {
-        try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), nodeTable)) {
-            addNodeMetrics(snapshots, writer);
+        try {
+            addNodeMetricsBody(snapshots);
         }
         catch (CairoException e) {
             if (e.getMessage().contains("Cannot read offset")) {
                 // This error seems non-recoverable
-                repair(e);
-                try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), nodeTable)) {
-                    addNodeMetrics(snapshots, writer);
-                }
+                nodeTable.repair(e);
+                addNodeMetricsBody(snapshots);
             }
         }
     }
 
-    private void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> snapshots, TableWriter writer) {
-        for (var snapshot : snapshots) {
-            long atMillis = adjustIfRecent(snapshot.getSecond().at().toEpochMilli(), highestTimestampAdded);
-            if (atMillis < highestTimestampAdded) continue; // Ignore old data
-            highestTimestampAdded = atMillis;
-            TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
-            row.putStr(0, snapshot.getFirst());
-            // (1 is timestamp)
-            row.putFloat(2, (float)snapshot.getSecond().load().cpu());
-            row.putFloat(3, (float)snapshot.getSecond().load().memory());
-            row.putFloat(4, (float)snapshot.getSecond().load().disk());
-            row.putLong(5, snapshot.getSecond().generation());
-            row.putBool(6, snapshot.getSecond().inService());
-            row.putBool(7, snapshot.getSecond().stable());
-            row.putFloat(8, (float)snapshot.getSecond().queryRate());
-            row.append();
+    private void addNodeMetricsBody(Collection<Pair<String, NodeMetricSnapshot>> snapshots) {
+        synchronized (nodeTable.writeLock) {
+            try (TableWriter writer = nodeTable.getWriter()) {
+                for (var snapshot : snapshots) {
+                    Optional<Long> atMillis = nodeTable.adjustOrDiscard(snapshot.getSecond().at());
+                    if (atMillis.isEmpty()) continue;
+                    TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
+                    row.putStr(0, snapshot.getFirst());
+                    // (1 is timestamp)
+                    row.putFloat(2, (float) snapshot.getSecond().load().cpu());
+                    row.putFloat(3, (float) snapshot.getSecond().load().memory());
+                    row.putFloat(4, (float) snapshot.getSecond().load().disk());
+                    row.putLong(5, snapshot.getSecond().generation());
+                    row.putBool(6, snapshot.getSecond().inService());
+                    row.putBool(7, snapshot.getSecond().stable());
+                    row.putFloat(8, (float) snapshot.getSecond().queryRate());
+                    row.append();
+                }
+                writer.commit();
+            }
         }
-        writer.commit();
     }
 
     @Override
     public void addClusterMetrics(ApplicationId application, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots) {
-        try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), clusterTable)) {
-            addClusterMetrics(application, snapshots, writer);
+        try {
+            addClusterMetricsBody(application, snapshots);
         }
         catch (CairoException e) {
             if (e.getMessage().contains("Cannot read offset")) {
                 // This error seems non-recoverable
-                repair(e);
-                try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), clusterTable)) {
-                    addClusterMetrics(application, snapshots, writer);
-                }
+                clusterTable.repair(e);
+                addClusterMetricsBody(application, snapshots);
             }
         }
     }
 
-    private void addClusterMetrics(ApplicationId applicationId, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots, TableWriter writer) {
-        for (var snapshot : snapshots.entrySet()) {
-            long atMillis = adjustIfRecent(snapshot.getValue().at().toEpochMilli(), highestTimestampAdded);
-            if (atMillis < highestTimestampAdded) continue; // Ignore old data
-            highestTimestampAdded = atMillis;
-            TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
-            row.putStr(0, applicationId.serializedForm());
-            row.putStr(1, snapshot.getKey().value());
-            // (2 is timestamp)
-            row.putFloat(3, (float)snapshot.getValue().queryRate());
-            row.putFloat(4, (float)snapshot.getValue().writeRate());
-            row.append();
+    private void addClusterMetricsBody(ApplicationId applicationId, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots) {
+        synchronized (clusterTable.writeLock) {
+            try (TableWriter writer = clusterTable.getWriter()) {
+                for (var snapshot : snapshots.entrySet()) {
+                    Optional<Long> atMillis = clusterTable.adjustOrDiscard(snapshot.getValue().at());
+                    if (atMillis.isEmpty()) continue;
+                    TableWriter.Row row = writer.newRow(atMillis.get() * 1000); // in microseconds
+                    row.putStr(0, applicationId.serializedForm());
+                    row.putStr(1, snapshot.getKey().value());
+                    // (2 is timestamp)
+                    row.putFloat(3, (float) snapshot.getValue().queryRate());
+                    row.putFloat(4, (float) snapshot.getValue().writeRate());
+                    row.append();
+                }
+                writer.commit();
+            }
         }
-        writer.commit();
     }
 
     @Override
@@ -187,44 +190,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
-    public int getNullRecordsCount() { return nullRecords; }
-
     @Override
     public void gc() {
-        nullRecords = 0;
-        gc(nodeTable);
-        gc(clusterTable);
-    }
-
-    private void gc(String table) {
-        // We remove full days at once and we want to see at least three days to not every only see weekend data
-        Instant oldestToKeep = clock.instant().minus(Duration.ofDays(4));
-        SqlExecutionContext context = newContext();
-        int partitions = 0;
-        try {
-            File tableRoot = new File(dataDir, table);
-            List<String> removeList = new ArrayList<>();
-            for (String dirEntry : tableRoot.list()) {
-                File partitionDir = new File(tableRoot, dirEntry);
-                if ( ! partitionDir.isDirectory()) continue;
-
-                partitions++;
-                DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
-                Instant partitionDay = Instant.from(formatter.parse(dirEntry + "T00:00:00"));
-                if (partitionDay.isBefore(oldestToKeep))
-                    removeList.add(dirEntry);
-
-            }
-            // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
-            if ( removeList.size() < partitions && ! removeList.isEmpty()) {
-                issue("alter table " + table + " drop partition list " +
-                      removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
-                      context);
-            }
-        }
-        catch (SqlException e) {
-            log.log(Level.WARNING, "Failed to gc old metrics data in " + dataDir + " table " + table, e);
-        }
+        nodeTable.gc();
+        clusterTable.gc();
     }
 
     @Override
@@ -232,117 +201,75 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void close() {
-        if (engine != null)
-            engine.close();
-    }
-
-    /**
-     * Repairs this db on corruption.
-     *
-     * @param e the exception indicating corruption
-     */
-    private void repair(Exception e) {
-        log.log(Level.WARNING, "QuestDb seems corrupted, wiping data and starting over", e);
-        IOUtils.recursiveDeleteDir(new File(dataDir));
-        initializeDb();
-    }
-
-    private boolean exists(String table, SqlExecutionContext context) {
-        return 0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table);
+        if (closed.getAndSet(true)) return;
+        synchronized (nodeTable.writeLock) {
+            synchronized (clusterTable.writeLock) {
+                for (SqlCompiler sqlCompiler : sqlCompilerPool)
+                    sqlCompiler.close();
+                engine.close();
+            }
+        }
     }
 
     private void ensureTablesExist() {
-        SqlExecutionContext context = newContext();
-        if (exists(nodeTable, context))
-            ensureNodeTableIsUpdated(context);
+        if (nodeTable.exists())
+            ensureNodeTableIsUpdated();
         else
-            createNodeTable(context);
+            createNodeTable();
 
-        if (exists(clusterTable, context))
-            ensureClusterTableIsUpdated(context);
+        if (clusterTable.exists())
+            ensureClusterTableIsUpdated();
         else
-            createClusterTable(context);
+            createClusterTable();
     }
 
-    private void createNodeTable(SqlExecutionContext context) {
+    private void ensureNodeTableIsUpdated() {
         try {
-            issue("create table " + nodeTable +
+            // Example: nodeTable.ensureColumnExists("write_rate", "float");
+        } catch (Exception e) {
+            nodeTable.repair(e);
+        }
+    }
+
+    private void ensureClusterTableIsUpdated() {
+        try {
+            if (0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), clusterTable.name)) {
+                // Example: clusterTable.ensureColumnExists("write_rate", "float");
+            }
+        } catch (Exception e) {
+            clusterTable.repair(e);
+        }
+    }
+
+    private void createNodeTable() {
+        try {
+            issue("create table " + nodeTable.name +
                   " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
                   "  application_generation long, inService boolean, stable boolean, queries_rate float)" +
                   " timestamp(at)" +
                   "PARTITION BY DAY;",
-                  context);
+                  newContext());
             // We should do this if we get a version where selecting on strings work embedded, see below
             // compiler.compile("alter table " + tableName + " alter column hostname add index", context);
         }
         catch (SqlException e) {
-            throw new IllegalStateException("Could not create Quest db table '" + nodeTable + "'", e);
+            throw new IllegalStateException("Could not create Quest db table '" + nodeTable.name + "'", e);
         }
     }
 
-    private void createClusterTable(SqlExecutionContext context) {
+    private void createClusterTable() {
         try {
-            issue("create table " + clusterTable +
+            issue("create table " + clusterTable.name +
                   " (application string, cluster string, at timestamp, queries_rate float, write_rate float)" +
                   " timestamp(at)" +
                   "PARTITION BY DAY;",
-                  context);
+                  newContext());
             // We should do this if we get a version where selecting on strings work embedded, see below
             // compiler.compile("alter table " + tableName + " alter column cluster add index", context);
         }
         catch (SqlException e) {
-            throw new IllegalStateException("Could not create Quest db table '" + clusterTable + "'", e);
+            throw new IllegalStateException("Could not create Quest db table '" + clusterTable.name + "'", e);
         }
-    }
-
-    private void ensureNodeTableIsUpdated(SqlExecutionContext context) {
-        try {
-            if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), nodeTable)) {
-                ensureColumnExists("queries_rate", "float", nodeTable,context); // TODO: Remove after March 2021
-            }
-        } catch (SqlException e) {
-            repair(e);
-        }
-    }
-
-    private void ensureClusterTableIsUpdated(SqlExecutionContext context) {
-        try {
-            if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), nodeTable)) {
-                ensureColumnExists("write_rate", "float", nodeTable, context); // TODO: Remove after March 2021
-            }
-        } catch (SqlException e) {
-            repair(e);
-        }
-    }
-
-    private void ensureColumnExists(String column, String columnType,
-                                    String table, SqlExecutionContext context) throws SqlException {
-        if (columnNamesOf(table, context).contains(column)) return;
-        issue("alter table " + table + " add column " + column + " " + columnType, context);
-    }
-
-    private List<String> columnNamesOf(String tableName, SqlExecutionContext context) throws SqlException {
-        List<String> columns = new ArrayList<>();
-        try (RecordCursorFactory factory = issue("show columns from " + tableName, context).getRecordCursorFactory()) {
-            try (RecordCursor cursor = factory.getCursor(context)) {
-                Record record = cursor.getRecord();
-                while (cursor.hasNext()) {
-                    columns.add(record.getStr(0).toString());
-                }
-            }
-        }
-        return columns;
-    }
-
-    private long adjustIfRecent(long timestamp, long highestTimestampAdded) {
-        if (timestamp >= highestTimestampAdded) return timestamp;
-
-        // We cannot add old data to QuestDb, but we want to use all recent information
-        long oneMinute = 60 * 1000;
-        if (timestamp >= highestTimestampAdded - oneMinute) return highestTimestampAdded;
-
-        // Too old; discard
-        return timestamp;
     }
 
     private ListMap<String, NodeMetricSnapshot> getNodeSnapshots(Instant startTime,
@@ -351,7 +278,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
         String from = formatter.format(startTime).substring(0, 19) + ".000000Z";
         String to = formatter.format(clock.instant()).substring(0, 19) + ".000000Z";
-        String sql = "select * from " + nodeTable + " where at between('" + from + "', '" + to + "');";
+        String sql = "select * from " + nodeTable.name + " where at between('" + from + "', '" + to + "');";
 
         // WHERE clauses does not work:
         // String sql = "select * from " + tableName + " where hostname in('host1', 'host2', 'host3');";
@@ -361,10 +288,6 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
-                    if (record == null || record.getStr(0) == null) { // Observed to happen. QuestDb bug?
-                        nullRecords++;
-                        continue;
-                    }
                     String hostname = record.getStr(0).toString();
                     if (hostnames.isEmpty() || hostnames.contains(hostname)) {
                         snapshots.put(hostname,
@@ -384,7 +307,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private ClusterTimeseries getClusterSnapshots(ApplicationId application, ClusterSpec.Id cluster) throws SqlException {
-        String sql = "select * from " + clusterTable;
+        String sql = "select * from " + clusterTable.name;
         var context = newContext();
         try (RecordCursorFactory factory = issue(sql, context).getRecordCursorFactory()) {
             List<ClusterMetricSnapshot> snapshots = new ArrayList<>();
@@ -407,11 +330,120 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     /** Issues an SQL statement against the QuestDb engine */
     private CompiledQuery issue(String sql, SqlExecutionContext context) throws SqlException {
-        return sqlCompiler.get().compile(sql, context);
+        SqlCompiler sqlCompiler = sqlCompilerPool.alloc();
+        try {
+            return sqlCompiler.compile(sql, context);
+        } finally {
+            sqlCompilerPool.free(sqlCompiler);
+        }
     }
 
     private SqlExecutionContext newContext() {
-        return new SqlExecutionContextImpl(engine, 1);
+        return new SqlExecutionContextImpl(engine(), 1);
+    }
+
+    /** A questDb table */
+    private class Table {
+
+        private final Object writeLock = new Object();
+        private final String name;
+        private final Clock clock;
+        private final File dir;
+        private long highestTimestampAdded = 0;
+
+        Table(String dataDir, String name, Clock clock) {
+            this.name = name;
+            this.clock = clock;
+            this.dir = new File(dataDir, name);
+            IOUtils.createDirectory(dir.getPath());
+            // https://stackoverflow.com/questions/67785629/what-does-max-txn-txn-inflight-limit-reached-in-questdb-and-how-to-i-avoid-it
+            new File(dir + "/_txn_scoreboard").delete();
+        }
+
+        boolean exists() {
+            return 0 == engine().getStatus(newContext().getCairoSecurityContext(), new Path(), name);
+        }
+
+        TableWriter getWriter() {
+            return engine().getWriter(newContext().getCairoSecurityContext(), name);
+        }
+
+        void gc() {
+            synchronized (writeLock) {
+                // We remove full days at once and we want to see at least three days to not every only see weekend data
+                Instant oldestToKeep = clock.instant().minus(Duration.ofDays(4));
+                SqlExecutionContext context = newContext();
+                int partitions = 0;
+                try {
+                    List<String> removeList = new ArrayList<>();
+                    for (String dirEntry : dir.list()) {
+                        File partitionDir = new File(dir, dirEntry);
+                        if (!partitionDir.isDirectory()) continue;
+
+                        partitions++;
+                        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
+                        Instant partitionDay = Instant.from(formatter.parse(dirEntry.substring(0, 10) + "T00:00:00"));
+                        if (partitionDay.isBefore(oldestToKeep))
+                            removeList.add(dirEntry);
+
+                    }
+                    // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
+                    if (removeList.size() < partitions && !removeList.isEmpty()) {
+                        issue("alter table " + name + " drop partition list " +
+                              removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
+                              context);
+                    }
+                } catch (SqlException e) {
+                    log.log(Level.WARNING, "Failed to gc old metrics data in " + dir + " table " + name, e);
+                }
+            }
+        }
+
+        /**
+         * Repairs this db on corruption.
+         *
+         * @param e the exception indicating corruption
+         */
+        private void repair(Exception e) {
+            log.log(Level.WARNING, "QuestDb seems corrupted, wiping data and starting over", e);
+            IOUtils.recursiveDeleteDir(dir);
+            IOUtils.createDirectory(dir.getPath());
+            ensureTablesExist();
+        }
+
+        void ensureColumnExists(String column, String columnType) throws SqlException {
+            if (columnNames().contains(column)) return;
+            issue("alter table " + name + " add column " + column + " " + columnType, newContext());
+        }
+
+        private Optional<Long> adjustOrDiscard(Instant at) {
+            long timestamp = at.toEpochMilli();
+            if (timestamp >= highestTimestampAdded) {
+                highestTimestampAdded = timestamp;
+                return Optional.of(timestamp);
+            }
+
+            // We cannot add old data to QuestDb, but we want to use all recent information
+            if (timestamp >= highestTimestampAdded - 60 * 1000) return Optional.of(highestTimestampAdded);
+
+            // Too old; discard
+            return Optional.empty();
+        }
+
+        private List<String> columnNames() throws SqlException {
+            var context = newContext();
+            List<String> columns = new ArrayList<>();
+            try (RecordCursorFactory factory = issue("show columns from " + name, context).getRecordCursorFactory()) {
+                try (RecordCursor cursor = factory.getCursor(context)) {
+                    Record record = cursor.getRecord();
+                    while (cursor.hasNext()) {
+                        columns.add(record.getStr(0).toString());
+                    }
+                }
+            }
+            return columns;
+        }
+
     }
 
 }

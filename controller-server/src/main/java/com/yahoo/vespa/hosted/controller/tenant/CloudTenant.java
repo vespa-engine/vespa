@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.tenant;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 
 import java.security.Principal;
@@ -40,7 +41,7 @@ public class CloudTenant extends Tenant {
         this.tenantSecretStores = tenantSecretStores;
         this.archiveAccessRole = archiveAccessRole;
         if (!archiveAccessRole.map(role -> VALID_ARCHIVE_ACCESS_ROLE_PATTERN.matcher(role).matches()).orElse(true))
-            throw new IllegalArgumentException(String.format("Invalid archive access role '%s': Must match expected pattern: '%s'",
+            throw new IllegalArgumentException(Text.format("Invalid archive access role '%s': Must match expected pattern: '%s'",
                     archiveAccessRole.get(), VALID_ARCHIVE_ACCESS_ROLE_PATTERN.pattern()));
         if (archiveAccessRole.map(role -> role.length() > 100).orElse(false))
             throw new IllegalArgumentException("Invalid archive access role too long, must be 100 or less characters");

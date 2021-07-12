@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;

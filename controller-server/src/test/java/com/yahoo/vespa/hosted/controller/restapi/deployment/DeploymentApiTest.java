@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
@@ -86,8 +85,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
                                            version.isReleased(),
-                                           NodeVersions.copyOf(List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
-                                                                       new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()))),
+                                           List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty()),
+                                                   new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Optional.empty())),
                                            version.confidence()
                 );
             }

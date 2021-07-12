@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -43,7 +44,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     @Override
     protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
         Duration zoneUpgradeBudget = zoneBudgetOf(target.upgradeBudget(), zone);
-        log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(),
+        log.info(Text.format("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(),
                                target.osVersion().version().toFullString(),
                                zone.getVirtualId(), zone.getCloudName(),
                                " with time budget " + zoneUpgradeBudget));

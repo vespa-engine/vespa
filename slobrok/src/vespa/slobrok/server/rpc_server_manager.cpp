@@ -9,7 +9,7 @@
 #include <sstream>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcserver");
+LOG_SETUP(".slobrok.server.rpc_server_manager");
 
 using vespalib::make_string_short::fmt;
 
@@ -173,9 +173,7 @@ RpcServerManager::addRemote(const std::string & name, const std::string &spec)
     }
     _rpcsrvmap.removeReservation(name);
     auto rpcsrv = std::make_unique<ManagedRpcServer>(name, spec, *this);
-    ManagedRpcServer & rpcServer = *rpcsrv;
     _rpcsrvmap.addNew(std::move(rpcsrv));
-    rpcServer.healthCheck();
     return OkState(0, "done");
 }
 
@@ -285,7 +283,7 @@ RpcServerManager::~RpcServerManager()
 void
 RpcServerManager::PerformTask()
 {
-    std::vector<std::unique_ptr<ManagedRpcServer>> deleteAfterSwap;
+    std::vector<std::unique_ptr<NamedService>> deleteAfterSwap;
     std::swap(deleteAfterSwap, _deleteList);
 }
 
@@ -294,32 +292,32 @@ void
 RpcServerManager::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg)
 {
     _env.countFailedHeartbeat();
-    bool logged = false;
+    const auto &name = rpcsrv->getName();
+    const auto &spec = rpcsrv->getSpec();
+    const char *namep = name.c_str();
+    const char *specp = spec.c_str();
+    std::unique_ptr<NamedService> toDelete;
     const NamedService *old = _rpcsrvmap.lookup(rpcsrv->getName());
     if (old == rpcsrv) {
-        old = _rpcsrvmap.remove(rpcsrv->getName()).release();
-        LOG_ASSERT(old == rpcsrv);
-        LOG(info, "managed server %s at %s failed: %s",
-            rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str(), errmsg.c_str());
-        logged = true;
+        toDelete = _rpcsrvmap.remove(name);
+        LOG_ASSERT(toDelete.get() == rpcsrv);
+        LOG(info, "managed server %s at %s failed: %s", namep, specp, errmsg.c_str());
+    } else {
+        // only managed servers should exist, this is bad:
+        LOG(error, "unmanaged server %s at %s failed: %s", namep, specp, errmsg.c_str());
     }
-    _exchanger.forwardRemove(rpcsrv->getName(), rpcsrv->getSpec());
+    _exchanger.forwardRemove(name, spec);
     for (size_t i = 0; i < _addManageds.size(); ++i) {
         if (_addManageds[i].rpcsrv == rpcsrv) {
-            _addManageds[i].handler
-                .doneHandler(OkState(13, "failed check using listNames callback"));
-            _addManageds[i].rpcsrv = 0;
-            LOG(warning, "rpcserver %s at %s failed while trying to register",
-                rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str());
-            logged = true;
+            LOG(warning, "rpcserver %s at %s failed while trying to register", namep, specp);
+            _addManageds[i].rpcsrv = nullptr;
+            _addManageds[i].handler.doneHandler(OkState(13, "failed check using listNames callback"));
         }
     }
-    if (!logged) {
-        LOG(warning, "unmanaged server %s at %s failed: %s",
-            rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str(), errmsg.c_str());
+    if (toDelete) {
+        _deleteList.push_back(std::move(toDelete));
+        ScheduleNow();
     }
-    _deleteList.push_back(std::unique_ptr<ManagedRpcServer>(rpcsrv));
-    ScheduleNow();
 }
 
 void

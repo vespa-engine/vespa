@@ -7,3 +7,4 @@ model[].input[].name    string
 model[].input[].source  string
 model[].output[].name   string
 model[].output[].as     string
+model[].dry_run_on_setup bool default=false

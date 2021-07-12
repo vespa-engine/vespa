@@ -53,9 +53,6 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                     Thread.sleep(pauseMs);
             }
 
-            if (nodeRepository().metricsDb().getNullRecordsCount() > 0)
-                log.warning(nodeRepository().metricsDb().getNullRecordsCount() + " records returned null");
-
             nodeRepository().metricsDb().gc();
 
             return asSuccessFactor(attempts, failures.get());

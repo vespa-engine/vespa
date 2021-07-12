@@ -37,7 +37,7 @@ public:
     uint32_t threadId()    const { return _threadId; }
     void quit() { _osThreadId = 0; } // Implicit memory barrier
     void init(int thrId);
-    static void setParams(size_t alwayReuseLimit, size_t threadCacheLimit);
+    static void setParams(size_t threadCacheLimit);
     bool grabAvailable();
 private:
     bool hasActuallyBeenUsed() const;
@@ -62,7 +62,7 @@ private:
         ChunkSList *_freeTo;
     };
     void mallocHelper(size_t exactSize, SizeClassT sc, AllocFree & af, MemBlockPtrT & mem) __attribute__ ((noinline));
-    bool alwaysReuse(SizeClassT sc) { return sc > _alwaysReuseSCLimit; }
+    static constexpr bool alwaysReuse(SizeClassT sc) { return sc > ALWAYS_REUSE_SC_LIMIT; }
 
     AllocPool   * _allocPool;
     AllocFree     _memList[NUM_SIZE_CLASSES];
@@ -70,7 +70,8 @@ private:
     uint32_t      _threadId;
     std::atomic<ssize_t> _osThreadId;
 
-    static SizeClassT _alwaysReuseSCLimit __attribute__((visibility("hidden")));
+    static constexpr SizeClassT ALWAYS_REUSE_SC_LIMIT = std::max(MemBlockPtrT::sizeClass(ALWAYS_REUSE_LIMIT),
+                                                                 SizeClassT(MemBlockPtrT::SizeClassSpan));
     static size_t     _threadCacheLimit __attribute__((visibility("hidden")));
 };
 

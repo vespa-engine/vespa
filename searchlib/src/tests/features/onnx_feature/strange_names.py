@@ -32,5 +32,5 @@ graph_def = helper.make_graph(
         OUTPUT2,
     ],
 )
-model_def = helper.make_model(graph_def, producer_name='strange_names.py')
+model_def = helper.make_model(graph_def, producer_name='strange_names.py', opset_imports=[onnx.OperatorSetIdProto(version=12)])
 onnx.save(model_def, 'strange_names.onnx')

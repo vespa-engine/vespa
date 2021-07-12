@@ -38,6 +38,7 @@ class CliArguments {
     private static final String CERTIFICATE_OPTION = "certificate";
     private static final String CONNECTIONS_OPTION = "connections";
     private static final String DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION = "disable-ssl-hostname-verification";
+    private static final String DRYRUN_OPTION = "dryrun";
     private static final String ENDPOINT_OPTION = "endpoint";
     private static final String FILE_OPTION = "file";
     private static final String HEADER_OPTION = "header";
@@ -48,6 +49,9 @@ class CliArguments {
     private static final String TIMEOUT_OPTION = "timeout";
     private static final String TRACE_OPTION = "trace";
     private static final String VERBOSE_OPTION = "verbose";
+    private static final String SHOW_ERRORS_OPTION = "show-errors";
+    private static final String SHOW_ALL_OPTION = "show-all";
+    private static final String SILENT_OPTION = "silent";
     private static final String VERSION_OPTION = "version";
     private static final String STDIN_OPTION = "stdin";
 
@@ -135,6 +139,12 @@ class CliArguments {
 
     boolean benchmarkModeEnabled() { return has(BENCHMARK_OPTION); }
 
+    boolean showProgress() { return ! has(SILENT_OPTION); }
+
+    boolean showErrors() { return has(SHOW_ERRORS_OPTION) || has(SHOW_ALL_OPTION); }
+
+    boolean showSuccesses() { return has(SHOW_ALL_OPTION); }
+
     Optional<String> route() { return stringValue(ROUTE_OPTION); }
 
     OptionalInt traceLevel() throws CliArgumentsException { return intValue(TRACE_OPTION); }
@@ -149,6 +159,8 @@ class CliArguments {
     boolean verboseSpecified() { return has(VERBOSE_OPTION); }
 
     boolean readFeedFromStandardInput() { return has(STDIN_OPTION); }
+
+    boolean dryrunEnabled() { return has(DRYRUN_OPTION); }
 
     private OptionalInt intValue(String option) throws CliArgumentsException {
         try {
@@ -219,7 +231,7 @@ class CliArguments {
                         .build())
                 .addOption(Option.builder()
                         .longOpt(MAX_STREAMS_PER_CONNECTION)
-                        .desc("Number of concurrent streams per HTTP/2 connection")
+                        .desc("Maximum number of concurrent streams per HTTP/2 connection")
                         .hasArg()
                         .type(Number.class)
                         .build())
@@ -271,7 +283,24 @@ class CliArguments {
                         .desc("Read JSON input from standard input")
                         .build())
                 .addOption(Option.builder()
+                        .longOpt(DRYRUN_OPTION)
+                        .desc("Enable dryrun mode where each operation succeeds after " + DryrunCluster.DELAY.toMillis() + "ms")
+                        .build())
+                .addOption(Option.builder()
                         .longOpt(VERBOSE_OPTION)
+                        .desc("Print stack traces on errors")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(SILENT_OPTION)
+                        .desc("Disable periodic status printing")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(SHOW_ERRORS_OPTION)
+                        .desc("Print every feed operation failure")
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(SHOW_ALL_OPTION)
+                        .desc("Print the result of every feed operation")
                         .build());
     }
 

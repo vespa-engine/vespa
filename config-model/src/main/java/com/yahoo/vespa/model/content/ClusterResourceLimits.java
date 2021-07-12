@@ -39,15 +39,21 @@ public class ClusterResourceLimits {
         private final boolean hostedVespa;
         private final boolean throwIfSpecified;
         private final DeployLogger deployLogger;
+        private final double resourceLimitDisk;
+        private final double resourceLimitMemory;
 
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
-        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa, boolean throwIfSpecified, DeployLogger deployLogger) {
+        public Builder(boolean enableFeedBlockInDistributor, boolean hostedVespa, boolean throwIfSpecified,
+                       DeployLogger deployLogger, double resourceLimitDisk, double resourceLimitMemory) {
             this.enableFeedBlockInDistributor = enableFeedBlockInDistributor;
             this.hostedVespa = hostedVespa;
             this.throwIfSpecified = throwIfSpecified;
             this.deployLogger = deployLogger;
+            this.resourceLimitDisk = resourceLimitDisk;
+            this.resourceLimitMemory = resourceLimitMemory;
+            verifyLimits(resourceLimitDisk, resourceLimitMemory);
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
@@ -80,8 +86,14 @@ public class ClusterResourceLimits {
         private void deriveLimits() {
             if (enableFeedBlockInDistributor) {
                 // This also ensures that content nodes limits are derived according to the formula in calcContentNodeLimit().
-                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
-                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getMemoryLimit(), nodeBuilder.getMemoryLimit(), ctrlBuilder::setMemoryLimit);
+                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getDiskLimit(),
+                                                             nodeBuilder.getDiskLimit(),
+                                                             ctrlBuilder::setDiskLimit,
+                                                             resourceLimitDisk);
+                considerSettingDefaultClusterControllerLimit(ctrlBuilder.getMemoryLimit(),
+                                                             nodeBuilder.getMemoryLimit(),
+                                                             ctrlBuilder::setMemoryLimit,
+                                                             resourceLimitMemory);
             }
 
             deriveClusterControllerLimit(ctrlBuilder.getDiskLimit(), nodeBuilder.getDiskLimit(), ctrlBuilder::setDiskLimit);
@@ -93,10 +105,11 @@ public class ClusterResourceLimits {
 
         private void considerSettingDefaultClusterControllerLimit(Optional<Double> clusterControllerLimit,
                                                                   Optional<Double> contentNodeLimit,
-                                                                  Consumer<Double> setter) {
+                                                                  Consumer<Double> setter,
+                                                                  double resourceLimit) {
             // TODO: remove this when feed block in distributor is default enabled.
             if (clusterControllerLimit.isEmpty() && contentNodeLimit.isEmpty()) {
-                setter.accept(0.8);
+                setter.accept(resourceLimit);
             }
         }
 
@@ -120,8 +133,23 @@ public class ClusterResourceLimits {
         }
 
         private double calcContentNodeLimit(double clusterControllerLimit) {
-            // Note that validation in the range [0.0-1.0] is handled by the rnc schema.
             return clusterControllerLimit + ((1.0 - clusterControllerLimit) / 2);
+        }
+
+
+        private void verifyLimits(double resourceLimitDisk, double resourceLimitMemory) {
+            verifyLimitInRange(resourceLimitDisk, "disk");
+            verifyLimitInRange(resourceLimitMemory, "memory");
+        }
+
+        private void verifyLimitInRange(double limit, String type) {
+            String message = "Resource limit for " + type + " is set to illegal value " + limit +
+                       ", but must be in the range [0.0, 1.0]";
+            if (limit < 0.0)
+                throw new IllegalArgumentException(message);
+
+            if (limit > 1.0)
+                throw new IllegalArgumentException(message);
         }
 
     }

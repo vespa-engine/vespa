@@ -162,6 +162,37 @@ class AutoscalingTester {
      * @param count the number of measurements
      * @param applicationId the application we're adding measurements for all nodes of
      */
+    public void addDiskMeasurements(float value, float otherResourcesLoad,
+                                    int count, ApplicationId applicationId) {
+        NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
+        float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        for (int i = 0; i < count; i++) {
+            clock().advance(Duration.ofMinutes(5));
+            for (Node node : nodes) {
+                Load load = new Load(ClusterModel.idealQueryCpuLoad * otherResourcesLoad,
+                                     ClusterModel.idealDiskLoad * otherResourcesLoad,
+                                     value).multiply(oneExtraNodeFactor);
+                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
+                                                                  new NodeMetricSnapshot(clock().instant(),
+                                                                                         load,
+                                                                                         0,
+                                                                                         true,
+                                                                                         true,
+                                                                                         0.0))));
+            }
+        }
+    }
+
+    /**
+     * Adds measurements with the given resource value and ideal values for the other resources,
+     * scaled to take one node redundancy into account.
+     * (I.e we adjust to measure a bit lower load than "naively" wanted to offset for the autoscaler
+     * wanting to see the ideal load with one node missing.)
+     *
+     * @param otherResourcesLoad the load factor relative to ideal to use for other resources
+     * @param count the number of measurements
+     * @param applicationId the application we're adding measurements for all nodes of
+     */
     public void addMemMeasurements(float value, float otherResourcesLoad,
                                    int count, ApplicationId applicationId) {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
@@ -302,7 +333,7 @@ class AutoscalingTester {
                                             double approxCpu, double approxMemory, double approxDisk,
                                             Optional<ClusterResources> resources) {
         double delta = 0.0000000001;
-        assertTrue(message, resources.isPresent());
+        assertTrue("Resources are present: " + message, resources.isPresent());
         NodeResources nodeResources = resources.get().nodeResources();
         assertEquals("Node count in " + resources.get() + ": " + message, nodeCount, resources.get().nodes());
         assertEquals("Group count in " + resources.get() + ": " + message, groupCount, resources.get().groups());
@@ -357,7 +388,7 @@ class AutoscalingTester {
         }
 
         @Override
-        public long thinPoolSizeInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
+        public long reservedDiskSpaceInBase2Gb(NodeType nodeType, boolean sharedHost) { return 0; }
 
     }
 

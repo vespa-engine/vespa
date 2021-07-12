@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.application.InstanceList;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 
@@ -28,12 +29,12 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private final boolean isControllerVersion;
     private final boolean isSystemVersion;
     private final boolean isReleased;
-    private final NodeVersions nodeVersions;
+    private final List<NodeVersion> nodeVersions;
     private final Confidence confidence;
 
     public VespaVersion(Version version, String releaseCommit, Instant committedAt,
                         boolean isControllerVersion, boolean isSystemVersion, boolean isReleased,
-                        NodeVersions nodeVersions,
+                        List<NodeVersion> nodeVersions,
                         Confidence confidence) {
         this.version = version;
         this.releaseCommit = releaseCommit;
@@ -104,7 +105,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
     public boolean isReleased() { return isReleased; }
 
     /** Returns the versions of nodes allocated to system applications (across all zones) */
-    public NodeVersions nodeVersions() {
+    public List<NodeVersion> nodeVersions() {
         return nodeVersions;
     }
 

@@ -5,10 +5,12 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
@@ -24,6 +26,7 @@ public class OsVersionTargetSerializer {
 
     private static final String versionsField = "versions";
     private static final String upgradeBudgetField = "upgradeBudget";
+    private static final String scheduledAtField = "scheduledAt";
 
     public OsVersionTargetSerializer(OsVersionSerializer osVersionSerializer) {
         this.osVersionSerializer = osVersionSerializer;
@@ -42,10 +45,11 @@ public class OsVersionTargetSerializer {
         Set<OsVersionTarget> osVersionTargets = new TreeSet<>();
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
-            // TODO(mpolden): Require this field after 2021-05-01
-            Duration upgradeBudget = Serializers.optionalDuration(inspector.field(upgradeBudgetField))
-                                                .orElse(Duration.ZERO);
-            osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget));
+            Duration upgradeBudget = Duration.ofMillis(inspector.field(upgradeBudgetField).asLong());
+            // TODO(mpolden): Require after 2021-09-01
+            Instant scheduledAt = SlimeUtils.optionalInstant(inspector.field(scheduledAtField))
+                                            .orElse(Instant.EPOCH);
+            osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget, scheduledAt));
         });
         return Collections.unmodifiableSet(osVersionTargets);
     }
@@ -53,6 +57,7 @@ public class OsVersionTargetSerializer {
     private void toSlime(OsVersionTarget target, Cursor object) {
         osVersionSerializer.toSlime(target.osVersion(), object);
         object.setLong(upgradeBudgetField, target.upgradeBudget().toMillis());
+        object.setLong(scheduledAtField, target.scheduledAt().toEpochMilli());
     }
 
 }

@@ -66,7 +66,7 @@ public:
     void fail();
     bool isConnected() const { return (_remote != nullptr); }
     void tryConnect();
-    void healthCheck();
+    void maybePushMine();
     void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
     const std::string & getName() const { return _rpcserver.getName(); }
     const std::string & getSpec() const { return _rpcserver.getSpec(); }

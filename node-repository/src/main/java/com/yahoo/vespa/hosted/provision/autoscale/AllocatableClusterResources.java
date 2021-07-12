@@ -107,8 +107,13 @@ public class AllocatableClusterResources {
     }
 
     public boolean preferableTo(AllocatableClusterResources other) {
-        if (this.fulfilment < 1 || other.fulfilment < 1)
-            return this.fulfilment > other.fulfilment;  // we always want to fulfil as much as possible
+        if (this.fulfilment < 1 || other.fulfilment < 1) // always fulfil as much as possible
+            return this.fulfilment > other.fulfilment;
+
+        if (clusterSpec.type().isContent() // always prefer local storage on content nodes
+            && this.realResources.storageType() != other.realResources().nodeResources().storageType())
+            return this.realResources.storageType() == NodeResources.StorageType.local;
+
         return this.cost() < other.cost(); // otherwise, prefer lower cost
     }
 
@@ -162,8 +167,9 @@ public class AllocatableClusterResources {
 
                 // Adjust where we don't need exact match to the flavor
                 if (flavor.resources().storageType() == NodeResources.StorageType.remote) {
-                    advertisedResources = advertisedResources.withDiskGb(cappedWantedResources.diskGb());
-                    realResources = realResources.withDiskGb(cappedWantedResources.diskGb());
+                    double diskGb = systemLimits.enlargeToLegal(cappedWantedResources, clusterSpec.type(), exclusive).diskGb();
+                    advertisedResources = advertisedResources.withDiskGb(diskGb);
+                    realResources = realResources.withDiskGb(diskGb);
                 }
                 if (flavor.resources().bandwidthGbps() >= advertisedResources.bandwidthGbps()) {
                     advertisedResources = advertisedResources.withBandwidthGbps(cappedWantedResources.bandwidthGbps());

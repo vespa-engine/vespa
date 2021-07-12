@@ -194,8 +194,6 @@ void
 EnumStoreT<EntryT>::free_unused_values(IndexList to_remove)
 {
     struct CompareEnumIndex {
-        using Index = IEnumStore::Index;
-
         bool operator()(const Index &lhs, const Index &rhs) const {
             return lhs.ref() < rhs.ref();
         }

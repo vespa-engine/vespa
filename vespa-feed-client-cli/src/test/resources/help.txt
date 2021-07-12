@@ -9,17 +9,24 @@ Vespa feed client
                                           connections
     --disable-ssl-hostname-verification   Disable SSL hostname
                                           verification
+    --dryrun                              Enable dryrun mode where each
+                                          operation succeeds after 1ms
     --endpoint <arg>                      URI to feed endpoint
     --file <arg>                          Path to feed file in JSON format
     --header <arg>                        HTTP header on the form 'Name:
                                           value'
     --help
-    --max-streams-per-connection <arg>    Number of concurrent streams per
-                                          HTTP/2 connection
+    --max-streams-per-connection <arg>    Maximum number of concurrent
+                                          streams per HTTP/2 connection
     --private-key <arg>                   Path to PEM/PKCS#8 encoded
                                           private key file
     --route <arg>                         Target Vespa route for feed
                                           operations
+    --show-all                            Print the result of every feed
+                                          operation
+    --show-errors                         Print every feed operation
+                                          failure
+    --silent                              Disable periodic status printing
     --stdin                               Read JSON input from standard
                                           input
     --timeout <arg>                       Feed operation timeout (in
@@ -27,5 +34,5 @@ Vespa feed client
     --trace <arg>                         The trace level of network
                                           traffic. Disabled by default
                                           (=0)
-    --verbose
+    --verbose                             Print stack traces on errors
     --version

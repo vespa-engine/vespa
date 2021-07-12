@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -137,11 +136,6 @@ public class ZKApplicationPackage implements ApplicationPackage {
         for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR)) {
             if (sd.endsWith(SD_NAME_SUFFIX))
                 schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, sd))));
-        }
-        // TODO: Remove when 7.414.19 is oldest version in use
-        for (String sd : zkApplication.getChildren(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR)) {
-            if (sd.endsWith(SD_NAME_SUFFIX))
-                schemas.add(new NamedReader(sd, new StringReader(zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, sd))));
         }
         return schemas;
     }
@@ -257,16 +251,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     @Override
     public Reader getRankingExpression(String name) {
-        Optional<Reader> reader = zkApplication.getOptionalDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, name);
-        // TODO: Remove when 7.414.19 is oldest version in use
-        return reader.orElseGet(() -> zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SEARCH_DEFINITIONS_DIR, name));
+        return zkApplication.getDataReader(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + SCHEMAS_DIR, name);
     }
 
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
-        String fileName = zkApplication.getData(ConfigCurator.USERAPP_ZK_SUBPATH + "/" + pathRelativeToAppDir.getRelative());
+        String path = ConfigCurator.USERAPP_ZK_SUBPATH + "/" + pathRelativeToAppDir.getRelative();
+
         // File does not exist: Manufacture a non-existing file
-        return new File(Objects.requireNonNullElseGet(fileName, pathRelativeToAppDir::getRelative));
+        if ( ! zkApplication.exists(path)) return new File(pathRelativeToAppDir.getRelative());
+
+        return new File(zkApplication.getData(path));
     }
 
     @Override

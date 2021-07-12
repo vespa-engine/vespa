@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.RequestHandler;
+import com.yahoo.vespa.config.server.http.v2.request.HttpConfigRequests;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.HttpConfigRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;

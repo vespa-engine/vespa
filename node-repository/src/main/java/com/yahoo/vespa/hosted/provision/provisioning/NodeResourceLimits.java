@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.Locale;
@@ -40,7 +41,10 @@ public class NodeResourceLimits {
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository, cluster.isExclusive()),
+        // This node is allocated exclusively if that has been explicitly requested, or if the host of the node was
+        // provisioned exclusively
+        boolean exclusive = cluster.isExclusive() || candidateNode.parent.flatMap(Node::exclusiveTo).isPresent();
+        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository, exclusive),
                                   cluster.type());
     }
 
@@ -76,13 +80,13 @@ public class NodeResourceLimits {
     }
 
     private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
-        return minRealDiskGb() + getThinPoolSize(requested.storageType(), exclusive);
+        return minRealDiskGb() + reservedDiskSpaceGb(requested.storageType(), exclusive);
     }
 
     // Note: Assumes node type 'host'
-    private long getThinPoolSize(NodeResources.StorageType storageType, boolean exclusive) {
+    private long reservedDiskSpaceGb(NodeResources.StorageType storageType, boolean exclusive) {
         if (storageType == NodeResources.StorageType.local && zone().getCloud().dynamicProvisioning())
-            return nodeRepository.resourcesCalculator().thinPoolSizeInBase2Gb(NodeType.host, ! exclusive);
+            return nodeRepository.resourcesCalculator().reservedDiskSpaceInBase2Gb(NodeType.host, ! exclusive);
         else
             return 4;
     }

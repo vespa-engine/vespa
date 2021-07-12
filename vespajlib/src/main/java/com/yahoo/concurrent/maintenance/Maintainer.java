@@ -104,21 +104,19 @@ public abstract class Maintainer implements Runnable {
     public final void lockAndMaintain(boolean force) {
         if (!force && !jobControl.isActive(name())) return;
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
-        jobMetrics.starting(name());
+
         double successFactor = 0;
         try (var lock = jobControl.lockJob(name())) {
             successFactor = maintain();
-            if (successFactor > 0.0)
-                jobMetrics.recordCompletionOf(name());
-        } catch (UncheckedTimeoutException e) {
-            if (ignoreCollision) {
-                jobMetrics.recordCompletionOf(name());
-            } else {
+        }
+        catch (UncheckedTimeoutException e) {
+            if ( ! ignoreCollision)
                 log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
-            }
-        } catch (Throwable e) {
+        }
+        catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
-        } finally {
+        }
+        finally {
             jobMetrics.completed(name(), successFactor);
         }
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());

@@ -5,38 +5,32 @@
 #include <util/clientstatus.h>
 #include <httpclient/httpclient.h>
 #include <util/filereader.h>
-#include <cassert>
 #include <cstring>
 #include <iostream>
 #include <vespa/vespalib/encoding/base64.h>
 
 using namespace vespalib;
 
-Client::Client(vespalib::CryptoEngine::SP engine, ClientArguments *args)
-    : _args(args),
-      _status(new ClientStatus()),
-      _reqTimer(new Timer()),
-      _cycleTimer(new Timer()),
-      _masterTimer(new Timer()),
-      _http(new HTTPClient(std::move(engine), _args->_hostname, _args->_port,
-                           _args->_keepAlive, _args->_headerBenchmarkdataCoverage,
-                           _args->_extraHeaders, _args->_authority)),
-      _reader(new FileReader()),
+Client::Client(vespalib::CryptoEngine::SP engine, std::unique_ptr<ClientArguments> args)
+    : _args(std::move(args)),
+      _status(std::make_unique<ClientStatus>()),
+      _reqTimer(std::make_unique<Timer>()),
+      _cycleTimer(std::make_unique<Timer>()),
+      _masterTimer(std::make_unique<Timer>()),
+      _http(std::make_unique<HTTPClient>(std::move(engine), _args->_hostname, _args->_port, _args->_keepAlive,
+                                         _args->_headerBenchmarkdataCoverage, _args->_extraHeaders, _args->_authority)),
+      _reader(std::make_unique<FileReader>()),
       _output(),
-      _linebufsize(args->_maxLineSize),
-      _linebuf(new char[_linebufsize]),
+      _linebufsize(_args->_maxLineSize),
+      _linebuf(std::make_unique<char[]>(_linebufsize)),
       _stop(false),
       _done(false),
       _thread()
 {
-    assert(args != NULL);
     _cycleTimer->SetMax(_args->_cycle);
 }
 
-Client::~Client()
-{
-    delete [] _linebuf;
-}
+Client::~Client() = default;
 
 void Client::runMe(Client * me) {
     me->run();
@@ -173,15 +167,15 @@ Client::run()
     std::this_thread::sleep_for(std::chrono::milliseconds(_args->_delay));
 
     // open query file
-    snprintf(inputFilename, 1024, _args->_filenamePattern, _args->_myNum);
+    snprintf(inputFilename, 1024, _args->_filenamePattern.c_str(), _args->_myNum);
     if (!_reader->Open(inputFilename)) {
         printf("Client %d: ERROR: could not open file '%s' [read mode]\n",
                _args->_myNum, inputFilename);
         _status->SetError("Could not open query file.");
         return;
     }
-    if (_args->_outputPattern != NULL) {
-        snprintf(outputFilename, 1024, _args->_outputPattern, _args->_myNum);
+    if ( ! _args->_outputPattern.empty()) {
+        snprintf(outputFilename, 1024, _args->_outputPattern.c_str(), _args->_myNum);
         _output = std::make_unique<std::ofstream>(outputFilename, std::ofstream::out | std::ofstream::binary);
         if (_output->fail()) {
             printf("Client %d: ERROR: could not open file '%s' [write mode]\n",
@@ -208,7 +202,7 @@ Client::run()
 
         _cycleTimer->Start();
 
-        linelen = urlSource.nextUrl(_linebuf, _linebufsize);
+        linelen = urlSource.nextUrl(_linebuf.get(), _linebufsize);
         if (linelen > 0) {
             ++urlNumber;
         } else {
@@ -222,11 +216,11 @@ Client::run()
         if (linelen < _linebufsize) {
             if (_output) {
                 _output->write("URL: ", strlen("URL: "));
-                _output->write(_linebuf, linelen);
+                _output->write(_linebuf.get(), linelen);
                 _output->write("\n\n", 2);
             }
             if (linelen + (int)_args->_queryStringToAppend.length() < _linebufsize) {
-                strcat(_linebuf, _args->_queryStringToAppend.c_str());
+                strcat(_linebuf.get(), _args->_queryStringToAppend.c_str());
             }
             int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
             
@@ -239,7 +233,7 @@ Client::run()
             }
                         
             _reqTimer->Start();
-            auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, content, cLen);
+            auto fetch_status = _http->Fetch(_linebuf.get(), _output.get(), _args->_usePostMode, content, cLen);
             _reqTimer->Stop();
             _status->AddRequestStatus(fetch_status.RequestStatus());
             if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0)

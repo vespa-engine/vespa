@@ -52,15 +52,13 @@ static constexpr uint32_t NUM_THREADS = 16384;
 #define PARANOID_CHECK3(a)
 #endif
 
-typedef MmapMemory OSMemory;
+using OSMemory = MmapMemory;
+using SizeClassT = int;
 
-typedef int SizeClassT;
-
+constexpr size_t ALWAYS_REUSE_LIMIT = 0x200000ul;
    
-inline int msbIdx(uint64_t v) {
-    int64_t result;
-    __asm __volatile("bsrq %0,%0" : "=r" (result) : "0" (v));
-    return result;
+inline constexpr int msbIdx(uint64_t v) {
+    return (sizeof(v)*8 - 1) - __builtin_clzl(v);
 }    
 
 template <size_t MinClassSizeC>
@@ -69,14 +67,14 @@ class CommonT
 public:
     static constexpr size_t MAX_ALIGN = 0x200000ul;
     enum {MinClassSize = MinClassSizeC};
-    static inline SizeClassT sizeClass(size_t sz) {
+    static inline constexpr SizeClassT sizeClass(size_t sz) {
         SizeClassT tmp(msbIdx(sz - 1) - (MinClassSizeC - 1));
         return (sz <= (1 << MinClassSizeC )) ? 0 : tmp;
     }
-    static inline size_t classSize(SizeClassT sc) { return (size_t(1) << (sc + MinClassSizeC)); }
+    static inline constexpr size_t classSize(SizeClassT sc) { return (size_t(1) << (sc + MinClassSizeC)); }
 };
 
-inline void crash() { *((volatile unsigned *) NULL) = 0; }
+inline void crash() { *((volatile unsigned *) nullptr) = 0; }
 
 template <typename T>
 inline void swap(T & a, T & b)      { T tmp(a); a = b; b = tmp; }

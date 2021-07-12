@@ -123,7 +123,6 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final BooleanFlag rewriteSearchDefinitions;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -164,7 +163,6 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.rewriteSearchDefinitions = Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.bindTo(flagSource);
 
         loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -175,7 +173,11 @@ public class SessionRepository {
     private void loadSessions(BooleanFlag loadLocalSessions) {
         ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                 new DaemonThreadFactory("load-sessions-"));
-        if (loadLocalSessions.value())
+        loadSessions(loadLocalSessions.value(), executor);
+    }
+
+    void loadSessions(boolean loadLocalSessions, ExecutorService executor) {
+        if (loadLocalSessions)
             loadLocalSessions(executor);
         loadRemoteSessions(executor);
         try {
@@ -659,8 +661,7 @@ public class SessionRepository {
     private Optional<ApplicationSet> getApplicationSet(long sessionId) {
         Optional<ApplicationSet> applicationSet = Optional.empty();
         try {
-            RemoteSession session = getRemoteSession(sessionId);
-            applicationSet = Optional.ofNullable(ensureApplicationLoaded(session));
+            applicationSet = Optional.ofNullable(getRemoteSession(sessionId)).map(this::ensureApplicationLoaded);
         } catch (IllegalArgumentException e) {
             // Do nothing if we have no currently active session
         }
@@ -681,8 +682,7 @@ public class SessionRepository {
             tempDestinationDir = Files.createTempDirectory(destinationDir.getParentFile().toPath(), "app-package");
             log.log(Level.FINE, "Copying dir " + sourceDir.getAbsolutePath() + " to " + tempDestinationDir.toFile().getAbsolutePath());
             IOUtils.copyDirectory(sourceDir, tempDestinationDir.toFile());
-            if (rewriteSearchDefinitions.value())
-                moveSearchDefinitionsToSchemasDir(tempDestinationDir);
+            moveSearchDefinitionsToSchemasDir(tempDestinationDir);
 
             log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
             Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);

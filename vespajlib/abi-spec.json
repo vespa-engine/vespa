@@ -1201,6 +1201,7 @@
       "public com.yahoo.tensor.Tensor equal(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor notEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor approxEqual(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.Tensor bit(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor avg()",
       "public com.yahoo.tensor.Tensor avg(java.lang.String)",
       "public com.yahoo.tensor.Tensor avg(java.util.List)",
@@ -3097,7 +3098,8 @@
       "public static java.util.OptionalInt validateTextString(java.lang.String)",
       "public static boolean isDisplayable(int)",
       "public static java.lang.String stripInvalidCharacters(java.lang.String)",
-      "public static java.lang.String truncate(java.lang.String, int)"
+      "public static java.lang.String truncate(java.lang.String, int)",
+      "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])"
     ],
     "fields": []
   },

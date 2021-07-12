@@ -43,6 +43,9 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
+      "name": "DeploymentUpgrader"
+    },
+    {
       "name": "EndpointCertificateMaintainer"
     },
     {
@@ -77,6 +80,9 @@
     },
     {
       "name": "ResourceTagMaintainer"
+    },
+    {
+      "name":"RetriggerMaintainer"
     },
     {
       "name": "SystemRoutingPolicyMaintainer"

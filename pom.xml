@@ -53,6 +53,7 @@
         <module>configserver-flags</module>
         <module>config_test</module>
         <module>container</module>
+        <module>container-apache-http-client-bundle</module>
         <module>container-core</module>
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
@@ -60,7 +61,6 @@
         <module>container-disc</module>
         <module>container-documentapi</module>
         <module>container-integration-test</module>
-        <module>container-jersey2</module>
         <module>container-messagebus</module>
         <module>container-search-and-docproc</module>
         <module>container-search</module>
@@ -70,7 +70,6 @@
         <module>controller-api</module>
         <module>controller-server</module>
         <module>defaults</module>
-        <module>docker-api</module>
         <module>docproc</module>
         <module>docprocs</module>
         <module>document</module>

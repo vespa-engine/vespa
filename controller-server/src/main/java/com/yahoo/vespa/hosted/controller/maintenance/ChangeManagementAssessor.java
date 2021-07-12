@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
@@ -120,7 +121,7 @@ public class ChangeManagementAssessor {
     private static Cluster clusterKey(NodeRepositoryNode node) {
         if (node.getOwner() == null)
             return Cluster.EMPTY;
-        String appId = String.format("%s:%s:%s", node.getOwner().tenant, node.getOwner().application, node.getOwner().instance);
+        String appId = Text.format("%s:%s:%s", node.getOwner().tenant, node.getOwner().application, node.getOwner().instance);
         return new Cluster(Node.ClusterType.valueOf(node.getMembership().clustertype), node.getMembership().clusterid, appId, node.getType());
     }
 

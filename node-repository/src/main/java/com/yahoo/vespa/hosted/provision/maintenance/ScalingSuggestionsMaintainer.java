@@ -40,19 +40,15 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         if ( ! nodeRepository().zone().environment().isProduction()) return 1.0;
 
         int attempts = 0;
-        int successes = 0;
+        int failures = 0;
         for (var application : activeNodesByApplication().entrySet()) {
-            attempts++;
-            successes += suggest(application.getKey(), application.getValue());
+            for (var cluster : nodesByCluster(application.getValue()).entrySet()) {
+                attempts++;
+                if ( ! suggest(application.getKey(), cluster.getKey(), cluster.getValue()))
+                    failures++;
+            }
         }
-        return attempts == 0 ? 1.0 : ((double)successes / attempts);
-    }
-
-    private int suggest(ApplicationId application, NodeList applicationNodes) {
-        int successes = 0;
-        for (var cluster : nodesByCluster(applicationNodes).entrySet())
-            successes += suggest(application, cluster.getKey(), cluster.getValue()) ? 1 : 0;
-        return successes;
+        return asSuccessFactor(attempts, failures);
     }
 
     private Applications applications() {

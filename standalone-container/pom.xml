@@ -90,6 +90,8 @@
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
             container-disc-jar-with-dependencies.jar,
+            model-evaluation-jar-with-dependencies.jar,
+            model-integration-jar-with-dependencies.jar,
             vespajlib.jar
           </discPreInstallBundle>
         </configuration>

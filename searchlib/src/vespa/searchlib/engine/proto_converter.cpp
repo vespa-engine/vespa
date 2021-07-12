@@ -171,10 +171,8 @@ ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply
 //-----------------------------------------------------------------------------
 
 void
-ProtoConverter::monitor_request_from_proto(const ProtoMonitorRequest &proto, MonitorRequest &request)
+ProtoConverter::monitor_request_from_proto(const ProtoMonitorRequest &, MonitorRequest &)
 {
-    (void) proto;
-    request.reportActiveDocs = true;
 }
 
 void

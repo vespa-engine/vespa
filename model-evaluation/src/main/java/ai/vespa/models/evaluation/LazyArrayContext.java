@@ -274,7 +274,6 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                     if (onnxModel.name().equals(modelName.get())) {
                         String onnxFeature = node.toString();
                         bindTargets.add(onnxFeature);
-                        arguments.add(onnxFeature);
 
                         // Load the model (if not already loaded) to extract inputs
                         onnxModel.load();

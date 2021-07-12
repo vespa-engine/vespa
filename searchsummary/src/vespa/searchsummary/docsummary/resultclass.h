@@ -141,6 +141,9 @@ private:
     util::StringEnum          &_fieldEnum;   // fieldname -> f.n. enum value [SHARED]
     std::vector<int>           _enumMap;     // fieldname enum value -> entry index
     DynamicInfo               *_dynInfo;     // fields overridden and generated
+    // Whether or not summary features should be omitted when filling this summary class.
+    // As default, summary features are always included.
+    bool                       _omit_summary_features;
 
 public:
     typedef std::unique_ptr<ResultClass> UP;
@@ -277,6 +280,14 @@ public:
     const ResConfigEntry *GetEntry(uint32_t offset) const
     {
         return (offset < _entries.size()) ? &_entries[offset] : NULL;
+    }
+
+    void set_omit_summary_features(bool value) {
+        _omit_summary_features = value;
+    }
+
+    bool omit_summary_features() const {
+        return _omit_summary_features;
     }
 };
 

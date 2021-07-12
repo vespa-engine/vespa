@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 /**
  * A Symbol may be used to look up a field within an OBJECT.
@@ -13,13 +12,13 @@ namespace slime {
 class Symbol
 {
 private:
-    static const uint32_t UNDEFINED = (uint32_t)-1;
+    static constexpr uint32_t UNDEFINED = (uint32_t)-1;
 
     uint32_t _value;
 
 public:
-    Symbol() : _value(UNDEFINED) {}
-    Symbol(uint32_t v) : _value(v) {}
+    Symbol() noexcept : _value(UNDEFINED) {}
+    Symbol(uint32_t v) noexcept : _value(v) {}
     bool undefined() const { return (_value == UNDEFINED); }
     uint32_t getValue() const { return _value; }
     bool operator<(const Symbol &rhs) const noexcept { return (_value < rhs._value); }
@@ -27,5 +26,3 @@ public:
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

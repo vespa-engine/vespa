@@ -5,8 +5,7 @@
 #include "type.h"
 #include "cursor.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 class SymbolTable;
 struct SymbolLookup;
@@ -22,7 +21,7 @@ struct ObjectTraverser;
 class Value : public Cursor
 {
 protected:
-    virtual ~Value() {}
+    virtual ~Value() = default;
 
     virtual Cursor &addLeaf(const ValueFactory &input);
     virtual Cursor &setLeaf(Symbol symbol, const ValueFactory &input);
@@ -58,7 +57,7 @@ public:
     Cursor &addString(Memory str) override;
     Cursor &addData(Memory data) override;
     Cursor &addData(ExternalMemory::UP data) override;
-    Cursor &addArray() override;
+    Cursor &addArray(size_t reserved_size) override;
     Cursor &addObject() override;
 
     Cursor &setNix(Symbol sym) override;
@@ -68,7 +67,7 @@ public:
     Cursor &setString(Symbol sym, Memory str) override;
     Cursor &setData(Symbol sym, Memory data) override;
     Cursor &setData(Symbol sym, ExternalMemory::UP data) override;
-    Cursor &setArray(Symbol sym) override;
+    Cursor &setArray(Symbol sym, size_t reserved_size) override;
     Cursor &setObject(Symbol sym) override;
 
     Cursor &setNix(Memory name) override;
@@ -78,12 +77,10 @@ public:
     Cursor &setString(Memory name, Memory str) override;
     Cursor &setData(Memory name, Memory str) override;
     Cursor &setData(Memory name, ExternalMemory::UP data) override;
-    Cursor &setArray(Memory name) override;
+    Cursor &setArray(Memory name, size_t reserved_size) override;
     Cursor &setObject(Memory name) override;
 
     Symbol resolve(Memory symbol_name) override;
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

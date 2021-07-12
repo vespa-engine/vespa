@@ -4,8 +4,7 @@
 
 #include "inspector.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 class Symbol;
 
@@ -28,5 +27,3 @@ struct ObjectTraverser {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

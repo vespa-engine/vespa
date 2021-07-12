@@ -6,6 +6,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Optional;
 import java.util.Properties;
 
 public class VespaConfiguration {
@@ -131,7 +132,11 @@ public class VespaConfiguration {
         return getInt(PROGRESS_REPORT, 1000);
     }
 
-    public boolean useLegacyClient() { return getBoolean(USE_LEGACY_CLIENT, true); }
+    public Optional<Boolean> useLegacyClient() {
+        String raw = getString(USE_LEGACY_CLIENT);
+        if (raw == null || raw.trim().isEmpty()) return Optional.empty();
+        return Optional.of(Boolean.parseBoolean(raw));
+    }
 
     public String getString(String name) {
         if (override != null && override.containsKey(name)) {
@@ -191,6 +196,7 @@ public class VespaConfiguration {
         sb.append(MAX_IN_FLIGHT_REQUESTS + ": " +  maxInFlightRequests() +"\n");
         sb.append(RANDOM_STARTUP_SLEEP + ": " +  randomStartupSleepMs() +"\n");
         sb.append(NUM_RETRIES + ": " +  numRetries() +"\n");
+        sb.append(USE_LEGACY_CLIENT + ": " +  useLegacyClient().map(Object::toString).orElse("<empty>") +"\n");
         return sb.toString();
     }
 

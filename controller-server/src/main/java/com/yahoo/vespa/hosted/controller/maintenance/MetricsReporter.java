@@ -9,7 +9,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -221,11 +219,11 @@ public class MetricsReporter extends ControllerMaintainer {
         return changeDurations(controller().osVersionStatus().versions().values(), Function.identity());
     }
 
-    private <V> Map<NodeVersion, Duration> changeDurations(Collection<V> versions, Function<V, NodeVersions> versionsGetter) {
+    private <V> Map<NodeVersion, Duration> changeDurations(Collection<V> versions, Function<V, List<NodeVersion>> versionsGetter) {
         var now = clock.instant();
         var durations = new HashMap<NodeVersion, Duration>();
         for (var version : versions) {
-            for (var nodeVersion : versionsGetter.apply(version).asMap().values()) {
+            for (var nodeVersion : versionsGetter.apply(version)) {
                 durations.put(nodeVersion, nodeVersion.changeDuration(now));
             }
         }

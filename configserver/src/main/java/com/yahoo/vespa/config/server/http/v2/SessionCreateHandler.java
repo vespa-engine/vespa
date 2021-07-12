@@ -9,7 +9,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
@@ -17,13 +16,12 @@ import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.model.content.Content;
+import com.yahoo.vespa.config.server.http.v2.response.SessionCreateResponse;
 import org.apache.hc.core5.http.ContentType;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A handler that is able to create a session from an application package,

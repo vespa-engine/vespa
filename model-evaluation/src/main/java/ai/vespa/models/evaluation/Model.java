@@ -72,13 +72,10 @@ public class Model {
                 }
 
                 for (Map.Entry<String, OnnxModel> entry : context.onnxModels().entrySet()) {
-                    String onnxFeature = entry.getKey();
                     OnnxModel onnxModel = entry.getValue();
                     for(Map.Entry<String, TensorType> input : onnxModel.inputs().entrySet()) {
                         functions.put(function.getKey(), function.getValue().withArgument(input.getKey(), input.getValue()));
                     }
-                    TensorType onnxOutputType = onnxModel.outputs().get(function.getKey().functionName());
-                    functions.put(function.getKey(), function.getValue().withArgument(onnxFeature, onnxOutputType));
                 }
 
                 for (String argument : context.arguments()) {

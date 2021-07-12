@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import java.util.Locale;
 import java.util.OptionalInt;
 
 /**
@@ -186,4 +187,7 @@ public final class Text {
         return s.substring(0, length - 4) + " ...";
     }
 
+    public static String format(String format, Object... args) {
+	return String.format(Locale.US, format, args);
+    }
 }

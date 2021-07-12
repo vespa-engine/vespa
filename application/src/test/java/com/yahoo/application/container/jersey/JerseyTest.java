@@ -15,6 +15,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.core.UriBuilder;
@@ -37,6 +38,7 @@ import static org.junit.Assert.assertTrue;
  * @author Tony Vaagenes
  * @author ollivir
  */
+@Ignore // TODO: remove test
 public class JerseyTest {
     private final Path testJar = Paths.get("target/test-jars/jersey-resources.jar");
     private final String testClassesDirectory = "target/test-classes";

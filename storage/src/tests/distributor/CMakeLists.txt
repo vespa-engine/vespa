@@ -13,6 +13,8 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     distributor_host_info_reporter_test.cpp
     distributor_message_sender_stub.cpp
     distributor_stripe_pool_test.cpp
+    distributor_stripe_test.cpp
+    distributor_stripe_test_util.cpp
     distributortestutil.cpp
     externaloperationhandlertest.cpp
     garbagecollectiontest.cpp

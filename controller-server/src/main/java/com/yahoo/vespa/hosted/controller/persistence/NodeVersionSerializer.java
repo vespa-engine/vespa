@@ -1,15 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Serializer for {@link com.yahoo.vespa.hosted.controller.versions.NodeVersion}.
@@ -30,8 +32,8 @@ public class NodeVersionSerializer {
     private static final String wantedVersionField = "wantedVersion";
     private static final String suspendedAtField = "suspendedAt";
 
-    public void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
-        for (var nodeVersion : nodeVersions.asMap().values()) {
+    public void nodeVersionsToSlime(List<NodeVersion> nodeVersions, Cursor array) {
+        for (var nodeVersion : nodeVersions) {
             var nodeVersionObject = array.addObject();
             nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
             nodeVersionObject.setString(zoneField, nodeVersion.zone().value());
@@ -41,16 +43,16 @@ public class NodeVersionSerializer {
         }
     }
 
-    public NodeVersions nodeVersionsFromSlime(Inspector array, Version version) {
-        var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
+    public List<NodeVersion> nodeVersionsFromSlime(Inspector array, Version version) {
+        List<NodeVersion> nodeVersions = new ArrayList<>();
         array.traverse((ArrayTraverser) (i, entry) -> {
             var hostname = HostName.from(entry.field(hostnameField).asString());
             var zone = ZoneId.from(entry.field(zoneField).asString());
             var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
-            var suspendedAt = Serializers.optionalInstant(entry.field(suspendedAtField));
-            nodeVersions.put(hostname, new NodeVersion(hostname, zone, version, wantedVersion, suspendedAt));
+            var suspendedAt = SlimeUtils.optionalInstant(entry.field(suspendedAtField));
+            nodeVersions.add(new NodeVersion(hostname, zone, version, wantedVersion, suspendedAt));
         });
-        return new NodeVersions(nodeVersions.build());
+        return nodeVersions;
     }
 
 }

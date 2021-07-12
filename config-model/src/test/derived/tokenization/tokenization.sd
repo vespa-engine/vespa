@@ -1,0 +1,23 @@
+schema tokenization {
+
+  document tokenization {
+
+    field text type string {
+      indexing: index | summary
+    }
+
+    field text_array type array<string> {
+      indexing: index | summary
+    }
+
+  }
+
+  field text_derived type string {
+    indexing: input text | normalize | index | summary
+  }
+
+  field text_array_derived type array<string> {
+    indexing: input text_array | for_each { lowercase } | for_each { normalize } | index | summary
+  }
+
+}

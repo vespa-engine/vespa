@@ -4,6 +4,7 @@
 #include "llvm_wrapper.h"
 #include <vespa/eval/eval/node_visitor.h>
 #include <vespa/eval/eval/node_traverser.h>
+#include <vespa/eval/eval/extract_bit.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/IRBuilder.h>
@@ -29,6 +30,7 @@ double vespalib_eval_approx(double a, double b) { return (vespalib::approx_equal
 double vespalib_eval_relu(double a) { return std::max(a, 0.0); }
 double vespalib_eval_sigmoid(double a) { return 1.0 / (1.0 + std::exp(-1.0 * a)); }
 double vespalib_eval_elu(double a) { return (a < 0) ? std::exp(a) - 1.0 : a; }
+double vespalib_eval_bit(double a, double b) { return vespalib::eval::extract_bit(a, b); }
 
 using vespalib::eval::gbdt::Forest;
 using resolve_function = double (*)(void *ctx, size_t idx);
@@ -645,6 +647,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const Erf &) override {
         make_call_1("erf");
+    }
+    void visit(const Bit &) override {
+        make_call_2("vespalib_eval_bit");
     }
 };
 

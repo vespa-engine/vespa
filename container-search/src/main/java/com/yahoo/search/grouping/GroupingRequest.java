@@ -2,7 +2,6 @@
 package com.yahoo.search.grouping;
 
 import com.yahoo.net.URI;
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -12,7 +11,9 @@ import com.yahoo.search.grouping.result.RootId;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.result.Hit;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TimeZone;
 
 /**
  * An instance of this class represents one of many grouping requests that are attached to a {@link Query}. Use the

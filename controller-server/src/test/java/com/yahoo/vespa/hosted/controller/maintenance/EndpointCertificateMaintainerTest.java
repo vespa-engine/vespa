@@ -82,7 +82,7 @@ public class EndpointCertificateMaintainerTest {
     }
 
     @Test
-    public void refreshed_certificate_is_deployed_after_one_week() {
+    public void refreshed_certificate_is_deployed_after_four_days() {
         var appId = ApplicationId.from("tenant", "application", "default");
 
         DeploymentTester deploymentTester = new DeploymentTester(tester);
@@ -107,7 +107,7 @@ public class EndpointCertificateMaintainerTest {
 
         maintainer.maintain();
 
-        tester.clock().advance(Duration.ofDays(8));
+        tester.clock().advance(Duration.ofDays(4));
 
         deploymentContext.assertNotRunning(productionUsWest1);
 

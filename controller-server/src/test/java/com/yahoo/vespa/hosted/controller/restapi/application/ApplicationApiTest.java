@@ -217,9 +217,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).userIdentity(USER_ID),
                               new File("tenant-with-application.json"));
 
+        tester.assertResponse(request("/application/v4/tenant/tenant1", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("activeInstances", "true")),
+                              new File("tenant-without-applications.json"));
+
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", GET).userIdentity(USER_ID),
                               new File("application-list.json"));
+        // GET tenant application instances for application that does not exist
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/fake-app/instance/", GET).userIdentity(USER_ID),
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Application 'fake-app' does not exist\"}", 404);
+
         // GET tenant applications (instances of "application1" only)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/", GET).userIdentity(USER_ID),
                               new File("application-list.json"));
@@ -228,7 +237,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .properties(Map.of("recursive", "true",
                                                          "production", "true")),
-                              new File("tenant-without-applications.json"));
+                              new File("tenant-with-empty-application.json"));
         // GET at an application, with "&recursive=true&production=true", recurses over no instances yet, as they are not in deployment spec.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
                                       .userIdentity(USER_ID)
@@ -796,7 +805,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET system test job overview.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test", GET)
-                                      .userIdentity(USER_ID),
+                                      .userIdentity(USER_ID).properties(Map.of("limit", "100")),
                               new File("system-test-job.json"));
 
         // GET system test run 1 details.
@@ -1554,6 +1563,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         List<SupportAccessGrant> activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
         assertEquals(1, activeGrants.size());
 
+        // Adding grant should trigger job
+        app.assertRunning(JobType.productionUsWest1);
+
         // DELETE removes access
         String disallowedResponse = grantResponse
                 .replaceAll("ALLOWED\".*?}", "NOT_ALLOWED\"}")
@@ -1562,6 +1574,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(USER_ID),
                 disallowedResponse, 200
         );
+
+        // Revoking access should trigger job
+        app.assertRunning(JobType.productionUsWest1);
 
         // Should be no available grant
         activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));

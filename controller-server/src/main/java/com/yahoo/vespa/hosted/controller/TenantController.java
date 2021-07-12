@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -57,7 +58,7 @@ public class TenantController {
                 lockIfPresent(name, LockedTenant.class, this::store);
                 count++;
             }
-            log.log(Level.INFO, String.format("Wrote %d tenants in %s", count,
+            log.log(Level.INFO, Text.format("Wrote %d tenants in %s", count,
                                               Duration.between(start, controller.clock().instant())));
         });
     }

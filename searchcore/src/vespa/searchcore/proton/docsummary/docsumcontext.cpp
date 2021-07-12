@@ -71,10 +71,10 @@ DocsumContext::createReply()
     reply->docsums.resize(_docsumState._docsumcnt);
     SymbolTable::UP symbols = std::make_unique<SymbolTable>();
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(), _docsumStore.getSummaryClassId());
+    _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
     for (uint32_t i = 0; i < _docsumState._docsumcnt; ++i) {
         buf.reset();
         uint32_t docId = _docsumState._docsumbuf[i];
-        reply->docsums[i].docid = docId;
         if (docId != search::endDocId && !rci.mustSkip) {
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);
@@ -115,6 +115,7 @@ DocsumContext::createSlimeReply()
     const Symbol docsumSym = response->insert(DOCSUM);
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
                                                                          _docsumStore.getSummaryClassId());
+    _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
     uint32_t i(0);
     for (i = 0; (i < _docsumState._docsumcnt) && !_request.expired(); ++i) {
         uint32_t docId = _docsumState._docsumbuf[i];

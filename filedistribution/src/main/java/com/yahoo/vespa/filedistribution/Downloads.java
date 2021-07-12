@@ -7,6 +7,7 @@ import java.io.File;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,17 +30,13 @@ public class Downloads {
     public DownloadStatuses downloadStatuses() { return downloadStatuses; }
 
     void setDownloadStatus(FileReference fileReference, double completeness) {
-        Optional<Downloads.DownloadStatus> downloadStatus = downloadStatuses.get(fileReference);
-        if (downloadStatus.isPresent())
-            downloadStatus.get().setProgress(completeness);
-        else
-            downloadStatuses.add(fileReference, completeness);
+        downloadStatuses.put(fileReference, completeness);
     }
 
     void completedDownloading(FileReference fileReference, File file) {
         Optional<FileReferenceDownload> download = get(fileReference);
+        setDownloadStatus(fileReference, 1.0);
         if (download.isPresent()) {
-            downloadStatuses().get(fileReference).ifPresent(Downloads.DownloadStatus::finished);
             downloads.remove(fileReference);
             download.get().future().complete(Optional.of(file));
         } else {
@@ -49,11 +46,11 @@ public class Downloads {
 
     void add(FileReferenceDownload fileReferenceDownload) {
         downloads.put(fileReferenceDownload.fileReference(), fileReferenceDownload);
-        downloadStatuses.add(fileReferenceDownload.fileReference());
+        downloadStatuses.put(fileReferenceDownload.fileReference());
     }
 
     void remove(FileReference fileReference) {
-        downloadStatuses.get(fileReference).ifPresent(d -> d.setProgress(0.0));
+        downloadStatuses.get(fileReference).ifPresent(d -> new DownloadStatus(d.fileReference(), 0.0));
         downloads.remove(fileReference);
     }
 
@@ -79,16 +76,14 @@ public class Downloads {
 
         private static final int maxEntries = 100;
 
-        private final Map<FileReference, DownloadStatus> downloadStatus = new ConcurrentHashMap<>();
+        private final Map<FileReference, DownloadStatus> downloadStatus = Collections.synchronizedMap(new HashMap<>());
 
-        void add(FileReference fileReference) {
-            add(fileReference, 0.0);
+        void put(FileReference fileReference) {
+            put(fileReference, 0.0);
         }
 
-        void add(FileReference fileReference, double progress) {
-            DownloadStatus ds = new DownloadStatus(fileReference);
-            ds.setProgress(progress);
-            downloadStatus.put(fileReference, ds);
+        void put(FileReference fileReference, double progress) {
+            downloadStatus.put(fileReference, new DownloadStatus(fileReference, progress));
             if (downloadStatus.size() > maxEntries) {
                 Map.Entry<FileReference, DownloadStatus> oldest =
                         Collections.min(downloadStatus.entrySet(), Comparator.comparing(e -> e.getValue().created));
@@ -104,16 +99,21 @@ public class Downloads {
             return Map.copyOf(downloadStatus);
         }
 
+        @Override
+        public String toString() {
+            return downloadStatus.entrySet().stream().map(entry -> entry.getKey().value() + "=>" + entry.getValue().progress).collect(Collectors.joining(", "));
+        }
+
     }
 
     static class DownloadStatus {
         private final FileReference fileReference;
-        private double progress; // between 0 and 1
+        private final double progress; // between 0 and 1
         private final Instant created;
 
-        DownloadStatus(FileReference fileReference) {
+        DownloadStatus(FileReference fileReference, double progress) {
             this.fileReference = fileReference;
-            this.progress = 0.0;
+            this.progress = progress;
             this.created = Instant.now();
         }
 
@@ -123,14 +123,6 @@ public class Downloads {
 
         public double progress() {
             return progress;
-        }
-
-        public void setProgress(double progress) {
-            this.progress = progress;
-        }
-
-        public void finished() {
-            setProgress(1.0);
         }
 
         public Instant created() {

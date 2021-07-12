@@ -16,7 +16,6 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the traffic fraction updater. This also tests its dependency on DeploymentMetricsMaintainer.
@@ -82,7 +81,7 @@ public class TrafficShareUpdaterTest {
     }
 
     private void setQpsMetric(double qps, ApplicationId application, ZoneId zone, DeploymentTester tester) {
-        var clusterMetrics = new ClusterMetrics("default", "container", Map.of(ClusterMetrics.QUERIES_PER_SECOND, qps));
+        var clusterMetrics = new ClusterMetrics("default", "container", Map.of(ClusterMetrics.QUERIES_PER_SECOND, qps), Map.of());
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, zone), clusterMetrics);
     }
 

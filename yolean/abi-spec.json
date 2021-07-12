@@ -169,6 +169,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.yolean.concurrent.ResourceFactory)",
+      "public void <init>(java.util.function.Supplier)",
       "public final java.lang.Object alloc()",
       "public final void free(java.lang.Object)",
       "public java.util.Iterator iterator()"
@@ -209,7 +210,8 @@
     ],
     "methods": [
       "public void <init>()",
-      "public abstract java.lang.Object create()"
+      "public abstract java.lang.Object create()",
+      "public final java.util.function.Supplier asSupplier()"
     ],
     "fields": []
   },

@@ -38,12 +38,14 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -219,7 +221,7 @@ public class Controller extends AbstractComponent {
         return curator.readOsVersionTargets();
     }
 
-    /** Set the target OS version for infrastructure on cloud in this system */
+    /** Set the target OS version for given cloud in this system */
     public void upgradeOsIn(CloudName cloudName, Version version, Duration upgradeBudget, boolean force) {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
@@ -227,16 +229,25 @@ public class Controller extends AbstractComponent {
         if (!clouds().contains(cloudName)) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
+        Instant scheduledAt = clock.instant();
         try (Lock lock = curator.lockOsVersions()) {
-            Set<OsVersionTarget> targets = new TreeSet<>(curator.readOsVersionTargets());
-            if (!force && targets.stream().anyMatch(target -> target.osVersion().cloud().equals(cloudName) &&
-                                                               target.osVersion().version().isAfter(version))) {
-                throw new IllegalArgumentException("Cannot downgrade cloud '" + cloudName.value() + "' to version " +
-                                                   version.toFullString());
+            Map<CloudName, OsVersionTarget> targets = curator.readOsVersionTargets().stream()
+                                                             .collect(Collectors.toMap(t -> t.osVersion().cloud(),
+                                                                                       Function.identity()));
+
+            OsVersionTarget currentTarget = targets.get(cloudName);
+            if (!force && currentTarget != null) {
+                if (currentTarget.osVersion().version().isAfter(version)) {
+                    throw new IllegalArgumentException("Cannot downgrade cloud '" + cloudName.value() + "' to version " +
+                                                       version.toFullString());
+                }
+                if (currentTarget.osVersion().version().equals(version) &&
+                    currentTarget.upgradeBudget().equals(upgradeBudget)) return; // Version and budget unchanged
             }
-            targets.removeIf(target -> target.osVersion().cloud().equals(cloudName)); // Only allow a single target per cloud
-            targets.add(new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget));
-            curator.writeOsVersionTargets(targets);
+
+            OsVersionTarget newTarget = new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget, scheduledAt);
+            targets.put(cloudName, newTarget);
+            curator.writeOsVersionTargets(new TreeSet<>(targets.values()));
             log.info("Triggered OS upgrade to " + version.toFullString() + " in cloud " +
                      cloudName.value() + ", with upgrade budget " + upgradeBudget);
         }
@@ -287,7 +298,8 @@ public class Controller extends AbstractComponent {
         return secretStore;
     }
 
-    private Set<CloudName> clouds() {
+    /** Clouds present in this system */
+    public Set<CloudName> clouds() {
         return zoneRegistry.zones().all().zones().stream()
                            .map(ZoneApi::getCloudName)
                            .collect(Collectors.toUnmodifiableSet());

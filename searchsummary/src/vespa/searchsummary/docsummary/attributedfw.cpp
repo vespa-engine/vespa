@@ -25,6 +25,7 @@ using search::attribute::IAttributeVector;
 using vespalib::Memory;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
+using vespalib::slime::Symbol;
 using vespalib::eval::Value;
 
 namespace search::docsummary {
@@ -39,7 +40,7 @@ AttrDFW::get_attribute(const GetDocsumsState& s) const {
     return *s.getAttribute(getIndex());
 }
 
-//-----------------------------------------------------------------------------
+namespace {
 
 class SingleAttrDFW : public AttrDFW
 {
@@ -161,45 +162,43 @@ public:
 };
 
 void
-insert_element(const std::vector<IAttributeVector::WeightedString>& elements,
-               size_t idx, bool is_weighted_set, Cursor& arr)
+set(const vespalib::string & value, Symbol itemSymbol, Cursor & cursor)
 {
-    const vespalib::string& sv = elements[idx].getValue();
-    Memory value(sv.c_str(), sv.size());
-    if (is_weighted_set) {
-        Cursor& elem = arr.addObject();
-        elem.setString("item", value);
-        elem.setLong("weight", elements[idx].getWeight());
-    } else {
-        arr.addString(value);
-    }
+    cursor.setString(itemSymbol, value);
 }
 
 void
-insert_element(const std::vector<IAttributeVector::WeightedInt>& elements,
-               size_t idx, bool is_weighted_set, Cursor& arr)
+append(const IAttributeVector::WeightedString & element, Cursor& arr)
 {
-    if (is_weighted_set) {
-        Cursor& elem = arr.addObject();
-        elem.setLong("item", elements[idx].getValue());
-        elem.setLong("weight", elements[idx].getWeight());
-    } else {
-        arr.addLong(elements[idx].getValue());
-    }
+    arr.addString(element.getValue());
 }
 
 void
-insert_element(const std::vector<IAttributeVector::WeightedFloat>& elements,
-               size_t idx, bool is_weighted_set, Cursor& arr)
+set(int64_t value, Symbol itemSymbol, Cursor & cursor)
 {
-    if (is_weighted_set) {
-        Cursor& elem = arr.addObject();
-        elem.setDouble("item", elements[idx].getValue());
-        elem.setLong("weight", elements[idx].getWeight());
-    } else {
-        arr.addDouble(elements[idx].getValue());
-    }
+    cursor.setLong(itemSymbol, value);
 }
+
+void
+append(const IAttributeVector::WeightedInt & element, Cursor& arr)
+{
+    arr.addLong(element.getValue());
+}
+
+void
+set(double value, Symbol itemSymbol, Cursor & cursor)
+{
+    cursor.setDouble(itemSymbol, value);
+}
+
+void
+append(const IAttributeVector::WeightedFloat & element, Cursor& arr)
+{
+    arr.addDouble(element.getValue());
+}
+
+Memory ITEM("item");
+Memory WEIGHT("weight");
 
 template <typename DataType>
 void
@@ -211,28 +210,45 @@ MultiAttrDFW<DataType>::insertField(uint32_t docid, GetDocsumsState* state, ResT
         return;  // Don't insert empty fields
     }
 
-    Cursor &arr = target.insertArray();
     std::vector<DataType> elements(entries);
     entries = std::min(entries, attr.get(docid, elements.data(), entries));
+    Cursor &arr = target.insertArray(entries);
 
     if (_filter_elements) {
         const auto& matching_elems = state->get_matching_elements(*_matching_elems_fields)
                 .get_matching_elements(docid, getAttributeName());
         if (!matching_elems.empty() && matching_elems.back() < entries) {
-            for (uint32_t id_to_keep : matching_elems) {
-                insert_element(elements, id_to_keep, _is_weighted_set, arr);
+            if (_is_weighted_set) {
+                Symbol itemSymbol = arr.resolve(ITEM);
+                Symbol weightSymbol = arr.resolve(WEIGHT);
+                for (uint32_t id_to_keep : matching_elems) {
+                    const DataType & element = elements[id_to_keep];
+                    Cursor& elemC = arr.addObject();
+                    set(element.getValue(), itemSymbol, elemC);
+                    elemC.setLong(weightSymbol, element.getWeight());
+                }
+            } else {
+                for (uint32_t id_to_keep : matching_elems) {
+                    append(elements[id_to_keep], arr);
+                }
             }
         }
     } else {
-        for (uint32_t i = 0; i < entries; ++i) {
-            insert_element(elements, i, _is_weighted_set, arr);
+        if (_is_weighted_set) {
+            Symbol itemSymbol = arr.resolve(ITEM);
+            Symbol weightSymbol = arr.resolve(WEIGHT);
+            for (const auto & element : elements) {
+                Cursor& elemC = arr.addObject();
+                set(element.getValue(), itemSymbol, elemC);
+                elemC.setLong(weightSymbol, element.getWeight());
+            }
+        } else {
+            for (const auto & element : elements) {
+                append(element, arr);
+            }
         }
     }
 }
-
-//-----------------------------------------------------------------------------
-
-namespace {
 
 std::unique_ptr<IDocsumFieldWriter>
 create_multi_writer(const IAttributeVector& attr,

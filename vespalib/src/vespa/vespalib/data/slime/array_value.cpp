@@ -3,9 +3,17 @@
 #include "array_value.h"
 #include "array_traverser.h"
 #include "empty_value_factory.h"
+#include "symbol_table.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
+
+ArrayValue::ArrayValue(SymbolTable &table, Stash & stash)
+    : _symbolTable(table),
+      _stash(stash),
+      _values()
+{}
+
+ArrayValue::~ArrayValue() = default;
 
 void
 ArrayValue::traverse(ArrayTraverser &at) const {
@@ -16,8 +24,8 @@ ArrayValue::traverse(ArrayTraverser &at) const {
 
 
 Cursor &
-ArrayValue::addArray() {
-    return addLeaf(ArrayValueFactory(_symbolTable));
+ArrayValue::addArray(size_t reserve) {
+    return addLeaf(ArrayValueFactory(_symbolTable, reserve));
 }
 
 Cursor &
@@ -29,4 +37,3 @@ Symbol
 ArrayValue::resolve(Memory symbol_name) { return _symbolTable.insert(symbol_name); }
 
 } // namespace vespalib::slime
-} // namespace vespalib

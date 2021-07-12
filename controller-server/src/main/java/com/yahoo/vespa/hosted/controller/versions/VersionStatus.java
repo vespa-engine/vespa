@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,7 +85,7 @@ public class VersionStatus {
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
         VersionStatus versionStatus = controller.readVersionStatus();
-        NodeVersions systemApplicationVersions = findSystemApplicationVersions(controller, versionStatus);
+        List<NodeVersion> systemApplicationVersions = findSystemApplicationVersions(controller, versionStatus);
         Map<ControllerVersion, List<HostName>> controllerVersions = findControllerVersions(controller);
 
         Map<Version, List<HostName>> infrastructureVersions = new HashMap<>();
@@ -94,9 +93,9 @@ public class VersionStatus {
             infrastructureVersions.computeIfAbsent(kv.getKey().version(), (k) -> new ArrayList<>())
                                   .addAll(kv.getValue());
         }
-        for (var kv : systemApplicationVersions.asMap().entrySet()) {
-            infrastructureVersions.computeIfAbsent(kv.getValue().currentVersion(), (k) -> new ArrayList<>())
-                                  .add(kv.getKey());
+        for (var nodeVersion : systemApplicationVersions) {
+            infrastructureVersions.computeIfAbsent(nodeVersion.currentVersion(), (k) -> new ArrayList<>())
+                                  .add(nodeVersion.hostname());
         }
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
@@ -130,11 +129,14 @@ public class VersionStatus {
 
             try {
                 boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
+                List<NodeVersion> nodeVersions = systemApplicationVersions.stream()
+                                                                          .filter(nodeVersion -> nodeVersion.currentVersion().equals(statistics.version()))
+                                                                          .collect(Collectors.toList());
                 VespaVersion vespaVersion = createVersion(statistics,
                                                           controllerVersions.keySet(),
                                                           systemVersion,
                                                           isReleased,
-                                                          systemApplicationVersions.matching(statistics.version()),
+                                                          nodeVersions,
                                                           controller,
                                                           versionStatus);
                 versions.add(vespaVersion);
@@ -149,8 +151,8 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static NodeVersions findSystemApplicationVersions(Controller controller, VersionStatus versionStatus) {
-        var nodeVersions = new LinkedHashMap<HostName, NodeVersion>();
+    private static List<NodeVersion> findSystemApplicationVersions(Controller controller, VersionStatus versionStatus) {
+        List<NodeVersion> nodeVersions = new ArrayList<>();
         for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (var application : SystemApplication.notController()) {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
@@ -168,11 +170,11 @@ public class VersionStatus {
                     var version = configConverged ? node.currentVersion() : controller.systemVersion(versionStatus);
                     var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), version, node.wantedVersion(),
                                                       node.suspendedSince());
-                    nodeVersions.put(nodeVersion.hostname(), nodeVersion);
+                    nodeVersions.add(nodeVersion);
                 }
             }
         }
-        return NodeVersions.copyOf(nodeVersions);
+        return nodeVersions;
     }
 
     private static Map<ControllerVersion, List<HostName>> findControllerVersions(Controller controller) {
@@ -194,7 +196,7 @@ public class VersionStatus {
                                               Set<ControllerVersion> controllerVersions,
                                               Version systemVersion,
                                               boolean isReleased,
-                                              NodeVersions nodeVersions,
+                                              List<NodeVersion> nodeVersions,
                                               Controller controller,
                                               VersionStatus versionStatus) {
         ControllerVersion latestVersion = controllerVersions.stream().max(Comparator.naturalOrder()).get();

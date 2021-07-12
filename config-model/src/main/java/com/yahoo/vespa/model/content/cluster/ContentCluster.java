@@ -124,7 +124,9 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
                                                                    stateIsHosted(deployState),
                                                                    deployState.featureFlags().throwIfResourceLimitsSpecified(),
-                                                                   deployState.getDeployLogger())
+                                                                   deployState.getDeployLogger(),
+                                                                   deployState.featureFlags().resourceLimitDisk(),
+                                                                   deployState.featureFlags().resourceLimitMemory())
                     .build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
                     contentElement,

@@ -34,8 +34,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
-import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
-import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.xml.PlatformBundles;
 import com.yahoo.vespa.model.utils.FileSender;
 
@@ -80,7 +78,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final ConfigProducerGroup<Servlet> servletGroup;
-    private final ConfigProducerGroup<RestApi> restApiGroup;
     private final Set<String> previousHosts;
 
     private ContainerModelEvaluation modelEvaluation;
@@ -95,7 +92,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
-        restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
         previousHosts = deployState.getPreviousModel().stream()
                                    .map(Model::allocatedHosts)
@@ -121,8 +117,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (modelEvaluation != null)
             modelEvaluation.prepare(containers);
         sendUserConfiguredFiles(deployState);
-        for (RestApi restApi : restApiGroup.getComponents())
-            restApi.prepare();
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
@@ -166,15 +160,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         this.modelEvaluation = modelEvaluation;
     }
 
-    public final void addRestApi(RestApi restApi) {
-        restApiGroup.addComponent(ComponentId.fromString(restApi.getBindingPath()), restApi);
-    }
-
-    public Map<ComponentId, RestApi> getRestApiMap() {
-        return restApiGroup.getComponentMap();
-    }
-
-
     public Map<ComponentId, Servlet> getServletMap() {
         return servletGroup.getComponentMap();
     }
@@ -183,18 +168,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         servletGroup.addComponent(servlet.getGlobalComponentId(), servlet);
     }
 
-    // Returns all servlets, including rest-api/jersey servlets.
     public Collection<Servlet> getAllServlets() {
         return allServlets().collect(Collectors.toCollection(ArrayList::new));
     }
 
     private Stream<Servlet> allServlets() {
-        return Stream.concat(allJersey2Servlets(),
-                             servletGroup.getComponents().stream());
-    }
-
-    private Stream<Jersey2Servlet> allJersey2Servlets() {
-        return restApiGroup.getComponents().stream().map(RestApi::getJersey2Servlet);
+        return servletGroup.getComponents().stream();
     }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage;

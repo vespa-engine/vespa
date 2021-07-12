@@ -8,9 +8,10 @@ over big data at serving time.
 This is the primary repository for Vespa where all development is happening. 
 New production releases from this repository's master branch are made each weekday from Monday to Thursday.
 
-Home page: [https://vespa.ai](https://vespa.ai)  
-Documentation: [https://docs.vespa.ai/](https://docs.vespa.ai/)  
-Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)  
+* Home page: [https://vespa.ai](https://vespa.ai)  
+* Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)  
+* Continuous build: [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud)
+* Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
 
 Vespa build status: [![Vespa Build Status](https://cd.screwdriver.cd/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 

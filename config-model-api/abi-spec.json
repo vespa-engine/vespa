@@ -557,22 +557,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.application.api.ValidationOverrides$AllowAllValidationOverrides": {
-    "superClass": "com.yahoo.config.application.api.ValidationOverrides",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.config.application.api.ValidationOverrides, com.yahoo.config.application.api.DeployLogger)",
-      "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
-      "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
-      "public java.lang.String xmlForm()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
   "com.yahoo.config.application.api.ValidationOverrides$ValidationException": {
     "superClass": "java.lang.IllegalArgumentException",
     "interfaces": [],
@@ -594,14 +578,14 @@
       "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
+      "public boolean validate(java.time.Instant)",
       "public java.lang.String xmlForm()",
       "public static java.lang.String toAllowMessage(com.yahoo.config.application.api.ValidationId)",
       "public static com.yahoo.config.application.api.ValidationOverrides fromXml(java.io.Reader)",
       "public static com.yahoo.config.application.api.ValidationOverrides fromXml(java.lang.String)"
     ],
     "fields": [
-      "public static final com.yahoo.config.application.api.ValidationOverrides empty",
-      "public static final com.yahoo.config.application.api.ValidationOverrides all"
+      "public static final com.yahoo.config.application.api.ValidationOverrides empty"
     ]
   }
 }

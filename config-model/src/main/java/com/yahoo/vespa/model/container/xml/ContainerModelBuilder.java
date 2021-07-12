@@ -78,7 +78,6 @@ import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
-import com.yahoo.vespa.model.container.jersey.xml.RestApiBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.GUIHandler;
@@ -92,6 +91,7 @@ import org.w3c.dom.Node;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -184,9 +184,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        addRestApis(deployState, spec, cluster);
         addServlets(deployState, spec, cluster);
         addModelEvaluation(spec, cluster, context);
+        addModelEvaluationBundles(cluster);
 
         addProcessing(deployState, spec, cluster);
         addSearch(deployState, spec, cluster);
@@ -433,7 +433,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         HostedSslConnectorFactory connectorFactory;
-        boolean enableHttp2 = deployState.featureFlags().enableJdiscHttp2();
+        Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
@@ -447,10 +447,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .orElse(false);
 
             connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, getTlsClientAuthorities(deployState))
-                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enforceHandshakeClientAuth);
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
+                            serverName, endpointCertificateSecrets,  getTlsClientAuthorities(deployState), tlsCiphersOverride)
+                    : HostedSslConnectorFactory.withProvidedCertificate(
+                            serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName);
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
@@ -514,13 +516,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return http;
     }
 
-    private void addRestApis(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        for (Element restApiElem : XML.getChildren(spec, "rest-api")) {
-            cluster.addRestApi(
-                    new RestApiBuilder().build(deployState, cluster, restApiElem));
-        }
-    }
-
     private void addServlets(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         for (Element servletElem : XML.getChildren(spec, "servlet"))
             cluster.addServlet(new ServletBuilder().build(deployState, cluster, servletElem));
@@ -562,6 +557,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         RankProfileList profiles =
                 context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
+    }
+
+    protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {
+        /* These bundles are added to all application container clusters, even if they haven't
+         * declared 'model-evaluation' in services.xml, because there are many public API packages
+         * in the model-evaluation bundle that could be used by customer code. */
+        cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE);
+        cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
     }
 
     private void addProcessing(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {

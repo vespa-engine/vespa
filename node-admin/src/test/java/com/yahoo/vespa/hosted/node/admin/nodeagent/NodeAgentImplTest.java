@@ -9,12 +9,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerId;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
-import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -22,7 +16,12 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.OrchestratorStatus;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.Container;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerId;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
@@ -34,6 +33,7 @@ import org.mockito.InOrder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -556,12 +556,12 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = spy(makeNodeAgent(null, false));
 
         when(containerOperations.pullImageAsyncIfNeeded(any(), eq(dockerImage), any())).thenReturn(false);
-        doThrow(new DockerException("Failed to set up network")).doNothing().when(containerOperations).startContainer(eq(context));
+        doThrow(new RuntimeException("Failed to set up network")).doNothing().when(containerOperations).startContainer(eq(context));
 
         try {
             nodeAgent.doConverge(context);
-            fail("Expected to get DockerException");
-        } catch (DockerException ignored) { }
+            fail("Expected to get RuntimeException");
+        } catch (RuntimeException ignored) { }
 
         verify(containerOperations, never()).removeContainer(eq(context), any());
         verify(containerOperations, times(1)).createContainer(eq(context), any(), any());
@@ -763,12 +763,17 @@ public class NodeAgentImplTest {
             return dockerImage != null ?
                     Optional.of(new Container(
                             containerId,
-                            hostName,
-                            dockerImage,
-                            containerResources,
                             ContainerName.fromHostname(hostName),
-                            isRunning ? Container.State.RUNNING : Container.State.EXITED,
-                            isRunning ? 1 : 0)) :
+                            isRunning ? Container.State.running : Container.State.exited,
+                            "image-id-1",
+                            dockerImage,
+                            Map.of(),
+                            42,
+                            43,
+                            hostName,
+                            containerResources,
+                            List.of(),
+                            true)) :
                     Optional.empty();
         }).when(containerOperations).getContainer(any());
     }

@@ -9,6 +9,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
@@ -80,7 +81,7 @@ public class RoutingPolicySerializer {
                                          ZoneId.from(inspect.field(zoneField).asString()));
             policies.put(id, new RoutingPolicy(id,
                                                HostName.from(inspect.field(canonicalNameField).asString()),
-                                               Serializers.optionalString(inspect.field(dnsZoneField)),
+                                               SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                                endpointIds,
                                                new Status(inspect.field(loadBalancerActiveField).asBool(),
                                                           globalRoutingFromSlime(inspect.field(globalRoutingField)))));
@@ -97,7 +98,7 @@ public class RoutingPolicySerializer {
     public GlobalRouting globalRoutingFromSlime(Inspector object) {
         var status = GlobalRouting.Status.valueOf(object.field(statusField).asString());
         var agent = GlobalRouting.Agent.valueOf(object.field(agentField).asString());
-        var changedAt = Serializers.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);
+        var changedAt = SlimeUtils.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);
         return new GlobalRouting(status, agent, changedAt);
     }
 

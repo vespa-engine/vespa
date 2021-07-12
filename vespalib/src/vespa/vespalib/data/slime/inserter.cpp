@@ -3,8 +3,7 @@
 #include "inserter.h"
 #include "slime.h"
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 using ExtMemUP = ExternalMemory::UP;
 
@@ -15,7 +14,7 @@ Cursor &SlimeInserter::insertDouble(double value) const { return slime.setDouble
 Cursor &SlimeInserter::insertString(Memory value) const { return slime.setString(value); }
 Cursor &SlimeInserter::insertData(Memory value)   const { return slime.setData(value); }
 Cursor &SlimeInserter::insertData(ExtMemUP value) const { return slime.setData(std::move(value)); }
-Cursor &SlimeInserter::insertArray()              const { return slime.setArray(); }
+Cursor &SlimeInserter::insertArray(size_t resv)   const { return slime.setArray(resv); }
 Cursor &SlimeInserter::insertObject()             const { return slime.setObject(); }
 
 Cursor &ArrayInserter::insertNix()                const { return cursor.addNix(); }
@@ -25,7 +24,7 @@ Cursor &ArrayInserter::insertDouble(double value) const { return cursor.addDoubl
 Cursor &ArrayInserter::insertString(Memory value) const { return cursor.addString(value); }
 Cursor &ArrayInserter::insertData(Memory value)   const { return cursor.addData(value); }
 Cursor &ArrayInserter::insertData(ExtMemUP value) const { return cursor.addData(std::move(value)); }
-Cursor &ArrayInserter::insertArray()              const { return cursor.addArray(); }
+Cursor &ArrayInserter::insertArray(size_t resv)   const { return cursor.addArray(resv); }
 Cursor &ArrayInserter::insertObject()             const { return cursor.addObject(); }
 
 Cursor &ObjectSymbolInserter::insertNix()                const { return cursor.setNix(symbol); }
@@ -35,7 +34,7 @@ Cursor &ObjectSymbolInserter::insertDouble(double value) const { return cursor.s
 Cursor &ObjectSymbolInserter::insertString(Memory value) const { return cursor.setString(symbol, value); }
 Cursor &ObjectSymbolInserter::insertData(Memory value)   const { return cursor.setData(symbol, value); }
 Cursor &ObjectSymbolInserter::insertData(ExtMemUP value) const { return cursor.setData(symbol, std::move(value)); }
-Cursor &ObjectSymbolInserter::insertArray()              const { return cursor.setArray(symbol); }
+Cursor &ObjectSymbolInserter::insertArray(size_t resv)   const { return cursor.setArray(symbol, resv); }
 Cursor &ObjectSymbolInserter::insertObject()             const { return cursor.setObject(symbol); }
 
 Cursor &ObjectInserter::insertNix()                const { return cursor.setNix(name); }
@@ -45,8 +44,7 @@ Cursor &ObjectInserter::insertDouble(double value) const { return cursor.setDoub
 Cursor &ObjectInserter::insertString(Memory value) const { return cursor.setString(name, value); }
 Cursor &ObjectInserter::insertData(Memory value)   const { return cursor.setData(name, value); }
 Cursor &ObjectInserter::insertData(ExtMemUP value) const { return cursor.setData(name, std::move(value)); }
-Cursor &ObjectInserter::insertArray()              const { return cursor.setArray(name); }
+Cursor &ObjectInserter::insertArray(size_t resv)   const { return cursor.setArray(name, resv); }
 Cursor &ObjectInserter::insertObject()             const { return cursor.setObject(name); }
 
-} // namespace slime
-} // namespace vespalib
+} // namespace vespalib::slime

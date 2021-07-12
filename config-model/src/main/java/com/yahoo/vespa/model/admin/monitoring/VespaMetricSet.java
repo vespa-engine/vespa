@@ -249,6 +249,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("cluster-controller.idle-tick-time-ms.sum"));
         metrics.add(new Metric("cluster-controller.idle-tick-time-ms.count"));
 
+        metrics.add(new Metric("cluster-controller.work-ms.last"));
+        metrics.add(new Metric("cluster-controller.work-ms.sum"));
+        metrics.add(new Metric("cluster-controller.work-ms.count"));
+
         metrics.add(new Metric("cluster-controller.is-master.last"));
         metrics.add(new Metric("cluster-controller.remote-task-queue.size.last"));
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
@@ -318,6 +322,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("documents_total.count"));
         metrics.add(new Metric("dispatch_internal.rate"));
         metrics.add(new Metric("dispatch_fdispatch.rate"));
+        addMetric(metrics, "jdisc.search.render_latency", Set.of("min", "max", "count", "sum", "last"));
 
         metrics.add(new Metric("totalhits_per_query.max"));
         metrics.add(new Metric("totalhits_per_query.sum"));
@@ -375,6 +380,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.index.docs_in_memory.last"));
         metrics.add(new Metric("content.proton.documentdb.disk_usage.last"));
         metrics.add(new Metric("content.proton.documentdb.memory_usage.allocated_bytes.max"));
+        metrics.add(new Metric("content.proton.documentdb.heart_beat_age.last"));
         metrics.add(new Metric("content.proton.transport.query.count.rate"));
         metrics.add(new Metric("content.proton.docsum.docs.rate"));
         metrics.add(new Metric("content.proton.docsum.latency.max"));
@@ -464,6 +470,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
         metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.max"));
+        metrics.add(new Metric("content.proton.resource_usage.malloc_arena.max"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.multi_value.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.feeding_blocked.last")); // TODO: Remove in Vespa 8
@@ -777,7 +784,7 @@ public class VespaMetricSet {
         return metrics;
     }
 
-    private static void addMetric(Set<Metric> metrics, String metricName, List<String> aggregateSuffices) {
+    private static void addMetric(Set<Metric> metrics, String metricName, Iterable<String> aggregateSuffices) {
         for (String suffix : aggregateSuffices) {
             metrics.add(new Metric(metricName + "." + suffix));
         }

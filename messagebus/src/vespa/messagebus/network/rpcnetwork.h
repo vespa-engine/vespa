@@ -74,7 +74,6 @@ private:
     bool                                               _allowDispatchForEncode;
     bool                                               _allowDispatchForDecode;
 
-
     /**
      * Resolves and assigns a service address for the given recipient using the
      * given address. This is called by the {@link

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -76,7 +77,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void addRoleMember(AthenzRole role, AthenzIdentity member) {
+    public void addRoleMember(AthenzRole role, AthenzIdentity member, Optional<String> reason) {
         if ( ! role.roleName().equals("tenancy.vespa.hosting.admin"))
             throw new IllegalArgumentException("Mock only supports adding tenant admins, not " + role.roleName());
         getDomainOrThrow(role.domain(), true).tenantAdmin(member);
@@ -94,6 +95,11 @@ public class ZmsClientMock implements ZmsClient {
         if (role.roleName().equals("admin")) {
             return getDomainOrThrow(role.domain(), false).admins.contains(identity);
         }
+        return false;
+    }
+
+    @Override
+    public boolean getGroupMembership(AthenzGroup group, AthenzIdentity identity) {
         return false;
     }
 

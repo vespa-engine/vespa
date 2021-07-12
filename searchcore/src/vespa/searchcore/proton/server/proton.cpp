@@ -40,6 +40,9 @@
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/size_literals.h>
+#ifdef __linux__
+#include <malloc.h>
+#endif
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -60,6 +63,7 @@ using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
 using vespalib::compression::CompressionConfig;
+using search::engine::MonitorReply;
 
 namespace proton {
 
@@ -698,20 +702,17 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
 }
 
 
-Proton::MonitorReply::UP
-Proton::ping(MonitorRequest::UP request, MonitorClient & client)
+std::unique_ptr<MonitorReply>
+Proton::ping(std::unique_ptr<MonitorRequest>, MonitorClient &)
 {
-    (void) client;
     auto reply = std::make_unique<MonitorReply>();
     MonitorReply &ret = *reply;
 
     BootstrapConfig::SP configSnapshot = getActiveConfigSnapshot();
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
-    ret.partid = protonConfig.partition;
     ret.distribution_key = protonConfig.distributionkey;
     ret.timestamp = (_matchEngine->isOnline()) ? 42 : 0;
     ret.activeDocs = (_matchEngine->isOnline()) ? getNumActiveDocs() : 0;
-    ret.activeDocsRequested = request->reportActiveDocs;
     ret.is_blocking_writes = !_diskMemUsageSampler->writeFilter().acceptWriteOperation();
     return reply;
 }
@@ -755,16 +756,29 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         }
 
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
-        DiskMemUsageState usageState = usageFilter.usageState();
-        metrics.resourceUsage.disk.set(usageState.diskState().usage());
-        metrics.resourceUsage.diskUtilization.set(usageState.diskState().utilization());
-        metrics.resourceUsage.memory.set(usageState.memoryState().usage());
-        metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
+        auto dm_metrics = usageFilter.get_metrics();
+        metrics.resourceUsage.disk.set(dm_metrics.get_disk_usage());
+        metrics.resourceUsage.diskUtilization.set(dm_metrics.get_disk_utilization());
+        metrics.resourceUsage.memory.set(dm_metrics.get_memory_usage());
+        metrics.resourceUsage.memoryUtilization.set(dm_metrics.get_memory_utilization());
         metrics.resourceUsage.transient_memory.set(usageFilter.get_relative_transient_memory_usage());
         metrics.resourceUsage.transient_disk.set(usageFilter.get_relative_transient_disk_usage());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
+#ifdef __linux__
+#if __GLIBC_PREREQ(2, 33)
+        struct mallinfo2 mallocInfo = mallinfo2();
+        metrics.resourceUsage.mallocArena.set(mallocInfo.arena);
+#else
+        struct mallinfo mallocInfo = mallinfo();
+        // Vespamalloc reports arena in 1M blocks as an 'int' is too small.
+        // If we use something else than vespamalloc this must be changed.
+        metrics.resourceUsage.mallocArena.set(uint64_t(mallocInfo.arena) * 1_Mi);
+#endif
+#else
+        metrics.resourceUsage.mallocArena.set(UINT64_C(0));
+#endif
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;

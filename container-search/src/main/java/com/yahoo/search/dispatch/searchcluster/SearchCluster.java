@@ -14,13 +14,10 @@ import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -311,9 +308,9 @@ public class SearchCluster implements NodeManager<Node> {
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean sufficientCoverage = isGroupCoverageSufficient(group.getActiveDocuments(),
-                                                               group.getActiveDocuments());
-        trackGroupCoverageChanges(group, sufficientCoverage, group.getActiveDocuments());
+        boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(),
+                                                               group.activeDocuments());
+        trackGroupCoverageChanges(group, sufficientCoverage, group.activeDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups() {
@@ -321,7 +318,7 @@ public class SearchCluster implements NodeManager<Node> {
         long medianDocuments = medianDocumentsPerGroup();
         boolean anyGroupsSufficientCoverage = false;
         for (Group group : orderedGroups()) {
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.getActiveDocuments(),
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.activeDocuments(),
                                                                    medianDocuments);
             anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
@@ -331,7 +328,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private long medianDocumentsPerGroup() {
         if (orderedGroups().isEmpty()) return 0;
-        var activeDocuments = orderedGroups().stream().map(Group::getActiveDocuments).collect(Collectors.toList());
+        var activeDocuments = orderedGroups().stream().map(Group::activeDocuments).collect(Collectors.toList());
         return (long)Quantiles.median().compute(activeDocuments);
     }
 
@@ -357,12 +354,6 @@ public class SearchCluster implements NodeManager<Node> {
         return true;
     }
 
-    public boolean isGroupWellBalanced(OptionalInt groupId) {
-        if (groupId.isEmpty()) return false;
-        Group group = groups().get(groupId.getAsInt());
-        return (group != null) && group.isContentWellBalanced();
-    }
-
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
@@ -375,12 +366,12 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
         if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
-        boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
+        boolean changed = group.fullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
             if (fullCoverage) {
                 log.info("Cluster " + clusterId + ": " + group + " has full coverage. " +
-                         "Active documents: " + group.getActiveDocuments() + "/" + medianDocuments + ", " +
+                         "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
                          "working nodes: " + group.workingNodes() + "/" + group.nodes().size());
             } else {
                 StringBuilder unresponsive = new StringBuilder();
@@ -389,7 +380,7 @@ public class SearchCluster implements NodeManager<Node> {
                         unresponsive.append('\n').append(node);
                 }
                 log.warning("Cluster " + clusterId + ": " + group + " has reduced coverage: " +
-                            "Active documents: " + group.getActiveDocuments() + "/" + medianDocuments + ", " +
+                            "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
                             "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
                             ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive));
             }

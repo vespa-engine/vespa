@@ -5,8 +5,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.container.Container;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.CoredumpCleanupRule;
@@ -227,7 +227,7 @@ public class StorageMaintainer {
     }
 
     private String getDockerImage(NodeAgentContext context, Optional<Container> container) {
-        return container.map(c -> c.image.asString())
+        return container.map(c -> c.image().asString())
                 .orElse(context.node().currentDockerImage()
                         .map(DockerImage::asString)
                         .orElse("<none>")

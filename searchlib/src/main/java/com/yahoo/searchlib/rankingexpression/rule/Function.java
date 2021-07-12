@@ -45,7 +45,8 @@ public enum Function implements Serializable {
     ldexp(2)  { public double evaluate(double x, double y) { return x*pow(2,(int)y); } },
     max(2)    { public double evaluate(double x, double y) { return max(x,y); } },
     min(2)    { public double evaluate(double x, double y) { return min(x,y); } },
-    pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } };
+    pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } },
+    bit(2)    { public double evaluate(double x, double y) { return ((int)y < 8 && (int)y >= 0 && ((int)x & (1 << (int)y)) != 0) ? 1.0 : 0.0; } };
 
     private final int arity;
 

@@ -232,9 +232,22 @@ void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestB
     }
 }
 
+void generate_join_expr(const vespalib::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+    for (const auto &layouts: join_layouts) {
+        GenSpec a = GenSpec::from_desc(layouts.first).seq(seq_a);
+        GenSpec b = GenSpec::from_desc(layouts.second).seq(seq_b);
+        generate(expr, a, b, dst);
+    }
+}
+
 void generate_op2_join(const vespalib::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
     generate_join_expr(op2_expr, seq, dst);
     generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
+}
+
+void generate_op2_join(const vespalib::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+    generate_join_expr(op2_expr, seq_a, seq_b, dst);
+    generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq_a, seq_b, dst);
 }
 
 void generate_join(TestBuilder &dst) {
@@ -259,6 +272,7 @@ void generate_join(TestBuilder &dst) {
     generate_op2_join("fmod(a,b)", Div16(N()), dst);
     generate_op2_join("min(a,b)", Div16(N()), dst);
     generate_op2_join("max(a,b)", Div16(N()), dst);
+    generate_op2_join("bit(a,b)", Seq({-128, -43, -1, 0, 85, 127}), Seq({0, 1, 2, 3, 4, 5, 6, 7}), dst);
     // inverted lambda
     generate_join_expr("join(a,b,f(a,b)(b-a))", Div16(N()), dst);
     // custom lambda
@@ -276,9 +290,22 @@ void generate_merge_expr(const vespalib::string &expr, const Sequence &seq, Test
     }
 }
 
+void generate_merge_expr(const vespalib::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+    for (const auto &layouts: merge_layouts) {
+        GenSpec a = GenSpec::from_desc(layouts.first).seq(seq_a);
+        GenSpec b = GenSpec::from_desc(layouts.second).seq(seq_b);
+        generate(expr, a, b, dst);
+    }
+}
+
 void generate_op2_merge(const vespalib::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
     generate_merge_expr(op2_expr, seq, dst);
     generate_merge_expr(fmt("merge(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
+}
+
+void generate_op2_merge(const vespalib::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+    generate_merge_expr(op2_expr, seq_a, seq_b, dst);
+    generate_merge_expr(fmt("merge(a,b,f(a,b)(%s))", op2_expr.c_str()), seq_a, seq_b, dst);
 }
 
 void generate_merge(TestBuilder &dst) {
@@ -303,6 +330,7 @@ void generate_merge(TestBuilder &dst) {
     generate_op2_merge("fmod(a,b)", Div16(N()), dst);
     generate_op2_merge("min(a,b)", Div16(N()), dst);
     generate_op2_merge("max(a,b)", Div16(N()), dst);
+    generate_op2_merge("bit(a,b)", Seq({-128, -43, -1, 0, 85, 127}), Seq({0, 1, 2, 3, 4, 5, 6, 7}), dst);
     // inverted lambda
     generate_merge_expr("merge(a,b,f(a,b)(b-a))", Div16(N()), dst);
     // custom lambda

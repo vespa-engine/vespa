@@ -1,7 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "visible_map.h"
+#include "named_service.h"
+#include "service_map_history.h"
+
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace slobrok {
 
@@ -23,7 +28,7 @@ class RpcServerMap
 private:
     using ManagedRpcServerMap = std::unordered_map<std::string, std::unique_ptr<ManagedRpcServer>>;
     using ReservedNameMap = std::unordered_map<std::string, std::unique_ptr<ReservedName>>;
-    VisibleMap           _visible_map;
+    ServiceMapHistory    _visible_map;
     ManagedRpcServerMap  _myrpcsrv_map;
     ReservedNameMap      _reservations;
 
@@ -34,7 +39,8 @@ private:
 public:
     typedef std::vector<const NamedService *> RpcSrvlist;
 
-    VisibleMap& visibleMap() { return _visible_map; }
+    ServiceMapHistory& localView() { return _visible_map; }
+    ServiceMapHistory& visibleMap() { return _visible_map; }
 
     ManagedRpcServer *lookupManaged(const std::string & name) const;
 

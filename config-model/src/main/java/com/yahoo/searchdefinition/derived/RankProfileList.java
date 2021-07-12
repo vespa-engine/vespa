@@ -35,6 +35,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     private final RankingConstants rankingConstants;
     private final LargeRankExpressions largeRankExpressions;
     private final OnnxModels onnxModels;
+    private final boolean dryRunOnnxOnSetup;
 
     public static RankProfileList empty = new RankProfileList();
 
@@ -42,6 +43,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         rankingConstants = new RankingConstants();
         largeRankExpressions = new LargeRankExpressions();
         onnxModels = new OnnxModels();
+        dryRunOnnxOnSetup = true;
     }
 
     /**
@@ -62,6 +64,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         this.rankingConstants = rankingConstants;
         this.largeRankExpressions = largeRankExpressions;
         onnxModels = search == null ? new OnnxModels() : search.onnxModels();  // as ONNX models come from parsing rank expressions
+        dryRunOnnxOnSetup = deployProperties.featureFlags().dryRunOnnxOnSetup();
         deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
     }
 
@@ -137,6 +140,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 log.warning("Illegal file reference " + model); // Let tests pass ... we should find a better way
             else {
                 OnnxModelsConfig.Model.Builder modelBuilder = new OnnxModelsConfig.Model.Builder();
+                modelBuilder.dry_run_on_setup(dryRunOnnxOnSetup);
                 modelBuilder.name(model.getName());
                 modelBuilder.fileref(model.getFileReference());
                 model.getInputMap().forEach((name, source) -> modelBuilder.input(new OnnxModelsConfig.Model.Input.Builder().name(name).source(source)));

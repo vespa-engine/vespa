@@ -11,8 +11,8 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.RawConfig;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -32,22 +32,27 @@ public class ConfigProxyRpcServerTest {
     private static final String hostname = "localhost";
     private static final int port = 12345;
     private static final String configSourceAddress = "tcp/" + hostname + ":" + port;
-    private TestServer server;
-    private TestClient client;
+    private static TestServer server;
+    private static TestClient client;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    @Before
-    public void setup() throws ListenFailedException {
+    @BeforeClass
+    public static void setup() throws ListenFailedException {
         server = new TestServer();
         client = new TestClient(server.listenPort());
     }
 
-    @After
-    public void teardown() {
+    @AfterClass
+    public static void teardown() {
         client.close();
         server.close();
+    }
+
+    private static void reset() throws ListenFailedException {
+        teardown();
+        setup();
     }
 
     @Test
@@ -75,7 +80,9 @@ public class ConfigProxyRpcServerTest {
      * Tests listCachedConfig RPC command
      */
     @Test
-    public void testRpcMethodListCachedConfig() {
+    public void testRpcMethodListCachedConfig() throws ListenFailedException {
+        reset();
+
         Request req = new Request("listCachedConfig");
         client.invoke(req);
 
@@ -129,7 +136,9 @@ public class ConfigProxyRpcServerTest {
      * Tests printStatistics RPC command
      */
     @Test
-    public void testRpcMethodListSourceConnections() {
+    public void testRpcMethodListSourceConnections() throws ListenFailedException {
+        reset();
+
         Request req = new Request("listSourceConnections");
         client.invoke(req);
 
@@ -218,7 +227,9 @@ public class ConfigProxyRpcServerTest {
      * Tests updateSources RPC command
      */
     @Test
-    public void testRpcMethodUpdateSources() {
+    public void testRpcMethodUpdateSources() throws ListenFailedException {
+        reset();
+
         Request req = new Request("updateSources");
         String spec1 = "tcp/a:19070";
         String spec2 = "tcp/b:19070";

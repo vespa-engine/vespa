@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.controller;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -16,10 +15,11 @@ import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
@@ -124,12 +124,10 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         SupportAccess supportAccess = controller.supportAccess().registerGrant(deployment, principal.getName(), certificate);
 
         // Trigger deployment to include operator cert
-        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
-                .orElseThrow(() -> new IllegalStateException("No job found to trigger for " + deployment.toUserFriendlyString()));
-
-        String jobName = controller.applications().deploymentTrigger()
-                .reTrigger(deployment.applicationId(), jobType).type().jobName();
-        return new MessageResponse(String.format("Operator %s granted access and job %s triggered", principal.getName(), jobName));
+        Optional<JobId> jobId = controller.applications().deploymentTrigger().reTriggerOrAddToQueue(deployment);
+        return new MessageResponse(
+                jobId.map(id -> Text.format("Operator %s granted access and job %s triggered", principal.getName(), id.type().jobName()))
+                        .orElseGet(() -> Text.format("Operator %s granted access and job trigger queued", principal.getName())));
     }
 
     private <T> T requireField(Inspector inspector, String field, Function<String, T> mapper) {

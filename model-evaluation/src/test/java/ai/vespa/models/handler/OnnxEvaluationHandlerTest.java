@@ -46,7 +46,6 @@ public class OnnxEvaluationHandlerTest {
                     "\"eval\":\"http://localhost/model-evaluation/v1/add_mul/output1/eval\"," +
                     "\"arguments\":[" +
                         "{\"name\":\"input1\",\"type\":\"tensor<float>(d0[1])\"}," +
-                        "{\"name\":\"onnxModel(add_mul).output1\",\"type\":\"tensor<float>(d0[1])\"}," +
                         "{\"name\":\"input2\",\"type\":\"tensor<float>(d0[1])\"}" +
                     "]}," +
                 "{\"function\":\"output2\"," +
@@ -54,7 +53,6 @@ public class OnnxEvaluationHandlerTest {
                     "\"eval\":\"http://localhost/model-evaluation/v1/add_mul/output2/eval\"," +
                     "\"arguments\":[" +
                         "{\"name\":\"input1\",\"type\":\"tensor<float>(d0[1])\"}," +
-                        "{\"name\":\"onnxModel(add_mul).output2\",\"type\":\"tensor<float>(d0[1])\"}," +
                         "{\"name\":\"input2\",\"type\":\"tensor<float>(d0[1])\"}" +
                 "]}]}";
         handler.assertResponse(url, 200, expected);
@@ -70,7 +68,7 @@ public class OnnxEvaluationHandlerTest {
     @Test
     public void testEvaluationWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/add_mul/output1/eval";
-        String expected = "{\"error\":\"Argument 'input2' must be bound to a value of type tensor<float>(d0[1])\"}";
+        String expected = "{\"error\":\"Argument 'input1' must be bound to a value of type tensor<float>(d0[1])\"}";
         handler.assertResponse(url, 400, expected);
     }
 
@@ -102,8 +100,7 @@ public class OnnxEvaluationHandlerTest {
                 "\"info\":\"http://localhost/model-evaluation/v1/one_layer/output\"," +
                 "\"eval\":\"http://localhost/model-evaluation/v1/one_layer/output/eval\"," +
                 "\"arguments\":[" +
-                "{\"name\":\"input\",\"type\":\"tensor<float>(d0[],d1[3])\"}," +
-                "{\"name\":\"onnxModel(one_layer)\",\"type\":\"tensor<float>(d0[],d1[1])\"}" +
+                "{\"name\":\"input\",\"type\":\"tensor<float>(d0[],d1[3])\"}" +
                 "]}]}";
         handler.assertResponse(url, 200, expected);
     }

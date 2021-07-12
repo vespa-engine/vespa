@@ -3,6 +3,8 @@
 <services>
 
   <container version="1.0">
+    <!-- Avoid using DefaultLinguisticsProvider -->
+    <component id="com.yahoo.language.simple.SimpleLinguistics" />
 
     <search>
       <chain id="default" inherits="vespa"/>

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -67,6 +68,7 @@ import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
@@ -156,7 +158,7 @@ public class ApplicationController {
                 });
                 count++;
             }
-            log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
+            log.log(Level.INFO, Text.format("Wrote %d applications in %s", count,
                                               Duration.between(start, clock.instant())));
         });
     }
@@ -809,7 +811,7 @@ public class ApplicationController {
         boolean revisionIsOlder = revision.compareTo(deployment.applicationVersion()) < 0 &&
                                   !(revision.isUnknown() && controller.system().isCd());
         if (platformIsOlder || revisionIsOlder)
-            throw new IllegalArgumentException(String.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
+            throw new IllegalArgumentException(Text.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
                                                              " are older than the currently deployed (platform: %s, application: %s).",
                                                              job.application(), zone, platform, revision, deployment.version(), deployment.applicationVersion()));
     }
@@ -868,12 +870,15 @@ public class ApplicationController {
             throw new IllegalArgumentException("Not allowed to launch Athenz service " + athenzService.getFullName());
     }
 
-    /** Returns the latest known version within the given major. */
+    /** Returns the latest known version within the given major, which is not newer than the system version. */
     public Optional<Version> lastCompatibleVersion(int targetMajorVersion) {
-        return controller.readVersionStatus().versions().stream()
-                         .map(VespaVersion::versionNumber)
-                         .filter(version -> version.getMajor() == targetMajorVersion)
-                         .max(naturalOrder());
+        VersionStatus versions = controller.readVersionStatus();
+        Version systemVersion = controller.systemVersion(versions);
+        return versions.versions().stream()
+                       .map(VespaVersion::versionNumber)
+                       .filter(version -> version.getMajor() == targetMajorVersion)
+                       .filter(version -> ! version.isAfter(systemVersion))
+                       .max(naturalOrder());
     }
 
     /** Extract deployment warnings metric from deployment result */

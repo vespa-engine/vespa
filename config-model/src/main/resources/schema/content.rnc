@@ -376,8 +376,8 @@ Tuning = element tuning {
 }
 
 TuningIoOptionsLight = string "normal" | string "directio"
-TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | string "mlock" | string "populate"
-TuningIoOptionsSearch = string "mmap" | string "mlock" | string "populate"
+TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | string "populate"
+TuningIoOptionsSearch = string "mmap" | string "populate"
 
 TuningCompression = element compression {
    element type { string "none" | string "lz4" | string "zstd" }? &

@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -30,7 +29,7 @@ public class TrafficShareUpdater extends ControllerMaintainer {
     private final NodeRepository nodeRepository;
 
     public TrafficShareUpdater(Controller controller, Duration duration) {
-        super(controller, duration, TrafficShareUpdater.class.getSimpleName(), SystemName.all());
+        super(controller, duration);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
@@ -44,7 +43,7 @@ public class TrafficShareUpdater extends ControllerMaintainer {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
                     if ( ! deployment.zone().environment().isProduction()) continue;
-
+                    if (shuttingDown()) return 1.0;
                     try {
                         attempts++;
                         updateTrafficFraction(instance, deployment);

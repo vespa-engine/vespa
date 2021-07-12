@@ -2,7 +2,7 @@
 package ai.vespa.feed.client;
 
 /**
- * Signals that the client was unable to parse the result/response from container
+ * Signals that the client was unable to obtain a proper response/result from container
  *
  * @author bjorncs
  */

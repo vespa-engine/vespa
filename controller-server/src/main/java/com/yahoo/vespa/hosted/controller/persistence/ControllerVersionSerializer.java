@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 
 /**
@@ -36,7 +37,7 @@ public class ControllerVersionSerializer {
         var root = slime.get();
         var version = Version.fromString(root.field(VERSION_FIELD).asString());
         var commitSha = root.field(COMMIT_SHA_FIELD).asString();
-        var commitDate = Serializers.instant(root.field(COMMIT_DATE_FIELD));
+        var commitDate = SlimeUtils.instant(root.field(COMMIT_DATE_FIELD));
         return new ControllerVersion(version, commitSha, commitDate);
     }
 

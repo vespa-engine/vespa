@@ -22,6 +22,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -65,7 +66,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -88,12 +88,15 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.INFO;
@@ -187,11 +190,20 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
+        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
         return deploy(() -> controller.applications().deploy(id.job(), setTheStage),
                       controller.jobController().run(id).get()
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
-                      logger);
+                      logger)
+                .filter(result -> {
+                    // If no tester cert, or deployment failed, propagate original result.
+                    if ( ! useTesterCertificate(id) || result != running)
+                        return true;
+                    // If tester cert, ensure real is deployed with the tester cert whose key was successfully deployed.
+                    return    controller.jobController().run(id).get().stepStatus(deployTester).get() == succeeded
+                           && testerCertificate.equals(controller.jobController().run(id).get().testerCertificate());
+                });
     }
 
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
@@ -248,7 +260,7 @@ public class InternalStepRunner implements StepRunner {
                 case OUT_OF_CAPACITY:
                     logger.log(e.message());
                     return controller.system().isCd() && startTime.plus(timeouts.capacity()).isAfter(controller.clock().instant())
-                           ? Optional.empty()
+                           ? result
                            : Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
@@ -635,6 +647,19 @@ public class InternalStepRunner implements StepRunner {
             try {
                 controller.jobController().updateVespaLog(id);
             }
+            // Hitting a config server which doesn't have this particular app loaded causes a 404.
+            catch (ConfigServerException e) {
+                Instant doom = controller.jobController().run(id).get().stepInfo(copyVespaLogs).get().startTime().get()
+                                         .plus(Duration.ofMinutes(3));
+                if (e.code() == ConfigServerException.ErrorCode.NOT_FOUND && controller.clock().instant().isBefore(doom)) {
+                    logger.log(INFO, "Found no logs, but will retry");
+                    return Optional.empty();
+                }
+                else {
+                    logger.log(INFO, "Failure getting vespa logs for " + id, e);
+                    return Optional.of(error);
+                }
+            }
             catch (Exception e) {
                 logger.log(INFO, "Failure getting vespa logs for " + id, e);
                 return Optional.of(error);
@@ -683,6 +708,12 @@ public class InternalStepRunner implements StepRunner {
         catch (IllegalStateException e) {
             logger.log(INFO, "Job '" + id.type() + "' no longer supposed to run?", e);
             return Optional.of(error);
+        }
+        catch (RuntimeException e) {
+            Instant start = controller.jobController().run(id).get().stepInfo(report).get().startTime().get();
+            return (controller.clock().instant().isAfter(start.plusSeconds(180)))
+                   ? Optional.empty()
+                   : Optional.of(error);
         }
         return Optional.of(running);
     }
@@ -797,16 +828,20 @@ public class InternalStepRunner implements StepRunner {
         return deployment.at().isBefore(controller.clock().instant().minus(timeout.minus(Duration.ofMinutes(1))));
     }
 
+    private boolean useTesterCertificate(RunId id) {
+        return controller.system().isPublic() && id.type().environment().isTest();
+    }
+
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
-        boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
+        boolean useTesterCertificate = useTesterCertificate(id);
         boolean useOsgiBasedTestRuntime = testerPlatformVersion(id).isAfter(new Version(7, 247, 11));
 
-        byte[] servicesXml = servicesXml(! controller.system().isPublic(),
+        byte[] servicesXml = servicesXml( ! controller.system().isPublic(),
                                          useTesterCertificate,
                                          useOsgiBasedTestRuntime,
                                          testerResourcesFor(zone, spec.requireInstance(id.application().instance())),
@@ -869,7 +904,7 @@ public class InternalStepRunner implements StepRunner {
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
-        String resourceString = String.format(Locale.ENGLISH,
+        String resourceString = Text.format(
                                               "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
                                               resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
 

@@ -5,7 +5,6 @@ import ai.vespa.reindexing.Reindexing.Status;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -17,9 +16,10 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -30,6 +30,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  * @author jonmv
  */
 public class ReindexingCurator {
+
+    private static final Logger log = Logger.getLogger(ReindexingCurator.class.getName());
 
     private final Curator curator;
     private final ReindexingSerializer serializer;
@@ -57,6 +59,7 @@ public class ReindexingCurator {
                     if (ready.get(type).isBefore(now))
                         reindexing = reindexing.with(type, Status.ready(now).running().successful(now));
 
+                log.log(Level.INFO, "Creating initial reindexing status at '" + statusPath(cluster) + "'");
                 writeReindexing(reindexing, cluster);
             }
             catch (ReindexingLockException ignored) {
@@ -66,11 +69,14 @@ public class ReindexingCurator {
     }
 
     public Reindexing readReindexing(String cluster) {
-        return curator.getData(statusPath(cluster)).map(serializer::deserialize)
-                      .orElse(Reindexing.empty());
+        Reindexing reindexing = curator.getData(statusPath(cluster)).map(serializer::deserialize)
+                                       .orElse(Reindexing.empty());
+        log.log(Level.FINE, () -> "Read reindexing status '" + reindexing + "' from '" + statusPath(cluster) + "'");
+        return reindexing;
     }
 
     public void writeReindexing(Reindexing reindexing, String cluster) {
+        log.log(Level.FINE, () -> "Writing reindexing status '" + reindexing + "' to '" + statusPath(cluster) + "'");
         curator.set(statusPath(cluster), serializer.serialize(reindexing));
     }
 
@@ -126,7 +132,7 @@ public class ReindexingCurator {
                                             .collect(toUnmodifiableMap(object -> require(TYPE, object, field -> types.getDocumentType(field.asString())),
                                                                        object -> new Status(require(STARTED_MILLIS, object, field -> Instant.ofEpochMilli(field.asLong())),
                                                                                             get(ENDED_MILLIS, object, field -> Instant.ofEpochMilli(field.asLong())),
-                                                                                            get(PROGRESS, object, field -> ProgressToken.fromSerializedString(field.asString())),
+                                                                                            get(PROGRESS, object, field -> field.asString()),
                                                                                             require(STATE, object, field -> toState(field.asString())),
                                                                                             get(MESSAGE, object, field -> field.asString())))));
         }

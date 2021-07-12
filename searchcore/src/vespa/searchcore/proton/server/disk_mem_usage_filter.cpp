@@ -154,13 +154,14 @@ DiskMemUsageFilter::getDiskUsedRatio(const Guard &guard) const
 DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
     : _lock(),
       _hwInfo(hwInfo),
+      _acceptWrite(true),
       _memoryStats(),
       _diskUsedSizeBytes(),
       _transient_memory_usage(0u),
       _config(),
       _state(),
-      _acceptWrite(true),
       _dmstate(),
+      _disk_mem_usage_metrics(),
       _listeners()
 { }
 
@@ -254,6 +255,15 @@ DiskMemUsageFilter::usageState() const
     return _dmstate;
 }
 
+DiskMemUsageMetrics
+DiskMemUsageFilter::get_metrics() const
+{
+    Guard guard(_lock);
+    DiskMemUsageMetrics result(_disk_mem_usage_metrics);
+    _disk_mem_usage_metrics = DiskMemUsageMetrics(_dmstate);
+    return result;
+}
+
 bool
 DiskMemUsageFilter::acceptWriteOperation() const
 {
@@ -295,6 +305,7 @@ DiskMemUsageFilter::notifyDiskMemUsage(const Guard &guard, DiskMemUsageState sta
         return;
     }
     _dmstate = state;
+    _disk_mem_usage_metrics.merge(state);
     for (const auto &listener : _listeners) {
         listener->notifyDiskMemUsage(_dmstate);
     }

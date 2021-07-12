@@ -13,6 +13,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -62,6 +63,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -92,9 +98,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
-    private RuntimeException prepareException = null;
+    private Consumer<ApplicationId> prepareException = null;
     private ConfigChangeActions configChangeActions = null;
-    private String log = "INFO - All good";
+    private Supplier<String> log = () -> "INFO - All good";
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
@@ -204,9 +210,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Optional.ofNullable(lastPrepareVersion);
     }
 
+    /** Sets a function that may throw, determined by app id. */
+    public void throwOnPrepare(Consumer<ApplicationId> prepareThrower) {
+        this.prepareException = prepareThrower;
+    }
+
     /** The exception to throw on the next prepare run, or null to continue normally */
     public void throwOnNextPrepare(RuntimeException prepareException) {
-        this.prepareException = prepareException;
+        this.prepareException = prepareException == null ? null : id -> { this.prepareException = null; throw prepareException; };
     }
 
     /** Set version for an application in a given zone */
@@ -365,11 +376,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public PreparedApplication deploy(DeploymentData deployment) {
         lastPrepareVersion = deployment.platform();
-        if (prepareException != null) {
-            RuntimeException prepareException = this.prepareException;
-            this.prepareException = null;
-            throw prepareException;
-        }
+        if (prepareException != null)
+            prepareException.accept(ApplicationId.from(deployment.instance().tenant(),
+                                                       deployment.instance().application(),
+                                                       deployment.instance().instance()));
         DeploymentId id = new DeploymentId(deployment.instance(), deployment.zone());
 
         applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage())));
@@ -477,8 +487,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
-        String cfgHostname = String.format("https://cfg.%s.%s.test.vip:4443", environment, region);
-        String cfgServiceUrlPrefix = String.format("%s/serviceview/v1/tenant/%s/application/%s/environment/%s/region/%s/instance/%s/service",
+        String cfgHostname = Text.format("https://cfg.%s.%s.test.vip:4443", environment, region);
+        String cfgServiceUrlPrefix = Text.format("%s/serviceview/v1/tenant/%s/application/%s/environment/%s/region/%s/instance/%s/service",
                                                    cfgHostname, tenantName, applicationName,
                                                    environment, region, instanceName);
         ApplicationView applicationView = new ApplicationView();
@@ -522,7 +532,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public String getClusterControllerStatus(DeploymentId deployment, String node, String subPath) {
+    public String getServiceStatusPage(DeploymentId deployment, String serviceName, String node, String subPath) {
         return "<h1>OK</h1>";
     }
 
@@ -553,7 +563,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
-        return new ByteArrayInputStream(log.getBytes(StandardCharsets.UTF_8));
+        return new ByteArrayInputStream(log.get().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -561,7 +571,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return new ProxyResponse("{\"path\":\"" + path + "\"}", "application/json", 200);
     }
 
-    public void setLogStream(String log) {
+    public void setLogStream(Supplier<String> log) {
         this.log = log;
     }
 

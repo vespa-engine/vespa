@@ -4,7 +4,7 @@ package ai.vespa.feed.client;
 import java.util.Optional;
 
 /**
- * Result for a document operation
+ * Result for a document operation which completed normally.
  *
  * @author bjorncs
  * @author jonmv
@@ -25,13 +25,22 @@ public class Result {
 
     public enum Type {
         success,
-        conditionNotMet,
-        failure
+        conditionNotMet
     }
 
     public Type type() { return type; }
     public DocumentId documentId() { return documentId; }
     public Optional<String> resultMessage() { return Optional.ofNullable(resultMessage); }
     public Optional<String> traceMessage() { return Optional.ofNullable(traceMessage); }
+
+    @Override
+    public String toString() {
+        return "Result{" +
+               "type=" + type +
+               ", documentId=" + documentId +
+               ", resultMessage='" + resultMessage + '\'' +
+               ", traceMessage='" + traceMessage + '\'' +
+               '}';
+    }
 
 }

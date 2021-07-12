@@ -34,6 +34,9 @@ public:
     void setThreadId(uint32_t ) { }
     void free()               { }
     size_t size()       const { return 0; }
+    static size_t usable_size(void *, size_t classSize) {
+        return classSize;
+    }
     bool allocated()    const { return false; }
     uint32_t threadId()      const { return 0; }
     void info(FILE *, unsigned level=0) const  { (void) level; }

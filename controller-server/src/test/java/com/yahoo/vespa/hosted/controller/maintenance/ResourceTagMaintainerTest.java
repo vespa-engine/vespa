@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.controller.maintenance.ResourceTagMaintainer.SHARED_HOST_APPLICATION;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -35,9 +36,9 @@ public class ResourceTagMaintainerTest {
                                                                                 mockResourceTagger);
         resourceTagMaintainer.maintain();
         assertEquals(2, mockResourceTagger.getValues().size());
-        Map<HostName, Optional<ApplicationId>> applicationForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));
-        assertEquals(ApplicationId.from("t1", "a1", "i1"), applicationForHost.get(HostName.from("parentHostA.prod.region-2")).get());
-        assertEquals(Optional.empty(), applicationForHost.get(HostName.from("parentHostB.prod.region-2")));
+        Map<HostName, ApplicationId> applicationForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));
+        assertEquals(ApplicationId.from("t1", "a1", "i1"), applicationForHost.get(HostName.from("parentHostA.prod.region-2")));
+        assertEquals(SHARED_HOST_APPLICATION, applicationForHost.get(HostName.from("parentHostB.prod.region-2")));
     }
 
     private void setUpZones() {

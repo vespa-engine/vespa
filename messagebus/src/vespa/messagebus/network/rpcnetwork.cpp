@@ -82,7 +82,7 @@ struct TargetPoolTask : public FNET_Task {
 
 TransportConfig
 toFNETConfig(const RPCNetworkParams & params) {
-    return TransportConfig()
+    return TransportConfig(params.getNumNetworkThreads())
               .maxInputBufferSize(params.getMaxInputBufferSize())
               .maxOutputBufferSize(params.getMaxOutputBufferSize())
               .tcpNoDelay(params.getTcpNoDelay());
@@ -125,7 +125,7 @@ RPCNetwork::SendContext::handleVersion(const vespalib::Version *version)
 RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _owner(nullptr),
     _ident(params.getIdentity()),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(128000, 0)),
+    _threadPool(std::make_unique<FastOS_ThreadPool>(128_Ki, 0)),
     _transport(std::make_unique<FNET_Transport>(toFNETConfig(params))),
     _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
     _scheduler(*_transport->GetScheduler()),
@@ -133,7 +133,7 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, *_slobrokCfgFactory)),
     _regAPI(std::make_unique<slobrok::api::RegisterAPI>(*_orb, *_slobrokCfgFactory)),
     _requestedPort(params.getListenPort()),
-    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
+    _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs(), params.getNumRpcTargets())),
     _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
     _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 64_Ki)),

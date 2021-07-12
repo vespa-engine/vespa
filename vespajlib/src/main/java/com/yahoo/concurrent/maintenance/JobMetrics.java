@@ -10,29 +10,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class JobMetrics {
 
-    private final ConcurrentHashMap<String, Long> incompleteRuns = new ConcurrentHashMap<>();
-
-    /** Record starting of a run of a job */
-    public void starting(String job) {
-        incompleteRuns.merge(job, 1L, Long::sum);
-    }
-
-    /** Record completion of given job */
-    public void recordCompletionOf(String job) {
-        incompleteRuns.put(job, 0L);
-    }
-
     /**
      * Records completion of a run of a job.
-     * This is guaranteed to always be called once whenever starting has been called.
+     * This is guaranteed to always be called once after each maintainer run.
      */
-    public void completed(String job, double successFactor) {
-        Long incompleteRuns = this.incompleteRuns.get(job);
-        if (incompleteRuns != null) {
-            recordCompletion(job, incompleteRuns, successFactor);
-        }
-    }
-
-    protected abstract void recordCompletion(String job, Long incompleteRuns, double successFactor);
+    public abstract void completed(String job, double successFactor);
 
 }

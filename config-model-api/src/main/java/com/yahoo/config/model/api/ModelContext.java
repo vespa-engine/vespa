@@ -86,18 +86,21 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean distributeExternalRankExpressions() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean dryRunOnnxOnSetup() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.406") default int clusterControllerMaxHeapSizeInMb() { return 128; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.428") default int clusterControllerMaxHeapSizeInMb() { return 128; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.422") default int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return 256; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return ""; }
-        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.409") default boolean enableJdiscHttp2() { return true; }
+        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.424") default boolean enableJdiscHttp2() { return true; }
         @ModelFeatureFlag(owners = {"tokle", "bjorncs"}) default boolean enableCustomAclMapping() { return false; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean throwIfResourceLimitsSpecified() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.8; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -134,13 +137,12 @@ public interface ModelContext {
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
 
-        // TODO: Remove after May 2021
-        default boolean dedicatedClusterControllerCluster() { return hostedVespa(); }
-
         // Allow disabling mTLS for now, harden later
         default boolean allowDisableMtls() { return true; }
 
         default List<X509Certificate> operatorCertificates() { return List.of(); }
+
+        default List<String> tlsCiphersOverride() { return List.of(); }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

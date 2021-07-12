@@ -75,6 +75,55 @@ TEST_F("require that strategy is updated when setting new config", Fixture)
     TEST_DO(f.assertStrategyConfig(6, 3, 30));
 }
 
+void
+expectEqual(const MemoryFlush::Config & a, const MemoryFlush::Config & b) {
+    EXPECT_TRUE(a.equal(b));
+    EXPECT_TRUE(a == b);
+    EXPECT_FALSE( a != b);
+    EXPECT_TRUE(b.equal(a));
+    EXPECT_TRUE(b == a);
+    EXPECT_FALSE( b != a);
+}
+
+void
+expectNotEqual(const MemoryFlush::Config & a, const MemoryFlush::Config & b) {
+    EXPECT_FALSE(a.equal(b));
+    EXPECT_FALSE(a == b);
+    EXPECT_TRUE( a != b);
+    EXPECT_FALSE(b.equal(a));
+    EXPECT_FALSE(b == a);
+    EXPECT_TRUE( b != a);
+}
+
+TEST("require that MemoryFlush::Config equal is correct") {
+    MemoryFlush::Config a, b;
+    expectEqual(a, b);
+    a.maxGlobalMemory = 7;
+    expectNotEqual(a, b);
+    b.maxGlobalMemory = 7;
+    expectEqual(a, b);
+    a.maxMemoryGain = 8;
+    expectNotEqual(a, b);
+    b.maxMemoryGain = 8;
+    expectEqual(a, b);
+    a.maxGlobalTlsSize = 9;
+    expectNotEqual(a, b);
+    b.maxGlobalTlsSize = 9;
+    expectEqual(a, b);
+    a.maxTimeGain = 10us;
+    expectNotEqual(a, b);
+    b.maxTimeGain = 10us;
+    expectEqual(a, b);
+    a.globalDiskBloatFactor = 11;
+    expectNotEqual(a, b);
+    b.globalDiskBloatFactor = 11;
+    expectEqual(a, b);
+    a.diskBloatFactor = 12;
+    expectNotEqual(a, b);
+    b.diskBloatFactor = 12;
+    expectEqual(a, b);
+}
+
 TEST("require that we use configured memory limits") {
     auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(6, 3, 30), defaultMemory);
     EXPECT_EQUAL(cfg.maxGlobalMemory, 6u);

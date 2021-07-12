@@ -3,6 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
@@ -41,9 +42,9 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     private final Set<SearchInvoker> invokers;
     private final SearchCluster searchCluster;
+    private final Group group;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
-    private final boolean isContentWellBalanced;
     private Query query;
 
     private boolean adaptiveTimeoutCalculated = false;
@@ -60,14 +61,17 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private boolean timedOut = false;
     private boolean degradedByMatchPhase = false;
 
-    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, boolean isContentWellBalanced, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
+    public InterleavedSearchInvoker(Collection<SearchInvoker> invokers,
+                                    SearchCluster searchCluster,
+                                    Group group,
+                                    Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
         this.invokers = Collections.newSetFromMap(new IdentityHashMap<>());
         this.invokers.addAll(invokers);
         this.searchCluster = searchCluster;
+        this.group = group;
         this.availableForProcessing = newQueue();
         this.alreadyFailedNodes = alreadyFailedNodes;
-        this.isContentWellBalanced = isContentWellBalanced;
     }
 
     /**
@@ -85,7 +89,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         int originalOffset = query.getOffset();
         int neededHits = originalHits + originalOffset;
         int q = neededHits;
-        if (isContentWellBalanced) {
+        if (group.isBalanced() && !group.isSparse()) {
             Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
             q = (topkProbabilityOverrride != null)
                     ? searchCluster.estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)

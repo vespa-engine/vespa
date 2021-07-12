@@ -5,6 +5,9 @@
 #include <vespa/searchlib/fef/onnx_model.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -18,7 +21,11 @@ using search::fef::IIndexEnvironment;
 using search::fef::IQueryEnvironment;
 using search::fef::ParameterList;
 using vespalib::Stash;
+using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::value_from_spec;
 using vespalib::make_string_short::fmt;
 using vespalib::eval::Onnx;
 
@@ -41,7 +48,26 @@ vespalib::string normalize_name(const vespalib::string &name, const char *contex
     return result;
 }
 
+vespalib::string my_dry_run(const Onnx &model, const Onnx::WireInfo &wire) {
+    vespalib::string error_msg;
+    try {
+        Onnx::EvalContext context(model, wire);
+        std::vector<Value::UP> inputs;
+        for (const auto &input_type: wire.vespa_inputs) {
+            TensorSpec spec(input_type.to_spec());
+            inputs.push_back(value_from_spec(spec, FastValueBuilderFactory::get()));
+        }
+        for (size_t i = 0; i < inputs.size(); ++i) {
+            context.bind_param(i, *inputs[i]);
+        }
+        context.eval();
+    } catch (const Ort::Exception &ex) {
+        error_msg = ex.what();
+    }
+    return error_msg;
 }
+
+} // <unnamed>
 
 /**
  * Feature executor that evaluates an onnx model
@@ -94,7 +120,7 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
             _cache_token = OnnxModelCache::load(model_cfg->file_path());
             _model = &(_cache_token->get());
         }
-    } catch (std::exception &ex) {
+    } catch (const Ort::Exception &ex) {
         return fail("model setup failed: %s", ex.what());
     }
     Onnx::WirePlanner planner;
@@ -131,6 +157,12 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
         describeOutput(output_name.value(), "output from onnx model", FeatureType::object(output_type));
     }
     _wire_info = planner.get_wire_info(*_model);
+    if (model_cfg->dry_run_on_setup()) {
+        auto error_msg = my_dry_run(*_model, _wire_info);
+        if (!error_msg.empty()) {
+            return fail("onnx model dry-run failed: %s", error_msg.c_str());
+        }
+    }
     return true;
 }
 

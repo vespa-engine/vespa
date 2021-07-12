@@ -62,7 +62,6 @@ private:
     MemoryIndex &operator=(const MemoryIndex &) = delete;
     MemoryIndex &operator=(MemoryIndex &&) = delete;
 
-    void removeDocumentHelper(uint32_t docId, const document::Document &doc);
     void updateMaxDocId(uint32_t docId) {
         if (docId > _maxDocId) {
             _maxDocId = docId;

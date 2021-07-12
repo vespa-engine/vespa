@@ -5,35 +5,27 @@
 namespace search::engine {
 
 SearchReply::SearchReply()
-    : valid(true),
-      offset(0),
-      _distributionKey(0),
+    : _distributionKey(0),
       totalHitCount(0),
-      maxRank(0),
       sortIndex(),
       sortData(),
       groupResult(),
       coverage(),
-      useWideHits(false),
       hits(),
       request()
 { }
 
 SearchReply::~SearchReply() = default;
 
-SearchReply::SearchReply(const SearchReply &rhs) :
-    valid        (rhs.valid),
-    offset       (rhs.offset),
-    _distributionKey     (rhs._distributionKey),
-    totalHitCount(rhs.totalHitCount),
-    maxRank      (rhs.maxRank),
-    sortIndex    (rhs.sortIndex),
-    sortData     (rhs.sortData),
-    groupResult  (rhs.groupResult),
-    coverage     (rhs.coverage),
-    useWideHits  (rhs.useWideHits),
-    hits         (rhs.hits),
-    request() // NB not copied
+SearchReply::SearchReply(const SearchReply &rhs)
+    : _distributionKey     (rhs._distributionKey),
+      totalHitCount(rhs.totalHitCount),
+      sortIndex    (rhs.sortIndex),
+      sortData     (rhs.sortData),
+      groupResult  (rhs.groupResult),
+      coverage     (rhs.coverage),
+      hits         (rhs.hits),
+      request() // NB not copied
 { }
 
 }

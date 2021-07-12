@@ -1,1 +1,1 @@
-Maven plugin which generates Vespa document classes from SD files.
+Maven plugin which generates Vespa document classes from schema files.

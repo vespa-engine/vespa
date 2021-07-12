@@ -7,6 +7,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -105,7 +106,7 @@ public enum SystemApplication {
 
     @Override
     public String toString() {
-        return String.format("system application %s of type %s", id, nodeType);
+        return Text.format("system application %s of type %s", id, nodeType);
     }
 
     private static class Constants {

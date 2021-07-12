@@ -54,7 +54,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
     private boolean useExternalRankExpression = false;
-    private int clusterControllerMaxHeapSizeInMb = 128;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
@@ -63,7 +62,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxMergeQueueSize = 1024;
     private int largeRankExpressionLimit = 0x10000;
     private boolean allowDisableMtls = true;
+    private boolean dryRunOnnxOnSetup = false;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
+    private double resourceLimitDisk = 0.8;
+    private double resourceLimitMemory = 0.8;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -95,7 +97,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
-    @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
@@ -107,7 +108,14 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
+    @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
+    @Override public double resourceLimitDisk() { return resourceLimitDisk; }
+    @Override public double resourceLimitMemory() { return resourceLimitMemory; }
 
+    public TestProperties setDryRunOnnxOnSetup(boolean value) {
+        dryRunOnnxOnSetup = value;
+        return this;
+    }
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
         return this;
@@ -226,11 +234,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties clusterControllerMaxHeapSizeInMb(int heapSize) {
-        clusterControllerMaxHeapSizeInMb = heapSize;
-        return this;
-    }
-
     public TestProperties maxActivationInhibitedOutOfSyncGroups(int nGroups) {
         maxActivationInhibitedOutOfSyncGroups = nGroups;
         return this;
@@ -258,6 +261,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setOperatorCertificates(List<X509Certificate> operatorCertificates) {
         this.operatorCertificates = List.copyOf(operatorCertificates);
+        return this;
+    }
+
+    public TestProperties setResourceLimitDisk(double value) {
+        this.resourceLimitDisk = value;
+        return this;
+    }
+
+    public TestProperties setResourceLimitMemory(double value) {
+        this.resourceLimitMemory = value;
         return this;
     }
 

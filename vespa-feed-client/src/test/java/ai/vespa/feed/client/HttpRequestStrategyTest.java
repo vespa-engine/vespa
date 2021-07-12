@@ -13,7 +13,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,7 +28,9 @@ import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpRequestStrategyTest {
 
@@ -36,17 +40,26 @@ class HttpRequestStrategyTest {
         HttpRequest request = new HttpRequest("PUT", "/", null, null);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), 100, TimeUnit.MILLISECONDS));
+        Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS));
 
         HttpRequestStrategy strategy = new HttpRequestStrategy(FeedClientBuilder.create(URI.create("https://dummy.com:123"))
-                                                                                .setConnectionsPerEndpoint(1 << 12)
-                                                                                .setMaxStreamPerConnection(1 << 4),
+                                                                                .setConnectionsPerEndpoint(1 << 10)
+                                                                                .setMaxStreamPerConnection(1 << 12),
                                                                cluster);
+        CountDownLatch latch = new CountDownLatch(1);
+        new Thread(() -> {
+            try {
+                while ( ! latch.await(1, TimeUnit.SECONDS))
+                    System.err.println(cluster.stats().inflight());
+            }
+            catch (InterruptedException ignored) { }
+        }).start();
         long startNanos = System.nanoTime();
         for (int i = 0; i < documents; i++)
             strategy.enqueue(DocumentId.of("ns", "type", Integer.toString(i)), request);
 
         strategy.await();
+        latch.countDown();
         executor.shutdown();
         cluster.close();
         OperationStats stats = cluster.stats();
@@ -64,7 +77,7 @@ class HttpRequestStrategyTest {
     }
 
     @Test
-    void testLogic() throws ExecutionException, InterruptedException {
+    void testRetries() throws ExecutionException, InterruptedException {
         int minStreams = 16; // Hard limit for minimum number of streams per connection.
         MockCluster cluster = new MockCluster();
         AtomicLong now = new AtomicLong(0);
@@ -78,6 +91,7 @@ class HttpRequestStrategyTest {
                                                                                 .setConnectionsPerEndpoint(1)
                                                                                 .setMaxStreamPerConnection(minStreams),
                                                                new BenchmarkingCluster(cluster));
+        OperationStats initial = strategy.stats();
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
@@ -87,14 +101,15 @@ class HttpRequestStrategyTest {
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
         ExecutionException expected = assertThrows(ExecutionException.class,
                                                    () -> strategy.enqueue(id1, request).get());
-        assertEquals("boom", expected.getCause().getMessage());
+        assertTrue(expected.getCause() instanceof FeedException);
+        assertEquals("java.lang.RuntimeException: boom", expected.getCause().getMessage());
         assertEquals(1, strategy.stats().requests());
 
         // IOException is retried.
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new IOException("retry me")));
         expected = assertThrows(ExecutionException.class,
                                 () -> strategy.enqueue(id1, request).get());
-        assertEquals("retry me", expected.getCause().getMessage());
+        assertEquals("retry me", expected.getCause().getCause().getMessage());
         assertEquals(3, strategy.stats().requests());
 
         // Successful response is returned
@@ -162,6 +177,86 @@ class HttpRequestStrategyTest {
         codes.put(500, 3L);
         assertEquals(codes, strategy.stats().responsesByCode());
         assertEquals(3, strategy.stats().exceptions());
+
+        assertEquals(strategy.stats(), strategy.stats().since(initial));
+        assertEquals(0, strategy.stats().since(strategy.stats()).averageLatencyMillis());
+        assertEquals(0, strategy.stats().since(strategy.stats()).requests());
+        assertEquals(0, strategy.stats().since(strategy.stats()).bytesSent());
+    }
+
+    @Test
+    void testShutdown() {
+        MockCluster cluster = new MockCluster();
+        AtomicLong now = new AtomicLong(0);
+        CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(10));
+        HttpRequestStrategy strategy = new HttpRequestStrategy(FeedClientBuilder.create(URI.create("https://dummy.com:123"))
+                                                                                .setRetryStrategy(new FeedClient.RetryStrategy() {
+                                                                                    @Override public int retries() { return 1; }
+                                                                                })
+                                                                                .setCircuitBreaker(breaker)
+                                                                                .setConnectionsPerEndpoint(1),
+                                                               new BenchmarkingCluster(cluster));
+
+        DocumentId id1 = DocumentId.of("ns", "type", "1");
+        DocumentId id2 = DocumentId.of("ns", "type", "2");
+        DocumentId id3 = DocumentId.of("ns", "type", "3");
+        DocumentId id4 = DocumentId.of("ns", "type", "4");
+        HttpRequest failing = new HttpRequest("POST", "/", null, null);
+        HttpRequest request = new HttpRequest("POST", "/", null, null);
+        HttpRequest blocking = new HttpRequest("POST", "/", null, null);
+
+        // Enqueue some operations to the same id, which are serialised, and then shut down while operations are in flight.
+        Phaser phaser = new Phaser(2);
+        Phaser blocker = new Phaser(2);
+        AtomicReference<CompletableFuture<HttpResponse>> completion = new AtomicReference<>();
+        cluster.expect((req, vessel) -> {
+            if (req == blocking) {
+                phaser.arriveAndAwaitAdvance();  // Synchronise with tst main thread, and then ...
+                blocker.arriveAndAwaitAdvance(); // ... block dispatch thread, so we get something in the queue.
+                throw new RuntimeException("armageddon"); // Dispatch thread should die, tearing down everything.
+            }
+            else if (req == failing) {
+                phaser.arriveAndAwaitAdvance();  // Let test thread enqueue more ops before failing (and retrying) this.
+                vessel.completeExceptionally(new IOException("failed"));
+            }
+            else phaser.arriveAndAwaitAdvance(); // Don't complete from mock cluster, but require destruction to do this.
+        });
+        CompletableFuture<HttpResponse> inflight = strategy.enqueue(id1, request);
+        CompletableFuture<HttpResponse> serialised1 = strategy.enqueue(id1, request);
+        CompletableFuture<HttpResponse> serialised2 = strategy.enqueue(id1, request);
+        CompletableFuture<HttpResponse> failed = strategy.enqueue(id2, failing);
+        CompletableFuture<HttpResponse> blocked = strategy.enqueue(id3, blocking);
+        CompletableFuture<HttpResponse> delayed = strategy.enqueue(id4, request);
+        phaser.arriveAndAwaitAdvance(); // inflight completes dispatch, but causes no response.
+        phaser.arriveAndAwaitAdvance(); // failed completes dispatch, and a retry is enqueued.
+        phaser.arriveAndAwaitAdvance(); // blocked starts dispatch, and hangs, blocking dispatch thread.
+
+        // Current state: inflight is "inflight to cluster", serialised1/2 are waiting completion of it;
+        //                blocked is blocking dispatch, delayed is enqueued, waiting for dispatch;
+        //                failed has a partial result, and has a retry in the dispatch queue.
+        assertFalse(inflight.isDone());
+        assertFalse(serialised1.isDone());
+        assertFalse(serialised2.isDone());
+        assertFalse(failed.isDone());
+        assertFalse(blocked.isDone());
+        assertFalse(delayed.isDone());
+
+        // Kill dispatch thread, and see that all enqueued operations, and new ones, complete.
+        blocker.arriveAndAwaitAdvance();
+        assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
+                     assertThrows(ExecutionException.class, inflight::get).getMessage());
+        assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
+                     assertThrows(ExecutionException.class, serialised1::get).getMessage());
+        assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
+                     assertThrows(ExecutionException.class, serialised2::get).getMessage());
+        assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
+                     assertThrows(ExecutionException.class, blocked::get).getMessage());
+        assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
+                     assertThrows(ExecutionException.class, delayed::get).getMessage());
+        assertEquals("ai.vespa.feed.client.FeedException: java.io.IOException: failed",
+                     assertThrows(ExecutionException.class, failed::get).getMessage());
+        assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
+                     assertThrows(ExecutionException.class, strategy.enqueue(id1, request)::get).getMessage());
     }
 
     static class MockCluster implements Cluster {
@@ -175,14 +270,6 @@ class HttpRequestStrategyTest {
         @Override
         public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
             dispatch.get().accept(request, vessel);
-        }
-
-        @Override
-        public void close() { }
-
-        @Override
-        public OperationStats stats() {
-            return null;
         }
 
     }

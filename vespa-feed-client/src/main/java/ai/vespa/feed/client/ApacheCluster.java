@@ -5,7 +5,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
@@ -19,7 +19,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,6 +33,13 @@ import static org.apache.hc.core5.http.ssl.TlsCiphers.excludeWeak;
 class ApacheCluster implements Cluster {
 
     private final List<Endpoint> endpoints = new ArrayList<>();
+    private final List<BasicHeader> defaultHeaders = Arrays.asList(new BasicHeader("User-Agent", String.format("vespa-feed-client/%s", Vespa.VERSION)),
+                                                                   new BasicHeader("Vespa-Client-Version", Vespa.VERSION));
+    private final RequestConfig defaultConfig = RequestConfig.custom()
+                                                             .setConnectTimeout(Timeout.ofSeconds(10))
+                                                             .setConnectionRequestTimeout(Timeout.DISABLED)
+                                                             .setResponseTimeout(Timeout.ofMinutes(5))
+                                                             .build();
 
     ApacheCluster(FeedClientBuilder builder) throws IOException {
         for (URI endpoint : builder.endpoints)
@@ -42,11 +49,6 @@ class ApacheCluster implements Cluster {
 
     @Override
     public void dispatch(HttpRequest wrapped, CompletableFuture<HttpResponse> vessel) {
-        SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
-        wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
-        if (wrapped.body() != null)
-            request.setBody(wrapped.body(), ContentType.APPLICATION_JSON);
-
         int index = 0;
         int min = Integer.MAX_VALUE;
         for (int i = 0; i < endpoints.size(); i++)
@@ -54,12 +56,19 @@ class ApacheCluster implements Cluster {
                 index = i;
                 min = endpoints.get(i).inflight.get();
             }
-
         Endpoint endpoint = endpoints.get(index);
-        endpoint.inflight.incrementAndGet();
+
         try {
+            SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
             request.setScheme(endpoint.url.getScheme());
-            request.setAuthority(new URIAuthority(endpoint.url.getHost(), endpoint.url.getPort()));
+            request.setAuthority(new URIAuthority(endpoint.url.getHost(), portOf(endpoint.url)));
+            request.setConfig(defaultConfig);
+            defaultHeaders.forEach(request::setHeader);
+            wrapped.headers().forEach((name, value) -> request.setHeader(name, value.get()));
+            if (wrapped.body() != null)
+                request.setBody(wrapped.body(), ContentType.APPLICATION_JSON);
+
+            endpoint.inflight.incrementAndGet();
             endpoint.client.execute(request,
                                     new FutureCallback<SimpleHttpResponse>() {
                                         @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }
@@ -104,29 +113,6 @@ class ApacheCluster implements Cluster {
     }
 
     private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder) throws IOException {
-        H2AsyncClientBuilder httpClientBuilder = H2AsyncClientBuilder.create()
-                                                                     .setUserAgent(String.format("vespa-feed-client/%s", Vespa.VERSION))
-                                                                     .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
-                                                                     .disableCookieManagement()
-                                                                     .disableRedirectHandling()
-                                                                     .disableAutomaticRetries()
-                                                                     .setIOReactorConfig(IOReactorConfig.custom()
-                                                                                                        .setIoThreadCount(2)
-                                                                                                        .setTcpNoDelay(true)
-                                                                                                        .setSoTimeout(Timeout.ofSeconds(10))
-                                                                                                        .build())
-                                                                     .setDefaultRequestConfig(RequestConfig.custom()
-                                                                                                           .setConnectTimeout(Timeout.ofSeconds(10))
-                                                                                                           .setConnectionRequestTimeout(Timeout.DISABLED)
-                                                                                                           .setResponseTimeout(Timeout.ofMinutes(5))
-                                                                                                           .build())
-                                                                     .setH2Config(H2Config.custom()
-                                                                                          .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
-                                                                                          .setCompressionEnabled(true)
-                                                                                          .setPushEnabled(false)
-                                                                                          .setInitialWindowSize(Integer.MAX_VALUE)
-                                                                                          .build());
-
         SSLContext sslContext = builder.constructSslContext();
         String[] allowedCiphers = excludeH2Blacklisted(excludeWeak(sslContext.getSupportedSSLParameters().getCipherSuites()));
         if (allowedCiphers.length == 0)
@@ -135,11 +121,26 @@ class ApacheCluster implements Cluster {
         ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
                                                                               .setCiphers(allowedCiphers)
                                                                               .setSslContext(sslContext);
-        if (builder.hostnameVerifier != null) {
+        if (builder.hostnameVerifier != null)
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
-        }
-        return httpClientBuilder.setTlsStrategy(tlsStrategyBuilder.build())
-                                .build();
+
+        return HttpAsyncClients.createHttp2Minimal(H2Config.custom()
+                                                           .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
+                                                           .setCompressionEnabled(true)
+                                                           .setPushEnabled(false)
+                                                           .setInitialWindowSize(Integer.MAX_VALUE)
+                                                           .build(),
+                                                   IOReactorConfig.custom()
+                                                                  .setIoThreadCount(2)
+                                                                  .setTcpNoDelay(true)
+                                                                  .setSoTimeout(Timeout.ofSeconds(10))
+                                                                  .build(),
+                                                   tlsStrategyBuilder.build());
+    }
+
+    private static int portOf(URI url) {
+        return url.getPort() == -1 ? url.getScheme().equals("http") ? 80 : 443
+                                   : url.getPort();
     }
 
     private static class ApacheHttpResponse implements HttpResponse {

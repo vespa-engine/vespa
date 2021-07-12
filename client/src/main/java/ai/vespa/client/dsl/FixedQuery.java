@@ -236,10 +236,10 @@ public class FixedQuery {
         double absLat = Math.abs(lat);
         double absLon = Math.abs(lon);
         if (absLat > 90 || absLon > 180) {
-            throw new IllegalArgumentException(String.format("invalid lat long value, lat=%f, long=%f", lat, lon));
+            throw new IllegalArgumentException(Text.format("invalid lat long value, lat=%f, long=%f", lat, lon));
         }
 
-        return String.format("%s%f;%s%f",
+        return Text.format("%s%f;%s%f",
                              lat > 0 ? "N" : "S", absLat,
                              lon > 0 ? "E" : "W", absLon);
     }
@@ -260,7 +260,7 @@ public class FixedQuery {
     }
 
     public FixedQuery posBoundingBox(double n, double s, double e, double w) {
-        this.param("pos.bb", String.format("n=%f,s=%f,e=%f,w=%f", n, s, e, w));
+        this.param("pos.bb", Text.format("n=%f,s=%f,e=%f,w=%f", n, s, e, w));
         return this;
     }
 

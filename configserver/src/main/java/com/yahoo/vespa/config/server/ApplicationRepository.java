@@ -56,9 +56,9 @@ import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
-import com.yahoo.vespa.config.server.http.v2.DeploymentMetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.http.v2.ProtonMetricsResponse;
+import com.yahoo.vespa.config.server.http.v2.response.ProtonMetricsResponse;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -547,15 +547,27 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse clusterControllerStatusPage(ApplicationId applicationId, String hostName, String pathSuffix) {
+    public HttpResponse serviceStatusPage(ApplicationId applicationId, String hostName, String serviceName, String pathSuffix) {
         // WARNING: pathSuffix may be given by the external user. Make sure no security issues arise...
         // We should be OK here, because at most, pathSuffix may change the parent path, but cannot otherwise
         // change the hostname and port. Exposing other paths on the cluster controller should be fine.
         // TODO: It would be nice to have a simple check to verify pathSuffix doesn't contain /../ components.
-        String relativePath = "clustercontroller-status/" + pathSuffix;
+        String pathPrefix;
+        switch (serviceName) {
+            case "container-clustercontroller": {
+                pathPrefix = "clustercontroller-status/v1/";
+                break;
+            }
+            case "distributor":
+            case "storagenode": {
+                pathPrefix = "";
+                break;
+            }
+            default:
+                throw new NotFoundException("No status page for service: " + serviceName);
+        }
 
-        return httpProxy.get(getApplication(applicationId), hostName,
-                             CLUSTERCONTROLLER_CONTAINER.serviceName, relativePath);
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, pathPrefix + pathSuffix);
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
@@ -578,16 +590,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public List<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, Duration keepFileReferences) {
-        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferences);
+    public List<String> deleteUnusedFiledistributionReferences(File fileReferencesPath,
+                                                               Duration keepFileReferencesDuration,
+                                                               int numberToAlwaysKeep) {
+        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferencesDuration);
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         Set<String> fileReferencesInUse = getFileReferencesInUse();
         log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
 
-        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferences);
+        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferencesDuration);
         // Do not delete the newest ones
-        List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - 5));
+        List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - numberToAlwaysKeep));
         if (fileReferencesToDelete.size() > 0) {
             log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
@@ -601,18 +615,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private Set<String> getFileReferencesInUse() {
         Set<String> fileReferencesInUse = new HashSet<>();
-        // Intentionally skip applications that we for some reason do not find
-        // or that we fail to get file references for (they will be retried on the next run)
         for (var applicationId : listApplications()) {
-            try {
-                Optional<Application> app = getOptionalApplication(applicationId);
-                if (app.isEmpty()) continue;
-                fileReferencesInUse.addAll(app.get().getModel().fileReferences().stream()
-                                              .map(FileReference::value)
-                                              .collect(Collectors.toSet()));
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Getting file references in use for '" + applicationId + "' failed", e);
-            }
+            Application app = getApplication(applicationId);
+            fileReferencesInUse.addAll(app.getModel().fileReferences().stream()
+                                          .map(FileReference::value)
+                                          .collect(Collectors.toSet()));
         }
         return fileReferencesInUse;
     }
@@ -1087,9 +1094,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
         ReindexActions reindexActions = actions.getReindexActions();
         if ( ! reindexActions.isEmpty()) {
-            logger.logApplicationPackage(Level.WARNING,
-                                         "Change(s) between active and new application that may require re-index:\n" +
-                                         reindexActions.format());
+            logger.log(Level.WARNING,
+                       "Change(s) between active and new application that may require re-index:\n" +
+                       reindexActions.format());
         }
     }
 

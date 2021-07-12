@@ -62,7 +62,7 @@ public class Notification {
 
     public enum Level {
         // Must be ordered in order of importance
-        warning, error
+        info, warning, error
     }
 
     public enum Type {
@@ -73,7 +73,10 @@ public class Notification {
         deployment,
 
         /** Application cluster is (near) external feed blocked */
-        feedBlock;
+        feedBlock,
+
+        /** Application cluster is reindexing document(s) */
+        reindex;
     }
 
 }

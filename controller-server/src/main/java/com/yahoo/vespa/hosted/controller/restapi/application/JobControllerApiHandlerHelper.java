@@ -10,6 +10,7 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
@@ -39,10 +40,12 @@ import java.time.Instant;
 import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
@@ -83,7 +86,7 @@ class JobControllerApiHandlerHelper {
 
                   Cursor jobObject = jobsArray.addObject();
                   jobObject.setString("jobName", job.type().jobName());
-                  toSlime(jobObject.setArray("runs"), runs, baseUriForJobs);
+                  toSlime(jobObject.setArray("runs"), runs, 10, baseUriForJobs);
               });
 
         return new SlimeJsonResponse(slime);
@@ -116,11 +119,19 @@ class JobControllerApiHandlerHelper {
     }
 
     /** Returns a response with the runs for the given job type. */
-    static HttpResponse runResponse(Map<RunId, Run> runs, URI baseUriForJobType) {
+    static HttpResponse runResponse(Map<RunId, Run> runs, Optional<String> limitStr, URI baseUriForJobType) {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
 
-        runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
+        // TODO (freva): Remove after console migrated to use new format
+        if (limitStr.isEmpty())
+            runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
+        else {
+            int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
+            toSlime(cursor.setArray("runs"), runs.values().stream()
+                    .sorted(Comparator.comparing((Run run) -> run.id().number()).reversed())
+                    .collect(Collectors.toUnmodifiableList()), limit, baseUriForJobType);
+        }
 
         return new SlimeJsonResponse(slime);
     }
@@ -166,7 +177,7 @@ class JobControllerApiHandlerHelper {
         catch (RuntimeException ignored) { } // Return response when this fails, which it does when, e.g., logserver is booting.
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
-                .orElseThrow(() -> new NotExistsException(String.format(
+                .orElseThrow(() -> new NotExistsException(Text.format(
                         "No run details exist for application: %s, job type: %s, number: %d",
                         runId.application().toShortString(), runId.type().jobName(), runId.number())));
 
@@ -376,7 +387,7 @@ class JobControllerApiHandlerHelper {
                     toSlime(runObject.setObject("versions"), versions);
                 }
 
-                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), baseUriForJob);
+                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), 10, baseUriForJob);
             });
         }
 
@@ -427,8 +438,8 @@ class JobControllerApiHandlerHelper {
         return Optional.of(versions.get(i));
     }
 
-    private static void toSlime(Cursor runsArray, Collection<Run> runs, URI baseUriForJob) {
-        runs.stream().limit(10).forEach(run -> {
+    private static void toSlime(Cursor runsArray, Collection<Run> runs, int limit, URI baseUriForJob) {
+        runs.stream().limit(limit).forEach(run -> {
             Cursor runObject = runsArray.addObject();
             runObject.setLong("id", run.id().number());
             runObject.setString("url", baseUriForJob.resolve(baseUriForJob.getPath() + "/run/" + run.id().number()).toString());

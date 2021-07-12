@@ -12,7 +12,6 @@ ContainerCluster = element container | jdisc {
 }
 
 ContainerServices =
-    RestApi* &
     Servlet* &
     SearchInContainer? &
     DocprocInContainer? &
@@ -126,22 +125,6 @@ Threadpool = element threadpool {
     element max-threads { xsd:nonNegativeInteger } &
     element min-threads { xsd:nonNegativeInteger } &
     element queue-size { xsd:nonNegativeInteger }
-}
-
-# REST-API:
-
-RestApi = element rest-api {
-    attribute path { xsd:string { pattern = "\w[\w_/\-\.]*" } } &
-    attribute jersey2 { xsd:boolean }? &
-    element components {
-      attribute bundle { xsd:Name } &
-      element package { xsd:NCName }*
-    }*
-
-#    element inject {
-#        attribute component { xsd:Name } &
-#        attribute for-name { xsd:Name }
-#    }*
 }
 
 # Servlet:

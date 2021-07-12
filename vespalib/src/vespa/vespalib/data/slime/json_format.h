@@ -7,11 +7,9 @@
 #include <vespa/vespalib/data/input_reader.h>
 #include <vespa/vespalib/data/output_writer.h>
 
-namespace vespalib {
+namespace vespalib { class Slime; }
 
-class Slime;
-
-namespace slime {
+namespace vespalib::slime {
 
 struct Inspector;
 
@@ -23,5 +21,3 @@ struct JsonFormat {
 };
 
 } // namespace vespalib::slime
-} // namespace vespalib
-

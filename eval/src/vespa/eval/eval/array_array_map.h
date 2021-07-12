@@ -116,7 +116,7 @@ private:
                 _keys.push_back(k);
             }
         }
-        _values.resize(_values.size() + _values_per_entry, V{});
+        _values.resize(_values.size() + _values_per_entry);
         auto [pos, was_inserted] = _map.insert(MyKey{{tag_id},hash});
         assert(was_inserted);
         return Tag{tag_id};

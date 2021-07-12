@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -31,12 +32,12 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -78,6 +79,9 @@ public class SessionRepositoryTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     public void setup() throws Exception {
         setup(new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
@@ -172,21 +176,25 @@ public class SessionRepositoryTest {
         assertStatusChange(sessionId, Session.Status.ACTIVATE);
     }
 
-    // If reading a session throws an exception it should be handled and not prevent other applications
-    // from loading. In this test we just show that we end up with one session in remote session
-    // repo even if it had bad data (by making getSessionIdForApplication() in FailingTenantApplications
-    // throw an exception).
+    // If reading a session throws an exception when bootstrapping SessionRepository it should fail,
+    // to make sure config server does not comes up and serves invalid/old config or, if this is hosted,
+    // serves empty config (takes down services on all nodes belonging to an application)
     @Test
-    public void testBadApplicationRepoOnActivate() throws Exception {
+    public void testInvalidSessionWhenBootstrappingSessionRepo() throws Exception {
         setup();
-        long sessionId = 3L;
-        TenantName mytenant = TenantName.from("mytenant");
-        curator.set(TenantRepository.getApplicationsPath(mytenant).append("mytenant:appX:default"), new byte[0]); // Invalid data
-        tenantRepository.addTenant(mytenant);
-        curator.create(TenantRepository.getSessionsPath(mytenant));
+
+        // Create a session with invalid data and set active session for application to this session
+        String sessionIdString = "3";
+        Path sessionPath = TenantRepository.getSessionsPath(tenantName).append(sessionIdString);
+        curator.create(sessionPath);
+        curator.set(sessionPath.append("applicationId"), new byte[0]); // Invalid data
+        Path applicationsPath = TenantRepository.getApplicationsPath(tenantName);
+        curator.set(applicationsPath.append(applicationId.serializedForm()), Utf8.toBytes(sessionIdString));
+
+        expectedException.expectMessage("Could not load remote session " + sessionIdString);
+        expectedException.expect(RuntimeException.class);
+        sessionRepository.loadSessions(false, new InThreadExecutorService());
         assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(0));
-        createSession(sessionId, true);
-        assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(1));
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -260,29 +268,14 @@ public class SessionRepositoryTest {
     public void require_that_searchdefinitions_are_written_to_schemas_dir() throws Exception {
         setup();
 
-        // App has schemas in searchdefinitions/, should NOT be moved to schemas/ on deploy
-        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), false);
         long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
         LocalSession session = sessionRepository.getLocalSession(sessionId);
 
         assertEquals(1, session.applicationPackage.get().getSchemas().size());
 
         ApplicationFile schema = getSchema(session, "schemas");
-        assertFalse(schema.exists());
-        ApplicationFile sd = getSchema(session, "searchdefinitions");
-        assertTrue(sd.exists());
-
-
-        // App has schemas in searchdefinitions/, should be moved to schemas/ on deploy
-        flagSource.withBooleanFlag(Flags.MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR.id(), true);
-        sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
-        session = sessionRepository.getLocalSession(sessionId);
-
-        assertEquals(1, session.applicationPackage.get().getSchemas().size());
-
-        schema = getSchema(session, "schemas");
         assertTrue(schema.exists());
-        sd = getSchema(session, "searchdefinitions");
+        ApplicationFile sd = getSchema(session, "searchdefinitions");
         assertFalse(sd.exists());
     }
 

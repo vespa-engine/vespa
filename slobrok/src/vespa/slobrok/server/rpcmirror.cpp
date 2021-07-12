@@ -5,91 +5,61 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcmirror");
+LOG_SETUP(".slobrok.server.rpcmirror");
 
 namespace slobrok {
 
 IncrementalFetch::IncrementalFetch(FRT_Supervisor *orb,
-                         FRT_RPCRequest *req,
-                         VisibleMap &map,
-                         vespalib::GenCnt gen)
-    : FNET_Task(orb->GetScheduler()),
-      _req(req),
-      _map(map),
-      _gen(gen)
+                                   FRT_RPCRequest *req,
+                                   ServiceMapHistory &smh,
+                                   vespalib::GenCnt gen)
+  : FNET_Task(orb->GetScheduler()),
+    _req(req),
+    _smh(smh),
+    _gen(gen)
 { }
 
 IncrementalFetch::~IncrementalFetch() { }
 
-void
-IncrementalFetch::completeReq()
-{
-    vespalib::GenCnt newgen = _map.genCnt();
-    VisibleMap::MapDiff diff;
+void IncrementalFetch::completeReq(MapDiff diff) {
     FRT_Values &dst = *_req->GetReturn();
 
-    if (newgen == _gen) { // no change
-        dst.AddInt32(_gen.getAsInt());
-    } else if (_map.hasHistory(_gen)) {
-        diff = _map.history(_gen);
-        dst.AddInt32(_gen.getAsInt());
-    } else {
-        dst.AddInt32(0);
-        diff.updated = _map.allVisible();
-    }
+    dst.AddInt32(diff.fromGen.getAsInt());
 
     size_t sz = diff.removed.size();
-    FRT_StringValue *rem    = dst.AddStringArray(sz);
+    FRT_StringValue *rem = dst.AddStringArray(sz);
     for (uint32_t i = 0; i < sz; ++i) {
-        dst.SetString(&rem[i],  diff.removed[i].c_str());
+        dst.SetString(&rem[i], diff.removed[i].c_str());
     }
 
     sz = diff.updated.size();
-    FRT_StringValue *names  = dst.AddStringArray(sz);
-    FRT_StringValue *specs  = dst.AddStringArray(sz);
+    FRT_StringValue *names = dst.AddStringArray(sz);
+    FRT_StringValue *specs = dst.AddStringArray(sz);
     for (uint32_t i = 0; i < sz; ++i) {
-        dst.SetString(&names[i],  diff.updated[i]->getName().c_str());
-        dst.SetString(&specs[i],  diff.updated[i]->getSpec().c_str());
+        dst.SetString(&names[i],  diff.updated[i].name.c_str());
+        dst.SetString(&specs[i],  diff.updated[i].spec.c_str());
     }
 
-    dst.AddInt32(newgen.getAsInt());
+    dst.AddInt32(diff.toGen.getAsInt());
+
     LOG(debug, "mirrorFetch %p done (gen %d -> gen %d)",
-        this, _gen.getAsInt(), newgen.getAsInt());
+        this, diff.fromGen.getAsInt(), diff.toGen.getAsInt());
     _req->Return();
 }
-
 
 void
 IncrementalFetch::PerformTask()
 {
-    // cancel update notification
-    _map.removeUpdateListener(this);
-    completeReq();
+    if (_smh.cancel(this)) {
+        completeReq(MapDiff(_gen, {}, {}, _gen));
+    }
 }
 
 
-void
-IncrementalFetch::updated(VisibleMap &map)
-{
-    LOG_ASSERT(&map == &_map);
-    (void) &map;
-    // unschedule timeout task
-    Unschedule();
-    completeReq();
+void IncrementalFetch::handle(MapDiff diff) {
+    Kill(); // unschedule timeout task
+    completeReq(std::move(diff));
 }
-
-
-void
-IncrementalFetch::aborted(VisibleMap &map)
-{
-    LOG_ASSERT(&map == &_map);
-    (void) &map;
-    // unschedule timeout task
-    Unschedule();
-    _req->SetError(FRTE_RPC_METHOD_FAILED, "slobrok shutting down");
-    _req->Return();
-}
-
 
 void
 IncrementalFetch::invoke(uint32_t msTimeout)
@@ -97,14 +67,10 @@ IncrementalFetch::invoke(uint32_t msTimeout)
     _req->Detach();
     LOG(debug, "IncrementalFetch %p invoked from %s (gen %d, timeout %d ms)",
         this, _req->GetConnection()->GetSpec(), _gen.getAsInt(), msTimeout);
-    if (_map.genCnt() != _gen || msTimeout == 0) {
-        completeReq();
-    } else {
-        _map.addUpdateListener(this); // register as update listener
-        if (msTimeout > 10000)
-            msTimeout = 10000;
-        Schedule((double) msTimeout / 1000.0);
-    }
+    if (msTimeout > 10000)
+        msTimeout = 10000;
+    Schedule(msTimeout * 0.001);
+    _smh.asyncGenerationDiff(this, _gen);
 }
 
 } // namespace slobrok

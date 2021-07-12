@@ -14,6 +14,7 @@ import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -222,7 +223,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public URI getConfigServerVipUri(ZoneId zoneId) {
-        return URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
+        return URI.create(Text.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
     }
 
     @Override

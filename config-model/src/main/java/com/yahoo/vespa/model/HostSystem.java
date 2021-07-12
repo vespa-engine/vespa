@@ -33,10 +33,17 @@ import static java.util.logging.Level.FINE;
 public class HostSystem extends AbstractConfigProducer<Host> {
 
     private static final Logger log = Logger.getLogger(HostSystem.class.getName());
+    private static final boolean doCheckIp;
+
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
     private final DeployLogger deployLogger;
+
+    static {
+        String checkIpProperty = System.getProperty("config_model.ip_check", "true");
+        doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
+    }
 
     public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
         super(parent, name);
@@ -45,16 +52,18 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     void checkName(String hostname) {
-        // Give a warning if the host does not exist
-        try {
-            var inetAddr = java.net.InetAddress.getByName(hostname);
-            String canonical = inetAddr.getCanonicalHostName();
-            if (! hostname.equals(canonical)) {
-                deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                                   "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
+        if (doCheckIp) {
+            // Give a warning if the host does not exist
+            try {
+                var inetAddr = java.net.InetAddress.getByName(hostname);
+                String canonical = inetAddr.getCanonicalHostName();
+                if (!hostname.equals(canonical)) {
+                    deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                            "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
+                }
+            } catch (UnknownHostException e) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
             }
-        } catch (UnknownHostException e) {
-            deployLogger.logApplicationPackage(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
         }
     }
 

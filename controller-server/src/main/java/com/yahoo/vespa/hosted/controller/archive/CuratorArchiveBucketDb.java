@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.archive;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -49,7 +50,7 @@ public class CuratorArchiveBucketDb {
 
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
         if (enabled) {
-            return Optional.of(URI.create(String.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
+            return Optional.of(URI.create(Text.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
         } else {
             return Optional.empty();
         }

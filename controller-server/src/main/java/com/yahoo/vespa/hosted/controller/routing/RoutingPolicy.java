@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
@@ -132,7 +133,7 @@ public class RoutingPolicy {
 
     @Override
     public String toString() {
-        return String.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
+        return Text.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
                              id.zone().value());
     }

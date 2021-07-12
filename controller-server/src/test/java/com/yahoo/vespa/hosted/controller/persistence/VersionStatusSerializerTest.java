@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
@@ -53,12 +52,12 @@ public class VersionStatusSerializerTest {
 
     }
 
-    private static NodeVersions nodeVersions(Version version, Version wantedVersion, String... hostnames) {
+    private static List<NodeVersion> nodeVersions(Version version, Version wantedVersion, String... hostnames) {
         var nodeVersions = new ArrayList<NodeVersion>();
         for (var hostname : hostnames) {
             nodeVersions.add(new NodeVersion(HostName.from(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, Optional.empty()));
         }
-        return NodeVersions.copyOf(nodeVersions);
+        return nodeVersions;
     }
 
 }

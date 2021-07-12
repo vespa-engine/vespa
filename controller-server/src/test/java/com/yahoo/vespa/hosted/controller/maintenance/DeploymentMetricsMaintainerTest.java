@@ -50,15 +50,6 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
-        // Only get application metrics for old version
-        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("6.3.3"));
-        maintainer.maintain();
-        assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
-        assertEquals(0, deployment.get().metrics().documentCount(), 0);
-        assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
-        assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
-        assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
-
         // Metrics are gathered and saved to application
         application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.5.5"));
         var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
@@ -118,8 +109,8 @@ public class DeploymentMetricsMaintainerTest {
     @Test
     public void cluster_metric_aggregation_test() {
         List<ClusterMetrics> clusterMetrics = List.of(
-                new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0)),
-                new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0)));
+                new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0), Map.of()),
+                new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0), Map.of()));
 
         DeploymentMetrics deploymentMetrics = DeploymentMetricsMaintainer.updateDeploymentMetrics(DeploymentMetrics.none, clusterMetrics);
 
@@ -131,7 +122,7 @@ public class DeploymentMetricsMaintainerTest {
     }
 
     private void setMetrics(ApplicationId application, Map<String, Double> metrics) {
-        var clusterMetrics = new ClusterMetrics("default", "container", metrics);
+        var clusterMetrics = new ClusterMetrics("default", "container", metrics, Map.of());
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, ZoneId.from("dev", "us-east-1")), clusterMetrics);
     }
 

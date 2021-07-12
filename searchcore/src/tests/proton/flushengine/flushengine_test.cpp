@@ -117,6 +117,7 @@ public:
     search::SerialNum         _oldestSerial;
     search::SerialNum         _currentSerial;
     uint32_t                  _pendingDone;
+    uint32_t                  _taskDone;
     std::mutex                _lock;
     vespalib::CountDownLatch  _done;
     FlushDoneHistory          _flushDoneHistory;
@@ -131,6 +132,7 @@ public:
           _oldestSerial(0),
           _currentSerial(currentSerial),
           _pendingDone(0u),
+          _taskDone(0u),
           _lock(),
           _done(targets.size()),
           _flushDoneHistory()
@@ -143,6 +145,11 @@ public:
 
     std::vector<IFlushTarget::SP>
     getFlushTargets() override {
+        {
+            std::lock_guard<std::mutex> guard(_lock);
+            _pendingDone += _taskDone;
+            _taskDone = 0;
+        }
         LOG(info, "SimpleHandler(%s)::getFlushTargets()", getName().c_str());
         std::vector<IFlushTarget::SP> wrappedTargets;
         for (const auto &target : _targets) {
@@ -154,7 +161,7 @@ public:
     // Called once by flush engine thread for each task done
     void taskDone() {
         std::lock_guard<std::mutex> guard(_lock);
-        ++_pendingDone;
+        ++_taskDone;
     }
 
     // Called by flush engine master thread after flush handler is

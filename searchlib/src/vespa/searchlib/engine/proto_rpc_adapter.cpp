@@ -174,7 +174,7 @@ struct GetDocsumsCompletionHandler : DocsumClient {
 struct PingCompletionHandler : MonitorClient {
     FRT_RPCRequest &req;
     PingCompletionHandler(FRT_RPCRequest &req_in) : req(req_in) {}
-    void pingDone(MonitorReply::UP reply) override {
+    void pingDone(std::unique_ptr<MonitorReply> reply) override {
         ProtoMonitorReply msg;
         ProtoConverter::monitor_reply_to_proto(*reply, msg);
         encode_message(msg, *req.GetReturn());

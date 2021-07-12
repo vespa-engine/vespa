@@ -6,8 +6,8 @@ zooKeeperConfigFile string default="conf/zookeeper/zookeeper.cfg"
 
 # For more info about the values below, see ZooKeeper documentation
 
-# tick time in milliseconds
-tickTime int default=2000
+# tick time in milliseconds, min and max session timeout are 2 and 20 times this value
+tickTime int default=6000
 initLimit int default=20
 syncLimit int default=15
 maxClientConnections int default=0

@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "basic_value.h"
+#include <vespa/vespalib/util/stash.h>
 
-namespace vespalib {
-namespace slime {
+namespace vespalib::slime {
 
 namespace {
 
@@ -28,4 +28,3 @@ BasicDataValue::BasicDataValue(Memory m, Stash & stash)
 }
 
 } // namespace vespalib::slime
-} // namespace vespalib

@@ -403,6 +403,24 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testBitExtraction() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates(1.0, "bit(-43,7)");
+        tester.assertEvaluates(1.0, "bit(-43,6)");
+        tester.assertEvaluates(0.0, "bit(-43,5)");
+        tester.assertEvaluates(1.0, "bit(-43,4)");
+        tester.assertEvaluates(0.0, "bit(-43,3)");
+        tester.assertEvaluates(1.0, "bit(-43,2)");
+        tester.assertEvaluates(0.0, "bit(-43,1)");
+        tester.assertEvaluates(1.0, "bit(-43,0)");
+        tester.assertEvaluates(
+                "tensor<int8>(x[40]):[1,1,0,1,0,1,0,1, 0,0,0,0,0,0,0,0, 0,1,0,1,0,1,0,1, 0,1,1,1,1,1,1,1, 1,0,0,0,0,0,0,0]",
+                "tensor<int8>(x[40])(bit(tensor0{y:x / 8}, 7 - x % 8))",
+                "tensor<int8>(y[5]):[-43,0,85,127,-128]"
+        );
+    }
+
+    @Test
     public void testCellTypeCasting() {
         EvaluationTester tester = new EvaluationTester();
 

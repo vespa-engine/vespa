@@ -142,6 +142,7 @@ private:
         }
     };
 
+    friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
     // TODO refactor and rewire to avoid needing this direct meddling
     friend class DistributorStripe;

@@ -41,14 +41,6 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag DOCKER_VERSION = defineStringFlag(
-            "docker-version", "1.13.1-102.git7f2769b",
-            "The version of the docker to use of the format VERSION-REL: The YUM package to be installed will be " +
-                    "2:docker-VERSION-REL.el7.centos.x86_64 in AWS (and without '.centos' otherwise). " +
-                    "If docker-version is not of this format, it must be parseable by YumPackageName::fromString.",
-            "Takes effect on next tick.",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
             "fleet-canary", false,
             "Whether the host is a fleet canary.",
@@ -168,6 +160,27 @@ public class PermanentFlags {
             "Tenants that will not be expired from their trial plan",
             "Takes effect immediately, used by the CloudTrialExpirer maintainer",
             TENANT_ID
+    );
+
+    public static final UnboundListFlag<String> TLS_CIPHERS_OVERRIDE = defineListFlag(
+            "tls-ciphers-override", List.of(), String.class,
+            "Override TLS ciphers enabled for port 4443 on hosted application containers",
+            "Takes effect on redeployment",
+            APPLICATION_ID
+    );
+
+    public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
+            "resource-limit-disk", 0.8,
+            "Resource limit (between 0.0 and 1.0) for disk used by cluster controller for when to block feed",
+            "Takes effect on next deployment",
+            APPLICATION_ID
+    );
+
+    public static final UnboundDoubleFlag RESOURCE_LIMIT_MEMORY = defineDoubleFlag(
+            "resource-limit-memory", 0.8,
+            "Resource limit (between 0.0 and 1.0) for memory used by cluster controller for when to block feed",
+            "Takes effect on next deployment",
+            APPLICATION_ID
     );
 
     private PermanentFlags() {}

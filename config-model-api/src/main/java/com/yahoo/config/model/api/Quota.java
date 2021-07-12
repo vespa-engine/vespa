@@ -35,9 +35,9 @@ public class Quota {
     }
 
     public static Quota fromSlime(Inspector inspector) {
-        var clusterSize = SlimeUtils.optionalLong(inspector.field("clusterSize"));
+        var clusterSize = SlimeUtils.optionalInteger(inspector.field("clusterSize"));
         var budget = budgetFromSlime(inspector.field("budget"));
-        return new Quota(clusterSize.map(Long::intValue), budget, true);
+        return new Quota(clusterSize.stream().boxed().findFirst(), budget, true);
     }
 
     public Quota withBudget(BigDecimal budget) {

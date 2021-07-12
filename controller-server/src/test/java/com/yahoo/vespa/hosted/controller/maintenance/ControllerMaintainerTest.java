@@ -38,16 +38,13 @@ public class ControllerMaintainerTest {
     public void records_metric() {
         TestControllerMaintainer maintainer = new TestControllerMaintainer(tester.controller(), SystemName.main, new AtomicInteger());
         maintainer.run();
-        assertEquals(0L, consecutiveFailuresMetric());
         assertEquals(1.0, successFactorMetric(), 0.0000001);
         maintainer.success = false;
         maintainer.run();
         maintainer.run();
-        assertEquals(2L, consecutiveFailuresMetric());
         assertEquals(0.0, successFactorMetric(), 0.0000001);
         maintainer.success = true;
         maintainer.run();
-        assertEquals(0, consecutiveFailuresMetric());
         assertEquals(1.0, successFactorMetric(), 0.0000001);
     }
 

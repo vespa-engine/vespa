@@ -176,7 +176,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             target.ifPresent(t -> currentVersionObject.setString("upgradeBudget", t.upgradeBudget().toString()));
             currentVersionObject.setString("cloud", osVersion.cloud().value());
             Cursor nodesArray = currentVersionObject.setArray("nodes");
-            nodeVersions.asMap().values().forEach(nodeVersion -> {
+            nodeVersions.forEach(nodeVersion -> {
                 Cursor nodeObject = nodesArray.addObject();
                 nodeObject.setString("hostname", nodeVersion.hostname().value());
                 nodeObject.setString("environment", nodeVersion.zone().environment().value());

@@ -18,6 +18,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -106,7 +107,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (path.matches("/user/v1/tenant/{tenant}")) return listTenantRoleMembers(path.get("tenant"));
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return listApplicationRoleMembers(path.get("tenant"), path.get("application"));
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
@@ -114,7 +115,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (path.matches("/user/v1/tenant/{tenant}")) return addTenantRoleMember(path.get("tenant"), request);
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return addApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 
@@ -122,7 +123,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (path.matches("/user/v1/tenant/{tenant}")) return removeTenantRoleMember(path.get("tenant"), request);
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return removeApplicationRoleMember(path.get("tenant"), path.get("application"), request);
 
-        return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
+        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
     }
 

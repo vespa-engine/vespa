@@ -13,9 +13,6 @@ httpport       int default=0 restart
 ## Cluster name
 clustername	string default="" restart
 
-## Partition number
-partition     int default=0 restart
-
 ## Distribution key
 distributionkey int default=-1
 
@@ -175,7 +172,7 @@ index.cache.size long default=0 restart
 attribute.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 
 ## Multiple optional options for use with mmap
-search.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+search.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
@@ -277,7 +274,7 @@ summary.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO
 summary.read.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 
 ## Multiple optional options for use with mmap
-summary.read.mmap.options[] enum {MLOCK, POPULATE, HUGETLB} restart
+summary.read.mmap.options[] enum {POPULATE, HUGETLB} restart
 
 ## Advise to give to os when mapping memory.
 summary.read.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
@@ -352,9 +349,6 @@ pruneremoveddocumentsinterval double default=0.0
 ## Default value is 2 weeks (1209600 seconds).
 pruneremoveddocumentsage double default=1209600.0
 
-## Set to true to enable bucket locking via content layer
-pruneremoveddocuments.usebucketexecutor bool default=true
-
 ## Minimum size of packets to compress (0 means no compression)
 ##
 packetcompresslimit int default=1024
@@ -415,16 +409,8 @@ lidspacecompaction.removebatchblockrate double default=0.5
 ## It is considered again at the next regular interval (see above).
 lidspacecompaction.removeblockrate double default=100.0
 
-## Set to true to enable bucket locking via content layer
-## DEPRECATED and unused
-lidspacecompaction.usebucketexecutor bool default=true
-
 ## Maximum docs to move in single operation per bucket
 bucketmove.maxdocstomoveperbucket int default=1
-
-## Set to true to enable bucket locking via content layer
-## DEPRECATED and unused
-bucketmove.usebucketexecutor bool default=true
 
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.

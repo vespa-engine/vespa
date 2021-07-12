@@ -601,42 +601,42 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public void tick() throws Exception {
         synchronized (monitor) {
             boolean didWork;
-            didWork = database.doNextZooKeeperTask(databaseContext);
-            didWork |= updateMasterElectionState();
-            didWork |= handleLeadershipEdgeTransitions();
+            didWork = metricUpdater.forWork("doNextZooKeeperTask", () -> database.doNextZooKeeperTask(databaseContext));
+            didWork |= metricUpdater.forWork("updateMasterElectionState", this::updateMasterElectionState);
+            didWork |= metricUpdater.forWork("handleLeadershipEdgeTransitions", this::handleLeadershipEdgeTransitions);
             stateChangeHandler.setMaster(isMaster);
 
             if ( ! isRunning()) { return; }
             // Process zero or more getNodeState responses that we have received.
-            didWork |= stateGatherer.processResponses(this);
+            didWork |= metricUpdater.forWork("stateGatherer-processResponses", () -> stateGatherer.processResponses(this));
 
             if ( ! isRunning()) { return; }
 
             if (masterElectionHandler.isAmongNthFirst(options.stateGatherCount)) {
-                didWork |= resyncLocallyCachedState();
+                didWork |= resyncLocallyCachedState(); // Calls to metricUpdate.forWork inside method
             } else {
                 stepDownAsStateGatherer();
             }
 
             if ( ! isRunning()) { return; }
-            didWork |= systemStateBroadcaster.processResponses();
+            didWork |= metricUpdater.forWork("systemStateBroadcaster-processResponses", systemStateBroadcaster::processResponses);
             if ( ! isRunning()) { return; }
             if (isMaster) {
-                didWork |= broadcastClusterStateToEligibleNodes();
+                didWork |= metricUpdater.forWork("broadcastClusterStateToEligibleNodes", this::broadcastClusterStateToEligibleNodes);
                 systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
             }
 
             if ( ! isRunning()) { return; }
-            didWork |= processAnyPendingStatusPageRequest();
+            didWork |= metricUpdater.forWork("processAnyPendingStatusPageRequest", this::processAnyPendingStatusPageRequest);
             if ( ! isRunning()) { return; }
             if (rpcServer != null) {
-                didWork |= rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this, this);
+                didWork |= metricUpdater.forWork("handleRpcRequests", () -> rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this, this));
             }
 
             if ( ! isRunning()) { return; }
-            didWork |= processNextQueuedRemoteTask();
-            didWork |= completeSatisfiedVersionDependentTasks();
-            didWork |= maybePublishOldMetrics();
+            didWork |= metricUpdater.forWork("processNextQueuedRemoteTask", this::processNextQueuedRemoteTask);
+            didWork |= metricUpdater.forWork("completeSatisfiedVersionDependentTasks", this::completeSatisfiedVersionDependentTasks);
+            didWork |= metricUpdater.forWork("maybePublishOldMetrics", this::maybePublishOldMetrics);
 
             processingCycle = false;
             ++cycleCount;
@@ -644,9 +644,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if (tickStopTime >= tickStartTime) {
                 metricUpdater.addTickTime(tickStopTime - tickStartTime, didWork);
             }
-            if ( ! didWork && ! waitingForCycle) {
-                monitor.wait(options.cycleWaitTime);
-            }
+            // Always sleep some to use avoid using too much CPU and avoid starving waiting threads
+            monitor.wait(didWork || waitingForCycle ? 1 : options.cycleWaitTime);
             if ( ! isRunning()) { return; }
             tickStartTime = timer.getCurrentTimeInMillis();
             processingCycle = true;
@@ -659,11 +658,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
     }
 
-    private boolean updateMasterElectionState() throws InterruptedException {
+    private boolean updateMasterElectionState() {
         try {
             return masterElectionHandler.watchMasterElection(database, databaseContext);
         } catch (InterruptedException e) {
-            throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+            throw new RuntimeException(e);
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to watch master election: " + e.toString());
         }
@@ -891,23 +890,25 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
       - a node that stops normally (U -> S) then goes down erroneously triggers premature crash handling
       - long time before content node state convergence (though this seems to be the case for legacy impl as well)
      */
-    private boolean resyncLocallyCachedState() throws InterruptedException {
+    private boolean resyncLocallyCachedState() {
         boolean didWork = false;
         // Let non-master state gatherers update wanted states once in a while, so states generated and shown are close to valid.
         if ( ! isMaster && cycleCount % 100 == 0) {
-            didWork = database.loadWantedStates(databaseContext);
-            didWork |= database.loadStartTimestamps(cluster);
+            didWork = metricUpdater.forWork("loadWantedStates", () -> database.loadWantedStates(databaseContext));
+            didWork |= metricUpdater.forWork("loadStartTimestamps", () -> database.loadStartTimestamps(cluster));
         }
         // If we have new slobrok information, update our cluster.
-        didWork |= nodeLookup.updateCluster(cluster, this);
+        didWork |= metricUpdater.forWork("updateCluster", () -> nodeLookup.updateCluster(cluster, this));
 
         // Send getNodeState requests to zero or more nodes.
-        didWork |= stateGatherer.sendMessages(cluster, communicator, this);
+        didWork |= metricUpdater.forWork("sendMessages", () -> stateGatherer.sendMessages(cluster, communicator, this));
         // Important: timer events must use a state with pending changes visible, or they might
         // trigger edge events multiple times.
-        didWork |= stateChangeHandler.watchTimers(cluster, stateVersionTracker.getLatestCandidateState().getClusterState(), this);
+        didWork |= metricUpdater.forWork(
+                "watchTimers",
+                () -> stateChangeHandler.watchTimers(cluster, stateVersionTracker.getLatestCandidateState().getClusterState(), this));
 
-        didWork |= recomputeClusterStateIfRequired();
+        didWork |= metricUpdater.forWork("recomputeClusterStateIfRequired", this::recomputeClusterStateIfRequired);
 
         if ( ! isStateGatherer) {
             if ( ! isMaster) {
@@ -1070,7 +1071,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 || atFirstClusterStateSendTimeEdge();
     }
 
-    private boolean handleLeadershipEdgeTransitions() throws InterruptedException {
+    private boolean handleLeadershipEdgeTransitions() {
         boolean didWork = false;
         if (masterElectionHandler.isMaster()) {
             if ( ! isMaster) {

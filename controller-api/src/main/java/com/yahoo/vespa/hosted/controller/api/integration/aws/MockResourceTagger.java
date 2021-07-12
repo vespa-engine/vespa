@@ -15,15 +15,15 @@ import java.util.Optional;
  */
 public class MockResourceTagger implements ResourceTagger {
 
-    Map<ZoneId, Map<HostName, Optional<ApplicationId>>> values = new HashMap<>();
+    Map<ZoneId, Map<HostName, ApplicationId>> values = new HashMap<>();
 
     @Override
-    public int tagResources(ZoneApi zone, Map<HostName, Optional<ApplicationId>> ownerOfHosts) {
+    public int tagResources(ZoneApi zone, Map<HostName, ApplicationId> ownerOfHosts) {
         values.put(zone.getId(), ownerOfHosts);
         return 0;
     }
 
-    public Map<ZoneId, Map<HostName, Optional<ApplicationId>>> getValues() {
+    public Map<ZoneId, Map<HostName, ApplicationId>> getValues() {
         return values;
     }
 }

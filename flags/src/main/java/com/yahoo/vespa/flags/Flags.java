@@ -73,7 +73,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag SKIP_COMMUNICATIONMANAGER_THREAD = defineFeatureFlag(
-            "skip-communicatiomanager-thread", false,
+            "skip-communicationmanager-thread", false,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
             "Should we skip the communicationmanager thread",
             "Takes effect at redeployment",
@@ -132,16 +132,10 @@ public class Flags {
 
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
-            List.of("hakon"), "2021-01-22", "2021-06-22",
+            List.of("hakon"), "2021-01-22", "2021-08-22",
             "Allow all content nodes in a hierarchical group to suspend at the same time",
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
-            "encrypt-disk", false,
-            List.of("hakonhall"), "2021-05-05", "2021-08-05",
-            "Allow migrating an unencrypted data partition to being encrypted.",
-            "Takes effect on next host-admin tick.");
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
@@ -151,14 +145,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2021-07-01",
+            List.of("geirst"), "2021-01-27", "2021-09-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "metrics-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-01", "2021-07-01",
+            List.of("hmusum"), "2021-03-01", "2021-07-15",
             "JVM max heap size for metrics proxy in Mb",
             "Takes effect when restarting metrics proxy",
             CLUSTER_TYPE);
@@ -184,7 +178,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2021-07-01",
+            List.of("vekterli"), "2021-02-19", "2021-09-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -199,42 +193,42 @@ public class Flags {
 
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
-            List.of("geirst", "vekterli"), "2021-04-20", "2021-07-01",
+            List.of("geirst", "vekterli"), "2021-04-20", "2021-09-01",
             "Specifies the number of stripes used by the distributor. When 0, legacy single stripe behavior is used.",
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
             "max-concurrent-merges-per-node", 16,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2021-09-01",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
             "max-merge-queue-size", 1024,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-08-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2021-09-01",
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "use-external-rank-expression", false,
-            List.of("baldersheim"), "2021-05-24", "2021-07-01",
+            List.of("baldersheim"), "2021-05-24", "2021-09-01",
             "Whether to use distributed external rank expression or inline in rankproperties",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISTRIBUTE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "distribute-external-rank-expression", false,
-            List.of("baldersheim"), "2021-05-27", "2021-07-01",
+            List.of("baldersheim"), "2021-05-27", "2021-09-01",
             "Whether to use distributed external rank expression files by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 0x10000,
-            List.of("baldersheim"), "2021-06-09", "2021-07-01",
+            List.of("baldersheim"), "2021-06-09", "2021-09-01",
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -260,7 +254,7 @@ public class Flags {
             "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
 
     public static final UnboundBooleanFlag REQUIRE_CONNECTIVITY_CHECK = defineFeatureFlag(
-            "require-connectivity-check", false,
+            "require-connectivity-check", true,
             List.of("arnej"), "2021-06-03", "2021-09-01",
             "Require that config-sentinel connectivity check passes with good quality before starting services",
             "Takes effect on next restart",
@@ -273,18 +267,30 @@ public class Flags {
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag MOVE_SEARCH_DEFINITIONS_TO_SCHEMAS_DIR = defineFeatureFlag(
-            "move-search-definitions-to-schemas-dir", false,
-            List.of("hmusum"), "2021-06-09", "2021-08-09",
-            "Whether to move files in searchdefinitions/ to schemas/ when deploying an application",
-            "Takes effect on next deployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING = defineFeatureFlag(
             "load-local-sessions-when-bootstrapping", true,
-            List.of("hmusum"), "2021-06-15", "2021-07-15",
+            List.of("hmusum"), "2021-06-15", "2021-08-15",
             "Whether to load local sessions when bootstrapping config server",
             "Takes effect on restart of config server");
+
+    public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
+            "dry-run-onnx-on-setup", false,
+            List.of("baldersheim"), "2021-06-23", "2021-09-01",
+            "Whether to dry run onnx models on setup for better error checking",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
+            "defer-application-encryption", List.of(), String.class,
+            List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
+            "List of applications where encryption of their host should be deferred",
+            "Takes effect on next run of HostEncrypter");
+
+    public static final UnboundBooleanFlag PODMAN3 = defineFeatureFlag(
+            "podman3", false,
+            List.of("mpolden"), "2021-07-05", "2021-09-01",
+            "Whether to use Podman 3 on supported hosts",
+            "Takes effect on host-admin restart");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

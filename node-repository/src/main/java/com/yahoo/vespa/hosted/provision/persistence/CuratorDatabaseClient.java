@@ -498,9 +498,15 @@ public class CuratorDatabaseClient {
             for (var lb : loadBalancers) {
                 if (lb.state() == fromState) continue;
                 if (fromState == null) {
-                    log.log(Level.INFO, () -> "Creating " + lb.id() + " in " + lb.state());
+                    log.log(Level.INFO, () -> "Creating " + lb.id() + lb.instance()
+                                                                        .map(instance -> " (" +  instance.hostname() + ")")
+                                                                        .orElse("") +
+                                              " in " + lb.state());
                 } else {
-                    log.log(Level.INFO, () -> "Moving " + lb.id() + " from " + fromState +
+                    log.log(Level.INFO, () -> "Moving " + lb.id() + lb.instance()
+                                                                      .map(instance -> " (" +  instance.hostname() + ")")
+                                                                      .orElse("") +
+                                              " from " + fromState +
                                               " to " + lb.state());
                 }
             }

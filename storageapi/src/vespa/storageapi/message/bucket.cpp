@@ -493,6 +493,8 @@ RequestBucketInfoCommand::print(std::ostream& out, bool verbose,
     if (hasSystemState()) {
         out << "distributor " << _distributor << " in ";
         _state->print(out, verbose, indent + "  ");
+    } else if (super_bucket_id().isSet()) {
+        out << ", super bucket " << super_bucket_id() << ". ";
     }
     if (verbose && !_buckets.empty()) {
         out << "\n" << indent << "  Specified buckets:\n" << indent << "    ";
@@ -529,6 +531,8 @@ RequestBucketInfoReply::print(std::ostream& out, bool verbose,
     out << "RequestBucketInfoReply(" << _buckets.size();
     if (_full_bucket_fetch) {
         out << ", full fetch";
+    } else if (super_bucket_id().isSet()) {
+        out << ", super bucket " << super_bucket_id();
     }
     if (verbose) {
         out << "\n" << indent << "  ";

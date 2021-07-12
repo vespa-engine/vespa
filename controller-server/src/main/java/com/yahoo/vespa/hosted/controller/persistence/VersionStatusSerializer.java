@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
+import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -84,7 +84,7 @@ public class VersionStatusSerializer {
         nodeVersionsToSlime(version.nodeVersions(), object.setArray(nodeVersionsField));
     }
 
-    private void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
+    private void nodeVersionsToSlime(List<NodeVersion> nodeVersions, Cursor array) {
         nodeVersionSerializer.nodeVersionsToSlime(nodeVersions, array);
     }
 
@@ -106,21 +106,13 @@ public class VersionStatusSerializer {
         var version = Version.fromString(object.field(deploymentStatisticsField).field(versionField).asString());
         return new VespaVersion(version,
                                 object.field(releaseCommitField).asString(),
-                                Serializers.instant(object.field(committedAtField)),
+                                SlimeUtils.instant(object.field(committedAtField)),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),
                                 nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), version),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
-    }
-
-    private List<ApplicationId> applicationsFromSlime(Inspector array) {
-        List<ApplicationId> applications = new ArrayList<>();
-        array.traverse((ArrayTraverser) (i, entry) -> applications.add(
-                ApplicationId.fromSerializedForm(entry.asString()))
-        );
-        return Collections.unmodifiableList(applications);
     }
 
 }

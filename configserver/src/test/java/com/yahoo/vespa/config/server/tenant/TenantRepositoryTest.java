@@ -191,7 +191,6 @@ public class TenantRepositoryTest {
     public void testFailingBootstrap() {
         tenantRepository.close(); // stop using the one setup in Before method
 
-        // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
         new FailingDuringBootstrapTenantRepository(configserverConfig);
@@ -213,7 +212,7 @@ public class TenantRepositoryTest {
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
+                  new FileDistributionFactory(configserverConfig),
                   new InMemoryFlagSource(),
                   new InThreadExecutorService(),
                   new MockSecretStore(),

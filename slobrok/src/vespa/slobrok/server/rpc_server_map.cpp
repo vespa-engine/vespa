@@ -6,7 +6,7 @@
 #include "sbenv.h"
 
 #include <vespa/log/log.h>
-LOG_SETUP(".rpcsrvmap");
+LOG_SETUP(".slobrok.server.rpc_server_map");
 
 namespace slobrok {
 
@@ -67,9 +67,7 @@ RpcServerMap::add(NamedService *rpcsrv)
     LOG_ASSERT(_myrpcsrv_map.find(name) == _myrpcsrv_map.end());
 
     removeReservation(name);
-
-    LOG_ASSERT(_visible_map.lookup(name) == nullptr);
-    _visible_map.addNew(rpcsrv);
+    _visible_map.update(ServiceMapping{name, rpcsrv->getSpec()});
 }
 
 void
@@ -82,7 +80,7 @@ RpcServerMap::addNew(std::unique_ptr<ManagedRpcServer> rpcsrv)
 
     if (oldman) {
         const ReservedName *oldres = _reservations[name].get();
-        const NamedService *oldvis = _visible_map.remove(name);
+        _visible_map.remove(name);
 
         const std::string &spec = rpcsrv->getSpec();
         const std::string &oldname = oldman->getName();
@@ -90,11 +88,6 @@ RpcServerMap::addNew(std::unique_ptr<ManagedRpcServer> rpcsrv)
         if (spec != oldspec)  {
             LOG(warning, "internal state problem: adding [%s at %s] but already had [%s at %s]",
                 name.c_str(), spec.c_str(), oldname.c_str(), oldspec.c_str());
-            if (oldvis != oldman.get()) {
-                const std::string &n = oldvis->getName();
-                const std::string &s = oldvis->getSpec();
-                LOG(warning, "BAD: different old visible: [%s at %s]", n.c_str(), s.c_str());
-            }
             if (oldres != nullptr) {
                 const std::string &n = oldres->getName();
                 const std::string &s = oldres->getSpec();

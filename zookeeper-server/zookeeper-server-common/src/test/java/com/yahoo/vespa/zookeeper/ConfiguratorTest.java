@@ -70,6 +70,7 @@ public class ConfiguratorTest {
         builder.server(newServer(2, "baz", 345, 543, true));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
+        builder.tickTime(1234);
         new Configurator(builder.build()).writeConfigToDisk(VespaTlsConfig.tlsDisabled());
         validateConfigFileMultipleHosts(cfgFile);
         validateIdFile(idFile, "1\n");
@@ -127,6 +128,7 @@ public class ConfiguratorTest {
         builder.myidFile(idFile.getAbsolutePath());
         builder.server(newServer(0, "foo", 123, 321, false));
         builder.myid(0);
+        builder.tickTime(1234);
         return builder;
     }
 
@@ -146,7 +148,7 @@ public class ConfiguratorTest {
     }
 
     private String commonConfig() {
-        return "tickTime=2000\n" +
+        return "tickTime=1234\n" +
                "initLimit=20\n" +
                "syncLimit=15\n" +
                "maxClientCnxns=0\n" +

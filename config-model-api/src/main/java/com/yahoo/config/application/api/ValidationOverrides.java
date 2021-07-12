@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -33,9 +32,6 @@ import java.util.stream.Collectors;
 public class ValidationOverrides {
 
     public static final ValidationOverrides empty = new ValidationOverrides(ImmutableList.of(), "<validation-overrides/>");
-
-    /** A special instance which behaves as if it contained a valid allow override for every (valid) validation id */
-    public static final ValidationOverrides all = new AllowAllValidationOverrides();
 
     private final List<Allow> overrides;
 
@@ -74,10 +70,18 @@ public class ValidationOverrides {
     /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
     public boolean allows(ValidationId validationId, Instant now) {
         for (Allow override : overrides) {
-            if (now.plus(Duration.ofDays(30)).isBefore(override.until))
-                throw new IllegalArgumentException(override + " is too far in the future: Max 30 days is allowed");
             if (override.allows(validationId, now))
                 return true;
+        }
+        return false;
+    }
+
+    /** Validates overrides (checks 'until' date') */
+    public boolean validate(Instant now) {
+        for (Allow override : overrides) {
+            if (now.plus(Duration.ofDays(30)).isBefore(override.until))
+                throw new IllegalArgumentException("validation-overrides is invalid: " + override +
+                                                   " is too far in the future: Max 30 days is allowed");
         }
         return false;
     }
@@ -116,23 +120,18 @@ public class ValidationOverrides {
     public static ValidationOverrides fromXml(String xmlForm) {
         if ( xmlForm.isEmpty()) return ValidationOverrides.empty;
 
-        try {
-            // Assume valid structure is ensured by schema validation
-            Element root = XML.getDocument(xmlForm).getDocumentElement();
-            List<ValidationOverrides.Allow> overrides = new ArrayList<>();
-            for (Element allow : XML.getChildren(root, "allow")) {
-                Instant until = LocalDate.parse(allow.getAttribute("until"), DateTimeFormatter.ISO_DATE)
-                        .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
-                        .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
-                Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
-                // skip unknown ids as they may be valid for other model versions
-                validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
-            }
-            return new ValidationOverrides(overrides, xmlForm);
+        // Assume valid structure is ensured by schema validation
+        Element root = XML.getDocument(xmlForm).getDocumentElement();
+        List<ValidationOverrides.Allow> overrides = new ArrayList<>();
+        for (Element allow : XML.getChildren(root, "allow")) {
+            Instant until = LocalDate.parse(allow.getAttribute("until"), DateTimeFormatter.ISO_DATE)
+                                     .atStartOfDay().atZone(ZoneOffset.UTC).toInstant()
+                                     .plus(Duration.ofDays(1)); // Make the override valid *on* the "until" date
+            Optional<ValidationId> validationId = ValidationId.from(XML.getValue(allow));
+            // skip unknown ids as they may be valid for other model versions
+            validationId.ifPresent(id -> overrides.add(new Allow(id, until)));
         }
-        catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("validation-overrides is invalid", e);
-        }
+        return new ValidationOverrides(overrides, xmlForm);
     }
 
     /** A validation override which allows a particular change. Immutable. */
@@ -174,46 +173,6 @@ public class ValidationOverrides {
                                                toAllowMessage(messages.getKey()))
                               .collect(Collectors.joining("\n")));
         }
-
-    }
-
-    // TODO: Remove this class after June 2021
-    public static class AllowAllValidationOverrides extends ValidationOverrides {
-
-        private final DeployLogger logger;
-        private final ValidationOverrides wrapped;
-
-        /** Create an instance of this which doesn't log */
-        public AllowAllValidationOverrides() {
-            this(null, null);
-        }
-
-        /** Creates an instance of this which logs what is allows to the given deploy logger */
-        public AllowAllValidationOverrides(ValidationOverrides wrapped, DeployLogger logger) {
-            super(List.of());
-            this.wrapped = wrapped;
-            this.logger = logger;
-        }
-
-        @Override
-        public void invalid(ValidationId validationId, String message, Instant now) {
-            // Log if would otherwise be invalid
-            if (wrapped != null && logger != null && ! wrapped.allows(validationId, now))
-                logger.log(Level.WARNING, "Possibly destructive change '" + validationId + "' allowed");
-        }
-
-        /** Returns whether the given (assumed invalid) change is allowed by this at the moment */
-        @Override
-        public boolean allows(ValidationId validationId, Instant now) {
-            return true;
-        }
-
-        /** Returns the XML form of this, or null if it was not created by fromXml, nor is empty */
-        @Override
-        public String xmlForm() { return null; }
-
-        @Override
-        public String toString() { return "(A validation override which allows everything)"; }
 
     }
 

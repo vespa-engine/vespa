@@ -14,7 +14,6 @@ DocsumRequest::DocsumRequest(bool useRootSlime_)
 
 DocsumRequest::DocsumRequest(RelativeTime relativeTime, bool useRootSlime_)
     : Request(std::move(relativeTime)),
-      _flags(0u),
       resultClassName(),
       _useRootSlime(useRootSlime_),
       hits()

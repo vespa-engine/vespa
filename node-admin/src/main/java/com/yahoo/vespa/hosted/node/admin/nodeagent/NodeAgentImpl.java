@@ -10,11 +10,6 @@ import com.yahoo.vespa.flags.DoubleFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
-import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
-import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -22,8 +17,11 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
-import com.yahoo.vespa.hosted.node.admin.docker.RegistryCredentialsProvider;
+import com.yahoo.vespa.hosted.node.admin.container.Container;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
+import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
@@ -265,7 +263,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<String> shouldRestartServices( NodeAgentContext context, Container existingContainer) {
         NodeSpec node = context.node();
-        if (!existingContainer.state.isRunning() || node.state() != NodeState.active) return Optional.empty();
+        if (!existingContainer.state().isRunning() || node.state() != NodeState.active) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
         if (currentRestartGeneration.get() < node.wantedRestartGeneration().get()) {
@@ -284,13 +282,9 @@ public class NodeAgentImpl implements NodeAgent {
     private void stopServices(NodeAgentContext context) {
         context.log(logger, "Stopping services");
         if (containerState == ABSENT) return;
-        try {
-            hasStartedServices = hasResumedNode = false;
-            firstSuccessfulHealthCheckInstant = Optional.empty();
-            containerOperations.stopServices(context);
-        } catch (ContainerNotFoundException e) {
-            containerState = ABSENT;
-        }
+        hasStartedServices = hasResumedNode = false;
+        firstSuccessfulHealthCheckInstant = Optional.empty();
+        containerOperations.stopServices(context);
     }
 
     @Override
@@ -307,8 +301,6 @@ public class NodeAgentImpl implements NodeAgent {
             if (!output.isBlank()) {
                 context.log(logger, "Suspend services output: " + output);
             }
-        } catch (ContainerNotFoundException e) {
-            containerState = ABSENT;
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
@@ -323,12 +315,12 @@ public class NodeAgentImpl implements NodeAgent {
             reasons.add("Node in state " + nodeState + ", container should no longer be running");
 
         if (context.node().wantedDockerImage().isPresent() &&
-                !context.node().wantedDockerImage().get().equals(existingContainer.image)) {
+                !context.node().wantedDockerImage().get().equals(existingContainer.image())) {
             reasons.add("The node is supposed to run a new Docker image: "
-                    + existingContainer.image.asString() + " -> " + context.node().wantedDockerImage().get().asString());
+                        + existingContainer.image().asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
 
-        if (!existingContainer.state.isRunning())
+        if (!existingContainer.state().isRunning())
             reasons.add("Container no longer running");
 
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
@@ -337,9 +329,9 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         ContainerResources wantedContainerResources = getContainerResources(context);
-        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
+        if (!wantedContainerResources.equalsMemory(existingContainer.resources())) {
             reasons.add("Container should be running with different memory allocation, wanted: " +
-                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+                        wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources().toStringMemory());
         }
 
         if (containerState == STARTING)
@@ -351,7 +343,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void removeContainer(NodeAgentContext context, Container existingContainer, List<String> reasons, boolean alreadySuspended) {
         context.log(logger, "Will remove container: " + String.join(", ", reasons));
 
-        if (existingContainer.state.isRunning()) {
+        if (existingContainer.state().isRunning()) {
             if (!alreadySuspended) {
                 orchestratorSuspendNode(context);
             }
@@ -381,12 +373,12 @@ public class NodeAgentImpl implements NodeAgent {
                 .orElse(true))
             return existingContainer;
 
-        if (wantedContainerResources.equalsCpu(existingContainer.resources)) return existingContainer;
+        if (wantedContainerResources.equalsCpu(existingContainer.resources())) return existingContainer;
         context.log(logger, "Container should be running with different CPU allocation, wanted: %s, current: %s",
-                wantedContainerResources.toStringCpu(), existingContainer.resources.toStringCpu());
+                    wantedContainerResources.toStringCpu(), existingContainer.resources().toStringCpu());
 
         // Only update CPU resources
-        containerOperations.updateContainer(context, existingContainer.id(), wantedContainerResources.withMemoryBytes(existingContainer.resources.memoryBytes()));
+        containerOperations.updateContainer(context, existingContainer.id(), wantedContainerResources.withMemoryBytes(existingContainer.resources().memoryBytes()));
         return containerOperations.getContainer(context).orElseThrow(() ->
                 new ConvergenceException("Did not find container that was just updated"));
     }
@@ -410,7 +402,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private boolean downloadImageIfNeeded(NodeAgentContext context, Optional<Container> container) {
         NodeSpec node = context.node();
-        if (node.wantedDockerImage().equals(container.map(c -> c.image))) return false;
+        if (node.wantedDockerImage().equals(container.map(c -> c.image()))) return false;
 
         RegistryCredentials credentials = registryCredentialsProvider.get();
         return node.wantedDockerImage()
@@ -424,12 +416,6 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, Level.INFO, "Converged");
         } catch (ConvergenceException e) {
             context.log(logger, e.getMessage());
-        } catch (ContainerNotFoundException e) {
-            containerState = ABSENT;
-            context.log(logger, Level.WARNING, "Container unexpectedly gone, resetting containerState to " + containerState);
-        } catch (DockerException e) {
-            numberOfUnhandledException++;
-            context.log(logger, Level.SEVERE, "Caught a DockerException", e);
         } catch (Throwable e) {
             numberOfUnhandledException++;
             context.log(logger, Level.SEVERE, "Unhandled exception, ignoring", e);
@@ -494,7 +480,7 @@ public class NodeAgentImpl implements NodeAgent {
                         firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
 
                     Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context)));
-                    if (!container.get().resources.equalsCpu(getContainerResources(context)))
+                    if (!container.get().resources().equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }

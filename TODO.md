@@ -17,6 +17,8 @@ bundles of parameters accessible to Searchers processing queries. Writes go thro
 Document Processors, but have no equivalent support for parametrization. This is to allow configuration of document 
 processor profiles by reusing the query profile support also for document processors.
 
+See [slack discussion](https://vespatalk.slack.com/archives/C01QNBPPNT1/p1624176344102300) for more details.
+
 **Code pointers:**
 - [Query profiles](https://github.com/vespa-engine/vespa/blob/master/container-search/src/main/java/com/yahoo/search/query/profile/QueryProfile.java)
 - [Document processors](https://github.com/vespa-engine/vespa/blob/master/docproc/src/main/java/com/yahoo/docproc/DocumentProcessor.java)
@@ -97,3 +99,59 @@ model updates.
 
 **Code pointers:**
 - Tensor modify operation (for document tensors): [Java](https://github.com/vespa-engine/vespa/blob/master/document/src/main/java/com/yahoo/document/update/TensorModifyUpdate.java), [C++](https://github.com/vespa-engine/vespa/blob/master/document/src/vespa/document/update/tensor_modify_update.h)
+
+
+## Feed clients in different languages
+
+**Effort:** Low<br/>
+**Difficulty:** Low<br/>
+**Skills:** Knowledge of a decent HTTP/2 library in some language
+
+/document/v1 is a RESTified HTTP API which exposes the Vespa Document API to the
+outside of the application's Java containers. The design of this API is simple,
+with each operation modelled as a single HTTP request, and its result as
+a single HTTP response. While it was previously not possible to achieve comparable
+throughput using this API to what the undocumented, custom-protocol /feedapi offered,
+this changed with HTTP/2 support in Vespa. The clean design of /document/v1 makes it
+easy to interface with from any language and runtime that support HTTP/2.
+An implementation currently only exists for Java, and requires a JDK8+ runtime,
+and implementations in other languages are very welcome. The below psuedo-code could
+be a starting point for an asynchronous implementation with futures and promises.
+
+Let `http` be an asynchronous HTTP/2 client, which returns a `future` for each request.
+A `future` will complete some time in the future, at which point dependent computations
+will trigger, depending on the result of the operation. A `future` is obtained from a
+`promise`, and completes when the `promise` is completed. An efficient feed client is then:
+
+```
+inflight = map<document_id, promise>()
+
+func dispatch(operation: request, result: promise, attempt: int): void
+    http.send(operation).when_complete(response => handle(operation, response, result, attempt))
+
+func handle(operation: request, response: response, result: promise, attempt: int): void
+    if retry(response, attempt):
+        dispatch(operation, result, attempt + 1)
+    else:
+        result.complete(response)
+
+func enqueue(operation): future
+    result_promise = promise()
+    result = result_promise.get_future()
+    previous = inflight.put(document.id, result)  # store `result` under `id` and obtain previous mapping
+    if previous == NIL:
+        while inflight.size >= max_inflight(): wait()
+        dispatch(operation, result, 1)
+    else:
+        previous.when_complete(ignored => dispatch(operation, result, 1))
+    result.when_complete(ignored => inflight.remove_value(result)) # remove mapping unless it has been replaced
+    return result
+```
+
+Apply synchronization as necessary. The `inflight` map is used to serialise multiple operations
+to the same document id: the mapped entry for each id is the tail of a linked queue where new
+dependents may be added, while the queue is emptied from the head one entry at a time, whenever
+a dependency (`previous`) completes computation. `enqueue` blocks until there is room in the client.
+
+**Code pointers:**
+- [Java feed client](https://github.com/vespa-engine/vespa/blob/master/vespa-feed-client/src/main/java/ai/vespa/feed/client/FeedClient.java)
