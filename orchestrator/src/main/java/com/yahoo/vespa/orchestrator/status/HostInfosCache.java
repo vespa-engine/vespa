@@ -1,6 +1,7 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status;
 
+import com.yahoo.path.Path;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author hakonhall
  */
 public class HostInfosCache implements HostInfosService {
-    final static String HOST_STATUS_CACHE_COUNTER_PATH = "/vespa/host-status-service-cache-counter";
+    final static Path HOST_STATUS_CACHE_COUNTER_PATH = Path.fromString("/vespa/host-status-service-cache-counter");
 
     private final CuratorCounter counter;
     private final HostInfosService wrappedService;

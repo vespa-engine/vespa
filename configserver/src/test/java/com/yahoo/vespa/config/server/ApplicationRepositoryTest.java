@@ -21,6 +21,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
@@ -43,7 +44,6 @@ import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -104,7 +104,6 @@ public class ApplicationRepositoryTest {
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
-    private ConfigCurator configCurator;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -115,7 +114,6 @@ public class ApplicationRepositoryTest {
     @Before
     public void setup() throws IOException {
         curator = new MockCurator();
-        configCurator = ConfigCurator.create(curator);
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
@@ -331,8 +329,8 @@ public class ApplicationRepositoryTest {
             assertNotNull(applicationData.getApplicationId());
             assertNotNull(sessionRepository.getLocalSession(sessionId));
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
-            String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
-            assertTrue(configCurator.exists(sessionNode));
+            Path sessionNode = sessionRepository.getSessionPath(sessionId);
+            assertTrue(curator.exists(sessionNode));
             TenantFileSystemDirs tenantFileSystemDirs = tenant.getApplicationRepo().getTenantFileSystemDirs();
             File sessionFile = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
             assertTrue(sessionFile.exists());
@@ -344,8 +342,8 @@ public class ApplicationRepositoryTest {
             assertTrue(provisioner.removed());
             assertEquals(tenant.getName(), provisioner.lastApplicationId().tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId());
-            assertTrue(configCurator.exists(sessionNode));
-            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
+            assertTrue(curator.exists(sessionNode));
+            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertTrue(sessionFile.exists());
 
             assertFalse(applicationRepository.delete(applicationId()));
@@ -395,8 +393,8 @@ public class ApplicationRepositoryTest {
             assertTrue(applicationRepository.delete(applicationId()));
 
             // Session should be in state DELETE
-            String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
-            assertEquals(Session.Status.DELETE.name(), configCurator.getData(sessionNode + "/sessionState"));
+            Path sessionNode = sessionRepository.getSessionPath(sessionId);
+            assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertNotNull(sessionRepository.getRemoteSession(sessionId)); // session still exists
             assertNull(applicationRepository.getActiveSession(applicationId())); // but it is not active
             try {
@@ -472,7 +470,6 @@ public class ApplicationRepositoryTest {
                                                       sessionId,
                                                       FilesApplicationPackage.fromFile(testApp),
                                                       new SessionZooKeeperClient(curator,
-                                                                                 configCurator,
                                                                                  tenant1,
                                                                                  sessionId,
                                                                                  ConfigUtils.getCanonicalHostName()));

@@ -12,11 +12,11 @@ import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.reader.NamedReader;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -27,12 +27,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.yahoo.config.application.api.ApplicationPackage.*;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.DEFCONFIGS_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.META_ZK_PATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USERAPP_ZK_SUBPATH;
-import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
 
 /**
  * Reads and writes application package to and from ZooKeeper.
@@ -41,14 +42,14 @@ import static com.yahoo.vespa.config.server.zookeeper.ConfigCurator.USER_DEFCONF
  */
 public class ZooKeeperClient {
 
-    private final ConfigCurator configCurator;
+    private final Curator curator;
     private final DeployLogger logger;
     private final Path sessionPath; // session id
 
     private static final ApplicationFile.PathFilter xmlFilter = path -> path.getName().endsWith(".xml");
 
-    public ZooKeeperClient(ConfigCurator configCurator, DeployLogger logger, Path sessionPath) {
-        this.configCurator = configCurator;
+    public ZooKeeperClient(Curator curator, DeployLogger logger, Path sessionPath) {
+        this.curator = curator;
         this.logger = logger;
         this.sessionPath = sessionPath;
     }
@@ -58,16 +59,14 @@ public class ZooKeeperClient {
      * This is the first operation on ZK during deploy.
      */
     void initialize() {
-        if ( ! configCurator.exists(sessionPath.getAbsolute()))
-            configCurator.createNode(sessionPath.getAbsolute());
+        curator.create(sessionPath);
 
         for (String subPath : Arrays.asList(DEFCONFIGS_ZK_SUBPATH,
                                             USER_DEFCONFIGS_ZK_SUBPATH,
                                             USERAPP_ZK_SUBPATH,
                                             ZKApplicationPackage.fileRegistryNode)) {
             // TODO: The replaceFirst below is hackish.
-            configCurator.createNode(getZooKeeperAppPath().getAbsolute(),
-                                     subPath.replaceFirst("/", ""));
+            curator.create(getZooKeeperAppPath().append(subPath.replaceFirst("/", "")));
         }
     }
 
@@ -95,12 +94,12 @@ public class ZooKeeperClient {
         if (sds.isEmpty()) return;
 
         Path zkPath = getZooKeeperAppPath(USERAPP_ZK_SUBPATH).append(SCHEMAS_DIR);
-        configCurator.createNode(zkPath.getAbsolute());
+        curator.create(zkPath);
         // Ensures that ranking expressions and other files are also written
         writeDir(app.getFile(ApplicationPackage.SEARCH_DEFINITIONS_DIR), zkPath, false);
         writeDir(app.getFile(ApplicationPackage.SCHEMAS_DIR), zkPath, false);
         for (NamedReader sd : sds) {
-            configCurator.putData(zkPath.getAbsolute(), sd.getName(), com.yahoo.io.IOUtils.readAll(sd.getReader()));
+            curator.set(zkPath.append(sd.getName()), Utf8.toBytes(com.yahoo.io.IOUtils.readAll(sd.getReader())));
             sd.getReader().close();
         }
     }
@@ -154,7 +153,7 @@ public class ZooKeeperClient {
             String name = file.getPath().getName();
             if (name.startsWith(".")) continue; //.svn , .git ...
             if (file.isDirectory()) {
-                configCurator.createNode(path.append(name).getAbsolute());
+                curator.create(path.append(name));
                 if (recurse) {
                     writeDir(file, path.append(name), filenameFilter, recurse);
                 }
@@ -192,7 +191,7 @@ public class ZooKeeperClient {
         try (InputStream inputStream = file.createInputStream()) {
             inputStream.transferTo(baos);
             baos.flush();
-            configCurator.putData(zkPath.append(file.getPath().getName()).getAbsolute(), baos.toByteArray());
+            curator.set(zkPath.append(file.getPath().getName()), baos.toByteArray());
         }
     }
 
@@ -201,7 +200,7 @@ public class ZooKeeperClient {
             ApplicationFile dir = applicationPackage.getFile(Path.fromString(userInclude));
             final List<ApplicationFile> files = dir.listFiles();
             if (files == null || files.isEmpty()) {
-                configCurator.createNode(getZooKeeperAppPath(USERAPP_ZK_SUBPATH + "/" + userInclude).getAbsolute());
+                curator.create(getZooKeeperAppPath(USERAPP_ZK_SUBPATH + "/" + userInclude));
             }
             writeDir(dir,
                      getZooKeeperAppPath(USERAPP_ZK_SUBPATH + "/" + userInclude),
@@ -218,21 +217,20 @@ public class ZooKeeperClient {
         for (Map.Entry<ConfigDefinitionKey, UnparsedConfigDefinition> entry : configDefs.entrySet()) {
             ConfigDefinitionKey key = entry.getKey();
             String contents = entry.getValue().getUnparsedContent();
-            writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
-            writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
+            writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(USER_DEFCONFIGS_ZK_SUBPATH), contents);
+            writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(DEFCONFIGS_ZK_SUBPATH), contents);
         }
         logger.log(Level.FINE, configDefs.size() + " user config definitions");
     }
 
-    private void writeConfigDefinition(String name, String namespace, String path, String data) {
-        configCurator.putDefData(namespace + "." + name, path, com.yahoo.text.Utf8.toBytes(data));
+    private void writeConfigDefinition(String name, String namespace, Path path, String data) {
+        curator.set(path.append(namespace + "." + name), Utf8.toBytes(data));
     }
 
     private void write(Version vespaVersion, FileRegistry fileRegistry) {
         String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
-        configCurator.putData(getZooKeeperAppPath(ZKApplicationPackage.fileRegistryNode).getAbsolute(),
-                              vespaVersion.toFullString(),
-                              exportedRegistry);
+        curator.set(getZooKeeperAppPath(ZKApplicationPackage.fileRegistryNode).append(vespaVersion.toFullString()),
+                    Utf8.toBytes(exportedRegistry));
     }
 
     /**
@@ -242,13 +240,13 @@ public class ZooKeeperClient {
      * @param metaData The application metadata.
      */
     private void writeMetadata(ApplicationMetaData metaData) {
-        configCurator.putData(getZooKeeperAppPath(META_ZK_PATH).getAbsolute(), metaData.asJsonBytes());
+        curator.set(getZooKeeperAppPath(META_ZK_PATH), metaData.asJsonBytes());
     }
 
     void cleanupZooKeeper() {
         try {
             List.of(DEFCONFIGS_ZK_SUBPATH, USER_DEFCONFIGS_ZK_SUBPATH, USERAPP_ZK_SUBPATH)
-                .forEach(path -> configCurator.deleteRecurse(getZooKeeperAppPath(path).getAbsolute()));
+                .forEach(path -> curator.delete(getZooKeeperAppPath(path)));
         } catch (Exception e) {
             logger.log(Level.WARNING, "Could not clean up in zookeeper: " + Exceptions.toMessageString(e));
             //Might be called in an exception handler before re-throw, so do not throw here.
@@ -277,8 +275,8 @@ public class ZooKeeperClient {
     }
 
     public void write(AllocatedHosts hosts) throws IOException {
-        configCurator.putData(sessionPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(),
-                              AllocatedHostsSerializer.toJson(hosts));
+        curator.set(sessionPath.append(ZKApplicationPackage.allocatedHostsNode),
+                    AllocatedHostsSerializer.toJson(hosts));
     }
 
     public void write(Map<Version, FileRegistry> fileRegistryMap) {

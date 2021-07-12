@@ -37,8 +37,8 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -114,7 +114,6 @@ public class SessionRepository {
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
-    private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
@@ -123,11 +122,12 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
+    private final int maxNodeSize;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
-                             ConfigCurator configCurator,
+                             Curator curator,
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
                              PermanentApplicationPackage permanentApplicationPackage,
@@ -140,13 +140,13 @@ public class SessionRepository {
                              Zone zone,
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
-                             ConfigDefinitionRepo configDefinitionRepo) {
+                             ConfigDefinitionRepo configDefinitionRepo,
+                             int maxNodeSize) {
         this.tenantName = tenantName;
-        this.configCurator = configCurator;
-        sessionCounter = new SessionCounter(configCurator, tenantName);
+        sessionCounter = new SessionCounter(curator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
-        this.curator = configCurator.curator();
+        this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;
@@ -163,6 +163,7 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
+        this.maxNodeSize = maxNodeSize;
 
         loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -591,7 +592,7 @@ public class SessionRepository {
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (configCurator.exists(sessionPath.getAbsolute())) {
+        if (curator.exists(sessionPath)) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
@@ -775,12 +776,12 @@ public class SessionRepository {
     }
 
     Path getSessionStatePath(long sessionId) {
-        return getSessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        return getSessionPath(sessionId).append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId, maxNodeSize);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

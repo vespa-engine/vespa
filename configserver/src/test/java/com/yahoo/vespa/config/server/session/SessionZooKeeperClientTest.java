@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.FileReference;
@@ -9,7 +9,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -22,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -35,7 +35,6 @@ public class SessionZooKeeperClientTest {
     private static final TenantName tenantName = TenantName.defaultName();
 
     private Curator curator;
-    private ConfigCurator configCurator;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -43,7 +42,6 @@ public class SessionZooKeeperClientTest {
     @Before
     public void setup() {
         curator = new MockCurator();
-        configCurator = ConfigCurator.create(curator);
         curator.create(sessionsPath());
     }
 
@@ -68,16 +66,16 @@ public class SessionZooKeeperClientTest {
         int sessionId = 2;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         zkc.writeStatus(Session.Status.NEW);
-        String path = sessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute();
-        assertTrue(configCurator.exists(path));
-        assertThat(configCurator.getData(path), is("NEW"));
+        Path path = sessionPath(sessionId).append(SESSIONSTATE_ZK_SUBPATH);
+        assertTrue(curator.exists(path));
+        assertThat(Utf8.toString(curator.getData(path).get()), is("NEW"));
     }
 
     @Test
     public void require_that_status_is_read_from_zk() {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
-        curator.set(sessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH), Utf8.toBytes("PREPARE"));
+        curator.set(sessionPath(sessionId).append(SESSIONSTATE_ZK_SUBPATH), Utf8.toBytes("PREPARE"));
         assertThat(zkc.readStatus(), is(Session.Status.PREPARE));
     }
 
@@ -91,9 +89,9 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         zkc.writeApplicationId(id);
-        String path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute();
-        assertTrue(configCurator.exists(path));
-        assertThat(configCurator.getData(path), is(id.serializedForm()));
+        Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
+        assertTrue(curator.exists(path));
+        assertThat(Utf8.toString(curator.getData(path).get()), is(id.serializedForm()));
     }
 
     @Test
@@ -163,15 +161,14 @@ public class SessionZooKeeperClientTest {
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
-        String path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH).getAbsolute();
-        configCurator.putData(path, idString);
+        Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
+        curator.set(path, Utf8.toBytes(idString));
         ApplicationId applicationId = zkc.readApplicationId().get();
         assertThat(applicationId.serializedForm(), is(expectedIdString));
     }
 
     private SessionZooKeeperClient createSessionZKClient(long sessionId) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
-                                                                ConfigCurator.create(curator),
                                                                 tenantName,
                                                                 sessionId,
                                                                 ConfigUtils.getCanonicalHostName());

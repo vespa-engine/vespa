@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -17,7 +18,6 @@ import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -47,7 +47,7 @@ public class TestTenantRepository extends TenantRepository {
                                 ReloadListener reloadListener,
                                 TenantListener tenantListener) {
         super(hostRegistry,
-              ConfigCurator.create(curator),
+              curator,
               metrics,
               new StripedExecutor<>(new InThreadExecutorService()),
               new StripedExecutor<>(new InThreadExecutorService()),
@@ -63,7 +63,8 @@ public class TestTenantRepository extends TenantRepository {
               modelFactoryRegistry,
               configDefinitionRepo,
               reloadListener,
-              tenantListener);
+              tenantListener,
+              new ZookeeperServerConfig.Builder().myid(0).build());
     }
 
     public static class Builder {
