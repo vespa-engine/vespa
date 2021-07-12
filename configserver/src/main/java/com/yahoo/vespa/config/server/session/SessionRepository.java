@@ -195,7 +195,7 @@ public class SessionRepository {
         long sessionId = session.getSessionId();
         localSessionCache.put(sessionId, session);
         if (remoteSessionCache.get(sessionId) == null)
-            createRemoteSession(sessionId);
+            createRemoteSession(sessionId, Optional.of(session));
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -283,11 +283,12 @@ public class SessionRepository {
     /**
      * Creates a local session based on a remote session and the distributed application package.
      * Does not wait for session being created on other servers.
+     * @return
      */
-    private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
+    private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false);
-            createAndAddLocalSession(sessionId, applicationPackage);
+            return createAndAddLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -326,9 +327,9 @@ public class SessionRepository {
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public RemoteSession createRemoteSession(long sessionId) {
+    public RemoteSession createRemoteSession(long sessionId, Optional<LocalSession> localSession) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient, localSession);
         RemoteSession newSession = loadSessionIfActive(session).orElse(session);
         remoteSessionCache.put(sessionId, newSession);
         updateSessionStateWatcher(sessionId, newSession);
@@ -400,7 +401,7 @@ public class SessionRepository {
         if (hasStatusDeleted(sessionId)) return;
 
         log.log(Level.FINE, () -> "Adding remote session " + sessionId);
-        Session session = createRemoteSession(sessionId);
+        Session session = createRemoteSession(sessionId, Optional.empty());
         if (session.getStatus() == Session.Status.NEW) {
             log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
@@ -410,7 +411,7 @@ public class SessionRepository {
 
     private boolean hasStatusDeleted(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
+        RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient, Optional.empty());
         return session.getStatus() == Session.Status.DELETE;
     }
 
@@ -712,10 +713,10 @@ public class SessionRepository {
     /**
      * Returns a new session instance for the given session id.
      */
-    void createSessionFromId(long sessionId) {
+    LocalSession createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
-        createAndAddLocalSession(sessionId, applicationPackage);
+        return createAndAddLocalSession(sessionId, applicationPackage);
     }
 
     LocalSession createAndAddLocalSession(long sessionId, ApplicationPackage applicationPackage) {
@@ -728,12 +729,13 @@ public class SessionRepository {
     /**
      * Returns a new local session for the given session id if it does not already exist.
      * Will also add the session to the local session cache if necessary
+     * @return
      */
-    public void createLocalSessionFromDistributedApplicationPackage(long sessionId) {
+    public Optional<LocalSession> createLocalSessionFromDistributedApplicationPackage(long sessionId) {
         if (applicationRepo.sessionExistsInFileSystem(sessionId)) {
             log.log(Level.FINE, () -> "Local session for session id " + sessionId + " already exists");
-            createSessionFromId(sessionId);
-            return;
+            return Optional.of(createSessionFromId(sessionId));
+
         }
 
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
@@ -749,13 +751,14 @@ public class SessionRepository {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
                 log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
-                return;
+                return Optional.empty();
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()
                     .orElseThrow(() -> new RuntimeException("Could not find application id for session " + sessionId));
             log.log(Level.FINE, () -> "Creating local session for tenant '" + tenantName + "' with session id " + sessionId);
-            createLocalSession(sessionDir, applicationId, sessionId);
+            return Optional.of(createLocalSession(sessionDir, applicationId, sessionId));
         }
+        return Optional.empty();
     }
 
     private Optional<Long> getActiveSessionId(ApplicationId applicationId) {

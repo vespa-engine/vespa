@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import org.apache.zookeeper.Op;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import java.util.Optional;
 public class RemoteSession extends Session {
 
     private final Optional<ApplicationSet> applicationSet;
+    private final Optional<LocalSession> localSession;
 
     /**
      * Creates a session. This involves loading the application, validating it and distributing it.
@@ -24,8 +26,8 @@ public class RemoteSession extends Session {
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
      */
-    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient) {
-        this(tenant, sessionId, zooKeeperClient, Optional.empty());
+    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<LocalSession> localSession) {
+        this(tenant, sessionId, zooKeeperClient, Optional.empty(), localSession);
     }
 
     /**
@@ -36,9 +38,14 @@ public class RemoteSession extends Session {
      * @param zooKeeperClient a SessionZooKeeperClient instance
      * @param applicationSet current application set for this session
      */
-    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<ApplicationSet> applicationSet) {
+    RemoteSession(TenantName tenant,
+                  long sessionId,
+                  SessionZooKeeperClient zooKeeperClient,
+                  Optional<ApplicationSet> applicationSet,
+                  Optional<LocalSession> localSession) {
         super(tenant, sessionId, zooKeeperClient);
         this.applicationSet = applicationSet;
+        this.localSession = localSession;
     }
 
     @Override
@@ -46,11 +53,11 @@ public class RemoteSession extends Session {
 
     public synchronized RemoteSession activated(ApplicationSet applicationSet) {
         Objects.requireNonNull(applicationSet, "applicationSet cannot be null");
-        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationSet));
+        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationSet), localSession);
     }
 
     public synchronized RemoteSession deactivated() {
-        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.empty());
+        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.empty(), localSession);
     }
 
     @Override
