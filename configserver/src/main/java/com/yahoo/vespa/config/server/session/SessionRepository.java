@@ -283,7 +283,7 @@ public class SessionRepository {
     /**
      * Creates a local session based on a remote session and the distributed application package.
      * Does not wait for session being created on other servers.
-     * @return
+     * @return a LocalSession
      */
     private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {

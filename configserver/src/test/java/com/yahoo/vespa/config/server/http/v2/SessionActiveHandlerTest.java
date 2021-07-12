@@ -135,7 +135,8 @@ public class SessionActiveHandlerTest {
         void invoke() {
             long sessionId = applicationRepository.createSession(applicationId(),
                                                                  new TimeoutBudget(clock, Duration.ofSeconds(10)),
-                                                                 testApp);
+                                                                 testApp)
+                                                  .getSessionId();
             applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             Tenant tenant = applicationRepository.getTenant(applicationId());

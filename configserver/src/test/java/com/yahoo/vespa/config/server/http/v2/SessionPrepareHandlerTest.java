@@ -125,12 +125,16 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_activate_url_is_returned_on_success() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
         assertResponseContains(response, "\"activate\":\"http://foo:1337" + pathPrefix + sessionId +
                                          "/active\",\"message\":\"Session " + sessionId + preparedMessage);
+    }
+
+    private long createSession(ApplicationId applicationId) {
+        return applicationRepository.createSession(applicationId, timeoutBudget, app).getSessionId();
     }
 
     @Test
@@ -143,7 +147,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_verbose() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         HttpResponse response = createHandler().handle(
                 createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId, "?verbose=true"));
         System.out.println(getRenderedString(response));
@@ -153,7 +157,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_get_response_activate_url_on_ok() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         request(HttpRequest.Method.PUT, sessionId);
         HttpResponse getResponse = request(HttpRequest.Method.GET, sessionId);
         assertResponseContains(getResponse, "\"activate\":\"http://foo:1337" + pathPrefix +
@@ -162,7 +166,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_get_response_error_on_not_prepared() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
 
         HttpResponse getResponse = request(HttpRequest.Method.GET, sessionId);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
@@ -188,7 +192,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_tenant_is_in_response() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
         assertThat(response.getStatus(), is(OK));
@@ -202,7 +206,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         TenantName defaultTenant = TenantName.from("test2");
         tenantRepository.addTenant(defaultTenant);
         ApplicationId applicationId1 = ApplicationId.from(defaultTenant, ApplicationName.from("app"), InstanceName.defaultName());
-        long sessionId = applicationRepository.createSession(applicationId1, timeoutBudget, app);
+        long sessionId = createSession(applicationId1);
 
         pathPrefix = "/application/v2/tenant/" + defaultTenant + "/session/";
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
@@ -211,7 +215,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
         String applicationName = "myapp";
         ApplicationId applicationId2 = ApplicationId.from(tenant.value(), applicationName, "default");
-        long sessionId2 = applicationRepository.createSession(applicationId2, timeoutBudget, app);
+        long sessionId2 = createSession(applicationId2);
         assertEquals(sessionId, sessionId2);  // Want to test when they are equal (but for different tenants)
 
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId2 +
@@ -221,7 +225,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
 
         ApplicationId applicationId3 = ApplicationId.from(tenant.value(), applicationName, "quux");
-        long sessionId3 = applicationRepository.createSession(applicationId3, timeoutBudget, app);
+        long sessionId3 = createSession(applicationId3);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/" + sessionId3 +
                 "/prepared?applicationName=" + applicationName + "&instance=quux";
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
@@ -231,14 +235,14 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_config_change_actions_are_in_response() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertResponseContains(response, "\"configChangeActions\":{\"restart\":[],\"refeed\":[],\"reindex\":[]}");
     }
 
     @Test
     public void require_that_config_change_actions_are_not_logged_if_not_existing() throws Exception {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertResponseNotContains(response, "Change(s) between active and new application that may require restart");
         assertResponseNotContains(response, "Change(s) between active and new application that may require re-feed");
@@ -247,7 +251,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void test_out_of_capacity_response() throws IOException {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         String exceptionMessage = "Out of capacity";
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
                                                                                 applicationRepository,
@@ -262,7 +266,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void test_that_nullpointerexception_gives_internal_server_error() throws IOException {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         String exceptionMessage = "nullpointer thrown in test handler";
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
                                                                                 applicationRepository,
@@ -278,7 +282,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void test_application_lock_failure() throws IOException {
         String exceptionMessage = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
@@ -292,7 +296,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void test_docker_image_repository() {
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
+        long sessionId = createSession(applicationId());
         String dockerImageRepository = "foo.bar.com:4443/baz";
         request(HttpRequest.Method.PUT, sessionId, Map.of("dockerImageRepository", dockerImageRepository,
                                                           "applicationName", applicationId().application().value()));

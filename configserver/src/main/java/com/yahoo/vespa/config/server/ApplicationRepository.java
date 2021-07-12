@@ -107,7 +107,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
@@ -313,17 +312,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public PrepareResult prepare(long sessionId, PrepareParams prepareParams) {
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
-        Deployment deployment = prepare(sessionId, prepareParams, logger);
+        Session session = getLocalSession(getTenant(prepareParams.getApplicationId()), sessionId);
+        Deployment deployment = prepare(session, prepareParams, logger);
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
 
-    private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
-        Tenant tenant = getTenant(prepareParams.getApplicationId());
-        Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
-        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, tenant, prepareParams, logger, clock);
+    private Deployment prepare(Session session, PrepareParams prepareParams, DeployHandlerLogger logger) {
+        validateThatLocalSessionIsNotActive(session);
+        Deployment deployment = Deployment.unprepared(session,
+                                                      this,
+                                                      hostProvisioner,
+                                                      getTenant(prepareParams.getApplicationId()),
+                                                      prepareParams,
+                                                      logger,
+                                                      clock);
         deployment.prepare();
         logConfigChangeActions(deployment.configChangeActions(), logger);
-        log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
+        log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + session.getSessionId() + " prepared successfully. ");
         return deployment;
     }
 
@@ -348,12 +353,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
-        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
-        Deployment deployment = prepare(sessionId, prepareParams, logger);
+        Session session = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
+        Deployment deployment = prepare(session, prepareParams, logger);
 
         deployment.activate();
 
-        return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
+        return new PrepareResult(session.getSessionId(), deployment.configChangeActions(), logger);
     }
 
     /**
@@ -868,17 +873,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         long sessionId;
         try {
-            sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
+            sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir)).getSessionId();
         } finally {
             cleanupTempDirectory(tempDir, logger);
         }
         return sessionId;
     }
 
-    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
+    public Session createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
-        return session.getSessionId();
+        return sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
     }
 
     public void deleteExpiredLocalSessions() {
@@ -998,12 +1002,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationId.orElse(null);
     }
 
-    private Session validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
-        Session session = getLocalSession(tenant, sessionId);
+    private void validateThatLocalSessionIsNotActive(Session session) {
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalArgumentException("Session is active: " + sessionId);
+            throw new IllegalArgumentException("Session is active: " + session.getSessionId());
         }
-        return session;
     }
 
     private Session getLocalSession(Tenant tenant, long sessionId) {

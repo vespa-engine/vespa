@@ -576,7 +576,7 @@ public class ApplicationRepositoryTest {
         long firstSession = result.sessionId();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly).getSessionId();
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
@@ -592,7 +592,7 @@ public class ApplicationRepositoryTest {
         PrepareResult result = deployApp(testAppJdiscOnly);
         long firstSession = result.sessionId();
 
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly).getSessionId();
         applicationRepository.prepare(sessionId, prepareParams());
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
