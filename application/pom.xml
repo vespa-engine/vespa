@@ -83,12 +83,6 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa.container-test-jars</groupId>
-      <artifactId>jersey-resources</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,
          for user projects must be added in compile scope here.
