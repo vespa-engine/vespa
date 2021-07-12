@@ -799,7 +799,7 @@ public class SessionRepository {
     private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
         SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
         if (sessionStateWatcher == null) {
-            com.yahoo.vespa.curator.Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
+            Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
             sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metricUpdater, zkWatcherExecutor, this));
         } else {

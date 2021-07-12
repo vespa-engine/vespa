@@ -259,7 +259,7 @@ public class TenantRepository {
         return metaData.orElse(new TenantMetaData(tenant.getName(), tenant.getCreatedTime(), tenant.getCreatedTime()));
     }
 
-    private static Set<TenantName> readTenantsFromZooKeeper(com.yahoo.vespa.curator.Curator curator) {
+    private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
         return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
     }
 

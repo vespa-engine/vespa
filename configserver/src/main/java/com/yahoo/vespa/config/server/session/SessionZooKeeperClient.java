@@ -156,9 +156,7 @@ public class SessionZooKeeperClient {
     }
 
     public Optional<ApplicationId> readApplicationId() {
-        Optional<byte[]> data = curator.getData(applicationIdPath());
-        if (data.isEmpty()) return Optional.empty();
-        return Optional.of(ApplicationId.fromSerializedForm(Utf8.toString(data.get())));
+        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)));
     }
 
     void writeApplicationPackageReference(Optional<FileReference> applicationPackageReference) {
