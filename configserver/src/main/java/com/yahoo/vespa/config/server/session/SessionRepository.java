@@ -287,7 +287,7 @@ public class SessionRepository {
     private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
             ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false);
-            createLocalSession(sessionId, applicationPackage);
+            createAndAddLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
         }
@@ -623,10 +623,9 @@ public class SessionRepository {
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.writePathsForNewSession(clock.instant());
+            LocalSession session = createAndAddLocalSession(sessionId, app);
             CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
-            LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));
-            addLocalSession(session);
             return session;
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -640,14 +639,13 @@ public class SessionRepository {
         // Synchronize to avoid threads trying to create an application package concurrently
         // (e.g. a maintainer and an external deployment)
         synchronized (monitor) {
-            Optional<Long> activeSessionId = getActiveSessionId(applicationId);
             File userApplicationDir = getSessionAppDir(sessionId);
             copyApp(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile,
                                                                       userApplicationDir,
                                                                       applicationId,
                                                                       sessionId,
-                                                                      activeSessionId,
+                                                                      getActiveSessionId(applicationId),
                                                                       internalRedeploy);
             applicationPackage.writeMetaData();
             return applicationPackage;
@@ -717,13 +715,14 @@ public class SessionRepository {
     void createSessionFromId(long sessionId) {
         File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
         ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
-        createLocalSession(sessionId, applicationPackage);
+        createAndAddLocalSession(sessionId, applicationPackage);
     }
 
-    void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
+    LocalSession createAndAddLocalSession(long sessionId, ApplicationPackage applicationPackage) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
         addLocalSession(session);
+        return session;
     }
 
     /**
