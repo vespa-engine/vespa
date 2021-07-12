@@ -333,6 +333,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         SqlCompiler sqlCompiler = sqlCompilerPool.alloc();
         try {
             return sqlCompiler.compile(sql, context);
+        } catch (SqlException e) {
+            log.log(Level.WARNING, "Could not execute SQL statement '" + sql + "'");
+            throw e;
         } finally {
             sqlCompilerPool.free(sqlCompiler);
         }
