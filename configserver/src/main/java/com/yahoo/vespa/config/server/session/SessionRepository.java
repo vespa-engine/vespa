@@ -622,7 +622,7 @@ public class SessionRepository {
             ApplicationPackage app = createApplicationPackage(applicationFile, applicationId, sessionId, internalRedeploy);
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
-            sessionZKClient.createNewSession(clock.instant());
+            sessionZKClient.writePathsForNewSession(clock.instant());
             CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));

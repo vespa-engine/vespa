@@ -129,7 +129,7 @@ public class SessionZooKeeperClientTest {
         curator.delete(sessionPath(sessionId));
         assertThat(zkc.readCreateTime(), is(Instant.EPOCH));
         Instant now = Instant.now();
-        zkc.createNewSession(now);
+        zkc.writePathsForNewSession(now);
         // resolution is in seconds, so need to go back use that when comparing
         assertThat(zkc.readCreateTime(), is(Instant.ofEpochSecond(now.getEpochSecond())));
     }
@@ -175,7 +175,7 @@ public class SessionZooKeeperClientTest {
                                                                 tenantName,
                                                                 sessionId,
                                                                 ConfigUtils.getCanonicalHostName());
-        zkc.createNewSession(Instant.now());
+        zkc.writePathsForNewSession(Instant.now());
         return zkc;
     }
 

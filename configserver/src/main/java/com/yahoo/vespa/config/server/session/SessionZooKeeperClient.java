@@ -308,7 +308,7 @@ public class SessionZooKeeperClient {
      *
      * @param createTime Time of session creation.
      */
-    public void createNewSession(Instant createTime) {
+    public void writePathsForNewSession(Instant createTime) {
         CuratorTransaction transaction = new CuratorTransaction(curator);
         transaction.add(CuratorOperations.create(sessionPath.getAbsolute()));
         transaction.add(CuratorOperations.create(sessionPath.append(UPLOAD_BARRIER).getAbsolute()));

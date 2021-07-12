@@ -289,7 +289,7 @@ public class SessionRepositoryTest {
                                                                 tenantName,
                                                                 sessionId,
                                                                 ConfigUtils.getCanonicalHostName());
-        zkc.createNewSession(Instant.now());
+        zkc.writePathsForNewSession(Instant.now());
         if (wait) {
             Curator.CompletionWaiter waiter = zkc.getUploadWaiter();
             waiter.awaitCompletion(Duration.ofSeconds(120));
