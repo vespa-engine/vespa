@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -91,11 +90,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         if (!tlsCiphersOverride.isEmpty()) {
             connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride);
         } else {
-            // Add TLS_RSA_WITH_AES_256_GCM_SHA384 cipher to list of default allowed ciphers
-            // TODO Remove TLS_RSA_WITH_AES_256_GCM_SHA384 as it's weak and incompatible with HTTP/2
-            Set<String> ciphers = new HashSet<>(TlsContext.ALLOWED_CIPHER_SUITES);
-            ciphers.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
-            connectorBuilder.ssl.enabledCipherSuites(Set.copyOf(ciphers));
+            connectorBuilder.ssl.enabledCipherSuites(Set.copyOf(TlsContext.ALLOWED_CIPHER_SUITES));
         }
 
         connectorBuilder
