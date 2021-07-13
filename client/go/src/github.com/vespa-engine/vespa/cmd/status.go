@@ -1,15 +1,25 @@
-package main
+package cmd
 
 import (
     "bufio"
+    "github.com/spf13/cobra"
     "fmt"
     "net/http"
     "strings"
     "time"
 )
 
-func main() {
+func init() {
+  rootCmd.AddCommand(statusCmd)
+}
+
+var statusCmd = &cobra.Command{
+  Use:   "status",
+  Short: "Verifies that your Vespa instance is ready to use",
+  Long:  `TODO`,
+  Run: func(cmd *cobra.Command, args []string) {
     status()
+  },
 }
 
 func status() {
