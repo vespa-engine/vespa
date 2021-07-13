@@ -8,17 +8,20 @@ vespa_add_library(slobrok_slobrokserver
     i_rpc_server_manager.cpp
     managed_rpc_server.cpp
     map_diff.cpp
+    map_listener.cpp
+    map_source.cpp
     metrics_producer.cpp
     monitor.cpp
     named_service.cpp
+    proxy_map_source.cpp
     reconfigurable_stateserver.cpp
     remote_check.cpp
     remote_slobrok.cpp
     reserved_name.cpp
-    rpchooks.cpp
-    rpcmirror.cpp
     rpc_server_manager.cpp
     rpc_server_map.cpp
+    rpchooks.cpp
+    rpcmirror.cpp
     sbenv.cpp
     service_map_history.cpp
     service_mapping.cpp
