@@ -882,7 +882,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Session createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        return sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
+        LocalSession localSession = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
+        return sessionRepository.createRemoteSession(localSession.getSessionId(), Optional.of(localSession));
     }
 
     public void deleteExpiredLocalSessions() {
@@ -1009,10 +1010,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Session getLocalSession(Tenant tenant, long sessionId) {
-        Session session = tenant.getSessionRepository().getLocalSession(sessionId);
+        RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
-
-        return session;
+        return session.localSession().orElseThrow(() -> new NotFoundException("Session " + sessionId + " was not found"));
     }
 
     private RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
@@ -1066,7 +1066,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Session getActiveLocalSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
-            return tenant.getSessionRepository().getLocalSession(applicationRepo.requireActiveSessionOf(applicationId));
+            RemoteSession remoteSession = tenant.getSessionRepository().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
+            if (remoteSession == null) return null;
+            Optional<LocalSession> localSession = remoteSession.localSession();
+            return localSession.orElse(null);
         }
         return null;
     }

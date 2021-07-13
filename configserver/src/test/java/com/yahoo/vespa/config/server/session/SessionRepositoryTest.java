@@ -120,7 +120,7 @@ public class SessionRepositoryTest {
         long secondSessionId = deploy();
         assertNotNull(sessionRepository.getLocalSession(firstSessionId));
         assertNotNull(sessionRepository.getLocalSession(secondSessionId));
-        assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
+        assertEquals(Optional.empty(), sessionRepository.getLocalSession(secondSessionId + 1));
 
         ApplicationSet applicationSet = sessionRepository.ensureApplicationLoaded(sessionRepository.getRemoteSession(firstSessionId));
         assertNotNull(applicationSet);
@@ -128,14 +128,14 @@ public class SessionRepositoryTest {
         assertEquals(applicationId.application(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
 
-        LocalSession session = sessionRepository.getLocalSession(secondSessionId);
+        LocalSession session = sessionRepository.getLocalSession(secondSessionId).get();
         Collection<NamedReader> a = session.applicationPackage.get().getSchemas();
         assertEquals(1, a.size());
 
         sessionRepository.close();
         // All created sessions are deleted
-        assertNull(sessionRepository.getLocalSession(firstSessionId));
-        assertNull(sessionRepository.getLocalSession(secondSessionId));
+        assertEquals(Optional.empty(), sessionRepository.getLocalSession(firstSessionId));
+        assertEquals(Optional.empty(), sessionRepository.getLocalSession(secondSessionId));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class SessionRepositoryTest {
         long secondSessionId = deploy();
         assertNotNull(sessionRepository.getLocalSession(firstSessionId));
         assertNotNull(sessionRepository.getLocalSession(secondSessionId));
-        assertNull(sessionRepository.getLocalSession(secondSessionId + 1));
+        assertEquals(Optional.empty(), sessionRepository.getLocalSession(secondSessionId + 1));
 
         // tenant is "newTenant"
         TenantName newTenant = TenantName.from("newTenant");
@@ -269,7 +269,7 @@ public class SessionRepositoryTest {
         setup();
 
         long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
-        LocalSession session = sessionRepository.getLocalSession(sessionId);
+        LocalSession session = sessionRepository.getLocalSession(sessionId).get();
 
         assertEquals(1, session.applicationPackage.get().getSchemas().size());
 

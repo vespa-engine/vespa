@@ -326,10 +326,10 @@ public class ApplicationRepositoryTest {
         {
             PrepareResult result = deployApp(testApp);
             long sessionId = result.sessionId();
-            Session applicationData = sessionRepository.getLocalSession(sessionId);
-            assertNotNull(applicationData);
-            assertNotNull(applicationData.getApplicationId());
-            assertNotNull(sessionRepository.getLocalSession(sessionId));
+            Session session = sessionRepository.getRemoteSession(sessionId);
+            assertNotNull(session);
+            assertNotNull(session.getApplicationId());
+            assertNotNull(session.getApplicationPackage());
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
             String sessionNode = sessionRepository.getSessionPath(sessionId).getAbsolute();
             assertTrue(configCurator.exists(sessionNode));

@@ -97,7 +97,7 @@ public class SessionActiveHandlerTest {
     @Test
     public void testUnknownSession() {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 9999L, "?timeout=1.0"));
-        assertEquals(response.getStatus(), NOT_FOUND);
+        assertEquals(NOT_FOUND, response.getStatus());
     }
 
     @Test

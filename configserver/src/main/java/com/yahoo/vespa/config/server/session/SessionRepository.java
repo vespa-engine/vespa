@@ -97,7 +97,6 @@ public class SessionRepository {
     private static final long nonExistingActiveSessionId = 0;
 
     private final Object monitor = new Object();
-    private final Map<Long, LocalSession> localSessionCache = Collections.synchronizedMap(new HashMap<>());
     private final Map<Long, RemoteSession> remoteSessionCache = Collections.synchronizedMap(new HashMap<>());
     private final Map<Long, SessionStateWatcher> sessionStateWatchers = Collections.synchronizedMap(new HashMap<>());
     private final Duration sessionLifetime;
@@ -193,18 +192,22 @@ public class SessionRepository {
 
     public void addLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
-        localSessionCache.put(sessionId, session);
-        if (remoteSessionCache.get(sessionId) == null)
-            createRemoteSession(sessionId, Optional.of(session));
+        createRemoteSession(sessionId, Optional.of(session));
     }
 
-    public LocalSession getLocalSession(long sessionId) {
-        return localSessionCache.get(sessionId);
+    public Optional<LocalSession> getLocalSession(long sessionId) {
+        RemoteSession remoteSession = remoteSessionCache.get(sessionId);
+        System.out.println("remote session " + remoteSession);
+        return remoteSession == null ? Optional.empty() : remoteSession.localSession();
     }
 
     /** Returns a copy of local sessions */
     public Collection<LocalSession> getLocalSessions() {
-        return List.copyOf(localSessionCache.values());
+        return List.copyOf(remoteSessionCache.values().stream()
+                                             .map(RemoteSession::localSession)
+                                             .filter(Optional::isPresent)
+                                             .map(Optional::get)
+                                             .collect(Collectors.toList()));
     }
 
     private void loadLocalSessions(ExecutorService executor) {
@@ -283,7 +286,6 @@ public class SessionRepository {
     /**
      * Creates a local session based on a remote session and the distributed application package.
      * Does not wait for session being created on other servers.
-     * @return a LocalSession
      */
     private LocalSession createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
@@ -300,7 +302,13 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Deleting local session " + sessionId);
         SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
-        localSessionCache.remove(sessionId);
+        RemoteSession remoteSession = remoteSessionCache.get(sessionId);
+        remoteSession = new RemoteSession(remoteSession.getTenantName(),
+                                          remoteSession.getSessionId(),
+                                          remoteSession.getSessionZooKeeperClient(),
+                                          remoteSession.applicationSet(),
+                                          Optional.empty());
+        remoteSessionCache.put(sessionId, remoteSession);
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
         transaction.commit();

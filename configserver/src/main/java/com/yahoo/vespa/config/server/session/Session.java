@@ -23,9 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A session represents an instance of an application that can be edited, prepared and activated. This
- * class represents the common stuff between sessions working on the local file
- * system ({@link LocalSession}s) and sessions working on zookeeper ({@link RemoteSession}s).
+ * A session represents an instance of an application that can be edited, prepared and activated.
  *
  * @author Ulf Lilleengen
  * @author hmusum
@@ -198,14 +196,14 @@ public abstract class Session implements Comparable<Session>  {
         return applicationPackage.orElseThrow(() -> new RuntimeException("No application package found for " + this));
     }
 
-    public ApplicationFile getApplicationFile(Path relativePath, LocalSession.Mode mode) {
+    public ApplicationFile getApplicationFile(Path relativePath, Session.Mode mode) {
         if (mode.equals(Session.Mode.WRITE)) {
             markSessionEdited();
         }
         return getApplicationPackage().getFile(relativePath);
     }
 
-    Optional<ApplicationSet> applicationSet() { return Optional.empty(); };
+    public Optional<ApplicationSet> applicationSet() { return Optional.empty(); };
 
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);
