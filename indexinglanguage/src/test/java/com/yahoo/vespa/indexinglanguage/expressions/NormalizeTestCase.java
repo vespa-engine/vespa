@@ -6,8 +6,10 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Transformer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
+
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -55,5 +57,38 @@ public class NormalizeTestCase {
         FieldValue val = ctx.getValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("beyonce", ((StringFieldValue)val).getString());
+    }
+
+    class MyMockTransformer implements Transformer {
+        boolean first = true;
+        @Override
+        public String accentDrop(String input, Language language) {
+            if (first) {
+                first = false;
+                return input.replace(' ', '\u0008');
+            } else {
+                return input.replace(' ', '/');
+            }
+        }
+    }        
+
+    class MyMockLinguistics extends SimpleLinguistics {
+        private Transformer transformer = new MyMockTransformer();
+        @Override
+        public Transformer getTransformer() {
+            return transformer;
+        }
+    }
+
+    @Test
+    public void requireThatBadNormalizeRetries() {
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
+        ctx.setLanguage(Language.ENGLISH);
+        ctx.setValue(new StringFieldValue("bad norm"));
+        var linguistics = new MyMockLinguistics();
+        new NormalizeExpression(linguistics).execute(ctx);
+        FieldValue val = ctx.getValue();
+        assertTrue(val instanceof StringFieldValue);
+        assertEquals("bad/norm", ((StringFieldValue)val).getString());
     }
 }
