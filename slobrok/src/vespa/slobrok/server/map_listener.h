@@ -6,6 +6,9 @@
 
 namespace slobrok {
 
+/**
+ * Interface for getting incremental updates from a MapSource.
+ **/
 struct MapListener {
     virtual void add(const ServiceMapping &mapping) = 0;
     virtual void remove(const ServiceMapping &mapping) = 0;

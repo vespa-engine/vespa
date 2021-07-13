@@ -7,6 +7,9 @@
 
 namespace slobrok {
 
+/**
+ * Proof-of-concept implementation of MapSource broadcasting.
+ **/
 class ProxyMapSource : public MapSource, public MapListener {
     std::set<MapListener *> _listeners;
 public:

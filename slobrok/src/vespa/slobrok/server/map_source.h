@@ -6,6 +6,9 @@
 
 namespace slobrok {
 
+/**
+ * Interface for sources of incremental map updates.
+ **/
 struct MapSource {
     virtual void registerListener(MapListener &listener) = 0;
     virtual void unregisterListener(MapListener &listener) = 0;
