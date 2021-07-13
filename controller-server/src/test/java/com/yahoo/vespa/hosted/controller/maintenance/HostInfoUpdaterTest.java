@@ -83,12 +83,12 @@ public class HostInfoUpdaterTest {
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
         String hostnameSuffix = ".prod." + zone.value();
-        Node configNode = new Node.Builder().hostname(HostName.from("cfg3" + hostnameSuffix))
-                                            .type(NodeType.config)
-                                            .build();
-        Node configHost = new Node.Builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
-                                            .type(NodeType.confighost)
-                                            .build();
+        Node configNode = Node.builder().hostname(HostName.from("cfg3" + hostnameSuffix))
+                              .type(NodeType.config)
+                              .build();
+        Node configHost = Node.builder().hostname(HostName.from("cfghost3" + hostnameSuffix))
+                              .type(NodeType.confighost)
+                              .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));
         String switchHostname = switchHostname(configHost);
         NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "RD350G", "Lenovo", switchHostname);

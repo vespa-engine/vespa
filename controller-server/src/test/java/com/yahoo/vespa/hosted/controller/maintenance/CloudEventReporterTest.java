@@ -121,10 +121,10 @@ public class CloudEventReporterTest {
     }
 
     private Node createNode(String hostname, NodeType nodeType) {
-        return new Node.Builder()
-                .hostname(HostName.from(hostname))
-                .type(nodeType)
-                .build();
+        return Node.builder()
+                   .hostname(HostName.from(hostname))
+                   .type(nodeType)
+                   .build();
     }
 
     private Set<String> getHostnames(ZoneId zoneId) {

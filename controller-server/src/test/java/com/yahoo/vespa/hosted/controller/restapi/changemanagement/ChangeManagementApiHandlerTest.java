@@ -2,23 +2,17 @@
 package com.yahoo.vespa.hosted.controller.restapi.changemanagement;
 
 import com.yahoo.application.container.handler.Request;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import org.intellij.lang.annotations.Language;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,8 +36,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     public void before() {
         tester = new ContainerTester(container, responses);
         addUserToHostedOperatorRole(operator);
-        tester.serviceRegistry().configServer().nodeRepository().addNodes(ZoneId.from("prod.us-east-3"), createNodes());
-        tester.serviceRegistry().configServer().nodeRepository().putNodes(ZoneId.from("prod.us-east-3"), createNode());
+        tester.serviceRegistry().configServer().nodeRepository().putNodes(ZoneId.from("prod.us-east-3"), createNodes());
         tester.controller().curator().writeChangeRequest(createChangeRequest());
 
     }
@@ -85,21 +78,9 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         assertEquals(VespaChangeRequest.Status.COMPLETED, changeRequest.getStatus());
     }
 
-    private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {
-        addIdentityToRequest(request, operator);
-        tester.assertResponse(request, body, statusCode);
-    }
-
     private void assertFile(Request request, String filename) {
         addIdentityToRequest(request, operator);
         tester.assertResponse(request, new File(filename));
-    }
-
-    private Node createNode() {
-        return new Node.Builder()
-                .hostname(HostName.from("host1"))
-                .switchHostname("switch1")
-                .build();
     }
 
     private VespaChangeRequest createChangeRequest() {
@@ -124,8 +105,8 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         );
     }
 
-    private List<NodeRepositoryNode> createNodes() {
-        List<NodeRepositoryNode> nodes = new ArrayList<>();
+    private List<Node> createNodes() {
+        List<Node> nodes = new ArrayList<>();
         nodes.add(createNode("node1", "host1", "default", 0 ));
         nodes.add(createNode("node2", "host1", "default", 0 ));
         nodes.add(createNode("node3", "host1", "default", 0 ));
@@ -135,44 +116,27 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         return nodes;
     }
 
-    private NodeOwner createOwner() {
-        NodeOwner owner = new NodeOwner();
-        owner.tenant = "mytenant";
-        owner.application = "myapp";
-        owner.instance = "default";
-        return owner;
+    private Node createNode(String nodename, String hostname, String clusterId, int group) {
+        return Node.builder()
+                   .hostname(nodename)
+                   .parentHostname(hostname).state(Node.State.active)
+                   .owner(ApplicationId.from("mytenant", "myapp", "default"))
+                   .type(com.yahoo.config.provision.NodeType.tenant)
+                   .clusterId(clusterId)
+                   .group(String.valueOf(group))
+                   .clusterType(Node.ClusterType.content)
+                   .build();
     }
 
-    private NodeMembership createMembership(String clusterId, int group) {
-        NodeMembership membership = new NodeMembership();
-        membership.group = "" + group;
-        membership.clusterid = clusterId;
-        membership.clustertype = "content";
-        membership.index = 2;
-        membership.retired = false;
-        return membership;
-    }
-
-    private NodeRepositoryNode createNode(String nodename, String hostname, String clusterId, int group) {
-        NodeRepositoryNode node = new NodeRepositoryNode();
-        node.setHostname(nodename);
-        node.setParentHostname(hostname);
-        node.setState(NodeState.active);
-        node.setOwner(createOwner());
-        node.setMembership(createMembership(clusterId, group));
-        node.setType(NodeType.tenant);
-
-        return node;
-    }
-
-    private NodeRepositoryNode createHost(String hostname, String switchName) {
-        NodeRepositoryNode node = new NodeRepositoryNode();
-        node.setHostname(hostname);
-        node.setSwitchHostname(switchName);
-        node.setOwner(createOwner());
-        node.setType(NodeType.host);
-        node.setMembership(createMembership("host", 0));
-        return node;
+    private Node createHost(String hostname, String switchName) {
+        return Node.builder()
+                   .hostname(hostname)
+                   .switchHostname(switchName)
+                   .owner(ApplicationId.from("mytenant", "myapp", "default"))
+                   .type(com.yahoo.config.provision.NodeType.host)
+                   .clusterId("host")
+                   .group("0")
+                   .build();
     }
 
 }
