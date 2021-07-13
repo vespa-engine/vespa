@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.repair;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,8 +52,8 @@ public class RepairTicketReport {
         return REPORT_ID;
     }
 
-    public static RepairTicketReport fromJsonNode(JsonNode node) {
-        return uncheck(() -> objectMapper.treeToValue(node, RepairTicketReport.class));
+    public static RepairTicketReport fromJsonNode(String jsonReport) {
+        return uncheck(() -> objectMapper.readValue(jsonReport, RepairTicketReport.class));
     }
 
     public JsonNode toJsonNode() {

@@ -197,10 +197,10 @@ public class InternalStepRunnerTest {
                                                                           app.instanceId()).iterator().next();
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().minus(Duration.ofSeconds(1)));
         tester.configServer().nodeRepository().putNodes(JobType.systemTest.zone(system()),
-                                                        new Node.Builder(systemTestNode)
-                                                                     .serviceState(Node.ServiceState.allowedDown)
-                                                                     .suspendedSince(tester.clock().instant())
-                                                                     .build());
+                                                        Node.builder(systemTestNode)
+                                                            .serviceState(Node.ServiceState.allowedDown)
+                                                            .suspendedSince(tester.clock().instant())
+                                                            .build());
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installInitialReal));
