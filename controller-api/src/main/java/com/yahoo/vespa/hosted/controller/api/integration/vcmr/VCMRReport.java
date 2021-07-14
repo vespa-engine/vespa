@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.vcmr;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -68,12 +69,12 @@ public class VCMRReport {
     /**
      * Serialization functions - mapped to {@link Node#reports()}
      */
-    public static VCMRReport fromReports(Map<String, String> reports) {
+    public static VCMRReport fromReports(Map<String, JsonNode> reports) {
         var serialized = reports.get(REPORT_ID);
         if (serialized == null)
             return new VCMRReport();
 
-        return uncheck(() -> objectMapper.readValue(serialized, VCMRReport.class));
+        return uncheck(() -> objectMapper.treeToValue(serialized, VCMRReport.class));
     }
 
     /**

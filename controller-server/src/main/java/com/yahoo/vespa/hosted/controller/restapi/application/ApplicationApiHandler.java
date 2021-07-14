@@ -880,7 +880,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             toSlime(node.resources(), nodeObject);
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
-            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.name())));
+            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.getEvent())));
             nodeObject.setBool("retired", node.retired() || node.wantToRetire());
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());

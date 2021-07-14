@@ -305,7 +305,7 @@ public class SystemUpgraderTest {
             for (Node node : listNodes(zone, application)) {
                 nodeRepository().putNodes(
                         zone.getId(),
-                        Node.builder(node).currentVersion(node.wantedVersion()).build());
+                        new Node.Builder(node).currentVersion(node.wantedVersion()).build());
             }
             assertCurrentVersion(application, version, zone);
         });
@@ -329,7 +329,7 @@ public class SystemUpgraderTest {
         Node node = nodes.get(0);
         nodeRepository().putNodes(
                 zone.getId(),
-                Node.builder(node).state(Node.State.failed).build());
+                new Node.Builder(node).state(Node.State.failed).build());
     }
 
     private void assertSystemVersion(Version version) {

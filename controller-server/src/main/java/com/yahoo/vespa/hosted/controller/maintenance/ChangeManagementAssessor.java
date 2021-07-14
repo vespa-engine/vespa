@@ -2,10 +2,13 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
 
 import java.util.Collection;
 import java.util.List;
@@ -13,9 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * @author smorgrav
- */
 public class ChangeManagementAssessor {
 
     private final NodeRepository nodeRepository;
@@ -25,31 +25,31 @@ public class ChangeManagementAssessor {
     }
 
     public Assessment assessment(List<String> impactedHostnames, ZoneId zone) {
-        return assessmentInner(impactedHostnames, nodeRepository.list(zone, false), zone);
+        return assessmentInner(impactedHostnames, nodeRepository.listNodes(zone).nodes(), zone);
     }
 
-    Assessment assessmentInner(List<String> impactedHostnames, List<Node> allNodes, ZoneId zone) {
+    Assessment assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
 
         List<String> impactedParentHosts = toParentHosts(impactedHostnames, allNodes);
         // Group impacted application nodes by parent host
-        Map<Node, List<Node>> prParentHost = allNodes.stream()
-                .filter(node -> node.state() == Node.State.active) //TODO look at more states?
-                .filter(node -> impactedParentHosts.contains(node.parentHostname().map(HostName::value).orElse("")))
+        Map<NodeRepositoryNode, List<NodeRepositoryNode>> prParentHost = allNodes.stream()
+                .filter(nodeRepositoryNode -> nodeRepositoryNode.getState() == NodeState.active) //TODO look at more states?
+                .filter(node -> impactedParentHosts.contains(node.getParentHostname() == null ? "" : node.getParentHostname()))
                 .collect(Collectors.groupingBy(node ->
                     allNodes.stream()
-                            .filter(parent -> parent.hostname().equals(node.parentHostname().get()))
+                            .filter(parent -> parent.getHostname().equals(node.getParentHostname()))
                             .findFirst().orElseThrow()
                 ));
 
         // Group nodes pr cluster
-        Map<Cluster, List<Node>> prCluster = prParentHost.values()
+        Map<Cluster, List<NodeRepositoryNode>> prCluster = prParentHost.values()
                 .stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.groupingBy(ChangeManagementAssessor::clusterKey));
 
         var tenantHosts = prParentHost.keySet().stream()
-                .filter(node -> node.type() == NodeType.host)
-                .map(node -> node.hostname())
+                .filter(node -> node.getType() == NodeType.host)
+                .map(node -> HostName.from(node.getHostname()))
                 .collect(Collectors.toList());
 
         boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(
@@ -60,7 +60,7 @@ public class ChangeManagementAssessor {
         // Report assessment pr cluster
         var clusterAssessments = prCluster.entrySet().stream().map((entry) -> {
             Cluster cluster = entry.getKey();
-            List<Node> nodes = entry.getValue();
+            List<NodeRepositoryNode> nodes = entry.getValue();
 
             long[] totalStats = clusterStats(cluster, allNodes);
             long[] impactedStats = clusterStats(cluster, nodes);
@@ -87,8 +87,8 @@ public class ChangeManagementAssessor {
 
         var hostAssessments = prParentHost.entrySet().stream().map((entry) -> {
             HostAssessment hostAssessment = new HostAssessment();
-            hostAssessment.hostName = entry.getKey().hostname().value();
-            hostAssessment.switchName = entry.getKey().switchHostname().orElse(null);
+            hostAssessment.hostName = entry.getKey().getHostname();
+            hostAssessment.switchName = entry.getKey().getSwitchHostname();
             hostAssessment.numberOfChildren = entry.getValue().size();
 
             //TODO: Some better heuristic for what's considered problematic
@@ -103,31 +103,31 @@ public class ChangeManagementAssessor {
         return new Assessment(clusterAssessments, hostAssessments);
     }
 
-    private List<String> toParentHosts(List<String> impactedHostnames, List<Node> allNodes) {
+    private List<String> toParentHosts(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes) {
         return impactedHostnames.stream()
                 .flatMap(hostname ->
                     allNodes.stream()
-                            .filter(node -> List.of(NodeType.config, NodeType.proxy, NodeType.host).contains(node.type()))
-                            .filter(node -> hostname.equals(node.hostname().value()) || hostname.equals(node.parentHostname().map(HostName::value).orElse("")))
+                            .filter(node -> List.of(NodeType.config, NodeType.proxy, NodeType.host).contains(node.getType()))
+                            .filter(node -> hostname.equals(node.getHostname()) || hostname.equals(node.getParentHostname()))
                             .map(node -> {
-                                if (node.type() == NodeType.host)
-                                    return node.hostname().value();
-                                return node.parentHostname().get().value();
+                                if (node.getType() == NodeType.host)
+                                    return node.getHostname();
+                                return node.getParentHostname();
                             }).findFirst().stream()
                 )
                 .collect(Collectors.toList());
     }
 
-    private static Cluster clusterKey(Node node) {
-        if (node.owner().isEmpty())
+    private static Cluster clusterKey(NodeRepositoryNode node) {
+        if (node.getOwner() == null)
             return Cluster.EMPTY;
-        String appId = node.owner().get().serializedForm();
-        return new Cluster(node.clusterType(), node.clusterId(), appId, node.type());
+        String appId = Text.format("%s:%s:%s", node.getOwner().tenant, node.getOwner().application, node.getOwner().instance);
+        return new Cluster(Node.ClusterType.valueOf(node.getMembership().clustertype), node.getMembership().clusterid, appId, node.getType());
     }
 
-    private static long[] clusterStats(Cluster cluster, List<Node> containerNodes) {
-        List<Node> clusterNodes = containerNodes.stream().filter(node -> cluster.equals(clusterKey(node))).collect(Collectors.toList());
-        long groups = clusterNodes.stream().map(Node::group).distinct().count();
+    private static long[] clusterStats(Cluster cluster, List<NodeRepositoryNode> containerNodes) {
+        List<NodeRepositoryNode> clusterNodes = containerNodes.stream().filter(nodeRepositoryNode -> cluster.equals(clusterKey(nodeRepositoryNode))).collect(Collectors.toList());
+        long groups = clusterNodes.stream().map(nodeRepositoryNode -> nodeRepositoryNode.getMembership() != null ? nodeRepositoryNode.getMembership().group : "").distinct().count();
         return new long[] { clusterNodes.size(), groups};
     }
 
