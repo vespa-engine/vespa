@@ -273,7 +273,7 @@ public class OsUpgraderTest {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putNodes(zone.getVirtualId(), new Node.Builder(node).state(Node.State.failed).build());
+        nodeRepository().putNodes(zone.getVirtualId(), Node.builder(node).state(Node.State.failed).build());
     }
 
     /** Simulate OS upgrade of nodes allocated to application. In a real system this is done by the node itself */
@@ -285,9 +285,9 @@ public class OsUpgraderTest {
         assertWanted(wantedVersion, application, zones);
         for (ZoneApi zone : zones) {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
-                nodeRepository().putNodes(zone.getVirtualId(), new Node.Builder(node).wantedOsVersion(version)
-                                                                                     .currentOsVersion(version)
-                                                                                     .build());
+                nodeRepository().putNodes(zone.getVirtualId(), Node.builder(node).wantedOsVersion(version)
+                                                                   .currentOsVersion(version)
+                                                                   .build());
             }
             assertCurrent(version, application, zone);
         }
