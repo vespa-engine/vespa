@@ -5,13 +5,10 @@ import com.google.inject.Guice;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.di.IntConfig;
 import com.yahoo.config.test.TestConfig;
-import com.yahoo.container.bundle.MockBundle;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
-import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent2;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
-import com.yahoo.container.di.config.RestApiContext;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
@@ -216,64 +213,6 @@ public class ContainerTest extends ContainerTestBase {
         container.reloadConfig(3);
 
         assertNotNull(newGraph.get(5, TimeUnit.MINUTES));
-    }
-
-
-    @Test
-    public void bundle_info_is_set_on_rest_api_context() {
-        Class<RestApiContext> clazz = RestApiContext.class;
-
-        writeBootstrapConfigs("restApiContext", clazz);
-        dirConfigSource.writeConfig("jersey-bundles", "bundles[0].spec \"mock-entry-to-enforce-a-MockBundle\"");
-        dirConfigSource.writeConfig("jersey-injection", "inject[0]");
-
-        Container container = newContainer(dirConfigSource);
-        ComponentGraph componentGraph = getNewComponentGraph(container);
-
-        RestApiContext restApiContext = componentGraph.getInstance(clazz);
-        assertNotNull(restApiContext);
-
-        assertEquals(1, restApiContext.getBundles().size());
-        assertEquals(MockBundle.SymbolicName, restApiContext.getBundles().get(0).symbolicName);
-        assertEquals(MockBundle.BundleVersion, restApiContext.getBundles().get(0).version);
-
-        container.shutdownConfigurer();
-    }
-
-    @Test
-    public void restApiContext_has_all_components_injected() {
-        Class<RestApiContext> restApiClass = RestApiContext.class;
-        Class<SimpleComponent> injectedClass = SimpleComponent.class;
-        String injectedComponentId = "injectedComponent";
-        Class<SimpleComponent2> anotherComponentClass = SimpleComponent2.class;
-        String anotherComponentId = "anotherComponent";
-
-        String componentsConfig =
-                new ComponentEntry(injectedComponentId, injectedClass).asConfig(0) + "\n" +
-                        new ComponentEntry(anotherComponentId, anotherComponentClass).asConfig(1) + "\n" +
-                        new ComponentEntry("restApiContext", restApiClass).asConfig(2) + "\n" +
-                        "components[2].inject[0].id " + injectedComponentId + "\n" +
-                        "components[2].inject[1].id " + anotherComponentId + "\n";
-
-        String injectionConfig = "inject[1]\n" +//
-                "inject[0].instance " + injectedComponentId + "\n" +//
-                "inject[0].forClass \"" + injectedClass.getName() + "\"\n";
-
-        dirConfigSource.writeConfig("components", componentsConfig);
-        dirConfigSource.writeConfig("platform-bundles", "");
-        dirConfigSource.writeConfig("application-bundles", "");
-        dirConfigSource.writeConfig("jersey-bundles", "bundles[0].spec \"mock-entry-to-enforce-a-MockBundle\"");
-        dirConfigSource.writeConfig("jersey-injection", injectionConfig);
-
-        Container container = newContainer(dirConfigSource);
-        ComponentGraph componentGraph = getNewComponentGraph(container);
-
-        RestApiContext restApiContext = componentGraph.getInstance(restApiClass);
-
-        assertFalse(restApiContext.getInjectableComponents().isEmpty());
-        assertEquals(2, restApiContext.getInjectableComponents().size());
-
-        container.shutdownConfigurer();
     }
 
     @Test
