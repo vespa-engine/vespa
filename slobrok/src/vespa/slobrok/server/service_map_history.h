@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <map>
 #include <mutex>
+#include "map_listener.h"
 #include "service_mapping.h"
 #include "map_diff.h"
 
@@ -16,8 +17,7 @@ namespace slobrok {
  * @class ServiceMapHistory
  * @brief API to generate incremental updates for a collection of name->spec mappings
  **/
-
-class ServiceMapHistory
+class ServiceMapHistory : public MapListener
 {
 public:
     using Generation = vespalib::GenCnt;
@@ -66,6 +66,11 @@ public:
     ~ServiceMapHistory();
 
     /**
+     * Get diff from generation fromGen (sync version).
+     **/
+    MapDiff makeDiffFrom(const Generation &fromGen) const;
+
+    /**
      * Ask for notification when the history has changes newer than fromGen.
      * Note that if there are any changes in the history already, the callback
      * will happen immediately (inside asyncGenerationDiff).
@@ -78,17 +83,14 @@ public:
      **/
     bool cancel(DiffCompletionHandler *handler);
 
-    /** add or update name->spec mapping */
-    void update(const ServiceMapping &mapping);
+    /** add name->spec mapping */
+    void add(const ServiceMapping &mapping) override;
 
     /** remove mapping for name */
-    void remove(const vespalib::string &name);
+    void remove(const ServiceMapping &mapping) override;
 
     /** For unit testing only: */
     Generation currentGen() const { return myGen(); }
-
-private:
-    MapDiff makeDiffFrom(const Generation &fromGen) const;
 };
 
 //-----------------------------------------------------------------------------
