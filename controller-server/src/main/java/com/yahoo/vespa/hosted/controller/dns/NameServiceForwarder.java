@@ -28,7 +28,11 @@ import java.util.stream.Collectors;
  */
 public class NameServiceForwarder {
 
-    private static final int QUEUE_CAPACITY = 300;
+    /**
+     * The number of {@link NameServiceRequest}s we allow to be queued. When the queue overflows, the first requests
+     * are dropped in a FIFO order until the queue shrinks below this capacity.
+     */
+    private static final int QUEUE_CAPACITY = 400;
 
     private static final Logger log = Logger.getLogger(NameServiceForwarder.class.getName());
 
