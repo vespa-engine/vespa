@@ -208,6 +208,22 @@ public class SessionRepository {
         return List.copyOf(localSessionCache.values());
     }
 
+    public Set<LocalSession> getLocalSessionsFromFileSystem() {
+        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
+        if (sessions == null) return Set.of();
+
+        Set<LocalSession> sessionIds = new HashSet<>();
+        for (File session : sessions) {
+            long sessionId = Long.parseLong(session.getName());
+            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+            File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
+            ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+            LocalSession localSession = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+            sessionIds.add(localSession);
+        }
+        return sessionIds;
+    }
+
     private void loadLocalSessions(ExecutorService executor) {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
         if (sessions == null) return;
@@ -553,7 +569,7 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
         try {
-            for (LocalSession candidate : getLocalSessions()) {
+            for (LocalSession candidate : getLocalSessionsFromFileSystem()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
