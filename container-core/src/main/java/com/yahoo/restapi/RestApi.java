@@ -35,12 +35,17 @@ public interface RestApi {
         Builder setDefaultRoute(RouteBuilder route);
         Builder addRoute(RouteBuilder route);
         Builder addFilter(Filter filter);
+        /** see {@link RestApiMappers#DEFAULT_EXCEPTION_MAPPERS} for default mappers */
         <EXCEPTION extends RuntimeException> Builder addExceptionMapper(Class<EXCEPTION> type, ExceptionMapper<EXCEPTION> mapper);
+        /** see {@link RestApiMappers#DEFAULT_RESPONSE_MAPPERS} for default mappers */
         <RESPONSE_ENTITY> Builder addResponseMapper(Class<RESPONSE_ENTITY> type, ResponseMapper<RESPONSE_ENTITY> mapper);
+        /** see {@link RestApiMappers#DEFAULT_REQUEST_MAPPERS} for default mappers */
         <REQUEST_ENTITY> Builder addRequestMapper(Class<REQUEST_ENTITY> type, RequestMapper<REQUEST_ENTITY> mapper);
         <RESPONSE_ENTITY> Builder registerJacksonResponseEntity(Class<RESPONSE_ENTITY> type);
         <REQUEST_ENTITY> Builder registerJacksonRequestEntity(Class<REQUEST_ENTITY> type);
+        /** Disables mappers listed in {@link RestApiMappers#DEFAULT_EXCEPTION_MAPPERS} */
         Builder disableDefaultExceptionMappers();
+        /** Disables mappers listed in {@link RestApiMappers#DEFAULT_RESPONSE_MAPPERS} */
         Builder disableDefaultResponseMappers();
         Builder disableDefaultAclMapping();
         RestApi build();
