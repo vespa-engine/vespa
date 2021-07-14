@@ -20,6 +20,7 @@ public interface RestApi {
 
     static Builder builder() { return new RestApiImpl.BuilderImpl(); }
     static RouteBuilder route(String pathPattern) { return new RestApiImpl.RouteBuilderImpl(pathPattern); }
+    static HandlerConfigBuilder handlerConfig() { return new RestApiImpl.HandlerConfigBuilderImpl(); }
 
     HttpResponse handleRequest(HttpRequest request);
     ObjectMapper jacksonJsonMapper();
@@ -41,17 +42,47 @@ public interface RestApi {
 
     interface RouteBuilder {
         RouteBuilder name(String name);
-        RouteBuilder get(Handler<?> handler);
-        RouteBuilder post(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder post(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
-        RouteBuilder put(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder put(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
-        RouteBuilder delete(Handler<?> handler);
-        RouteBuilder patch(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder patch(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
-        RouteBuilder defaultHandler(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder defaultHandler(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
         RouteBuilder addFilter(Filter filter);
+
+        // GET
+        RouteBuilder get(Handler<?> handler);
+        RouteBuilder get(Handler<?> handler, HandlerConfigBuilder config);
+
+        // POST
+        RouteBuilder post(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder post(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
+
+        // PUT
+        RouteBuilder put(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder put(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
+
+        // DELETE
+        RouteBuilder delete(Handler<?> handler);
+        RouteBuilder delete(Handler<?> handler, HandlerConfigBuilder config);
+
+        // PATCH
+        RouteBuilder patch(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder patch(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
+
+        // Default
+        RouteBuilder defaultHandler(Handler<?> handler);
+        RouteBuilder defaultHandler(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
     }
 
     @FunctionalInterface interface Handler<RESPONSE_ENTITY> {
@@ -69,6 +100,8 @@ public interface RestApi {
     @FunctionalInterface interface RequestMapper<REQUEST_ENTITY> { Optional<REQUEST_ENTITY> toRequestEntity(RequestContext context) throws RestApiException; }
 
     @FunctionalInterface interface Filter { HttpResponse filterRequest(FilterContext context); }
+
+    interface HandlerConfigBuilder {}
 
     interface RequestContext {
         HttpRequest request();

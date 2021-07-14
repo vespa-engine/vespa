@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -269,7 +268,7 @@ class RestApiImpl implements RestApi {
         @Override public RestApi build() { return new RestApiImpl(this); }
     }
 
-    public static class RouteBuilderImpl implements RestApi.RouteBuilder {
+    static class RouteBuilderImpl implements RestApi.RouteBuilder {
         private final String pathPattern;
         private String name;
         private final Map<Method, HandlerHolder<?>> handlerPerMethod = new HashMap<>();
@@ -279,48 +278,104 @@ class RestApiImpl implements RestApi {
         RouteBuilderImpl(String pathPattern) { this.pathPattern = pathPattern; }
 
         @Override public RestApi.RouteBuilder name(String name) { this.name = name; return this; }
-        @Override public RestApi.RouteBuilder get(Handler<?> handler) {
-            return addHandler(Method.GET, handler);
-        }
-        @Override public RestApi.RouteBuilder post(Handler<?> handler) {
-            return addHandler(Method.POST, handler);
-        }
-        @Override public <ENTITY> RouteBuilder post(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            return addHandler(Method.POST, type, handler);
-        }
-        @Override public RestApi.RouteBuilder put(Handler<?> handler) {
-            return addHandler(Method.PUT, handler);
-        }
-        @Override public <ENTITY> RouteBuilder put(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            return addHandler(Method.PUT, type, handler);
-        }
-        @Override public RestApi.RouteBuilder delete(Handler<?> handler) {
-            return addHandler(Method.DELETE, handler);
-        }
-        @Override public RestApi.RouteBuilder patch(Handler<?> handler) {
-            return addHandler(Method.PATCH, handler);
-        }
-        @Override public <ENTITY> RouteBuilder patch(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            return addHandler(Method.PATCH, type, handler);
-        }
-        @Override public RestApi.RouteBuilder defaultHandler(Handler<?> handler) {
-            defaultHandler = HandlerHolder.of(handler); return this;
-        }
-        @Override public <ENTITY> RouteBuilder defaultHandler(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            defaultHandler = HandlerHolder.of(type, handler); return this;
-        }
         @Override public RestApi.RouteBuilder addFilter(RestApi.Filter filter) { filters.add(filter); return this; }
 
-        private RestApi.RouteBuilder addHandler(Method method, Handler<?> handler) {
-            handlerPerMethod.put(method, HandlerHolder.of(handler)); return this;
+        // GET
+        @Override public RouteBuilder get(Handler<?> handler) { return get(handler, null); }
+        @Override public RouteBuilder get(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.GET, handler, config);
+        }
+
+        // POST
+        @Override public RouteBuilder post(Handler<?> handler) { return post(handler, null); }
+        @Override public <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return post(type, handler, null);
+        }
+        @Override public RouteBuilder post(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.POST, handler, config);
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.POST, type, handler, config);
+        }
+
+        // PUT
+        @Override public RouteBuilder put(Handler<?> handler) { return put(handler, null); }
+        @Override public <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return put(type, handler, null);
+        }
+        @Override public RouteBuilder put(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PUT, handler, null);
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PUT, type, handler, config);
+        }
+
+        // DELETE
+        @Override public RouteBuilder delete(Handler<?> handler) { return delete(handler, null); }
+        @Override public RouteBuilder delete(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.DELETE, handler, config);
+        }
+
+        // PATCH
+        @Override public RouteBuilder patch(Handler<?> handler) { return patch(handler, null); }
+        @Override public <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return patch(type, handler, null);
+        }
+        @Override public RouteBuilder patch(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PATCH, handler, config);
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PATCH, type, handler, config);
+        }
+
+        // Default
+        @Override public RouteBuilder defaultHandler(Handler<?> handler) {
+            return defaultHandler(handler, null);
+        }
+        @Override public RouteBuilder defaultHandler(Handler<?> handler, HandlerConfigBuilder config) {
+            defaultHandler = HandlerHolder.of(handler, build(config)); return this;
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return defaultHandler(type, handler, null);
+        }
+        @Override
+        public <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            defaultHandler = HandlerHolder.of(type, handler, build(config)); return this;
+        }
+
+        private RestApi.RouteBuilder addHandler(Method method, Handler<?> handler, HandlerConfigBuilder config) {
+            handlerPerMethod.put(method, HandlerHolder.of(handler, build(config))); return this;
         }
 
         private <ENTITY> RestApi.RouteBuilder addHandler(
-                Method method, Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            handlerPerMethod.put(method, HandlerHolder.of(type, handler)); return this;
+                Method method, Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler, HandlerConfigBuilder config) {
+            handlerPerMethod.put(method, HandlerHolder.of(type, handler, build(config))); return this;
+        }
+
+        private static HandlerConfig build(HandlerConfigBuilder builder) {
+            if (builder == null) return HandlerConfig.empty();
+            return ((HandlerConfigBuilderImpl)builder).build();
         }
 
         private Route build() { return new Route(this); }
+    }
+
+    static class HandlerConfigBuilderImpl implements HandlerConfigBuilder {
+        HandlerConfig build() { return new HandlerConfig(this); }
+    }
+
+    private static class HandlerConfig {
+        HandlerConfig(HandlerConfigBuilderImpl builder) {}
+
+        static HandlerConfig empty() { return new HandlerConfigBuilderImpl().build(); }
     }
 
     private static class RequestContextImpl implements RestApi.RequestContext {
@@ -460,21 +515,29 @@ class RestApiImpl implements RestApi {
     private static class HandlerHolder<REQUEST_ENTITY> {
         final Class<REQUEST_ENTITY> type;
         final HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler;
+        final HandlerConfig config;
 
-        HandlerHolder(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+        private HandlerHolder(
+                Class<REQUEST_ENTITY> type,
+                HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler,
+                HandlerConfig config) {
             this.type = type;
             this.handler = handler;
+            this.config = config;
         }
 
         static <RESPONSE_ENTITY, REQUEST_ENTITY> HandlerHolder<REQUEST_ENTITY> of(
-                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, RESPONSE_ENTITY> handler) {
-            return new HandlerHolder<>(type, handler);
+                Class<REQUEST_ENTITY> type,
+                HandlerWithRequestEntity<REQUEST_ENTITY, RESPONSE_ENTITY> handler,
+                HandlerConfig config) {
+            return new HandlerHolder<>(type, handler, config);
         }
 
-        static <RESPONSE_ENTITY> HandlerHolder<Void> of(Handler<RESPONSE_ENTITY> handler) {
+        static <RESPONSE_ENTITY> HandlerHolder<Void> of(Handler<RESPONSE_ENTITY> handler, HandlerConfig config) {
             return new HandlerHolder<>(
                     Void.class,
-                    (HandlerWithRequestEntity<Void, RESPONSE_ENTITY>) (context, nullEntity) -> handler.handleRequest(context));
+                    (HandlerWithRequestEntity<Void, RESPONSE_ENTITY>) (context, nullEntity) -> handler.handleRequest(context),
+                    config);
         }
 
         Object executeHandler(RestApi.RequestContext context, Object entity) { return handler.handleRequest(context, type.cast(entity)); }
@@ -507,7 +570,9 @@ class RestApiImpl implements RestApi {
         }
 
         private HandlerHolder<?> createDefaultMethodHandler() {
-            return HandlerHolder.of(context -> { throw new RestApiException.MethodNotAllowed(context.request()); });
+            return HandlerHolder.of(
+                    context -> { throw new RestApiException.MethodNotAllowed(context.request()); },
+                    HandlerConfig.empty());
         }
     }
 
