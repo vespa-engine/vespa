@@ -17,7 +17,7 @@ func Detail(messages ...string) {
 }
 
 func print(prefix string, messages []string) {
-   fmt.Print(prefix)
+    fmt.Print(prefix)
     for i := 0; i < len(messages); i++ {
         fmt.Print(messages[i])
         fmt.Print(" ")

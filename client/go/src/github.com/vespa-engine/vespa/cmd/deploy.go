@@ -6,14 +6,19 @@ import (
 )
 
 func init() {
-  rootCmd.AddCommand(deployCmd)
+    rootCmd.AddCommand(deployCmd)
 }
 
 var deployCmd = &cobra.Command{
-  Use:   "deploy",
-  Short: "Deploys an application package",
-  Long:  `TODO`,
-  Run: func(cmd *cobra.Command, args []string) {
-  },
+    Use:   "deploy",
+    Short: "Deploys an application package",
+    Long:  `TODO`,
+    Run: func(cmd *cobra.Command, args []string) {
+        deploy()
+    },
+}
+
+func deploy() {
+
 }
 
