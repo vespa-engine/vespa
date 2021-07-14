@@ -5,11 +5,9 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.bundle.MockBundle;
-import com.yahoo.container.di.osgi.BundleClasses;
 import org.osgi.framework.Bundle;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -21,9 +19,6 @@ import static java.util.Collections.emptySet;
  * @author ollivir
  */
 public interface Osgi {
-    default BundleClasses getBundleClasses(ComponentSpecification bundle, Set<String> packagesToScan) {
-        return new BundleClasses(new MockBundle(), Collections.emptySet());
-    }
 
     default void installPlatformBundles(Collection<String> bundlePaths) {
         System.out.println("installPlatformBundles " + bundlePaths);
