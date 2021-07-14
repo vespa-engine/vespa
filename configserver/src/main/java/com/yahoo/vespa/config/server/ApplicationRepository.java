@@ -56,13 +56,12 @@ import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.TesterClient;
-import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.response.ProtonMetricsResponse;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.ProtonMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
@@ -312,7 +311,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public PrepareResult prepare(long sessionId, PrepareParams prepareParams) {
         DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
-        Session session = getLocalSession(getTenant(prepareParams.getApplicationId()), sessionId);
+        Session session = getRemoteSession(getTenant(prepareParams.getApplicationId()), sessionId);
         Deployment deployment = prepare(session, prepareParams, logger);
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
@@ -438,7 +437,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   TimeoutBudget timeoutBudget,
                                   boolean force) {
         DeployLogger logger = new SilentDeployLogger();
-        Session session = getLocalSession(tenant, sessionId);
+        Session session = getRemoteSession(tenant, sessionId);
         Deployment deployment = Deployment.prepared(session, this, hostProvisioner, tenant, logger, timeoutBudget.timeout(), clock, false, force);
         deployment.activate();
         return session.getApplicationId();
@@ -647,7 +646,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, Session.Mode mode) {
         Tenant tenant = tenantRepository.getTenant(tenantName);
-        return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
+        return getRemoteSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
     }
 
     public Tenant getTenant(ApplicationId applicationId) {
@@ -829,7 +828,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      *
      * @return the active session, or null if there is no active session for the given application id.
      */
-    public RemoteSession getActiveRemoteSession(ApplicationId applicationId) {
+    public Session getActiveRemoteSession(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
         if (tenant == null) throw new IllegalArgumentException("Could not find any tenant for '" + applicationId + "'");
         return getActiveSession(tenant, applicationId);
@@ -882,14 +881,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Session createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
         SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        LocalSession localSession = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
-        return sessionRepository.createRemoteSession(localSession.getSessionId(), Optional.of(localSession));
+        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
+        return sessionRepository.createRemoteSession(session.getSessionId(), Optional.of(session.getApplicationPackage()));
     }
 
-    public void deleteExpiredLocalSessions() {
-        Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
+    public void deleteExpiredSessions() {
+        Map<Tenant, Collection<RemoteSession>> sessionsPerTenant = new HashMap<>();
         tenantRepository.getAllTenants()
-                        .forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
+                        .forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getRemoteSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()
@@ -905,18 +904,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 activeSessions.put(applicationId, activeSession.getSessionId());
         });
         sessionsPerTenant.keySet().forEach(tenant -> tenant.getSessionRepository().deleteExpiredSessions(activeSessions));
-    }
-
-    public int deleteExpiredRemoteSessions(Duration expiryTime) {
-        return deleteExpiredRemoteSessions(clock, expiryTime);
-    }
-
-    public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
-        return tenantRepository.getAllTenants()
-                .stream()
-                .map(tenant -> tenant.getSessionRepository().deleteExpiredRemoteSessions(clock, expiryTime))
-                .mapToInt(i -> i)
-                .sum();
     }
 
     // ---------------- Tenant operations ----------------------------------------------------------------
@@ -966,8 +953,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Misc operations ----------------------------------------------------------------
 
-    public ApplicationMetaData getMetadataFromLocalSession(Tenant tenant, long sessionId) {
-        return getLocalSession(tenant, sessionId).getMetaData();
+    public ApplicationMetaData getMetadataFromSession(Tenant tenant, long sessionId) {
+        return getRemoteSession(tenant, sessionId).getMetaData();
     }
 
     private ApplicationCuratorDatabase requireDatabase(ApplicationId id) {
@@ -1007,12 +994,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalArgumentException("Session is active: " + session.getSessionId());
         }
-    }
-
-    private Session getLocalSession(Tenant tenant, long sessionId) {
-        RemoteSession session = tenant.getSessionRepository().getRemoteSession(sessionId);
-        if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
-        return session.localSession().orElseThrow(() -> new NotFoundException("Session " + sessionId + " was not found"));
     }
 
     private RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
@@ -1055,7 +1036,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getRemoteSession(tenant, applicationRepo.requireActiveSessionOf(applicationId));
     }
 
-    public RemoteSession getActiveSession(Tenant tenant, ApplicationId applicationId) {
+    public Session getActiveSession(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
             return tenant.getSessionRepository().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
@@ -1067,9 +1048,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo.activeApplications().contains(applicationId)) {
             RemoteSession remoteSession = tenant.getSessionRepository().getRemoteSession(applicationRepo.requireActiveSessionOf(applicationId));
-            if (remoteSession == null) return null;
-            Optional<LocalSession> localSession = remoteSession.localSession();
-            return localSession.orElse(null);
+            return (remoteSession == null || remoteSession.getApplicationPackage() == null) ? null : remoteSession;
         }
         return null;
     }

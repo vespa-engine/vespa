@@ -6,6 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -74,7 +75,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                             continue;
                         }
                     }
-                    createLocalSessionIfMissing(applicationId, sessionId);
+                    createSessionIfMissing(applicationId, sessionId);
                 }
             }
         }
@@ -87,11 +88,12 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         super.awaitShutdown();
     }
 
-    private void createLocalSessionIfMissing(ApplicationId applicationId, long sessionId) {
+    private void createSessionIfMissing(ApplicationId applicationId, long sessionId) {
         Tenant tenant = applicationRepository.getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
-        if (sessionRepository.getLocalSession(sessionId) == null)
-            sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
+        RemoteSession remoteSession = sessionRepository.getRemoteSession(sessionId);
+        if (remoteSession == null || remoteSession.getApplicationPackage() == null)
+            sessionRepository.createSessionFromDistributedApplicationPackage(sessionId);
     }
 
 }

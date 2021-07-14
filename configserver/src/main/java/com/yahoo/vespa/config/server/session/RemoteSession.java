@@ -17,7 +17,6 @@ import java.util.Optional;
 public class RemoteSession extends Session {
 
     private final Optional<ApplicationSet> applicationSet;
-    private final Optional<LocalSession> localSession;
 
     /**
      * Creates a session. This involves loading the application, validating it and distributing it.
@@ -26,8 +25,8 @@ public class RemoteSession extends Session {
      * @param sessionId The session id for this session.
      * @param zooKeeperClient a SessionZooKeeperClient instance
      */
-    RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<LocalSession> localSession) {
-        this(tenant, sessionId, zooKeeperClient, Optional.empty(), localSession);
+    public RemoteSession(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient, Optional<ApplicationPackage> applicationPackage) {
+        this(tenant, sessionId, zooKeeperClient, Optional.empty(), applicationPackage);
     }
 
     /**
@@ -42,25 +41,9 @@ public class RemoteSession extends Session {
                          long sessionId,
                          SessionZooKeeperClient zooKeeperClient,
                          Optional<ApplicationSet> applicationSet,
-                         Optional<LocalSession> localSession) {
-        super(tenant, sessionId, zooKeeperClient);
+                         Optional<ApplicationPackage> applicationPackage) {
+        super(tenant, sessionId, zooKeeperClient, applicationPackage);
         this.applicationSet = applicationSet;
-        this.localSession = localSession;
-    }
-
-    /**
-     * Creates a remote session from a local session
-     *
-     * @param localSession a LocalSession
-     */
-    RemoteSession(LocalSession localSession) {
-        // Need to set application package
-        super(localSession.getTenantName(),
-              localSession.getSessionId(),
-              localSession.getSessionZooKeeperClient(),
-              localSession.getApplicationPackage());
-        this.applicationSet = Optional.empty();
-        this.localSession = Optional.of(localSession);
     }
 
     @Override
@@ -68,14 +51,12 @@ public class RemoteSession extends Session {
 
     public synchronized RemoteSession activated(ApplicationSet applicationSet) {
         Objects.requireNonNull(applicationSet, "applicationSet cannot be null");
-        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationSet), localSession);
+        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationSet), applicationPackage);
     }
 
     public synchronized RemoteSession deactivated() {
-        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.empty(), localSession);
+        return new RemoteSession(tenant, sessionId, sessionZooKeeperClient, Optional.empty(), applicationPackage);
     }
-
-    public Optional<LocalSession> localSession() { return localSession; }
 
     @Override
     public String toString() {
@@ -84,7 +65,7 @@ public class RemoteSession extends Session {
 
     @Override
     public ApplicationPackage getApplicationPackage() {
-        return localSession.isPresent() ? localSession.get().getApplicationPackage() : super.getApplicationPackage();
+        return super.getApplicationPackage();
     }
 
 }

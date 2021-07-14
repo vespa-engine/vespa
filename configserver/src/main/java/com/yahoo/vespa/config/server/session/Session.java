@@ -44,7 +44,7 @@ public abstract class Session implements Comparable<Session>  {
         this(tenant, sessionId, sessionZooKeeperClient, Optional.of(applicationPackage));
     }
 
-    private Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
+    public Session(TenantName tenant, long sessionId, SessionZooKeeperClient sessionZooKeeperClient,
                     Optional<ApplicationPackage> applicationPackage) {
         this.tenant = tenant;
         this.sessionId = sessionId;

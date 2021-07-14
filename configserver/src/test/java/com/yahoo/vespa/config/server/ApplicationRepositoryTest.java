@@ -34,17 +34,15 @@ import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
-import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -437,54 +435,40 @@ public class ApplicationRepositoryTest {
         // No change to active session id
         assertEquals(activeSessionId, tester.tenant().getApplicationRepo().requireActiveSessionOf(tester.applicationId()));
         SessionRepository sessionRepository = tester.tenant().getSessionRepository();
-        assertEquals(3, sessionRepository.getLocalSessions().size());
+        assertEquals(3, sessionRepository.getRemoteSessions().size());
 
         clock.advance(Duration.ofHours(1)); // longer than session lifetime
 
-        // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
+        // All sessions except 3 should be removed after the call to deleteExpiredSessions
+        tester.applicationRepository().deleteExpiredSessions();
+        Collection<RemoteSession> sessions = sessionRepository.getRemoteSessions();
         assertEquals(1, sessions.size());
-        ArrayList<LocalSession> localSessions = new ArrayList<>(sessions);
-        LocalSession localSession = localSessions.get(0);
+        ArrayList<RemoteSession> localSessions = new ArrayList<>(sessions);
+        RemoteSession localSession = localSessions.get(0);
         assertEquals(3, localSession.getSessionId());
-
-        // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
-        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
-        ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
-        Session remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
-        assertEquals(3, remoteSession.getSessionId());
 
         // Deploy, but do not activate
         Optional<com.yahoo.config.provision.Deployment> deployment4 = tester.redeployFromLocalActive();
         assertTrue(deployment4.isPresent());
         deployment4.get().prepare();  // session 5 (not activated)
 
-        assertEquals(2, sessionRepository.getLocalSessions().size());
-        sessionRepository.deleteLocalSession(localSession);
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        assertEquals(2, sessionRepository.getRemoteSessions().size());
+        sessionRepository.deleteSession(localSession);
+        assertEquals(1, sessionRepository.getRemoteSessions().size());
 
-        // Create a local session without any data in zookeeper (corner case seen in production occasionally)
-        // and check that expiring local sessions still work
+        // Create a session without any data in zookeeper (corner case seen in production occasionally)
+        // and check that expiring sessions still work
         int sessionId = 6;
         Files.createDirectory(new TenantFileSystemDirs(serverdb, tenant1).getUserApplicationDir(sessionId).toPath());
-        LocalSession localSession2 = new LocalSession(tenant1,
-                                                      sessionId,
-                                                      FilesApplicationPackage.fromFile(testApp),
-                                                      new SessionZooKeeperClient(curator,
-                                                                                 configCurator,
-                                                                                 tenant1,
-                                                                                 sessionId,
-                                                                                 ConfigUtils.getCanonicalHostName()));
-        sessionRepository.addLocalSession(localSession2);
-        assertEquals(2, sessionRepository.getLocalSessions().size());
+        sessionRepository.createRemoteSession(sessionId, Optional.ofNullable(FilesApplicationPackage.fromFile(testApp)));
+        assertEquals(2, sessionRepository.getRemoteSessions().size());
 
         // Check that trying to expire local session when there exists a local session with no zookeeper data works
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        tester.applicationRepository().deleteExpiredSessions();
+        assertEquals(1, sessionRepository.getRemoteSessions().size());
 
         // Check that trying to expire when there are no active sessions works
-        tester.applicationRepository().deleteExpiredLocalSessions();
+        tester.applicationRepository().deleteExpiredSessions();
     }
 
     @Test
@@ -753,7 +737,7 @@ public class ApplicationRepositoryTest {
 
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-        return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
+        return applicationRepository.getMetadataFromSession(tenant, sessionId);
     }
 
     /** Stores all added or set values for each metric and context. */

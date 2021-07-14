@@ -114,13 +114,13 @@ public class SessionRepositoryTest {
     }
 
     @Test
-    public void require_that_local_sessions_are_created_and_deleted() throws Exception {
+    public void require_that_sessions_are_created_and_deleted() throws Exception {
         setup();
         long firstSessionId = deploy();
         long secondSessionId = deploy();
-        assertNotNull(sessionRepository.getLocalSession(firstSessionId));
-        assertNotNull(sessionRepository.getLocalSession(secondSessionId));
-        assertEquals(Optional.empty(), sessionRepository.getLocalSession(secondSessionId + 1));
+        assertNotNull(sessionRepository.getRemoteSession(firstSessionId));
+        assertNotNull(sessionRepository.getRemoteSession(secondSessionId));
+        assertNull(sessionRepository.getRemoteSession(secondSessionId + 1));
 
         ApplicationSet applicationSet = sessionRepository.ensureApplicationLoaded(sessionRepository.getRemoteSession(firstSessionId));
         assertNotNull(applicationSet);
@@ -128,33 +128,33 @@ public class SessionRepositoryTest {
         assertEquals(applicationId.application(), applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application());
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
 
-        LocalSession session = sessionRepository.getLocalSession(secondSessionId).get();
+        Session session = sessionRepository.getRemoteSession(secondSessionId);
         Collection<NamedReader> a = session.applicationPackage.get().getSchemas();
         assertEquals(1, a.size());
 
         sessionRepository.close();
         // All created sessions are deleted
-        assertEquals(Optional.empty(), sessionRepository.getLocalSession(firstSessionId));
-        assertEquals(Optional.empty(), sessionRepository.getLocalSession(secondSessionId));
+        assertNull(sessionRepository.getRemoteSession(firstSessionId));
+        assertNull(sessionRepository.getRemoteSession(secondSessionId));
     }
 
     @Test
-    public void require_that_local_sessions_belong_to_a_tenant() throws Exception {
+    public void require_that_sessions_belong_to_a_tenant() throws Exception {
         setup();
         // tenant is "default"
 
         long firstSessionId = deploy();
         long secondSessionId = deploy();
-        assertNotNull(sessionRepository.getLocalSession(firstSessionId));
-        assertNotNull(sessionRepository.getLocalSession(secondSessionId));
-        assertEquals(Optional.empty(), sessionRepository.getLocalSession(secondSessionId + 1));
+        assertNotNull(sessionRepository.getRemoteSession(firstSessionId));
+        assertNotNull(sessionRepository.getRemoteSession(secondSessionId));
+        assertNull(sessionRepository.getRemoteSession(secondSessionId + 1));
 
         // tenant is "newTenant"
         TenantName newTenant = TenantName.from("newTenant");
         tenantRepository.addTenant(newTenant);
         long sessionId = deploy(ApplicationId.from(newTenant.value(), "testapp", "default"), appJdiscOnly);
         SessionRepository sessionRepository2 = tenantRepository.getTenant(newTenant).getSessionRepository();
-        assertNotNull(sessionRepository2.getLocalSession(sessionId));
+        assertNotNull(sessionRepository2.getRemoteSession(sessionId));
     }
 
     @Test
@@ -269,7 +269,7 @@ public class SessionRepositoryTest {
         setup();
 
         long sessionId = deploy(applicationId, new File("src/test/apps/deprecated-features-app"));
-        LocalSession session = sessionRepository.getLocalSession(sessionId).get();
+        Session session = sessionRepository.getRemoteSession(sessionId);
 
         assertEquals(1, session.applicationPackage.get().getSchemas().size());
 
