@@ -41,9 +41,7 @@ import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -51,7 +49,6 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -93,7 +90,6 @@ import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 public class SessionRepository {
 
     private static final Logger log = Logger.getLogger(SessionRepository.class.getName());
-    private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSessionId = 0;
 
     private final Object monitor = new Object();
@@ -165,21 +161,20 @@ public class SessionRepository {
         this.configDefinitionRepo = configDefinitionRepo;
         this.maxNodeSize = maxNodeSize;
 
-        loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
+        loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
 
-    private void loadSessions(BooleanFlag loadLocalSessions) {
+    private void loadSessions() {
         ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                 new DaemonThreadFactory("load-sessions-"));
-        loadSessions(loadLocalSessions.value(), executor);
+        loadSessions(executor);
     }
 
-    void loadSessions(boolean loadLocalSessions, ExecutorService executor) {
-        if (loadLocalSessions)
-            loadLocalSessions(executor);
+    // For testing
+    void loadSessions(ExecutorService executor) {
         loadRemoteSessions(executor);
         try {
             executor.shutdown();
@@ -206,25 +201,6 @@ public class SessionRepository {
     /** Returns a copy of local sessions */
     public Collection<LocalSession> getLocalSessions() {
         return List.copyOf(localSessionCache.values());
-    }
-
-    private void loadLocalSessions(ExecutorService executor) {
-        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) return;
-
-        Map<Long, Future<?>> futures = new HashMap<>();
-        for (File session : sessions) {
-            long sessionId = Long.parseLong(session.getName());
-            futures.put(sessionId, executor.submit(() -> createSessionFromId(sessionId)));
-        }
-        futures.forEach((sessionId, future) -> {
-            try {
-                future.get();
-                log.log(Level.FINE, () -> "Local session " + sessionId + " loaded");
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException("Could not load local session " + sessionId, e);
-            }
-        });
     }
 
     public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {

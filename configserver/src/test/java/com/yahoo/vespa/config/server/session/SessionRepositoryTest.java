@@ -192,7 +192,7 @@ public class SessionRepositoryTest {
 
         expectedException.expectMessage("Could not load remote session " + sessionIdString);
         expectedException.expect(RuntimeException.class);
-        sessionRepository.loadSessions(false, new InThreadExecutorService());
+        sessionRepository.loadSessions(new InThreadExecutorService());
         assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(0));
     }
 
