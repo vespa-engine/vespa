@@ -11,21 +11,29 @@ import (
 
 func init() {
   rootCmd.AddCommand(statusCmd)
+  statusCmd.AddCommand(statusConfigServerCmd)
 }
 
 var statusCmd = &cobra.Command{
   Use:   "status",
-  Short: "Verifies that your Vespa instance is ready to use",
+  Short: "Verifies that your Vespa endpoint is ready to use",
   Long:  `TODO`,
   Run: func(cmd *cobra.Command, args []string) {
-    status()
+    status("http://127.0.0.1:8080", "container")
   },
 }
 
-func status() {
-    host := "http://127.0.0.1:19071"
+var statusConfigServerCmd = &cobra.Command{
+  Use:   "config-server",
+  Short: "Verifies that your Vespa config server endpoint is ready",
+  Long:  `TODO`,
+  Run: func(cmd *cobra.Command, args []string) {
+    status("http://127.0.0.1:19071", "Config server")
+  },
+}
+
+func status(host string, description string) {
     path := "/ApplicationStatus"
-    description := "Config server"
     response := request(host, path, description)
     if (response == nil) {
         return
@@ -41,7 +49,7 @@ func status() {
 
 func request(host string, path string, description string) (response *http.Response) {
     client := &http.Client{
-	    Timeout: time.Second * 30,
+	    Timeout: time.Second * 10,
     }
     response, error := client.Get(host + path)
     if error != nil {
