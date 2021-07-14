@@ -11,12 +11,22 @@ import (
 
 func init() {
   rootCmd.AddCommand(statusCmd)
+  statusCmd.AddCommand(statusContainerCmd)
   statusCmd.AddCommand(statusConfigServerCmd)
 }
 
 var statusCmd = &cobra.Command{
   Use:   "status",
-  Short: "Verifies that your Vespa endpoint is ready to use",
+  Short: "Verifies that your Vespa endpoint is ready to use (container by default)",
+  Long:  `TODO`,
+  Run: func(cmd *cobra.Command, args []string) {
+    status("http://127.0.0.1:8080", "container")
+  },
+}
+
+var statusContainerCmd = &cobra.Command{
+  Use:   "container",
+  Short: "Verifies that your Vespa container endpoint is ready [Default]",
   Long:  `TODO`,
   Run: func(cmd *cobra.Command, args []string) {
     status("http://127.0.0.1:8080", "container")
