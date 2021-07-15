@@ -636,10 +636,10 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
       _attrMap()
 {
     setupWriteContexts();
-    setupAttriuteMapping();
+    setupAttributeMapping();
 }
 
-void AttributeWriter::setupAttriuteMapping() {
+void AttributeWriter::setupAttributeMapping() {
     for (auto attr : getWritableAttributes()) {
         vespalib::stringref name = attr->getName();
         _attrMap[name] = AttributeWithInfo(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
