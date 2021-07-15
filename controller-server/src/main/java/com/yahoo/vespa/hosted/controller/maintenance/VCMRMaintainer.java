@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
@@ -174,7 +175,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
                 } catch (Exception e) {
                     logger.warning("Failed to retire host " + node.hostname() + ": " + Exceptions.toMessageString(e));
                     // Check if retirement actually failed
-                    if (!nodeRepository.getNode(changeRequest.getZoneId(), node.hostname().value()).getWantToRetire()) {
+                    if (!nodeRepository.getNode(changeRequest.getZoneId(), node.hostname().value()).wantToRetire()) {
                         return hostAction;
                     }
                 }

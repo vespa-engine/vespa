@@ -28,7 +28,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -546,7 +545,7 @@ public class MetricsReporterTest {
                              ControllerTester tester) {
         var currentNodes = getNodes(zone, nodes, tester);
         var updatedNodes = currentNodes.stream()
-                                       .map(node -> builderOps.apply(new Node.Builder(node)).build())
+                                       .map(node -> builderOps.apply(Node.builder(node)).build())
                                        .collect(Collectors.toList());
         tester.configServer().nodeRepository().putNodes(zone, updatedNodes);
     }

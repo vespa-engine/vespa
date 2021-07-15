@@ -20,8 +20,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author olaa
@@ -49,9 +53,12 @@ public class VCMRMaintainerTest {
         vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
-        parkedNode = new Node.Builder(parkedNode)
-                .reports(vcmrReport.toNodeReports())
-                .build();
+        Map<String, String> reports = vcmrReport.toNodeReports().entrySet().stream()
+                                                .collect(Collectors.toMap(Map.Entry::getKey,
+                                                                          kv -> kv.getValue().toString()));
+        parkedNode = Node.builder(parkedNode)
+                         .reports(reports)
+                         .build();
 
         nodeRepo.putNodes(zoneId, List.of(parkedNode, failedNode));
 
@@ -63,8 +70,7 @@ public class VCMRMaintainerTest {
         assertEquals(Node.State.dirty, nodeList.get(0).state());
         assertEquals(Node.State.failed, nodeList.get(1).state());
 
-        var report = nodeList.get(0).reports();
-        assertNull(report.get(VCMRReport.getReportId()));
+        assertTrue(nodeList.get(0).reports().isEmpty());
 
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
         assertEquals(Status.COMPLETED, writtenChangeRequest.getStatus());
@@ -235,11 +241,11 @@ public class VCMRMaintainerTest {
     }
 
     private Node createNode(HostName hostname, NodeType nodeType, Node.State state, boolean wantToRetire) {
-        return new Node.Builder()
-                .hostname(hostname)
-                .type(nodeType)
-                .state(state)
-                .wantToRetire(wantToRetire)
-                .build();
+        return Node.builder()
+                   .hostname(hostname)
+                   .type(nodeType)
+                   .state(state)
+                   .wantToRetire(wantToRetire)
+                   .build();
     }
 }
