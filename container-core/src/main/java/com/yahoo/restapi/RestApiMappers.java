@@ -29,7 +29,7 @@ public class RestApiMappers {
 
     private static final Logger log = Logger.getLogger(RestApiMappers.class.getName());
 
-    public static List<RequestMapperHolder<?>> DEFAULT_REQUEST_MAPPERS = List.of(
+    static List<RequestMapperHolder<?>> DEFAULT_REQUEST_MAPPERS = List.of(
             new RequestMapperHolder<>(Slime.class, RestApiMappers::toSlime),
             new RequestMapperHolder<>(JsonNode.class, ctx -> toJsonNode(ctx, ctx.jacksonJsonMapper())),
             new RequestMapperHolder<>(String.class, RestApiMappers::toString),
@@ -37,14 +37,14 @@ public class RestApiMappers {
             new RequestMapperHolder<>(InputStream .class, RestApiMappers::toInputStream),
             new RequestMapperHolder<>(Void.class, ctx -> Optional.empty()));
 
-    public static List<ResponseMapperHolder<?>> DEFAULT_RESPONSE_MAPPERS = List.of(
+    static List<ResponseMapperHolder<?>> DEFAULT_RESPONSE_MAPPERS = List.of(
             new ResponseMapperHolder<>(HttpResponse.class, (context, entity) -> entity),
             new ResponseMapperHolder<>(String.class, (context, entity) -> new MessageResponse(entity)),
             new ResponseMapperHolder<>(Slime.class, (context, entity) -> new SlimeJsonResponse(entity)),
             new ResponseMapperHolder<>(JsonNode.class,
                     (context, entity) -> new JacksonJsonResponse<>(200, entity, context.jacksonJsonMapper(), true)));
 
-    public static List<ExceptionMapperHolder<?>> DEFAULT_EXCEPTION_MAPPERS = List.of(
+    static List<ExceptionMapperHolder<?>> DEFAULT_EXCEPTION_MAPPERS = List.of(
             new ExceptionMapperHolder<>(RestApiException.class, (context, exception) -> exception.response()));
 
     private RestApiMappers() {}
@@ -75,7 +75,7 @@ public class RestApiMappers {
         }
     }
 
-    public static class RequestMapperHolder<ENTITY> {
+    static class RequestMapperHolder<ENTITY> {
         final Class<ENTITY> type;
         final RestApi.RequestMapper<ENTITY> mapper;
 
@@ -85,7 +85,7 @@ public class RestApiMappers {
         }
     }
 
-    public static class ResponseMapperHolder<ENTITY> {
+    static class ResponseMapperHolder<ENTITY> {
         final Class<ENTITY> type;
         final RestApi.ResponseMapper<ENTITY> mapper;
 
@@ -99,7 +99,7 @@ public class RestApiMappers {
         }
     }
 
-    public static class ExceptionMapperHolder<EXCEPTION extends RuntimeException> {
+    static class ExceptionMapperHolder<EXCEPTION extends RuntimeException> {
         final Class<EXCEPTION> type;
         final RestApi.ExceptionMapper<EXCEPTION> mapper;
 
