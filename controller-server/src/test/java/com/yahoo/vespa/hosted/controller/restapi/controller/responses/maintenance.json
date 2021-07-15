@@ -100,7 +100,7 @@
       "name": "Upgrader"
     },
     {
-      "name": "VCMRMaintainer"
+      "name": "VcmrMaintainer"
     },
     {
       "name": "VersionStatusUpdater"

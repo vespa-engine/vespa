@@ -17,29 +17,30 @@ import java.util.Set;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * @author olaa
  *
  * Node repository report containing list of upcoming VCMRs impacting a node
+ *
+ * @author olaa
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class VCMRReport {
+public class VcmrReport {
 
     private static final String REPORT_ID = "vcmr";
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
     @JsonProperty("upcoming")
-    private Set<VCMR> vcmrs;
+    private Set<Vcmr> vcmrs;
 
-    public VCMRReport() {
+    public VcmrReport() {
         this(new HashSet<>());
     }
 
-    public VCMRReport(Set<VCMR> vcmrs) {
+    public VcmrReport(Set<Vcmr> vcmrs) {
         this.vcmrs = vcmrs;
     }
 
-    public Set<VCMR> getVcmrs() {
+    public Set<Vcmr> getVcmrs() {
         return vcmrs;
     }
 
@@ -47,7 +48,7 @@ public class VCMRReport {
      * @return true if list of VCMRs is changed
      */
     public boolean addVcmr(String id, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndtime) {
-        var vcmr = new VCMR(id, plannedStartTime, plannedEndtime);
+        var vcmr = new Vcmr(id, plannedStartTime, plannedEndtime);
         if (vcmrs.contains(vcmr))
             return false;
 
@@ -67,12 +68,12 @@ public class VCMRReport {
     /**
      * Serialization functions - mapped to {@link Node#reports()}
      */
-    public static VCMRReport fromReports(Map<String, String> reports) {
+    public static VcmrReport fromReports(Map<String, String> reports) {
         var serialized = reports.get(REPORT_ID);
         if (serialized == null)
-            return new VCMRReport();
+            return new VcmrReport();
 
-        return uncheck(() -> objectMapper.readValue(serialized, VCMRReport.class));
+        return uncheck(() -> objectMapper.readValue(serialized, VcmrReport.class));
     }
 
     /**
@@ -92,15 +93,15 @@ public class VCMRReport {
         return "VCMRReport{" + vcmrs + "}";
     }
 
-    public static class VCMR {
+    public static class Vcmr {
 
         private String id;
         private ZonedDateTime plannedStartTime;
         private ZonedDateTime plannedEndTime;
 
-        VCMR(@JsonProperty("id") String id,
-                          @JsonProperty("plannedStartTime") ZonedDateTime plannedStartTime,
-                          @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime) {
+        Vcmr(@JsonProperty("id") String id,
+             @JsonProperty("plannedStartTime") ZonedDateTime plannedStartTime,
+             @JsonProperty("plannedEndTime") ZonedDateTime plannedEndTime) {
             this.id = id;
             this.plannedStartTime = plannedStartTime;
             this.plannedEndTime = plannedEndTime;
@@ -122,7 +123,7 @@ public class VCMRReport {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            VCMR vcmr = (VCMR) o;
+            Vcmr vcmr = (Vcmr) o;
             return Objects.equals(id, vcmr.id) &&
                     Objects.equals(plannedStartTime, vcmr.plannedStartTime) &&
                     Objects.equals(plannedEndTime, vcmr.plannedEndTime);
