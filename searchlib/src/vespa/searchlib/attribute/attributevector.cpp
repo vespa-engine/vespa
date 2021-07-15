@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributevector.h"
+#include "address_space_components.h"
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributeiterators.hpp"
 #include "attributesaver.h"
+#include "attributevector.h"
 #include "attributevector.hpp"
 #include "floatbase.h"
 #include "interlock.h"
@@ -14,14 +15,14 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/util/logutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/searchlib/util/logutil.h>
-#include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -222,22 +223,20 @@ AttributeVector::getEnumStoreValuesMemoryUsage() const
     return vespalib::MemoryUsage();
 }
 
-vespalib::AddressSpace
-AttributeVector::getEnumStoreAddressSpaceUsage() const
+void
+AttributeVector::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return AddressSpaceUsage::defaultEnumStoreUsage();
-}
-
-vespalib::AddressSpace
-AttributeVector::getMultiValueAddressSpaceUsage() const
-{
-    return AddressSpaceUsage::defaultMultiValueUsage();
+    // TODO: Stop inserting defaults here when code using AddressSpaceUsage no longer require these two components.
+    usage.set(AddressSpaceComponents::enum_store, AddressSpaceComponents::default_enum_store_usage());
+    usage.set(AddressSpaceComponents::multi_value, AddressSpaceComponents::default_multi_value_usage());
 }
 
 AddressSpaceUsage
 AttributeVector::getAddressSpaceUsage() const
 {
-    return AddressSpaceUsage(getEnumStoreAddressSpaceUsage(), getMultiValueAddressSpaceUsage());
+    AddressSpaceUsage usage;
+    populate_address_space_usage(usage);
+    return usage;
 }
 
 bool
