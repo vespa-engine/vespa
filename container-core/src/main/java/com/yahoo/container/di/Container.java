@@ -12,11 +12,9 @@ import com.yahoo.container.di.ConfigRetriever.ComponentsConfigs;
 import com.yahoo.container.di.ConfigRetriever.ConfigSnapshot;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentNode;
-import com.yahoo.container.di.componentgraph.core.JerseyNode;
 import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
-import com.yahoo.container.di.config.RestApiContext;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 import org.osgi.framework.Bundle;
@@ -200,14 +198,7 @@ public class Container {
         for (ComponentsConfig.Components config : componentsConfig.components()) {
             BundleInstantiationSpecification specification = bundleInstantiationSpecification(config);
             Class<?> componentClass = osgi.resolveClass(specification);
-            Node componentNode;
-
-            if (RestApiContext.class.isAssignableFrom(componentClass)) {
-                Class<? extends RestApiContext> nodeClass = componentClass.asSubclass(RestApiContext.class);
-                componentNode = new JerseyNode(specification.id, config.configId(), nodeClass, osgi);
-            } else {
-                componentNode = new ComponentNode(specification.id, config.configId(), componentClass, null);
-            }
+            Node componentNode = new ComponentNode(specification.id, config.configId(), componentClass, null);
             graph.add(componentNode);
         }
     }
