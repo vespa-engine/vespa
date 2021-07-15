@@ -1,19 +1,14 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.athenz;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.RestApi;
+import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -22,12 +17,11 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
-import com.yahoo.yolean.Exceptions;
 
 import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.restapi.RestApi.route;
 
 /**
  * This API proxies requests to an Athenz server.
@@ -35,7 +29,7 @@ import java.util.logging.Logger;
  * @author jonmv
  */
 @SuppressWarnings("unused") // Handler
-public class AthenzApiHandler extends LoggingRequestHandler {
+public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> {
 
     private final static Logger log = Logger.getLogger(AthenzApiHandler.class.getName());
 
@@ -43,55 +37,32 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     private final AthenzDomain sandboxDomain;
     private final EntityService properties;
 
+    @Inject
     public AthenzApiHandler(Context parentCtx, AthenzFacade athenz, Controller controller) {
-        super(parentCtx);
+        super(parentCtx, AthenzApiHandler::createRestApi);
         this.athenz = athenz;
         this.sandboxDomain = new AthenzDomain(sandboxDomainIn(controller.system()));
         this.properties = controller.serviceRegistry().entityService();
     }
 
-    @Override
-    public HttpResponse handle(HttpRequest request) {
-        Method method = request.getMethod();
-        try {
-            switch (method) {
-                case GET: return get(request);
-                case POST: return post(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + method + "' is unsupported");
-            }
-        }
-        catch (IllegalArgumentException|IllegalStateException e) {
-            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
-        }
-        catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
-        }
+    private static RestApi createRestApi(AthenzApiHandler self) {
+        return RestApi.builder()
+                .addRoute(route("/athenz/v1")
+                        .get(self::root))
+                .addRoute(route("/athenz/v1/domains")
+                        .get(self::domainList))
+                .addRoute(route("/athenz/v1/properties")
+                        .get(self::properties))
+                .addRoute(route("/athenz/v1/user")
+                        .post(self::signup))
+                .build();
     }
 
-    private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri());
-        if (path.matches("/athenz/v1")) return root(request);
-        if (path.matches("/athenz/v1/domains")) return domainList(request);
-        if (path.matches("/athenz/v1/properties")) return properties();
-
-        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
-                                                         request.getUri().getPath()));
+    private HttpResponse root(RestApi.RequestContext ctx) {
+        return new ResourceResponse(ctx.request(), "domains", "properties");
     }
 
-    private HttpResponse post(HttpRequest request) {
-        Path path = new Path(request.getUri());
-        if (path.matches("/athenz/v1/user")) return signup(request);
-        return ErrorResponse.notFoundError(Text.format("No '%s' handler at '%s'", request.getMethod(),
-                                                         request.getUri().getPath()));
-    }
-
-    private HttpResponse root(HttpRequest request) {
-        return new ResourceResponse(request, "domains", "properties");
-    }
-
-
-    private HttpResponse properties() {
+    private Slime properties(RestApi.RequestContext ctx) {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor array = response.setArray("properties");
@@ -100,26 +71,27 @@ public class AthenzApiHandler extends LoggingRequestHandler {
             propertyObject.setString("propertyid", entry.getKey().id());
             propertyObject.setString("property", entry.getValue().id());
         }
-        return new SlimeJsonResponse(slime);
+        return slime;
     }
 
-    private HttpResponse domainList(HttpRequest request) {
+    private Slime domainList(RestApi.RequestContext ctx) {
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("data");
-        for (AthenzDomain athenzDomain : athenz.getDomainList(request.getProperty("prefix")))
+        for (AthenzDomain athenzDomain : athenz.getDomainList(ctx.queryParameters().getString("prefix").orElse(null)))
             array.addString(athenzDomain.getName());
 
-        return new SlimeJsonResponse(slime);
+        return slime;
     }
 
-    private HttpResponse signup(HttpRequest request) {
-        AthenzUser user = athenzUser(request);
+    private String signup(RestApi.RequestContext ctx) {
+        AthenzUser user = athenzUser(ctx);
         athenz.addTenantAdmin(sandboxDomain, user);
-        return new MessageResponse("User '" + user.getName() + "' added to admin role of '" + sandboxDomain.getName() + "'");
+        return "User '" + user.getName() + "' added to admin role of '" + sandboxDomain.getName() + "'";
     }
 
-    private static AthenzUser athenzUser(HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal()).filter(AthenzPrincipal.class::isInstance)
+    private static AthenzUser athenzUser(RestApi.RequestContext ctx) {
+        return ctx.userPrincipal()
+                       .filter(AthenzPrincipal.class::isInstance)
                        .map(AthenzPrincipal.class::cast)
                        .map(AthenzPrincipal::getIdentity)
                        .filter(AthenzUser.class::isInstance)
