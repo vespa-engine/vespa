@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.vcmr;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -80,11 +79,11 @@ public class VCMRReport {
      * Set report to 'null' if list is empty - clearing the report
      * See NodePatcher in node-repository
      */
-    public Map<String, JsonNode> toNodeReports() {
-        Map<String, JsonNode> reports = new HashMap<>();
-        JsonNode jsonNode = vcmrs.isEmpty() ?
-                null : uncheck(() -> objectMapper.valueToTree(this));
-        reports.put(REPORT_ID, jsonNode);
+    public Map<String, String> toNodeReports() {
+        Map<String, String> reports = new HashMap<>();
+        String json = vcmrs.isEmpty() ?
+                null : uncheck(() -> objectMapper.valueToTree(this).toString());
+        reports.put(REPORT_ID, json);
         return reports;
     }
 

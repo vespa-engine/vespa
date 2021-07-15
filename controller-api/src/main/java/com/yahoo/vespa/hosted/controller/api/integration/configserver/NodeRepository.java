@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
 import java.net.URI;
 import java.time.Duration;
@@ -30,7 +29,7 @@ public interface NodeRepository {
 
     void deleteNode(ZoneId zone, String hostname);
 
-    void setState(ZoneId zone, NodeState nodeState, String hostname);
+    void setState(ZoneId zone, Node.State nodeState, String hostname);
 
     Node getNode(ZoneId zone, String hostname);
 
@@ -78,13 +77,22 @@ public interface NodeRepository {
     /** Cancels firmware checks on all hosts in the given zone. */
     void cancelFirmwareCheck(ZoneId zone);
 
-    void retireAndDeprovision(ZoneId zoneId, String hostName);
+    /** Retire given node */
+    void retire(ZoneId zone, String hostname, boolean wantToRetire, boolean wantToDeprovision);
 
-    void patchNode(ZoneId zoneId, String hostName, NodeRepositoryNode node);
+    /** Update reports for given node. A key with null value clears that report */
+    void updateReports(ZoneId zone, String hostname, Map<String, String> reports);
 
-    void reboot(ZoneId zoneId, String hostName);
+    /** Update hardware model */
+    void updateModel(ZoneId zone, String hostname, String modelName);
+
+    /** Update switch hostname */
+    void updateSwitchHostname(ZoneId zone, String hostname, String switchHostname);
+
+    /** Schedule reboot of given node */
+    void reboot(ZoneId zone, String hostname);
 
     /** Checks whether the zone has the spare capacity to remove the given hosts */
-    boolean isReplaceable(ZoneId zoneId, List<HostName> hostNames);
+    boolean isReplaceable(ZoneId zone, List<HostName> hostnames);
 
 }

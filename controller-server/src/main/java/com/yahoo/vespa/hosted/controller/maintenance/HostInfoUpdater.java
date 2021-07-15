@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.NodeEntity;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 
 import java.time.Duration;
 import java.util.EnumSet;
@@ -48,13 +47,24 @@ public class HostInfoUpdater extends ControllerMaintainer {
                 for (var node : nodeRepository.list(zone, false)) {
                     if (!node.type().isHost()) continue;
                     NodeEntity nodeEntity = nodeEntities.get(registeredHostnameOf(node));
-                    if (!shouldUpdateSwitch(node, nodeEntity) && !shouldUpdateModel(node, nodeEntity)) continue;
+                    if (nodeEntity == null) continue;
 
-                    NodeRepositoryNode updatedNode = new NodeRepositoryNode();
-                    nodeEntity.switchHostname().ifPresent(updatedNode::setSwitchHostname);
-                    buildModelName(nodeEntity).ifPresent(updatedNode::setModelName);
-                    nodeRepository.patchNode(zone, node.hostname().value(), updatedNode);
-                    hostsUpdated++;
+                    boolean updatedHost = false;
+                    Optional<String> modelName = modelNameOf(nodeEntity);
+                    if (modelName.isPresent() && !modelName.equals(node.modelName())) {
+                        nodeRepository.updateModel(zone, node.hostname().value(), modelName.get());
+                        updatedHost = true;
+                    }
+
+                    Optional<String> switchHostname = nodeEntity.switchHostname();
+                    if (switchHostname.isPresent() && !switchHostname.equals(node.switchHostname())) {
+                        nodeRepository.updateSwitchHostname(zone, node.hostname().value(), switchHostname.get());
+                        updatedHost = true;
+                    }
+
+                    if (updatedHost) {
+                        hostsUpdated++;
+                    }
                 }
             }
         } finally {
@@ -65,9 +75,8 @@ public class HostInfoUpdater extends ControllerMaintainer {
         return 1.0;
     }
 
-    private static Optional<String> buildModelName(NodeEntity nodeEntity) {
-        if(nodeEntity.manufacturer().isEmpty() || nodeEntity.model().isEmpty())
-            return Optional.empty();
+    private static Optional<String> modelNameOf(NodeEntity nodeEntity) {
+        if (nodeEntity.manufacturer().isEmpty() || nodeEntity.model().isEmpty()) return Optional.empty();
         return Optional.of(nodeEntity.manufacturer().get() + " " + nodeEntity.model().get());
     }
 
@@ -78,19 +87,6 @@ public class HostInfoUpdater extends ControllerMaintainer {
         Matcher matcher = HOST_PATTERN.matcher(hostname);
         if (!matcher.matches()) return hostname;
         return matcher.replaceFirst("$1$2");
-    }
-
-    private static boolean shouldUpdateSwitch(Node node, NodeEntity nodeEntity) {
-        if (nodeEntity == null) return false;
-        if (nodeEntity.switchHostname().isEmpty())  return false;
-        return !node.switchHostname().equals(nodeEntity.switchHostname());
-    }
-
-    private static boolean shouldUpdateModel(Node node, NodeEntity nodeEntity) {
-        if (nodeEntity == null) return false;
-        if (nodeEntity.model().isEmpty())  return false;
-        if (nodeEntity.manufacturer().isEmpty()) return false;
-        return !node.modelName().equals(buildModelName(nodeEntity));
     }
 
 }

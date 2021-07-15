@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
@@ -10,8 +9,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest.Impact;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -201,7 +198,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
         if (hostAction.getState() == State.RETIRED &&
                 node.state() == Node.State.parked) {
             logger.info("Setting " + node.hostname() + " to dirty");
-            nodeRepository.setState(zoneId, NodeState.dirty, node.hostname().value());
+            nodeRepository.setState(zoneId, Node.State.dirty, node.hostname().value());
         }
         if (hostAction.getState() == State.RETIRING && node.wantToRetire()) {
             try {
@@ -275,9 +272,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
     }
 
     private void setWantToRetire(ZoneId zoneId, Node node, boolean wantToRetire) {
-        var newNode = new NodeRepositoryNode();
-        newNode.setWantToRetire(wantToRetire);
-        nodeRepository.patchNode(zoneId, node.hostname().value(), newNode);
+        nodeRepository.retire(zoneId, node.hostname().value(), wantToRetire, false);
     }
 
     private void approveChangeRequest(VespaChangeRequest changeRequest) {
@@ -311,8 +306,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
 
     private void updateReport(ZoneId zoneId, Node node, VCMRReport report) {
         logger.info(Text.format("Updating report for %s: %s", node.hostname(), report));
-        var newNode = new NodeRepositoryNode();
-        newNode.setReports(report.toNodeReports());
-        nodeRepository.patchNode(zoneId, node.hostname().value(), newNode);
+        nodeRepository.updateReports(zoneId, node.hostname().value(), report.toNodeReports());
     }
+
 }
