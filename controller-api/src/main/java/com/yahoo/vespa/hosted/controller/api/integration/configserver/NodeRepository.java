@@ -7,11 +7,9 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +23,8 @@ import java.util.stream.Collectors;
  */
 public interface NodeRepository {
 
-    void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes);
+    /** Add new nodes to the node repository */
+    void addNodes(ZoneId zone, List<Node> nodes);
 
     void deleteNode(ZoneId zone, String hostname);
 

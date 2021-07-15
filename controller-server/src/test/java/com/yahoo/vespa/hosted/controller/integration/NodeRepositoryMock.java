@@ -17,11 +17,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepoStats;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +45,14 @@ public class NodeRepositoryMock implements NodeRepository {
     private boolean hasSpareCapacity = false;
 
     @Override
-    public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
-        throw new UnsupportedOperationException();
+    public void addNodes(ZoneId zone, List<Node> nodes) {
+        Map<HostName, Node> existingNodes = nodeRepository.getOrDefault(zone, Map.of());
+        for (var node : nodes) {
+            if (existingNodes.containsKey(node.hostname())) {
+                throw new IllegalArgumentException("Node " + node.hostname() + " already added in zone " + zone);
+            }
+        }
+        putNodes(zone, nodes);
     }
 
     @Override

@@ -53,7 +53,7 @@ public class Node {
     private final long wantedRebootGeneration;
     private final int cost;
     private final int failCount;
-    private final String flavor;
+    private final Optional<String> flavor;
     private final String clusterId;
     private final ClusterType clusterType;
     private final String group;
@@ -77,7 +77,7 @@ public class Node {
                  Version currentOsVersion, Version wantedOsVersion, Optional<Instant> currentFirmwareCheck,
                  Optional<Instant> wantedFirmwareCheck, ServiceState serviceState, Optional<Instant> suspendedSince,
                  long restartGeneration, long wantedRestartGeneration, long rebootGeneration,
-                 long wantedRebootGeneration, int cost, int failCount, String flavor, String clusterId,
+                 long wantedRebootGeneration, int cost, int failCount, Optional<String> flavor, String clusterId,
                  ClusterType clusterType, String group, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                  boolean wantToRebuild, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                  DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, String> reports,
@@ -241,7 +241,7 @@ public class Node {
     }
 
     /** The flavor of this */
-    public String flavor() {
+    public Optional<String> flavor() {
         return flavor;
     }
 
@@ -458,7 +458,7 @@ public class Node {
         private long wantedRebootGeneration = 0;
         private int cost = 0;
         private int failCount = 0;
-        private String flavor = "default";
+        private Optional<String> flavor = Optional.empty();
         private String clusterId = "";
         private ClusterType clusterType = ClusterType.unknown;
         private String group = "";
@@ -647,7 +647,7 @@ public class Node {
         }
 
         public Builder flavor(String flavor) {
-            this.flavor = flavor;
+            this.flavor = Optional.of(flavor);
             return this;
         }
 
