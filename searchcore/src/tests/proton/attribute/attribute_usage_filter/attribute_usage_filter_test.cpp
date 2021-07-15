@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_usage_filter_test");
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/size_literals.h>
+
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_usage_filter_test");
 
 using proton::AttributeUsageFilter;
 using proton::AttributeUsageStats;
@@ -24,15 +27,15 @@ class MyAttributeStats : public AttributeUsageStats
 {
 public:
     void triggerEnumStoreLimit() {
-        merge({        enumStoreOverLoad,
-                       search::AddressSpaceUsage::defaultMultiValueUsage() },
+        merge({ enumStoreOverLoad,
+                search::AddressSpaceComponents::default_multi_value_usage() },
               "enumeratedName",
               "ready");
     }
 
     void triggerMultiValueLimit() {
-        merge({         search::AddressSpaceUsage::defaultEnumStoreUsage(),
-                       multiValueOverLoad },
+        merge({ search::AddressSpaceComponents::default_enum_store_usage(),
+                multiValueOverLoad },
               "multiValueName",
               "ready");
     }
