@@ -89,7 +89,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean dryRunOnnxOnSetup() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.428") default int clusterControllerMaxHeapSizeInMb() { return 128; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.422") default int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return 256; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
