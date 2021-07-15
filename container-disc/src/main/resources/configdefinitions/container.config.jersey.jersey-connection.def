@@ -1,7 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-## Do NOT move this file to the container-jersey module. If system bundles
-## like config-model import packages from container-jersey, new class
-## loaders for these bundles will be created after reconfig.
-namespace=container.config.jersey
-
-requestTimeout             long default=-1
