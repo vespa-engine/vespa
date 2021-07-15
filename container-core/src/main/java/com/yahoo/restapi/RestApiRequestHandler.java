@@ -4,6 +4,7 @@ package com.yahoo.restapi;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.jdisc.Metric;
 
 import java.util.concurrent.Executor;
@@ -48,6 +49,7 @@ public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> 
     }
 
     @Override public final HttpResponse handle(HttpRequest request) { return restApi.handleRequest(request); }
+    @Override public RequestHandlerSpec requestHandlerSpec() { return restApi.requestHandlerSpec(); }
 
     public RestApi restApi() { return restApi; }
 }

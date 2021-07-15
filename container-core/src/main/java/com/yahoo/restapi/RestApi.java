@@ -2,8 +2,10 @@
 package com.yahoo.restapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 
 import java.io.InputStream;
 import java.util.List;
@@ -20,38 +22,78 @@ public interface RestApi {
 
     static Builder builder() { return new RestApiImpl.BuilderImpl(); }
     static RouteBuilder route(String pathPattern) { return new RestApiImpl.RouteBuilderImpl(pathPattern); }
+    static HandlerConfigBuilder handlerConfig() { return new RestApiImpl.HandlerConfigBuilderImpl(); }
 
     HttpResponse handleRequest(HttpRequest request);
     ObjectMapper jacksonJsonMapper();
+
+    /** @see com.yahoo.container.jdisc.HttpRequestHandler#requestHandlerSpec() */
+    RequestHandlerSpec requestHandlerSpec();
 
     interface Builder {
         Builder setObjectMapper(ObjectMapper mapper);
         Builder setDefaultRoute(RouteBuilder route);
         Builder addRoute(RouteBuilder route);
         Builder addFilter(Filter filter);
+        /** see {@link RestApiMappers#DEFAULT_EXCEPTION_MAPPERS} for default mappers */
         <EXCEPTION extends RuntimeException> Builder addExceptionMapper(Class<EXCEPTION> type, ExceptionMapper<EXCEPTION> mapper);
+        /** see {@link RestApiMappers#DEFAULT_RESPONSE_MAPPERS} for default mappers */
         <RESPONSE_ENTITY> Builder addResponseMapper(Class<RESPONSE_ENTITY> type, ResponseMapper<RESPONSE_ENTITY> mapper);
+        /** see {@link RestApiMappers#DEFAULT_REQUEST_MAPPERS} for default mappers */
         <REQUEST_ENTITY> Builder addRequestMapper(Class<REQUEST_ENTITY> type, RequestMapper<REQUEST_ENTITY> mapper);
         <RESPONSE_ENTITY> Builder registerJacksonResponseEntity(Class<RESPONSE_ENTITY> type);
         <REQUEST_ENTITY> Builder registerJacksonRequestEntity(Class<REQUEST_ENTITY> type);
+        /** Disables mappers listed in {@link RestApiMappers#DEFAULT_EXCEPTION_MAPPERS} */
         Builder disableDefaultExceptionMappers();
+        /** Disables mappers listed in {@link RestApiMappers#DEFAULT_RESPONSE_MAPPERS} */
         Builder disableDefaultResponseMappers();
+        Builder disableDefaultAclMapping();
         RestApi build();
     }
 
     interface RouteBuilder {
         RouteBuilder name(String name);
-        RouteBuilder get(Handler<?> handler);
-        RouteBuilder post(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder post(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
-        RouteBuilder put(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder put(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
-        RouteBuilder delete(Handler<?> handler);
-        RouteBuilder patch(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder patch(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
-        RouteBuilder defaultHandler(Handler<?> handler);
-        <REQUEST_ENTITY> RouteBuilder defaultHandler(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
         RouteBuilder addFilter(Filter filter);
+
+        // GET
+        RouteBuilder get(Handler<?> handler);
+        RouteBuilder get(Handler<?> handler, HandlerConfigBuilder config);
+
+        // POST
+        RouteBuilder post(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder post(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
+
+        // PUT
+        RouteBuilder put(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder put(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
+
+        // DELETE
+        RouteBuilder delete(Handler<?> handler);
+        RouteBuilder delete(Handler<?> handler, HandlerConfigBuilder config);
+
+        // PATCH
+        RouteBuilder patch(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder patch(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
+
+        // Default
+        RouteBuilder defaultHandler(Handler<?> handler);
+        RouteBuilder defaultHandler(Handler<?> handler, HandlerConfigBuilder config);
+        <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config);
     }
 
     @FunctionalInterface interface Handler<RESPONSE_ENTITY> {
@@ -70,6 +112,12 @@ public interface RestApi {
 
     @FunctionalInterface interface Filter { HttpResponse filterRequest(FilterContext context); }
 
+    interface HandlerConfigBuilder {
+        HandlerConfigBuilder withReadAclAction();
+        HandlerConfigBuilder withWriteAclAction();
+        HandlerConfigBuilder withCustomAclAction(AclMapping.Action action);
+    }
+
     interface RequestContext {
         HttpRequest request();
         PathParameters pathParameters();
@@ -80,6 +128,7 @@ public interface RestApi {
         RequestContent requestContentOrThrow();
         ObjectMapper jacksonJsonMapper();
         UriBuilder uriBuilder();
+        AclMapping.Action aclAction();
 
         interface Parameters {
             Optional<String> getString(String name);
