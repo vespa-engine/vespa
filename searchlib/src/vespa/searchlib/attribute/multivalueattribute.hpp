@@ -205,7 +205,7 @@ void
 MultiValueAttribute<B, M>::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     B::populate_address_space_usage(usage);
-    usage.add(AddressSpaceComponents::multi_value, _mvMapping.getAddressSpaceUsage());
+    usage.set(AddressSpaceComponents::multi_value, _mvMapping.getAddressSpaceUsage());
 }
 
 template <typename B, typename M>

@@ -81,7 +81,7 @@ void
 EnumAttribute<B>::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     B::populate_address_space_usage(usage);
-    usage.add(AddressSpaceComponents::enum_store, _enumStore.get_address_space_usage());
+    usage.set(AddressSpaceComponents::enum_store, _enumStore.get_address_space_usage());
 }
 
 } // namespace search

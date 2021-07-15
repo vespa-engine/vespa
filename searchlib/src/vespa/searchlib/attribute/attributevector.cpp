@@ -227,8 +227,8 @@ void
 AttributeVector::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     // TODO: Stop inserting defaults here when code using AddressSpaceUsage no longer require these two components.
-    usage.add(AddressSpaceComponents::enum_store, AddressSpaceComponents::default_enum_store_usage());
-    usage.add(AddressSpaceComponents::multi_value, AddressSpaceComponents::default_multi_value_usage());
+    usage.set(AddressSpaceComponents::enum_store, AddressSpaceComponents::default_enum_store_usage());
+    usage.set(AddressSpaceComponents::multi_value, AddressSpaceComponents::default_multi_value_usage());
 }
 
 AddressSpaceUsage
