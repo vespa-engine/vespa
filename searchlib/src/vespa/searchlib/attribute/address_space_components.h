@@ -14,8 +14,8 @@ class AddressSpaceComponents {
 public:
     static vespalib::AddressSpace default_enum_store_usage();
     static vespalib::AddressSpace default_multi_value_usage();
-    static vespalib::string enum_store;
-    static vespalib::string multi_value;
+    static const vespalib::string enum_store;
+    static const vespalib::string multi_value;
 };
 
 }

@@ -15,7 +15,7 @@ AddressSpace AddressSpaceComponents::default_multi_value_usage() {
     return AddressSpace(0, 0, (1ull << 32));
 }
 
-vespalib::string AddressSpaceComponents::enum_store = "enum-store";
-vespalib::string AddressSpaceComponents::multi_value = "multi-value";
+const vespalib::string AddressSpaceComponents::enum_store = "enum-store";
+const vespalib::string AddressSpaceComponents::multi_value = "multi-value";
 
 }
