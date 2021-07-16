@@ -20,11 +20,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVers
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -76,23 +78,25 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public List<Node> list(ZoneId zone, boolean includeDeprovisioned) {
-        return nodeRepository.getOrDefault(zone, Map.of()).values().stream()
-                             .filter(node -> includeDeprovisioned || node.state() != Node.State.deprovisioned)
-                             .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Node> list(ZoneId zone, ApplicationId application) {
-        return nodeRepository.getOrDefault(zone, Map.of()).values().stream()
-                             .filter(node -> node.owner().map(application::equals).orElse(false))
-                             .collect(Collectors.toList());
+        return list(zone).stream()
+                         .filter(node -> includeDeprovisioned || node.state() != Node.State.deprovisioned)
+                         .collect(Collectors.toList());
     }
 
     @Override
     public List<Node> list(ZoneId zone, List<HostName> hostnames) {
-        return nodeRepository.getOrDefault(zone, Map.of()).values().stream()
-                             .filter(node -> hostnames.contains(node.hostname()))
-                             .collect(Collectors.toList());
+        return list(zone).stream()
+                         .filter(node -> hostnames.contains(node.hostname()))
+                         .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Node> list(ZoneId zone, Set<ApplicationId> applications, Set<Node.State> states) {
+        return list(zone).stream()
+                         .filter(node -> states.isEmpty() || states.contains(node.state()))
+                         .filter(node -> applications.isEmpty() ||
+                                         (node.owner().isPresent() && applications.contains(node.owner().get())))
+                         .collect(Collectors.toList());
     }
 
     @Override
@@ -142,11 +146,10 @@ public class NodeRepositoryMock implements NodeRepository {
             return targetVersions.withVespaVersion(type, version);
         });
         // Bump wanted version of each node. This is done by InfrastructureProvisioner in a real node repository.
-        nodeRepository.getOrDefault(zone, Map.of()).values()
-                      .stream()
-                      .filter(node -> node.type() == type)
-                      .map(node -> Node.builder(node).wantedVersion(version).build())
-                      .forEach(node -> putNodes(zone, node));
+        patchNodes(zone, Optional.empty(), node -> {
+            if (node.type() != type) return node;
+            return Node.builder(node).wantedVersion(version).build();
+        });
     }
 
     @Override
@@ -159,11 +162,10 @@ public class NodeRepositoryMock implements NodeRepository {
             return targetVersions.withOsVersion(type, version);
         });
         // Bump wanted version of each node. This is done by OsUpgradeActivator in a real node repository.
-        nodeRepository.getOrDefault(zone, Map.of()).values()
-                      .stream()
-                      .filter(node -> node.type() == type)
-                      .map(node -> Node.builder(node).wantedOsVersion(version).build())
-                      .forEach(node -> putNodes(zone, node));
+        patchNodes(zone, Optional.empty(), node -> {
+            if (node.type() != type) return node;
+            return Node.builder(node).wantedOsVersion(version).build();
+        });
     }
 
     @Override
@@ -318,6 +320,10 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void hasSpareCapacity(boolean hasSpareCapacity) {
         this.hasSpareCapacity = hasSpareCapacity;
+    }
+
+    private Collection<Node> list(ZoneId zone) {
+        return nodeRepository.getOrDefault(zone, Map.of()).values();
     }
 
     private Node require(ZoneId zone, String hostname) {

@@ -277,7 +277,7 @@ public class ApplicationController {
     /** Reads the oldest installed platform for the given application and zone from the node repo of that zone. */
     private Optional<Version> oldestInstalledPlatform(JobId job) {
         return configServer.nodeRepository().list(job.type().zone(controller.system()),
-                                                  job.application(),
+                                                  Set.of(job.application()),
                                                   EnumSet.of(active, reserved))
                            .stream()
                            .map(Node::currentVersion)
