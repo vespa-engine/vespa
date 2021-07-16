@@ -56,6 +56,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -211,8 +212,12 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private void verifyAppDir(File appDir) {
-        if (appDir==null || !appDir.isDirectory()) {
-            throw new IllegalArgumentException("Path '" + appDir + "' is not a directory.");
+        Objects.requireNonNull(appDir, "Path cannot be null");
+        if ( ! appDir.exists()) {
+            throw new IllegalArgumentException("Path '" + appDir + "' does not exist");
+        }
+        if ( ! appDir.isDirectory()) {
+            throw new IllegalArgumentException("Path '" + appDir + "' is not a directory");
         }
         if (! appDir.canRead()){
             throw new IllegalArgumentException("Cannot read from application directory '" + appDir + "'");
@@ -308,7 +313,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
                 ret.add(new NamedReader(f.getName(), new FileReader(f)));
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Couldn't get search definition contents.", e);
+            throw new IllegalArgumentException("Couldn't get schema contents.", e);
         }
         return ret;
     }
@@ -518,7 +523,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
             return bundle;
         }
 
-    } // class Component
+    }
 
     /**
      * Reads a ranking expression from file to a string and returns it.
