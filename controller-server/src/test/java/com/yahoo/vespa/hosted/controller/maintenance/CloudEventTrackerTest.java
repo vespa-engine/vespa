@@ -6,7 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.MockCloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author olaa
  */
-public class CloudEventReporterTest {
+public class CloudEventTrackerTest {
 
     private final ControllerTester tester = new ControllerTester();
     private final ZoneApiMock unsupportedZone = createZone("prod.zone3", "region-1", "other");
@@ -41,20 +41,20 @@ public class CloudEventReporterTest {
     @Test
     public void maintain() {
         setUpZones();
-        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15));
+        CloudEventTracker cloudEventTracker = new CloudEventTracker(tester.controller(), Duration.ofMinutes(15));
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), hostsNotDeprovisioning(unsupportedZone.getId()));
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), hostsNotDeprovisioning(zone1.getId()));
         assertEquals(Set.of("host4.com", "host5.com", "confighost.com"), hostsNotDeprovisioning(zone2.getId()));
 
         mockEvents();
-        cloudEventReporter.maintain();
+        cloudEventTracker.maintain();
         assertEquals(Set.of("host1.com", "host2.com", "host3.com"), hostsNotDeprovisioning(unsupportedZone.getId()));
         assertEquals(Set.of("host3.com"), hostsNotDeprovisioning(zone1.getId()));
         assertEquals(Set.of("host4.com"), hostsNotDeprovisioning(zone2.getId()));
     }
 
     private void mockEvents() {
-        MockAwsEventFetcher eventFetcher = (MockAwsEventFetcher) tester.controller().serviceRegistry().eventFetcherService();
+        MockCloudEventFetcher eventFetcher = (MockCloudEventFetcher) tester.controller().serviceRegistry().eventFetcherService();
 
         Date date = new Date();
         CloudEvent event1 = new CloudEvent("event 1",

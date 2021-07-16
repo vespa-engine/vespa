@@ -16,7 +16,7 @@
       "name": "ChangeRequestMaintainer"
     },
     {
-      "name": "CloudEventReporter"
+      "name": "CloudEventTracker"
     },
     {
       "name": "CloudTrialExpirer"
