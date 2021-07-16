@@ -60,17 +60,23 @@ public class NormalizeTestCase {
     }
 
     class MyMockTransformer implements Transformer {
-        boolean first = true;
+        public boolean first = true;
         @Override
         public String accentDrop(String input, Language language) {
             if (first) {
                 first = false;
-                return input.replace(' ', '\u0008');
+                return "\u0008";
             } else {
                 return input.replace(' ', '/');
             }
         }
     }        
+
+    boolean getFirst(Transformer t) {
+        assertTrue(t instanceof MyMockTransformer);
+        var mmt = (MyMockTransformer)t;
+        return mmt.first;
+    }
 
     class MyMockLinguistics extends SimpleLinguistics {
         private Transformer transformer = new MyMockTransformer();
@@ -86,9 +92,26 @@ public class NormalizeTestCase {
         ctx.setLanguage(Language.ENGLISH);
         ctx.setValue(new StringFieldValue("bad norm"));
         var linguistics = new MyMockLinguistics();
+        assertTrue(getFirst(linguistics.getTransformer()));
         new NormalizeExpression(linguistics).execute(ctx);
         FieldValue val = ctx.getValue();
         assertTrue(val instanceof StringFieldValue);
         assertEquals("bad/norm", ((StringFieldValue)val).getString());
+        assertFalse(getFirst(linguistics.getTransformer()));
     }
+
+    @Test
+    public void requireThatEmptyIsNop() {
+        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
+        ctx.setLanguage(Language.ENGLISH);
+        var orig = new StringFieldValue("");
+        ctx.setValue(orig);
+        var linguistics = new MyMockLinguistics();
+        assertTrue(getFirst(linguistics.getTransformer()));
+        new NormalizeExpression(linguistics).execute(ctx);
+        FieldValue val = ctx.getValue();
+        assertTrue(val == orig);
+        assertTrue(getFirst(linguistics.getTransformer()));
+    }
+
 }
