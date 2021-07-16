@@ -184,6 +184,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean dryRunOnnxOnSetup;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final double minNodeRatioPerGroup;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -213,6 +214,7 @@ public class ModelContextImpl implements ModelContext {
             this.dryRunOnnxOnSetup = flagValue(source, appId, Flags.DRY_RUN_ONNX_ON_SETUP);
             this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
             this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
+            this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -244,6 +246,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+        @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

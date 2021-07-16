@@ -279,6 +279,14 @@ public class Flags {
             "Whether to use Podman 3 on supported hosts",
             "Takes effect on host-admin restart");
 
+    public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
+            "min-node-ratio-per-group", 0.0,
+            List.of("geirst", "vekterli"), "2021-07-16", "2021-10-01",
+            "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
