@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Node repository interface intended for use by the controller.
@@ -41,12 +42,14 @@ public interface NodeRepository {
     List<Node> list(ZoneId zone, List<HostName> hostnames);
 
     /** List all nodes in zone owned by given application */
-    default List<Node> list(ZoneId zone, ApplicationId application) {
-        return list(zone, Set.of(application), Set.of());
-    }
+    List<Node> list(ZoneId zone, ApplicationId application);
 
     /** List all nodes in states, in zone owned by given application */
-    List<Node> list(ZoneId zone, Set<ApplicationId> applications, Set<Node.State> states);
+    default List<Node> list(ZoneId zone, ApplicationId application, Set<Node.State> states) {
+        return list(zone, application).stream()
+                                      .filter(node -> states.contains(node.state()))
+                                      .collect(Collectors.toList());
+    }
 
     /** Get node repository's view of given application */
     Application getApplication(ZoneId zone, ApplicationId application);

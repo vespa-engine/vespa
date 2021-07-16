@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -64,7 +65,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -313,8 +313,8 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
-                                                                                             Set.of(id.application()),
-                                                                                             EnumSet.of(active));
+                                                                                             id.application(),
+                                                                                             Set.of(active));
         List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
                                                                                                nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
@@ -419,8 +419,8 @@ public class InternalStepRunner implements StepRunner {
                    : Optional.empty();
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone,
-                                                                                             Set.of(testerId),
-                                                                                             EnumSet.of(active, reserved));
+                                                                                             testerId,
+                                                                                             ImmutableSet.of(active, reserved));
         List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(zone,
                                                                                                nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
@@ -447,13 +447,14 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        return endpoints.get(zoneId).parallelStream().allMatch(endpoint -> {
+        return endpoints.get(zoneId).parallelStream().map(endpoint -> {
             boolean ready = controller.jobController().cloud().ready(endpoint.url());
-            if (!ready) {
+            if ( ! ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
+                return Boolean.FALSE;
             }
-            return ready;
-        });
+            return Boolean.TRUE;
+        }).allMatch(Boolean.TRUE::equals);
     }
 
     /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
