@@ -23,13 +23,20 @@ import java.util.logging.Logger;
 
 import static com.yahoo.restapi.RestApi.route;
 
+interface ResourceDefinition {
+    HttpResponse root(RestApi.RequestContext ctx);
+    Slime domainList(RestApi.RequestContext ctx);
+    Slime properties(RestApi.RequestContext ctx);
+    String signup(RestApi.RequestContext ctx);
+}
+
 /**
  * This API proxies requests to an Athenz server.
  * 
  * @author jonmv
  */
 @SuppressWarnings("unused") // Handler
-public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> {
+public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> implements ResourceDefinition {
 
     private final static Logger log = Logger.getLogger(AthenzApiHandler.class.getName());
 
@@ -45,7 +52,7 @@ public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> {
         this.properties = controller.serviceRegistry().entityService();
     }
 
-    private static RestApi createRestApi(AthenzApiHandler self) {
+    private static RestApi createRestApi(ResourceDefinition self) {
         return RestApi.builder()
                 .addRoute(route("/athenz/v1")
                         .get(self::root))
@@ -58,11 +65,13 @@ public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> {
                 .build();
     }
 
-    private HttpResponse root(RestApi.RequestContext ctx) {
+    @Override
+    public HttpResponse root(RestApi.RequestContext ctx) {
         return new ResourceResponse(ctx.request(), "domains", "properties");
     }
 
-    private Slime properties(RestApi.RequestContext ctx) {
+    @Override
+    public Slime properties(RestApi.RequestContext ctx) {
         Slime slime = new Slime();
         Cursor response = slime.setObject();
         Cursor array = response.setArray("properties");
@@ -74,7 +83,8 @@ public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> {
         return slime;
     }
 
-    private Slime domainList(RestApi.RequestContext ctx) {
+    @Override
+    public Slime domainList(RestApi.RequestContext ctx) {
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("data");
         for (AthenzDomain athenzDomain : athenz.getDomainList(ctx.queryParameters().getString("prefix").orElse(null)))
@@ -83,7 +93,8 @@ public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> {
         return slime;
     }
 
-    private String signup(RestApi.RequestContext ctx) {
+    @Override
+    public String signup(RestApi.RequestContext ctx) {
         AthenzUser user = athenzUser(ctx);
         athenz.addTenantAdmin(sandboxDomain, user);
         return "User '" + user.getName() + "' added to admin role of '" + sandboxDomain.getName() + "'";
