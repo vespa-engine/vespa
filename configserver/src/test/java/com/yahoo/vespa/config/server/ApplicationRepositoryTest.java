@@ -477,9 +477,17 @@ public class ApplicationRepositoryTest {
         sessionRepository.addLocalSession(localSession2);
         assertEquals(2, sessionRepository.getLocalSessions().size());
 
+        // Create a session, set status to UNKNOWN, we don't want to expire those (creation time is then EPOCH,
+        // so will be candidate for expiry)
+        Session session = sessionRepository.createRemoteSession(7);
+        sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN);
+
+        sessionRepository.addLocalSession(localSession2);
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+
         // Check that trying to expire local session when there exists a local session with no zookeeper data works
         tester.applicationRepository().deleteExpiredLocalSessions();
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        assertEquals(2, sessionRepository.getLocalSessions().size());
 
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredLocalSessions();
