@@ -411,8 +411,8 @@ sub http_upload {
         debug("exitcode=$exitcode\n");
         debug("output=$output\n");
         $configsource_url = shift(@configsources);
-        $configsource_url =~ s/\/$//; # Remove last / from configsource_url
         if ($configsource_url) {
+          $configsource_url =~ s/\/$//; # Remove last / from configsource_url
           $configsource_url_used = $configsource_url;
           $retry = 1;
           print_request_failed($exitcode, $configsource_url_used);
