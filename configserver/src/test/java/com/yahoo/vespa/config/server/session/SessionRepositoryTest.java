@@ -28,7 +28,6 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -193,7 +192,7 @@ public class SessionRepositoryTest {
 
         expectedException.expectMessage("Could not load remote session " + sessionIdString);
         expectedException.expect(RuntimeException.class);
-        sessionRepository.loadSessions(false, new InThreadExecutorService());
+        sessionRepository.loadSessions(new InThreadExecutorService());
         assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(0));
     }
 
@@ -285,7 +284,6 @@ public class SessionRepositoryTest {
 
     private void createSession(long sessionId, boolean wait) {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
-                                                                ConfigCurator.create(curator),
                                                                 tenantName,
                                                                 sessionId,
                                                                 ConfigUtils.getCanonicalHostName());

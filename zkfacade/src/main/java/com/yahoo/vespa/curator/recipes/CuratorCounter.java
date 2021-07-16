@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.recipes;
 
+import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
@@ -9,15 +10,14 @@ import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
  * A distributed atomic counter.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class CuratorCounter {
 
     private final DistributedAtomicLong counter;
-    private final String counterPath;
+    private final Path counterPath;
 
-    public CuratorCounter(Curator curator, String counterPath) {
-        this.counter = curator.createAtomicCounter(counterPath);
+    public CuratorCounter(Curator curator, Path counterPath) {
+        this.counter = curator.createAtomicCounter(counterPath.getAbsolute());
         this.counterPath = counterPath;
     }
 

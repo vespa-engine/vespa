@@ -803,12 +803,14 @@ public:
     mutable size_t prepare_set_tensor_cnt;
     mutable size_t complete_set_tensor_cnt;
     size_t clear_doc_cnt;
+    const Value* exp_tensor;
 
     MockDenseTensorAttribute(vespalib::stringref name, const AVConfig& cfg)
         : DenseTensorAttribute(name, cfg),
           prepare_set_tensor_cnt(0),
           complete_set_tensor_cnt(0),
-          clear_doc_cnt(0)
+          clear_doc_cnt(0),
+          exp_tensor()
     {}
     uint32_t clearDoc(DocId docid) override {
         ++clear_doc_cnt;
@@ -816,6 +818,7 @@ public:
     }
     std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const Value& tensor) const override {
         ++prepare_set_tensor_cnt;
+        EXPECT_EQ(*exp_tensor, tensor);
         return std::make_unique<MockPrepareResult>(docid, tensor);
     }
 
@@ -873,6 +876,7 @@ class TwoPhasePutTest : public AttributeWriterTest {
 public:
     Schema schema;
     DocBuilder builder;
+    vespalib::string doc_id;
     std::shared_ptr<MockDenseTensorAttribute> attr;
     std::unique_ptr<Value> tensor;
 
@@ -880,6 +884,7 @@ public:
         : AttributeWriterTest(),
           schema(createTensorSchema(dense_tensor)),
           builder(schema),
+          doc_id("id:ns:searchdocument::1"),
           attr()
     {
         setup(2);
@@ -889,6 +894,7 @@ public:
         attr->clear_doc_cnt = 0;
         tensor = make_tensor(TensorSpec(dense_tensor)
                                      .add({{"x", 0}}, 3).add({{"x", 1}}, 5));
+        attr->exp_tensor = tensor.get();
     }
     void expect_tensor_attr_calls(size_t exp_prepare_cnt,
                                   size_t exp_complete_cnt,
@@ -901,12 +907,22 @@ public:
         return createTensorPutDoc(builder, *tensor);
     }
     Document::UP make_no_field_doc() {
-        return builder.startDocument("id:ns:searchdocument::1").endDocument();
+        return builder.startDocument(doc_id).endDocument();
     }
     Document::UP make_no_tensor_doc() {
-        return builder.startDocument("id:ns:searchdocument::1").
+        return builder.startDocument(doc_id).
                 startAttributeField("a1").
             addTensor(std::unique_ptr<vespalib::eval::Value>()).endField().endDocument();
+    }
+    DocumentUpdate::UP make_assign_update() {
+       auto upd = std::make_unique<DocumentUpdate>(*builder.getDocumentTypeRepo(),
+                                                   builder.getDocumentType(),
+                                                   DocumentId(doc_id));
+        TensorDataType tensor_type(vespalib::eval::ValueType::from_spec(dense_tensor));
+        TensorFieldValue tensor_value(tensor_type);
+        tensor_value= SimpleValue::from_value(*tensor);
+        upd->addUpdate(FieldUpdate(upd->getType().getField("a1")).addUpdate(AssignValueUpdate(tensor_value)));
+        return upd;
     }
     void expect_shared_executor_tasks(size_t exp_accepted_tasks) {
         auto stats = _shared.getStats();
@@ -956,6 +972,22 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set)
     expect_tensor_attr_calls(0, 0, 1);
     expect_shared_executor_tasks(1);
     assertExecuteHistory({0});
+}
+
+TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_for_tensor_attribute)
+{
+    auto upd = make_assign_update();
+
+    DummyFieldUpdateCallback on_update;
+    update(1, *upd, 1, on_update);
+    expect_tensor_attr_calls(1, 1);
+    expect_shared_executor_tasks(1);
+    assertExecuteHistory({0});
+
+    update(2, *upd, 2, on_update);
+    expect_tensor_attr_calls(2, 2);
+    expect_shared_executor_tasks(2);
+    assertExecuteHistory({0, 0});
 }
 
 

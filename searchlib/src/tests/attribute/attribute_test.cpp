@@ -6,22 +6,23 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/searchlib/attribute/multienumattribute.hpp>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/multivalueattribute.hpp>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/multivalueattribute.hpp>
-#include <vespa/searchlib/attribute/multienumattribute.hpp>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
+#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <cmath>
@@ -2105,30 +2106,30 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     AddressSpaceUsage after = attrPtr->getAddressSpaceUsage();
     if (attrPtr->hasEnum()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has enum", attrName.c_str());
-        EXPECT_EQUAL(before.enumStoreUsage().used(), 1u);
-        EXPECT_EQUAL(before.enumStoreUsage().dead(), 1u);
-        EXPECT_GREATER(after.enumStoreUsage().used(), before.enumStoreUsage().used());
-        EXPECT_GREATER_EQUAL(after.enumStoreUsage().limit(), before.enumStoreUsage().limit());
-        EXPECT_GREATER(after.enumStoreUsage().limit(), 4200000000u);
+        EXPECT_EQUAL(before.enum_store_usage().used(), 1u);
+        EXPECT_EQUAL(before.enum_store_usage().dead(), 1u);
+        EXPECT_GREATER(after.enum_store_usage().used(), before.enum_store_usage().used());
+        EXPECT_GREATER_EQUAL(after.enum_store_usage().limit(), before.enum_store_usage().limit());
+        EXPECT_GREATER(after.enum_store_usage().limit(), 4200000000u);
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT enum", attrName.c_str());
-        EXPECT_EQUAL(before.enumStoreUsage().used(), 0u);
-        EXPECT_EQUAL(before.enumStoreUsage().dead(), 0u);
-        EXPECT_EQUAL(after.enumStoreUsage(), before.enumStoreUsage());
-        EXPECT_EQUAL(AddressSpaceUsage::defaultEnumStoreUsage(), after.enumStoreUsage());
+        EXPECT_EQUAL(before.enum_store_usage().used(), 0u);
+        EXPECT_EQUAL(before.enum_store_usage().dead(), 0u);
+        EXPECT_EQUAL(after.enum_store_usage(), before.enum_store_usage());
+        EXPECT_EQUAL(AddressSpaceComponents::default_enum_store_usage(), after.enum_store_usage());
     }
     if (attrPtr->hasMultiValue()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 1u);
-        EXPECT_EQUAL(before.multiValueUsage().dead(), 1u);
-        EXPECT_GREATER_EQUAL(after.multiValueUsage().used(), before.multiValueUsage().used());
-        EXPECT_GREATER(after.multiValueUsage().limit(), before.multiValueUsage().limit());
-        EXPECT_GREATER((1ull << 32), after.multiValueUsage().limit());
+        EXPECT_EQUAL(before.multi_value_usage().used(), 1u);
+        EXPECT_EQUAL(before.multi_value_usage().dead(), 1u);
+        EXPECT_GREATER_EQUAL(after.multi_value_usage().used(), before.multi_value_usage().used());
+        EXPECT_GREATER(after.multi_value_usage().limit(), before.multi_value_usage().limit());
+        EXPECT_GREATER((1ull << 32), after.multi_value_usage().limit());
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 0u);
-        EXPECT_EQUAL(after.multiValueUsage(), before.multiValueUsage());
-        EXPECT_EQUAL(AddressSpaceUsage::defaultMultiValueUsage(), after.multiValueUsage());
+        EXPECT_EQUAL(before.multi_value_usage().used(), 0u);
+        EXPECT_EQUAL(after.multi_value_usage(), before.multi_value_usage());
+        EXPECT_EQUAL(AddressSpaceComponents::default_multi_value_usage(), after.multi_value_usage());
     }
 }
 

@@ -78,6 +78,7 @@ public class Processing {
                 OnnxModelConfigGenerator::new,
                 OnnxModelTypeResolver::new,
                 RankingExpressionTypeResolver::new,
+                BoolAttributeValidator::new,
                 // These should be last:
                 IndexingValidation::new,
                 IndexingValues::new);

@@ -150,13 +150,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "metrics-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-01", "2021-07-15",
-            "JVM max heap size for metrics proxy in Mb",
-            "Takes effect when restarting metrics proxy",
-            CLUSTER_TYPE);
-
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
             "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-08-25",
             "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
@@ -267,12 +260,6 @@ public class Flags {
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING = defineFeatureFlag(
-            "load-local-sessions-when-bootstrapping", true,
-            List.of("hmusum"), "2021-06-15", "2021-08-15",
-            "Whether to load local sessions when bootstrapping config server",
-            "Takes effect on restart of config server");
-
     public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
             "dry-run-onnx-on-setup", false,
             List.of("baldersheim"), "2021-06-23", "2021-09-01",
@@ -287,7 +274,7 @@ public class Flags {
             "Takes effect on next run of HostEncrypter");
 
     public static final UnboundBooleanFlag PODMAN3 = defineFeatureFlag(
-            "podman3", false,
+            "podman3", true,
             List.of("mpolden"), "2021-07-05", "2021-09-01",
             "Whether to use Podman 3 on supported hosts",
             "Takes effect on host-admin restart");

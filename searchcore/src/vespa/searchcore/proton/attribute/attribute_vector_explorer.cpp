@@ -63,8 +63,8 @@ convertAddressSpaceToSlime(const AddressSpace &addressSpace, Cursor &object)
 void
 convertAddressSpaceUsageToSlime(const AddressSpaceUsage &usage, Cursor &object)
 {
-    convertAddressSpaceToSlime(usage.enumStoreUsage(), object.setObject("enumStore"));
-    convertAddressSpaceToSlime(usage.multiValueUsage(), object.setObject("multiValue"));
+    convertAddressSpaceToSlime(usage.enum_store_usage(), object.setObject("enumStore"));
+    convertAddressSpaceToSlime(usage.multi_value_usage(), object.setObject("multiValue"));
 }
 
 void

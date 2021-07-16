@@ -76,7 +76,7 @@ public class NodePrioritizer {
         // In dynamically provisioned zones, we can always take spare hosts since we can provision new on-demand,
         // NodeCandidate::compareTo will ensure that they will not be used until there is no room elsewhere.
         // In non-dynamically provisioned zones, we only allow allocating to spare hosts to replace failed nodes.
-        this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster);
+        this.canAllocateToSpareHosts = dynamicProvisioning || isReplacement(nodesInCluster, clusterSpec.group());
         // Do not allocate new nodes for exclusive deployments in dynamically provisioned zones: provision new host instead.
         this.canAllocateNew = requestedNodes instanceof NodeSpec.CountNodeSpec
                               && (!dynamicProvisioning || !requestedNodes.isExclusive());
@@ -195,10 +195,13 @@ public class NodePrioritizer {
     }
 
     /** Returns whether we are allocating to replace a failed node */
-    private boolean isReplacement(NodeList nodesInCluster) {
-        int failedNodesInCluster = nodesInCluster.failing().size() + nodesInCluster.state(Node.State.failed).size();
-        if (failedNodesInCluster == 0) return false;
-        return ! requestedNodes.fulfilledBy(nodesInCluster.size() - failedNodesInCluster);
+    private boolean isReplacement(NodeList nodesInCluster, Optional<ClusterSpec.Group> group) {
+        NodeList nodesInGroup = group.map(ClusterSpec.Group::index)
+                                     .map(nodesInCluster::group)
+                                     .orElse(nodesInCluster);
+        int failedNodesInGroup = nodesInGroup.failing().size() + nodesInGroup.state(Node.State.failed).size();
+        if (failedNodesInGroup == 0) return false;
+        return ! requestedNodes.fulfilledBy(nodesInGroup.size() - failedNodesInGroup);
     }
 
     /**

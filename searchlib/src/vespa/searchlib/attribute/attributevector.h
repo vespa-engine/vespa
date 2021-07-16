@@ -381,8 +381,7 @@ protected:
     }
 
     virtual vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const;
-    virtual vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const;
-    virtual vespalib::AddressSpace getMultiValueAddressSpaceUsage() const;
+    virtual void populate_address_space_usage(AddressSpaceUsage& usage) const;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);

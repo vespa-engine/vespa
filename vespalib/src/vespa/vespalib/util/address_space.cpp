@@ -6,6 +6,13 @@
 
 namespace vespalib {
 
+AddressSpace::AddressSpace()
+    : _used(0),
+      _dead(0),
+      _limit(0)
+{
+}
+
 AddressSpace::AddressSpace(size_t used_, size_t dead_, size_t limit_)
     : _used(used_),
       _dead(dead_),

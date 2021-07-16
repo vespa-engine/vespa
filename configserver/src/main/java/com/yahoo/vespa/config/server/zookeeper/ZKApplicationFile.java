@@ -5,13 +5,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.path.Path;
 import com.yahoo.io.IOUtils;
+
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 
 /**
  * @author Ulf Lilleengen
@@ -30,7 +39,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public boolean isDirectory() {
-        String zkPath = getZKPath(path);
+        Path zkPath = getZKPath(path);
         if (zkApp.exists(zkPath)) {
             String data = zkApp.getData(zkPath);
             return data == null || data.isEmpty() || ! zkApp.getChildren(zkPath).isEmpty();
@@ -41,7 +50,7 @@ class ZKApplicationFile extends ApplicationFile {
     @Override
     public boolean exists() {
         try {
-            String zkPath = getZKPath(path);
+            Path zkPath = getZKPath(path);
             return zkApp.exists(zkPath);
         } catch (RuntimeException e) {
             return false;
@@ -60,7 +69,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public Reader createReader() throws FileNotFoundException {
-        String zkPath = getZKPath(path);
+        Path zkPath = getZKPath(path);
         if ( ! zkApp.exists(zkPath)) throw new FileNotFoundException("No such path: " + path);
 
         return new StringReader(zkApp.getData(zkPath));
@@ -68,7 +77,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public InputStream createInputStream() throws FileNotFoundException {
-        String zkPath = getZKPath(path);
+        Path zkPath = getZKPath(path);
         if ( ! zkApp.exists(zkPath)) throw new FileNotFoundException("No such path: " + path);
 
         return new ByteArrayInputStream(zkApp.getBytes(zkPath));
@@ -76,7 +85,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public ApplicationFile createDirectory() {
-        String zkPath = getZKPath(path);
+        Path zkPath = getZKPath(path);
         if (isDirectory()) return this;
         if (exists()) {
             throw new IllegalArgumentException("Unable to create directory, file exists: " + path);
@@ -88,7 +97,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public ApplicationFile writeFile(Reader input) {
-        String zkPath = getZKPath(path);
+        Path zkPath = getZKPath(path);
         try {
             String data = IOUtils.readAll(input);
             String status = ContentStatusNew;
@@ -105,7 +114,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public ApplicationFile appendFile(String value) {
-        String zkPath = getZKPath(path);
+        Path zkPath = getZKPath(path);
         String status = ContentStatusNew;
         if (zkApp.exists(zkPath)) {
             status = ContentStatusChanged;
@@ -120,7 +129,7 @@ class ZKApplicationFile extends ApplicationFile {
 
     @Override
     public List<ApplicationFile> listFiles(PathFilter filter) {
-        String userPath = getZKPath(path);
+        Path userPath = getZKPath(path);
         List<ApplicationFile> ret = new ArrayList<>();
         for (String zkChild : zkApp.getChildren(userPath)) {
             Path childPath = path.append(zkChild);
@@ -132,15 +141,15 @@ class ZKApplicationFile extends ApplicationFile {
         return ret;
     }
 
-    private static String getZKPath(Path path) {
+    private static Path getZKPath(Path path) {
         if (path.isRoot()) {
-            return ConfigCurator.USERAPP_ZK_SUBPATH;
+            return Path.fromString(USERAPP_ZK_SUBPATH);
         }
-        return ConfigCurator.USERAPP_ZK_SUBPATH + "/" + path.getRelative();
+        return Path.fromString(USERAPP_ZK_SUBPATH).append(path);
     }
 
     private void writeMetaFile(String input, String status) {
-        String metaPath = getZKPath(getMetaPath());
+        Path metaPath = getZKPath(getMetaPath());
         StringWriter writer = new StringWriter();
         try {
             mapper.writeValue(writer, new MetaData(status, input == null ? "" : ConfigUtils.getMd5(input)));
@@ -152,7 +161,7 @@ class ZKApplicationFile extends ApplicationFile {
     }
 
     public MetaData getMetaData() {
-        String metaPath = getZKPath(getMetaPath());
+        Path metaPath = getZKPath(getMetaPath());
         log.log(Level.FINE, () -> "Getting metadata for " + metaPath);
         if (!zkApp.exists(getZKPath(path))) {
             if (zkApp.exists(metaPath)) {
@@ -167,7 +176,7 @@ class ZKApplicationFile extends ApplicationFile {
         return new MetaData(ContentStatusNew, isDirectory() ? "" : ConfigUtils.getMd5(zkApp.getData(getZKPath(path))));
     }
 
-    private MetaData getMetaDataFromZk(String metaPath) {
+    private MetaData getMetaDataFromZk(Path metaPath) {
         try {
             return mapper.readValue(zkApp.getBytes(metaPath), MetaData.class);
         } catch (IOException e) {

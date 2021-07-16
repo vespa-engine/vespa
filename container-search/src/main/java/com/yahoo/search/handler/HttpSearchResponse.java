@@ -22,7 +22,6 @@ import com.yahoo.yolean.trace.TraceNode;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -191,11 +190,11 @@ public class HttpSearchResponse extends ExtendedResponse {
 
         @Override
         public void run() {
-            long latencyMillis = Duration.ofNanos(System.nanoTime() - nanoStart).toMillis();
+            long latencyNanos = System.nanoTime() - nanoStart;
             Metric.Context ctx = metric.createContext(Map.of(
                     SearchHandler.RENDERER_DIMENSION, rendererCopy.getClassName(),
                     SearchHandler.MIME_DIMENSION, rendererCopy.getMimeType()));
-            metric.set(SearchHandler.RENDER_LATENCY_METRIC, latencyMillis, ctx);
+            metric.set(SearchHandler.RENDER_LATENCY_METRIC, latencyNanos, ctx);
         }
     }
 

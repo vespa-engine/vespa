@@ -89,12 +89,12 @@ TEST(ServiceMapHistoryTest, full_inspection) {
         for (int i = 0; i < 1984; ++i) {
             auto name = fmt("key/%d/name", i);
             auto spec = fmt("tcp/host%d.domain.tld:19099", 10000+i);
-            p.update(ServiceMapping{name, spec});
+            p.add(ServiceMapping{name, spec});
         }
         EXPECT_EQ(p.currentGen(), GenCnt(1985));
-        p.remove("key/666/name");
+        p.remove(ServiceMapping{"key/666/name", "tcp/host10666.domain.tld:19099"});
         EXPECT_EQ(p.currentGen(), GenCnt(1986));
-        p.update(ServiceMapping{"key/1969/name", "tcp/woodstock:19069"});
+        p.add(ServiceMapping{"key/1969/name", "tcp/woodstock:19069"});
         EXPECT_EQ(p.currentGen(), GenCnt(1987));
 
         auto map = dump(p);
@@ -187,7 +187,7 @@ TEST(ServiceMapHistoryTest, handlers_test) {
         EXPECT_FALSE(cantCancel);
 
         handler1.got_update = false;
-        p.update(ServiceMapping{"foo", "bar"});
+        p.add(ServiceMapping{"foo", "bar"});
         EXPECT_FALSE(handler1.got_update);
         EXPECT_TRUE(handler2.got_update);
         EXPECT_FALSE(handler3.got_update);
@@ -197,7 +197,7 @@ TEST(ServiceMapHistoryTest, handlers_test) {
         handler2.got_update = false;
         p.asyncGenerationDiff(&handler3, GenCnt(2));
         EXPECT_FALSE(handler3.got_update);
-        p.remove("foo");
+        p.remove(ServiceMapping{"foo", "bar"});
         EXPECT_FALSE(handler1.got_update);
         EXPECT_FALSE(handler2.got_update);
         EXPECT_TRUE(handler3.got_update);

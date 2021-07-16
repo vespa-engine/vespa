@@ -1,19 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin;
 
-import com.yahoo.osgi.maven.ProjectBundleClassPaths;
 import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -22,13 +18,7 @@ import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
-import static com.yahoo.osgi.maven.ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.endsWith;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -152,33 +142,4 @@ public class BundleTest {
         assertThat(webInfUrl, containsString("/WEB-INF/web.xml"));
     }
 
-    // TODO Vespa 8: Remove, the classpath mappings file is only needed for jersey resources to work in the application test framework.
-    //               When this test is removed, also remove the maven-resources-plugin from the 'main' test bundle's pom.
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-    @SuppressWarnings("unchecked")
-    @Test
-    public void bundle_class_path_mappings_are_generated() throws Exception {
-        ZipEntry classpathMappingsEntry = jarFile.getEntry(CLASSPATH_MAPPINGS_FILENAME);
-
-        assertNotNull(
-                "Could not find " + CLASSPATH_MAPPINGS_FILENAME + " in the test bundle",
-                classpathMappingsEntry);
-
-        Path mappingsFile = tempFolder.newFile(CLASSPATH_MAPPINGS_FILENAME).toPath();
-        Files.copy(jarFile.getInputStream(classpathMappingsEntry), mappingsFile, REPLACE_EXISTING);
-
-        ProjectBundleClassPaths bundleClassPaths = ProjectBundleClassPaths.load(mappingsFile);
-
-        assertThat(bundleClassPaths.mainBundle.bundleSymbolicName, is("main"));
-
-        Collection<String> mainBundleClassPaths = bundleClassPaths.mainBundle.classPathElements;
-
-        assertThat(mainBundleClassPaths,
-                hasItems(
-                        endsWith("target/classes"),
-                        anyOf(
-                                allOf(containsString("/jrt-"), containsString(".jar")),
-                                containsString("/jrt.jar"))));
-    }
 }

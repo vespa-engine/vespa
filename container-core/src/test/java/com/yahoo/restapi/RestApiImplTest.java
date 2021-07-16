@@ -1,14 +1,18 @@
 package com.yahoo.restapi;// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
+import static com.yahoo.restapi.RestApi.handlerConfig;
 import static com.yahoo.restapi.RestApi.route;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -103,11 +108,30 @@ class RestApiImplTest {
     }
 
     @Test
-    public void uri_builder_creates_valid_uri_prefix() {
+    void uri_builder_creates_valid_uri_prefix() {
         RestApi restApi = RestApi.builder()
                 .addRoute(route("/test").get(ctx -> new MessageResponse(ctx.uriBuilder().toString())))
                 .build();
         verifyJsonResponse(restApi, Method.GET, "/test", null, 200, "{\"message\":\"http://localhost\"}");
+    }
+
+    @Test
+    void resolves_correct_acl_action() {
+        AclMapping.Action customAclAction = AclMapping.Action.custom("custom-action");
+        RestApi restApi = RestApi.builder()
+                .addRoute(route("/api1")
+                        .get(ctx -> new MessageResponse(ctx.aclAction().name()),
+                                handlerConfig().withCustomAclAction(customAclAction)))
+                .addRoute(route("/api2")
+                        .post(ctx -> new MessageResponse(ctx.aclAction().name())))
+                .build();
+
+        verifyJsonResponse(restApi, Method.GET, "/api1", null, 200, "{\"message\":\"custom-action\"}");
+        verifyJsonResponse(restApi, Method.POST, "/api2", "ignored", 200, "{\"message\":\"write\"}");
+
+        RequestHandlerSpec spec = restApi.requestHandlerSpec();
+        assertRequestHandlerSpecAclMapping(spec, customAclAction, Method.GET, "/api1");
+        assertRequestHandlerSpecAclMapping(spec, AclMapping.Action.WRITE, Method.POST, "/api2");
     }
 
     private static void verifyJsonResponse(RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode, String expectedJson) {
@@ -130,6 +154,15 @@ class RestApiImplTest {
             String content = outputStream.toString(StandardCharsets.UTF_8);
             JsonTestHelper.assertJsonEquals(content, expectedJson);
         }
+    }
+
+    private static void assertRequestHandlerSpecAclMapping(
+            RequestHandlerSpec spec, AclMapping.Action expectedAction, Method method, String uriPath) {
+        RequestView requestView = new RequestView() {
+            @Override public Method method() { return method; }
+            @Override public URI uri() { return URI.create("http://localhost" + uriPath); }
+        };
+        assertEquals(expectedAction, spec.aclMapping().get(requestView));
     }
 
     public static class TestEntity {

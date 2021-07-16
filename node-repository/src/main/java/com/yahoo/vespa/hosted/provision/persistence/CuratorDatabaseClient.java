@@ -82,7 +82,7 @@ public class CuratorDatabaseClient {
         this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
-        this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
+        this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
         initZK();
     }
 

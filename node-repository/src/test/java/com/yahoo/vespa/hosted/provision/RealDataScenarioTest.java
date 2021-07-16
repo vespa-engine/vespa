@@ -35,6 +35,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -49,13 +50,21 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Scenario tester with real node-repository data loaded from ZK snapshot file
  *
+ * How to use:
+ *
+ * 1. Copy /opt/vespa/conf/configserver-app/node-flavors.xml from config server to /tmp/node-flavors.xml
+ * 2. Copy /opt/vespa/var/zookeeper/version-2/snapshot.XXX from config server to /tmp/snapshot
+ * 3. Set capacities and specs according to the wanted scenario
+ *
  * @author valerijf
  */
 public class RealDataScenarioTest {
+
     private static final Logger log = Logger.getLogger(RealDataScenarioTest.class.getSimpleName());
 
     @Ignore
@@ -63,11 +72,11 @@ public class RealDataScenarioTest {
     public void test() {
         ProvisioningTester tester = new ProvisioningTester.Builder()
                 .zone(new Zone(Cloud.builder().dynamicProvisioning(true).build(), SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
-                .flavorsConfig(parseFlavors(Paths.get(System.getProperty("user.home"), ".flavors.xml")))
+                .flavorsConfig(parseFlavors(Paths.get("/tmp/node-flavors.xml")))
                 .nameResolver(new DnsNameResolver())
                 .spareCount(1)
                 .build();
-        initFromZk(tester.nodeRepository(), Paths.get(System.getProperty("user.home"), "snapshot"));
+        initFromZk(tester.nodeRepository(), Paths.get("/tmp/snapshot"));
 
         ApplicationId app = ApplicationId.from("tenant", "app", "default");
         Version version = Version.fromString("7.123.4");
@@ -91,10 +100,11 @@ public class RealDataScenarioTest {
     }
 
     private void deploy(ProvisioningTester tester, ApplicationId app, ClusterSpec[] specs, Capacity[] capacities) {
+        assertEquals("Equal capacity and spec count", capacities.length, specs.length);
         List<HostSpec> hostSpecs = IntStream.range(0, capacities.length)
-                .mapToObj(i -> tester.provisioner().prepare(app, specs[i], capacities[i], log::log).stream())
-                .flatMap(s -> s)
-                .collect(Collectors.toList());
+                                            .mapToObj(i -> tester.provisioner().prepare(app, specs[i], capacities[i], log::log))
+                                            .flatMap(Collection::stream)
+                                            .collect(Collectors.toList());
         NestedTransaction transaction = new NestedTransaction();
         tester.provisioner().activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(new ProvisionLock(app, () -> {}), transaction));
         transaction.commit();
@@ -144,4 +154,5 @@ public class RealDataScenarioTest {
             throw new UncheckedIOException(e);
         }
     }
+
 }

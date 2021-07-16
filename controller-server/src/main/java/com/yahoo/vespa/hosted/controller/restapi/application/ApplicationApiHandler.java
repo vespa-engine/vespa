@@ -876,11 +876,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             node.reservedTo().ifPresent(tenant -> nodeObject.setString("reservedTo", tenant.value()));
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
-            nodeObject.setString("flavor", node.flavor());
+            node.flavor().ifPresent(flavor -> nodeObject.setString("flavor", flavor));
             toSlime(node.resources(), nodeObject);
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
-            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.getEvent())));
+            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.name())));
             nodeObject.setBool("retired", node.retired() || node.wantToRetire());
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());

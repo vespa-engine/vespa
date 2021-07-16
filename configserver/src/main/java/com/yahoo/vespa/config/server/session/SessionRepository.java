@@ -37,13 +37,11 @@ import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
+import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -112,7 +110,6 @@ public class SessionRepository {
     private final SessionPreparer sessionPreparer;
     private final Path sessionsPath;
     private final TenantName tenantName;
-    private final ConfigCurator configCurator;
     private final SessionCounter sessionCounter;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
@@ -121,11 +118,12 @@ public class SessionRepository {
     private final Zone zone;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
+    private final int maxNodeSize;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
-                             ConfigCurator configCurator,
+                             Curator curator,
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
                              PermanentApplicationPackage permanentApplicationPackage,
@@ -138,13 +136,13 @@ public class SessionRepository {
                              Zone zone,
                              Clock clock,
                              ModelFactoryRegistry modelFactoryRegistry,
-                             ConfigDefinitionRepo configDefinitionRepo) {
+                             ConfigDefinitionRepo configDefinitionRepo,
+                             int maxNodeSize) {
         this.tenantName = tenantName;
-        this.configCurator = configCurator;
-        sessionCounter = new SessionCounter(configCurator, tenantName);
+        sessionCounter = new SessionCounter(curator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
-        this.curator = configCurator.curator();
+        this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;
@@ -161,22 +159,22 @@ public class SessionRepository {
         this.zone = zone;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
+        this.maxNodeSize = maxNodeSize;
 
-        loadSessions(Flags.LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING.bindTo(flagSource)); // Needs to be done before creating cache below
+        loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
 
-    private void loadSessions(BooleanFlag loadLocalSessions) {
+    private void loadSessions() {
         ExecutorService executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                 new DaemonThreadFactory("load-sessions-"));
-        loadSessions(loadLocalSessions.value(), executor);
+        loadSessions(executor);
     }
 
-    void loadSessions(boolean loadLocalSessions, ExecutorService executor) {
-        if (loadLocalSessions)
-            loadSessionsFromFileSystem(executor);
+    // For testing
+    void loadSessions(ExecutorService executor) {
         loadRemoteSessions(executor);
         try {
             executor.shutdown();
@@ -187,23 +185,20 @@ public class SessionRepository {
         }
     }
 
-    private void loadSessionsFromFileSystem(ExecutorService executor) {
+    private Set<Session> getLocalSessionsFromFileSystem() {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) return;
+        if (sessions == null) return Set.of();
 
-        Map<Long, Future<?>> futures = new HashMap<>();
+        Set<Session> sessionIds = new HashSet<>();
         for (File session : sessions) {
             long sessionId = Long.parseLong(session.getName());
-            futures.put(sessionId, executor.submit(() -> createSessionFromId(sessionId)));
+            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+            File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
+            ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+            Session localSession = new RemoteSession(tenantName, sessionId, sessionZKClient, Optional.of(applicationPackage));
+            sessionIds.add(localSession);
         }
-        futures.forEach((sessionId, future) -> {
-            try {
-                future.get();
-                log.log(Level.FINE, () -> "Session " + sessionId + " loaded");
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException("Could not load session " + sessionId, e);
-            }
-        });
+        return sessionIds;
     }
 
     public ConfigChangeActions prepareSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
@@ -514,7 +509,7 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<Session> toDelete = new HashSet<>();
         try {
-            for (Session candidate : getRemoteSessions()) {
+            for (Session candidate : getLocalSessionsFromFileSystem()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
@@ -553,7 +548,7 @@ public class SessionRepository {
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
         Path sessionPath = getSessionPath(sessionId);
-        if (configCurator.exists(sessionPath.getAbsolute())) {
+        if (curator.exists(sessionPath)) {
             throw new IllegalArgumentException("Path " + sessionPath.getAbsolute() + " already exists in ZooKeeper");
         }
     }
@@ -729,12 +724,12 @@ public class SessionRepository {
     }
 
     Path getSessionStatePath(long sessionId) {
-        return getSessionPath(sessionId).append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH);
+        return getSessionPath(sessionId).append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, configCurator, tenantName, sessionId, serverId);
+        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId, maxNodeSize);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

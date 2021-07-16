@@ -701,6 +701,28 @@ public class HttpServerTest {
                 .set(MetricDefinitions.REQUESTS_PER_CONNECTION, 1L, MetricConsumerMock.STATIC_CONTEXT);
     }
 
+    @Test
+    public void uriWithEmptyPathSegmentIsAllowed() throws Exception {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        MetricConsumerMock metricConsumer = new MetricConsumerMock();
+        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
+        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        String uriPath = "/path/with/empty//segment";
+
+        // HTTP/1.1
+        driver.client().get(uriPath).expectStatusCode(is(OK));
+
+        // HTTP/2
+        try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
+            String uri = "https://localhost:" + driver.server().getListenPort() + uriPath;
+            SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+            assertEquals(OK, response.getCode());
+        }
+
+        assertTrue(driver.close());
+    }
 
     private static CloseableHttpAsyncClient createHttp2Client(JettyTestDriver driver) {
         TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()

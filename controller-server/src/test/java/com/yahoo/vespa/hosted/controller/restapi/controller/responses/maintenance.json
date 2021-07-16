@@ -16,7 +16,7 @@
       "name": "ChangeRequestMaintainer"
     },
     {
-      "name": "CloudEventReporter"
+      "name": "CloudEventTracker"
     },
     {
       "name": "CloudTrialExpirer"
@@ -100,7 +100,7 @@
       "name": "Upgrader"
     },
     {
-      "name": "VCMRMaintainer"
+      "name": "VcmrMaintainer"
     },
     {
       "name": "VersionStatusUpdater"
