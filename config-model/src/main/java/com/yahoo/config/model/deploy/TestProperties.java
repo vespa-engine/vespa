@@ -66,6 +66,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
     private double resourceLimitMemory = 0.8;
+    private double minNodeRatioPerGroup = 0.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -111,6 +112,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+    @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
 
     public TestProperties setDryRunOnnxOnSetup(boolean value) {
         dryRunOnnxOnSetup = value;
@@ -271,6 +273,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitMemory(double value) {
         this.resourceLimitMemory = value;
+        return this;
+    }
+
+    public TestProperties setMinNodeRatioPerGroup(double value) {
+        this.minNodeRatioPerGroup = value;
         return this;
     }
 
