@@ -229,15 +229,10 @@
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
                 jersey-client-${jersey2.version}.jar,
                 jersey-common-${jersey2.version}.jar,
-                jersey-container-servlet-${jersey2.version}.jar,
-                jersey-container-servlet-core-${jersey2.version}.jar,
-                jersey-entity-filtering-${jersey2.version}.jar, <!-- new feature from 2.16, provided for convenience -->
                 jersey-guava-${jersey2.version}.jar,
                 jersey-media-jaxb-${jersey2.version}.jar,
-                jersey-media-json-jackson-${jersey2.version}.jar,
                 jersey-media-multipart-${jersey2.version}.jar,
                 mimepull-${mimepull.version}.jar, <!-- needed by media-multipart -->
-                jersey-server-${jersey2.version}.jar,
                 jersey-proxy-client-${jersey2.version}.jar,
                 osgi-resource-locator-1.0.1.jar,
                 validation-api-1.1.0.Final.jar
