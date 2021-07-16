@@ -16,11 +16,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.test.Test2Config;
 import com.yahoo.config.test.TestConfig;
-import com.yahoo.container.di.Osgi;
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.container.di.config.JerseyBundlesConfig;
-import com.yahoo.container.di.config.JerseyInjectionConfig;
-import com.yahoo.container.di.config.RestApiContext;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.Test;
 
@@ -485,25 +481,6 @@ public class ComponentGraphTest {
         assertThat(componentGraph.getInstance(ComponentTakingComponentId.class).componentId, is(ComponentId.fromString(componentId)));
     }
 
-    @Test
-    public void rest_api_context_can_be_instantiated() {
-        String configId = "raw:\"\"";
-
-        Class<RestApiContext> clazz = RestApiContext.class;
-        JerseyNode jerseyNode = new JerseyNode(uniqueComponentId(clazz.getName()), configId, clazz, new Osgi() {
-        });
-
-        ComponentGraph componentGraph = new ComponentGraph();
-        componentGraph.add(jerseyNode);
-        componentGraph.complete();
-
-        componentGraph
-                .setAvailableConfigs(ConfigMap.newMap(JerseyBundlesConfig.class, configId).add(JerseyInjectionConfig.class, configId));
-
-        RestApiContext restApiContext = componentGraph.getInstance(clazz);
-        assertNotNull(restApiContext);
-        assertThat(restApiContext.getBundles().size(), is(0));
-    }
 
     //Note that all Components must be defined in a static context,
     //otherwise their constructor will take the outer class as the first parameter.

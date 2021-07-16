@@ -49,6 +49,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -90,6 +91,7 @@ import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 public class SessionRepository {
 
     private static final Logger log = Logger.getLogger(SessionRepository.class.getName());
+    private static final FilenameFilter sessionApplicationsFilter = (dir, name) -> name.matches("\\d+");
     private static final long nonExistingActiveSessionId = 0;
 
     private final Object monitor = new Object();
@@ -201,6 +203,22 @@ public class SessionRepository {
     /** Returns a copy of local sessions */
     public Collection<LocalSession> getLocalSessions() {
         return List.copyOf(localSessionCache.values());
+    }
+
+    public Set<LocalSession> getLocalSessionsFromFileSystem() {
+        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
+        if (sessions == null) return Set.of();
+
+        Set<LocalSession> sessionIds = new HashSet<>();
+        for (File session : sessions) {
+            long sessionId = Long.parseLong(session.getName());
+            SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
+            File sessionDir = getAndValidateExistingSessionAppDir(sessionId);
+            ApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(sessionDir);
+            LocalSession localSession = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
+            sessionIds.add(localSession);
+        }
+        return sessionIds;
     }
 
     public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
@@ -529,7 +547,7 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
         try {
-            for (LocalSession candidate : getLocalSessions()) {
+            for (LocalSession candidate : getLocalSessionsFromFileSystem()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 

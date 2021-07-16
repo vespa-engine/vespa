@@ -154,7 +154,7 @@ public:
         return status;
     }
     const Config &getConfig() const { return _v->getConfig(); }
-    AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multiValueUsage(); }
+    AddressSpace getMultiValueAddressSpaceUsage() const {return _v->getAddressSpaceUsage().multi_value_usage(); }
     AddressSpace getMultiValueAddressSpaceUsage(const vespalib::string &prefix) {
         AddressSpace usage(getMultiValueAddressSpaceUsage());
         LOG(info, "address space usage %s: used=%zu, dead=%zu, limit=%zu, usage=%12.8f",

@@ -3,6 +3,7 @@
 
 #include "named_service.h"
 #include "service_map_history.h"
+#include "proxy_map_source.h"
 
 #include <memory>
 #include <string>
@@ -28,9 +29,9 @@ class RpcServerMap
 private:
     using ManagedRpcServerMap = std::unordered_map<std::string, std::unique_ptr<ManagedRpcServer>>;
     using ReservedNameMap = std::unordered_map<std::string, std::unique_ptr<ReservedName>>;
-    ServiceMapHistory    _visible_map;
     ManagedRpcServerMap  _myrpcsrv_map;
     ReservedNameMap      _reservations;
+    ProxyMapSource      _proxy;
 
     static bool match(const char *name, const char *pattern);
 
@@ -39,8 +40,7 @@ private:
 public:
     typedef std::vector<const NamedService *> RpcSrvlist;
 
-    ServiceMapHistory& localView() { return _visible_map; }
-    ServiceMapHistory& visibleMap() { return _visible_map; }
+    MapSource &proxy() { return _proxy; }
 
     ManagedRpcServer *lookupManaged(const std::string & name) const;
 

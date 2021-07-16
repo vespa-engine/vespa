@@ -48,7 +48,7 @@ protected:
      **/
     bool onAddDoc(DocId doc) override { (void) doc; return false; }
 
-    vespalib::AddressSpace getMultiValueAddressSpaceUsage() const override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
 public:
     MultiValueAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

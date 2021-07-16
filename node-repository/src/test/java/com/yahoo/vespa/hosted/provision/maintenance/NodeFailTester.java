@@ -148,11 +148,12 @@ public class NodeFailTester {
     }
 
     public static NodeFailTester withOneUndeployedApplication(Capacity capacity) {
-        NodeFailTester tester = new NodeFailTester();
+        return withOneUndeployedApplication(capacity, ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.42").build());
+    }
 
-        // Create applications
-        ClusterSpec clusterApp = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.42").build();
-        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(app1, new MockDeployer.ApplicationContext(app1, clusterApp, capacity));
+    public static NodeFailTester withOneUndeployedApplication(Capacity capacity, ClusterSpec spec) {
+        NodeFailTester tester = new NodeFailTester();
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(app1, new MockDeployer.ApplicationContext(app1, spec, capacity));
         tester.initializeMaintainers(apps);
         return tester;
     }

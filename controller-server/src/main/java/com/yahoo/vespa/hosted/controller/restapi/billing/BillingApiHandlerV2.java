@@ -11,7 +11,6 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -26,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import javax.ws.rs.BadRequestException;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -34,8 +32,8 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author ogronnesby
@@ -78,11 +76,6 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
-                /*
-                 * Utility - map Slime.class => SlimeJsonResponse
-                 */
-                .addRequestMapper(Slime.class, BillingApiHandlerV2::slimeRequestMapper)
-                .addResponseMapper(Slime.class, BillingApiHandlerV2::slimeResponseMapper)
                 .build();
     }
 
@@ -335,18 +328,6 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         if (!inspector.field(field).valid())
             throw new BadRequestException("Field " + field + " cannot be null");
         return inspector.field(field).asString();
-    }
-
-    private static Optional<Slime> slimeRequestMapper(RestApi.RequestContext requestContext) {
-        try {
-            return Optional.of(SlimeUtils.jsonToSlime(requestContext.requestContentOrThrow().content().readAllBytes()));
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Could not parse JSON input");
-        }
-    }
-
-    private static HttpResponse slimeResponseMapper(RestApi.RequestContext ctx, Slime slime) {
-        return new SlimeJsonResponse(slime);
     }
 
 }

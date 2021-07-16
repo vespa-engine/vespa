@@ -2,32 +2,32 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author smorgrav
+ */
 public class ChangeManagementAssessorTest {
 
-    private ChangeManagementAssessor changeManagementAssessor = new ChangeManagementAssessor(new NodeRepositoryMock());
+    private final ChangeManagementAssessor changeManagementAssessor = new ChangeManagementAssessor(new NodeRepositoryMock());
 
     @Test
     public void empty_input_variations() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
         List<String> hostNames = new ArrayList<>();
-        List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
+        List<Node> allNodesInZone = new ArrayList<>();
 
         // Both zone and hostnames are empty
         ChangeManagementAssessor.Assessment assessment
@@ -39,7 +39,7 @@ public class ChangeManagementAssessorTest {
     public void one_host_one_cluster_no_groups() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
         List<String> hostNames = Collections.singletonList("host1");
-        List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
+        List<Node> allNodesInZone = new ArrayList<>();
         allNodesInZone.add(createNode("node1", "host1", "default", 0 ));
         allNodesInZone.add(createNode("node2", "host1", "default", 0 ));
         allNodesInZone.add(createNode("node3", "host1", "default", 0 ));
@@ -69,8 +69,8 @@ public class ChangeManagementAssessorTest {
     @Test
     public void one_of_two_groups_in_one_of_two_clusters() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
-        List<String> hostNames = Arrays.asList("host1", "host2", "host5");
-        List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
+        List<String> hostNames = List.of("host1", "host2", "host5");
+        List<Node> allNodesInZone = new ArrayList<>();
 
         // Two impacted nodes on host1
         allNodesInZone.add(createNode("node1", "host1", "default", 0 ));
@@ -123,8 +123,8 @@ public class ChangeManagementAssessorTest {
     @Test
     public void two_config_nodes() {
         var zone = ZoneId.from("prod", "eu-trd");
-        var hostNames = Arrays.asList("config1", "config2");
-        var allNodesInZone = new ArrayList<NodeRepositoryNode>();
+        var hostNames = List.of("config1", "config2");
+        var allNodesInZone = new ArrayList<Node>();
 
         // Add config nodes and parents
         allNodesInZone.add(createNode("config1", "confighost1", "config", 0, NodeType.config));
@@ -141,8 +141,8 @@ public class ChangeManagementAssessorTest {
     @Test
     public void one_of_three_proxy_nodes() {
         var zone = ZoneId.from("prod", "eu-trd");
-        var hostNames = Arrays.asList("routing1");
-        var allNodesInZone = new ArrayList<NodeRepositoryNode>();
+        var hostNames = List.of("routing1");
+        var allNodesInZone = new ArrayList<Node>();
 
         // Add routing nodes and parents
         allNodesInZone.add(createNode("routing1", "parentrouting1", "routing", 0, NodeType.proxy));
@@ -156,47 +156,33 @@ public class ChangeManagementAssessorTest {
         assertEquals("33% of routing nodes impacted. Consider reprovisioning if too many", assessment.get(0).impact);
     }
 
-    private NodeOwner createOwner() {
-        NodeOwner owner = new NodeOwner();
-        owner.tenant = "mytenant";
-        owner.application = "myapp";
-        owner.instance = "default";
-        return owner;
-    }
-
-    private NodeMembership createMembership(String clusterId, int group) {
-        NodeMembership membership = new NodeMembership();
-        membership.group = "" + group;
-        membership.clusterid = clusterId;
-        membership.clustertype = "content";
-        membership.index = 2;
-        membership.retired = false;
-        return membership;
-    }
-
-    private NodeRepositoryNode createNode(String nodename, String hostname, String clusterId, int group) {
+    private Node createNode(String nodename, String hostname, String clusterId, int group) {
         return createNode(nodename, hostname, clusterId, group, NodeType.tenant);
     }
 
-    private NodeRepositoryNode createNode(String nodename, String hostname, String clusterId, int group, NodeType nodeType) {
-        NodeRepositoryNode node = new NodeRepositoryNode();
-        node.setHostname(nodename);
-        node.setParentHostname(hostname);
-        node.setState(NodeState.active);
-        node.setOwner(createOwner());
-        node.setMembership(createMembership(clusterId, group));
-        node.setType(nodeType);
-
-        return node;
+    private Node createNode(String nodename, String hostname, String clusterId, int group, NodeType nodeType) {
+        return Node.builder().hostname(nodename)
+                   .parentHostname(hostname)
+                   .state(Node.State.active)
+                   .owner(ApplicationId.from("mytenant", "myapp", "default"))
+                   .group(String.valueOf(group))
+                   .clusterId(clusterId)
+                   .clusterType(Node.ClusterType.content)
+                   .type(nodeType)
+                   .build();
     }
 
-    private NodeRepositoryNode createHost(String hostname, NodeType nodeType) {
-        NodeRepositoryNode node = new NodeRepositoryNode();
-        node.setHostname(hostname);
-        node.setSwitchHostname("switch1");
-        node.setType(nodeType);
-        node.setOwner(createOwner());
-        node.setMembership(createMembership(nodeType.name(), 0));
-        return node;
+    private Node createHost(String hostname, NodeType nodeType) {
+        return Node.builder()
+                   .hostname(hostname)
+                   .switchHostname("switch1")
+                   .state(Node.State.active)
+                   .owner(ApplicationId.from("mytenant", "myapp", "default"))
+                   .group(String.valueOf(0))
+                   .clusterId(nodeType.name())
+                   .clusterType(Node.ClusterType.content)
+                   .type(nodeType)
+                   .build();
     }
+
 }

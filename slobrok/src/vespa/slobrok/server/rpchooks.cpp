@@ -43,6 +43,8 @@ public:
 
 RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman)
     : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
+      _globalHistory(env.globalHistory()),
+      _localHistory(env.localHistory()),
       _cnts(Metrics::zero()),
       _m_reporter()
 {
@@ -493,7 +495,7 @@ RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)
     uint32_t msTimeout = args[1]._intval32;
 
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req,
-                                             _rpcsrvmap.visibleMap(), gencnt).invoke(msTimeout);
+                                             _globalHistory, gencnt).invoke(msTimeout);
 }
 
 void RPCHooks::rpc_fetchLocalView(FRT_RPCRequest *req) {
@@ -502,7 +504,7 @@ void RPCHooks::rpc_fetchLocalView(FRT_RPCRequest *req) {
     vespalib::GenCnt gencnt(args[0]._intval32);
     uint32_t msTimeout = args[1]._intval32;
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req,
-                                             _rpcsrvmap.localView(), gencnt).invoke(msTimeout);
+                                             _localHistory, gencnt).invoke(msTimeout);
 }
 
 

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "address_space_components.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
@@ -76,10 +77,11 @@ EnumAttribute<B>::getEnumStoreValuesMemoryUsage() const
 }
 
 template <typename B>
-vespalib::AddressSpace
-EnumAttribute<B>::getEnumStoreAddressSpaceUsage() const
+void
+EnumAttribute<B>::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
-    return _enumStore.get_address_space_usage();
+    B::populate_address_space_usage(usage);
+    usage.set(AddressSpaceComponents::enum_store, _enumStore.get_address_space_usage());
 }
 
 } // namespace search

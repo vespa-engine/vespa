@@ -1,20 +1,20 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
-import com.yahoo.yolean.Exceptions;
+import com.yahoo.restapi.RestApiMappers.ExceptionMapperHolder;
+import com.yahoo.restapi.RestApiMappers.RequestMapperHolder;
+import com.yahoo.restapi.RestApiMappers.ResponseMapperHolder;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author bjorncs
@@ -39,6 +37,7 @@ class RestApiImpl implements RestApi {
     private final List<RequestMapperHolder<?>> requestMappers;
     private final List<Filter> filters;
     private final ObjectMapper jacksonJsonMapper;
+    private final boolean disableDefaultAclMapping;
 
     private RestApiImpl(RestApi.Builder builder) {
         BuilderImpl builderImpl = (BuilderImpl) builder;
@@ -48,18 +47,19 @@ class RestApiImpl implements RestApi {
         this.exceptionMappers = combineWithDefaultExceptionMappers(
                 builderImpl.exceptionMappers, Boolean.TRUE.equals(builderImpl.disableDefaultExceptionMappers));
         this.responseMappers = combineWithDefaultResponseMappers(
-                builderImpl.responseMappers, jacksonJsonMapper, Boolean.TRUE.equals(builderImpl.disableDefaultResponseMappers));
-        this.requestMappers = combineWithDefaultRequestMappers(
-                builderImpl.requestMappers, jacksonJsonMapper);
+                builderImpl.responseMappers, Boolean.TRUE.equals(builderImpl.disableDefaultResponseMappers));
+        this.requestMappers = combineWithDefaultRequestMappers(builderImpl.requestMappers);
         this.filters = List.copyOf(builderImpl.filters);
         this.jacksonJsonMapper = jacksonJsonMapper;
+        this.disableDefaultAclMapping = Boolean.TRUE.equals(builderImpl.disableDefaultAclMapping);
     }
 
     @Override
     public HttpResponse handleRequest(HttpRequest request) {
         Path pathMatcher = new Path(request.getUri());
         Route resolvedRoute = resolveRoute(pathMatcher);
-        RequestContextImpl requestContext = new RequestContextImpl(request, pathMatcher, jacksonJsonMapper);
+        AclMapping.Action aclAction = getAclMapping(request.getMethod(), request.getUri());
+        RequestContextImpl requestContext = new RequestContextImpl(request, pathMatcher, aclAction, jacksonJsonMapper);
         FilterContextImpl filterContext =
                 createFilterContextRecursive(
                         resolvedRoute, requestContext, filters,
@@ -73,8 +73,33 @@ class RestApiImpl implements RestApi {
 
     @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
 
+    @Override
+    public RequestHandlerSpec requestHandlerSpec() {
+        return RequestHandlerSpec.builder()
+                .withAclMapping(requestView -> getAclMapping(requestView.method(), requestView.uri()))
+                .build();
+    }
+
+    private AclMapping.Action getAclMapping(Method method, URI uri) {
+        Path pathMatcher = new Path(uri);
+        Route route = resolveRoute(pathMatcher);
+        HandlerHolder<?> handler = resolveHandler(method, route);
+        AclMapping.Action aclAction = handler.config.aclAction;
+        if (aclAction != null) return aclAction;
+        if (!disableDefaultAclMapping) {
+            // Fallback to default request handler spec which is used by the default implementation of
+            // HttpRequestHandler.requestHandlerSpec().
+            return RequestHandlerSpec.DEFAULT_INSTANCE.aclMapping().get(
+                    new RequestView() {
+                        @Override public Method method() { return method; }
+                        @Override public URI uri() { return uri; }
+                    });
+        }
+        throw new IllegalStateException(String.format("No ACL mapping configured for '%s' to '%s'", method, route.name));
+    }
+
     private HttpResponse dispatchToRoute(Route route, RequestContextImpl context) {
-        HandlerHolder<?> resolvedHandler = resolveHandler(context, route);
+        HandlerHolder<?> resolvedHandler = resolveHandler(context.request.getMethod(), route);
         RequestMapperHolder<?> resolvedRequestMapper = resolveRequestMapper(resolvedHandler);
         Object requestEntity;
         try {
@@ -97,8 +122,8 @@ class RestApiImpl implements RestApi {
         }
     }
 
-    private HandlerHolder<?> resolveHandler(RequestContextImpl context, Route route) {
-        HandlerHolder<?> resolvedHandler = route.handlerPerMethod.get(context.request().getMethod());
+    private HandlerHolder<?> resolveHandler(Method method, Route route) {
+        HandlerHolder<?> resolvedHandler = route.handlerPerMethod.get(method);
         return resolvedHandler == null ? route.defaultHandler : resolvedHandler;
     }
 
@@ -154,7 +179,7 @@ class RestApiImpl implements RestApi {
             List<ExceptionMapperHolder<?>> configuredExceptionMappers, boolean disableDefaultMappers) {
         List<ExceptionMapperHolder<?>> exceptionMappers = new ArrayList<>(configuredExceptionMappers);
         if (!disableDefaultMappers){
-            exceptionMappers.add(new ExceptionMapperHolder<>(RestApiException.class, (context, exception) -> exception.response()));
+            exceptionMappers.addAll(RestApiMappers.DEFAULT_EXCEPTION_MAPPERS);
         }
         // Topologically sort children before superclasses, so most the specific match is found by iterating through mappers in order.
         exceptionMappers.sort((a, b) -> (a.type.isAssignableFrom(b.type) ? 1 : 0) + (b.type.isAssignableFrom(a.type) ? -1 : 0));
@@ -162,69 +187,19 @@ class RestApiImpl implements RestApi {
     }
 
     private static List<ResponseMapperHolder<?>> combineWithDefaultResponseMappers(
-            List<ResponseMapperHolder<?>> configuredResponseMappers, ObjectMapper jacksonJsonMapper, boolean disableDefaultMappers) {
+            List<ResponseMapperHolder<?>> configuredResponseMappers, boolean disableDefaultMappers) {
         List<ResponseMapperHolder<?>> responseMappers = new ArrayList<>(configuredResponseMappers);
         if (!disableDefaultMappers) {
-            responseMappers.add(new ResponseMapperHolder<>(HttpResponse.class, (context, entity) -> entity));
-            responseMappers.add(new ResponseMapperHolder<>(String.class, (context, entity) -> new MessageResponse(entity)));
-            responseMappers.add(new ResponseMapperHolder<>(Slime.class, (context, entity) -> new SlimeJsonResponse(entity)));
-            responseMappers.add(new ResponseMapperHolder<>(JsonNode.class, (context, entity) -> new JacksonJsonResponse<>(200, entity, jacksonJsonMapper, true)));
+            responseMappers.addAll(RestApiMappers.DEFAULT_RESPONSE_MAPPERS);
         }
         return responseMappers;
     }
 
     private static List<RequestMapperHolder<?>> combineWithDefaultRequestMappers(
-            List<RequestMapperHolder<?>> configuredRequestMappers, ObjectMapper jacksonJsonMapper) {
+            List<RequestMapperHolder<?>> configuredRequestMappers) {
         List<RequestMapperHolder<?>> requestMappers = new ArrayList<>(configuredRequestMappers);
-        requestMappers.add(new RequestMapperHolder<>(Slime.class, RestApiImpl::toSlime));
-        requestMappers.add(new RequestMapperHolder<>(JsonNode.class, ctx -> toJsonNode(ctx, jacksonJsonMapper)));
-        requestMappers.add(new RequestMapperHolder<>(String.class, RestApiImpl::toString));
-        requestMappers.add(new RequestMapperHolder<>(byte[].class, RestApiImpl::toByteArray));
-        requestMappers.add(new RequestMapperHolder<>(InputStream.class, RestApiImpl::toInputStream));
-        requestMappers.add(new RequestMapperHolder<>(Void.class, ctx -> Optional.empty()));
+        requestMappers.addAll(RestApiMappers.DEFAULT_REQUEST_MAPPERS);
         return requestMappers;
-    }
-
-    private static Optional<InputStream> toInputStream(RequestContext context) {
-        return context.requestContent().map(RequestContext.RequestContent::content);
-    }
-
-    private static Optional<byte[]> toByteArray(RequestContext context) {
-        InputStream in = toInputStream(context).orElse(null);
-        if (in == null) return Optional.empty();
-        return convertIoException(() -> Optional.of(in.readAllBytes()));
-    }
-
-    private static Optional<String> toString(RequestContext context) {
-        try {
-            return toByteArray(context).map(bytes -> new String(bytes, UTF_8));
-        } catch (RuntimeException e) {
-            throw new RestApiException.BadRequest("Failed parse request content as UTF-8: " + Exceptions.toMessageString(e), e);
-        }
-    }
-
-    private static Optional<JsonNode> toJsonNode(RequestContext context, ObjectMapper jacksonJsonMapper) {
-        if (log.isLoggable(Level.FINE)) {
-            return toString(context).map(string -> {
-                log.fine(() -> "Request content: " + string);
-                return convertIoException("Failed to parse JSON", () -> jacksonJsonMapper.readTree(string));
-            });
-        } else {
-            return toInputStream(context)
-                    .map(in -> convertIoException("Invalid JSON", () -> jacksonJsonMapper.readTree(in)));
-        }
-    }
-
-    private static Optional<Slime> toSlime(RequestContext context) {
-        try {
-            return toString(context).map(string -> {
-                log.fine(() -> "Request content: " + string);
-                return SlimeUtils.jsonToSlimeOrThrow(string);
-            });
-        } catch (com.yahoo.slime.JsonParseException e) {
-            log.log(Level.FINE, e.getMessage(), e);
-            throw new RestApiException.BadRequest("Invalid JSON: " + Exceptions.toMessageString(e), e);
-        }
     }
 
     static class BuilderImpl implements RestApi.Builder {
@@ -237,6 +212,7 @@ class RestApiImpl implements RestApi {
         private ObjectMapper jacksonJsonMapper;
         private Boolean disableDefaultExceptionMappers;
         private Boolean disableDefaultResponseMappers;
+        private Boolean disableDefaultAclMapping;
 
         @Override public RestApi.Builder setObjectMapper(ObjectMapper mapper) { this.jacksonJsonMapper = mapper; return this; }
         @Override public RestApi.Builder setDefaultRoute(RestApi.RouteBuilder route) { this.defaultRoute = ((RouteBuilderImpl)route).build(); return this; }
@@ -256,20 +232,21 @@ class RestApiImpl implements RestApi {
         }
 
         @Override public <ENTITY> Builder registerJacksonResponseEntity(Class<ENTITY> type) {
-            addResponseMapper(type, new JacksonResponseMapper<>()); return this;
+            addResponseMapper(type, new RestApiMappers.JacksonResponseMapper<>()); return this;
         }
 
         @Override public <ENTITY> Builder registerJacksonRequestEntity(Class<ENTITY> type) {
-            addRequestMapper(type, new JacksonRequestMapper<>(type)); return this;
+            addRequestMapper(type, new RestApiMappers.JacksonRequestMapper<>(type)); return this;
         }
 
         @Override public Builder disableDefaultExceptionMappers() { this.disableDefaultExceptionMappers = true; return this; }
         @Override public Builder disableDefaultResponseMappers() { this.disableDefaultResponseMappers = true; return this; }
+        @Override public Builder disableDefaultAclMapping() { this.disableDefaultAclMapping = true; return this; }
 
         @Override public RestApi build() { return new RestApiImpl(this); }
     }
 
-    public static class RouteBuilderImpl implements RestApi.RouteBuilder {
+    static class RouteBuilderImpl implements RestApi.RouteBuilder {
         private final String pathPattern;
         private String name;
         private final Map<Method, HandlerHolder<?>> handlerPerMethod = new HashMap<>();
@@ -279,48 +256,116 @@ class RestApiImpl implements RestApi {
         RouteBuilderImpl(String pathPattern) { this.pathPattern = pathPattern; }
 
         @Override public RestApi.RouteBuilder name(String name) { this.name = name; return this; }
-        @Override public RestApi.RouteBuilder get(Handler<?> handler) {
-            return addHandler(Method.GET, handler);
-        }
-        @Override public RestApi.RouteBuilder post(Handler<?> handler) {
-            return addHandler(Method.POST, handler);
-        }
-        @Override public <ENTITY> RouteBuilder post(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            return addHandler(Method.POST, type, handler);
-        }
-        @Override public RestApi.RouteBuilder put(Handler<?> handler) {
-            return addHandler(Method.PUT, handler);
-        }
-        @Override public <ENTITY> RouteBuilder put(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            return addHandler(Method.PUT, type, handler);
-        }
-        @Override public RestApi.RouteBuilder delete(Handler<?> handler) {
-            return addHandler(Method.DELETE, handler);
-        }
-        @Override public RestApi.RouteBuilder patch(Handler<?> handler) {
-            return addHandler(Method.PATCH, handler);
-        }
-        @Override public <ENTITY> RouteBuilder patch(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            return addHandler(Method.PATCH, type, handler);
-        }
-        @Override public RestApi.RouteBuilder defaultHandler(Handler<?> handler) {
-            defaultHandler = HandlerHolder.of(handler); return this;
-        }
-        @Override public <ENTITY> RouteBuilder defaultHandler(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            defaultHandler = HandlerHolder.of(type, handler); return this;
-        }
         @Override public RestApi.RouteBuilder addFilter(RestApi.Filter filter) { filters.add(filter); return this; }
 
-        private RestApi.RouteBuilder addHandler(Method method, Handler<?> handler) {
-            handlerPerMethod.put(method, HandlerHolder.of(handler)); return this;
+        // GET
+        @Override public RouteBuilder get(Handler<?> handler) { return get(handler, null); }
+        @Override public RouteBuilder get(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.GET, handler, config);
+        }
+
+        // POST
+        @Override public RouteBuilder post(Handler<?> handler) { return post(handler, null); }
+        @Override public <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return post(type, handler, null);
+        }
+        @Override public RouteBuilder post(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.POST, handler, config);
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder post(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.POST, type, handler, config);
+        }
+
+        // PUT
+        @Override public RouteBuilder put(Handler<?> handler) { return put(handler, null); }
+        @Override public <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return put(type, handler, null);
+        }
+        @Override public RouteBuilder put(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PUT, handler, null);
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder put(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PUT, type, handler, config);
+        }
+
+        // DELETE
+        @Override public RouteBuilder delete(Handler<?> handler) { return delete(handler, null); }
+        @Override public RouteBuilder delete(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.DELETE, handler, config);
+        }
+
+        // PATCH
+        @Override public RouteBuilder patch(Handler<?> handler) { return patch(handler, null); }
+        @Override public <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return patch(type, handler, null);
+        }
+        @Override public RouteBuilder patch(Handler<?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PATCH, handler, config);
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder patch(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            return addHandler(Method.PATCH, type, handler, config);
+        }
+
+        // Default
+        @Override public RouteBuilder defaultHandler(Handler<?> handler) {
+            return defaultHandler(handler, null);
+        }
+        @Override public RouteBuilder defaultHandler(Handler<?> handler, HandlerConfigBuilder config) {
+            defaultHandler = HandlerHolder.of(handler, build(config)); return this;
+        }
+        @Override public <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+            return defaultHandler(type, handler, null);
+        }
+        @Override
+        public <REQUEST_ENTITY> RouteBuilder defaultHandler(
+                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler, HandlerConfigBuilder config) {
+            defaultHandler = HandlerHolder.of(type, handler, build(config)); return this;
+        }
+
+        private RestApi.RouteBuilder addHandler(Method method, Handler<?> handler, HandlerConfigBuilder config) {
+            handlerPerMethod.put(method, HandlerHolder.of(handler, build(config))); return this;
         }
 
         private <ENTITY> RestApi.RouteBuilder addHandler(
-                Method method, Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler) {
-            handlerPerMethod.put(method, HandlerHolder.of(type, handler)); return this;
+                Method method, Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler, HandlerConfigBuilder config) {
+            handlerPerMethod.put(method, HandlerHolder.of(type, handler, build(config))); return this;
+        }
+
+        private static HandlerConfig build(HandlerConfigBuilder builder) {
+            if (builder == null) return HandlerConfig.empty();
+            return ((HandlerConfigBuilderImpl)builder).build();
         }
 
         private Route build() { return new Route(this); }
+    }
+
+    static class HandlerConfigBuilderImpl implements HandlerConfigBuilder {
+        private AclMapping.Action aclAction;
+
+        @Override public HandlerConfigBuilder withReadAclAction() { return withCustomAclAction(AclMapping.Action.READ); }
+        @Override public HandlerConfigBuilder withWriteAclAction() { return withCustomAclAction(AclMapping.Action.WRITE); }
+        @Override public HandlerConfigBuilder withCustomAclAction(AclMapping.Action action) {
+            this.aclAction = action; return this;
+        }
+
+        HandlerConfig build() { return new HandlerConfig(this); }
+    }
+
+    private static class HandlerConfig {
+        final AclMapping.Action aclAction;
+
+        HandlerConfig(HandlerConfigBuilderImpl builder) {
+            this.aclAction = builder.aclAction;
+        }
+
+        static HandlerConfig empty() { return new HandlerConfigBuilderImpl().build(); }
     }
 
     private static class RequestContextImpl implements RestApi.RequestContext {
@@ -332,12 +377,14 @@ class RestApiImpl implements RestApi {
         final Headers headers = new HeadersImpl();
         final Attributes attributes = new AttributesImpl();
         final RequestContent requestContent;
+        final AclMapping.Action aclAction;
 
-        RequestContextImpl(HttpRequest request, Path pathMatcher, ObjectMapper jacksonJsonMapper) {
+        RequestContextImpl(HttpRequest request, Path pathMatcher, AclMapping.Action aclAction, ObjectMapper jacksonJsonMapper) {
             this.request = request;
             this.pathMatcher = pathMatcher;
             this.jacksonJsonMapper = jacksonJsonMapper;
             this.requestContent = request.getData() != null ? new RequestContentImpl() : null;
+            this.aclAction = aclAction;
         }
 
         @Override public HttpRequest request() { return request; }
@@ -357,6 +404,7 @@ class RestApiImpl implements RestApi {
                     ? new UriBuilder(uri.getScheme() + "://" + uri.getHost() + ':' + uriPort)
                     : new UriBuilder(uri.getScheme() + "://" + uri.getHost());
         }
+        @Override public AclMapping.Action aclAction() { return aclAction; }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override
@@ -433,61 +481,35 @@ class RestApiImpl implements RestApi {
         }
     }
 
-    private static class ExceptionMapperHolder<EXCEPTION extends RuntimeException> {
-        final Class<EXCEPTION> type;
-        final RestApi.ExceptionMapper<EXCEPTION> mapper;
-
-        ExceptionMapperHolder(Class<EXCEPTION> type, RestApi.ExceptionMapper<EXCEPTION> mapper) {
-            this.type = type;
-            this.mapper = mapper;
-        }
-
-        HttpResponse toResponse(RestApi.RequestContext context, RuntimeException e) { return mapper.toResponse(context, type.cast(e)); }
-    }
-
-    private static class ResponseMapperHolder<ENTITY> {
-        final Class<ENTITY> type;
-        final RestApi.ResponseMapper<ENTITY> mapper;
-
-        ResponseMapperHolder(Class<ENTITY> type, RestApi.ResponseMapper<ENTITY> mapper) {
-            this.type = type;
-            this.mapper = mapper;
-        }
-
-        HttpResponse toHttpResponse(RestApi.RequestContext context, Object entity) { return mapper.toHttpResponse(context, type.cast(entity)); }
-    }
-
     private static class HandlerHolder<REQUEST_ENTITY> {
         final Class<REQUEST_ENTITY> type;
         final HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler;
+        final HandlerConfig config;
 
-        HandlerHolder(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler) {
+        private HandlerHolder(
+                Class<REQUEST_ENTITY> type,
+                HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler,
+                HandlerConfig config) {
             this.type = type;
             this.handler = handler;
+            this.config = config;
         }
 
         static <RESPONSE_ENTITY, REQUEST_ENTITY> HandlerHolder<REQUEST_ENTITY> of(
-                Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, RESPONSE_ENTITY> handler) {
-            return new HandlerHolder<>(type, handler);
+                Class<REQUEST_ENTITY> type,
+                HandlerWithRequestEntity<REQUEST_ENTITY, RESPONSE_ENTITY> handler,
+                HandlerConfig config) {
+            return new HandlerHolder<>(type, handler, config);
         }
 
-        static <RESPONSE_ENTITY> HandlerHolder<Void> of(Handler<RESPONSE_ENTITY> handler) {
+        static <RESPONSE_ENTITY> HandlerHolder<Void> of(Handler<RESPONSE_ENTITY> handler, HandlerConfig config) {
             return new HandlerHolder<>(
                     Void.class,
-                    (HandlerWithRequestEntity<Void, RESPONSE_ENTITY>) (context, nullEntity) -> handler.handleRequest(context));
+                    (HandlerWithRequestEntity<Void, RESPONSE_ENTITY>) (context, nullEntity) -> handler.handleRequest(context),
+                    config);
         }
 
         Object executeHandler(RestApi.RequestContext context, Object entity) { return handler.handleRequest(context, type.cast(entity)); }
-    }
-
-    private static class RequestMapperHolder<ENTITY> {
-        final Class<ENTITY> type;
-        final RestApi.RequestMapper<ENTITY> mapper;
-
-        RequestMapperHolder(Class<ENTITY> type, RequestMapper<ENTITY> mapper) {
-            this.type = type;
-            this.mapper = mapper;
-        }
     }
 
     static class Route {
@@ -507,47 +529,10 @@ class RestApiImpl implements RestApi {
         }
 
         private HandlerHolder<?> createDefaultMethodHandler() {
-            return HandlerHolder.of(context -> { throw new RestApiException.MethodNotAllowed(context.request()); });
+            return HandlerHolder.of(
+                    context -> { throw new RestApiException.MethodNotAllowed(context.request()); },
+                    HandlerConfig.empty());
         }
     }
 
-    private static class JacksonRequestMapper<ENTITY> implements RequestMapper<ENTITY> {
-        private final Class<ENTITY> type;
-
-        JacksonRequestMapper(Class<ENTITY> type) { this.type = type; }
-
-        @Override
-        public Optional<ENTITY> toRequestEntity(RequestContext context) throws RestApiException {
-            if (log.isLoggable(Level.FINE)) {
-                return RestApiImpl.toString(context).map(string -> {
-                    log.fine(() -> "Request content: " + string);
-                    return convertIoException("Failed to parse JSON", () -> context.jacksonJsonMapper().readValue(string, type));
-                });
-            } else {
-                return RestApiImpl.toInputStream(context)
-                        .map(in -> convertIoException("Invalid JSON", () -> context.jacksonJsonMapper().readValue(in, type)));
-            }
-        }
-    }
-
-    private static class JacksonResponseMapper<ENTITY> implements ResponseMapper<ENTITY> {
-        @Override
-        public HttpResponse toHttpResponse(RequestContext context, ENTITY responseEntity) throws RestApiException {
-            return new JacksonJsonResponse<>(200, responseEntity, context.jacksonJsonMapper(), true);
-        }
-    }
-
-    @FunctionalInterface private interface SupplierThrowingIoException<T> { T get() throws IOException; }
-    private static <T> T convertIoException(String messagePrefix, SupplierThrowingIoException<T> supplier) {
-        try {
-            return supplier.get();
-        } catch (IOException e) {
-            log.log(Level.FINE, e.getMessage(), e);
-            throw new RestApiException.InternalServerError(messagePrefix + ": " + Exceptions.toMessageString(e), e);
-        }
-    }
-
-    private static <T> T convertIoException(SupplierThrowingIoException<T> supplier) {
-        return convertIoException("Failed to read request content", supplier);
-    }
 }

@@ -465,12 +465,13 @@ public class ApplicationRepositoryTest {
         // Create a local session without any data in zookeeper (corner case seen in production occasionally)
         // and check that expiring local sessions still work
         int sessionId = 6;
-        Files.createDirectory(new TenantFileSystemDirs(serverdb, tenant1).getUserApplicationDir(sessionId).toPath());
+        TenantName tenantName = tester.tenant().getName();
+        Files.createDirectory(new TenantFileSystemDirs(serverdb, tenantName).getUserApplicationDir(sessionId).toPath());
         LocalSession localSession2 = new LocalSession(tenant1,
                                                       sessionId,
                                                       FilesApplicationPackage.fromFile(testApp),
                                                       new SessionZooKeeperClient(curator,
-                                                                                 tenant1,
+                                                                                 tenantName,
                                                                                  sessionId,
                                                                                  ConfigUtils.getCanonicalHostName()));
         sessionRepository.addLocalSession(localSession2);

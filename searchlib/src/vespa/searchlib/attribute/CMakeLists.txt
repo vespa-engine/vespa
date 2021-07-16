@@ -1,6 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_attribute OBJECT
     SOURCES
+    address_space_components.cpp
     address_space_usage.cpp
     attribute.cpp
     attribute_blueprint_factory.cpp

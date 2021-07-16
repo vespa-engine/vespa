@@ -54,6 +54,7 @@ private:
     vespalib::SimpleHealthProducer             _health;
     MetricsProducer                            _metrics;
     vespalib::SimpleComponentConfigProducer    _components;
+    ServiceMapHistory                          _globalVisibleHistory;
 
 public:
     explicit SBEnv(const ConfigShim &shim);
@@ -70,6 +71,14 @@ public:
     RpcServerManager         _rpcsrvmanager;
     ExchangeManager          _exchanger;
     RpcServerMap             _rpcsrvmap;
+
+    ServiceMapHistory& globalHistory() {
+        return _globalVisibleHistory;
+    }
+
+    ServiceMapHistory& localHistory() {
+        return _globalVisibleHistory;
+    }
 
     const std::string & mySpec() const { return _me; }
 

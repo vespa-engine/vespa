@@ -377,6 +377,32 @@ public class NodeFailerTest {
     }
 
     @Test
+    public void node_failing_can_allocate_spare_to_replace_failed_node_in_group() {
+        NodeResources resources = new NodeResources(1, 20, 15, 1);
+        Capacity capacity = Capacity.from(new ClusterResources(4, 2, resources), false, true);
+        ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        NodeFailTester tester = NodeFailTester.withOneUndeployedApplication(capacity, spec);
+        assertEquals("Test depends on this setting in NodeFailTester", 1, tester.nodeRepository.spareCount());
+        tester.createAndActivateHosts(5, resources); // One extra - becomes designated spare
+        tester.activate(NodeFailTester.app1, spec, capacity);
+
+        // Hardware failure is reported for host
+        NodeList activeNodes = tester.nodeRepository.nodes().list(Node.State.active);
+        Node downNode = activeNodes.owner(NodeFailTester.app1).first().get();
+        Node downHost = activeNodes.parentOf(downNode).get();
+        tester.tester.patchNode(downHost, (node) -> node.with(node.reports().withReport(badTotalMemorySizeReport)));
+        tester.suspend(downHost.hostname());
+        tester.suspend(downNode.hostname());
+
+        // Node is failed and replaced
+        tester.runMaintainers();
+        assertEquals(1, tester.deployer.redeployments);
+        NodeList failedOrActive = tester.nodeRepository.nodes().list(Node.State.active, Node.State.failed);
+        assertEquals(4, failedOrActive.state(Node.State.active).nodeType(NodeType.tenant).size());
+        assertEquals(Set.of(downNode.hostname()), failedOrActive.state(Node.State.failed).nodeType(NodeType.tenant).hostnames());
+    }
+
+    @Test
     public void failing_ready_nodes() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 

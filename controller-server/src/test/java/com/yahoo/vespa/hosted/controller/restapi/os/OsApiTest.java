@@ -142,7 +142,7 @@ public class OsApiTest extends ControllerContainerTest {
                 var targetVersion = nodeRepository().targetVersionsOf(zone).osVersion(application.nodeType());
                 for (Node node : nodeRepository().list(zone, application.id())) {
                     var version = targetVersion.orElse(node.wantedOsVersion());
-                    nodeRepository().putNodes(zone, new Node.Builder(node).currentOsVersion(version).wantedOsVersion(version).build());
+                    nodeRepository().putNodes(zone, Node.builder(node).currentOsVersion(version).wantedOsVersion(version).build());
                 }
             }
         }

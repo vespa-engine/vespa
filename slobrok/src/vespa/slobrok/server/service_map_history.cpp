@@ -82,24 +82,29 @@ bool ServiceMapHistory::cancel(DiffCompletionHandler *handler) {
     return (removed > 0);
 }
 
-void ServiceMapHistory::remove(const vespalib::string &name) {
+void ServiceMapHistory::remove(const ServiceMapping &mapping) {
     {
         std::lock_guard guard(_lock);
-        auto iter = _map.find(name);
+        auto iter = _map.find(mapping.name);
         if (iter == _map.end()) {
-            LOG(warning, "already removed: %s", name.c_str());
-            // already removed
-            return;
+            LOG(debug, "already removed: %s", mapping.name.c_str());
+            return; // already removed
         }
+        LOG_ASSERT(iter->second == mapping.spec);
         _map.erase(iter);
-        _log.add(name);
+        _log.add(mapping.name);
     }
     notify_updated();
 }
 
-void ServiceMapHistory::update(const ServiceMapping &mapping) {
+void ServiceMapHistory::add(const ServiceMapping &mapping) {
     {
         std::lock_guard guard(_lock);
+        auto iter = _map.find(mapping.name);
+        if (iter != _map.end() && iter->second == mapping.spec) {
+            // already ok
+            return;
+        }
         _map.insert_or_assign(mapping.name, mapping.spec);
         _log.add(mapping.name);
     }

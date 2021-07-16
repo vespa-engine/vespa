@@ -67,16 +67,25 @@ public:
         bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
         bool use_two_phase_put() const { return _use_two_phase_put; }
     };
+
+    struct AttributeWithInfo {
+        search::AttributeVector* attribute;
+        ExecutorId executor_id;
+        bool use_two_phase_put_for_assign_updates;
+
+        AttributeWithInfo();
+        AttributeWithInfo(search::AttributeVector* attribute_in,
+                          ExecutorId executor_id_in);
+    };
 private:
-    using AttrWithId = std::pair<search::AttributeVector *, ExecutorId>;
-    using AttrMap = vespalib::hash_map<vespalib::string, AttrWithId>;
+    using AttrMap = vespalib::hash_map<vespalib::string, AttributeWithInfo>;
     std::vector<WriteContext> _writeContexts;
     const DataType           *_dataType;
     bool                      _hasStructFieldAttribute;
     AttrMap                   _attrMap;
 
     void setupWriteContexts();
-    void setupAttriuteMapping();
+    void setupAttributeMapping();
     void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
     void internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool allAttributes, OnWriteDoneType onWriteDone);

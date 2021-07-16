@@ -3,21 +3,15 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.OrchestratorStatus;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A minimal interface to the node repository, providing only the operations used by the controller.
+ * Node repository interface intended for use by the controller.
  *
  * @author mpolden
  */
@@ -38,10 +32,7 @@ public interface NodeRepository {
 
     void setState(ZoneId zone, NodeState nodeState, String hostname);
 
-    NodeRepositoryNode getNode(ZoneId zone, String hostname);
-
-    // TODO: Migrate any callers to list() and remove this method
-    NodeList listNodes(ZoneId zone);
+    Node getNode(ZoneId zone, String hostname);
 
     /** List all nodes in given zone */
     List<Node> list(ZoneId zone, boolean includeDeprovisioned);
@@ -95,146 +86,5 @@ public interface NodeRepository {
 
     /** Checks whether the zone has the spare capacity to remove the given hosts */
     boolean isReplaceable(ZoneId zoneId, List<HostName> hostNames);
-
-    static Node toNode(NodeRepositoryNode node) {
-        var application = Optional.ofNullable(node.getOwner())
-                                  .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
-                                                                   owner.getInstance()));
-        var parentHostname = Optional.ofNullable(node.getParentHostname()).map(HostName::from);
-        var resources = new NodeResources(
-                toDouble(node.getResources().getVcpu()),
-                toDouble(node.getResources().getMemoryGb()),
-                toDouble(node.getResources().getDiskGb()),
-                toDouble(node.getResources().getBandwidthGbps()),
-                diskSpeedFromString(node.getResources().getDiskSpeed()),
-                storageTypeFromString(node.getResources().getStorageType()));
-        return new Node(HostName.from(node.getHostname()),
-                        parentHostname,
-                        fromJacksonState(node.getState()),
-                        fromJacksonType(node.getType()),
-                        resources,
-                        application,
-                        versionFrom(node.getVespaVersion()),
-                        versionFrom(node.getWantedVespaVersion()),
-                        versionFrom(node.getCurrentOsVersion()),
-                        versionFrom(node.getWantedOsVersion()),
-                        Optional.ofNullable(node.getCurrentFirmwareCheck()).map(Instant::ofEpochMilli),
-                        Optional.ofNullable(node.getWantedFirmwareCheck()).map(Instant::ofEpochMilli),
-                        toServiceState(node.getOrchestratorStatus()),
-                        Optional.ofNullable(node.suspendedSinceMillis()).map(Instant::ofEpochMilli),
-                        toInt(node.getCurrentRestartGeneration()),
-                        toInt(node.getRestartGeneration()),
-                        toInt(node.getCurrentRebootGeneration()),
-                        toInt(node.getRebootGeneration()),
-                        toInt(node.getCost()),
-                        node.getFlavor(),
-                        clusterIdOf(node.getMembership()),
-                        clusterTypeOf(node.getMembership()),
-                        Optional.ofNullable(node.getMembership()).map(NodeMembership::getRetired).orElse(false),
-                        node.getWantToRetire(),
-                        node.getWantToDeprovision(),
-                        node.getWantToRebuild(), Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
-                        Optional.ofNullable(node.getExclusiveTo()).map(ApplicationId::fromSerializedForm),
-                        dockerImageFrom(node.getWantedDockerImage()),
-                        dockerImageFrom(node.getCurrentDockerImage()),
-                        node.getReports(),
-                        node.getHistory(),
-                        node.getAdditionalIpAddresses(),
-                        node.getOpenStackId(),
-                        Optional.ofNullable(node.getSwitchHostname()),
-                        Optional.ofNullable(node.getModelName()));
-    }
-
-    private static String clusterIdOf(NodeMembership nodeMembership) {
-        return nodeMembership == null ? "" : nodeMembership.clusterid;
-    }
-
-    private static Node.ClusterType clusterTypeOf(NodeMembership nodeMembership) {
-        if (nodeMembership == null) return Node.ClusterType.unknown;
-        switch (nodeMembership.clustertype) {
-            case "admin": return Node.ClusterType.admin;
-            case "content": return Node.ClusterType.content;
-            case "container": return Node.ClusterType.container;
-            case "combined": return Node.ClusterType.combined;
-        }
-        return Node.ClusterType.unknown;
-    }
-
-    // Convert Jackson type to config.provision type
-    private static NodeType fromJacksonType(com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType nodeType) {
-        switch (nodeType) {
-            case tenant: return NodeType.tenant;
-            case host: return NodeType.host;
-            case proxy: return NodeType.proxy;
-            case proxyhost: return NodeType.proxyhost;
-            case config: return NodeType.config;
-            case confighost: return NodeType.confighost;
-            case controller: return NodeType.controller;
-            case controllerhost: return NodeType.controllerhost;
-            default: throw new IllegalArgumentException("Unknown type: " + nodeType);
-        }
-    }
-
-    private static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State fromJacksonState(NodeState state) {
-        switch (state) {
-            case provisioned: return Node.State.provisioned;
-            case ready: return Node.State.ready;
-            case reserved: return Node.State.reserved;
-            case active: return Node.State.active;
-            case inactive: return Node.State.inactive;
-            case dirty: return Node.State.dirty;
-            case failed: return Node.State.failed;
-            case parked: return Node.State.parked;
-            case breakfixed: return Node.State.breakfixed;
-            case deprovisioned: return Node.State.deprovisioned;
-        }
-        return Node.State.unknown;
-    }
-
-    private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
-        if (diskSpeed == null) return NodeResources.DiskSpeed.getDefault();
-        switch (diskSpeed) {
-            case "fast": return NodeResources.DiskSpeed.fast;
-            case "slow": return NodeResources.DiskSpeed.slow;
-            case "any": return NodeResources.DiskSpeed.any;
-            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
-        }
-    }
-
-    private static NodeResources.StorageType storageTypeFromString(String storageType) {
-        if (storageType == null) return NodeResources.StorageType.getDefault();
-        switch (storageType) {
-            case "remote": return NodeResources.StorageType.remote;
-            case "local": return NodeResources.StorageType.local;
-            case "any": return NodeResources.StorageType.any;
-            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
-        }
-    }
-
-    private static Node.ServiceState toServiceState(OrchestratorStatus orchestratorStatus) {
-        switch (orchestratorStatus) {
-            case ALLOWED_TO_BE_DOWN: return Node.ServiceState.allowedDown;
-            case PERMANENTLY_DOWN: return Node.ServiceState.permanentlyDown;
-            case NO_REMARKS: return Node.ServiceState.expectedUp;
-        }
-
-        return Node.ServiceState.unknown;
-    }
-
-    private static double toDouble(Double d) {
-        return d == null ? 0 : d;
-    }
-
-    private static int toInt(Integer i) {
-        return i == null ? 0 : i;
-    }
-
-    private static Version versionFrom(String s) {
-        return s == null ? Version.emptyVersion : Version.fromString(s);
-    }
-
-    private static DockerImage dockerImageFrom(String s) {
-        return s == null ? DockerImage.EMPTY : DockerImage.fromString(s);
-    }
 
 }

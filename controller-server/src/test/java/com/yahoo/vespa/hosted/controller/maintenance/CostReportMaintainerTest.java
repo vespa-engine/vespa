@@ -54,7 +54,7 @@ public class CostReportMaintainerTest {
 
     private void addNodes() {
         for (var zone : tester.zoneRegistry().zones().all().zones()) {
-            tester.configServer().nodeRepository().setFixedNodes(zone.getId());
+            tester.configServer().nodeRepository().addFixedNodes(zone.getId());
         }
     }
 
