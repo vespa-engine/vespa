@@ -62,9 +62,9 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void setState(ZoneId zone, Node.State nodeState, String hostname) {
+    public void setState(ZoneId zone, Node.State state, String hostname) {
         Node node = Node.builder(require(zone, hostname))
-                        .state(Node.State.valueOf(nodeState.name()))
+                        .state(Node.State.valueOf(state.name()))
                         .build();
         putNodes(zone, node);
     }

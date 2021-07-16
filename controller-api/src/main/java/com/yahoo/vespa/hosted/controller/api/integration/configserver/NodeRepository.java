@@ -26,10 +26,13 @@ public interface NodeRepository {
     /** Add new nodes to the node repository */
     void addNodes(ZoneId zone, List<Node> nodes);
 
+    /** Delete node */
     void deleteNode(ZoneId zone, String hostname);
 
-    void setState(ZoneId zone, Node.State nodeState, String hostname);
+    /** Move node to given state */
+    void setState(ZoneId zone, Node.State state, String hostname);
 
+    /** Get node from zone */
     Node getNode(ZoneId zone, String hostname);
 
     /** List all nodes in given zone */
@@ -48,17 +51,23 @@ public interface NodeRepository {
                                       .collect(Collectors.toList());
     }
 
+    /** Get node repository's view of given application */
     Application getApplication(ZoneId zone, ApplicationId application);
 
+    /** Update application */
     void patchApplication(ZoneId zone, ApplicationId application,
                           double currentReadShare, double maxReadShare);
 
+    /** Get node statistics such as cost and load from given zone */
     NodeRepoStats getStats(ZoneId zone);
 
+    /** Get all archive URLs found in zone */
     Map<TenantName, URI> getArchiveUris(ZoneId zone);
 
+    /** Update archive URL for given tenant */
     void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri);
 
+    /** Remove archive URL for given tenant */
     void removeArchiveUri(ZoneId zone, TenantName tenantName);
 
     /** Upgrade all nodes of given type to a new version */
