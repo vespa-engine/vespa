@@ -42,15 +42,15 @@ public class CloudEventReporterTest {
     public void maintain() {
         setUpZones();
         CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15));
-        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(unsupportedZone.getId()));
-        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(zone1.getId()));
-        assertEquals(Set.of("host4.com", "host5.com", "confighost.com"), getHostnames(zone2.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), hostsNotDeprovisioning(unsupportedZone.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), hostsNotDeprovisioning(zone1.getId()));
+        assertEquals(Set.of("host4.com", "host5.com", "confighost.com"), hostsNotDeprovisioning(zone2.getId()));
 
         mockEvents();
         cloudEventReporter.maintain();
-        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(unsupportedZone.getId()));
-        assertEquals(Set.of("host3.com"), getHostnames(zone1.getId()));
-        assertEquals(Set.of("host4.com"), getHostnames(zone2.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), hostsNotDeprovisioning(unsupportedZone.getId()));
+        assertEquals(Set.of("host3.com"), hostsNotDeprovisioning(zone1.getId()));
+        assertEquals(Set.of("host4.com"), hostsNotDeprovisioning(zone2.getId()));
     }
 
     private void mockEvents() {
@@ -127,11 +127,12 @@ public class CloudEventReporterTest {
                    .build();
     }
 
-    private Set<String> getHostnames(ZoneId zoneId) {
+    private Set<String> hostsNotDeprovisioning(ZoneId zoneId) {
         return tester.configServer().nodeRepository().list(zoneId, false)
-                .stream()
-                .map(node -> node.hostname().value())
-                .collect(Collectors.toSet());
+                     .stream()
+                     .filter(node -> !node.wantToDeprovision())
+                     .map(node -> node.hostname().value())
+                     .collect(Collectors.toSet());
     }
 
     private ZoneApiMock createZone(String zoneId, String cloudNativeRegionName, String cloud) {

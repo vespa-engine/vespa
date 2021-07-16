@@ -10,7 +10,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +70,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ArchiveAccessMaintainer(controller, metric, intervals.archiveAccessMaintainer));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
-        maintainers.add(new VCMRMaintainer(controller, intervals.vcmrMaintainer));
+        maintainers.add(new VcmrMaintainer(controller, intervals.vcmrMaintainer));
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
     }

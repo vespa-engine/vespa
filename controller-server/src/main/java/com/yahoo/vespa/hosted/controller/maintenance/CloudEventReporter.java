@@ -59,7 +59,7 @@ public class CloudEventReporter extends ControllerMaintainer {
                 if (!affects(node, event)) continue;
                 log.info("Retiring and deprovisioning " + node.hostname().value() + " in " + zone.getId() +
                          ": Affected by maintenance event " + event.instanceEventId);
-                nodeRepository.retireAndDeprovision(zone.getId(), node.hostname().value());
+                nodeRepository.retire(zone.getId(), node.hostname().value(), true, true);
             }
         }
     }

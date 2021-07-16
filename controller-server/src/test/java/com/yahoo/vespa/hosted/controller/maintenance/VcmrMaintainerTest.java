@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
-import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VCMRReport;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VcmrReport;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
@@ -30,10 +30,10 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author olaa
  */
-public class VCMRMaintainerTest {
+public class VcmrMaintainerTest {
 
     private ControllerTester tester;
-    private VCMRMaintainer maintainer;
+    private VcmrMaintainer maintainer;
     private NodeRepositoryMock nodeRepo;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
     private final HostName host1 = HostName.from("host1");
@@ -43,13 +43,13 @@ public class VCMRMaintainerTest {
     @Before
     public void setup() {
         tester = new ControllerTester();
-        maintainer = new VCMRMaintainer(tester.controller(), Duration.ofMinutes(1));
+        maintainer = new VcmrMaintainer(tester.controller(), Duration.ofMinutes(1));
         nodeRepo = tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
     }
 
     @Test
     public void recycle_hosts_after_completion() {
-        var vcmrReport = new VCMRReport();
+        var vcmrReport = new VcmrReport();
         vcmrReport.addVcmr("id123", ZonedDateTime.now(), ZonedDateTime.now());
         var parkedNode = createNode(host1, NodeType.host, Node.State.parked, true);
         var failedNode = createNode(host2, NodeType.host, Node.State.failed, false);
@@ -169,7 +169,7 @@ public class VCMRMaintainerTest {
         assertEquals(1, approvedChangeRequests.size());
 
         activeNode = nodeRepo.list(zoneId, List.of(host2)).get(0);
-        var report = VCMRReport.fromReports(activeNode.reports());
+        var report = VcmrReport.fromReports(activeNode.reports());
         var reportAdded = report.getVcmrs().stream()
                         .filter(vcmr -> vcmr.getId().equals(changeRequestId))
                         .count() == 1;

@@ -876,7 +876,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             node.reservedTo().ifPresent(tenant -> nodeObject.setString("reservedTo", tenant.value()));
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
-            nodeObject.setString("flavor", node.flavor());
+            node.flavor().ifPresent(flavor -> nodeObject.setString("flavor", flavor));
             toSlime(node.resources(), nodeObject);
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
