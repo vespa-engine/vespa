@@ -78,4 +78,10 @@ public class RestApiException extends RuntimeException {
         public Conflict(String message) { this(message, null); }
         public Conflict(String message, Throwable cause) { super(ErrorResponse::conflict, message, cause); }
     }
+
+    public static class Unauthorized extends RestApiException {
+        public Unauthorized() { this("Unauthorized", null); }
+        public Unauthorized(String message) { this(message, null); }
+        public Unauthorized(String message, Throwable cause) { super(ErrorResponse::unauthorized, message, cause); }
+    }
 }

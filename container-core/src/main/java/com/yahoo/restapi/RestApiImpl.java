@@ -14,6 +14,7 @@ import com.yahoo.restapi.RestApiMappers.ResponseMapperHolder;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -405,6 +406,12 @@ class RestApiImpl implements RestApi {
                     : new UriBuilder(uri.getScheme() + "://" + uri.getHost());
         }
         @Override public AclMapping.Action aclAction() { return aclAction; }
+        @Override public Optional<Principal> userPrincipal() {
+            return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal());
+        }
+        @Override public Principal userPrincipalOrThrow() {
+            return userPrincipal().orElseThrow(RestApiException.Unauthorized::new);
+        }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override

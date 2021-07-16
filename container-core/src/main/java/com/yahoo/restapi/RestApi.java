@@ -8,6 +8,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 
 import java.io.InputStream;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -129,6 +130,8 @@ public interface RestApi {
         ObjectMapper jacksonJsonMapper();
         UriBuilder uriBuilder();
         AclMapping.Action aclAction();
+        Optional<Principal> userPrincipal();
+        Principal userPrincipalOrThrow();
 
         interface Parameters {
             Optional<String> getString(String name);
