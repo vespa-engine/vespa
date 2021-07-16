@@ -8,11 +8,28 @@ import (
     "time"
 )
 
-func HttpRequest(host string, path string, description string) (response *http.Response) {
-    client := &http.Client{
-	    Timeout: time.Second * 10,
+var httpClient = CreateClient()
+
+type HttpClient interface {
+    get(url string) (response *http.Response, error error)
+}
+
+type defaultHttpClient struct {
+    client http.Client
+}
+
+func (c defaultHttpClient) get(url string) (response *http.Response, error error) {
+    return c.client.Get(url)
+}
+
+func CreateClient() (client HttpClient) {
+    return &defaultHttpClient{
+        client: http.Client{Timeout: time.Second * 10,},
     }
-    response, error := client.Get(host + path)
+}
+
+func HttpRequest(host string, path string, description string) (response *http.Response) {
+    response, error := httpClient.get(host + path)
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", host)
         Detail(error.Error())

@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-   rootCmd.AddCommand(statusCmd)
+    rootCmd.AddCommand(statusCmd)
     statusCmd.AddCommand(statusContainerCmd)
     statusCmd.AddCommand(statusConfigServerCmd)
 }

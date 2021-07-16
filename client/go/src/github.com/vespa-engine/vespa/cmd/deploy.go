@@ -3,7 +3,7 @@ package cmd
 
 import (
     "github.com/spf13/cobra"
-    // "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/utils"
 )
 
 func init() {
@@ -11,7 +11,7 @@ func init() {
 }
 
 var deployCmd = &cobra.Command{
-    Use:   "deploy",
+    Use:   "deploy application-package-dir OR application.zip",
     Short: "Deploys an application package",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
@@ -20,6 +20,9 @@ var deployCmd = &cobra.Command{
 }
 
 func deploy() {
-
+    // (cd src/main/application && zip -r - .) | \
+    //     curl --header Content-Type:application/zip --data-binary @- \
+    //     localhost:19071/application/v2/tenant/default/prepareandactivate
+    utils.HttpRequest("http://127.0.0.1:19071", "/application/v2/tenant/default/prepareandactivate", "Config server")
 }
 
