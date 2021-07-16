@@ -260,12 +260,6 @@ public class Flags {
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag LOAD_LOCAL_SESSIONS_WHEN_BOOTSTRAPPING = defineFeatureFlag(
-            "load-local-sessions-when-bootstrapping", true,
-            List.of("hmusum"), "2021-06-15", "2021-08-15",
-            "Whether to load local sessions when bootstrapping config server",
-            "Takes effect on restart of config server");
-
     public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
             "dry-run-onnx-on-setup", false,
             List.of("baldersheim"), "2021-06-23", "2021-09-01",
