@@ -33,39 +33,13 @@ interface ResourceDefinition2 {
     String signup(RestApi.RequestContext ctx);
 }
 
-class Resource1 implements ResourceDefinition1 {
-
-    @Override
-    public HttpResponse root(RestApi.RequestContext ctx) {
-        return null;
-    }
-
-    @Override
-    public Slime domainList(RestApi.RequestContext ctx) {
-        return null;
-    }
-}
-
-class Resource2 implements ResourceDefinition2 {
-
-    @Override
-    public Slime properties(RestApi.RequestContext ctx) {
-        return null;
-    }
-
-    @Override
-    public String signup(RestApi.RequestContext ctx) {
-        return null;
-    }
-}
-
 /**
  * This API proxies requests to an Athenz server.
  * 
  * @author jonmv
  */
 @SuppressWarnings("unused") // Handler
-public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> implements ResourceDefinition1 {
+public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> implements ResourceDefinition1, ResourceDefinition2 {
 
     private final static Logger log = Logger.getLogger(AthenzApiHandler.class.getName());
 
@@ -74,8 +48,8 @@ public class AthenzApiHandler extends RestApiRequestHandler<AthenzApiHandler> im
     private final EntityService properties;
 
     @Inject
-    public AthenzApiHandler(Context parentCtx, ResourceDefinition1 res1, ResourceDefinition2 res2) {
-        super(parentCtx, createRestApi(res1, res2));
+    public AthenzApiHandler(Context parentCtx, AthenzFacade athenz, Controller controller) {
+        super(parentCtx, self -> createRestApi(self, self));
         this.athenz = athenz;
         this.sandboxDomain = new AthenzDomain(sandboxDomainIn(controller.system()));
         this.properties = controller.serviceRegistry().entityService();
