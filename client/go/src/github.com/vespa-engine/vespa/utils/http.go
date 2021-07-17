@@ -8,7 +8,8 @@ import (
     "time"
 )
 
-var httpClient = CreateClient()
+// Set this to a mock HttpClient to unit test HTTP requests
+var ActiveHttpClient = CreateClient()
 
 type HttpClient interface {
     get(url string) (response *http.Response, error error)
@@ -29,7 +30,7 @@ func CreateClient() (client HttpClient) {
 }
 
 func HttpRequest(host string, path string, description string) (response *http.Response) {
-    response, error := httpClient.get(host + path)
+    response, error := ActiveHttpClient.get(host + path)
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", host)
         Detail(error.Error())
