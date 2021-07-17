@@ -26,9 +26,9 @@ public class MockBillingController implements BillingController {
     private final Clock clock;
     Map<TenantName, PlanId> plans = new HashMap<>();
     Map<TenantName, PaymentInstrument> activeInstruments = new HashMap<>();
-    Map<TenantName, List<Invoice>> committedInvoices = new HashMap<>();
-    Map<TenantName, Invoice> uncommittedInvoices = new HashMap<>();
-    Map<TenantName, List<Invoice.LineItem>> unusedLineItems = new HashMap<>();
+    Map<TenantName, List<Bill>> committedBills = new HashMap<>();
+    Map<TenantName, Bill> uncommittedBills = new HashMap<>();
+    Map<TenantName, List<Bill.LineItem>> unusedLineItems = new HashMap<>();
     Map<TenantName, CollectionMethod> collectionMethod = new HashMap<>();
 
     public MockBillingController(Clock clock) {
@@ -64,32 +64,32 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public Invoice.Id createInvoiceForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent) {
-        var invoiceId = Invoice.Id.of("id-123");
-        committedInvoices.computeIfAbsent(tenant, l -> new ArrayList<>())
-                .add(new Invoice(
-                        invoiceId,
+    public Bill.Id createBillForPeriod(TenantName tenant, ZonedDateTime startTime, ZonedDateTime endTime, String agent) {
+        var billId = Bill.Id.of("id-123");
+        committedBills.computeIfAbsent(tenant, l -> new ArrayList<>())
+                .add(new Bill(
+                        billId,
                         tenant,
-                        Invoice.StatusHistory.open(clock),
+                        Bill.StatusHistory.open(clock),
                         List.of(),
                         startTime,
                         endTime
                 ));
-        return invoiceId;
+        return billId;
     }
 
     @Override
-    public Invoice createUncommittedInvoice(TenantName tenant, LocalDate until) {
-        return uncommittedInvoices.getOrDefault(tenant, emptyInvoice());
+    public Bill createUncommittedBill(TenantName tenant, LocalDate until) {
+        return uncommittedBills.getOrDefault(tenant, emptyBill());
     }
 
     @Override
-    public Map<TenantName, Invoice> createUncommittedInvoices(LocalDate until) {
-        return uncommittedInvoices;
+    public Map<TenantName, Bill> createUncommittedBills(LocalDate until) {
+        return uncommittedBills;
     }
 
     @Override
-    public List<Invoice.LineItem> getUnusedLineItems(TenantName tenant) {
+    public List<Bill.LineItem> getUnusedLineItems(TenantName tenant) {
         return unusedLineItems.getOrDefault(tenant, List.of());
     }
 
@@ -110,18 +110,18 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public void updateInvoiceStatus(Invoice.Id invoiceId, String agent, String status) {
+    public void updateBillStatus(Bill.Id billId, String agent, String status) {
         var now = clock.instant().atZone(ZoneOffset.UTC);
-        committedInvoices.values().stream()
+        committedBills.values().stream()
                 .flatMap(List::stream)
-                .filter(invoice -> invoiceId.equals(invoice.id()))
-                .forEach(invoice -> invoice.statusHistory().history.put(now, status));
+                .filter(bill -> billId.equals(bill.id()))
+                .forEach(bill -> bill.statusHistory().history.put(now, status));
     }
 
     @Override
     public void addLineItem(TenantName tenant, String description, BigDecimal amount, String agent) {
         unusedLineItems.computeIfAbsent(tenant, l -> new ArrayList<>())
-                .add(new Invoice.LineItem(
+                .add(new Bill.LineItem(
                         "line-item-id",
                         description,
                         amount,
@@ -152,13 +152,13 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public List<Invoice> getInvoicesForTenant(TenantName tenant) {
-        return committedInvoices.getOrDefault(tenant, List.of());
+    public List<Bill> getBillsForTenant(TenantName tenant) {
+        return committedBills.getOrDefault(tenant, List.of());
     }
 
     @Override
-    public List<Invoice> getInvoices() {
-        return committedInvoices.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    public List<Bill> getBills() {
+        return committedBills.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
     @Override
@@ -191,17 +191,17 @@ public class MockBillingController implements BillingController {
                 "country");
     }
 
-    public void addInvoice(TenantName tenantName, Invoice invoice, boolean committed) {
+    public void addBill(TenantName tenantName, Bill bill, boolean committed) {
         if (committed)
-            committedInvoices.computeIfAbsent(tenantName, i -> new ArrayList<>())
-                    .add(invoice);
+            committedBills.computeIfAbsent(tenantName, i -> new ArrayList<>())
+                    .add(bill);
         else
-            uncommittedInvoices.put(tenantName, invoice);
+            uncommittedBills.put(tenantName, bill);
     }
 
-    private Invoice emptyInvoice() {
+    private Bill emptyBill() {
         var start = clock.instant().atZone(ZoneOffset.UTC);
         var end = clock.instant().atZone(ZoneOffset.UTC);
-        return new Invoice(Invoice.Id.of("empty"), TenantName.defaultName(), Invoice.StatusHistory.open(clock), List.of(), start, end);
+        return new Bill(Bill.Id.of("empty"), TenantName.defaultName(), Bill.StatusHistory.open(clock), List.of(), start, end);
     }
 }
