@@ -34,6 +34,7 @@ public class RPCServicePool {
      * @return A service address for the given pattern.
      */
     public RPCServiceAddress resolve(String pattern) {
+        System.err.println("##: " + services.get() + " asked for " + pattern);
         RPCService service = services.get().get(pattern);
         if (service == null) {
             service = new RPCService(net.getMirror(), pattern);

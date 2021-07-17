@@ -14,6 +14,7 @@ import com.yahoo.jrt.TransportThread;
 import com.yahoo.jrt.Values;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,7 @@ public class Mirror implements IMirror {
                 found.add(specEntry);
             }
         }
+        System.err.println("## found " + found + " looking up " + pattern);
         return found;
     }
 
@@ -313,6 +315,15 @@ public class Mirror implements IMirror {
 
         public int hashCode() {
             return (name.hashCode() + spec.hashCode());
+        }
+
+        @Override
+        public String toString() {
+            return "Entry{" +
+                   "name='" + name + '\'' +
+                   ", spec=" + spec +
+                   ", nameArray=" + Arrays.toString(nameArray) +
+                   '}';
         }
 
         public int compareTo(Entry b) {

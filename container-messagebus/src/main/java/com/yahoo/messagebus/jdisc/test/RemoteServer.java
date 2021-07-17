@@ -1,9 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc.test;
 
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBus;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Protocol;
+import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
@@ -17,16 +24,14 @@ import java.util.concurrent.TimeUnit;
 public class RemoteServer {
 
     private final Slobrok slobrok;
-    private final String slobrokId;
     private final MessageBus mbus;
     private final MessageQueue queue = new MessageQueue();
     private final DestinationSession session;
 
-    private RemoteServer(Slobrok slobrok, String slobrokId, Protocol protocol, String identity) {
-        this.slobrok = slobrok;
-        this.slobrokId = slobrok != null ? slobrok.configId() : slobrokId;
+    private RemoteServer(Protocol protocol, String identity) {
+        this.slobrok = newSlobrok();
         mbus = new MessageBus(new RPCNetwork(new RPCNetworkParams()
-                                                     .setSlobrokConfigId(this.slobrokId)
+                                                     .setSlobroksConfig(slobroksConfig())
                                                      .setIdentity(new Identity(identity))),
                               new MessageBusParams().addProtocol(protocol));
         session = mbus.createDestinationSession(new DestinationSessionParams().setMessageHandler(queue));
@@ -48,32 +53,22 @@ public class RemoteServer {
         session.reply(reply);
     }
 
-    public String slobrokId() {
-        return slobrokId;
+    public SlobroksConfig slobroksConfig() {
+        return TestUtils.configFor(slobrok);
     }
 
     public void close() {
         session.destroy();
         mbus.destroy();
-        if (slobrok != null) {
-            slobrok.stop();
-        }
+        slobrok.stop();
     }
 
     public static RemoteServer newInstanceWithInternSlobrok() {
-        return new RemoteServer(newSlobrok(), null, new SimpleProtocol(), "remote");
+        return new RemoteServer(new SimpleProtocol(), "remote");
     }
 
-    public static RemoteServer newInstanceWithExternSlobrok(String slobrokId) {
-        return new RemoteServer(null, slobrokId, new SimpleProtocol(), "remote");
-    }
-
-    public static RemoteServer newInstance(String slobrokId, String identity, Protocol protocol) {
-        return new RemoteServer(null, slobrokId, protocol, identity);
-    }
-
-    public static RemoteServer newInstanceWithProtocol(Protocol protocol) {
-        return new RemoteServer(newSlobrok(), null, protocol, "remote");
+    public static RemoteServer newInstance(String identity, Protocol protocol) {
+        return new RemoteServer(protocol, identity);
     }
 
     private static Slobrok newSlobrok() {

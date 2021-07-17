@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
+import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.docproc.CallStack;
@@ -13,12 +14,15 @@ import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.jdisc.MbusClient;
@@ -26,6 +30,8 @@ import com.yahoo.messagebus.jdisc.test.RemoteServer;
 import com.yahoo.messagebus.jdisc.test.ServerTestDriver;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.shared.SharedSourceSession;
+import com.yahoo.vespa.config.content.DistributionConfig;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 import org.junit.After;
 import org.junit.Before;
 
@@ -52,8 +58,11 @@ public abstract class DocumentProcessingHandlerTestBase {
 
         driver = ServerTestDriver.newInactiveInstanceWithProtocol(protocol, true);
 
-        sessionCache =
-                new SessionCache("raw:", driver.client().slobrokId(), "test", "raw:", null, "raw:", documentTypeManager);
+        sessionCache = new SessionCache(new ContainerMbusConfig.Builder().build(),
+                                        driver.client().slobroksConfig(),
+                                        new MessagebusConfig.Builder().build(),
+                                        "test",
+                                        protocol);
 
         ContainerBuilder builder = driver.parent().newContainerBuilder();
         ComponentRegistry<DocprocService> registry = new ComponentRegistry<>();
@@ -102,7 +111,7 @@ public abstract class DocumentProcessingHandlerTestBase {
             resource.release();
         }
 
-        remoteServer = RemoteServer.newInstance(driver.client().slobrokId(), "foobar", protocol);
+        remoteServer = RemoteServer.newInstance("foobar", protocol);
     }
 
     @After

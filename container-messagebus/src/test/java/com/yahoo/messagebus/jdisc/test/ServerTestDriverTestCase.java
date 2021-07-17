@@ -24,11 +24,6 @@ public class ServerTestDriverTestCase {
         driver = ServerTestDriver.newInstanceWithProtocol(new SimpleProtocol(), new NonWorkingRequestHandler(), false);
         assertNotNull(driver);
         assertTrue(driver.close());
-
-        Slobrok slobrok = new Slobrok();
-        driver = ServerTestDriver.newInstanceWithExternSlobrok(slobrok.configId(), new NonWorkingRequestHandler(), false);
-        assertNotNull(driver);
-        assertTrue(driver.close());
     }
 
 }
