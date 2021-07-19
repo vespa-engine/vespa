@@ -9,10 +9,10 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -47,7 +47,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
 
     private Map<HostName, ApplicationId> getTenantOfParentHosts(ZoneId zoneId) {
         return controller().serviceRegistry().configServer().nodeRepository()
-                .list(zoneId, false)
+                .list(zoneId, NodeFilter.all())
                 .stream()
                 .filter(node -> node.type().isHost())
                 .collect(Collectors.toMap(

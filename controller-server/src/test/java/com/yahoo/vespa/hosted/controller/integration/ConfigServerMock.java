@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerE
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage;
@@ -133,7 +134,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                       new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
                                                                                                                      List.of(cluster)));
 
-        Node parent = nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream().findAny()
+        Node parent = nodeRepository().list(zone, NodeFilter.all().applications(SystemApplication.tenantHost.id())).stream().findAny()
                                       .orElseThrow(() -> new IllegalStateException("No parent hosts in " + zone));
         nodeRepository().putNodes(zone, Node.builder().hostname(hostFor(application, zone))
                                             .state(Node.State.reserved)
@@ -189,7 +190,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Converge all services belonging to the given application */
     public void convergeServices(ApplicationId application, ZoneId zone) {
-        List<Node> nodes = nodeRepository.list(zone, application);
+        List<Node> nodes = nodeRepository.list(zone, NodeFilter.all().applications(application));
         serviceStatus.put(new DeploymentId(application, zone), new ServiceConvergence(application,
                                                                                       zone,
                                                                                       true,
@@ -219,7 +220,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Set version for an application in a given zone */
     public void setVersion(Version version, ApplicationId application, ZoneId zone) {
-        setVersion(zone, nodeRepository.list(zone, application), version, false);
+        setVersion(zone, nodeRepository.list(zone, NodeFilter.all().applications(application)), version, false);
     }
 
     /** Set version for nodeCount number of nodes in application in a given zone */
@@ -229,7 +230,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Set OS version for an application in a given zone */
     public void setOsVersion(Version version, ApplicationId application, ZoneId zone) {
-        setVersion(zone, nodeRepository.list(zone, application), version, true);
+        setVersion(zone, nodeRepository.list(zone, NodeFilter.all().applications(application)), version, true);
     }
 
     /** Set OS version for an application in a given zone */
@@ -382,7 +383,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         applications.put(id, new Application(id.applicationId(), lastPrepareVersion, new ApplicationPackage(deployment.applicationPackage())));
         ClusterSpec.Id cluster = ClusterSpec.Id.from("default");
 
-        if (nodeRepository().list(id.zoneId(), id.applicationId()).isEmpty())
+        if (nodeRepository().list(id.zoneId(), NodeFilter.all().applications(id.applicationId())).isEmpty())
             provision(id.zoneId(), id.applicationId(), cluster);
 
         this.containerEndpoints.put(
@@ -405,7 +406,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return () -> {
             Application application = applications.get(id);
             application.activate();
-            List<Node> nodes = nodeRepository.list(id.zoneId(), id.applicationId());
+            List<Node> nodes = nodeRepository.list(id.zoneId(), NodeFilter.all().applications(id.applicationId()));
             for (Node node : nodes) {
                 nodeRepository.putNodes(id.zoneId(), Node.builder(node)
                                                          .state(Node.State.active)
@@ -471,7 +472,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void deactivate(DeploymentId deployment) {
         ApplicationId applicationId = deployment.applicationId();
         nodeRepository().removeNodes(deployment.zoneId(),
-                                     nodeRepository().list(deployment.zoneId(), applicationId));
+                                     nodeRepository().list(deployment.zoneId(), NodeFilter.all().applications(applicationId)));
         if ( ! applications.containsKey(deployment))
             return;
 

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.yolean.Exceptions;
 
@@ -112,7 +113,7 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
         try {
             return controller().serviceRegistry().configServer()
                                .nodeRepository()
-                               .list(zone.getVirtualId(), application.id())
+                               .list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))
                                .stream()
                                .filter(node -> expectUpgradeOf(node, application, zone))
                                .map(versionField)

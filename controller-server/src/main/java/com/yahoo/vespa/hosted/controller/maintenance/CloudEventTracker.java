@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 
 import java.time.Duration;
@@ -53,7 +54,7 @@ public class CloudEventTracker extends ControllerMaintainer {
     /** Deprovision any host affected by given event */
     private void deprovisionAffectedHosts(String region, CloudEvent event) {
         for (var zone : zonesByCloudNativeRegion.get(region)) {
-            for (var node : nodeRepository.list(zone.getId(), false)) {
+            for (var node : nodeRepository.list(zone.getId(), NodeFilter.all())) {
                 if (!affects(node, event)) continue;
                 log.info("Retiring and deprovisioning " + node.hostname().value() + " in " + zone.getId() +
                          ": Affected by maintenance event " + event.instanceEventId);

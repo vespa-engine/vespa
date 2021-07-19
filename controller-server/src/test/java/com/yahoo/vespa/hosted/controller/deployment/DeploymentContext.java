@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -192,7 +193,8 @@ public class DeploymentContext {
         for (var spec : application().deploymentSpec().instances())
             for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
                 assertTrue(tester.configServer().nodeRepository()
-                                 .list(type.zone(tester.controller().system()), applicationId.defaultInstance()).stream() // TODO jonmv: support more
+                                 .list(type.zone(tester.controller().system()),
+                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream() // TODO jonmv: support more
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
@@ -543,7 +545,7 @@ public class DeploymentContext {
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
         assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
-        assertTrue(configServer().nodeRepository().list(zone, TesterId.of(id.application()).id()).isEmpty());
+        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(id.application()).id())).isEmpty());
     }
 
     private JobId jobId(JobType type) {
