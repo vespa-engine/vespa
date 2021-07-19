@@ -241,7 +241,8 @@ public class StorageGroup {
             int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 
             if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
-                context.getDeployLogger().logApplicationPackage(Level.WARNING,
+                context.getDeployLogger()
+                       .logApplicationPackage(Level.WARNING,
                                               "Cluster '" + clusterElement.stringAttribute("id") + "' " +
                                               "specifies redundancy " + redundancy + " but cannot be higher than " +
                                               "the minimum nodes per group, which is " + minNodesPerGroup);
