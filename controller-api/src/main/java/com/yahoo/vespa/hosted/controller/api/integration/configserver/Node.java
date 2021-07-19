@@ -375,6 +375,7 @@ public class Node {
         bareMetal,
         virtualMachine,
         dockerContainer,
+        unknown,
     }
 
     /** A node event */
@@ -475,7 +476,7 @@ public class Node {
         private Set<String> additionalHostnames = Set.of();
         private Optional<String> switchHostname = Optional.empty();
         private Optional<String> modelName = Optional.empty();
-        private Environment environment = Environment.bareMetal;
+        private Environment environment = Environment.unknown;
 
         private Builder() {}
 
