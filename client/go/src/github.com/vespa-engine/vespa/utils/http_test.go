@@ -14,7 +14,7 @@ import (
 
 type mockHttpClient struct {}
 
-func (c mockHttpClient) get(url string) (response *http.Response, error error) {
+func (c mockHttpClient) Get(url string) (response *http.Response, error error) {
     var status int
     var body string
     if (url == "http://host/okpath") {

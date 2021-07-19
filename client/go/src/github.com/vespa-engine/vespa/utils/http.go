@@ -15,14 +15,14 @@ import (
 var ActiveHttpClient = CreateClient()
 
 type HttpClient interface {
-    get(url string) (response *http.Response, error error)
+    Get(url string) (response *http.Response, error error)
 }
 
 type defaultHttpClient struct {
     client http.Client
 }
 
-func (c defaultHttpClient) get(url string) (response *http.Response, error error) {
+func (c defaultHttpClient) Get(url string) (response *http.Response, error error) {
     return c.client.Get(url)
 }
 
@@ -33,7 +33,7 @@ func CreateClient() (client HttpClient) {
 }
 
 func HttpRequest(host string, path string, description string) (response *http.Response) {
-    response, error := ActiveHttpClient.get(host + path)
+    response, error := ActiveHttpClient.Get(host + path)
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", host)
         Detail(error.Error())

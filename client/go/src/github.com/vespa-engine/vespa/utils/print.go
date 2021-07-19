@@ -6,7 +6,16 @@ package utils
 
 import (
     "fmt"
+    "io"
+    "os"
 )
+
+// Set this to have output written somewhere else than os.Stdout
+var Out io.Writer
+
+func init() {
+    Out = os.Stdout
+}
 
 func Error(messages ...string) {
     print("\033[31m", messages)
@@ -21,10 +30,10 @@ func Detail(messages ...string) {
 }
 
 func print(prefix string, messages []string) {
-    fmt.Print(prefix)
+    fmt.Fprint(Out, prefix)
     for i := 0; i < len(messages); i++ {
-        fmt.Print(messages[i])
-        fmt.Print(" ")
+        fmt.Fprint(Out, messages[i])
+        fmt.Fprint(Out, " ")
     }
-    fmt.Println("")
+    fmt.Fprintln(Out, "")
 }
