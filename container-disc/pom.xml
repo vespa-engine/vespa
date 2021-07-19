@@ -230,7 +230,6 @@
                 jersey-client-${jersey2.version}.jar,
                 jersey-common-${jersey2.version}.jar,
                 jersey-guava-${jersey2.version}.jar,
-                jersey-media-jaxb-${jersey2.version}.jar,
                 jersey-media-multipart-${jersey2.version}.jar,
                 mimepull-${mimepull.version}.jar, <!-- needed by media-multipart -->
                 jersey-proxy-client-${jersey2.version}.jar,
