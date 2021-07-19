@@ -21,22 +21,6 @@
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-json-jackson</artifactId>
-      <exclusions>
-        <exclusion>
-          <!-- Conflicts with javax.activation:javax.activation-api:1.2.0, which is "exported" via jdisc_core. -->
-          <groupId>jakarta.activation</groupId>
-          <artifactId>jakarta.activation-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <!-- Conflicts with javax.xml.bind:jaxb-api:2.3, which is "exported" via jdisc_core.-->
-          <groupId>jakarta.xml.bind</groupId>
-          <artifactId>jakarta.xml.bind-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-multipart</artifactId>
     </dependency>
     <dependency>
@@ -54,6 +38,25 @@
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+
+    <dependency>
+      <!-- Previously pulled in by jersey-media-json-jackson. Contains 'jackson.jaxrs' package imported
+      by routing-generator, controller-clients, provision-controller and core-dump-reporter, July 2021 -->
+      <groupId>com.fasterxml.jackson.jaxrs</groupId>
+      <artifactId>jackson-jaxrs-json-provider</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- Conflicts with javax.activation:javax.activation-api:1.2.0, which is "exported" via jdisc_core. -->
+          <groupId>jakarta.activation</groupId>
+          <artifactId>jakarta.activation-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- Conflicts with javax.xml.bind:jaxb-api:2.3, which is "exported" via jdisc_core.-->
+          <groupId>jakarta.xml.bind</groupId>
+          <artifactId>jakarta.xml.bind-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
