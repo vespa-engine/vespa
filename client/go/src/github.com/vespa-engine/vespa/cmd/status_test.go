@@ -10,6 +10,7 @@ import (
 )
 
 func TestStatusConfigServerCommand(t *testing.T) {
+    expectedUrl = "http://127.0.0.1:19071/ApplicationStatus"
 	assert.Equal(t,
 	             "\x1b[32mConfig server at http://127.0.0.1:19071 is ready \n",
 	             executeCommand(t, []string{"status", "config-server"}),

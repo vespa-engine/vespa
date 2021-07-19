@@ -13,6 +13,8 @@ import (
     "testing"
 )
 
+var expectedUrl string
+
 func executeCommand(t *testing.T, args []string) (standardout string) {
     utils.ActiveHttpClient = mockHttpClient{}
 	b := bytes.NewBufferString("")
@@ -29,7 +31,7 @@ type mockHttpClient struct {}
 func (c mockHttpClient) Get(url string) (response *http.Response, error error) {
     var status int
     var body string
-    if (url == "http://127.0.0.1:19071/ApplicationStatus" || url == "http://127.0.0.1:8080/ApplicationStatus") {
+    if (url == expectedUrl) {
         status = 200
         body = "OK"
     } else {
