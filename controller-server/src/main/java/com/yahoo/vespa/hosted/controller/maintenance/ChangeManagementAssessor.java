@@ -5,6 +5,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 
 import java.util.Collection;
@@ -25,7 +26,7 @@ public class ChangeManagementAssessor {
     }
 
     public Assessment assessment(List<String> impactedHostnames, ZoneId zone) {
-        return assessmentInner(impactedHostnames, nodeRepository.list(zone, false), zone);
+        return assessmentInner(impactedHostnames, nodeRepository.list(zone, NodeFilter.all()), zone);
     }
 
     Assessment assessmentInner(List<String> impactedHostnames, List<Node> allNodes, ZoneId zone) {

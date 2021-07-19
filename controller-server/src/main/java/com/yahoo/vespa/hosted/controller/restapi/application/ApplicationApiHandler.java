@@ -57,6 +57,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -865,7 +866,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, id);
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all().applications(id));
 
         Slime slime = new Slime();
         Cursor nodesArray = slime.setObject().setArray("nodes");

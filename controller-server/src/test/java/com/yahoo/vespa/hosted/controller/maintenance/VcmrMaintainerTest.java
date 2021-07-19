@@ -5,6 +5,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
@@ -66,7 +67,7 @@ public class VcmrMaintainerTest {
         maintainer.maintain();
 
         // Only the parked node is recycled, VCMR report is cleared
-        var nodeList = nodeRepo.list(zoneId, List.of(host1, host2));
+        var nodeList = nodeRepo.list(zoneId, NodeFilter.all().hostnames(host1, host2));
         assertEquals(Node.State.dirty, nodeList.get(0).state());
         assertEquals(Node.State.failed, nodeList.get(1).state());
 
@@ -111,7 +112,7 @@ public class VcmrMaintainerTest {
         assertEquals(State.NONE, failedNodeAction.getState());
         assertEquals(Status.IN_PROGRESS, writtenChangeRequest.getStatus());
 
-        activeNode = nodeRepo.list(zoneId, List.of(activeNode.hostname())).get(0);
+        activeNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(activeNode.hostname())).get(0);
         assertTrue(activeNode.wantToRetire());
     }
 
@@ -168,7 +169,7 @@ public class VcmrMaintainerTest {
         var approvedChangeRequests = tester.serviceRegistry().changeRequestClient().getApprovedChangeRequests();
         assertEquals(1, approvedChangeRequests.size());
 
-        activeNode = nodeRepo.list(zoneId, List.of(host2)).get(0);
+        activeNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(host2)).get(0);
         var report = VcmrReport.fromReports(activeNode.reports());
         var reportAdded = report.getVcmrs().stream()
                         .filter(vcmr -> vcmr.getId().equals(changeRequestId))
@@ -190,11 +191,11 @@ public class VcmrMaintainerTest {
         var hostAction = writtenChangeRequest.getHostActionPlan().get(0);
         assertEquals(State.PENDING_RETIREMENT, hostAction.getState());
 
-        parkedNode = nodeRepo.list(zoneId, List.of(parkedNode.hostname())).get(0);
+        parkedNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(parkedNode.hostname())).get(0);
         assertEquals(Node.State.dirty, parkedNode.state());
         assertFalse(parkedNode.wantToRetire());
 
-        retiringNode = nodeRepo.list(zoneId, List.of(retiringNode.hostname())).get(0);
+        retiringNode = nodeRepo.list(zoneId, NodeFilter.all().hostnames(retiringNode.hostname())).get(0);
         assertEquals(Node.State.active, retiringNode.state());
         assertFalse(retiringNode.wantToRetire());
     }

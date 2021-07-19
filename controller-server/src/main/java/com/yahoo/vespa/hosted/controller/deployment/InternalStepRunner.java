@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -31,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -103,6 +103,7 @@ import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Runs steps of a deployment job against its provided controller.
@@ -313,10 +314,14 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
-                                                                                             id.application(),
-                                                                                             Set.of(active));
+                                                                                             NodeFilter.all()
+                                                                                                       .applications(id.application())
+                                                                                                       .states(active));
+
+        Set<HostName> parentHostnames = nodes.stream().map(node -> node.parentHostname().get()).collect(toSet());
         List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
-                                                                                               nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
+                                                                                               NodeFilter.all()
+                                                                                                         .hostnames(parentHostnames));
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         boolean firstTick = run.convergenceSummary().isEmpty();
         if (firstTick) { // Run the first time (for each convergence step).
@@ -419,10 +424,13 @@ public class InternalStepRunner implements StepRunner {
                    : Optional.empty();
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone,
-                                                                                             testerId,
-                                                                                             ImmutableSet.of(active, reserved));
+                                                                                             NodeFilter.all()
+                                                                                                       .applications(testerId)
+                                                                                                       .states(active, reserved));
+        Set<HostName> parentHostnames = nodes.stream().map(node -> node.parentHostname().get()).collect(toSet());
         List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(zone,
-                                                                                               nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
+                                                                                               NodeFilter.all()
+                                                                                                         .hostnames(parentHostnames));
         NodeList nodeList = NodeList.of(nodes, parents, services.get());
         logger.log(nodeList.asList().stream()
                            .flatMap(node -> nodeDetails(node, false))

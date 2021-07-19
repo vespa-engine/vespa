@@ -6,6 +6,7 @@ import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -322,7 +323,7 @@ public class SystemUpgraderTest {
     }
 
     private void failNodeIn(ZoneApi zone, SystemApplication application) {
-        List<Node> nodes = nodeRepository().list(zone.getId(), application.id());
+        List<Node> nodes = nodeRepository().list(zone.getId(), NodeFilter.all().applications(application.id()));
         if (nodes.isEmpty()) {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
@@ -372,7 +373,7 @@ public class SystemUpgraderTest {
     }
 
     private List<Node> listNodes(ZoneApi zone, SystemApplication application) {
-        return nodeRepository().list(zone.getId(), application.id()).stream()
+        return nodeRepository().list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
                                .filter(SystemUpgrader::eligibleForUpgrade)
                                .collect(Collectors.toList());
     }

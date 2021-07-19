@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationStats;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepoStats;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
@@ -75,23 +76,13 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public List<Node> list(ZoneId zone, boolean includeDeprovisioned) {
+    public List<Node> list(ZoneId zone, NodeFilter filter) {
         return nodeRepository.getOrDefault(zone, Map.of()).values().stream()
-                             .filter(node -> includeDeprovisioned || node.state() != Node.State.deprovisioned)
-                             .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Node> list(ZoneId zone, ApplicationId application) {
-        return nodeRepository.getOrDefault(zone, Map.of()).values().stream()
-                             .filter(node -> node.owner().map(application::equals).orElse(false))
-                             .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Node> list(ZoneId zone, List<HostName> hostnames) {
-        return nodeRepository.getOrDefault(zone, Map.of()).values().stream()
-                             .filter(node -> hostnames.contains(node.hostname()))
+                             .filter(node -> filter.includeDeprovisioned() || node.state() != Node.State.deprovisioned)
+                             .filter(node -> filter.applications().isEmpty() ||
+                                             (node.owner().isPresent() && filter.applications().contains(node.owner().get())))
+                             .filter(node -> filter.hostnames().isEmpty() || filter.hostnames().contains(node.hostname()))
+                             .filter(node -> filter.states().isEmpty() || filter.states().contains(node.state()))
                              .collect(Collectors.toList());
     }
 
@@ -344,7 +335,7 @@ public class NodeRepositoryMock implements NodeRepository {
         if (hostname.isPresent()) {
             nodes = List.of(require(zone, hostname.get()));
         } else {
-            nodes = list(zone, false);
+            nodes = list(zone, NodeFilter.all());
         }
         putNodes(zone, nodes.stream().map(patcher).collect(Collectors.toList()));
     }

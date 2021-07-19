@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -100,7 +101,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
                 .stream()
                 .collect(Collectors.toMap(
                         zone -> zone,
-                        zone -> nodeRepository.list(zone, false)
+                        zone -> nodeRepository.list(zone, NodeFilter.all())
                                 .stream()
                                 .map(node -> node.hostname().value())
                                 .collect(Collectors.toList())

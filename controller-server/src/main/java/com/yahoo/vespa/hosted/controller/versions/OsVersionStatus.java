@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 
@@ -71,7 +72,7 @@ public class OsVersionStatus {
                                                     .osVersion(application.nodeType())
                                                     .orElse(Version.emptyVersion);
 
-                for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getVirtualId(), application.id())) {
+                for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))) {
                     if (!OsUpgrader.canUpgrade(node)) continue;
                     Optional<Instant> suspendedAt = node.suspendedSince();
                     NodeVersion nodeVersion = new NodeVersion(node.hostname(), zone.getVirtualId(), node.currentOsVersion(),

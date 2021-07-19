@@ -8,6 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest.Impact;
@@ -245,7 +246,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                 .stream()
                 .collect(Collectors.toMap(
                         zone -> zone,
-                        zone -> nodeRepository.list(zone, false)
+                        zone -> nodeRepository.list(zone, NodeFilter.all())
                 ));
     }
 

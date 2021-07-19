@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.NodeEntity;
@@ -44,7 +45,7 @@ public class HostInfoUpdater extends ControllerMaintainer {
         int hostsUpdated = 0;
         try {
             for (var zone : controller().zoneRegistry().zones().controllerUpgraded().all().ids()) {
-                for (var node : nodeRepository.list(zone, false)) {
+                for (var node : nodeRepository.list(zone, NodeFilter.all())) {
                     if (!node.type().isHost()) continue;
                     NodeEntity nodeEntity = nodeEntities.get(registeredHostnameOf(node));
                     if (nodeEntity == null) continue;

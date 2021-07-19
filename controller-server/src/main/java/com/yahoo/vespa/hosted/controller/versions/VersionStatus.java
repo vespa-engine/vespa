@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
@@ -156,7 +157,7 @@ public class VersionStatus {
         for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (var application : SystemApplication.notController()) {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
-                                      .list(zone.getId(), application.id()).stream()
+                                      .list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
                                       .filter(SystemUpgrader::eligibleForUpgrade)
                                       .collect(Collectors.toList());
                 if (nodes.isEmpty()) continue;

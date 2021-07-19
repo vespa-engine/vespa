@@ -13,8 +13,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Node repository interface intended for use by the controller.
@@ -35,21 +33,8 @@ public interface NodeRepository {
     /** Get node from zone */
     Node getNode(ZoneId zone, String hostname);
 
-    /** List all nodes in given zone */
-    List<Node> list(ZoneId zone, boolean includeDeprovisioned);
-
-    /** List all nodes in zone having given hostnames */
-    List<Node> list(ZoneId zone, List<HostName> hostnames);
-
-    /** List all nodes in zone owned by given application */
-    List<Node> list(ZoneId zone, ApplicationId application);
-
-    /** List all nodes in states, in zone owned by given application */
-    default List<Node> list(ZoneId zone, ApplicationId application, Set<Node.State> states) {
-        return list(zone, application).stream()
-                                      .filter(node -> states.contains(node.state()))
-                                      .collect(Collectors.toList());
-    }
+    /** List nodes in given zone matching given filter */
+    List<Node> list(ZoneId zone, NodeFilter filter);
 
     /** Get node repository's view of given application */
     Application getApplication(ZoneId zone, ApplicationId application);
