@@ -451,7 +451,7 @@ public class Node {
         private DockerImage wantedDockerImage = DockerImage.EMPTY;
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
-        private ServiceState serviceState = ServiceState.unknown;
+        private ServiceState serviceState = ServiceState.expectedUp;
         private Optional<Instant> suspendedSince = Optional.empty();
         private long restartGeneration = 0;
         private long wantedRestartGeneration = 0;

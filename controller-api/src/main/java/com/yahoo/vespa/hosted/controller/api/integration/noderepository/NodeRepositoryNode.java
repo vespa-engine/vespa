@@ -15,6 +15,8 @@ import java.util.Set;
 /**
  * The wire format of a node retrieved from the node repository.
  *
+ * All fields in this are nullable.
+ *
  * @author bjorncs
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -26,7 +28,7 @@ public class NodeRepositoryNode {
     @JsonProperty("id")
     private String id;
     @JsonProperty("state")
-    private NodeState state;
+    private String state;
     @JsonProperty("hostname")
     private String hostname;
     @JsonProperty("ipAddresses")
@@ -70,9 +72,9 @@ public class NodeRepositoryNode {
     @JsonProperty("failCount")
     private Integer failCount;
     @JsonProperty("environment")
-    private NodeEnvironment environment;
+    private String environment;
     @JsonProperty("type")
-    private NodeType type;
+    private String type;
     @JsonProperty("wantedDockerImage")
     private String wantedDockerImage;
     @JsonProperty("currentDockerImage")
@@ -120,11 +122,11 @@ public class NodeRepositoryNode {
         this.id = id;
     }
 
-    public NodeState getState() {
+    public String getState() {
         return state;
     }
 
-    public void setState(NodeState state) {
+    public void setState(String state) {
         this.state = state;
     }
 
@@ -264,19 +266,19 @@ public class NodeRepositoryNode {
         this.failCount = failCount;
     }
 
-    public NodeEnvironment getEnvironment() {
+    public String getEnvironment() {
         return environment;
     }
 
-    public void setEnvironment(NodeEnvironment environment) {
+    public void setEnvironment(String environment) {
         this.environment = environment;
     }
 
-    public NodeType getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(NodeType type) {
+    public void setType(String type) {
         this.type = type;
     }
 
@@ -342,19 +344,8 @@ public class NodeRepositoryNode {
         this.history = history;
     }
 
-
-    @JsonGetter("orchestratorStatus")
-    public String getOrchestratorStatusOrNull() {
+    public String getOrchestratorStatus() {
         return orchestratorStatus;
-    }
-
-    @JsonIgnore
-    public OrchestratorStatus getOrchestratorStatus() {
-        if (orchestratorStatus == null) {
-            return OrchestratorStatus.NO_REMARKS;
-        }
-
-        return OrchestratorStatus.fromString(orchestratorStatus);
     }
 
     public Long suspendedSinceMillis() {
@@ -432,6 +423,19 @@ public class NodeRepositoryNode {
     public void setSwitchHostname(String switchHostname) {
         this.switchHostname = switchHostname;
     }
+
+
+    // --- Helper methods for code that (wrongly) consume this directly
+
+    public boolean hasType(NodeType type) {
+        return type.name().equals(getType());
+    }
+
+    public boolean hasState(NodeState state) {
+        return state.name().equals(getState());
+    }
+
+    // --- end
 
     @Override
     public String toString() {
