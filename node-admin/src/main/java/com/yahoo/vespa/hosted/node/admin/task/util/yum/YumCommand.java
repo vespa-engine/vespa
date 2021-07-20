@@ -241,10 +241,11 @@ public abstract class YumCommand<T extends YumCommand<T>> {
     }
 
     protected boolean isInstalled(TaskContext context, YumPackageName yumPackage) {
-        return queryInstalled(terminal, context, yumPackage.getName()).map(yumPackage::isSubsetOf).orElse(false);
+        return queryInstalled(terminal, context, yumPackage).map(yumPackage::isSubsetOf).orElse(false);
     }
 
-    static Optional<YumPackageName> queryInstalled(Terminal terminal, TaskContext context, String packageName) {
+    static Optional<YumPackageName> queryInstalled(Terminal terminal, TaskContext context, YumPackageName yumPackage) {
+        String packageName = yumPackage.toName();
         CommandResult commandResult = terminal.newCommandLine(context)
                 .add("rpm", "-q", packageName, "--queryformat", RPM_QUERYFORMAT)
                 .ignoreExitCode()
@@ -255,8 +256,8 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         YumPackageName.Builder builder = new YumPackageName.Builder();
         List<Function<String, YumPackageName.Builder>> builders = PACKAGE_NAME_BUILDERS_GENERATOR.apply(builder);
         List<Optional<String>> lines = commandResult.mapEachLine(line -> Optional.of(line).filter(s -> !"(none)".equals(s)));
-        if (lines.size() != builders.size()) throw new IllegalStateException(String.format(
-                "Unexpected response from rpm, expected %d lines, got %s", builders.size(), commandResult.getOutput()));
+        if (lines.size() % builders.size() != 0) throw new IllegalStateException(String.format("Unexpected response from rpm, expected %d lines, got '%s'", builders.size(), commandResult.getOutput()));
+        if (lines.size() > builders.size()) throw new IllegalArgumentException("Found multiple installed packages for '" + packageName + "'. Version is required to match package exactly");
 
         IntStream.range(0, builders.size()).forEach(i -> lines.get(i).ifPresent(builders.get(i)::apply));
         return Optional.of(builder.build());

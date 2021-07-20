@@ -31,7 +31,7 @@ public class YumTest {
     }
 
     @Test
-    public void testQueryInstalledNevra() {
+    public void testQueryInstalled() {
         terminal.expectCommand(
                 "rpm -q docker --queryformat \"%{NAME}\\\\n%{EPOCH}\\\\n%{VERSION}\\\\n%{RELEASE}\\\\n%{ARCH}\" 2>&1",
                 0,
@@ -74,6 +74,29 @@ public class YumTest {
         Optional<YumPackageName> installed = yum.queryInstalled(taskContext, "fake-package");
 
         assertFalse(installed.isPresent());
+    }
+
+    @Test
+    public void testQueryInstalledMultiplePackages() {
+        terminal.expectCommand(
+                "rpm -q kernel-devel --queryformat \"%{NAME}\\\\n%{EPOCH}\\\\n%{VERSION}\\\\n%{RELEASE}\\\\n%{ARCH}\" 2>&1",
+                0,
+                "kernel-devel\n" +
+                "(none)\n" +
+                "4.18.0\n" +
+                "305.7.1.el8_4\n" +
+                "x86_64\n" +
+                "kernel-devel\n" +
+                "(none)\n" +
+                "4.18.0\n" +
+                "240.15.1.el8_3\n" +
+                "x86_64\n");
+        try {
+            yum.queryInstalled(taskContext, "kernel-devel");
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Found multiple installed packages for 'kernel-devel'. Version is required to match package exactly", e.getMessage());
+        }
     }
 
     @Test
@@ -133,7 +156,7 @@ public class YumTest {
 
     @Test
     public void skipsYumInstallIfInRpm() {
-        mockRpmQuery("package-1", YumPackageName.fromString("package-1-1.2.3-1"));
+        mockRpmQuery("package-1-0:1.2.3-1", YumPackageName.fromString("package-1-1.2.3-1"));
         mockRpmQuery("package-2", YumPackageName.fromString("1:package-2-1.2.3-1.el7.x86_64"));
         assertFalse(yum.install("package-1-1.2.3-1", "package-2").converge(taskContext));
     }
