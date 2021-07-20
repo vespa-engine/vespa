@@ -20,7 +20,7 @@ var statusCmd = &cobra.Command{
     Short: "Verifies that your Vespa endpoint is ready to use (container by default)",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status("http://127.0.0.1:8080", "container")
+        status("http://127.0.0.1:8080", "Container")
     },
 }
 
@@ -29,7 +29,7 @@ var statusContainerCmd = &cobra.Command{
     Short: "Verifies that your Vespa container endpoint is ready [Default]",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status("http://127.0.0.1:8080", "container")
+        status("http://127.0.0.1:8080", "Container")
     },
 }
 

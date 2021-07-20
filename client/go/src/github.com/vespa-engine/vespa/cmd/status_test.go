@@ -14,6 +14,18 @@ func TestStatusConfigServerCommand(t *testing.T) {
 	assert.Equal(t,
 	             "\x1b[32mConfig server at http://127.0.0.1:19071 is ready \n",
 	             executeCommand(t, []string{"status", "config-server"}),
-	             "Get success message")
+	             "vespa status config-server")
+}
+
+func TestStatusContainerCommand(t *testing.T) {
+    expectedUrl = "http://127.0.0.1:8080/ApplicationStatus"
+	assert.Equal(t,
+	             "\x1b[32mContainer at http://127.0.0.1:8080 is ready \n",
+	             executeCommand(t, []string{"status", "container"}),
+	             "vespa status container")
+	assert.Equal(t,
+	             "\x1b[32mContainer at http://127.0.0.1:8080 is ready \n",
+	             executeCommand(t, []string{"status"}),
+	             "vespa status (the default)")
 }
 
