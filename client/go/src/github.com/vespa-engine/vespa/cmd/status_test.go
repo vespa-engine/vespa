@@ -29,3 +29,10 @@ func TestStatusContainerCommand(t *testing.T) {
 	             "vespa status (the default)")
 }
 
+func TestStatusErrorResponse(t *testing.T) {
+    expectedUrl = "Not the actual url so we get an error response"
+	assert.Equal(t,
+	             "\x1b[31mContainer at http://127.0.0.1:8080 is not ready \n\x1b[33mResponse status:  \n",
+	             executeCommand(t, []string{"status", "container"}),
+	             "vespa status container")
+}
