@@ -5,8 +5,10 @@
 package cmd
 
 import (
+    "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
+    "strings"
 )
 
 func init() {
@@ -17,15 +19,29 @@ var deployCmd = &cobra.Command{
     Use:   "deploy application-package-dir OR application.zip",
     Short: "Deploys an application package",
     Long:  `TODO`,
+    Args: func(cmd *cobra.Command, args []string) error {
+        if len(args) > 1 {
+          return errors.New("Expected an application as the only argument")
+        }
+        return nil
+    },
     Run: func(cmd *cobra.Command, args []string) {
-        deploy()
+        if len(args) == 0 {
+            deploy("src/main/application")
+        } else {
+            deploy(args[0])
+        }
     },
 }
 
-func deploy() {
+func deploy(application string) {
     // (cd src/main/application && zip -r - .) | \
     //     curl --header Content-Type:application/zip --data-binary @- \
     //     localhost:19071/application/v2/tenant/default/prepareandactivate
+
+    if ! strings.HasSuffix(application, ".zip") {
+        // TODO: Zip it
+    }
     utils.HttpRequest("http://127.0.0.1:19071", "/application/v2/tenant/default/prepareandactivate", "Config server")
 }
 
