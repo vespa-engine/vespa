@@ -120,14 +120,11 @@
                                         <include>org.glassfish.hk2:hk2-utils:[${hk2.version}]:jar:provided</include>
                                         <include>org.glassfish.hk2:osgi-resource-locator:[${hk2.osgi-resource-locator.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.bundles.repackaged:jersey-guava:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.containers:jersey-container-servlet-core:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.containers:jersey-container-servlet:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-client:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.ext:jersey-entity-filtering:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.ext:jersey-proxy-client:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.media:jersey-media-jaxb:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.media:jersey-media-json-jackson:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.media:jersey-media-multipart:[${jersey2.version}]:jar:provided</include>
                                         <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
