@@ -7,6 +7,7 @@ package utils
 import (
     "bufio"
     "net/http"
+    "net/url"
     "strings"
     "time"
 )
@@ -15,15 +16,15 @@ import (
 var ActiveHttpClient = CreateClient()
 
 type HttpClient interface {
-    Get(url string) (response *http.Response, error error)
+    Do(*http.Request) (response *http.Response, error error)
 }
 
 type defaultHttpClient struct {
     client http.Client
 }
 
-func (c defaultHttpClient) Get(url string) (response *http.Response, error error) {
-    return c.client.Get(url)
+func (c defaultHttpClient) Do(request *http.Request) (response *http.Response, error error) {
+    return c.client.Do(request)
 }
 
 func CreateClient() (client HttpClient) {
@@ -33,7 +34,14 @@ func CreateClient() (client HttpClient) {
 }
 
 func HttpRequest(host string, path string, description string) (response *http.Response) {
-    response, error := ActiveHttpClient.Get(host + path)
+    url, urlError := url.Parse(host + path)
+    if urlError != nil {
+        Error("Invalid target url '" + host + path + "'")
+        return nil
+    }
+    response, error := ActiveHttpClient.Do(&http.Request{
+        URL: url,
+    })
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", host)
         Detail(error.Error())

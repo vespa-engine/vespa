@@ -14,10 +14,10 @@ import (
 
 type mockHttpClient struct {}
 
-func (c mockHttpClient) Get(url string) (response *http.Response, error error) {
+func (c mockHttpClient) Do(request *http.Request) (response *http.Response, error error) {
     var status int
     var body string
-    if (url == "http://host/okpath") {
+    if request.URL.String() == "http://host/okpath" {
         status = 200
         body = "OK"
     } else {

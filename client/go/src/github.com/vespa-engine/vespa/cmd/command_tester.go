@@ -28,15 +28,15 @@ func executeCommand(t *testing.T, args []string) (standardout string) {
 
 type mockHttpClient struct {}
 
-func (c mockHttpClient) Get(url string) (response *http.Response, error error) {
+func (c mockHttpClient) Do(request *http.Request) (response *http.Response, error error) {
     var status int
     var body string
-    if (url == expectedUrl) {
+    if request.URL.String() == expectedUrl {
         status = 200
         body = "OK"
     } else {
         status = 400
-        body = "Unexpected url " + url
+        body = "Unexpected url " + request.URL.String()
     }
 
     return &http.Response{
