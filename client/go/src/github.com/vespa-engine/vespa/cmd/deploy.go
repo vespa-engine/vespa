@@ -8,6 +8,8 @@ import (
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
+    "net/http"
+    "net/url"
     "strings"
 )
 
@@ -42,6 +44,19 @@ func deploy(application string) {
     if ! strings.HasSuffix(application, ".zip") {
         // TODO: Zip it
     }
-    utils.HttpGet("http://127.0.0.1:19071", "/application/v2/tenant/default/prepareandactivate", "Config server")
+
+    url, _ := url.Parse("http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate")
+    request := &http.Request{URL: url,}
+    serviceDescription := "Deploy service"
+    response := utils.HttpDo(request, serviceDescription)
+    if response.StatusCode == 200 {
+        utils.Success("Success")
+    } else if response.StatusCode % 100 == 4 {
+        utils.Error("Invalid application package")
+        // TODO: Output error in body
+    } else {
+        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host)
+        utils.Detail("Response status:", response.Status)
+    }
 }
 
