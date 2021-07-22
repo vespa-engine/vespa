@@ -15,4 +15,7 @@ func TestDeployCommand(t *testing.T) {
 	             executeCommand(t, []string{"deploy", "testdata/application.zip"}))
     assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate", lastRequest.URL.String())
     assert.Equal(t, "application/zip", lastRequest.Header.Get("Content-Type"))
+    var body = lastRequest.Body
+    assert.NotNil(t, body)
+    assert.Equals(t, "", lastRequest.)
 }
