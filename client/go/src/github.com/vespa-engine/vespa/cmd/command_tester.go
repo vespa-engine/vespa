@@ -13,7 +13,15 @@ import (
     "testing"
 )
 
-var expectedUrl string
+// The HTTP status code that will be returned from the next invocation. Defauult: 200
+var nextStatus int
+
+// A recording of the last HTTP request made through this
+var lastRequest *http.Request
+
+func init() {
+    nextStatus = 200
+}
 
 func executeCommand(t *testing.T, args []string) (standardout string) {
     utils.ActiveHttpClient = mockHttpClient{}
@@ -26,22 +34,14 @@ func executeCommand(t *testing.T, args []string) (standardout string) {
 	return string(out)
 }
 
-type mockHttpClient struct {}
+type mockHttpClient struct {
+}
 
 func (c mockHttpClient) Do(request *http.Request) (response *http.Response, error error) {
-    var status int
-    var body string
-    if request.URL.String() == expectedUrl {
-        status = 200
-        body = "OK"
-    } else {
-        status = 400
-        body = "Unexpected url " + request.URL.String()
-    }
-
+    lastRequest = request
     return &http.Response{
-        StatusCode: status,
-        Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
+        StatusCode: nextStatus,
+        Body:       ioutil.NopCloser(bytes.NewBufferString("")),
         Header:     make(http.Header),
     },
     nil

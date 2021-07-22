@@ -10,27 +10,29 @@ import (
 )
 
 func TestStatusConfigServerCommand(t *testing.T) {
-    expectedUrl = "http://127.0.0.1:19071/ApplicationStatus"
 	assert.Equal(t,
 	             "\x1b[32mConfig server at http://127.0.0.1:19071 is ready \n",
 	             executeCommand(t, []string{"status", "config-server"}),
 	             "vespa status config-server")
+    assert.Equal(t, "http://127.0.0.1:19071/ApplicationStatus", lastRequest.URL.String())
 }
 
 func TestStatusContainerCommand(t *testing.T) {
-    expectedUrl = "http://127.0.0.1:8080/ApplicationStatus"
 	assert.Equal(t,
 	             "\x1b[32mContainer at http://127.0.0.1:8080 is ready \n",
 	             executeCommand(t, []string{"status", "container"}),
 	             "vespa status container")
+    assert.Equal(t, "http://127.0.0.1:8080/ApplicationStatus", lastRequest.URL.String())
+
 	assert.Equal(t,
 	             "\x1b[32mContainer at http://127.0.0.1:8080 is ready \n",
 	             executeCommand(t, []string{"status"}),
 	             "vespa status (the default)")
+    assert.Equal(t, "http://127.0.0.1:8080/ApplicationStatus", lastRequest.URL.String())
 }
 
 func TestStatusErrorResponse(t *testing.T) {
-    expectedUrl = "Not the actual url so we get an error response"
+    nextStatus = 500
 	assert.Equal(t,
 	             "\x1b[31mContainer at http://127.0.0.1:8080 is not ready \n\x1b[33mResponse status:  \n",
 	             executeCommand(t, []string{"status", "container"}),

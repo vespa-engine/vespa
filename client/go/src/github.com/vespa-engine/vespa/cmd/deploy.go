@@ -46,7 +46,12 @@ func deploy(application string) {
     }
 
     url, _ := url.Parse("http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate")
-    request := &http.Request{URL: url,}
+    header := http.Header{}
+    header.Add("Content-Type", "application/zip")
+    request := &http.Request{
+        URL: url,
+        Header: header,
+    }
     serviceDescription := "Deploy service"
     response := utils.HttpDo(request, serviceDescription)
     if response.StatusCode == 200 {

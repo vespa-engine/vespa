@@ -10,9 +10,8 @@ import (
 )
 
 func TestDeployCommand(t *testing.T) {
-    expectedUrl = "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate"
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
-	             executeCommand(t, []string{"deploy", "testdata/application.zip"}),
-	             "vespa deploy src/github.com/vespa/cmd/testdata/application.zip")
+	             executeCommand(t, []string{"deploy", "testdata/application.zip"}))
+    assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate", lastRequest.URL.String())
 }
