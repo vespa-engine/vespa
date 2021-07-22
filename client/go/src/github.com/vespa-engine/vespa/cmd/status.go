@@ -44,7 +44,7 @@ var statusConfigServerCmd = &cobra.Command{
 
 func status(host string, description string) {
     path := "/ApplicationStatus"
-    response := utils.HttpRequest(host, path, description)
+    response := utils.HttpGet(host, path, description)
     if (response == nil) {
         return
     }

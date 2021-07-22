@@ -42,6 +42,6 @@ func deploy(application string) {
     if ! strings.HasSuffix(application, ".zip") {
         // TODO: Zip it
     }
-    utils.HttpRequest("http://127.0.0.1:19071", "/application/v2/tenant/default/prepareandactivate", "Config server")
+    utils.HttpGet("http://127.0.0.1:19071", "/application/v2/tenant/default/prepareandactivate", "Config server")
 }
 

@@ -36,10 +36,10 @@ func (c mockHttpClient) Do(request *http.Request) (response *http.Response, erro
 func TestHttpRequest(t *testing.T) {
     ActiveHttpClient = mockHttpClient{}
 
-    response := HttpRequest("http://host", "/okpath", "description")
+    response := HttpGet("http://host", "/okpath", "description")
     assert.Equal(t, 200, response.StatusCode)
 
-    response = HttpRequest("http://host", "/otherpath", "description")
+    response = HttpGet("http://host", "/otherpath", "description")
     assert.Equal(t, 500, response.StatusCode)
 }
 

@@ -33,17 +33,20 @@ func CreateClient() (client HttpClient) {
     }
 }
 
-func HttpRequest(host string, path string, description string) (response *http.Response) {
+// Convenience function for doing a HTTP GET
+func HttpGet(host string, path string, description string) (response *http.Response) {
     url, urlError := url.Parse(host + path)
     if urlError != nil {
         Error("Invalid target url '" + host + path + "'")
         return nil
     }
-    response, error := ActiveHttpClient.Do(&http.Request{
-        URL: url,
-    })
+    return HttpDo(&http.Request{URL: url,}, description)
+}
+
+func HttpDo(request *http.Request, description string) (response *http.Response) {
+    response, error := ActiveHttpClient.Do(request)
     if error != nil {
-        Error("Could not connect to", strings.ToLower(description), "at", host)
+        Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
         Detail(error.Error())
         return
     }
@@ -52,7 +55,7 @@ func HttpRequest(host string, path string, description string) (response *http.R
     scanner := bufio.NewScanner(response.Body)
 
     if error := scanner.Err(); error != nil {
-        Error("Error reading data from", strings.ToLower(description), "at", host)
+        Error("Error reading data from", strings.ToLower(description), "at", request.URL.Host)
         Detail(error.Error())
         return nil
     } else {
