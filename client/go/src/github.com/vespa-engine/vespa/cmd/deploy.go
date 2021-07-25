@@ -8,8 +8,10 @@ import (
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
+    "io/ioutil"
     "net/http"
     "net/url"
+    "os"
     "strings"
 )
 
@@ -45,12 +47,20 @@ func deploy(application string) {
         // TODO: Zip it
     }
 
+    applicationReader, applicationError := os.Open(application)
+    if applicationError != nil {
+        utils.Error("Could not open application package at " + application)
+        utils.Detail(applicationError.Error())
+    }
+
     url, _ := url.Parse("http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate")
     header := http.Header{}
     header.Add("Content-Type", "application/zip")
     request := &http.Request{
         URL: url,
+        Method: "POST",
         Header: header,
+        Body: ioutil.NopCloser(applicationReader),
     }
     serviceDescription := "Deploy service"
     response := utils.HttpDo(request, serviceDescription)
