@@ -333,6 +333,34 @@ public class VirtualNodeProvisioningTest {
         assertNodeParentReservation(tester.getNodes(application1_1).asList(), Optional.empty(), tester); // Reservation is cleared after activation
     }
 
+    @Test
+    public void respects_exclusive_to_cluster_type() {
+        NodeResources resources = new NodeResources(10, 10, 100, 10);
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(10, resources, Optional.empty(), NodeType.host, 1);
+        tester.activateTenantHosts();
+        // All hosts are exclusive to content nodes
+        tester.patchNodes(tester.nodeRepository().nodes().list().asList(), node -> node.withExclusiveToClusterType(ClusterSpec.Type.content));
+
+        Version wantedVespaVersion = Version.fromString("6.39");
+        try {
+            // No capacity for 'container' nodes
+            tester.prepare(applicationId,
+                    ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                    6, 1, resources);
+            fail("Expected to fail due to out of capacity");
+        } catch (OutOfCapacityException ignored) { }
+
+        // Same cluster, but content type is now 'content'
+        List<HostSpec> nodes = tester.prepare(applicationId,
+                ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion(wantedVespaVersion).build(),
+                6, 1, resources);
+        tester.activate(applicationId, nodes);
+
+        assertEquals(6, tester.nodeRepository().nodes().list(Node.State.active).owner(applicationId).size());
+    }
+
     /** Exclusive app first, then non-exclusive: Should give the same result as below */
     @Test
     public void application_deployment_with_exclusive_app_first() {

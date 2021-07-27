@@ -206,7 +206,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         return nodeList.stream()
                 .filter(node -> Nodes.canAllocateTenantNodeTo(node, true))
                 .filter(node -> node.reservedTo().isEmpty())
-                .filter(node -> node.exclusiveTo().isEmpty())
+                .filter(node -> node.exclusiveToApplicationId().isEmpty())
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
     }
 
@@ -245,7 +245,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             List<Node> hosts = hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources,
-                    ApplicationId.defaultId(), osVersion, HostSharing.shared)
+                    ApplicationId.defaultId(), osVersion, HostSharing.shared, Optional.empty())
                     .stream()
                     .map(ProvisionedHost::generateHost)
                     .collect(Collectors.toList());

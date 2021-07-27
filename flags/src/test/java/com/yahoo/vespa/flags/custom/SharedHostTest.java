@@ -12,8 +12,8 @@ import static org.junit.Assert.assertEquals;
 public class SharedHostTest {
     @Test
     public void serialization() throws IOException {
-        verifySerialization(new SharedHost(List.of(new HostResources(1.0, 2.0, 3.0, 4.0, "fast", "remote", 5)), 6));
-        verifySerialization(new SharedHost(List.of(new HostResources(1.0, 2.0, 3.0, 4.0, "fast", "remote", 5)), null));
+        verifySerialization(new SharedHost(List.of(new HostResources(1.0, 2.0, 3.0, 4.0, "fast", "remote", "container", 5)), 6));
+        verifySerialization(new SharedHost(List.of(new HostResources(1.0, 2.0, 3.0, 4.0, "fast", "remote", "admin", 5)), null));
     }
 
     private void verifySerialization(SharedHost sharedHost) throws IOException {
