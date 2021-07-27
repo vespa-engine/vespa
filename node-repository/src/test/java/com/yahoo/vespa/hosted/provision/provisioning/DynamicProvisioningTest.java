@@ -468,7 +468,7 @@ public class DynamicProvisioningTest {
                         }).collect(Collectors.toSet());
 
                         Node parent = Node.create(hostHostname, new IP.Config(Set.of(hostIp), pool), hostHostname, hostFlavor, NodeType.host)
-                                .exclusiveTo(exclusiveTo).build();
+                                .exclusiveToApplicationId(exclusiveTo).build();
                         Node child = Node.reserve(Set.of("::" + hostIndex + ":1"), hostHostname + "-1", hostHostname, nodeResources, NodeType.tenant).build();
                         ProvisionedHost provisionedHost = mock(ProvisionedHost.class);
                         when(provisionedHost.generateHost()).thenReturn(parent);

@@ -206,7 +206,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         return nodeList.stream()
                 .filter(node -> Nodes.canAllocateTenantNodeTo(node, true))
                 .filter(node -> node.reservedTo().isEmpty())
-                .filter(node -> node.exclusiveTo().isEmpty())
+                .filter(node -> node.exclusiveToApplicationId().isEmpty())
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
     }
 

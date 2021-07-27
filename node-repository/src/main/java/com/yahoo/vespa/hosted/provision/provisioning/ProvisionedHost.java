@@ -59,7 +59,7 @@ public class ProvisionedHost {
         Node.Builder builder = Node
                 .create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor, hostType)
                 .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
-        exclusiveTo.ifPresent(builder::exclusiveTo);
+        exclusiveTo.ifPresent(builder::exclusiveToApplicationId);
         return builder.build();
     }
 

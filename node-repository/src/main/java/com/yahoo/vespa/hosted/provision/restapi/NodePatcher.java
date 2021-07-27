@@ -179,7 +179,7 @@ public class NodePatcher implements AutoCloseable {
             case "reservedTo":
                 return value.type() == Type.NIX ? node.withoutReservedTo() : node.withReservedTo(TenantName.from(value.asString()));
             case "exclusiveTo":
-                return node.withExclusiveTo(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
+                return node.withExclusiveToApplicationId(SlimeUtils.optionalString(value).map(ApplicationId::fromSerializedForm).orElse(null));
             case "switchHostname":
                 return value.type() == Type.NIX ? node.withoutSwitchHostname() : node.withSwitchHostname(value.asString());
             default :
