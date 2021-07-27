@@ -9,12 +9,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author mortent
@@ -28,6 +30,7 @@ public class TenantRoleMaintainerTest {
         var devAppTenant1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodAppTenant2 = tester.newDeploymentContext("tenant2", "app2", "default");
         var devAppTenant2 = tester.newDeploymentContext("tenant2","app3","default");
+        var perfAppTenant1 = tester.newDeploymentContext("tenant3","app1","default");
         ApplicationPackage appPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();
@@ -35,6 +38,9 @@ public class TenantRoleMaintainerTest {
         // Deploy dev apps
         devAppTenant1.runJob(JobType.devUsEast1, appPackage);
         devAppTenant2.runJob(JobType.devUsEast1, appPackage);
+
+        // Deploy perf apps
+        perfAppTenant1.runJob(JobType.perfUsEast3, appPackage);
 
         // Deploy prod
         prodAppTenant2.submit(appPackage).deploy();
@@ -48,8 +54,7 @@ public class TenantRoleMaintainerTest {
         var roleService = tester.controller().serviceRegistry().roleService();
         List<TenantName> tenantNames = ((MockRoleService) roleService).maintainedTenants();
 
-        assertEquals(1, tenantNames.size());
-        assertEquals(prodAppTenant2.application().id().tenant(), tenantNames.get(0));
+        assertThat(tenantNames, Matchers.containsInAnyOrder(prodAppTenant2.application().id().tenant(), perfAppTenant1.application().id().tenant()));
     }
 
     private long permanentDeployments(Instance instance) {
