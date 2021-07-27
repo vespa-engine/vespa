@@ -137,6 +137,7 @@ public class NodePrioritizer {
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveToApplicationId().isPresent()) continue; // Never allocate new nodes to exclusive hosts
+            if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
