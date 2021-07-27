@@ -993,11 +993,15 @@ public class NodesV2ApiTest {
         String url = "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com";
         tester.assertPartialResponse(new Request(url), "exclusiveTo", false); // Initially there is no exclusiveTo
 
-        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": \"t1:a1:i1\"}"), Request.Method.PATCH),
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToApplicationId\": \"t1:a1:i1\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",", true);
 
-        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null}"), Request.Method.PATCH),
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveToClusterType\": \"admin\"}"), Request.Method.PATCH),
+                "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), "exclusiveTo\":\"t1:a1:i1\",\"exclusiveToClusterType\":\"admin\",", true);
+
+        assertResponse(new Request(url, Utf8.toBytes("{\"exclusiveTo\": null, \"exclusiveToClusterType\": null}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         tester.assertPartialResponse(new Request(url), "exclusiveTo", false);
     }
