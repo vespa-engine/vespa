@@ -17,7 +17,7 @@ class PermanentFlagsTest {
     public void testSharedHostFlag() {
         SharedHost sharedHost = new SharedHost(List.of(new HostResources(
                 4.0, 16.0, 50.0, 0.3,
-                "fast", "local",
+                "fast", "local", "admin",
                 10)),
                 null);
         testGeneric(PermanentFlags.SHARED_HOST, sharedHost);
