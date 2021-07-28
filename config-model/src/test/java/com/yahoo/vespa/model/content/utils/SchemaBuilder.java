@@ -15,7 +15,8 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 public class SchemaBuilder {
 
     private String name = "test";
-    private String content = "";
+    private String documentFields = "";
+    private String schemaFields = "";
 
     public SchemaBuilder() {
     }
@@ -25,16 +26,21 @@ public class SchemaBuilder {
         return this;
     }
 
-    public SchemaBuilder content(String content) {
-        this.content = content;
+    public SchemaBuilder documentFields(String content) {
+        this.documentFields = content;
         return this;
     }
 
+    public SchemaBuilder schemaFields(String extra) {
+        this.schemaFields = extra;
+        return this;
+    }
     public String build() {
-        return joinLines("search " + name + " {",
+        return joinLines("schema " + name + " {",
                 "  document " + name + " {",
-                content,
+                documentFields,
                 "  }",
+                schemaFields,
                 "}");
     }
 

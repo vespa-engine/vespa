@@ -18,11 +18,18 @@ public class IndexingScriptChangeValidatorTest {
     private static class Fixture extends ContentClusterFixture {
         IndexingScriptChangeValidator validator;
 
-        public Fixture(String currentSd, String nextSd) throws Exception {
-            super(currentSd, nextSd);
+        public Fixture(String currentDocumentFields, String nextDocumentFields) throws Exception {
+            super(currentDocumentFields, nextDocumentFields);
             validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
                                                           currentDb().getDerivedConfiguration().getSearch(),
                                                           nextDb().getDerivedConfiguration().getSearch());
+        }
+
+        public Fixture(String currentDocumentFields, String nextDocumentFields, String currentSchemaFields, String nextSchemaFields) throws Exception {
+            super(currentDocumentFields, nextDocumentFields, currentSchemaFields, nextSchemaFields);
+            validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
+                    currentDb().getDerivedConfiguration().getSearch(),
+                    nextDb().getDerivedConfiguration().getSearch());
         }
 
         @Override
@@ -176,4 +183,61 @@ public class IndexingScriptChangeValidatorTest {
                 validate());
     }
 
+    @Test
+    public void requireThatUsingInputFieldIsOk() throws Exception {
+        String bodyField =
+                "    field body type string {\n" +
+                "      indexing: index | summary\n" +
+                "      weight: 6\n" +
+                "      stemming: none\n" +
+                "      summary: dynamic\n" +
+                "      index: enable-bm25\n" +
+                "    }";
+        String bodyBestField =
+                "  field body_best type string {\n" +
+                "    indexing: input body | lowercase | normalize | index | summary\n" +
+                "    weight: 6\n" +
+                "    stemming: BEST\n" +
+                "    summary: dynamic\n" +
+                "    index: enable-bm25\n" +
+                "  }";
+        new Fixture(bodyField,
+                    bodyField,
+                    bodyBestField,
+                    bodyBestField).assertValidation();
+    }
+
+    @Test
+    public void requireThatInputFieldChangesRequiresReindexing() throws Exception {
+        String bodyField =
+                "    field body type string {\n" +
+                        "      indexing: index | summary\n" +
+                        "      weight: 6\n" +
+                        "      stemming: none\n" +
+                        "      summary: dynamic\n" +
+                        "      index: enable-bm25\n" +
+                        "    }";
+        String bodyBestField =
+                "  field body_best type string {\n" +
+                        "    indexing: input body | lowercase | normalize | index | summary\n" +
+                        "    weight: 6\n" +
+                        "    stemming: BEST\n" +
+                        "    summary: dynamic\n" +
+                        "    index: enable-bm25\n" +
+                        "  }";
+        String bodyBestFieldNew =
+                "  field body_best type string {\n" +
+                        "    indexing: input body | index | summary\n" +
+                        "    weight: 6\n" +
+                        "    stemming: BEST\n" +
+                        "    summary: dynamic\n" +
+                        "    index: enable-bm25\n" +
+                        "  }";
+        new Fixture(bodyField,
+                bodyField,
+                bodyBestField,
+                bodyBestFieldNew).assertValidation(expectedReindexingAction("body_best", "",
+                "{ input body | lowercase | normalize | tokenize normalize stem:\"BEST\" | index body_best | summary body_best; }",
+                "{ input body | tokenize normalize stem:\"BEST\" | index body_best | summary body_best; }"));
+    }
 }

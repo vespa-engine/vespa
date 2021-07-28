@@ -180,11 +180,11 @@ public class ContentSearchClusterTest {
     private static ContentCluster createClusterWithThreeDocumentTypes() throws Exception {
         List<String> schemas = new ArrayList<>();
         schemas.add(new SchemaBuilder().name("a")
-                                       .content(joinLines("field ref_to_b type reference<b> { indexing: attribute }",
+                                       .documentFields(joinLines("field ref_to_b type reference<b> { indexing: attribute }",
                                                           "field ref_to_c type reference<c> { indexing: attribute }"))
                                        .build());
         schemas.add(new SchemaBuilder().name("b")
-                                       .content("field ref_to_c type reference<c> { indexing: attribute }")
+                                       .documentFields("field ref_to_c type reference<c> { indexing: attribute }")
                                        .build());
         schemas.add(new SchemaBuilder().name("c").build());
         return createCluster(new ContentClusterBuilder().docTypes(List.of(DocType.index("a"),

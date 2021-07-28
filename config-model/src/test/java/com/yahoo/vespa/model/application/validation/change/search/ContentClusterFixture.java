@@ -26,16 +26,28 @@ public abstract class ContentClusterFixture {
     protected ContentCluster currentCluster;
     protected ContentCluster nextCluster;
 
-    public ContentClusterFixture(String currentSd, String nextSd) throws Exception {
-        currentCluster = createCluster(currentSd);
-        nextCluster = createCluster(nextSd);
+    public ContentClusterFixture(String currentDocumentFields, String nextDocumentFields) throws Exception {
+        currentCluster = createCluster(currentDocumentFields);
+        nextCluster = createCluster(nextDocumentFields);
+    }
+
+    public ContentClusterFixture(String currentDocumentFields, String nextDocumentFields, String currentSchemaFields, String nextSchemaFields) throws Exception {
+        currentCluster = createCluster(currentDocumentFields, currentSchemaFields);
+        nextCluster = createCluster(nextDocumentFields, nextSchemaFields);
     }
 
     private static ContentCluster createCluster(String sdContent) throws Exception {
         return new ContentClusterBuilder().build(
                 ContentClusterUtils.createMockRoot(
-                        Arrays.asList(new SchemaBuilder().content(sdContent).build())));
+                        Arrays.asList(new SchemaBuilder().documentFields(sdContent).build())));
     }
+
+    private static ContentCluster createCluster(String documentFields, String schemaFields) throws Exception {
+        return new ContentClusterBuilder().build(
+                ContentClusterUtils.createMockRoot(
+                        Arrays.asList(new SchemaBuilder().documentFields(documentFields).schemaFields(schemaFields).build())));
+    }
+
 
     protected DocumentDatabase currentDb() {
         return currentCluster.getSearch().getIndexed().getDocumentDbs().get(0);
