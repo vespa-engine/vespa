@@ -301,6 +301,11 @@ public class HeaderFields implements Map<String, List<String>> {
         public String setValue(String value) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public String toString() {
+            return key + '=' + value;
+        }
     }
 
 }
