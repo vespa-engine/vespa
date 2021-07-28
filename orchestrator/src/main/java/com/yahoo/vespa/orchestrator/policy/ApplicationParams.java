@@ -2,6 +2,7 @@
 package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.ClusterId;
+import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceClusterKey;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
@@ -41,6 +42,10 @@ public class ApplicationParams {
 
     private ApplicationParams(Map<ServiceClusterKey, ClusterParams> clusterParams) {
         this.clusterParams = Map.copyOf(clusterParams);
+    }
+
+    public ClusterParams clusterParamsFor(ServiceCluster serviceCluster) {
+        return clusterParamsFor(serviceCluster.clusterId(), serviceCluster.serviceType());
     }
 
     public ClusterParams clusterParamsFor(ClusterId clusterId, ServiceType serviceType) {

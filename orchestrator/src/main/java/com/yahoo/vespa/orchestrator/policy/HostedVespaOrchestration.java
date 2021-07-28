@@ -18,6 +18,11 @@ import com.yahoo.vespa.service.duper.ProxyHostApplication;
  */
 public class HostedVespaOrchestration {
     public static OrchestrationParams create(ConfigserverConfig configserverConfig) {
+        // todo: get the number of proxy nodes
+        return create(configserverConfig.zookeeperserver().size(), 0);
+    }
+
+    public static OrchestrationParams create(int numConfigServers, int numProxies) {
         // We'll create parameters for both the controller and config server applications, even though
         // only one of them is present, as (a) no harm is done by having the extra parameters, and
         // (b) it leads to simpler code below.
@@ -32,7 +37,7 @@ public class HostedVespaOrchestration {
                                                    ServiceType.HOST_ADMIN,
                                                    new ClusterParams
                                                            .Builder()
-                                                           .setSize(configserverConfig.zookeeperserver().size())
+                                                           .setSize(numConfigServers)
                                                            .build())
                                               .build())
 
@@ -44,7 +49,7 @@ public class HostedVespaOrchestration {
                                                    ServiceType.CONTROLLER,
                                                    new ClusterParams
                                                            .Builder()
-                                                           .setSize(configserverConfig.zookeeperserver().size())
+                                                           .setSize(numConfigServers)
                                                            .build())
                                               .build())
 
@@ -56,7 +61,7 @@ public class HostedVespaOrchestration {
                                                    ServiceType.HOST_ADMIN,
                                                    new ClusterParams
                                                            .Builder()
-                                                           .setSize(configserverConfig.zookeeperserver().size())
+                                                           .setSize(numConfigServers)
                                                            .build())
                                               .build())
 
@@ -68,7 +73,7 @@ public class HostedVespaOrchestration {
                                                    ServiceType.CONFIG_SERVER,
                                                    new ClusterParams
                                                            .Builder()
-                                                           .setSize(configserverConfig.zookeeperserver().size())
+                                                           .setSize(numConfigServers)
                                                            .build())
                                               .build())
 
@@ -80,8 +85,7 @@ public class HostedVespaOrchestration {
                                                    ServiceType.HOST_ADMIN,
                                                    new ClusterParams
                                                            .Builder()
-                                                           // todo: get the number of proxy nodes
-                                                           .setSize(0)
+                                                           .setSize(numProxies)
                                                            .build())
                                               .build())
 
@@ -93,8 +97,7 @@ public class HostedVespaOrchestration {
                                                    ServiceType.CONTAINER,
                                                    new ClusterParams
                                                            .Builder()
-                                                           // todo: get the number of proxy nodes
-                                                           .setSize(0)
+                                                           .setSize(numProxies)
                                                            .build())
                                               .build())
 

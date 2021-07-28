@@ -24,10 +24,14 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
+import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
+import com.yahoo.vespa.orchestrator.policy.ApplicationParams;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaOrchestration;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
+import com.yahoo.vespa.orchestrator.policy.OrchestrationParams;
 import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
@@ -54,7 +58,16 @@ import static org.mockito.Mockito.mock;
  */
 class ModelTestUtils {
 
+    private static final TenantId TENANT_ID = new TenantId("tenant");
+    private static final ApplicationInstanceId APPLICATION_INSTANCE_ID =
+            new ApplicationInstanceId("application-name:foo:bar:default");
+
     public static final int NUMBER_OF_CONFIG_SERVERS = 3;
+    public static final OrchestrationParams ORCHESTRATION_PARAMS =
+            HostedVespaOrchestration.create(NUMBER_OF_CONFIG_SERVERS, 0);
+    public static final ApplicationParams APPLICATION_PARAMS = ORCHESTRATION_PARAMS
+            .getApplicationParams(OrchestratorUtil.toApplicationId(
+                    new ApplicationInstanceReference(TENANT_ID, APPLICATION_INSTANCE_ID)));
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
@@ -134,8 +147,8 @@ class ModelTestUtils {
         Set<ServiceCluster> serviceClusterSet = new HashSet<>(serviceClusters);
 
         ApplicationInstance application = new ApplicationInstance(
-                new TenantId("tenant"),
-                new ApplicationInstanceId("application-name:foo:bar:default"),
+                TENANT_ID,
+                APPLICATION_INSTANCE_ID,
                 serviceClusterSet);
         applications.put(application.reference(), application);
 
