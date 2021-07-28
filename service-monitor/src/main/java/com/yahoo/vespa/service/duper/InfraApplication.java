@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  */
 public abstract class InfraApplication implements InfraApplicationApi {
 
-    private static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
+    static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
 
     private final ApplicationId applicationId;
     private final Capacity capacity;
