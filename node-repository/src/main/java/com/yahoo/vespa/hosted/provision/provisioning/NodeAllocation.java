@@ -189,10 +189,13 @@ class NodeAllocation {
     private boolean violatesExclusivity(NodeCandidate candidate) {
         if (candidate.parentHostname().isEmpty()) return false;
 
-        // In dynamic provisioned zones a node requiring exclusivity must be on a host that has exclusiveTo equal to its owner
-        if (nodeRepository.zone().getCloud().dynamicProvisioning())
-            return requestedNodes.isExclusive() &&
-                    ! candidate.parent.flatMap(Node::exclusiveTo).map(application::equals).orElse(false);
+        // In dynamic provisioned zones, exclusivity is violated if...
+        if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
+                    // If either the parent is dedicated to a cluster type different from this cluster
+            return  ! candidate.parent.flatMap(Node::exclusiveToClusterType).map(cluster.type()::equals).orElse(true) ||
+                    // or this cluster is requiring exclusivity, but the host is exclusive to a different owner
+                    (requestedNodes.isExclusive() && !candidate.parent.flatMap(Node::exclusiveToApplicationId).map(application::equals).orElse(false));
+        }
 
         // In non-dynamic provisioned zones we require that if either of the nodes on the host requires exclusivity,
         // then all the nodes on the host must have the same owner

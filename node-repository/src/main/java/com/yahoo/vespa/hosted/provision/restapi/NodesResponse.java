@@ -129,7 +129,8 @@ class NodesResponse extends SlimeJsonResponse {
         object.setString("openStackId", node.id());
         object.setString("flavor", node.flavor().name());
         node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
-        node.exclusiveTo().ifPresent(exclusiveTo -> object.setString("exclusiveTo", exclusiveTo.serializedForm()));
+        node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString("exclusiveTo", applicationId.serializedForm()));
+        node.exclusiveToClusterType().ifPresent(clusterType -> object.setString("exclusiveToClusterType", clusterType.name()));
         if (node.flavor().isConfigured())
             object.setDouble("cpuCores", node.flavor().resources().vcpu());
         NodeResourcesSerializer.toSlime(node.flavor().resources(), object.setObject("resources"));
