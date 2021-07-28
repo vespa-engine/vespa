@@ -27,6 +27,15 @@ public class FilterUtils {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    public static boolean originIsRequestHost(DiscFilterRequest request) {
+        try {
+            return Optional.ofNullable(request.getHeader("Origin"))
+                    .map(origin -> URI.create(origin).getHost().equals(request.getServerName()))
+                    .orElse(false);
+        } catch (RuntimeException ignored) { }
+        return false;
+    }
+
     public static void sendRedirectResponse(ResponseHandler handler, List<Cookie> cookies, String location) {
         Response response = createResponse(Response.Status.FOUND, cookies);
         response.headers().add("Location", location);
