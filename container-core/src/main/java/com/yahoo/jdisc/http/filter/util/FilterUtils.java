@@ -16,7 +16,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Helper methods for auth0/okta request filters.
@@ -27,11 +26,11 @@ public class FilterUtils {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    public static boolean originIsRequestHost(DiscFilterRequest request) {
+    public static boolean isDifferentOrigin(DiscFilterRequest request) {
         try {
-            return Optional.ofNullable(request.getHeader("Origin"))
-                    .map(origin -> URI.create(origin).getHost().equals(request.getServerName()))
-                    .orElse(false);
+            String origin = request.getHeader("Origin");
+            if (origin != null && !URI.create(origin).getHost().equals(request.getServerName()))
+                return true;
         } catch (RuntimeException ignored) { }
         return false;
     }
@@ -64,16 +63,8 @@ public class FilterUtils {
     }
 
     public static URI createUriFromRequest(DiscFilterRequest request, String path) {
-        Optional<Integer> port = Optional.empty();
         try {
-            port = Optional.ofNullable(request.getHeader("Host"))
-                    .flatMap(host -> Optional.of(host.lastIndexOf(':') + 1)
-                            .filter(i -> i > 0)
-                            .map(index -> Integer.parseInt(host.substring(index))));
-        } catch (NumberFormatException ignored) { }
-
-        try {
-            return new URI(request.getScheme(), null, request.getServerName(), port.orElse(-1), path, null, null);
+            return new URI(request.getScheme(), null, request.getServerName(), request.getUri().getPort(), path, null, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
