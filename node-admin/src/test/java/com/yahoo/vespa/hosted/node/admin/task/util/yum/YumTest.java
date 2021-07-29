@@ -58,7 +58,7 @@ public class YumTest {
 
         assertTrue(installed.isPresent());
         assertEquals("vespa-node-admin", installed.get().getName());
-        assertFalse(installed.get().getEpoch().isPresent());
+        assertEquals("0", installed.get().getEpoch().get());
         assertEquals("6.283.62", installed.get().getVersion().get());
         assertEquals("1.el7", installed.get().getRelease().get());
         assertEquals("noarch", installed.get().getArchitecture().get());

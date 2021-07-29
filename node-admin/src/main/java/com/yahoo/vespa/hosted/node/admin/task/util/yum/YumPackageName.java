@@ -80,6 +80,12 @@ public class YumPackageName {
         public Builder setRelease(String release) { this.release = Optional.of(release); return this; }
         public Builder setArchitecture(String architecture) { this.architecture = Optional.of(architecture); return this; }
 
+        public Optional<String> epoch() { return epoch; }
+        public String name() { return name; }
+        public Optional<String> version() { return version; }
+        public Optional<String> release() { return release; }
+        public Optional<String> architecture() { return architecture; }
+
         public YumPackageName build() { return new YumPackageName(epoch, name, version, release, architecture); }
     }
 

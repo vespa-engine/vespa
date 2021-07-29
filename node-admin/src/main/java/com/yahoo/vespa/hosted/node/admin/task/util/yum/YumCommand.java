@@ -260,6 +260,8 @@ public abstract class YumCommand<T extends YumCommand<T>> {
         if (lines.size() > builders.size()) throw new IllegalArgumentException("Found multiple installed packages for '" + packageName + "'. Version is required to match package exactly");
 
         IntStream.range(0, builders.size()).forEach(i -> lines.get(i).ifPresent(builders.get(i)::apply));
+        if (builder.epoch().isEmpty()) builder.setEpoch("0");
+
         return Optional.of(builder.build());
     }
 }
