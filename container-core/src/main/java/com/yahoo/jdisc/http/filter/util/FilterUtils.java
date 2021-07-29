@@ -64,16 +64,8 @@ public class FilterUtils {
     }
 
     public static URI createUriFromRequest(DiscFilterRequest request, String path) {
-        Optional<Integer> port = Optional.empty();
         try {
-            port = Optional.ofNullable(request.getHeader("Host"))
-                    .flatMap(host -> Optional.of(host.lastIndexOf(':') + 1)
-                            .filter(i -> i > 0)
-                            .map(index -> Integer.parseInt(host.substring(index))));
-        } catch (NumberFormatException ignored) { }
-
-        try {
-            return new URI(request.getScheme(), null, request.getServerName(), port.orElse(-1), path, null, null);
+            return new URI(request.getScheme(), null, request.getServerName(), request.getUri().getPort(), path, null, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
