@@ -16,7 +16,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Helper methods for auth0/okta request filters.
@@ -27,11 +26,11 @@ public class FilterUtils {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    public static boolean originIsRequestHost(DiscFilterRequest request) {
+    public static boolean isDifferentOrigin(DiscFilterRequest request) {
         try {
-            return Optional.ofNullable(request.getHeader("Origin"))
-                    .map(origin -> URI.create(origin).getHost().equals(request.getServerName()))
-                    .orElse(false);
+            String origin = request.getHeader("Origin");
+            if (origin != null && !URI.create(origin).getHost().equals(request.getServerName()))
+                return true;
         } catch (RuntimeException ignored) { }
         return false;
     }
