@@ -2,7 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
+import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.Editor;
@@ -43,10 +46,12 @@ public class AclMaintainer {
 
     private final ContainerOperations containerOperations;
     private final IPAddresses ipAddresses;
+    private final Metrics metrics;
 
-    public AclMaintainer(ContainerOperations containerOperations, IPAddresses ipAddresses) {
+    public AclMaintainer(ContainerOperations containerOperations, IPAddresses ipAddresses, Metrics metrics) {
         this.containerOperations = containerOperations;
         this.ipAddresses = ipAddresses;
+        this.metrics = metrics;
     }
 
     // ip(6)tables operate while having the xtables lock, run with synchronized to prevent multiple NodeAgents
@@ -55,8 +60,10 @@ public class AclMaintainer {
         if (context.isDisabled(NodeAgentTask.AclMaintainer)) return;
 
         // Apply acl to the filter table
-        editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
-        editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
+        boolean updatedIPv4 = editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
+        boolean updatedIPv6 = editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
+        updateMetrics(context, updatedIPv4, "IPv4-acl.updated");
+        updateMetrics(context, updatedIPv6, "IPv6-acl.updated");
 
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv4).ifPresent(addr -> applyRedirect(context, addr));
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv6).ifPresent(addr -> applyRedirect(context, addr));
@@ -113,6 +120,26 @@ public class AclMaintainer {
                 }
             }
         };
+    }
+
+    void updateMetrics(NodeAgentContext context, boolean updated, String name) {
+        if (!updated) return;
+
+        Dimensions dimensions = generateDimensions(context);
+
+        metrics.declareGauge(Metrics.APPLICATION_NODE, name, dimensions, Metrics.DimensionType.PRETAGGED).sample(System.currentTimeMillis()/1000);
+
+    }
+
+    private Dimensions generateDimensions(NodeAgentContext context) {
+        NodeSpec node = context.node();
+        Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
+                .add("host", node.hostname())
+                .add("zone", context.zone().getId().value());
+
+        node.currentVespaVersion().ifPresent(vespaVersion -> dimensionsBuilder.add("vespaVersion", vespaVersion.toFullString()));
+
+        return dimensionsBuilder.build();
     }
 
     private static class TemporaryIpTablesFileHandler implements AutoCloseable {
