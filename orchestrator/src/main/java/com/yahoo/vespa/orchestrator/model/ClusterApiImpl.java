@@ -8,6 +8,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.policy.ClusterParams;
 import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -59,7 +60,7 @@ class ClusterApiImpl implements ClusterApi {
                           NodeGroup nodeGroup,
                           HostInfos hostInfos,
                           ClusterControllerClientFactory clusterControllerClientFactory,
-                          int numberOfConfigServers,
+                          ClusterParams clusterParams,
                           Clock clock) {
         this.applicationApi = applicationApi;
         this.serviceCluster = serviceCluster;
@@ -81,9 +82,8 @@ class ClusterApiImpl implements ClusterApi {
         servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
 
         int serviceInstances = serviceCluster.serviceInstances().size();
-        if ((serviceCluster.isConfigServerLike() || serviceCluster.isConfigServerHostLike()) &&
-                serviceInstances < numberOfConfigServers) {
-            missingServices = numberOfConfigServers - serviceInstances;
+        if (clusterParams.size().isPresent() && serviceInstances < clusterParams.size().getAsInt()) {
+            missingServices = clusterParams.size().getAsInt() - serviceInstances;
             descriptionOfMissingServices = missingServices + " missing " + serviceCluster.nodeDescription(missingServices > 1);
         } else {
             missingServices = 0;
