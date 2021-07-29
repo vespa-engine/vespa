@@ -13,7 +13,6 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
-import com.yahoo.vespa.orchestrator.policy.ClusterParams;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
@@ -89,9 +88,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName5),
                 modelUtils.getHostInfos(),
-                modelUtils.getClusterControllerClientFactory(),
-                ModelTestUtils.APPLICATION_PARAMS.clusterParamsFor(serviceCluster),
-                clock);
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, clock);
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
         assertFalse(clusterApi.isStorageCluster());
@@ -277,9 +274,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), groupNodes),
                 modelUtils.getHostInfos(),
-                modelUtils.getClusterControllerClientFactory(),
-                ModelTestUtils.APPLICATION_PARAMS.clusterParamsFor(serviceCluster),
-                clock);
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, clock);
 
         assertEquals(expectedNoServicesInGroupIsUp.map(SuspensionReasons::getMessagesInOrder),
                      clusterApi.reasonsForNoServicesInGroupIsUp().map(SuspensionReasons::getMessagesInOrder));
@@ -310,9 +305,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(applicationInstance, hostName1, hostName3),
                 new HostInfos(),
-                modelUtils.getClusterControllerClientFactory(),
-                ModelTestUtils.APPLICATION_PARAMS.clusterParamsFor(serviceCluster),
-                clock);
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, clock);
 
         assertTrue(clusterApi.isStorageCluster());
         assertEquals(Optional.of(hostName1), clusterApi.storageNodeInGroup().map(storageNode -> storageNode.hostName()));
@@ -360,9 +353,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(application, hostnames.get(0)),
                 modelUtils.getHostInfos(),
-                modelUtils.getClusterControllerClientFactory(),
-                new ClusterParams.Builder().setSize(clusterSize).build(),
-                clock);
+                modelUtils.getClusterControllerClientFactory(), clusterSize, clock);
 
         assertEquals(clusterSize - serviceStatusList.size(), clusterApi.missingServices());
         assertEquals(clusterSize == serviceStatusList.size(), clusterApi.noServicesOutsideGroupIsDown());
