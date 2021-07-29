@@ -14,6 +14,8 @@ public class ClusterId {
     public static final ClusterId CONTROLLER = new ClusterId("controller");
     public static final ClusterId CONFIG_SERVER_HOST = new ClusterId("configserver-host");
     public static final ClusterId CONTROLLER_HOST = new ClusterId("controller-host");
+    public static final ClusterId PROXY_HOST = new ClusterId("proxy-host");
+    public static final ClusterId ROUTING = new ClusterId("routing");
     public static final ClusterId TENANT_HOST = new ClusterId("tenant-host");
 
     private final String id;
