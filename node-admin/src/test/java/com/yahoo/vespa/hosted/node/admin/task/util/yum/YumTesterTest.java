@@ -8,7 +8,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -19,8 +18,8 @@ public class YumTesterTest {
 
     private static final String[] packages = {"pkg1", "pkg2"};
     private static final String[] repos = {"repo1", "repo2"};
-    private static final YumPackageName minimalPackage = YumPackageName.fromString("my-pkg-1.13.1-0.el7");
-    private static final YumPackageName fullPackage = YumPackageName.fromString("2:my-pkg-1.13.1-0.el7.x86_64");
+    private static final YumPackageName minimalPackage = YumPackageName.fromString("pkg-1.13.1-0.el7");
+    private static final YumPackageName fullPackage = YumPackageName.fromString("2:pkg-1.13.1-0.el7.x86_64");
 
     private final TestTerminal terminal = new TestTerminal();
     private final YumTester yum = new YumTester(terminal);
@@ -43,11 +42,9 @@ public class YumTesterTest {
 
     @Test
     public void expect_query_installed() {
-        Stream.of(minimalPackage, fullPackage, null).forEach(pkg -> {
-            yum.expectQueryInstalled(packages[0]).andReturn(pkg);
-            assertEquals(Optional.ofNullable(pkg), yum.queryInstalled(context, packages[0]));
-            terminal.verifyAllCommandsExecuted();
-        });
+        yum.expectQueryInstalled(packages[0]).andReturn(fullPackage);
+        assertEquals(Optional.of(fullPackage), yum.queryInstalled(context, packages[0]));
+        terminal.verifyAllCommandsExecuted();
     }
 
     private void assertYumMethod(Function<YumTester, YumTester.GenericYumCommandExpectation> yumTesterExpectationFunction,
