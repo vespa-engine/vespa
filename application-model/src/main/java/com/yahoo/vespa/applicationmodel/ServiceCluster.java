@@ -98,12 +98,28 @@ public class ServiceCluster {
                 Objects.equals(serviceType, ServiceType.HOST_ADMIN);
     }
 
+    @JsonIgnore
+    public boolean isProxy() {
+        return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isProxy) &&
+               Objects.equals(clusterId, ClusterId.ROUTING) &&
+               Objects.equals(serviceType, ServiceType.CONTAINER);
+    }
+
+    @JsonIgnore
+    public boolean isProxyHost() {
+        return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isProxyHost) &&
+               Objects.equals(clusterId, ClusterId.PROXY_HOST) &&
+               Objects.equals(serviceType, ServiceType.HOST_ADMIN);
+    }
+
     public String nodeDescription(boolean plural) {
         String pluralSuffix = plural ? "s" : "";
         return isConfigServer() ? "config server" + pluralSuffix :
                isConfigServerHost() ? "config server host" + pluralSuffix :
                isController() ? "controller" + pluralSuffix :
                isControllerHost() ? "controller host" + pluralSuffix :
+               isProxy() ? (plural ? "proxies" : "proxy") :
+               isProxyHost() ? "proxy host" + pluralSuffix :
                isTenantHost() ? "tenant host" + pluralSuffix :
                "node" + pluralSuffix + " of {" + serviceType + "," + clusterId + "}";
     }
