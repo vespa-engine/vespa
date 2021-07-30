@@ -45,9 +45,6 @@ public class SessionStateWatcher {
 
     private synchronized void sessionStatusChanged(Status newStatus) {
         long sessionId = session.getSessionId();
-
-        log.info("Session " + sessionId + " for " + session.getApplicationId() + " changed: " + newStatus);
-
         switch (newStatus) {
             case NEW:
             case UNKNOWN:
@@ -69,8 +66,6 @@ public class SessionStateWatcher {
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
-
-        log.info("Session " + sessionId + " for " + session.getApplicationId() + " changed: " + newStatus + " [DONE]");
     }
 
     private void createLocalSession(long sessionId) {
