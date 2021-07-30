@@ -168,11 +168,6 @@ public class YumPackageName {
             release = Optional.ofNullable(matcher.group(3));
         }
 
-        // Set default epoch if we have a version
-        if (version.isPresent() && epoch.isEmpty()) {
-            epoch = Optional.of("0");
-        }
-
         if (!NAME_PATTERN.matcher(spec).find()) {
             throw new IllegalArgumentException("Bad package name in " + packageSpec + ": '" + spec + "'");
         }
@@ -217,11 +212,7 @@ public class YumPackageName {
      * @throws IllegalStateException if any field required for the version lock spec is missing
      */
     public String toVersionLockName() {
-        Builder b = new Builder(this).setArchitecture("*");
-        if (epoch.isEmpty()) {
-            b.setEpoch("0");
-        }
-        YumPackageName lockSpec = b.build();
+        YumPackageName lockSpec = new Builder(this).setArchitecture("*").build();
         if (lockSpec.getVersion().isEmpty()) throw new IllegalStateException("Version is missing for YUM package " + name);
         if (lockSpec.getRelease().isEmpty()) throw new IllegalStateException("Release is missing for YUM package " + name);
         return lockSpec.toName();
