@@ -18,7 +18,9 @@ import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -47,11 +49,18 @@ public class AclMaintainer {
     private final ContainerOperations containerOperations;
     private final IPAddresses ipAddresses;
     private final Metrics metrics;
+    private final Map<String, Long> lastSuccess;
+    private static final String METRIC_NAME_POSTFIX = ".acl.age";
 
     public AclMaintainer(ContainerOperations containerOperations, IPAddresses ipAddresses, Metrics metrics) {
         this.containerOperations = containerOperations;
         this.ipAddresses = ipAddresses;
         this.metrics = metrics;
+        this.lastSuccess = new HashMap<>(){{
+            put(IPVersion.IPv4.id(), System.currentTimeMillis());
+            put(IPVersion.IPv6.id(), System.currentTimeMillis());
+        }};
+
     }
 
     // ip(6)tables operate while having the xtables lock, run with synchronized to prevent multiple NodeAgents
@@ -62,8 +71,8 @@ public class AclMaintainer {
         // Apply acl to the filter table
         boolean updatedIPv4 = editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
         boolean updatedIPv6 = editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
-        updateMetrics(context, updatedIPv4, "IPv4-acl.updated");
-        updateMetrics(context, updatedIPv6, "IPv6-acl.updated");
+        updateMetric(context, updatedIPv4, IPVersion.IPv4.id());
+        updateMetric(context, updatedIPv6, IPVersion.IPv6.id());
 
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv4).ifPresent(addr -> applyRedirect(context, addr));
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv6).ifPresent(addr -> applyRedirect(context, addr));
@@ -122,12 +131,17 @@ public class AclMaintainer {
         };
     }
 
-    void updateMetrics(NodeAgentContext context, boolean updated, String name) {
-        if (!updated) return;
-
+    void updateMetric(NodeAgentContext context, boolean updated, String ipVersion) {
         Dimensions dimensions = generateDimensions(context);
+        if (!updated) {
+            metrics.declareGauge(Metrics.APPLICATION_NODE, ipVersion + METRIC_NAME_POSTFIX, dimensions, Metrics.DimensionType.PRETAGGED)
+                    .sample((System.currentTimeMillis() - lastSuccess.get(ipVersion)) / 1000);
+            return;
+        }
 
-        metrics.declareGauge(Metrics.APPLICATION_NODE, name, dimensions, Metrics.DimensionType.PRETAGGED).sample(System.currentTimeMillis()/1000);
+        metrics.declareGauge(Metrics.APPLICATION_NODE, ipVersion + METRIC_NAME_POSTFIX, dimensions, Metrics.DimensionType.PRETAGGED)
+                .sample(0);
+        lastSuccess.put(ipVersion, System.currentTimeMillis());
 
     }
 
