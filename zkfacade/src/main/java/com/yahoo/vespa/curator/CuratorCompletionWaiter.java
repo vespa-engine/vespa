@@ -1,14 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import java.util.ArrayList;
-import java.util.logging.Level;
+import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Implementation of a Barrier that handles the case where more than number of members can call synchronize. If
@@ -55,29 +56,32 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     private List<String> awaitInternal(Duration timeout) throws Exception {
         Instant startTime = clock.instant();
         Instant endTime = startTime.plus(timeout);
+        log.log(LogLevel.FINE, () -> "Waiting on " + barrierPath + " barrier w/timeout " + timeout);
+
         List<String> respondents = new ArrayList<>();
         do {
             respondents.clear();
             respondents.addAll(curator.framework().getChildren().forPath(barrierPath));
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
-                                    respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
+                                     respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
             }
 
             // First, check if all config servers responded
             if (respondents.size() == curator.zooKeeperEnsembleCount()) {
                 log.log(Level.FINE, () -> barrierCompletedMessage(respondents, startTime));
-                break;
+                return respondents;
             }
             // If some are missing, quorum is enough
             if (respondents.size() >= barrierMemberCount()) {
                 log.log(Level.FINE, () -> barrierCompletedMessage(respondents, startTime));
-                break;
+                return respondents;
             }
 
             Thread.sleep(100);
         } while (clock.instant().isBefore(endTime));
 
+        log.log(LogLevel.FINE, () -> "Timed out on " + barrierPath);
         return respondents;
     }
 
