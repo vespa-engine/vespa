@@ -28,7 +28,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
 
     private int defaultThreadsByClusterType() {
         if (cluster instanceof MetricsProxyContainerCluster) {
-            return 4;
+            return 2;
         }
         return 10;
     }
