@@ -33,7 +33,7 @@ void verifyInclusiveStart(const search::BitVector & a, const search::BitVector &
     }
 }
 
-constexpr size_t MMAP_LIMIT = 32_Mi;
+constexpr size_t MMAP_LIMIT = 256_Mi;
 constexpr size_t DIRECTIO_ALIGNMENT = 4_Ki;
 
 }
