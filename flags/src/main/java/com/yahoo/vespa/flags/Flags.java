@@ -218,13 +218,6 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
-            "enable-routing-core-dumps", false,
-            List.of("tokle"), "2021-04-16", "2021-09-01",
-            "Whether to enable core dumps for routing layer",
-            "Takes effect on next host-admin tick",
-            HOSTNAME);
-
     public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
             "cfg-deploy-multipart", false,
             List.of("tokle"), "2021-05-19", "2021-09-01",
