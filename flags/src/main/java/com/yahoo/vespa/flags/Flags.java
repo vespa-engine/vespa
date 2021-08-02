@@ -100,14 +100,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    // TODO: Remove when models referring to this are gone in all systems
-    public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
-            "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-08-01",
-            "Allow separate iam roles when provisioning/assigning hosts",
-            "Takes effect immediately on new hosts, on next redeploy for applications",
-            TENANT_ID);
-
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
             List.of("tokle", "bjormel"), "2020-12-02", "2021-09-01",
