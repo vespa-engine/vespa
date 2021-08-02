@@ -199,9 +199,10 @@ void createAlignedAutoAllocators(AutoAllocatorsMap & map, size_t mmapLimit) {
 
 AutoAllocatorsMap
 createAutoAllocators() {
+    constexpr size_t allowed_huge_pages_limits[] = {1,2,4,8,16,32,64,128,256};
     AutoAllocatorsMap map;
-    map.reserve(3*5);
-    for (size_t pages : {1,2,4,8,16}) {
+    map.reserve(3 * sizeof(allowed_huge_pages_limits)/sizeof(allowed_huge_pages_limits[0]));
+    for (size_t pages : allowed_huge_pages_limits) {
         size_t mmapLimit = pages * MemoryAllocator::HUGEPAGE_SIZE;
         createAlignedAutoAllocators(map, mmapLimit);
     }
