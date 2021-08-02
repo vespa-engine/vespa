@@ -171,7 +171,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
             "enable-custom-acl-mapping", false,
-            List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
+            List.of("mortent","bjorncs"), "2021-04-13", "2021-09-01",
             "Whether access control filters should read acl request mapping from handler or use default",
             "Takes effect at redeployment",
             APPLICATION_ID);
