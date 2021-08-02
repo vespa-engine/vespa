@@ -49,7 +49,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
     private Quota quota = Quota.unlimited();
-    private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
@@ -94,7 +93,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
-    @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
@@ -223,11 +221,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setQuota(Quota quota) {
         this.quota = quota;
-        return this;
-    }
-
-    public TestProperties useAccessControlTlsHandshakeClientAuth(boolean useAccessControlTlsHandshakeClientAuth) {
-        this.useAccessControlTlsHandshakeClientAuth = useAccessControlTlsHandshakeClientAuth;
         return this;
     }
 
