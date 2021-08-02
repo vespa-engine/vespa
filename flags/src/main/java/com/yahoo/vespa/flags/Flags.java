@@ -100,14 +100,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    // TODO: Remove when models referring to this are gone in all systems
-    public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
-            "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-08-01",
-            "Allow separate iam roles when provisioning/assigning hosts",
-            "Takes effect immediately on new hosts, on next redeploy for applications",
-            TENANT_ID);
-
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
             List.of("tokle", "bjormel"), "2020-12-02", "2021-09-01",
@@ -158,7 +150,7 @@ public class Flags {
 
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2021-08-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2021-12-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -179,7 +171,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
             "enable-custom-acl-mapping", false,
-            List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
+            List.of("mortent","bjorncs"), "2021-04-13", "2021-09-01",
             "Whether access control filters should read acl request mapping from handler or use default",
             "Takes effect at redeployment",
             APPLICATION_ID);
@@ -228,14 +220,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
             "enable-routing-core-dumps", false,
-            List.of("tokle"), "2021-04-16", "2021-08-01",
+            List.of("tokle"), "2021-04-16", "2021-09-01",
             "Whether to enable core dumps for routing layer",
             "Takes effect on next host-admin tick",
             HOSTNAME);
 
     public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
             "cfg-deploy-multipart", false,
-            List.of("tokle"), "2021-05-19", "2021-08-01",
+            List.of("tokle"), "2021-05-19", "2021-09-01",
             "Whether to deploy applications using multipart form data (instead of url params)",
             "Takes effect immediately",
             APPLICATION_ID);
