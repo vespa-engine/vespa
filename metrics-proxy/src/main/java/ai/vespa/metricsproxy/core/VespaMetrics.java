@@ -147,8 +147,7 @@ public class VespaMetrics {
             if ( configuredConsumers.size() == 1) {
                 consumers = Collections.singleton(configuredConsumers.get(0));
             } else if (configuredConsumers.size() > 1){
-                consumers = new HashSet<>();
-                consumers.addAll(configuredConsumers);
+                consumers = new HashSet<>(configuredConsumers);
                 consumers = Collections.unmodifiableSet(consumers);
             }
         }
@@ -305,7 +304,7 @@ public class VespaMetrics {
             }
         }
 
-        return bufferOn.toString() + bufferOff.toString();
+        return bufferOn.append(bufferOff).toString();
     }
 
 }
