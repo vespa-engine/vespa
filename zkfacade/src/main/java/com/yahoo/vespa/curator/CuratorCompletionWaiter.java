@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 
 import java.time.Clock;
@@ -56,7 +55,6 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     private List<String> awaitInternal(Duration timeout) throws Exception {
         Instant startTime = clock.instant();
         Instant endTime = startTime.plus(timeout);
-        log.log(LogLevel.FINE, () -> "Waiting on " + barrierPath + " barrier w/timeout " + timeout);
 
         List<String> respondents = new ArrayList<>();
         do {
@@ -70,18 +68,17 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
             // First, check if all config servers responded
             if (respondents.size() == curator.zooKeeperEnsembleCount()) {
                 log.log(Level.FINE, () -> barrierCompletedMessage(respondents, startTime));
-                return respondents;
+                break;
             }
             // If some are missing, quorum is enough
             if (respondents.size() >= barrierMemberCount()) {
                 log.log(Level.FINE, () -> barrierCompletedMessage(respondents, startTime));
-                return respondents;
+                break;
             }
 
             Thread.sleep(100);
         } while (clock.instant().isBefore(endTime));
 
-        log.log(LogLevel.FINE, () -> "Timed out on " + barrierPath);
         return respondents;
     }
 
