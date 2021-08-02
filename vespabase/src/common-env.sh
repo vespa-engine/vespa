@@ -122,6 +122,9 @@ populate_environment
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
 export MALLOC_ARENA_MAX=1
 
+# Prefer newer gdb and pstack
+prepend_path /opt/rh/gcc-toolset-10/root/usr/bin
+
 # Maven is needed for tester applications
 prepend_path "$VESPA_HOME/local/maven/bin"
 prepend_path "$VESPA_HOME/bin64"
