@@ -227,7 +227,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
             "cfg-deploy-multipart", false,
-            List.of("tokle"), "2021-05-19", "2021-08-01",
+            List.of("tokle"), "2021-05-19", "2021-09-01",
             "Whether to deploy applications using multipart form data (instead of url params)",
             "Takes effect immediately",
             APPLICATION_ID);
