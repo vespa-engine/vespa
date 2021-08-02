@@ -169,13 +169,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
-            "enable-custom-acl-mapping", false,
-            List.of("mortent","bjorncs"), "2021-04-13", "2021-09-01",
-            "Whether access control filters should read acl request mapping from handler or use default",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
             List.of("geirst", "vekterli"), "2021-04-20", "2021-09-01",
