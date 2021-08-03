@@ -259,6 +259,10 @@ Query::handle_global_filters(uint32_t docid_limit, double global_filter_limit)
         LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
         // strictness may change if optimized order changed:
         fetchPostings();
+    } else {
+        auto no_filter = GlobalFilter::create(search::BitVector::UP());
+        _blueprint->set_global_filter(*no_filter);
+        fetchPostings();
     }
 }
 
