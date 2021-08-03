@@ -202,4 +202,24 @@ public class IndexingScriptChangeValidatorTest {
         new Fixture(entireSd).assertValidation();
     }
 
+    @Test
+    public void requireThatNgramIsOk() throws Exception {
+        String entireSd = joinLines(
+            "search test {",
+            "  document test {",
+            "    field inside type string {",
+            "      indexing: index",
+            "      match {",
+            "        gram",
+            "        gram-size: 3",
+            "      }",
+            "    }",
+            "  }",
+            "  field outside type string {",
+            "    indexing: input inside | ngram 2 | index outside",
+            "  }",
+            "}");
+        new Fixture(entireSd).assertValidation();
+    }
+
 }
