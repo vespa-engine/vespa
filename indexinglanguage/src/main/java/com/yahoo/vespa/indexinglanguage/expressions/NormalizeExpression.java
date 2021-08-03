@@ -81,7 +81,7 @@ public final class NormalizeExpression extends Expression {
     public boolean equals(Object o) {
         if (!(o instanceof NormalizeExpression)) return false;
         NormalizeExpression other = (NormalizeExpression)o;
-        if (linguistics != other.linguistics) return false;
+        if (linguistics.getClass() != other.linguistics.getClass()) return false;
         return true;
     }
 
