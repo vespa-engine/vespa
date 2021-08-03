@@ -103,7 +103,13 @@ public final class NGramExpression extends Expression {
         if (!(obj instanceof NGramExpression)) return false;
 
         NGramExpression rhs = (NGramExpression)obj;
-        if (linguistics != rhs.linguistics) return false;
+        if (linguistics == null) {
+            if (rhs.linguistics != null) return false;
+        } else if (rhs.linguistics != null) {
+            if (linguistics.getClass() != rhs.linguistics.getClass()) return false;
+        } else {
+            return false;
+        }
         if (gramSize != rhs.gramSize) return false;
         return true;
     }
