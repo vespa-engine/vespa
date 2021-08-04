@@ -109,7 +109,7 @@ BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
 %endif
 %else
-BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
+BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: openssl-devel
@@ -237,7 +237,7 @@ Requires: vespa-valgrind >= 3.17.0-1
 %define _vespa_llvm_version 11
 %endif
 %else
-%define _vespa_llvm_version 11
+%define _vespa_llvm_version 10
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
