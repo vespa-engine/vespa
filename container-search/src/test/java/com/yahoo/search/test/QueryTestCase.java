@@ -1112,6 +1112,8 @@ public class QueryTestCase {
         @Override
         public Detector getDetector() { return detector; }
 
+        @Override
+        public boolean equals(Linguistics other) { return (other instanceof MockLinguistics); }
     }
 
     private static class MockDetector extends SimpleDetector {

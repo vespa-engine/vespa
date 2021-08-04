@@ -2,6 +2,7 @@
 package com.yahoo.language.opennlp;
 
 import com.google.inject.Inject;
+import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleDetector;
@@ -46,4 +47,6 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
     @Override
     public Detector getDetector() { return detector; }
 
+    @Override
+    public boolean equals(Linguistics other) { return (other instanceof OpenNlpLinguistics); }
 }

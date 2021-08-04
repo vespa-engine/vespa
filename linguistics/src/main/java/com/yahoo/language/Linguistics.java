@@ -86,4 +86,6 @@ public interface Linguistics {
     /** Returns a thread-unsafe character classes instance. */
     CharacterClasses getCharacterClasses();
 
+    /** Check if another instance is equivalent to this one */
+    boolean equals(Linguistics other);
 }
