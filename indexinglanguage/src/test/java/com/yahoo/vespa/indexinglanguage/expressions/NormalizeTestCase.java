@@ -84,6 +84,9 @@ public class NormalizeTestCase {
         public Transformer getTransformer() {
             return transformer;
         }
+
+        @Override
+        public boolean equals(Linguistics other) { return (other instanceof MyMockLinguistics); }
     }
 
     @Test
