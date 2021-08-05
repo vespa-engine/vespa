@@ -1583,6 +1583,32 @@ public class ApplicationApiTest extends ControllerContainerTest {
         assertEquals(0, activeGrants.size());
     }
 
+    @Test
+    public void testServiceView() throws Exception {
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        String serviceApi="/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service";
+        // Not allowed to request apis not listed in feature flag allowed-service-view-apis. e.g /document/v1
+        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/document/v1/", GET)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
+                              403);
+
+        // Test path traversal
+        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/../../document/v1/", GET)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
+                              403);
+
+        // Test urlencoded path traversal
+        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Access denied\"}",
+                              403);
+    }
+
     private static String serializeInstant(Instant i) {
         return DateTimeFormatter.ISO_INSTANT.format(i.truncatedTo(ChronoUnit.SECONDS));
     }
