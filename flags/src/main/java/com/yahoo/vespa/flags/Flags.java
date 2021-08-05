@@ -275,6 +275,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundListFlag<String> ALLOWED_SERVICE_VIEW_APIS = defineListFlag(
+            "allowed-service-view-apis", List.of("state/v1/"), String.class,
+            List.of("mortent"), "2021-08-05", "2021-11-01",
+            "Apis allowed to proxy through the service view api",
+            "Takes effect immediately");
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
