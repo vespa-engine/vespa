@@ -124,7 +124,7 @@ public class Flags {
             "orchestrate-missing-proxies", false,
             List.of("hakonhall"), "2020-08-05", "2020-10-05",
             "Whether the Orchestrator can assume any missing proxy services are down.",
-            "Takes effect immediately");
+            "Takes effect on first (re)start of config server");
 
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
