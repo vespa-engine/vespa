@@ -26,6 +26,7 @@ vespa_add_library(slobrok_slobrokserver
     service_map_history.cpp
     service_mapping.cpp
     slobrokserver.cpp
+    union_service_map.cpp
     INSTALL lib64
     DEPENDS
     slobrok
