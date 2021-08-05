@@ -290,18 +290,34 @@ NearestNeighborBruteForceLimit::lookup(const Properties &props, double defaultVa
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const vespalib::string GlobalFilterLimit::NAME("vespa.matching.global_filter_limit");
+const vespalib::string GlobalFilterLowerLimit::NAME("vespa.matching.global_filter.lower_limit");
 
-const double GlobalFilterLimit::DEFAULT_VALUE(0.0);
+const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.0);
 
 double
-GlobalFilterLimit::lookup(const Properties &props)
+GlobalFilterLowerLimit::lookup(const Properties &props)
 {
     return lookup(props, DEFAULT_VALUE);
 }
 
 double
-GlobalFilterLimit::lookup(const Properties &props, double defaultValue)
+GlobalFilterLowerLimit::lookup(const Properties &props, double defaultValue)
+{
+    return lookupDouble(props, NAME, defaultValue);
+}
+
+const vespalib::string GlobalFilterUpperLimit::NAME("vespa.matching.global_filter.upper_limit");
+
+const double GlobalFilterUpperLimit::DEFAULT_VALUE(2.0);
+
+double
+GlobalFilterUpperLimit::lookup(const Properties &props)
+{
+    return lookup(props, DEFAULT_VALUE);
+}
+
+double
+GlobalFilterUpperLimit::lookup(const Properties &props, double defaultValue)
 {
     return lookupDouble(props, NAME, defaultValue);
 }

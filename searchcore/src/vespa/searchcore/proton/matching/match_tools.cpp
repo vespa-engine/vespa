@@ -196,8 +196,9 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.fetchPostings();
         if (is_search) {
             trace.addEvent(5, "MTF: Handle Global Filters");
-            double global_filter_limit = GlobalFilterLimit::lookup(rankProperties, rankSetup.get_global_filter_limit());
-            _query.handle_global_filters(searchContext.getDocIdLimit(), global_filter_limit);
+            double lower_limit = GlobalFilterLowerLimit::lookup(rankProperties, rankSetup.get_global_filter_lower_limit());
+            double upper_limit = GlobalFilterUpperLimit::lookup(rankProperties, rankSetup.get_global_filter_upper_limit());
+            _query.handle_global_filters(searchContext.getDocIdLimit(), lower_limit, upper_limit);
         }
         _query.freeze();
         trace.addEvent(5, "MTF: prepareSharedState");

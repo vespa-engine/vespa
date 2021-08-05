@@ -223,9 +223,24 @@ namespace matching {
      * Property to control fallback to not building a global filter
      * for a query with a blueprint that wants a global filter. If the
      * estimated ratio of matching documents is less than this limit
-     * then don't build a global filter.
+     * then don't build a global filter. The effect will be falling back to bruteforce instead of approximation.
      **/
-    struct GlobalFilterLimit {
+    struct GlobalFilterLowerLimit {
+        static const vespalib::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
+    };
+
+    /**
+     * Property to control not building a global filter
+     * for a query with a blueprint that wants a global filter. If the
+     * estimated ratio of matching documents is larger than this limit
+     * then don't build a global filter, but assumes that the expected filter ratio has been
+     * taken care of increasing recall. Increasing recall by 1/upper_limit * 1.2 is probably a sane solution
+     * adding 20% margin to handle some correlation between filter and rest of query.
+     **/
+    struct GlobalFilterUpperLimit {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
