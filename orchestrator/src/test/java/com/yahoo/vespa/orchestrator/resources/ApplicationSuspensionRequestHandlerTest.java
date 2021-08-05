@@ -44,11 +44,9 @@ class ApplicationSuspensionRequestHandlerTest {
     void createHandler() {
         DummyServiceMonitor serviceMonitor = new DummyServiceMonitor();
         Orchestrator orchestrator = new OrchestratorImpl(
-                new ClusterControllerClientFactoryMock(),
+                new OrchestratorConfig(new OrchestratorConfig.Builder()), new ConfigserverConfig(new ConfigserverConfig.Builder()), new ClusterControllerClientFactoryMock(),
                 new ZkStatusService(new MockCurator(), new MockMetric(), new SystemTimer(), serviceMonitor),
-                new OrchestratorConfig(new OrchestratorConfig.Builder()),
                 serviceMonitor,
-                new ConfigserverConfig(new ConfigserverConfig.Builder()),
                 new InMemoryFlagSource(),
                 Zone.defaultZone());
         var handler = new ApplicationSuspensionRequestHandler(RestApiTestDriver.createHandlerTestContext(), orchestrator);

@@ -59,7 +59,9 @@
     <component id="com.yahoo.vespa.service.duper.DuperModelManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.orchestrator.status.ZkStatusService" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
-    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator" />
+    <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator">
+      <preprocess:include file="orchestrator-config.xml" required="false" />
+    </component>
     
     <handler id="com.yahoo.vespa.orchestrator.resources.ApplicationSuspensionRequestHandler" bundle="orchestrator">
       <binding>http://*/orchestrator/v1/suspensions/applications</binding>
@@ -155,5 +157,6 @@
     <preprocess:include file='configserver-components.xml' required='false' />
 
     <preprocess:include file='zookeeper-server-config.xml' required='false' />
+
   </container>
 </services>
