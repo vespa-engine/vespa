@@ -3,3 +3,13 @@ namespace=vespa.orchestrator.config
 
 # TODO: Change the default to actual latency in real setup.
 serviceMonitorConvergenceLatencySeconds int default=0
+
+numProxies int default=0
+
+# Application ID of the form TENANT:NAME:INSTANCE.
+application[].applicationId string
+application[].cluster[].clusterId string
+application[].cluster[].serviceType string
+# The expected number of services in the cluster:  If the number of services is less than this count, the missing
+# services must be assumed to be down.
+application[].cluster[].clusterSize int
