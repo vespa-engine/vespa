@@ -63,8 +63,9 @@ class ModelTestUtils {
             new ApplicationInstanceId("application-name:foo:bar:default");
 
     public static final int NUMBER_OF_CONFIG_SERVERS = 3;
+    public static final int NUMBER_OF_PROXIES = 5;
     public static final OrchestrationParams ORCHESTRATION_PARAMS =
-            HostedVespaOrchestration.create(NUMBER_OF_CONFIG_SERVERS, 0);
+            HostedVespaOrchestration.create(NUMBER_OF_CONFIG_SERVERS, NUMBER_OF_PROXIES);
     public static final ApplicationParams APPLICATION_PARAMS = ORCHESTRATION_PARAMS
             .getApplicationParams(OrchestratorUtil.toApplicationId(
                     new ApplicationInstanceReference(TENANT_ID, APPLICATION_INSTANCE_ID)));
@@ -92,7 +93,7 @@ class ModelTestUtils {
     private final ManualClock clock = new ManualClock();
 
     ApplicationApiFactory applicationApiFactory() {
-        return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS, clock);
+        return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS, NUMBER_OF_PROXIES, clock);
     }
 
     HostInfos getHostInfos() {

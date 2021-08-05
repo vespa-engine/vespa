@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
@@ -12,11 +11,6 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
  * @author hakonhall
  */
 public class HostedVespaOrchestration {
-    public static OrchestrationParams create(ConfigserverConfig configserverConfig) {
-        // todo: get the number of proxy nodes
-        return create(configserverConfig.zookeeperserver().size(), 0);
-    }
-
     public static OrchestrationParams create(int numConfigServers, int numProxies) {
         // We'll create parameters for both the controller and config server applications, even though
         // only one of them is present, as (a) no harm is done by having the extra parameters, and

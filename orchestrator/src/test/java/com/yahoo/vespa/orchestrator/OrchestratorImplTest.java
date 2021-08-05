@@ -81,7 +81,7 @@ public class OrchestratorImplTest {
     private static final Zone zone = Zone.defaultZone();
 
     private final ManualClock clock = new ManualClock();
-    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, 5, clock);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final MockCurator curator = new MockCurator();
     private final ZkStatusService statusService = new ZkStatusService(
