@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
@@ -85,9 +86,15 @@ public class OrchestratorImpl implements Orchestrator {
              zone,
              Clock.systemUTC(),
              new ApplicationApiFactory(configServerConfig.zookeeperserver().size(),
-                                       orchestratorConfig.numProxies(),
+                                       resolveNumProxies(orchestratorConfig, flagSource),
                                        Clock.systemUTC()),
              orchestratorConfig.serviceMonitorConvergenceLatencySeconds());
+    }
+
+    private static int resolveNumProxies(OrchestratorConfig orchestratorConfig, FlagSource flagSource) {
+        return Flags.ORCHESTRATE_MISSING_PROXIES.bindTo(flagSource).value() ?
+                orchestratorConfig.numProxies() :
+                0;
     }
 
     private OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,

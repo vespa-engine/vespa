@@ -13,9 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -122,6 +120,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ORCHESTRATE_MISSING_PROXIES = defineFeatureFlag(
+            "orchestrate-missing-proxies", false,
+            List.of("hakonhall"), "2020-08-05", "2020-10-05",
+            "Whether the Orchestrator can assume any missing proxy services are down.",
+            "Takes effect immediately");
+
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
             List.of("hakon"), "2021-01-22", "2021-08-22",
@@ -131,7 +135,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
-            List.of("hakonhall"), "2021-05-14", "2021-08-05",
+            List.of("hakonhall"), "2021-05-14", "2021-10-05",
             "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
             "Takes effect on next host-admin tick.");
 
