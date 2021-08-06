@@ -122,7 +122,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ORCHESTRATE_MISSING_PROXIES = defineFeatureFlag(
             "orchestrate-missing-proxies", false,
-            List.of("hakonhall"), "2020-08-05", "2020-10-05",
+            List.of("hakonhall"), "2021-08-05", "2021-10-05",
             "Whether the Orchestrator can assume any missing proxy services are down.",
             "Takes effect on first (re)start of config server");
 
