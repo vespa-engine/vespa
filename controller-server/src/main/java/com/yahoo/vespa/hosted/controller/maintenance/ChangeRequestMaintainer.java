@@ -34,12 +34,14 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
     private final ChangeRequestClient changeRequestClient;
     private final CuratorDb curator;
     private final NodeRepository nodeRepository;
+    private final SystemName system;
 
     public ChangeRequestMaintainer(Controller controller, Duration interval) {
         super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.changeRequestClient = controller.serviceRegistry().changeRequestClient();
         this.curator = controller.curator();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
+        this.system = controller.system();
     }
 
 
@@ -124,7 +126,10 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
     }
 
     private void approveChangeRequest(ChangeRequest changeRequest) {
-        if (changeRequest.getApproval() == ChangeRequest.Approval.REQUESTED)
+        if (system.equals(SystemName.main) &&
+                changeRequest.getApproval() == ChangeRequest.Approval.REQUESTED) {
+            logger.info("Approving " + changeRequest.getChangeRequestSource().getId());
             changeRequestClient.approveChangeRequest(changeRequest);
+        }
     }
 }
