@@ -60,11 +60,6 @@ public class CliClient {
                 CountDownLatch latch = new CountDownLatch(1);
                 AtomicReference<FeedException> fatal = new AtomicReference<>();
                 long startNanos = System.nanoTime();
-                feeder.feedMany(in, new ResultCallback() {
-                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
-                    @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
-                    @Override public void onComplete() { latch.countDown(); }
-                });
                 if (cliArgs.showProgress()) {
                     Thread progressPrinter = new Thread(() -> {
                         try {
@@ -77,7 +72,14 @@ public class CliClient {
                     progressPrinter.setDaemon(true);
                     progressPrinter.start();
                 }
+
+                feeder.feedMany(in, new ResultCallback() {
+                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
+                    @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
+                    @Override public void onComplete() { latch.countDown(); }
+                });
                 latch.await();
+
                 if (cliArgs.benchmarkModeEnabled()) {
                     printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemOut);
                 }
