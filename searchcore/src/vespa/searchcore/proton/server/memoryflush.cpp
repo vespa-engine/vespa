@@ -74,6 +74,18 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
       maxTimeGain(maxTimeGain_in)
 { }
 
+vespalib::string
+MemoryFlush::Config::toString() const {
+    vespalib::asciistream os;
+    os << "maxGlobalMemory=" << maxGlobalMemory << " ";
+    os << "maxGlobalTlsSize=" << maxGlobalTlsSize << " ";
+    os << "globalDiskBloatFactor=" << globalDiskBloatFactor << " ";
+    os << "maxMemoryGain=" << maxMemoryGain << " ";
+    os << "diskBloatFactor=" << diskBloatFactor << " ";
+    os << "maxTimeGain(ns)=" << maxTimeGain.count();
+    return os.str();
+}
+
 MemoryFlush::MemoryFlush(const Config &config, vespalib::system_time startTime)
     : _lock(),
       _config(config),
