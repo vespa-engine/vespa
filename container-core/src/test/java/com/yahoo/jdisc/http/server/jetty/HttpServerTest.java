@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -91,6 +92,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -456,11 +458,28 @@ public class HttpServerTest {
 
     @Test
     public void requireThatConnectionIsClosedAfterXRequests() throws Exception {
-        final int MAX_KEEPALIVE_REQUESTS = 100;
-        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(new EchoRequestHandler(),
-                new ServerConfig.Builder(),
-                new ConnectorConfig.Builder().maxRequestsPerConnection(MAX_KEEPALIVE_REQUESTS));
-        for (int i = 0; i < MAX_KEEPALIVE_REQUESTS - 1; i++) {
+        final int MAX_REQUESTS = 10;
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
+                .maxRequestsPerConnection(MAX_REQUESTS)
+                .ssl(new ConnectorConfig.Ssl.Builder()
+                        .enabled(true)
+                        .clientAuth(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH)
+                        .privateKeyFile(privateKeyFile.toString())
+                        .certificateFile(certificateFile.toString())
+                        .caCertificateFile(certificateFile.toString()));
+        ServerConfig.Builder serverConfig = new ServerConfig.Builder()
+                .connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new EchoRequestHandler(),
+                serverConfig,
+                connectorConfig,
+                binder -> {});
+
+        // HTTP/1.1
+        for (int i = 0; i < MAX_REQUESTS - 1; i++) {
             driver.client().get("/status.html")
                     .expectStatusCode(is(OK))
                     .expectNoHeader(CONNECTION);
@@ -468,6 +487,22 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader(CONNECTION, is(CLOSE));
+
+        // HTTP/2
+        try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
+            String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
+            for (int i = 0; i < MAX_REQUESTS - 1; i++) {
+                SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+                assertEquals(OK, response.getCode());
+            }
+            try {
+                client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+                fail();
+            } catch (ExecutionException e) {
+                // Note: this is a weakness with Apache Http Client 5; the failed stream/request will not be retried on a new connection
+                assertEquals(e.getMessage(), "org.apache.hc.core5.http2.H2StreamResetException: Stream refused");
+            }
+        }
         assertTrue(driver.close());
     }
 
