@@ -417,7 +417,27 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
             }
             if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
+            distributeLargeExpressionsAsFiles(properties, largeRankExpressions);
             return properties;
+        }
+
+        private void distributeLargeExpressionsAsFiles(List<Pair<String, String>> properties, LargeRankExpressions largeRankExpressions) {
+            if (!distributeLargeRankExpressions) return;
+            for (ListIterator<Pair<String, String>> iter = properties.listIterator(); iter.hasNext();) {
+                Pair<String, String> property = iter.next();
+                String expression = property.getSecond();
+                if (expression.length() > largeRankExpressionLimit) {
+                    String propertyName = property.getFirst();
+                    String functionName = RankingExpression.extractScriptName(propertyName);
+                    if (functionName != null) {
+                        String mangledName = rankprofileName + "." + functionName;
+                        largeRankExpressions.add(new RankExpressionBody(mangledName, ByteBuffer.wrap(expression.getBytes(StandardCharsets.UTF_8))));
+                        if (useDistributedRankExpressions) {
+                            iter.set(new Pair<>(RankingExpression.propertyExpressionName(functionName), mangledName));
+                        }
+                    }
+                }
+            }
         }
 
         private List<Pair<String, String>> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
