@@ -215,13 +215,6 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
-            "cfg-deploy-multipart", false,
-            List.of("tokle"), "2021-05-19", "2021-09-01",
-            "Whether to deploy applications using multipart form data (instead of url params)",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundIntFlag MAX_ENCRYPTING_HOSTS = defineIntFlag(
             "max-encrypting-hosts", 0,
             List.of("mpolden", "hakonhall"), "2021-05-27", "2021-10-01",
