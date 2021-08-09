@@ -22,7 +22,7 @@ public class Yum {
     }
 
     public Optional<YumPackageName> queryInstalled(TaskContext context, String packageName) {
-        return YumCommand.queryInstalled(terminal, context, packageName);
+        return YumCommand.queryInstalled(terminal, context, YumPackageName.fromString(packageName));
     }
 
     /** Lock and install, or if necessary downgrade, a package to a given version. */

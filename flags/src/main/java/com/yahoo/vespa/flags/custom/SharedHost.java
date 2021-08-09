@@ -52,8 +52,8 @@ public class SharedHost {
     }
 
     @JsonIgnore
-    public boolean isEnabled() {
-        return resources.size() > 0;
+    public boolean isEnabled(String clusterType) {
+        return resources.stream().anyMatch(hr -> hr.satisfiesClusterType(clusterType));
     }
 
     @JsonIgnore

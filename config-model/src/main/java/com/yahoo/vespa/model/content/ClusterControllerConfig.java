@@ -35,7 +35,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer<ClusterContr
 
             ModelElement clusterTuning = clusterElement.child("tuning");
             Integer bucketSplittingMinimumBits = null;
-            Double minNodeRatioPerGroup = null;
+            Double minNodeRatioPerGroup = deployState.getProperties().featureFlags().minNodeRatioPerGroup();
             if (clusterTuning != null) {
                 tuning = clusterTuning.child("cluster-controller");
                 minNodeRatioPerGroup = clusterTuning.childAsDouble("min-node-ratio-per-group");

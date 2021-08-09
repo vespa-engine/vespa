@@ -2,10 +2,12 @@
 package com.yahoo.vespa.flags.custom;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -18,18 +20,17 @@ import java.util.Set;
 public class HostResources {
     private static final Set<String> validDiskSpeeds = Set.of("slow", "fast");
     private static final Set<String> validStorageTypes = Set.of("remote", "local");
+    private static final Set<String> validClusterTypes = Set.of("container", "content", "combined", "admin");
 
     private final double vcpu;
-
     private final double memoryGb;
-
     private final double diskGb;
-
     private final double bandwidthGbps;
 
     private final String diskSpeed;
-
     private final String storageType;
+
+    private final Optional<String> clusterType;
 
     private final int containers;
 
@@ -40,6 +41,7 @@ public class HostResources {
                          @JsonProperty("bandwidthGbps") Double bandwidthGbps,
                          @JsonProperty("diskSpeed") String diskSpeed,
                          @JsonProperty("storageType") String storageType,
+                         @JsonProperty("clusterType") String clusterType,
                          @JsonProperty("containers") Integer containers) {
         this.vcpu = requirePositive("vcpu", vcpu);
         this.memoryGb = requirePositive("memoryGb", memoryGb);
@@ -47,6 +49,7 @@ public class HostResources {
         this.bandwidthGbps = requirePositive("bandwidthGbps", bandwidthGbps);
         this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed);
         this.storageType = validateEnum("storageType", validStorageTypes, storageType);
+        this.clusterType = Optional.ofNullable(clusterType).map(cType -> validateEnum("clusterType", validClusterTypes, cType));
         this.containers = requirePositive("containers", containers);
     }
 
@@ -68,8 +71,18 @@ public class HostResources {
     @JsonProperty("storageType")
     public String storageType() { return storageType; }
 
+    @JsonProperty("clusterType")
+    public String clusterTypeOrNull() { return clusterType.orElse(null); }
+
+    @JsonIgnore
+    public Optional<String> clusterType() { return clusterType; }
+
     @JsonProperty("containers")
     public int containers() { return containers; }
+
+    public boolean satisfiesClusterType(String clusterType) {
+        return this.clusterType.map(clusterType::equalsIgnoreCase).orElse(true);
+    }
 
     private static double requirePositive(String name, Double value) {
         requireNonNull(name, value);
@@ -106,6 +119,7 @@ public class HostResources {
                 ", bandwidthGbps=" + bandwidthGbps +
                 ", diskSpeed='" + diskSpeed + '\'' +
                 ", storageType='" + storageType + '\'' +
+                ", clusterType='" + clusterType + '\'' +
                 ", containers=" + containers +
                 '}';
     }
@@ -121,11 +135,12 @@ public class HostResources {
                 Double.compare(resources.bandwidthGbps, bandwidthGbps) == 0 &&
                 diskSpeed.equals(resources.diskSpeed) &&
                 storageType.equals(resources.storageType) &&
+                clusterType.equals(resources.clusterType) &&
                 containers == resources.containers;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, containers);
+        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, clusterType, containers);
     }
 }

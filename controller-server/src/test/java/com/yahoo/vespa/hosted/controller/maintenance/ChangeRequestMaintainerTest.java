@@ -39,6 +39,7 @@ public class ChangeRequestMaintainerTest {
         assertEquals(Status.CANCELED, persistedChangeRequest.getChangeRequestSource().getStatus());
         assertEquals(ChangeRequest.Approval.APPROVED, persistedChangeRequest.getApproval());
         assertEquals(time, persistedChangeRequest.getChangeRequestSource().getPlannedStartTime());
+        assertEquals(0, changeRequestClient.getApprovedChangeRequests().size());
     }
 
     @Test
@@ -58,17 +59,39 @@ public class ChangeRequestMaintainerTest {
         assertEquals(newChangeRequest, persistedChangeRequests.get(0));
     }
 
-    private ChangeRequest newChangeRequest(String id, ChangeRequest.Approval approval) {
-        return newChangeRequest(id, approval, ZonedDateTime.now(), Status.CLOSED);
+    @Test
+    public void approves_change_request_if_non_prod() {
+        var time = ZonedDateTime.now();
+        var prodChangeRequest = newChangeRequest("id1", ChangeRequest.Approval.REQUESTED, time, Status.WAITING_FOR_APPROVAL);
+        var nonProdApprovalRequested = newChangeRequest("id2", "unknown-node", ChangeRequest.Approval.REQUESTED, time, Status.WAITING_FOR_APPROVAL);
+        var nonProdApproved = newChangeRequest("id3", "unknown-node", ChangeRequest.Approval.APPROVED, time, Status.WAITING_FOR_APPROVAL);
+
+        changeRequestClient.setUpcomingChangeRequests(List.of(
+                prodChangeRequest,
+                nonProdApprovalRequested,
+                nonProdApproved
+        ));
+        changeRequestMaintainer.maintain();
+
+        var persistedChangeRequests = tester.curator().readChangeRequests();
+        assertEquals(1, persistedChangeRequests.size());
+        assertEquals(prodChangeRequest.getId(), persistedChangeRequests.get(0).getId());
+
+        assertEquals(1, changeRequestClient.getApprovedChangeRequests().size());
+        assertEquals(nonProdApprovalRequested.getId(), changeRequestClient.getApprovedChangeRequests().get(0).getId());
     }
 
     private ChangeRequest newChangeRequest(String id, ChangeRequest.Approval approval, ZonedDateTime time, Status status) {
+        return newChangeRequest(id, "node-1-tenant-host-prod.us-east-3", approval, time, status);
+    }
+
+    private ChangeRequest newChangeRequest(String id, String hostname, ChangeRequest.Approval approval, ZonedDateTime time, Status status) {
         return new ChangeRequest.Builder()
                 .id(id)
                 .approval(approval)
                 .impact(ChangeRequest.Impact.VERY_HIGH)
                 .impactedSwitches(List.of())
-                .impactedHosts(List.of("node-1-tenant-host-prod.us-east-3"))
+                .impactedHosts(List.of(hostname))
                 .changeRequestSource(new ChangeRequestSource.Builder()
                         .plannedStartTime(time)
                         .plannedEndTime(time)

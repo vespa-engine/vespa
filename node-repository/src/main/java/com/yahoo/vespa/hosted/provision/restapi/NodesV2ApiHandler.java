@@ -283,7 +283,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         optionalString(inspector.field("parentHostname")).ifPresent(builder::parentHostname);
         optionalString(inspector.field("modelName")).ifPresent(builder::modelName);
         optionalString(inspector.field("reservedTo")).map(TenantName::from).ifPresent(builder::reservedTo);
-        optionalString(inspector.field("exclusiveTo")).map(ApplicationId::fromSerializedForm).ifPresent(builder::exclusiveTo);
+        optionalString(inspector.field("exclusiveTo")).map(ApplicationId::fromSerializedForm).ifPresent(builder::exclusiveToApplicationId);
         optionalString(inspector.field("switchHostname")).ifPresent(builder::switchHostname);
         return builder.build();
     }

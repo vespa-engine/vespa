@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockCloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
@@ -128,7 +129,7 @@ public class CloudEventTrackerTest {
     }
 
     private Set<String> hostsNotDeprovisioning(ZoneId zoneId) {
-        return tester.configServer().nodeRepository().list(zoneId, false)
+        return tester.configServer().nodeRepository().list(zoneId, NodeFilter.all())
                      .stream()
                      .filter(node -> !node.wantToDeprovision())
                      .map(node -> node.hostname().value())

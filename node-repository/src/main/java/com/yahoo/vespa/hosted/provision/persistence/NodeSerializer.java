@@ -10,6 +10,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
@@ -91,7 +92,8 @@ public class NodeSerializer {
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
     private static final String reservedToKey = "reservedTo";
-    private static final String exclusiveToKey = "exclusiveTo";
+    private static final String exclusiveToApplicationIdKey = "exclusiveTo";
+    private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
     private static final String switchHostnameKey = "switchHostname";
 
     // Node resource fields
@@ -178,7 +180,8 @@ public class NodeSerializer {
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
         node.reservedTo().ifPresent(tenant -> object.setString(reservedToKey, tenant.value()));
-        node.exclusiveTo().ifPresent(applicationId -> object.setString(exclusiveToKey, applicationId.serializedForm()));
+        node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
+        node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -264,7 +267,8 @@ public class NodeSerializer {
                         Reports.fromSlime(object.field(reportsKey)),
                         modelNameFromSlime(object),
                         reservedToFromSlime(object.field(reservedToKey)),
-                        exclusiveToFromSlime(object.field(exclusiveToKey)),
+                        exclusiveToApplicationIdFromSlime(object.field(exclusiveToApplicationIdKey)),
+                        exclusiveToClusterTypeFromSlime(object.field(exclusiveToClusterTypeKey)),
                         switchHostnameFromSlime(object.field(switchHostnameKey)));
     }
 
@@ -401,11 +405,18 @@ public class NodeSerializer {
         return Optional.of(TenantName.from(object.asString()));
     }
 
-    private Optional<ApplicationId> exclusiveToFromSlime(Inspector object) {
+    private Optional<ApplicationId> exclusiveToApplicationIdFromSlime(Inspector object) {
         if (! object.valid()) return Optional.empty();
         if (object.type() != Type.STRING)
             throw new IllegalArgumentException("Expected 'exclusiveTo' to be a string but is " + object);
         return Optional.of(ApplicationId.fromSerializedForm(object.asString()));
+    }
+
+    private Optional<ClusterSpec.Type> exclusiveToClusterTypeFromSlime(Inspector object) {
+        if (! object.valid()) return Optional.empty();
+        if (object.type() != Type.STRING)
+            throw new IllegalArgumentException("Expected 'exclusiveToClusterType' to be a string but is " + object);
+        return Optional.of(ClusterSpec.Type.from(object.asString()));
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -103,12 +104,35 @@ public class VespaModelFactory implements ModelFactory {
         return buildModel(createDeployState(modelContext, new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE)));
     }
 
+    private void logReindexingReasons(List<ConfigChangeAction> changeActions,
+                                      VespaModel nextModel,
+                                      Optional<Model> currentActiveModel)
+    {
+        if (currentActiveModel.isEmpty()) {
+            return;
+        }
+        for (ConfigChangeAction action : changeActions) {
+            if (action.getType().equals(ConfigChangeAction.Type.REINDEX)) {
+                VespaModel currentModel = (VespaModel) currentActiveModel.get();
+                var currentVersion = currentModel.version();
+                var currentMeta = currentModel.applicationPackage().getMetaData();
+                var nextVersion = nextModel.version();
+                var nextMeta = nextModel.applicationPackage().getMetaData();
+                log.log(Level.INFO, String.format("Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
+                                                  currentModel.version().toString(), currentMeta.toString(),
+                                                  nextModel.version().toString(), nextMeta.toString(),
+                                                  action.toString()));
+            }
+        }
+    }
+
     @Override
     public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
         validateXml(modelContext, validationParameters.ignoreValidationErrors());
         DeployState deployState = createDeployState(modelContext, validationParameters);
         VespaModel model = buildModel(deployState);
         List<ConfigChangeAction> changeActions = validateModel(model, deployState, validationParameters);
+        logReindexingReasons(changeActions, model, deployState.getPreviousModel());
         return new ModelCreateResult(model, changeActions);
     }
     

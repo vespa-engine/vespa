@@ -3,3 +3,6 @@ namespace=vespa.orchestrator.config
 
 # TODO: Change the default to actual latency in real setup.
 serviceMonitorConvergenceLatencySeconds int default=0
+
+# The number of services in the routing/container cluster of hosted-vespa.routing.default.
+numProxies int default=0

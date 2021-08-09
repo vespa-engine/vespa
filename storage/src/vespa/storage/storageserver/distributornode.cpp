@@ -127,7 +127,7 @@ DistributorNode::generate_unique_timestamp()
                        "%u timestamps were generated within this time period.",
                 SanityCheckMaxWallClockSecondSkew, now_seconds,_timestamp_second_counter,
                 _intra_second_pseudo_usec_counter);
-            abort();
+            std::_Exit(65);
         }
         assert(_intra_second_pseudo_usec_counter < 1'000'000);
         ++_intra_second_pseudo_usec_counter;

@@ -92,7 +92,7 @@ public:
      **/
     void optimize();
     void fetchPostings();
-    void handle_global_filters(uint32_t docidLimit, double global_filter_limit);
+    void handle_global_filters(uint32_t docidLimit, double global_filter_lower_limit, double global_filter_upper_limit);
     void freeze();
 
     /**

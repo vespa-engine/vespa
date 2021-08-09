@@ -242,11 +242,17 @@ Query::fetchPostings()
 }
 
 void
-Query::handle_global_filters(uint32_t docid_limit, double global_filter_limit)
+Query::handle_global_filters(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
 {
     using search::queryeval::GlobalFilter;
     double estimated_hit_ratio = _blueprint->getState().hit_ratio(docid_limit);
-    if (_blueprint->getState().want_global_filter() && estimated_hit_ratio >= global_filter_limit) {
+    if ( ! _blueprint->getState().want_global_filter()) return;
+
+    LOG(debug, "docid_limit=%d, estimated_hit_ratio=%1.2f, global_filter_lower_limit=%1.2f, global_filter_upper_limit=%1.2f",
+        docid_limit, estimated_hit_ratio, global_filter_lower_limit, global_filter_upper_limit);
+    if (estimated_hit_ratio < global_filter_lower_limit) return;
+
+    if (estimated_hit_ratio <= global_filter_upper_limit) {
         auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
         bool strict = true;
         auto filter_iterator = _blueprint->createFilterSearch(strict, constraint);
@@ -254,12 +260,15 @@ Query::handle_global_filters(uint32_t docid_limit, double global_filter_limit)
         auto white_list = filter_iterator->get_hits(1);
         auto global_filter = GlobalFilter::create(std::move(white_list));
         _blueprint->set_global_filter(*global_filter);
-        // optimized order may change after accounting for global filter:
-        _blueprint = Blueprint::optimize(std::move(_blueprint));
-        LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
-        // strictness may change if optimized order changed:
-        fetchPostings();
+    } else {
+        auto no_filter = GlobalFilter::create();
+        _blueprint->set_global_filter(*no_filter);
     }
+    // optimized order may change after accounting for global filter:
+    _blueprint = Blueprint::optimize(std::move(_blueprint));
+    LOG(debug, "blueprint after handle_global_filters:\n%s\n", _blueprint->asString().c_str());
+    // strictness may change if optimized order changed:
+    fetchPostings();
 }
 
 void

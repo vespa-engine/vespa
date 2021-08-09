@@ -17,10 +17,10 @@ import static org.junit.Assert.assertEquals;
 
 public class FleetControllerClusterTest {
 
-    private ClusterControllerConfig parse(String xml, boolean enableFeedBlockInDistributor) {
+    private ClusterControllerConfig parse(String xml, TestProperties props) {
         Document doc = XML.getDocument(xml);
-        var deployState = new DeployState.Builder().properties(
-                new TestProperties().enableFeedBlockInDistributor(enableFeedBlockInDistributor)).build();
+        var deployState = new DeployState.Builder().properties(props).build();
+        boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
         MockRoot root = new MockRoot("", deployState);
         var clusterElement = new ModelElement(doc.getDocumentElement());
         ModelContext.FeatureFlags featureFlags = new TestProperties();
@@ -37,7 +37,7 @@ public class FleetControllerClusterTest {
     }
 
     private ClusterControllerConfig parse(String xml) {
-        return parse(xml, true);
+        return parse(xml, new TestProperties().enableFeedBlockInDistributor(true));
     }
 
     @Test
@@ -153,20 +153,32 @@ public class FleetControllerClusterTest {
     }
 
     private void verifyThatFeatureFlagControlsEnableClusterFeedBlock(boolean flag) {
-        var config = getConfigForBasicCluster(flag);
+        var config = getConfigForBasicCluster(new TestProperties().enableFeedBlockInDistributor(flag));
         assertEquals(flag, config.enable_cluster_feed_block());
     }
 
-    private FleetcontrollerConfig getConfigForBasicCluster(boolean enableFeedBlockInDistributor) {
+    @Test
+    public void feature_flag_controls_min_node_ratio_per_group() {
+        verifyFeatureFlagControlsMinNodeRatioPerGroup(0.0, new TestProperties());
+        verifyFeatureFlagControlsMinNodeRatioPerGroup(0.3,
+                new TestProperties().setMinNodeRatioPerGroup(0.3));
+    }
+
+    private void verifyFeatureFlagControlsMinNodeRatioPerGroup(double expRatio, TestProperties props) {
+        var config = getConfigForBasicCluster(props);
+        assertEquals(expRatio, config.min_node_ratio_per_group(), DELTA);
+    }
+
+    private FleetcontrollerConfig getConfigForBasicCluster(TestProperties props) {
         var builder = new FleetcontrollerConfig.Builder();
         parse("<cluster id=\"storage\">\n" +
                 "  <documents/>\n" +
-                "</cluster>", enableFeedBlockInDistributor).
+                "</cluster>", props).
                 getConfig(builder);
         return new FleetcontrollerConfig(builder);
     }
 
     private FleetcontrollerConfig getConfigForBasicCluster() {
-        return getConfigForBasicCluster(true);
+        return getConfigForBasicCluster(new TestProperties().enableFeedBlockInDistributor(true));
     }
 }

@@ -963,8 +963,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         DeployState state = new DeployState.Builder().properties(
                 new TestProperties()
                         .setHostedVespa(true)
-                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
-                        .useAccessControlTlsHandshakeClientAuth(true))
+                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
                 .build();
         createModel(root, state, null, clusterElem);
         ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");

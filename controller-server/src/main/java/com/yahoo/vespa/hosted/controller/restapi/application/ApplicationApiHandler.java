@@ -37,6 +37,8 @@ import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -57,6 +59,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -140,6 +143,7 @@ import java.util.OptionalLong;
 import java.util.Scanner;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -165,6 +169,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
     private final TestConfigSerializer testConfigSerializer;
+    private final ListFlag<String> allowedServiceViewProxy;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -174,6 +179,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
+        allowedServiceViewProxy = Flags.ALLOWED_SERVICE_VIEW_APIS.bindTo(controller.flagSource());
     }
 
     @Override
@@ -865,7 +871,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, id);
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all().applications(id));
 
         Slime slime = new Slime();
         Cursor nodesArray = slime.setObject().setArray("nodes");
@@ -1682,6 +1688,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             String[] parts = restPath.split("/status/", 2);
             String result = controller.serviceRegistry().configServer().getServiceStatusPage(deploymentId, serviceName, parts[0], parts[1]);
             return new HtmlResponse(result);
+        }
+
+        String normalizedRestPath = URI.create(restPath).normalize().toString();
+        if (allowedServiceViewProxy.value().stream().noneMatch(normalizedRestPath::startsWith)) {
+            return ErrorResponse.forbidden("Access denied");
         }
 
         Map<?,?> result = controller.serviceRegistry().configServer().getServiceApiResponse(deploymentId, serviceName, restPath);

@@ -43,6 +43,9 @@ public final class NormalizeExpression extends Expression {
     protected void doExecute(ExecutionContext context) {
         Transformer transformer = linguistics.getTransformer();
         var orig = String.valueOf(context.getValue());
+        if (orig.isEmpty()) {
+            return; // must be a no-op for all linguistics/language combinations
+        }
         var lang = context.resolveLanguage(linguistics);
         var transformed = transformer.accentDrop(orig, lang);
         try {
@@ -78,7 +81,7 @@ public final class NormalizeExpression extends Expression {
     public boolean equals(Object o) {
         if (!(o instanceof NormalizeExpression)) return false;
         NormalizeExpression other = (NormalizeExpression)o;
-        if (linguistics != other.linguistics) return false;
+        if (linguistics.getClass() != other.linguistics.getClass()) return false;
         return true;
     }
 

@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
@@ -70,24 +71,51 @@ public class OrchestratorImpl implements Orchestrator {
     private final ApplicationApiFactory applicationApiFactory;
 
     @Inject
-    public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
-                            StatusService statusService,
-                            OrchestratorConfig orchestratorConfig,
-                            ServiceMonitor serviceMonitor,
+    public OrchestratorImpl(OrchestratorConfig orchestratorConfig,
                             ConfigserverConfig configServerConfig,
+                            ClusterControllerClientFactory clusterControllerClientFactory,
+                            StatusService statusService,
+                            ServiceMonitor serviceMonitor,
                             FlagSource flagSource,
                             Zone zone)
     {
+        this(clusterControllerClientFactory,
+             statusService,
+             serviceMonitor,
+             flagSource,
+             zone,
+             Clock.systemUTC(),
+             new ApplicationApiFactory(configServerConfig.zookeeperserver().size(),
+                                       resolveNumProxies(orchestratorConfig, flagSource),
+                                       Clock.systemUTC()),
+             orchestratorConfig.serviceMonitorConvergenceLatencySeconds());
+    }
+
+    private static int resolveNumProxies(OrchestratorConfig orchestratorConfig, FlagSource flagSource) {
+        return Flags.ORCHESTRATE_MISSING_PROXIES.bindTo(flagSource).value() ?
+                orchestratorConfig.numProxies() :
+                0;
+    }
+
+    private OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
+                             StatusService statusService,
+                             ServiceMonitor serviceMonitor,
+                             FlagSource flagSource,
+                             Zone zone,
+                             Clock clock,
+                             ApplicationApiFactory applicationApiFactory,
+                             int serviceMonitorConvergenceLatencySeconds)
+    {
         this(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                    clusterControllerClientFactory,
-                                   new ApplicationApiFactory(configServerConfig.zookeeperserver().size(), Clock.systemUTC())),
-                clusterControllerClientFactory,
-                statusService,
-                serviceMonitor,
-                orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
-                Clock.systemUTC(),
-                new ApplicationApiFactory(configServerConfig.zookeeperserver().size(), Clock.systemUTC()),
-                flagSource);
+                                   applicationApiFactory),
+             clusterControllerClientFactory,
+             statusService,
+             serviceMonitor,
+             serviceMonitorConvergenceLatencySeconds,
+             clock,
+             applicationApiFactory,
+             flagSource);
     }
 
     public OrchestratorImpl(Policy policy,

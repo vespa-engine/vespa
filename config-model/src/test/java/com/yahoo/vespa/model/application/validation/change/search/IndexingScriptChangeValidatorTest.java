@@ -6,6 +6,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
+
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -20,6 +23,13 @@ public class IndexingScriptChangeValidatorTest {
 
         public Fixture(String currentSd, String nextSd) throws Exception {
             super(currentSd, nextSd);
+            validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
+                                                          currentDb().getDerivedConfiguration().getSearch(),
+                                                          nextDb().getDerivedConfiguration().getSearch());
+        }
+
+        public Fixture(String entireSd) throws Exception {
+            super(entireSd);
             validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
                                                           currentDb().getDerivedConfiguration().getSearch(),
                                                           nextDb().getDerivedConfiguration().getSearch());
@@ -174,6 +184,42 @@ public class IndexingScriptChangeValidatorTest {
         assertTrue(new ScriptFixture("{ input foo | switch { case \"audio\": input bar | index; case \"video\": input baz | index; default: 0 | index; }; }",
                 "{ input foo | switch { case \"audio\": input bar | attribute; case \"video\": input baz | attribute; default: 0 | attribute; }; }").
                 validate());
+    }
+
+    @Test
+    public void requireThatNormalizeIsOk() throws Exception {
+        String entireSd = joinLines(
+            "search test {",
+            "  document test {",
+            "    field inside type array<string> {",
+            "      indexing: summary",
+            "    }",
+            "  }",
+            "  field outside type array<string> {",
+            "    indexing: input inside | for_each { normalize } | index outside",
+            "  }",
+            "}");
+        new Fixture(entireSd).assertValidation();
+    }
+
+    @Test
+    public void requireThatNgramIsOk() throws Exception {
+        String entireSd = joinLines(
+            "search test {",
+            "  document test {",
+            "    field inside type string {",
+            "      indexing: index",
+            "      match {",
+            "        gram",
+            "        gram-size: 3",
+            "      }",
+            "    }",
+            "  }",
+            "  field outside type string {",
+            "    indexing: input inside | ngram 2 | index outside",
+            "  }",
+            "}");
+        new Fixture(entireSd).assertValidation();
     }
 
 }

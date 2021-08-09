@@ -13,9 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -95,18 +93,10 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-08-01",
+            List.of("vekterli"), "2020-12-02", "2021-09-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
-    // TODO: Remove when models referring to this are gone in all systems
-    public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
-            "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-08-01",
-            "Allow separate iam roles when provisioning/assigning hosts",
-            "Takes effect immediately on new hosts, on next redeploy for applications",
-            TENANT_ID);
 
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
@@ -130,6 +120,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ORCHESTRATE_MISSING_PROXIES = defineFeatureFlag(
+            "orchestrate-missing-proxies", false,
+            List.of("hakonhall"), "2021-08-05", "2021-10-05",
+            "Whether the Orchestrator can assume any missing proxy services are down.",
+            "Takes effect on first (re)start of config server");
+
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
             List.of("hakon"), "2021-01-22", "2021-08-22",
@@ -139,7 +135,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
-            List.of("hakonhall"), "2021-05-14", "2021-08-05",
+            List.of("hakonhall"), "2021-05-14", "2021-10-05",
             "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
             "Takes effect on next host-admin tick.");
 
@@ -158,7 +154,7 @@ public class Flags {
 
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2021-08-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2021-12-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -176,13 +172,6 @@ public class Flags {
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
-            "enable-custom-acl-mapping", false,
-            List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
-            "Whether access control filters should read acl request mapping from handler or use default",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
 
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
@@ -226,20 +215,6 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
-            "enable-routing-core-dumps", false,
-            List.of("tokle"), "2021-04-16", "2021-08-01",
-            "Whether to enable core dumps for routing layer",
-            "Takes effect on next host-admin tick",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
-            "cfg-deploy-multipart", false,
-            List.of("tokle"), "2021-05-19", "2021-08-01",
-            "Whether to deploy applications using multipart form data (instead of url params)",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundIntFlag MAX_ENCRYPTING_HOSTS = defineIntFlag(
             "max-encrypting-hosts", 0,
             List.of("mpolden", "hakonhall"), "2021-05-27", "2021-10-01",
@@ -255,7 +230,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED = defineFeatureFlag(
             "throw-exception-if-resource-limits-specified", false,
-            List.of("hmusum"), "2021-06-07", "2021-08-07",
+            List.of("hmusum"), "2021-06-07", "2021-09-07",
             "Whether to throw an exception in hosted Vespa if the application specifies resource limits in services.xml",
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
@@ -278,6 +253,20 @@ public class Flags {
             List.of("mpolden"), "2021-07-05", "2021-09-01",
             "Whether to use Podman 3 on supported hosts",
             "Takes effect on host-admin restart");
+
+    public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
+            "min-node-ratio-per-group", 0.0,
+            List.of("geirst", "vekterli"), "2021-07-16", "2021-10-01",
+            "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundListFlag<String> ALLOWED_SERVICE_VIEW_APIS = defineListFlag(
+            "allowed-service-view-apis", List.of("state/v1/"), String.class,
+            List.of("mortent"), "2021-08-05", "2021-11-01",
+            "Apis allowed to proxy through the service view api",
+            "Takes effect immediately");
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

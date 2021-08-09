@@ -296,7 +296,7 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
     } else {
         const DataType *existing_retry = repo.lookup(id);
         LOG(spam, "Type %s not found, adding it", name.c_str());
-        struct_type_ap.reset(new StructDataType(name, id));
+        struct_type_ap = std::make_unique<StructDataType>(name, id);
         struct_type = struct_type_ap.get();
         repo.addDataType(std::move(struct_type_ap));
         if (existing_retry) {
@@ -319,18 +319,18 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
 
 void addArray(int32_t id, const Datatype::Array &a, Repo &repo) {
     const DataType &nested = repo.findOrThrow(a.element.id);
-    repo.addDataType(DataType::UP(new ArrayDataType(nested, id)));
+    repo.addDataType(std::make_unique<ArrayDataType>(nested, id));
 }
 
 void addWset(int32_t id, const Datatype::Wset &w, Repo &repo) {
     const DataType &key = repo.findOrThrow(w.key.id);
-    repo.addDataType(DataType::UP(new WeightedSetDataType(key, w.createifnonexistent, w.removeifzero, id)));
+    repo.addDataType(std::make_unique<WeightedSetDataType>(key, w.createifnonexistent, w.removeifzero, id));
 }
 
 void addMap(int32_t id, const Datatype::Map &m, Repo &repo) {
     const DataType &key = repo.findOrThrow(m.key.id);
     const DataType &value = repo.findOrThrow(m.value.id);
-    repo.addDataType(DataType::UP(new MapDataType(key, value, id)));
+    repo.addDataType(std::make_unique<MapDataType>(key, value, id));
 }
 
 void addAnnotationRef(int32_t id, const Datatype::Annotationref &a, Repo &r, const AnnotationTypeRepo &annotations) {
@@ -338,7 +338,7 @@ void addAnnotationRef(int32_t id, const Datatype::Annotationref &a, Repo &r, con
     if (!type) {
         throw IllegalArgumentException(make_string("Unknown AnnotationType %d", a.annotation.id));
     }
-    r.addDataType(DataType::UP(new AnnotationReferenceDataType(*type, id)));
+    r.addDataType(std::make_unique<AnnotationReferenceDataType>(*type, id));
 }
 
 void addDataType(const Datatype &type, Repo &repo, const AnnotationTypeRepo &a_repo) {
@@ -372,7 +372,7 @@ void addDocumentTypes(const DocumentTypeMap &type_map, Repo &repo) {
 
 const DocumentType *
 addDefaultDocument(DocumentTypeMap &type_map) {
-    DataTypeRepo::UP data_types(new DataTypeRepo);
+    auto data_types = std::make_unique<DataTypeRepo>();
     vector<const DataType *> default_types = DataType::getDefaultDataTypes();
     for (size_t i = 0; i < default_types.size(); ++i) {
         data_types->repo.addDataType(*default_types[i]);
@@ -425,7 +425,7 @@ void inheritDocumentTypes(const vector<DocumenttypesConfig::Documenttype::Inheri
 }
 
 DataTypeRepo::UP makeDataTypeRepo(const DocumentType &doc_type, const DocumentTypeMap &type_map) {
-    DataTypeRepo::UP data_types(new DataTypeRepo);
+    auto data_types = std::make_unique<DataTypeRepo>();
     data_types->repo.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).repo);
     data_types->annotations.inherit(lookupRepo(DataType::T_DOCUMENT, type_map).annotations);
     data_types->doc_type = doc_type.clone();
@@ -483,7 +483,7 @@ void addDataTypeRepo(DataTypeRepo::UP data_types, DocumentTypeMap &doc_types) {
 }
 
 DataTypeRepo::UP makeSkeletonDataTypeRepo(const DocumenttypesConfig::Documenttype &type) {
-    DataTypeRepo::UP data_types(new DataTypeRepo);
+    auto data_types = std::make_unique<DataTypeRepo>();
     auto type_ap = std::make_unique<StructDataType>(type.name + ".header", type.headerstruct);
     data_types->doc_type = new DocumentType(type.name, type.id, *type_ap);
     data_types->repo.addDataType(std::move(type_ap));

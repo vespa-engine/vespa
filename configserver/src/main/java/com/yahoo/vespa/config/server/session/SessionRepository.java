@@ -513,8 +513,7 @@ public class SessionRepository {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
-                // Sessions with state other than ACTIVATE
-                if (hasExpired(candidate) && !isActiveSession(candidate)) {
+                if (hasExpired(candidate) && canBeDeleted(candidate)) {
                     toDelete.add(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
                     //  Sessions with state ACTIVATE, but which are not actually active
@@ -544,6 +543,11 @@ public class SessionRepository {
 
     private boolean isActiveSession(Session candidate) {
         return candidate.getStatus() == Session.Status.ACTIVATE;
+    }
+
+    // Sessions with state other than UNKNOWN or ACTIVATE
+    private boolean canBeDeleted(Session candidate) {
+        return  ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus());
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {

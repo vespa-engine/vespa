@@ -9,6 +9,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -69,7 +70,7 @@ public class VersionStatusTest {
         Version version1 = Version.fromString("6.5");
         // Upgrade some config servers
         for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), NodeFilter.all().applications(SystemApplication.configServer.id()))) {
                 Node upgradedNode = Node.builder(node).currentVersion(version1).build();
                 tester.configServer().nodeRepository().putNodes(zone.getId(), upgradedNode);
                 break;
@@ -113,7 +114,7 @@ public class VersionStatusTest {
         // Downgrade one config server in each zone
         Version ancientVersion = Version.fromString("5.1");
         for (ZoneApi zone : tester.controller().zoneRegistry().zones().all().zones()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), NodeFilter.all().applications(SystemApplication.configServer.id()))) {
                 Node downgradedNode = Node.builder(node).currentVersion(ancientVersion).build();
                 tester.configServer().nodeRepository().putNodes(zone.getId(), downgradedNode);
                 break;

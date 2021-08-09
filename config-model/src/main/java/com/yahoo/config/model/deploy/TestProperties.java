@@ -49,7 +49,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
     private Quota quota = Quota.unlimited();
-    private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
@@ -66,6 +65,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
     private double resourceLimitMemory = 0.8;
+    private double minNodeRatioPerGroup = 0.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -93,7 +93,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
-    @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
@@ -111,6 +110,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+    @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
 
     public TestProperties setDryRunOnnxOnSetup(boolean value) {
         dryRunOnnxOnSetup = value;
@@ -224,11 +224,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties useAccessControlTlsHandshakeClientAuth(boolean useAccessControlTlsHandshakeClientAuth) {
-        this.useAccessControlTlsHandshakeClientAuth = useAccessControlTlsHandshakeClientAuth;
-        return this;
-    }
-
     public TestProperties enableFeedBlockInDistributor(boolean enabled) {
         enableFeedBlockInDistributor = enabled;
         return this;
@@ -271,6 +266,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitMemory(double value) {
         this.resourceLimitMemory = value;
+        return this;
+    }
+
+    public TestProperties setMinNodeRatioPerGroup(double value) {
+        this.minNodeRatioPerGroup = value;
         return this;
     }
 

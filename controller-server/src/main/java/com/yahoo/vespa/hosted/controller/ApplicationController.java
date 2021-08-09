@@ -36,6 +36,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -80,7 +81,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -277,8 +277,9 @@ public class ApplicationController {
     /** Reads the oldest installed platform for the given application and zone from the node repo of that zone. */
     private Optional<Version> oldestInstalledPlatform(JobId job) {
         return configServer.nodeRepository().list(job.type().zone(controller.system()),
-                                                  job.application(),
-                                                  EnumSet.of(active, reserved))
+                                                  NodeFilter.all()
+                                                            .applications(job.application())
+                                                            .states(active, reserved))
                            .stream()
                            .map(Node::currentVersion)
                            .filter(version -> ! version.isEmpty())

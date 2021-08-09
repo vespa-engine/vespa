@@ -9,6 +9,7 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
+import com.yahoo.vespa.orchestrator.policy.ApplicationParams;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.ApplicationLock;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
@@ -38,13 +39,13 @@ public class ApplicationApiImpl implements ApplicationApi {
     public ApplicationApiImpl(NodeGroup nodeGroup,
                               ApplicationLock lock,
                               ClusterControllerClientFactory clusterControllerClientFactory,
-                              int numberOfConfigServers, Clock clock) {
+                              ApplicationParams params, Clock clock) {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
         this.lock = lock;
         this.clock = clock;
         this.hostInfos = lock.getHostInfos();
-        this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
+        this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, params);
     }
 
     @Override
@@ -113,7 +114,7 @@ public class ApplicationApiImpl implements ApplicationApi {
     private List<ClusterApi> makeClustersInOrder(NodeGroup nodeGroup,
                                                  HostInfos hostInfos,
                                                  ClusterControllerClientFactory clusterControllerClientFactory,
-                                                 int numberOfConfigServers) {
+                                                 ApplicationParams params) {
         Set<ServiceCluster> clustersInGroup = getServiceClustersInGroup(nodeGroup);
         return clustersInGroup.stream()
                 .map(serviceCluster -> new ClusterApiImpl(
@@ -122,7 +123,7 @@ public class ApplicationApiImpl implements ApplicationApi {
                         nodeGroup,
                         hostInfos,
                         clusterControllerClientFactory,
-                        numberOfConfigServers,
+                        params.clusterParamsFor(serviceCluster.clusterId(), serviceCluster.serviceType()),
                         clock))
                 .sorted(ApplicationApiImpl::compareClusters)
                 .collect(Collectors.toList());

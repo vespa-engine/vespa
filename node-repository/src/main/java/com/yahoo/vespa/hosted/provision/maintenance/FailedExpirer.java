@@ -42,9 +42,6 @@ import java.util.stream.Collectors;
 public class FailedExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
-    // Try recycling nodes until reaching this many failures
-    // TODO: Consider removing this altogether as this effectively always recycles nodes
-    private static final int maxAllowedFailures = 50;
 
     private final NodeRepository nodeRepository;
     private final Duration statefulExpiry; // Stateful nodes: Grace period to allow recovery of data
@@ -107,16 +104,11 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                                            "unparked children: %s", candidate.hostname(),
                                            String.join(", ", unparkedChildren)));
                 }
-            } else if (!failCountIndicatesHardwareIssue(candidate)) {
+            } else {
                 nodesToRecycle.add(candidate);
             }
         }
         nodeRepository.nodes().deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
-    }
-
-    /** Returns whether the current node fail count should be used as an indicator of hardware issue */
-    private boolean failCountIndicatesHardwareIssue(Node node) {
-        return node.type().isHost() && node.status().failCount() >= maxAllowedFailures;
     }
 
 }

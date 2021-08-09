@@ -10,6 +10,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -140,7 +141,7 @@ public class OsApiTest extends ControllerContainerTest {
         for (ZoneId zone : zones) {
             for (SystemApplication application : SystemApplication.all()) {
                 var targetVersion = nodeRepository().targetVersionsOf(zone).osVersion(application.nodeType());
-                for (Node node : nodeRepository().list(zone, application.id())) {
+                for (Node node : nodeRepository().list(zone, NodeFilter.all().applications(application.id()))) {
                     var version = targetVersion.orElse(node.wantedOsVersion());
                     nodeRepository().putNodes(zone, Node.builder(node).currentOsVersion(version).wantedOsVersion(version).build());
                 }

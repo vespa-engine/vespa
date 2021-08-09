@@ -172,7 +172,6 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
-        private final boolean enableCustomAclMapping;
         private final boolean useExternalRankExpression;
         private final boolean distributeExternalRankExpressions;
         private final int numDistributorStripes;
@@ -184,6 +183,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean dryRunOnnxOnSetup;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final double minNodeRatioPerGroup;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -201,7 +201,6 @@ public class ModelContextImpl implements ModelContext {
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
-            this.enableCustomAclMapping = flagValue(source, appId, Flags.ENABLE_CUSTOM_ACL_MAPPING);
             this.numDistributorStripes = flagValue(source, appId, Flags.NUM_DISTRIBUTOR_STRIPES);
             this.useExternalRankExpression = flagValue(source, appId, Flags.USE_EXTERNAL_RANK_EXPRESSION);
             this.distributeExternalRankExpressions = flagValue(source, appId, Flags.DISTRIBUTE_EXTERNAL_RANK_EXPRESSION);
@@ -213,6 +212,7 @@ public class ModelContextImpl implements ModelContext {
             this.dryRunOnnxOnSetup = flagValue(source, appId, Flags.DRY_RUN_ONNX_ON_SETUP);
             this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
             this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
+            this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -232,7 +232,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
             return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
         }
-        @Override public boolean enableCustomAclMapping() { return enableCustomAclMapping; }
         @Override public int numDistributorStripes() { return numDistributorStripes; }
         @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
         @Override public boolean distributeExternalRankExpressions() { return distributeExternalRankExpressions; }
@@ -244,6 +243,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+        @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

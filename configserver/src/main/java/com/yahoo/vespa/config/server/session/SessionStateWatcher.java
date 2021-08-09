@@ -45,9 +45,12 @@ public class SessionStateWatcher {
 
     private synchronized void sessionStatusChanged(Status newStatus) {
         long sessionId = session.getSessionId();
+
+        log.fine("Session " + sessionId + " for " + session.getApplicationId() + " changed: " + newStatus);
+
         switch (newStatus) {
             case NEW:
-            case NONE:
+            case UNKNOWN:
                 break;
             case DELETE:
                 sessionRepository.deactivateAndUpdateCache(session);
@@ -66,6 +69,8 @@ public class SessionStateWatcher {
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
+
+        log.fine("Session " + sessionId + " for " + session.getApplicationId() + " changed: " + newStatus + " [DONE]");
     }
 
     private void createLocalSession(long sessionId) {
@@ -86,7 +91,7 @@ public class SessionStateWatcher {
 
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
-            Status newStatus = Status.NONE;
+            Status newStatus = Status.UNKNOWN;
             try {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {

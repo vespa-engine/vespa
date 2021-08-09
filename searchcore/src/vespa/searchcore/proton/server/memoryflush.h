@@ -44,6 +44,7 @@ public:
                    (maxTimeGain == rhs.maxTimeGain) &&
                    (diskBloatFactor == rhs. diskBloatFactor);
         }
+        vespalib::string toString() const;
     };
 
     enum OrderType { DEFAULT, MAXAGE, DISKBLOAT, TLSSIZE, MEMORY };

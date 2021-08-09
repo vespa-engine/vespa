@@ -16,6 +16,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
@@ -278,10 +279,9 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     }
 
     private Optional<ZoneId> affectedZone(List<String> hosts) {
-        var affectedHosts = hosts.stream()
-                .map(HostName::from)
-                .collect(Collectors.toList());
-
+        NodeFilter affectedHosts = NodeFilter.all().hostnames(hosts.stream()
+                                                                   .map(HostName::from)
+                                                                   .collect(Collectors.toSet()));
         for (var zone : getProdZones()) {
             var affectedHostsInZone = controller.serviceRegistry().configServer().nodeRepository().list(zone, affectedHosts);
             if (!affectedHostsInZone.isEmpty())
@@ -293,7 +293,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     private List<String> hostsOnSwitch(List<String> switches) {
         return getProdZones().stream()
-                .flatMap(zone -> controller.serviceRegistry().configServer().nodeRepository().list(zone, false).stream())
+                .flatMap(zone -> controller.serviceRegistry().configServer().nodeRepository().list(zone, NodeFilter.all()).stream())
                 .filter(node -> node.switchHostname().map(switches::contains).orElse(false))
                 .map(node -> node.hostname().value())
                 .collect(Collectors.toList());

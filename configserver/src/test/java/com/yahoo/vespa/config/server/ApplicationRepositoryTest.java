@@ -456,15 +456,21 @@ public class ApplicationRepositoryTest {
 
         // Create a session without any data in zookeeper (corner case seen in production occasionally)
         // and check that expiring sessions still work
+        // TODO: Not handled now, needs to be fixed if still a valid scenario
         int sessionId = 6;
         TenantName tenantName = tester.tenant().getName();
         Files.createDirectory(new TenantFileSystemDirs(serverdb, tenantName).getUserApplicationDir(sessionId).toPath());
         Session localSession2 = sessionRepository.createRemoteSession(sessionId, Optional.of(FilesApplicationPackage.fromFile(testApp)));
         assertEquals(2, sessionRepository.getRemoteSessions().size());
 
+        // Create a session, set status to UNKNOWN, we don't want to expire those (creation time is then EPOCH,
+        // so will be candidate for expiry)
+        Session session = sessionRepository.createRemoteSession(7, Optional.empty());
+        sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN);
+
         // Check that trying to expire local session when there exists a local session with no zookeeper data works
         tester.applicationRepository().deleteExpiredSessions();
-        assertEquals(1, sessionRepository.getRemoteSessions().size());
+        assertEquals(3, sessionRepository.getRemoteSessions().size());
 
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredSessions();

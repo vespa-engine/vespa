@@ -375,6 +375,7 @@ public class Node {
         bareMetal,
         virtualMachine,
         dockerContainer,
+        unknown,
     }
 
     /** A node event */
@@ -450,7 +451,7 @@ public class Node {
         private DockerImage wantedDockerImage = DockerImage.EMPTY;
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
-        private ServiceState serviceState = ServiceState.unknown;
+        private ServiceState serviceState = ServiceState.expectedUp;
         private Optional<Instant> suspendedSince = Optional.empty();
         private long restartGeneration = 0;
         private long wantedRestartGeneration = 0;
@@ -475,7 +476,7 @@ public class Node {
         private Set<String> additionalHostnames = Set.of();
         private Optional<String> switchHostname = Optional.empty();
         private Optional<String> modelName = Optional.empty();
-        private Environment environment = Environment.bareMetal;
+        private Environment environment = Environment.unknown;
 
         private Builder() {}
 

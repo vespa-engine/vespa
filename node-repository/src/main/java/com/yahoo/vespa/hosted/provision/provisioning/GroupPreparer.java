@@ -81,7 +81,8 @@ public class GroupPreparer {
                                                                                                                         hostType,
                                                                                                                         deficit.resources(),
                                                                                                                         application, osVersion,
-                                                                                                                        sharing))
+                                                                                                                        sharing,
+                                                                                                                        Optional.of(cluster.type())))
                                                                    .orElseGet(List::of);
 
                 // At this point we have started provisioning of the hosts, the first priority is to make sure that

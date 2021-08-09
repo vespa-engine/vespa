@@ -60,6 +60,10 @@ public class TestLinguistics implements Linguistics {
         return linguistics.getCharacterClasses();
     }
 
+    public boolean equals(Linguistics other) {
+        return (other instanceof TestLinguistics);
+    }
+
 }
 
 

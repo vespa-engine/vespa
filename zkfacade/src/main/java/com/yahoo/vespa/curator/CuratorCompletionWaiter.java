@@ -1,14 +1,14 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import java.util.ArrayList;
-import java.util.logging.Level;
 import com.yahoo.path.Path;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Implementation of a Barrier that handles the case where more than number of members can call synchronize. If
@@ -55,13 +55,14 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     private List<String> awaitInternal(Duration timeout) throws Exception {
         Instant startTime = clock.instant();
         Instant endTime = startTime.plus(timeout);
+
         List<String> respondents = new ArrayList<>();
         do {
             respondents.clear();
             respondents.addAll(curator.framework().getChildren().forPath(barrierPath));
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
-                                    respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
+            if (log.isLoggable(Level.FINER)) {
+                log.log(Level.FINER, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
+                                     respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
             }
 
             // First, check if all config servers responded
@@ -110,6 +111,7 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
 
     public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id) {
         Path waiterPath = parentPath.append(waiterNode);
+        log.fine("Recreating ZK path: " + waiterPath);
         curator.delete(waiterPath);
         curator.createAtomically(waiterPath);
         return new CuratorCompletionWaiter(curator, waiterPath.getAbsolute(), id, Clock.systemUTC());

@@ -70,4 +70,6 @@ public class SimpleLinguistics implements Linguistics {
     @Override
     public CharacterClasses getCharacterClasses() { return characterClasses; }
 
+    @Override
+    public boolean equals(Linguistics other) { return (other instanceof SimpleLinguistics); }
 }

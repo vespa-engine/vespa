@@ -210,7 +210,8 @@
       "public abstract com.yahoo.language.process.Segmenter getSegmenter()",
       "public abstract com.yahoo.language.detect.Detector getDetector()",
       "public abstract com.yahoo.language.process.GramSplitter getGramSplitter()",
-      "public abstract com.yahoo.language.process.CharacterClasses getCharacterClasses()"
+      "public abstract com.yahoo.language.process.CharacterClasses getCharacterClasses()",
+      "public abstract boolean equals(com.yahoo.language.Linguistics)"
     ],
     "fields": []
   },
