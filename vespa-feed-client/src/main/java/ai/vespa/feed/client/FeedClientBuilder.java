@@ -37,7 +37,7 @@ public class FeedClientBuilder {
     int connectionsPerEndpoint = 4;
     int maxStreamsPerConnection = 4096;
     FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
-    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(1), Duration.ofMinutes(10));
+    FeedClient.CircuitBreaker circuitBreaker = new GracePeriodCircuitBreaker(Duration.ofSeconds(10), Duration.ofMinutes(10));
     Path certificateFile;
     Path privateKeyFile;
     Path caCertificatesFile;
