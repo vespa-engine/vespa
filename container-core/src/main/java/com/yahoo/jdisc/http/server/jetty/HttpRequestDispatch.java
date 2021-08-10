@@ -13,8 +13,13 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
+import org.eclipse.jetty.http2.ErrorCode;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
+import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EofException;
+import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.Callback;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletInputStream;
@@ -35,7 +40,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
-import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getHttp1Connection;
 import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
@@ -72,7 +76,7 @@ class HttpRequestDispatch {
                                                                        jDiscContext.janitor,
                                                                        metricReporter,
                                                                        jDiscContext.developerMode());
-        markHttp1ConnectionAsNonPersistentIfThresholdReached(jettyRequest);
+        shutdownConnectionGracefullyIfThresholdReached(jettyRequest);
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
         metricReporter.uriLength(jettyRequest.getOriginalURI().length());
@@ -143,24 +147,34 @@ class HttpRequestDispatch {
         };
     }
 
-    private static void markHttp1ConnectionAsNonPersistentIfThresholdReached(Request request) {
+    private static void shutdownConnectionGracefullyIfThresholdReached(Request request) {
         ConnectorConfig connectorConfig = getConnector(request).connectorConfig();
         int maxRequestsPerConnection = connectorConfig.maxRequestsPerConnection();
+        Connection connection = RequestUtils.getConnection(request);
         if (maxRequestsPerConnection > 0) {
-            getHttp1Connection(request).ifPresent(connection -> {
-                if (connection.getMessagesIn() >= maxRequestsPerConnection) {
-                    connection.getGenerator().setPersistent(false);
-                }
-            });
+            if (connection.getMessagesIn() >= maxRequestsPerConnection) {
+                gracefulShutdown(connection, "max-req-per-conn-exceeded");
+            }
         }
         double maxConnectionLifeInSeconds = connectorConfig.maxConnectionLife();
         if (maxConnectionLifeInSeconds > 0) {
-            getHttp1Connection(request).ifPresent(connection -> {
-                Instant expireAt = Instant.ofEpochMilli((long) (connection.getCreatedTimeStamp() + maxConnectionLifeInSeconds * 1000));
-                if (Instant.now().isAfter(expireAt)) {
-                    connection.getGenerator().setPersistent(false);
-                }
-            });
+            long createdAt = connection.getCreatedTimeStamp();
+            Instant expiredAt = Instant.ofEpochMilli((long) (createdAt + maxConnectionLifeInSeconds * 1000));
+            boolean isExpired = Instant.now().isAfter(expiredAt);
+            if (isExpired) {
+                gracefulShutdown(connection, "max-conn-life-exceeded");
+            }
+        }
+    }
+
+    private static void gracefulShutdown(Connection connection, String reason) {
+        if (connection instanceof HttpConnection) {
+            HttpConnection http1 = (HttpConnection) connection;
+            http1.getGenerator().setPersistent(false);
+        } else if (connection instanceof HTTP2ServerConnection) {
+            HTTP2ServerConnection http2 = (HTTP2ServerConnection) connection;
+            // Signal Jetty to do a graceful connection shutdown with GOAWAY frame
+            http2.getSession().close(ErrorCode.NO_ERROR.code, reason, Callback.NOOP);
         }
     }
 
