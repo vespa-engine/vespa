@@ -21,9 +21,8 @@ LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end()) {
         PerService & psd = iter->second;
-        if (psd.mapping.spec == mapping.spec) {
-            return &psd;
-        }
+        LOG_ASSERT(psd.mapping.spec == mapping.spec);
+        return &psd;
     }
     return nullptr;
 }
