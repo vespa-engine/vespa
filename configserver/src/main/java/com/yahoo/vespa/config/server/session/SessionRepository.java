@@ -356,10 +356,15 @@ public class SessionRepository {
     public void sessionAdded(long sessionId) {
         if (hasStatusDeleted(sessionId)) return;
 
-        log.log(Level.FINE, () -> "Adding remote session " + sessionId);
-        Session session = createRemoteSession(sessionId, Optional.empty());
+        log.log(Level.INFO, () -> "Adding remote session " + sessionId);
+        Session session = remoteSessionCache.get(sessionId);
+        log.log(Level.INFO, "Remote session " + session);
+        if (session == null)
+             session = createRemoteSession(sessionId, Optional.empty());
+        log.log(Level.INFO, "Remote session " + session);
         if (session.getStatus() == Session.Status.NEW) {
-            log.log(Level.FINE, () -> session.logPre() + "Confirming upload for session " + sessionId);
+            final Session logSession = session;
+            log.log(Level.FINE, () -> logSession.logPre() + "Confirming upload for session " + sessionId);
             confirmUpload(session);
         }
         createSessionFromDistributedApplicationPackage(sessionId);
@@ -800,8 +805,7 @@ public class SessionRepository {
 
     private void checkForAddedSessions(List<Long> sessions) {
         for (Long sessionId : sessions)
-            if (remoteSessionCache.get(sessionId) == null)
-                sessionAdded(sessionId);
+            sessionAdded(sessionId);
     }
 
     public Transaction createActivateTransaction(Session session) {

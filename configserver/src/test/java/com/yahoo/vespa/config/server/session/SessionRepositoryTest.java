@@ -184,11 +184,13 @@ public class SessionRepositoryTest {
 
         // Create a session with invalid data and set active session for application to this session
         String sessionIdString = "3";
+
+        Path applicationsPath = TenantRepository.getApplicationsPath(tenantName);
+        curator.set(applicationsPath.append(applicationId.serializedForm()), Utf8.toBytes(sessionIdString));
+
         Path sessionPath = TenantRepository.getSessionsPath(tenantName).append(sessionIdString);
         curator.create(sessionPath);
         curator.set(sessionPath.append("applicationId"), new byte[0]); // Invalid data
-        Path applicationsPath = TenantRepository.getApplicationsPath(tenantName);
-        curator.set(applicationsPath.append(applicationId.serializedForm()), Utf8.toBytes(sessionIdString));
 
         expectedException.expectMessage("Could not load remote session " + sessionIdString);
         expectedException.expect(RuntimeException.class);
