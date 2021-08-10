@@ -97,6 +97,17 @@ struct CreateVespaTensor {
     }
 };
 
+struct ClearVespaTensor {
+    template <typename CT> static void invoke(const Value &value) {
+        auto cells = unconstify(value.cells().typify<CT>());
+        std::fill(cells.begin(), cells.end(), CT{});
+    }
+    void operator()(const Value &value) {
+        return typify_invoke<1,TypifyCellType,ClearVespaTensor>(value.type().cell_type(), value);
+    }
+};
+ClearVespaTensor clear_vespa_tensor;
+
 //-----------------------------------------------------------------------------
 
 template <typename E> vespalib::string type_name(E enum_value) {
@@ -202,7 +213,7 @@ std::vector<int64_t> extract_sizes(const ValueType &type) {
     return sizes;
 }
 
-}
+} // <unnamed>
 
 vespalib::string
 Onnx::DimSize::as_string() const
@@ -485,6 +496,14 @@ Onnx::EvalContext::eval()
                 _model._output_name_refs.data(), _result_values.data(), _result_values.size());
     for (const auto &entry: _result_converters) {
         entry.second(*this, entry.first);
+    }
+}
+
+void
+Onnx::EvalContext::clear_results()
+{
+    for (const Value::UP &result: _results) {
+        clear_vespa_tensor(*result);
     }
 }
 

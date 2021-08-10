@@ -134,6 +134,7 @@ public:
         size_t num_results() const { return _result_values.size(); }
         void bind_param(size_t i, const Value &param);
         void eval();
+        void clear_results();
         const Value &get_result(size_t i) const;
     };
 
