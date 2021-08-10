@@ -83,15 +83,7 @@ BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-openssl-devel >= 1.1.1k-1
-%if 0%{?centos}
-%if 0%{?amzn2}
-BuildRequires: vespa-protobuf-devel = 3.7.0-5.amzn2
-%else
-BuildRequires: vespa-protobuf-devel = 3.7.0-4.el7
-%endif
-%else
-BuildRequires: vespa-protobuf-devel = 3.7.0-5.el7
-%endif
+BuildRequires: vespa-protobuf-devel = 3.17.3
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
@@ -116,7 +108,7 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-protobuf-devel = 3.7.0-5.el8
+BuildRequires: vespa-protobuf-devel = 3.17.3
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?fedora}
@@ -352,15 +344,7 @@ Requires: %{name}-base-libs = %{version}-%{release}
 Requires: llvm7.0-libs
 Requires: vespa-icu >= 65.1.0-1
 Requires: vespa-openssl >= 1.1.1k-1
-%if 0%{?centos}
-%if 0%{?amzn2}
-Requires: vespa-protobuf = 3.7.0-5.amzn2
-%else
-Requires: vespa-protobuf = 3.7.0-4.el7
-%endif
-%else
-Requires: vespa-protobuf = 3.7.0-5.el7
-%endif
+Requires: vespa-protobuf = 3.17.3
 %else
 Requires: libicu
 Requires: openssl-libs
@@ -375,7 +359,7 @@ Requires: (llvm-libs >= 11.0.0 and llvm-libs < 12)
 %else
 Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
 %endif
-Requires: vespa-protobuf = 3.7.0-5.el8
+Requires: vespa-protobuf = 3.17.3
 %endif
 %if 0%{?fedora}
 Requires: protobuf
