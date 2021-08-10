@@ -21,7 +21,7 @@ LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end()) {
         PerService & psd = iter->second;
-        LOG_ASSERT(psd.mapping.spec == mapping.spec);
+        LOG_ASSERT(psd.spec() == mapping.spec);
         return &psd;
     }
     return nullptr;
@@ -37,25 +37,26 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
     auto old = _map.find(mapping.name);
     if (old != _map.end()) {
         PerService & exists = old->second;
-        if (exists.mapping.spec == mapping.spec) {
+        if (exists.spec() == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
             return;
         }
         LOG(warning, "added mapping %s->%s, but already had conflicting mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str(),
-            exists.mapping.name.c_str(), exists.mapping.spec.c_str());
+            exists.name().c_str(), exists.spec().c_str());
         if (exists.up) {
-            _history.remove(exists.mapping);
+            _history.remove(exists.mapping());
         }
         _map.erase(old);
     }
-    auto [ iter, was_inserted ] = _map.try_emplace(mapping.name, mapping);
+    auto [ iter, was_inserted ] =
+        _map.try_emplace(mapping.name,
+                         false,
+                         std::make_unique<ManagedRpcServer>(mapping.name,
+                                                            mapping.spec,
+                                                            *this));
     LOG_ASSERT(was_inserted);
-    PerService & fill = iter->second;
-    fill.srv = std::make_unique<ManagedRpcServer>(mapping.name,
-                                                  mapping.spec,
-                                                  *this);
 }
 
 void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
@@ -63,14 +64,14 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
     if (iter != _map.end()) {
         LOG(debug, "remove: mapping %s->%s", mapping.name.c_str(), mapping.spec.c_str());
         PerService & exists = iter->second;
-        if (mapping.spec != exists.mapping.spec) {
+        if (mapping.spec != exists.spec()) {
             LOG(warning, "inconsistent specs for name '%s': had '%s', but was asked to remove '%s'",
                 mapping.name.c_str(),
-                exists.mapping.spec.c_str(),
+                exists.spec().c_str(),
                 mapping.spec.c_str());
         }
         if (exists.up) {
-            _history.remove(exists.mapping);
+            _history.remove(exists.mapping());
         }
         _map.erase(iter);
     } else {

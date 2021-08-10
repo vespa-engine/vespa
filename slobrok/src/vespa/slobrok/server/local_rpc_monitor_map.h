@@ -27,9 +27,11 @@ class LocalRpcMonitorMap : public IRpcServerManager,
 {
 private:
     struct PerService {
-        const ServiceMapping mapping;
-        bool up = false;
-        std::unique_ptr<ManagedRpcServer> srv = {};
+        bool up;
+        std::unique_ptr<ManagedRpcServer> srv;
+        vespalib::string name() { return srv->getName(); }
+        vespalib::string spec() { return srv->getSpec(); }
+        ServiceMapping mapping() { return ServiceMapping{srv->getName(), srv->getSpec()}; }
     };
 
     using Map = std::map<vespalib::string, PerService>;
