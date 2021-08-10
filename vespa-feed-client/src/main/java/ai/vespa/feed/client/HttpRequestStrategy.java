@@ -239,13 +239,13 @@ class HttpRequestStrategy implements RequestStrategy {
     @Override
     public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) {
         RetriableFuture<HttpResponse> result = new RetriableFuture<>(); // Carries the aggregate result of the operation, including retries.
-        CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
-        RetriableFuture<HttpResponse> previous = inflightById.put(documentId, result);
         if (destroyed.get()) {
             result.complete();
             return result;
         }
 
+        CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
+        RetriableFuture<HttpResponse> previous = inflightById.put(documentId, result);
         if (previous == null) {
             acquireSlot();
             offer(request, vessel);
