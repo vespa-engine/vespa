@@ -28,7 +28,7 @@ LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     return nullptr;
 }
 
-ServiceMapHistory & LocalRpcMonitorMap::localHistory() {
+ServiceMapHistory & LocalRpcMonitorMap::history() {
     return _history;
 }
 

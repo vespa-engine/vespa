@@ -79,7 +79,7 @@ public:
     }
 
     ServiceMapHistory& localHistory() {
-        return _localRpcMonitorMap.localHistory();
+        return _localRpcMonitorMap.history();
     }
 
     const std::string & mySpec() const { return _me; }

@@ -37,7 +37,6 @@ private:
     Map _map;
     ServiceMapHistory _history;
     FRT_Supervisor &_supervisor;
-    vespalib::GenCnt _genFromGlobal;
 
     PerService * lookup(const ServiceMapping &mapping);
     
@@ -45,7 +44,7 @@ public:
     LocalRpcMonitorMap(FRT_Supervisor &_supervisor);
     ~LocalRpcMonitorMap();
 
-    ServiceMapHistory & localHistory();
+    ServiceMapHistory & history();
 
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
