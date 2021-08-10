@@ -76,12 +76,11 @@ void indexFeature(PredicateIndex &attr, uint32_t doc_id, int min_feature,
                   const vector<pair<uint64_t, IntervalWithBounds>> &bounds) {
     PredicateTreeAnnotations annotations(min_feature);
     for (auto &p : intervals) {
-        annotations.interval_map[p.first] = std::vector<Interval>{{p.second}};
+        annotations.interval_map[p.first] = vector<Interval>{{p.second}};
         annotations.features.push_back(p.first);
     }
     for (auto &p : bounds) {
-        annotations.bounds_map[p.first] =
-            std::vector<IntervalWithBounds>{{p.second}};
+        annotations.bounds_map[p.first] = vector<IntervalWithBounds>{{p.second}};
         annotations.features.push_back(p.first);
     }
     attr.indexDocument(doc_id, annotations);
@@ -116,8 +115,7 @@ TEST("require that PredicateIndex can index document") {
     auto posting_it = lookupPosting(index, hash);
     EXPECT_EQUAL(doc_id, posting_it.getKey());
     uint32_t size;
-    const auto &interval_list =
-        index.getIntervalStore().get(posting_it.getData(), size, &single_buf);
+    const auto &interval_list = index.getIntervalStore().get(posting_it.getData(), size, &single_buf);
     ASSERT_EQUAL(1u, size);
     EXPECT_EQUAL(interval, interval_list[0]);
 }
@@ -159,14 +157,12 @@ TEST("require that PredicateIndex can index document with bounds") {
 
     uint32_t size;
     IntervalWithBounds single;
-    const auto &interval_list =
-        index.getIntervalStore().get(posting_it.getData(), size, &single);
+    const auto &interval_list = index.getIntervalStore().get(posting_it.getData(), size, &single);
     ASSERT_EQUAL(1u, size);
     EXPECT_EQUAL(bounds, interval_list[0]);
 }
 
-TEST("require that PredicateIndex can index multiple documents "
-     "with the same feature") {
+TEST("require that PredicateIndex can index multiple documents with the same feature") {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     for (uint32_t id = 1; id < 100; ++id) {
@@ -179,8 +175,7 @@ TEST("require that PredicateIndex can index multiple documents "
         ASSERT_TRUE(posting_it.valid());
         EXPECT_EQUAL(id, posting_it.getKey());
         uint32_t size;
-        const auto &interval_list = index.getIntervalStore().get(
-                posting_it.getData(), size, &single_buf);
+        const auto &interval_list = index.getIntervalStore().get(posting_it.getData(), size, &single_buf);
         ASSERT_EQUAL(1u, size);
         EXPECT_EQUAL(interval, interval_list[0]);
         ++posting_it;
@@ -191,8 +186,7 @@ TEST("require that PredicateIndex can index multiple documents "
 TEST("require that PredicateIndex can remove indexed documents") {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
-    indexFeature(index, doc_id, min_feature,
-                 {{hash, interval}}, {{hash2, bounds}});
+    indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
     index.removeDocument(doc_id);
     index.commit();
     auto it = index.getIntervalIndex().lookup(hash);
@@ -224,8 +218,7 @@ TEST("require that PredicateIndex can remove multiple documents") {
     }
 }
 
-TEST("require that PredicateIndex can remove multiple documents with "
-     "multiple features") {
+TEST("require that PredicateIndex can remove multiple documents with multiple features") {
     vector<pair<uint64_t, Interval>> intervals;
     vector<pair<uint64_t, IntervalWithBounds>> bounds_intervals;
     for (int i = 0; i < 100; ++i) {
@@ -254,7 +247,8 @@ TEST("require that PredicateIndex can remove multiple documents with "
 // Helper function for next test.
 template <typename Iterator, typename IntervalT>
 void checkAllIntervals(Iterator posting_it, IntervalT expected_interval,
-                       const PredicateIntervalStore &interval_store) {
+                       const PredicateIntervalStore &interval_store)
+{
     for (uint32_t id = 1; id < 100u; ++id) {
         ASSERT_TRUE(posting_it.valid());
         EXPECT_EQUAL(id, posting_it.getKey());
@@ -262,8 +256,7 @@ void checkAllIntervals(Iterator posting_it, IntervalT expected_interval,
         ASSERT_TRUE(ref.valid());
         uint32_t size;
         IntervalT single;
-        const IntervalT *read_interval =
-            interval_store.get(ref, size, &single);
+        const IntervalT *read_interval = interval_store.get(ref, size, &single);
         EXPECT_EQUAL(1u, size);
         EXPECT_EQUAL(expected_interval, read_interval[0]);
         ++posting_it;
@@ -308,8 +301,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
     EXPECT_EQUAL(199u, doc_id_limit);
 
     EXPECT_EQUAL(index.getArity(), index2.getArity());
-    EXPECT_EQUAL(index.getZeroConstraintDocs().size(),
-                 index2.getZeroConstraintDocs().size());
+    EXPECT_EQUAL(index.getZeroConstraintDocs().size(),index2.getZeroConstraintDocs().size());
     {
         auto it = index2.getZeroConstraintDocs().begin();
         for (uint32_t i = 1; i < 100u; ++i) {
@@ -342,8 +334,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
 TEST("require that DocumentFeaturesStore is restored on deserialization") {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
-    indexFeature(index, doc_id, min_feature,
-                 {{hash, interval}}, {{hash2, bounds}});
+    indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
     vespalib::DataBuffer buffer;
     index.serialize(buffer);
     uint32_t doc_id_limit;
@@ -370,8 +361,7 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
 
 TEST("require that hold lists are attempted emptied on destruction") {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
-    indexFeature(index, doc_id, min_feature,
-                 {{hash, interval}}, {{hash2, bounds}});
+    indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
     {
         auto guard = generation_handler.takeGuard();
         index.removeDocument(doc_id);

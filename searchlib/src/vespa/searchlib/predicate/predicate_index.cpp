@@ -12,7 +12,6 @@
 
 using vespalib::datastore::EntryRef;
 using vespalib::DataBuffer;
-using std::vector;
 
 namespace search::predicate {
 
@@ -30,13 +29,10 @@ PredicateIndex::addPosting<IntervalWithBounds>(uint64_t feature, uint32_t doc_id
 template <typename IntervalT>
 void
 PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex::FeatureMap<IntervalT> &interval_map) {
-    if (interval_map.empty()) {
-        return;
-    }
     for (const auto &map_entry : interval_map) {
         uint64_t feature = map_entry.first;
         const auto &interval_list = map_entry.second;
-        vespalib::datastore::EntryRef ref = _interval_store.insert(interval_list);
+        EntryRef ref = _interval_store.insert(interval_list);
         assert(ref.valid());
         addPosting<IntervalT>(feature, doc_id, ref);
         _cache.set(feature, doc_id, true);
@@ -53,7 +49,7 @@ class IntervalSerializer : public PostingSerializer<EntryRef> {
     const PredicateIntervalStore &_store;
 public:
     IntervalSerializer(const PredicateIntervalStore &store) : _store(store) {}
-    void serialize(const EntryRef &ref, vespalib::DataBuffer &buffer) const override {
+    void serialize(const EntryRef &ref, DataBuffer &buffer) const override {
         uint32_t size;
         IntervalT single_buf;
         const IntervalT *interval = _store.get(ref, size, &single_buf);
@@ -71,7 +67,7 @@ class IntervalDeserializer : public PostingDeserializer<EntryRef> {
     PredicateIntervalStore &_store;
 public:
     IntervalDeserializer(PredicateIntervalStore &store) : _store(store) {}
-    EntryRef deserialize(vespalib::DataBuffer &buffer) override {
+    EntryRef deserialize(DataBuffer &buffer) override {
         std::vector<IntervalT> intervals;
         size_t size = buffer.readInt16();
         for (uint32_t i = 0; i < size; ++i) {
@@ -164,7 +160,7 @@ PredicateIndex::indexEmptyDocument(uint32_t doc_id)
 
 namespace {
 void
-removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<vespalib::datastore::EntryRef> &index,
+removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<EntryRef> &index,
                 PredicateIntervalStore &interval_store)
 {
     auto result = index.removeFromPostingList(feature, doc_id);
@@ -177,7 +173,7 @@ removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<vespalib::datasto
 
 class DocIdIterator : public PopulateInterface::Iterator {
 public:
-    using BTreeIterator = SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
+    using BTreeIterator = SimpleIndex<EntryRef>::BTreeIterator;
 
     DocIdIterator(BTreeIterator it) : _it(it) { }
     int32_t getNext() override {
