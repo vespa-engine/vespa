@@ -16,9 +16,9 @@ struct Interval;
  */
 class PredicateIntervalStore {
     class DataStoreAdapter;
-    typedef PredicateRefCache<DataStoreAdapter, 8> RefCacheType;
-    typedef vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<18, 6>> DataStoreType;
-    typedef DataStoreType::RefType RefType;
+    using RefCacheType = PredicateRefCache<DataStoreAdapter, 8>;
+    using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<18, 6>>;
+    using RefType =  DataStoreType::RefType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     DataStoreType _store;
@@ -90,9 +90,7 @@ public:
      */
     template <typename IntervalT>
     const IntervalT
-    *get(vespalib::datastore::EntryRef btree_ref,
-                         uint32_t &size_out,
-                         IntervalT *single_buf) const
+    *get(vespalib::datastore::EntryRef btree_ref, uint32_t &size_out, IntervalT *single_buf) const
     {
         uint32_t size = btree_ref.ref() >> RefCacheType::SIZE_SHIFT;
         RefType data_ref(vespalib::datastore::EntryRef(btree_ref.ref() & RefCacheType::DATA_REF_MASK));

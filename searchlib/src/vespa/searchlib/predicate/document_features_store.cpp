@@ -191,7 +191,7 @@ DocumentFeaturesStore::remove(uint32_t doc_id) {
         _ranges.erase(range_itr);
     }
     if (_currDocId == doc_id) {
-        setCurrent(0, NULL);
+        setCurrent(0, nullptr);
     }
 }
 
