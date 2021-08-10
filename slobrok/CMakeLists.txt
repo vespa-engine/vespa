@@ -25,4 +25,5 @@ vespa_define_module(
     src/tests/standalone
     src/tests/startsome
     src/tests/startup
+    src/tests/union_service_map
 )
