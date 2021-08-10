@@ -158,7 +158,7 @@ BuildRequires: gmock-devel
 %if 0%{?el7} && 0%{?amzn2}
 BuildRequires: vespa-xxhash-devel = 0.8.0
 BuildRequires: vespa-openblas-devel = 0.3.17
-BuildRequires: vespa-re2-devel = 20190801
+BuildRequires: vespa-re2-devel = 20210801
 %else
 BuildRequires: xxhash-devel >= 0.8.0
 BuildRequires: openblas-devel
@@ -331,7 +331,7 @@ Requires: openblas-serial
 %endif
 %endif
 %if 0%{?amzn2}
-Requires: vespa-re2 = 20190801
+Requires: vespa-re2 = 20210801
 %else
 Requires: re2
 %endif
