@@ -68,7 +68,7 @@ public class CliClient {
                             }
                         }
                         catch (InterruptedException | IOException ignored) { } // doesn't happen
-                    });
+                    }, "progress-printer");
                     progressPrinter.setDaemon(true);
                     progressPrinter.start();
                 }
@@ -152,7 +152,7 @@ public class CliClient {
     }
 
     static void printBenchmarkResult(long durationNanos, OperationStats stats, OutputStream systemOut) throws IOException {
-        JsonFactory factory = new JsonFactory();
+        JsonFactory factory = new JsonFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         long okCount = stats.successes();
         long errorCount = stats.requests() - okCount;
         double throughput = okCount * 1e9 / Math.max(1, durationNanos);
