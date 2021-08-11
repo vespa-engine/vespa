@@ -66,7 +66,7 @@ func deploy(application string) {
         return
     }
 
-    url, _ := url.Parse("http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate")
+    url, _ := url.Parse(DeployTarget + "/application/v2/tenant/default/prepareandactivate")
     header := http.Header{}
     header.Add("Content-Type", "application/zip")
     request := &http.Request{

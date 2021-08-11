@@ -9,22 +9,37 @@ import (
     "testing"
 )
 
-func IgnoreTestDeployZip(t *testing.T) {
+func TestDeployZip(t *testing.T) {
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
 	             executeCommand(t, []string{"deploy", "testdata/application.zip"}))
-	assertDeployRequestMade(t)
+	assertDeployRequestMade("http://127.0.0.1:19071", t)
+}
+
+func TestDeployZipWithTargetArgument(t *testing.T) {
+	assert.Equal(t,
+	             "\x1b[32mSuccess \n",
+	             executeCommand(t, []string{"deploy", "testdata/application.zip", "-d", "http://target:19071"}))
+	assertDeployRequestMade("http://target:19071", t)
+
+	assert.Equal(t,
+	             "\x1b[32mSuccess \n",
+	             executeCommand(t, []string{"deploy", "testdata/application.zip", "--deploy-target", "http://target2:19071"}))
+	assertDeployRequestMade("http://target2:19071", t)
+
+	// Reset persistent flag
+    executeCommand(t, []string{"deploy", "testdata/application.zip", "-d", "http://127.0.0.1:19071"})
 }
 
 func TestDeployDirectory(t *testing.T) {
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
 	             executeCommand(t, []string{"deploy", "testdata/src/main/application"}))
-	assertDeployRequestMade(t)
+	assertDeployRequestMade("http://127.0.0.1:19071", t)
 }
 
-func assertDeployRequestMade(t *testing.T) {
-    assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/prepareandactivate", lastRequest.URL.String())
+func assertDeployRequestMade(target string, t *testing.T) {
+    assert.Equal(t, target + "/application/v2/tenant/default/prepareandactivate", lastRequest.URL.String())
     assert.Equal(t, "application/zip", lastRequest.Header.Get("Content-Type"))
     assert.Equal(t, "POST", lastRequest.Method)
     var body = lastRequest.Body

@@ -10,31 +10,43 @@ import (
 )
 
 func TestStatusConfigServerCommand(t *testing.T) {
-	assert.Equal(t,
-	             "\x1b[32mConfig server at http://127.0.0.1:19071 is ready \n",
-	             executeCommand(t, []string{"status", "config-server"}),
-	             "vespa status config-server")
-    assert.Equal(t, "http://127.0.0.1:19071/ApplicationStatus", lastRequest.URL.String())
+    assertConfigServerStatus("http://127.0.0.1:19071", t)
 }
 
 func TestStatusContainerCommand(t *testing.T) {
-	assert.Equal(t,
-	             "\x1b[32mContainer at http://127.0.0.1:8080 is ready \n",
-	             executeCommand(t, []string{"status", "container"}),
-	             "vespa status container")
-    assert.Equal(t, "http://127.0.0.1:8080/ApplicationStatus", lastRequest.URL.String())
-
-	assert.Equal(t,
-	             "\x1b[32mContainer at http://127.0.0.1:8080 is ready \n",
-	             executeCommand(t, []string{"status"}),
-	             "vespa status (the default)")
-    assert.Equal(t, "http://127.0.0.1:8080/ApplicationStatus", lastRequest.URL.String())
+    assertContainerStatus("http://127.0.0.1:8080", t)
 }
 
 func TestStatusErrorResponse(t *testing.T) {
+    assertContainerError("http://127.0.0.1:8080", t)
+}
+
+func assertConfigServerStatus(target string, t *testing.T) {
+	assert.Equal(t,
+	             "\x1b[32mConfig server at " + target + " is ready \n",
+	             executeCommand(t, []string{"status", "config-server"}),
+	             "vespa status config-server")
+    assert.Equal(t, target + "/ApplicationStatus", lastRequest.URL.String())
+}
+
+func assertContainerStatus(target string, t *testing.T) {
+	assert.Equal(t,
+	             "\x1b[32mContainer at " + target + " is ready \n",
+	             executeCommand(t, []string{"status", "container"}),
+	             "vespa status container")
+    assert.Equal(t, target + "/ApplicationStatus", lastRequest.URL.String())
+
+	assert.Equal(t,
+	             "\x1b[32mContainer at " + target + " is ready \n",
+	             executeCommand(t, []string{"status"}),
+	             "vespa status (the default)")
+    assert.Equal(t, target + "/ApplicationStatus", lastRequest.URL.String())
+}
+
+func assertContainerError(target string, t *testing.T) {
     nextStatus = 500
 	assert.Equal(t,
-	             "\x1b[31mContainer at http://127.0.0.1:8080 is not ready \n\x1b[33mResponse status:  \n",
+	             "\x1b[31mContainer at " + target + " is not ready \n\x1b[33mResponse status:  \n",
 	             executeCommand(t, []string{"status", "container"}),
 	             "vespa status container")
 }

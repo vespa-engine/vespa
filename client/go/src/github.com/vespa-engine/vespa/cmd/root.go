@@ -8,10 +8,12 @@ import (
     "github.com/spf13/cobra"
 )
 
+
+
 var (
-	// Used for flags.
-	cfgFile     string
-	userLicense string
+	// flags
+	DeployTarget string
+	ContainerTarget string
 
 	rootCmd = &cobra.Command{
 		Use:   "vespa",
@@ -21,14 +23,13 @@ DO`,
 	}
 )
 
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&ContainerTarget, "container-target", "c", "http://127.0.0.1:8080", "The target of commands to application containers")
+	rootCmd.PersistentFlags().StringVarP(&DeployTarget, "deploy-target", "d", "http://127.0.0.1:19071", "The target of deploy commands.")
+}
+
 // Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-}
-
-func initConfig() {
-}
