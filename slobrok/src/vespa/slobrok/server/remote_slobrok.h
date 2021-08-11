@@ -5,7 +5,7 @@
 #include "cmd.h"
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
-#include "map_view.h"
+#include "service_map_mirror.h"
 #include <deque>
 
 namespace slobrok {
@@ -45,7 +45,7 @@ private:
     ExchangeManager     &_exchanger;
     RpcServerManager    &_rpcsrvmanager;
     FRT_Target          *_remote;
-    MapView              _mapView;
+    ServiceMapMirror     _serviceMapMirror;
     ManagedRpcServer     _rpcserver;
     Reconnecter          _reconnecter;
     int                  _failCnt;
@@ -75,7 +75,7 @@ public:
     void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
     const std::string & getName() const { return _rpcserver.getName(); }
     const std::string & getSpec() const { return _rpcserver.getSpec(); }
-    const MapView &remoteView() const { return _mapView; }
+    ServiceMapMirror &remoteMap() { return _serviceMapMirror; }
 
     // interfaces implemented:
     void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;

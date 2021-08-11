@@ -1,24 +1,25 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "map_view.h"
+#include "service_map_mirror.h"
 #include <vespa/log/log.h>
-LOG_SETUP(".slobrok.map_view");
+LOG_SETUP(".slobrok.service_map_mirror");
 
 namespace slobrok {
 
-MapView::MapView()
+ServiceMapMirror::ServiceMapMirror()
   : _map(),
     _currGen(0),
     _lock()
 {}
 
-MapView::~MapView() {
+ServiceMapMirror::~ServiceMapMirror() {
     clear();
 }
 
-void MapView::apply(const MapDiff &diff) {
+void ServiceMapMirror::apply(const MapDiff &diff) {
     std::lock_guard guard(_lock);
     LOG(debug, "Applying diff from gen %u", diff.fromGen.getAsInt());
+    LOG_ASSERT(diff.fromGen == _currGen);
     for (const auto & name : diff.removed) {
         auto iter = _map.find(name);
         if (iter != _map.end()) {
@@ -52,7 +53,7 @@ void MapView::apply(const MapDiff &diff) {
     _currGen = diff.toGen;
 }
 
-void MapView::clear() {
+void ServiceMapMirror::clear() {
     std::lock_guard guard(_lock);
     for (const auto & [ k, v ] : _map) {
         ServiceMapping mapping{k, v};
@@ -64,7 +65,7 @@ void MapView::clear() {
     _currGen.reset();
 }
 
-ServiceMappingList MapView::allMappings() const {
+ServiceMappingList ServiceMapMirror::allMappings() const {
     std::lock_guard guard(_lock);
     ServiceMappingList result;
     result.reserve(_map.size());
@@ -74,12 +75,12 @@ ServiceMappingList MapView::allMappings() const {
     return result;
 }
 
-void MapView::registerListener(MapListener &listener) {
+void ServiceMapMirror::registerListener(MapListener &listener) {
     std::lock_guard guard(_lock);
     _listeners.insert(&listener);
 }
 
-void MapView::unregisterListener(MapListener &listener) {
+void ServiceMapMirror::unregisterListener(MapListener &listener) {
     std::lock_guard guard(_lock);
     _listeners.erase(&listener);
 }

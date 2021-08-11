@@ -101,7 +101,7 @@ void RemoteSlobrok::maybeStartFetch() {
     if (_remote == nullptr) return;
     _remFetchReq = getSupervisor()->AllocRPCRequest();
     _remFetchReq->SetMethodName("slobrok.internal.fetchLocalView");
-    _remFetchReq->GetParams()->AddInt32(_mapView.currentGeneration().getAsInt());
+    _remFetchReq->GetParams()->AddInt32(_serviceMapMirror.currentGeneration().getAsInt());
     _remFetchReq->GetParams()->AddInt32(5000);
     _remote->InvokeAsync(_remFetchReq, 15.0, this);
 }
@@ -137,12 +137,12 @@ void RemoteSlobrok::handleFetchResult() {
         }
         MapDiff diff(diff_from, std::move(removed), std::move(updated), diff_to);
         if (diff_from == 0) {
-            _mapView.clear();
-            _mapView.apply(std::move(diff));
-        } else if (diff_from == _mapView.currentGeneration().getAsInt()) {
-            _mapView.apply(std::move(diff));
+            _serviceMapMirror.clear();
+            _serviceMapMirror.apply(std::move(diff));
+        } else if (diff_from == _serviceMapMirror.currentGeneration().getAsInt()) {
+            _serviceMapMirror.apply(std::move(diff));
         } else {
-            _mapView.clear();
+            _serviceMapMirror.clear();
             success = false;
         }
     } else {
@@ -152,7 +152,7 @@ void RemoteSlobrok::handleFetchResult() {
         LOG(warning, "fetchLocalView() failed with partner %s: %s",
             getName().c_str(), _remFetchReq->GetErrorMessage());            
         }
-        _mapView.clear();
+        _serviceMapMirror.clear();
         success = false;
     }
     _remFetchReq->SubRef();

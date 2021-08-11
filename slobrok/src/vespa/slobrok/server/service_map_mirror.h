@@ -13,16 +13,16 @@
 namespace slobrok {
 
 /**
- * @class MapView
+ * @class ServiceMapMirror
  * @brief Holds a name->spec map which can be incrementally updated
  **/
-class MapView : public MapSource
+class ServiceMapMirror : public MapSource
 {
 public:
     using Generation = vespalib::GenCnt;
 
-    MapView();
-    ~MapView();
+    ServiceMapMirror();
+    ~ServiceMapMirror();
 
     /** update according to diff */
     void apply(const MapDiff &diff);
