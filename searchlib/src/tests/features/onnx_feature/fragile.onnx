@@ -1,5 +1,5 @@
 
-fragile.py:b
+fragile.py:]
 
 in1
 in2out"AddfragileZ
@@ -9,7 +9,8 @@ fragile.py:b
 Z
 in2
 	
-batchb
-out
-	
-batchB
+batchb
+out
+
+
+B
