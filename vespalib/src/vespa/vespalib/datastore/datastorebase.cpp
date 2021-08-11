@@ -125,7 +125,7 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded
 {
     auto typeHandler = _typeHandlers[typeId];
     uint32_t arraySize = typeHandler->getArraySize();
-    size_t numArraysForNewBuffer = typeHandler->getNumArraysForNewBuffer();
+    size_t numArraysForNewBuffer = typeHandler->get_scaled_num_arrays_for_new_buffer();
     size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
     uint32_t bufferId = _primary_buffer_ids[typeId];
     if (elemsNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
