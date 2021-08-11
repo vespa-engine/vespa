@@ -236,10 +236,10 @@ TEST("require short edge_partitions to get correct intervals and features") {
     EXPECT_EQUAL(4u, result.features.size());
     EXPECT_EQUAL(0u, result.range_features.size());
 
-    EXPECT_EQUAL(0xdbc38b103b5d50a9ul, result.features[0]); //This is incorrect
-    EXPECT_EQUAL(0xbe6d86e3e2270b0aul, result.features[1]); //This is incorrect
-    EXPECT_EQUAL(0xb2b301e26efffdc2ul, result.features[2]); //This is incorrect
-    EXPECT_EQUAL(3580296296714527193ul, result.features[3]); //This is incorrect
+    EXPECT_EQUAL(0xdbc38b103b5d50a9ul, result.features[0]);
+    EXPECT_EQUAL(0xbe6d86e3e2270b0aul, result.features[1]);
+    EXPECT_EQUAL(0xb2b301e26efffdc2ul, result.features[2]);
+    EXPECT_EQUAL(3580296296714527193ul, result.features[3]);
     checkBounds(result, "key=0", {{0x00010001, 0xffffffff}});
     checkBounds(result, "key=30", {{0x00010001, 3}});
     checkBounds(result, "foo=0", {{0x00020002, 0xffffffff}});
