@@ -33,8 +33,7 @@ RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
     _rpcserver.healthCheck();
 }
 
-RemoteSlobrok::~RemoteSlobrok()
-{
+void RemoteSlobrok::shutdown() {
     _reconnecter.disable();
 
     _pending.clear();
@@ -59,9 +58,13 @@ RemoteSlobrok::~RemoteSlobrok()
     if (_remRemReq != nullptr) {
         _remRemReq->Abort();
     }
-    // _rpcserver destructor called automatically
+    _serviceMapMirror.clear();
 }
 
+RemoteSlobrok::~RemoteSlobrok() {
+    shutdown();
+    // _rpcserver destructor called automatically
+}
 
 void
 RemoteSlobrok::doPending()
