@@ -74,7 +74,7 @@ public:
 
     uint32_t getActiveBuffers() const { return _activeBuffers; }
     size_t getMaxArrays() const { return _maxArrays; }
-    uint32_t getNumArraysForNewBuffer() const { return _numArraysForNewBuffer; }
+    uint32_t get_scaled_num_arrays_for_new_buffer() const;
 protected:
 
     struct BufferCounts {

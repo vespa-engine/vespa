@@ -3,6 +3,7 @@
 #include "atomic_entry_ref.h"
 #include "buffer_type.hpp"
 #include <cassert>
+#include <cmath>
 
 namespace vespalib::datastore {
 
@@ -135,6 +136,20 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
     }
     assert(result >= neededArrays);
     return result;
+}
+
+uint32_t
+BufferTypeBase::get_scaled_num_arrays_for_new_buffer() const
+{
+    if (_activeBuffers <= 1u || _numArraysForNewBuffer == 0u) {
+        return _numArraysForNewBuffer;
+    }
+    double scale_factor = std::pow(1.0 + _allocGrowFactor, _activeBuffers - 1);
+    double scaled_result = _numArraysForNewBuffer * scale_factor;
+    if (scaled_result >= _maxArrays) {
+        return _maxArrays;
+    }
+    return scaled_result;
 }
 
 BufferTypeBase::AggregatedBufferCounts::AggregatedBufferCounts()
