@@ -81,6 +81,7 @@
     "methods": [
       "public void success()",
       "public void failure()",
+      "public void failure(java.lang.String)",
       "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State state()"
     ],
     "fields": [
@@ -196,7 +197,7 @@
     "methods": [
       "public void <init>(java.time.Duration, java.time.Duration)",
       "public void success()",
-      "public void failure()",
+      "public void failure(java.lang.String)",
       "public ai.vespa.feed.client.FeedClient$CircuitBreaker$State state()"
     ],
     "fields": []

@@ -4,6 +4,7 @@ package ai.vespa.feed.client;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 import java.util.logging.Logger;
 
@@ -26,6 +27,7 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     private final AtomicBoolean halfOpen = new AtomicBoolean(false);
     private final AtomicBoolean open = new AtomicBoolean(false);
     private final LongSupplier clock;
+    private final AtomicReference<String> detail = new AtomicReference<>();
     private final long graceMillis;
     private final long doomMillis;
 
@@ -53,8 +55,9 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     }
 
     @Override
-    public void failure() {
-        failingSinceMillis.compareAndSet(NEVER, clock.getAsLong());
+    public void failure(String detail) {
+        if (failingSinceMillis.compareAndSet(NEVER, clock.getAsLong()))
+            this.detail.set(detail);
     }
 
     @Override
@@ -63,7 +66,8 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
         if (failingMillis > graceMillis && halfOpen.compareAndSet(false, true))
             log.log(INFO, "Circuit breaker is now half-open, as no requests have succeeded for the " +
                           "last " + failingMillis + "ms. The server will be pinged to see if it recovers, " +
-                          "but this client will give up if no successes are observed within " + doomMillis + "ms");
+                          "but this client will give up if no successes are observed within " + doomMillis + "ms. " +
+                          "First failure was '" + detail.get() + "'.");
 
         if (failingMillis > doomMillis && open.compareAndSet(false, true))
             log.log(WARNING, "Circuit breaker is now open, after " + doomMillis + "ms of failing request, " +

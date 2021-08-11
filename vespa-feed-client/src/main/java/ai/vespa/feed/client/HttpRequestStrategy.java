@@ -135,7 +135,7 @@ class HttpRequestStrategy implements RequestStrategy {
      * or the user has turned off retries for this type of operation.
      */
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
-        breaker.failure();
+        breaker.failure(thrown.getMessage());
         if (   (thrown instanceof IOException)               // General IO problems.
             || (thrown instanceof CancellationException)     // TLS session disconnect.
             || (thrown instanceof CancelledKeyException)) {  // Selection cancelled.
@@ -163,7 +163,7 @@ class HttpRequestStrategy implements RequestStrategy {
             return true;
         }
 
-        breaker.failure();
+        breaker.failure(response.toString());
         logResponse(FINE, response, request, attempt);
         if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
             return retry(request, attempt);

@@ -69,7 +69,10 @@ public interface FeedClient extends Closeable {
         default void success() { }
 
         /** Called by the client whenever a transient or fatal error occurs. */
-        default void failure() { }
+        default void failure() { failure(null); }
+
+        /** Called by the client whenever a transient or fatal error occurs. */
+        default void failure(String message) { }
 
         /** The current state of the circuit breaker. */
         State state();
