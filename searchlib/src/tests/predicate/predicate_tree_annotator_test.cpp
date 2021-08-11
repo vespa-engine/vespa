@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for PredicateTreeAnnotator.
 
-#include <vespa/log/log.h>
-LOG_SETUP("PredicateTreeAnnotator_test");
-
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
@@ -12,7 +9,9 @@ LOG_SETUP("PredicateTreeAnnotator_test");
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <sstream>
-#include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP("PredicateTreeAnnotator_test");
 
 using document::Predicate;
 using std::ostringstream;
