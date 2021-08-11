@@ -19,7 +19,7 @@
 %define _command_cmake cmake3
 
 Name:           vespa
-Version:        _VESPA_VERSION_
+Version:        7.449.21
 Release:        1%{?dist}
 Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
