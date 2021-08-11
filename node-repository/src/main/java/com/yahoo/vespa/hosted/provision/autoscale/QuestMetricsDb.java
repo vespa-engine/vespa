@@ -368,7 +368,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
 
         TableWriter getWriter() {
-            return engine().getWriter(newContext().getCairoSecurityContext(), name);
+            return engine().getWriter(newContext().getCairoSecurityContext(), name, "getWriter");
         }
 
         void gc() {
