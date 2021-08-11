@@ -194,7 +194,9 @@ PredicateTreeAnnotatorImpl::assignIntervalMarkers(const Inspector &in) {
                 _result.features.push_back(in_hashed_partitions[i].asLong());
             }
             for (size_t i = 0; i < in_hashed_edges.children(); ++i) {
-                _result.features.push_back(in_hashed_edges[i].asLong());
+                const Inspector& child = in_hashed_edges[i];
+                uint64_t hash = child[Predicate::HASH].asLong();
+                _result.features.push_back(hash);
             }
         } else {
             const Inspector& in_min = in[Predicate::RANGE_MIN];
