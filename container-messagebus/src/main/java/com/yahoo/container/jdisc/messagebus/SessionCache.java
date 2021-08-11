@@ -15,6 +15,7 @@ import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.SharedResource;
+import com.yahoo.messagebus.ConfigAgent;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBusParams;
@@ -76,14 +77,14 @@ public final class SessionCache extends AbstractComponent {
                         LoadTypeConfig loadTypeConfig, SlobroksConfig slobroksConfig,
                         MessagebusConfig messagebusConfig, DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig, String identity) {
-        this.messageBus = createSharedMessageBus(containerMbusConfig,
-                                                 messagebusConfig,
-                                                 slobroksConfig,
-                                                 identity,
-                                                 new DocumentProtocol(new DocumentTypeManager(documentmanagerConfig),
-                                                                      new LoadTypeSet(loadTypeConfig),
-                                                                      policiesConfig,
-                                                                      distributionConfig));
+        this(containerMbusConfig,
+             slobroksConfig,
+             messagebusConfig,
+             identity,
+             new DocumentProtocol(new DocumentTypeManager(documentmanagerConfig),
+                                  new LoadTypeSet(loadTypeConfig),
+                                  policiesConfig,
+                                  distributionConfig));
     }
 
     public SessionCache(ContainerMbusConfig containerMbusConfig, SlobroksConfig slobroksConfig,
@@ -103,8 +104,7 @@ public final class SessionCache extends AbstractComponent {
                                                            MessagebusConfig messagebusConfig,
                                                            SlobroksConfig slobroksConfig, String identity,
                                                            Protocol protocol) {
-        MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol)
-                                                            .setMessageBusConfig(messagebusConfig);
+        MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
 
         int maxPendingSize = DocumentUtil
                 .calculateMaxPendingSize(mbusConfig.maxConcurrentFactor(), mbusConfig.documentExpansionFactor(),
@@ -122,7 +122,9 @@ public final class SessionCache extends AbstractComponent {
                 .setNumNetworkThreads(mbusConfig.numthreads())
                 .setTransportEventsBeforeWakeup(mbusConfig.transport_events_before_wakeup())
                 .setOptimization(RPCNetworkParams.Optimization.valueOf(mbusConfig.optimize_for().name()));
-        return SharedMessageBus.newInstance(mbusParams, netParams);
+        SharedMessageBus bus = SharedMessageBus.newInstance(mbusParams, netParams);
+        new ConfigAgent(messagebusConfig, bus.messageBus()); // Configure the wrapped MessageBus with a routing table.
+        return bus;
     }
 
     private static void logSystemInfo(ContainerMbusConfig containerMbusConfig, long maxPendingSize) {
