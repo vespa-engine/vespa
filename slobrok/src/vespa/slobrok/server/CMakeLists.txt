@@ -11,6 +11,7 @@ vespa_add_library(slobrok_slobrokserver
     map_diff.cpp
     map_listener.cpp
     map_source.cpp
+    service_map_mirror.cpp
     metrics_producer.cpp
     monitor.cpp
     named_service.cpp

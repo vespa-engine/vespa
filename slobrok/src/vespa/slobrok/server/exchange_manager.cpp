@@ -109,6 +109,7 @@ void
 ExchangeManager::healthCheck()
 {
     for (const auto & [ name, partner ] : _partners) {
+        partner->maybeStartFetch();
         partner->maybePushMine();
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());

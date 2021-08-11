@@ -27,6 +27,7 @@ RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
       _remListReq(nullptr),
       _remAddReq(nullptr),
       _remRemReq(nullptr),
+      _remFetchReq(nullptr),
       _pending()
 {
     _rpcserver.healthCheck();
@@ -43,6 +44,9 @@ RemoteSlobrok::~RemoteSlobrok()
         _remote = nullptr;
     }
 
+    if (_remFetchReq != nullptr) {
+        _remFetchReq->Abort();
+    }
     if (_remAddPeerReq != nullptr) {
         _remAddPeerReq->Abort();
     }
@@ -90,8 +94,75 @@ RemoteSlobrok::doPending()
         }
         // XXX should save this and pick up on RequestDone()
     }
-
 }
+
+void RemoteSlobrok::maybeStartFetch() {
+    if (_remFetchReq != nullptr) return;
+    if (_remote == nullptr) return;
+    _remFetchReq = getSupervisor()->AllocRPCRequest();
+    _remFetchReq->SetMethodName("slobrok.internal.fetchLocalView");
+    _remFetchReq->GetParams()->AddInt32(_serviceMapMirror.currentGeneration().getAsInt());
+    _remFetchReq->GetParams()->AddInt32(5000);
+    _remote->InvokeAsync(_remFetchReq, 15.0, this);
+}
+
+void RemoteSlobrok::handleFetchResult() {
+    LOG_ASSERT(_remFetchReq != nullptr);
+    bool success = true;
+    if (_remFetchReq->CheckReturnTypes("iSSSi")) {
+        FRT_Values &answer = *(_remFetchReq->GetReturn());
+
+        uint32_t diff_from = answer[0]._intval32;
+        uint32_t numRemove = answer[1]._string_array._len;
+        FRT_StringValue *r = answer[1]._string_array._pt;
+        uint32_t numNames  = answer[2]._string_array._len;
+        FRT_StringValue *n = answer[2]._string_array._pt;
+        uint32_t numSpecs  = answer[3]._string_array._len;
+        FRT_StringValue *s = answer[3]._string_array._pt;
+        uint32_t diff_to   = answer[4]._intval32;
+
+        std::vector<vespalib::string> removed;
+        for (uint32_t idx = 0; idx < numRemove; ++idx) {
+            removed.emplace_back(r[idx]._str);
+        }
+        ServiceMappingList updated;
+        if (numNames == numSpecs) {
+            for (uint32_t idx = 0; idx < numNames; ++idx) {
+                updated.emplace_back(n[idx]._str, s[idx]._str);
+            }
+        } else {
+            diff_from = 0;
+            diff_to = 0;
+            success = false;
+        }
+        MapDiff diff(diff_from, std::move(removed), std::move(updated), diff_to);
+        if (diff_from == 0) {
+            _serviceMapMirror.clear();
+            _serviceMapMirror.apply(std::move(diff));
+        } else if (diff_from == _serviceMapMirror.currentGeneration().getAsInt()) {
+            _serviceMapMirror.apply(std::move(diff));
+        } else {
+            _serviceMapMirror.clear();
+            success = false;
+        }
+    } else {
+        if (_remFetchReq->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
+            LOG(debug, "partner slobrok too old - not mirroring");
+        } else {
+        LOG(warning, "fetchLocalView() failed with partner %s: %s",
+            getName().c_str(), _remFetchReq->GetErrorMessage());            
+        }
+        _serviceMapMirror.clear();
+        success = false;
+    }
+    _remFetchReq->SubRef();
+    _remFetchReq = nullptr;
+    if (success) {
+        maybeStartFetch();
+    }
+}
+
+    
 
 void
 RemoteSlobrok::pushMine()
@@ -109,13 +180,17 @@ RemoteSlobrok::pushMine()
 void
 RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
 {
+    if (req == _remFetchReq) {
+        handleFetchResult();
+        return;
+    }
     FRT_Values &answer = *(req->GetReturn());
     if (req == _remAddPeerReq) {
         // handle response after asking remote slobrok to add me as a peer:
         if (req->IsError()) {
             FRT_Values &args = *req->GetParams();
-            const char *myname     = args[0]._string._str;
-            const char *myspec     = args[1]._string._str;
+            const char *myname = args[0]._string._str;
+            const char *myspec = args[1]._string._str;
             LOG(info, "addPeer(%s, %s) on remote slobrok %s at %s: %s",
                 myname, myspec, getName().c_str(), getSpec().c_str(), req->GetErrorMessage());
             req->SubRef();
@@ -162,6 +237,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
         _remListReq = nullptr;
 
         // next step is to push the ones I own:
+        maybeStartFetch();
         maybePushMine();
     } else if (req == _remAddReq) {
         // handle response after pushing some name that we managed:
@@ -268,10 +344,12 @@ RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv)
     _reconnecter.disable();
 
     if (_remote != nullptr) {
+        maybeStartFetch();
         // the rest here should only be done on first notifyOk
         return;
     }
     _remote = getSupervisor()->GetTarget(getSpec().c_str());
+    maybeStartFetch();
 
     // at this point, we will do (in sequence):
     // ask peer to connect to us too;
