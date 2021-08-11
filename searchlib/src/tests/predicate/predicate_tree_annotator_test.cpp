@@ -216,9 +216,34 @@ TEST("show different types of NOT-intervals") {
     checkInterval(result, "key=C", {0x00010005});
     checkInterval(result, "key=D", {0x00070007});
     checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00010000, 0x00070002, 0x00050000,
-                   0x00070006});
+                  {0x00010000, 0x00070002, 0x00050000,0x00070006});
 
+}
+
+TEST("require short edge_partitions to get correct intervals and features") {
+    Slime slime;
+    Cursor &children = makeAndNode(slime.setObject());
+    makeHashedFeatureRange(children.addObject(), "key",{}, {{0, 5, -1}, {30, 0, 3}});
+    makeHashedFeatureRange(children.addObject(), "foo",{}, {{0, 5, -1}, {30, 0, 3}});
+
+    PredicateTreeAnnotations result;
+    PredicateTreeAnnotator::annotate(slime.get(), result);
+
+    EXPECT_EQUAL(2u, result.min_feature);
+    EXPECT_EQUAL(2u, result.interval_range);
+    EXPECT_EQUAL(0u, result.interval_map.size());
+    EXPECT_EQUAL(4u, result.bounds_map.size());
+    EXPECT_EQUAL(4u, result.features.size());
+    EXPECT_EQUAL(0u, result.range_features.size());
+
+    EXPECT_EQUAL(0ul, result.features[0]); //This is incorrect
+    EXPECT_EQUAL(0ul, result.features[1]); //This is incorrect
+    EXPECT_EQUAL(0ul, result.features[2]); //This is incorrect
+    EXPECT_EQUAL(0ul, result.features[3]); //This is incorrect
+    checkBounds(result, "key=0", {{0x00010001, 0xffffffff}});
+    checkBounds(result, "key=30", {{0x00010001, 3}});
+    checkBounds(result, "foo=0", {{0x00020002, 0xffffffff}});
+    checkBounds(result, "foo=30", {{0x00020002, 3}});
 }
 
 TEST("require that hashed ranges get correct intervals") {
@@ -238,6 +263,9 @@ TEST("require that hashed ranges get correct intervals") {
     EXPECT_EQUAL(2u, result.interval_range);
     EXPECT_EQUAL(4u, result.interval_map.size());
     EXPECT_EQUAL(4u, result.bounds_map.size());
+    EXPECT_EQUAL(0u, result.features.size());
+    EXPECT_EQUAL(2u, result.range_features.size());
+
     checkInterval(result, "key=10-19", {0x00010001});
     checkInterval(result, "key=20-29", {0x00010001});
     checkBounds(result, "key=0", {{0x00010001, 0xffffffff}});
