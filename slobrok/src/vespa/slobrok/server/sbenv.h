@@ -8,6 +8,7 @@
 #include "exchange_manager.h"
 #include "configshim.h"
 #include "ok_state.h"
+#include "local_rpc_monitor_map.h"
 #include "metrics_producer.h"
 #include <vespa/config-slobroks.h>
 #include <vespa/slobrok/cfg.h>
@@ -54,6 +55,7 @@ private:
     vespalib::SimpleHealthProducer             _health;
     MetricsProducer                            _metrics;
     vespalib::SimpleComponentConfigProducer    _components;
+    LocalRpcMonitorMap                         _localRpcMonitorMap;
     ServiceMapHistory                          _globalVisibleHistory;
 
 public:
@@ -77,7 +79,7 @@ public:
     }
 
     ServiceMapHistory& localHistory() {
-        return _globalVisibleHistory;
+        return _localRpcMonitorMap.history();
     }
 
     const std::string & mySpec() const { return _me; }

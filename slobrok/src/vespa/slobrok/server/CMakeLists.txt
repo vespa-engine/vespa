@@ -6,6 +6,7 @@ vespa_add_library(slobrok_slobrokserver
     exchange_manager.cpp
     i_monitored_server.cpp
     i_rpc_server_manager.cpp
+    local_rpc_monitor_map.cpp
     managed_rpc_server.cpp
     map_diff.cpp
     map_listener.cpp

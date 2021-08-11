@@ -110,12 +110,14 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
+      _localRpcMonitorMap(*_supervisor),
       _rpcsrvmanager(*this),
       _exchanger(*this, _rpcsrvmap),
       _rpcsrvmap()
 {
     srandom(time(nullptr) ^ getpid());
     _rpcsrvmap.proxy().registerListener(_globalVisibleHistory);
+    _rpcsrvmap.proxy().registerListener(_localRpcMonitorMap);
     _rpcHooks.initRPC(getSupervisor());
 }
 
