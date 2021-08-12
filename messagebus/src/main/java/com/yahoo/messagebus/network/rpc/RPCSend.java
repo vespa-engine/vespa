@@ -58,7 +58,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
 
     @Override
     public final void send(RoutingNode recipient, Version version, byte[] payload, long timeRemaining) {
-        SendContext ctx = new SendContext(net.getOwner(), recipient, timeRemaining);
+        SendContext ctx = new SendContext(recipient, timeRemaining);
         RPCServiceAddress address = (RPCServiceAddress)recipient.getServiceAddress();
         Message msg = recipient.getMessage();
         Route route = new Route(recipient.getRoute());
@@ -257,13 +257,11 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
 
     private static class SendContext {
 
-        final NetworkOwner owner;
         final RoutingNode recipient;
         final Trace trace;
         final double timeout;
 
-        SendContext(NetworkOwner owner, RoutingNode recipient, long timeRemaining) {
-            this.owner = owner;
+        SendContext(RoutingNode recipient, long timeRemaining) {
             this.recipient = recipient;
             trace = new Trace(recipient.getTrace().getLevel());
             timeout = timeRemaining * 0.001;
