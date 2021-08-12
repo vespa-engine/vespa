@@ -184,10 +184,8 @@ public class RPCNetwork implements Network, MethodHandler {
         }
         this.owner = owner;
 
-        RPCSendAdapter adapter1 = new RPCSendV1();
-        RPCSendAdapter adapter2 = new RPCSendV2();
-        addSendAdapter(new Version(5), adapter1);
-        addSendAdapter(new Version(6,149), adapter2);
+        sendAdapters.put(new Version(5), new RPCSendV1(this));
+        sendAdapters.put(new Version(6,149), new RPCSendV2(this));
     }
 
     @Override
@@ -324,18 +322,6 @@ public class RPCNetwork implements Network, MethodHandler {
         ret.setTarget(target); // free by freeServiceAddress()
         recipient.setServiceAddress(ret);
         return null; // no error
-    }
-
-    /**
-     * Registers a send adapter for a given version. This will overwrite whatever is already registered under the same
-     * version.
-     *
-     * @param version the version for which to register an adapter
-     * @param adapter the adapter to register
-     */
-    private void addSendAdapter(Version version, RPCSendAdapter adapter) {
-        adapter.attach(this);
-        sendAdapters.put(version, adapter);
     }
 
     /**

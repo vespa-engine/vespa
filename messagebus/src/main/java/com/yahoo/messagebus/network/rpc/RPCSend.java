@@ -31,9 +31,9 @@ import com.yahoo.text.Utf8Array;
  */
 public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWaiter, RPCSendAdapter {
 
-    private RPCNetwork net = null;
-    private String clientIdent = "client";
-    private String serverIdent = "server";
+    private final RPCNetwork net;
+    private final String clientIdent;
+    private final String serverIdent;
 
     protected abstract Method buildMethod();
     protected abstract String getReturnSpec();
@@ -43,13 +43,15 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
     protected abstract Params toParams(Values req);
     protected abstract void createResponse(Values ret, Reply reply, Version version, byte [] payload);
 
-    @Override
-    public final void attach(RPCNetwork net) {
+    protected RPCSend(RPCNetwork net) {
         this.net = net;
         String prefix = net.getIdentity().getServicePrefix();
         if (prefix != null && prefix.length() > 0) {
-            clientIdent = "'" + prefix + "'";
-            serverIdent = clientIdent;
+            this.serverIdent = this.clientIdent = "'" + prefix + "'";
+        }
+        else {
+            this.clientIdent = "client";
+            this.serverIdent = "server";
         }
         net.getSupervisor().addMethod(buildMethod());
     }
