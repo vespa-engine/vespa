@@ -32,7 +32,7 @@ private:
     typedef typename B::EnumHandle EnumHandle;
     NumericDirectAttribute(const NumericDirectAttribute &);
     NumericDirectAttribute & operator=(const NumericDirectAttribute &);
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     typename B::BaseType getFromEnum(EnumHandle e) const override { return _data[e]; }
 protected:
     typedef typename B::BaseType   BaseType;
@@ -139,7 +139,7 @@ private:
     StringDirectAttribute(const StringDirectAttribute &);
     StringDirectAttribute & operator=(const StringDirectAttribute &);
     void onSave(IAttributeSaveTarget & saveTarget) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     const char * getFromEnum(EnumHandle e) const override { return &_buffer[e]; }
     const char * getStringFromEnum(EnumHandle e) const override { return &_buffer[e]; }
     SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

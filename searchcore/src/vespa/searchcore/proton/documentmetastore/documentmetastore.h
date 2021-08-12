@@ -92,7 +92,7 @@ private:
     void onGenerationChange(generation_t generation) override;
     void removeOldGenerations(generation_t firstUsed) override;
     std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     template <typename TreeView>
     typename TreeView::Iterator

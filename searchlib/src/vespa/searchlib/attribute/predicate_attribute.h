@@ -47,7 +47,7 @@ public:
     predicate::PredicateIndex &getIndex() { return *_index; }
 
     void onSave(IAttributeSaveTarget & saveTarget) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;

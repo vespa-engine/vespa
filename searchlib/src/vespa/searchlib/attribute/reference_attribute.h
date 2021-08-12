@@ -53,7 +53,7 @@ private:
     void onCommit() override;
     void onUpdateStat() override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     uint64_t getUniqueValueCount() const override;
 
     bool consider_compact_values(const CompactionStrategy &compactionStrategy);

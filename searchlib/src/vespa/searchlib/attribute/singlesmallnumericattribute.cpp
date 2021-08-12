@@ -121,7 +121,7 @@ SingleValueSmallNumericAttribute::onGenerationChange(generation_t generation)
 
 
 bool
-SingleValueSmallNumericAttribute::onLoad()
+SingleValueSmallNumericAttribute::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<Word> attrReader(*this);
     bool ok(attrReader.hasData());

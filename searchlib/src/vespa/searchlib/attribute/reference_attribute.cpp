@@ -216,7 +216,7 @@ ReferenceAttribute::onInitSave(vespalib::stringref fileName)
 }
 
 bool
-ReferenceAttribute::onLoad()
+ReferenceAttribute::onLoad(vespalib::Executor *)
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());

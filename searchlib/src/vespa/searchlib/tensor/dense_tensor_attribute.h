@@ -38,7 +38,7 @@ public:
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     vespalib::eval::TypedCells extract_cells_ref(DocId docId) const override;
     bool supports_extract_cells_ref() const override { return true; }
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;
     uint32_t getVersion() const override;

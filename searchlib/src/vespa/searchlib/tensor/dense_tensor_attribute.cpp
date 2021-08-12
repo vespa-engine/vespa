@@ -203,8 +203,9 @@ DenseTensorAttribute::extract_cells_ref(DocId docId) const
 }
 
 bool
-DenseTensorAttribute::onLoad()
+DenseTensorAttribute::onLoad(vespalib::Executor *executor)
 {
+    (void) executor;
     BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {
         return false;

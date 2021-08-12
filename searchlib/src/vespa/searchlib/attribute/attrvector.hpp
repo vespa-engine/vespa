@@ -22,7 +22,7 @@ template <typename B>
 NumericDirectAttribute<B>::~NumericDirectAttribute() = default;
 
 template <typename B>
-bool NumericDirectAttribute<B>::onLoad()
+bool NumericDirectAttribute<B>::onLoad(vespalib::Executor *)
 {
     auto dataBuffer = attribute::LoadUtils::loadDAT(*this);
     bool rc(dataBuffer.get());
