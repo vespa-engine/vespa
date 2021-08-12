@@ -6,6 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
@@ -18,13 +19,14 @@ import com.yahoo.vespa.athenz.client.zms.bindings.MembershipEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.PolicyEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ProviderResourceGroupRolesRequestEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.RoleEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.ServiceEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.ServiceListResponseEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.TenancyRequestEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 
 import javax.net.ssl.SSLContext;
@@ -32,11 +34,9 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -259,6 +259,34 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .map(RoleEntity.Member::memberName)
                 .map(AthenzIdentities::from)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AthenzService> listServices(AthenzDomain athenzDomain) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service", athenzDomain.getName()));
+        ServiceListResponseEntity execute = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, ServiceListResponseEntity.class));
+
+        return execute.services.stream()
+                .map(serviceName -> new AthenzService(athenzDomain, serviceName))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void createOrUpdateService(AthenzService athenzService) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s", athenzService.getDomainName(), athenzService.getName()));
+
+        var serviceEntity = new ServiceEntity(athenzService.getFullName());
+
+        var request = RequestBuilder.put(uri)
+                .setEntity(toJsonStringEntity(serviceEntity))
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public void deleteService(AthenzService athenzService) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s", athenzService.getDomainName(), athenzService.getName()));
+        execute(RequestBuilder.delete(uri).build(), response -> readEntity(response, Void.class));
     }
 
     private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {
