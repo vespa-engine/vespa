@@ -221,10 +221,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return true;
     }
 
-    // Returns the set of applications that failed to redeploy
+    // Returns applications that failed to redeploy
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
-                                                                new DaemonThreadFactory("redeploy-apps-"));
+        ExecutorService executor = getExecutor();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
 
         PreparedApplications preparedApplications = prepare(applicationIds, executor);
@@ -235,13 +234,21 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
         List<ApplicationId> failed = activate(preparedApplications.deploymentInfos());
 
+        shutdownExecutor(executor);
+        return failed;
+    }
+
+    private void shutdownExecutor(ExecutorService executor) throws InterruptedException {
         executor.shutdown();
         if ( ! executor.awaitTermination(1, TimeUnit.HOURS)) {
             log.log(Level.WARNING, "Awaiting termination of executor failed");
             executor.shutdownNow();
         }
+    }
 
-        return failed;
+    private ExecutorService getExecutor() {
+        return Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
+                                            new DaemonThreadFactory("redeploy-apps-"));
     }
 
     private PreparedApplications prepare(List<ApplicationId> applicationIds, ExecutorService executor) {
