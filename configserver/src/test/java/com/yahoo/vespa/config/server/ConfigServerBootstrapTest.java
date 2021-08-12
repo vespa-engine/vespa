@@ -161,7 +161,7 @@ public class ConfigServerBootstrapTest {
                 .zone(new Zone(Environment.dev, RegionName.defaultName()))
                 .curator(curator)
                 .build();
-        tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
+        tester.deployApp("src/test/apps/app/", vespaVersion);
         ApplicationId applicationId = tester.applicationId();
 
         VersionState versionState = createVersionState();
