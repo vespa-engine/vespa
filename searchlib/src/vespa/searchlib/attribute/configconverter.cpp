@@ -108,7 +108,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     retval.setIsFilter(cfg.enableonlybitvector);
     retval.setFastAccess(cfg.fastaccess);
     retval.setMutable(cfg.ismutable);
-    retval.setSwapable(cfg.swappable);
+    retval.setSwappable(cfg.swappable);
     predicateParams.setArity(cfg.arity);
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
