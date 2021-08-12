@@ -55,7 +55,16 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     }
 
     @Override
-    public void failure(String detail) {
+    public void failure(HttpResponse response) {
+        failure(response.toString());
+    }
+
+    @Override
+    public void failure(Throwable cause) {
+        failure(cause.getMessage());
+    }
+
+    private void failure(String detail) {
         if (failingSinceMillis.compareAndSet(NEVER, clock.getAsLong()))
             this.detail.set(detail);
     }
