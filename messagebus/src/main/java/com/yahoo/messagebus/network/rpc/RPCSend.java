@@ -80,7 +80,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
             }
             Reply reply = new EmptyReply();
             reply.getTrace().swap(ctx.trace);
-            net.getOwner().deliverReply(reply, recipient);
+            recipient.handleReply(reply);
         } else {
             req.setContext(ctx);
             address.getTarget().getJRTTarget().invokeAsync(req, ctx.timeout, this);
@@ -147,7 +147,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         if (error != null) {
             reply.addError(error);
         }
-        ctx.owner.deliverReply(reply, ctx.recipient);
+        ctx.recipient.handleReply(reply);
     }
 
     protected final class Params {

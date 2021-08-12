@@ -805,9 +805,13 @@ public class RoutingNode implements ReplyHandler {
         this.serviceAddress = serviceAddress;
     }
 
+    /** Proxy through message bus in case it was destroyed in the meantime. */
     @Override
     public void handleReply(Reply reply) {
-        setReply(reply);
-        notifyParent();
+        mbus.deliverReply(reply, r -> {
+            setReply(reply);
+            notifyParent();
+        });
     }
+
 }

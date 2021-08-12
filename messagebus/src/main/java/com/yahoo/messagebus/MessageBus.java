@@ -423,7 +423,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         return getProtocol((Utf8Array)name);
     }
 
-    @Override
     public void deliverReply(Reply reply, ReplyHandler handler) {
         msn.deliverReply(reply, handler);
     }

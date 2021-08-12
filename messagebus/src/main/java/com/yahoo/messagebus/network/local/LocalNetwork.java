@@ -115,7 +115,7 @@ public class LocalNetwork implements Network {
                                          error.getMessage(),
                                          error.getService() != null ? error.getService() : envelope.sender.hostId));
             }
-            owner.deliverReply(reply, envelope.parent.recipient);
+            envelope.parent.recipient.handleReply(reply);
         });
     }
 

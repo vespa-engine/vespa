@@ -348,7 +348,7 @@ public class RPCNetwork implements Network, MethodHandler {
             Reply reply = new EmptyReply();
             reply.getTrace().setLevel(ctx.traceLevel);
             reply.addError(new Error(errCode, errMsg));
-            owner.deliverReply(reply, recipient);
+            recipient.handleReply(reply);
         }
     }
 
