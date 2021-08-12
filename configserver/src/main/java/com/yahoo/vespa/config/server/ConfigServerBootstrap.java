@@ -309,7 +309,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 logProgress(applicationCount, applications);
                 lastLogged = Instant.now();
             }
-        } while (applications.failed().size() + applications.successCount() < applicationCount);
+        } while (applications.failCount() + applications.successCount() < applicationCount);
 
         logProgress(applicationCount, applications);
         return applications;
