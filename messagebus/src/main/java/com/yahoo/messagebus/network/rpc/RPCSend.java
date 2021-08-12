@@ -41,6 +41,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
     protected abstract Reply createReply(Values ret, String serviceName, Trace trace);
     protected abstract Params toParams(Values req);
     protected abstract void createResponse(Values ret, Reply reply, Version version, byte [] payload);
+
     @Override
     public final void attach(RPCNetwork net) {
         this.net = net;

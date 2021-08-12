@@ -145,8 +145,8 @@ public final class ConfiguredApplication implements Application {
     }
 
     /**
-     * The container has no RPC methods, but we still need an RPC sever
-     * to register in Slobrok to enable orchestration
+     * The container has no RPC methods, but we still need an RPC server
+     * to register in Slobrok to enable orchestration.
      */
     private Register registerInSlobrok(QrConfig qrConfig) {
         if ( ! qrConfig.rpc().enabled()) return null;

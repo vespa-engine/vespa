@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 //       MbusClient, with or without throttling. This introduced the problem of ownership during shutdown,
 //       which was solved with manual reference counting. This is all much better solved with DI, which (now)
 //       owns everything, and does component shutdown in reverse construction order, which is always right.
-//       So for the sake everyone's mental health, this should all just be removed now! I suspect this is
+//       So for the sake of everyone's mental health, this should all just be removed now! I suspect this is
 //       even the case for Request; we can track in handlers, and warn when requests have been misplaced.
 public final class SessionCache extends AbstractComponent {
 
