@@ -128,7 +128,7 @@ public class Messenger implements Runnable {
      */
     public boolean destroy() {
         boolean done = false;
-        enqueue(Terminate.INSTANCE);
+        enqueue(TERMINATE);
         if (!destroyed.getAndSet(true)) {
             try {
                 synchronized (this) {
@@ -161,7 +161,7 @@ public class Messenger implements Runnable {
                     task = queue.poll();
                 }
             }
-            if (task == Terminate.INSTANCE) {
+            if (task == TERMINATE) {
                 break;
             }
             if (task != null) {
@@ -175,7 +175,7 @@ public class Messenger implements Runnable {
                 } catch (final Exception e) {
                     log.warning("An exception was thrown while destroying " + task.getClass().getName() + ": " +
                                 e.toString());
-                    log.warning("Someone, somewhere might have to wait indefinetly for something.");
+                    log.warning("Someone, somewhere might have to wait indefinitely for something.");
                 }
             }
             for (final Task child : children) {
@@ -235,18 +235,9 @@ public class Messenger implements Runnable {
         }
     }
 
-    private static class Terminate implements Task {
+    private static final Task TERMINATE = new Task() {
+        @Override public void run() { }
+        @Override public void destroy() { }
+    };
 
-        static final Terminate INSTANCE = new Terminate();
-
-        @Override
-        public void run() {
-            // empty
-        }
-
-        @Override
-        public void destroy() {
-            // empty
-        }
-    }
 }

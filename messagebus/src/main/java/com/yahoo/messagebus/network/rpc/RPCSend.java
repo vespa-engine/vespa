@@ -122,16 +122,16 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
             switch (req.errorCode()) {
                 case com.yahoo.jrt.ErrorCode.TIMEOUT:
                     error = new Error(ErrorCode.TIMEOUT,
-                            "A timeout occured while waiting for '" + serviceName + "' (" +
+                            "A timeout occurred while waiting for '" + serviceName + "' (" +
                                     ctx.timeout + " seconds expired); " + req.errorMessage());
                     break;
                 case com.yahoo.jrt.ErrorCode.CONNECTION:
                     error = new Error(ErrorCode.CONNECTION_ERROR,
-                            "A connection error occured for '" + serviceName + "'; " + req.errorMessage());
+                            "A connection error occurred for '" + serviceName + "'; " + req.errorMessage());
                     break;
                 default:
                     error = new Error(ErrorCode.NETWORK_ERROR,
-                            "A network error occured for '" + serviceName + "'; " + req.errorMessage());
+                            "A network error occurred for '" + serviceName + "'; " + req.errorMessage());
             }
         } else {
             reply = createReply(req.returnValues(), serviceName, ctx.trace);
@@ -229,7 +229,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
             }
             if (payload == null || payload.length == 0) {
                 reply.addError(new Error(ErrorCode.ENCODE_ERROR,
-                        "An error occured while encoding the reply."));
+                        "An error occurred while encoding the reply."));
             }
         }
         createResponse(ctx.request.returnValues(), reply, ctx.version, payload);
