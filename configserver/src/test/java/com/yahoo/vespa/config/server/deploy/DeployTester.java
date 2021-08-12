@@ -124,35 +124,21 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath) {
-        return deployApp(applicationPath, null, Instant.now());
+    public void deployApp(String applicationPath) {
+        deployApp(applicationPath, (String) null);
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath, Instant now) {
-        return deployApp(applicationPath, null, now);
+    public PrepareResult deployApp(String applicationPath, String vespaVersion)  {
+        return deployApp(applicationPath, new PrepareParams.Builder().vespaVersion(vespaVersion));
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath, String vespaVersion) {
-        return deployApp(applicationPath, vespaVersion, Instant.now());
-    }
-
-    /**
-     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
-     */
-    public PrepareResult deployApp(String applicationPath, String vespaVersion, Instant now)  {
-        return deployApp(applicationPath, now, new PrepareParams.Builder().vespaVersion(vespaVersion));
-    }
-
-    /**
-     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
-     */
-    public PrepareResult deployApp(String applicationPath, Instant now, PrepareParams.Builder paramsBuilder)  {
+    public PrepareResult deployApp(String applicationPath, PrepareParams.Builder paramsBuilder)  {
          paramsBuilder.applicationId(applicationId)
                 .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)));
 
