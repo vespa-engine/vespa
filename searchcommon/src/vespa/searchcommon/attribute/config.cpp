@@ -14,6 +14,7 @@ Config::Config() noexcept :
     _isFilter(false),
     _fastAccess(false),
     _mutable(false),
+    _swapable(false),
     _match(Match::UNCASED),
     _dictionary(),
     _growStrategy(),
@@ -35,6 +36,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) no
       _isFilter(false),
       _fastAccess(false),
       _mutable(false),
+      _swapable(false),
       _match(Match::UNCASED),
       _dictionary(),
       _growStrategy(),
@@ -64,6 +66,7 @@ Config::operator==(const Config &b) const
            _isFilter == b._isFilter &&
            _fastAccess == b._fastAccess &&
            _mutable == b._mutable &&
+           _swapable == b._swapable &&
            _match == b._match &&
            _dictionary == b._dictionary &&
            _growStrategy == b._growStrategy &&
