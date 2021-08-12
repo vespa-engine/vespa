@@ -12,29 +12,29 @@ import (
 func TestDeployZip(t *testing.T) {
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
-	             executeCommand(t, []string{"deploy", "testdata/application.zip"}))
+	             executeCommand(t, []string{"deploy", "testdata/application.zip"}, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", t)
 }
 
 func TestDeployZipWithTargetArgument(t *testing.T) {
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
-	             executeCommand(t, []string{"deploy", "testdata/application.zip", "-d", "http://target:19071"}))
+	             executeCommand(t, []string{"deploy", "testdata/application.zip", "-d", "http://target:19071"}, []string{}))
 	assertDeployRequestMade("http://target:19071", t)
 
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
-	             executeCommand(t, []string{"deploy", "testdata/application.zip", "--deploy-target", "http://target2:19071"}))
+	             executeCommand(t, []string{"deploy", "testdata/application.zip", "--deploy-target", "http://target2:19071"}, []string{}))
 	assertDeployRequestMade("http://target2:19071", t)
 
 	// Reset persistent flag
-    executeCommand(t, []string{"deploy", "testdata/application.zip", "-d", "http://127.0.0.1:19071"})
+    executeCommand(t, []string{"deploy", "testdata/application.zip", "-d", "http://127.0.0.1:19071"}, []string{})
 }
 
 func TestDeployDirectory(t *testing.T) {
 	assert.Equal(t,
 	             "\x1b[32mSuccess \n",
-	             executeCommand(t, []string{"deploy", "testdata/src/main/application"}))
+	             executeCommand(t, []string{"deploy", "testdata/src/main/application"}, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", t)
 }
 

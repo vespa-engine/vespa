@@ -23,11 +23,11 @@ func init() {
     nextStatus = 200
 }
 
-func executeCommand(t *testing.T, args []string) (standardout string) {
+func executeCommand(t *testing.T, args []string, moreArgs []string) (standardout string) {
     utils.ActiveHttpClient = mockHttpClient{}
 	b := bytes.NewBufferString("")
     utils.Out = b
-	rootCmd.SetArgs(args)
+	rootCmd.SetArgs(concat(args, moreArgs))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(b)
 	assert.Empty(t, err, "No error")
@@ -45,4 +45,15 @@ func (c mockHttpClient) Do(request *http.Request) (response *http.Response, erro
         Header:     make(http.Header),
     },
     nil
+}
+
+func concat(array1 []string, array2 []string) []string {
+    result := make([]string, len(array1) + len(array2))
+    for i := 0; i < len(array1); i++ {
+        result[i] = array1[i]
+    }
+    for i := 0; i < len(array2); i++ {
+        result[i + len(array1)] = array2[i]
+    }
+    return result
 }
