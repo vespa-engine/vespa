@@ -108,22 +108,22 @@ size_t
 BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool resizing) const
 {
     size_t reservedElems = getReservedElements(bufferId);
+    BufferCounts last_bc;
     BufferCounts bc;
     if (resizing) {
         if (!_aggr_counts.empty()) {
-            bc = _aggr_counts.last_buffer();
+            last_bc = _aggr_counts.last_buffer();
         }
-    } else {
-        bc = _aggr_counts.all_buffers();
     }
+    bc = _aggr_counts.all_buffers();
     assert((bc.used_elems % _arraySize) == 0);
     assert((bc.dead_elems % _arraySize) == 0);
     assert(bc.used_elems >= bc.dead_elems);
-    size_t neededArrays = (elemsNeeded + (resizing ? bc.used_elems : reservedElems) + _arraySize - 1) / _arraySize;
+    size_t neededArrays = (elemsNeeded + (resizing ? last_bc.used_elems : reservedElems) + _arraySize - 1) / _arraySize;
 
     size_t liveArrays = (bc.used_elems - bc.dead_elems) / _arraySize;
     size_t growArrays = (liveArrays * _allocGrowFactor);
-    size_t usedArrays = bc.used_elems / _arraySize;
+    size_t usedArrays = last_bc.used_elems / _arraySize;
     size_t wantedArrays = std::max((resizing ? usedArrays : 0u) + growArrays,
                                    static_cast<size_t>(_minArrays));
 

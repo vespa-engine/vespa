@@ -563,16 +563,16 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
     assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
                     { 4 }, 20, 4, 0);
     // Resize if buffer size is less than 4, min size 0
-    assertGrowStats({ 4, 4, 8, 16, 16, 32, 32, 64, 128, 128 },
+    assertGrowStats({ 4, 4, 8, 32, 32, 32, 64, 128, 128, 128 },
                     { 0, 1, 2, 4 }, 4, 0, 4);
     // Always switch to new buffer, min size 16
     assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
                     { 16 }, 68, 16, 0);
     // Resize if buffer size is less than 16, min size 0
-    assertGrowStats({ 16, 32, 32, 64, 64, 128, 128, 128, 128 },
+    assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
                     { 0, 1, 2, 4, 8, 16 }, 4, 0, 16);
     // Resize if buffer size is less than 16, min size 4
-    assertGrowStats({ 16, 32, 32, 64, 64, 128, 128, 128, 128 },
+    assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
                     { 4, 8, 16 }, 20, 4, 16);
     // Always switch to new buffer, min size 0
     assertGrowStats({ 1, 1, 1, 1, 1, 2, 2, 4, 8, 8, 16, 32 },
@@ -580,7 +580,7 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
 
     // Buffers with sizes larger than the huge page size of the mmap allocator.
     ASSERT_EQ(524288u, HUGE_PAGE_ARRAY_SIZE);
-    assertGrowStats({ 262144, 524288, 524288, 524288 * 2, 524288 * 2, 524288 * 3, 524288 * 4, 524288 * 5, 524288 * 5, 524288 * 5 },
+    assertGrowStats({ 262144, 524288, 524288, 524288 * 3, 524288 * 3, 524288 * 4, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5 },
                     { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 },
                     4, 0, HUGE_PAGE_ARRAY_SIZE / 2, HUGE_PAGE_ARRAY_SIZE * 5);
 }
@@ -614,12 +614,12 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
      *   4) Cap bytes to alloc to the max offset EntryRef can handle.
      *      The max bytes to alloc is: maxArrays * arraySize * elementSize.
      */
-    assertGrowStats<uint8_t>({8192,16384,16384,32768,32768,65536,98304,98304,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint8_t>({16384,16384,32768,32768,65536,65536,131072,163840,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint8_t>({16384,32768,32768,65536,65536,131072,229376,229376,229376,229376,229376,229376}, 7);
-    assertGrowStats<uint32_t>({8192,16384,16384,32768,32768,65536,98304,98304,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint32_t>({16384,16384,32768,32768,65536,65536,131072,163840,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint32_t>({16384,32768,32768,65536,65536,131072,229376,229376,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint8_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
+    assertGrowStats<uint8_t>({16384,16384,65536,65536,65536,131072,163840,163840,163840,163840,163840,163840}, 5);
+    assertGrowStats<uint8_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint32_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
+    assertGrowStats<uint32_t>({16384,16384,65536,65536,65536,131072,163840,163840,163840,163840,163840,163840}, 5);
+    assertGrowStats<uint32_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
 }
 
 namespace {
