@@ -272,7 +272,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void putService(AthenzService athenzService) {
+    public void createOrUpdateService(AthenzService athenzService) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s", athenzService.getDomainName(), athenzService.getName()));
 
         var serviceEntity = new ServiceEntity(athenzService.getFullName());

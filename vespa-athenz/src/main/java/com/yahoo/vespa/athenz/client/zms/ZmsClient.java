@@ -57,7 +57,7 @@ public interface ZmsClient extends AutoCloseable {
 
     List<AthenzService> listServices(AthenzDomain athenzDomain);
 
-    void putService(AthenzService athenzService);
+    void createOrUpdateService(AthenzService athenzService);
 
     void deleteService(AthenzService athenzService);
 

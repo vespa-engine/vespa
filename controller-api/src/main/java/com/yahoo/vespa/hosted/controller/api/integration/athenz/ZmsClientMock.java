@@ -174,7 +174,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void putService(AthenzService athenzService) {
+    public void createOrUpdateService(AthenzService athenzService) {
     }
 
     @Override
