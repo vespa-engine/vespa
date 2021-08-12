@@ -57,6 +57,7 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean fastAccess = false;
     private boolean huge = false;
     private boolean mutable = false;
+    private boolean swappable = false;
     private int arity = BooleanIndexDefinition.DEFAULT_ARITY;
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
@@ -194,6 +195,7 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isFastSearch()         { return fastSearch; }
     public boolean isFastAccess()         { return fastAccess; }
     public boolean isHuge()               { return huge; }
+    public boolean isSwappable()          { return swappable; }
     public boolean isPosition()           { return isPosition; }
     public boolean isMutable()            { return mutable; }
 
@@ -226,6 +228,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
     public void setFastSearch(boolean fastSearch)                { this.fastSearch = fastSearch; }
     public void setHuge(boolean huge)                            { this.huge = huge; }
+    public void setSwappable(boolean swappable)                  { this.swappable = swappable; }
     public void setFastAccess(boolean fastAccess)                { this.fastAccess = fastAccess; }
     public void setPosition(boolean position)                    { this.isPosition = position; }
     public void setMutable(boolean mutable)                      { this.mutable = mutable; }
@@ -355,8 +358,9 @@ public final class Attribute implements Cloneable, Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(
-                name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
-                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
+                name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
+                createIfNonExistent, isPosition, huge, mutable, swappable, enableBitVectors, enableOnlyBitVector,
+                tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
     @Override
@@ -379,6 +383,8 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.enableOnlyBitVector != other.enableOnlyBitVector) return false;
         if (this.fastSearch != other.fastSearch) return false;
         if (this.huge != other.huge) return false;
+        if (this.mutable != other.mutable) return false;
+        if (this.swappable != other.swappable) return false;
         if (! this.sorting.equals(other.sorting)) return false;
         if (! Objects.equals(dictionary, other.dictionary)) return false;
         if (! Objects.equals(tensorType, other.tensorType)) return false;

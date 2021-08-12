@@ -112,6 +112,33 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         SDField field = (SDField) search.getDocument().getField("f");
         return field.getAttributes().get(field.getName());
     }
+
+    @Test
+    public void requireThatSwappableIsDefaultOff() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                        "  document test { \n" +
+                        "    field f type int { \n" +
+                        "      indexing: attribute \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n");
+        assertFalse(attr.isSwappable());
+    }
+    @Test
+    public void requireThatSwappableCanBeSet() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                        "  document test { \n" +
+                        "    field f type int { \n" +
+                        "      indexing: attribute \n" +
+                        "      attribute: swappable \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n");
+        assertFalse(attr.isSwappable());
+    }
+
     @Test
     public void requireThatMutableIsDefaultOff() throws ParseException {
         Attribute attr = getAttributeF(
@@ -219,6 +246,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         single.setEnableOnlyBitVector(true);
         single.setFastSearch(true);
         single.setHuge(true);
+        single.setSwappable(true);
         single.setFastAccess(true);
         single.setPosition(true);
         single.setArity(5);
@@ -241,6 +269,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertTrue(array.isEnabledOnlyBitVector());
         assertTrue(array.isFastSearch());
         assertTrue(array.isHuge());
+        assertTrue(array.isSwappable());
         assertTrue(array.isFastAccess());
         assertTrue(array.isPosition());
         assertEquals(5, array.arity());

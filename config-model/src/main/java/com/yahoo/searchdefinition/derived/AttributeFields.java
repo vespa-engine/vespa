@@ -222,6 +222,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         if (attribute.isHuge()) {
             aaB.huge(true);
         }
+        if (attribute.isSwappable()) {
+            aaB.swappable(true);
+        }
         if (attribute.getSorting().isDescending()) {
             aaB.sortascending(false);
         }

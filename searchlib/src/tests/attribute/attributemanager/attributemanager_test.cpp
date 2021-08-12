@@ -239,7 +239,7 @@ TEST("require that config can be converted")
     {
         CACA a;
         EXPECT_TRUE(!CC::convert(a).swapable());
-        a.swapable = true;
+        a.swappable = true;
         EXPECT_TRUE(CC::convert(a).swapable());
     }
     { // tensor
