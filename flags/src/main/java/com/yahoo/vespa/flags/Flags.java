@@ -14,6 +14,7 @@ import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -267,6 +268,12 @@ public class Flags {
             "Apis allowed to proxy through the service view api",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag SEPARATE_TENANT_IAM_ROLES = defineFeatureFlag(
+            "separate-tenant-iam-roles", false,
+            List.of("mortent"), "2021-08-12", "2021-11-01",
+            "Create separate iam roles for tenant",
+            "Takes effect on redeploy",
+            TENANT_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
