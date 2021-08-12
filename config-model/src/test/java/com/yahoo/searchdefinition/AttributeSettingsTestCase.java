@@ -123,7 +123,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
                         "    }\n" +
                         "  }\n" +
                         "}\n");
-        assertFalse(attr.isSwappable());
+        assertFalse(attr.isPaged());
     }
     @Test
     public void requireThatSwappableCanBeSet() throws ParseException {
@@ -132,11 +132,11 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
                         "  document test { \n" +
                         "    field f type int { \n" +
                         "      indexing: attribute \n" +
-                        "      attribute: swappable \n" +
+                        "      attribute: paged \n" +
                         "    }\n" +
                         "  }\n" +
                         "}\n");
-        assertTrue(attr.isSwappable());
+        assertTrue(attr.isPaged());
     }
 
     @Test
@@ -246,7 +246,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         single.setEnableOnlyBitVector(true);
         single.setFastSearch(true);
         single.setHuge(true);
-        single.setSwappable(true);
+        single.setPaged(true);
         single.setFastAccess(true);
         single.setPosition(true);
         single.setArity(5);
@@ -269,7 +269,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertTrue(array.isEnabledOnlyBitVector());
         assertTrue(array.isFastSearch());
         assertTrue(array.isHuge());
-        assertTrue(array.isSwappable());
+        assertTrue(array.isPaged());
         assertTrue(array.isFastAccess());
         assertTrue(array.isPosition());
         assertEquals(5, array.arity());

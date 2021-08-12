@@ -18,7 +18,7 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     private Boolean fastSearch;
     private Boolean fastAccess;
     private Boolean mutable;
-    private Boolean swappable;
+    private Boolean paged;
     private Boolean enableBitVectors;
     private Boolean enableOnlyBitVector;
     //TODO: Remember sorting!!
@@ -74,8 +74,8 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     public void setMutable(Boolean mutable) {
         this.mutable = mutable;
     }
-    public void setSwappable(Boolean swappable) {
-        this.swappable = swappable;
+    public void setPaged(Boolean paged) {
+        this.paged = paged;
     }
 
     public Boolean getEnableBitVectors() {
@@ -135,8 +135,8 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         if (huge != null) {
             attribute.setHuge(huge);
         }
-        if (swappable != null) {
-            attribute.setSwappable(swappable);
+        if (paged != null) {
+            attribute.setPaged(paged);
         }
         if (fastSearch != null) {
             attribute.setFastSearch(fastSearch);
