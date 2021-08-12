@@ -57,6 +57,7 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean fastAccess = false;
     private boolean huge = false;
     private boolean mutable = false;
+    private boolean paged = false;
     private int arity = BooleanIndexDefinition.DEFAULT_ARITY;
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
@@ -187,21 +188,22 @@ public final class Attribute implements Cloneable, Serializable {
     /** Returns the prefetch value of this, null if the default is used. */
     public Boolean getPrefetchValue() { return prefetch; }
 
-    public boolean isRemoveIfZero()       { return removeIfZero; }
-    public boolean isCreateIfNonExistent(){ return createIfNonExistent; }
-    public boolean isEnabledBitVectors()  { return enableBitVectors; }
+    public boolean isRemoveIfZero()         { return removeIfZero; }
+    public boolean isCreateIfNonExistent()  { return createIfNonExistent; }
+    public boolean isEnabledBitVectors()    { return enableBitVectors; }
     public boolean isEnabledOnlyBitVector() { return enableOnlyBitVector; }
-    public boolean isFastSearch()         { return fastSearch; }
-    public boolean isFastAccess()         { return fastAccess; }
-    public boolean isHuge()               { return huge; }
-    public boolean isPosition()           { return isPosition; }
-    public boolean isMutable()            { return mutable; }
+    public boolean isFastSearch()           { return fastSearch; }
+    public boolean isFastAccess()           { return fastAccess; }
+    public boolean isHuge()                 { return huge; }
+    public boolean isPaged()                { return paged; }
+    public boolean isPosition()             { return isPosition; }
+    public boolean isMutable()              { return mutable; }
 
-    public int arity() { return arity; }
+    public int arity()       { return arity; }
     public long lowerBound() { return lowerBound; }
     public long upperBound() { return upperBound; }
     public double densePostingListThreshold() { return densePostingListThreshold; }
-    public Optional<TensorType> tensorType() { return tensorType; }
+    public Optional<TensorType> tensorType()  { return tensorType; }
     public Optional<StructuredDataType> referenceDocumentType() { return referenceDocumentType; }
 
     public static final DistanceMetric DEFAULT_DISTANCE_METRIC = DistanceMetric.EUCLIDEAN;
@@ -226,6 +228,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
     public void setFastSearch(boolean fastSearch)                { this.fastSearch = fastSearch; }
     public void setHuge(boolean huge)                            { this.huge = huge; }
+    public void setPaged(boolean paged)                  { this.paged = paged; }
     public void setFastAccess(boolean fastAccess)                { this.fastAccess = fastAccess; }
     public void setPosition(boolean position)                    { this.isPosition = position; }
     public void setMutable(boolean mutable)                      { this.mutable = mutable; }
@@ -355,8 +358,9 @@ public final class Attribute implements Cloneable, Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(
-                name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
-                isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
+                name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
+                createIfNonExistent, isPosition, huge, mutable, paged, enableBitVectors, enableOnlyBitVector,
+                tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
     @Override
@@ -379,6 +383,8 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.enableOnlyBitVector != other.enableOnlyBitVector) return false;
         if (this.fastSearch != other.fastSearch) return false;
         if (this.huge != other.huge) return false;
+        if (this.mutable != other.mutable) return false;
+        if (this.paged != other.paged) return false;
         if (! this.sorting.equals(other.sorting)) return false;
         if (! Objects.equals(dictionary, other.dictionary)) return false;
         if (! Objects.equals(tensorType, other.tensorType)) return false;

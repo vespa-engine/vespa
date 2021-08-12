@@ -35,7 +35,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         Search search = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
 
         SDField f1=(SDField) search.getDocument().getField("f1");
-        assertTrue(f1.getAttributes().size() == 1);
+        assertEquals(1, f1.getAttributes().size());
         Attribute a1 = f1.getAttributes().get(f1.getName());
         assertThat(a1.getType(), is(Attribute.Type.LONG));
         assertThat(a1.getCollectionType(), is(Attribute.CollectionType.SINGLE));
@@ -46,7 +46,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertFalse(a1.isCreateIfNonExistent());
 
         SDField f2=(SDField) search.getDocument().getField("f2");
-        assertTrue(f2.getAttributes().size() == 1);
+        assertEquals(1, f2.getAttributes().size());
         Attribute a2 = f2.getAttributes().get(f2.getName());
         assertThat(a2.getType(), is(Attribute.Type.LONG));
         assertThat(a2.getCollectionType(), is(Attribute.CollectionType.SINGLE));
@@ -57,7 +57,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertFalse(a2.isCreateIfNonExistent());
         assertThat(f2.getAliasToName().get("f2alias"), is("f2"));
         SDField f3=(SDField) search.getDocument().getField("f3");
-        assertTrue(f3.getAttributes().size() == 1);
+        assertEquals(1, f3.getAttributes().size());
         assertThat(f3.getAliasToName().get("f3alias"), is("f3"));
 
         Attribute a3 = f3.getAttributes().get(f3.getName());
@@ -80,7 +80,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
 
     private void assertWeightedSet(Search search, String name, boolean createIfNonExistent, boolean removeIfZero) {
         SDField f4 = (SDField) search.getDocument().getField(name);
-        assertTrue(f4.getAttributes().size() == 1);
+        assertEquals(1, f4.getAttributes().size());
         Attribute a4 = f4.getAttributes().get(f4.getName());
         assertThat(a4.getType(), is(Attribute.Type.STRING));
         assertThat(a4.getCollectionType(), is(Attribute.CollectionType.WEIGHTEDSET));
@@ -95,7 +95,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
     public void requireThatFastAccessCanBeSet() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
         SDField field = (SDField) search.getDocument().getField("fast_access");
-        assertTrue(field.getAttributes().size() == 1);
+        assertEquals(1, field.getAttributes().size());
         Attribute attr = field.getAttributes().get(field.getName());
         assertTrue(attr.isFastAccess());
     }
@@ -112,6 +112,33 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         SDField field = (SDField) search.getDocument().getField("f");
         return field.getAttributes().get(field.getName());
     }
+
+    @Test
+    public void requireThatSwappableIsDefaultOff() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                        "  document test { \n" +
+                        "    field f type int { \n" +
+                        "      indexing: attribute \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n");
+        assertFalse(attr.isPaged());
+    }
+    @Test
+    public void requireThatSwappableCanBeSet() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                        "  document test { \n" +
+                        "    field f type int { \n" +
+                        "      indexing: attribute \n" +
+                        "      attribute: paged \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "}\n");
+        assertTrue(attr.isPaged());
+    }
+
     @Test
     public void requireThatMutableIsDefaultOff() throws ParseException {
         Attribute attr = getAttributeF(
@@ -219,6 +246,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         single.setEnableOnlyBitVector(true);
         single.setFastSearch(true);
         single.setHuge(true);
+        single.setPaged(true);
         single.setFastAccess(true);
         single.setPosition(true);
         single.setArity(5);
@@ -241,6 +269,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertTrue(array.isEnabledOnlyBitVector());
         assertTrue(array.isFastSearch());
         assertTrue(array.isHuge());
+        assertTrue(array.isPaged());
         assertTrue(array.isFastAccess());
         assertTrue(array.isPosition());
         assertEquals(5, array.arity());

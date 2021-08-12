@@ -11,6 +11,7 @@ attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
 attribute[].fastsearch          bool default=false
 attribute[].huge                bool default=false
+attribute[].paged               bool default=false
 # An attribute marked mutable can be updated by a query.
 attribute[].ismutable           bool default=false
 attribute[].sortascending       bool default=true

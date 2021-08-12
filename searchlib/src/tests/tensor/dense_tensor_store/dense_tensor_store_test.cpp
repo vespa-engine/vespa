@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/log/log.h>
+LOG_SETUP("dense_tensor_store_test");
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/searchlib/tensor/dense_tensor_store.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/test/value_compare.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("dense_tensor_store_test");
 
 using search::tensor::DenseTensorStore;
 using vespalib::eval::SimpleValue;
@@ -28,7 +28,7 @@ struct Fixture
 {
     DenseTensorStore store;
     Fixture(const vespalib::string &tensorType)
-        : store(ValueType::from_spec(tensorType))
+        : store(ValueType::from_spec(tensorType), {})
     {}
     void assertSetAndGetTensor(const TensorSpec &tensorSpec) {
         Value::UP expTensor = makeTensor(tensorSpec);

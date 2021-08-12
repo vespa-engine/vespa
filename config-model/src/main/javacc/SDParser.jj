@@ -299,6 +299,7 @@ TOKEN :
 | < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
 | < FASTACCESS: "fast-access" >
 | < MUTABLE: "mutable" >
+| < PAGED: "paged" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
@@ -1229,12 +1230,13 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
 }
 {
     (
-        <HUGE>                { attribute.setHuge(true); }
-      | <FASTSEARCH>          { attribute.setFastSearch(true); }
-      | <FASTACCESS>          { attribute.setFastAccess(true); }
-      | <MUTABLE>             { attribute.setMutable(true); }
-      | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
-      | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
+        <HUGE>                 { attribute.setHuge(true); }
+      | <FASTSEARCH>           { attribute.setFastSearch(true); }
+      | <FASTACCESS>           { attribute.setFastAccess(true); }
+      | <MUTABLE>              { attribute.setMutable(true); }
+      | <PAGED>                { attribute.setPaged(true); }
+      | <ENABLEBITVECTORS>     { attribute.setEnableBitVectors(true); }
+      | <ENABLEONLYBITVECTOR>  { attribute.setEnableOnlyBitVector(true); }
       | sorting(field, attributeName)
       | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.setDoAlias(true);
@@ -2736,6 +2738,7 @@ String identifier() : { }
       | <SECONDPHASE>
       | <SORTING>
       | <SOURCE>
+      | <PAGED>
       | <SSCONTEXTUAL>
       | <SSOVERRIDE>
       | <SSTITLE>

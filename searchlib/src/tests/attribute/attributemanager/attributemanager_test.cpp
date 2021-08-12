@@ -20,43 +20,13 @@ using namespace search::attribute;
 using std::shared_ptr;
 using vespalib::stringref;
 
-typedef BasicType      BT;
-typedef CollectionType CT;
-typedef AttributeVector::SP             AVSP;
+using BT = BasicType;
+using CT = CollectionType;
+using AVSP = AttributeVector::SP;
 
 namespace search {
 
-class AttributeManagerTest : public vespalib::TestApp
-{
-private:
-    void verifyLoad(AttributeVector & v);
-    void testLoad();
-    void testGuards();
-    void testConfigConvert();
-    void testContext();
-    void can_get_readable_attribute_vector_by_name();
-
-    bool
-    assertDataType(BT::Type exp,
-                   AttributesConfig::Attribute::Datatype in);
-
-    bool
-    assertCollectionType(CollectionType exp,
-                         AttributesConfig::Attribute::Collectiontype in,
-                         bool removeIfZ = false,
-                         bool createIfNe = false);
-
-public:
-    AttributeManagerTest()
-    {
-    }
-    int Main() override;
-};
-
-
-typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int32_t>,
-                                    multivalue::Value<int32_t> >
-TestAttributeBase;
+using TestAttributeBase = MultiValueNumericAttribute< IntegerAttributeTemplate<int32_t>, multivalue::Value<int32_t> >;
 
 class TestAttribute : public TestAttributeBase
 {
@@ -73,8 +43,7 @@ public:
 };
 
 
-void
-AttributeManagerTest::testGuards()
+TEST("Test attribute guards")
 {
     AttributeVector::SP vec(new TestAttribute("mvint") );
     TestAttribute * v = static_cast<TestAttribute *> (vec.get());
@@ -134,7 +103,7 @@ AttributeManagerTest::testGuards()
 
 
 void
-AttributeManagerTest::verifyLoad(AttributeVector & v)
+verifyLoad(AttributeVector & v)
 {
     EXPECT_TRUE( !v.isLoaded() );
     EXPECT_TRUE( v.load() );
@@ -143,8 +112,7 @@ AttributeManagerTest::verifyLoad(AttributeVector & v)
 }
 
 
-void
-AttributeManagerTest::testLoad()
+TEST("Test loading of attributes")
 {
     {
         TestAttributeBase v("mvint");
@@ -172,14 +140,14 @@ AttributeManagerTest::testLoad()
         verifyLoad(v);
     }
     {
-        AttributeVector::Config config(BT::INT32,
+        Config config(BT::INT32,
                                        CollectionType::ARRAY);
         TestAttributeBase v("mvint", config);
         verifyLoad(v);
     }
     {
         AttributeManager manager;
-        AttributeVector::Config config(BT::INT32,
+        Config config(BT::INT32,
                                        CollectionType::ARRAY);
         EXPECT_TRUE(manager.addVector("mvint", config));
         AttributeManager::AttributeList list;
@@ -193,7 +161,7 @@ AttributeManagerTest::testLoad()
 
 
 bool
-AttributeManagerTest::assertDataType(BT::Type exp, AttributesConfig::Attribute::Datatype in)
+assertDataType(BT::Type exp, AttributesConfig::Attribute::Datatype in)
 {
     AttributesConfig::Attribute a;
     a.datatype = in;
@@ -202,25 +170,22 @@ AttributeManagerTest::assertDataType(BT::Type exp, AttributesConfig::Attribute::
 
 
 bool
-AttributeManagerTest::
 assertCollectionType(CollectionType exp, AttributesConfig::Attribute::Collectiontype in,
-                     bool removeIfZ, bool createIfNe)
+                     bool removeIfZ = false, bool createIfNe = false)
 {
     AttributesConfig::Attribute a;
     a.collectiontype = in;
     a.removeifzero = removeIfZ;
     a.createifnonexistent = createIfNe;
-    AttributeVector::Config out = ConfigConverter::convert(a);
+    Config out = ConfigConverter::convert(a);
     return EXPECT_EQUAL(exp.type(), out.collectionType().type()) &&
         EXPECT_EQUAL(exp.removeIfZero(), out.collectionType().removeIfZero()) &&
         EXPECT_EQUAL(exp.createIfNonExistant(), out.collectionType().createIfNonExistant());
 }
 
 
-void
-AttributeManagerTest::testConfigConvert()
+TEST("require that config can be converted")
 {
-    // typedef AttributeVector::Config AVC;
     typedef BT AVBT;
     typedef CollectionType AVCT;
     using CACA = AttributesConfig::Attribute;
@@ -271,11 +236,17 @@ AttributeManagerTest::testConfigConvert()
         a.ismutable = true;
         EXPECT_TRUE(CC::convert(a).isMutable());
     }
+    {
+        CACA a;
+        EXPECT_TRUE(!CC::convert(a).paged());
+        a.paged = true;
+        EXPECT_TRUE(CC::convert(a).paged());
+    }
     { // tensor
         CACA a;
         a.datatype = CACAD::TENSOR;
         a.tensortype = "tensor(x[5])";
-        AttributeVector::Config out = ConfigConverter::convert(a);
+        Config out = ConfigConverter::convert(a);
         EXPECT_EQUAL("tensor(x[5])", out.tensorType().to_spec());
     }
     { // distance metric (default)
@@ -334,8 +305,7 @@ bool gt_attribute(const attribute::IAttributeVector * a, const attribute::IAttri
     return a->getName() < b->getName();
 }
 
-void
-AttributeManagerTest::testContext()
+TEST("test the attribute context")
 {
     std::vector<AVSP> attrs;
     // create various attributes vectors
@@ -370,13 +340,13 @@ AttributeManagerTest::testContext()
         }
 
         for (uint32_t i = 0; i < 2; ++i) {
-            EXPECT_TRUE(first->getAttribute("sint32") != NULL);
-            EXPECT_TRUE(first->getAttribute("aint32") != NULL);
-            EXPECT_TRUE(first->getAttribute("wsint32") != NULL);
-            EXPECT_TRUE(first->getAttributeStableEnum("wsint32") != NULL);
+            EXPECT_TRUE(first->getAttribute("sint32") != nullptr);
+            EXPECT_TRUE(first->getAttribute("aint32") != nullptr);
+            EXPECT_TRUE(first->getAttribute("wsint32") != nullptr);
+            EXPECT_TRUE(first->getAttributeStableEnum("wsint32") != nullptr);
         }
-        EXPECT_TRUE(first->getAttribute("foo") == NULL);
-        EXPECT_TRUE(first->getAttribute("bar") == NULL);
+        EXPECT_TRUE(first->getAttribute("foo") == nullptr);
+        EXPECT_TRUE(first->getAttribute("bar") == nullptr);
 
         // one generation guard taken per attribute asked for
         for (uint32_t i = 0; i < attrs.size(); ++i) {
@@ -388,10 +358,10 @@ AttributeManagerTest::testContext()
         {
             IAttributeContext::UP second = manager.createContext();
 
-            EXPECT_TRUE(second->getAttribute("sint32") != NULL);
-            EXPECT_TRUE(second->getAttribute("aint32") != NULL);
-            EXPECT_TRUE(second->getAttribute("wsint32") != NULL);
-            EXPECT_TRUE(second->getAttributeStableEnum("wsint32") != NULL);
+            EXPECT_TRUE(second->getAttribute("sint32") != nullptr);
+            EXPECT_TRUE(second->getAttribute("aint32") != nullptr);
+            EXPECT_TRUE(second->getAttribute("wsint32") != nullptr);
+            EXPECT_TRUE(second->getAttributeStableEnum("wsint32") != nullptr);
 
             // two generation guards taken per attribute asked for
             for (uint32_t i = 0; i < attrs.size(); ++i) {
@@ -428,8 +398,7 @@ AttributeManagerTest::testContext()
     }
 }
 
-void
-AttributeManagerTest::can_get_readable_attribute_vector_by_name()
+TEST("require that we can get readable attribute by name")
 {
     auto attr = AttributeFactory::createAttribute("cool_attr", Config(BT::INT32, CT::SINGLE));
     // Ensure there's something to actually load, or fetching the attribute will throw.
@@ -443,20 +412,7 @@ AttributeManagerTest::can_get_readable_attribute_vector_by_name()
     EXPECT_TRUE(av.get() == nullptr);
 }
 
-int AttributeManagerTest::Main()
-{
-    TEST_INIT("attributemanager_test");
-
-    testLoad();
-    testGuards();
-    testConfigConvert();
-    testContext();
-    can_get_readable_attribute_vector_by_name();
-
-    TEST_DONE();
-}
-
 } // namespace search
 
 
-TEST_APPHOOK(search::AttributeManagerTest);
+TEST_MAIN() { TEST_RUN_ALL(); }

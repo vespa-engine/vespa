@@ -29,7 +29,7 @@ private:
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
-    virtual ~DenseTensorAttribute();
+    ~DenseTensorAttribute() override;
     // Implements AttributeVector and ITensorAttribute
     uint32_t clearDoc(DocId docId) override;
     void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
