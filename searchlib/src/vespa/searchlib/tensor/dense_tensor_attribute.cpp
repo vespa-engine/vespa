@@ -125,7 +125,7 @@ DenseTensorAttribute::memory_usage() const
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType(), make_memory_allocator(getName(), cfg.swappable())),
+      _denseTensorStore(cfg.tensorType(), make_memory_allocator(getName(), cfg.paged())),
       _index()
 {
     if (cfg.hnsw_index_params().has_value()) {

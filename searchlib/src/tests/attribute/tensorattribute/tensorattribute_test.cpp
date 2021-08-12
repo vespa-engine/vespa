@@ -335,7 +335,7 @@ struct Fixture {
             _denseTensors = true;
         }
         if (_traits.use_mmap_file_allocator) {
-            _cfg.setSwappable(true);
+            _cfg.setPaged(true);
         }
         if (_traits.use_mock_index) {
             _index_factory = std::make_unique<MockNearestNeighborIndexFactory>();
@@ -1010,7 +1010,7 @@ TEST_F("NN blueprint handles strong filter triggering brute force search", Neare
     EXPECT_FALSE(bp->may_approximate());
 }
 
-TEST("Dense tensor attribute with swappable flag uses mmap file allocator")
+TEST("Dense tensor attribute with paged flag uses mmap file allocator")
 {
     vespalib::string basedir("mmap-file-allocator-factory-dir");
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup(basedir);
