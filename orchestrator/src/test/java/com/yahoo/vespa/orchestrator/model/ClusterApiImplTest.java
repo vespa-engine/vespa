@@ -124,7 +124,7 @@ public class ClusterApiImplTest {
                             "Services down on resumed hosts: [1 missing config server]."));
         }
 
-        flagSource.withBooleanFlag(Flags.GROUP_SUSPENSION.id(), true);
+        flagSource.withBooleanFlag(Flags.GROUP_PERMANENT_SUSPENSION.id(), true);
 
         try {
             policy.verifyGroupGoingDownIsFine(clusterApi);
@@ -156,7 +156,7 @@ public class ClusterApiImplTest {
                             "Services down on resumed hosts: [1 missing config server host]."));
         }
 
-        flagSource.withBooleanFlag(Flags.GROUP_SUSPENSION.id(), true);
+        flagSource.withBooleanFlag(Flags.GROUP_PERMANENT_SUSPENSION.id(), true);
 
         try {
             policy.verifyGroupGoingDownIsFine(clusterApi);

@@ -126,12 +126,12 @@ public class Flags {
             "Whether the Orchestrator can assume any missing proxy services are down.",
             "Takes effect on first (re)start of config server");
 
-    public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
-            "group-suspension", true,
-            List.of("hakon"), "2021-01-22", "2021-08-22",
-            "Allow all content nodes in a hierarchical group to suspend at the same time",
-            "Takes effect on the next suspension request to the Orchestrator.",
-            APPLICATION_ID);
+    public static final UnboundBooleanFlag GROUP_PERMANENT_SUSPENSION = defineFeatureFlag(
+            "group-permanent-suspension", true,
+            List.of("hakonhall"), "2021-09-11", "2021-11-11",
+            "Allow all content nodes in a hierarchical group to suspend at the same time when" +
+            "permanently suspending a host.",
+            "Takes effect on the next permanent suspension request to the Orchestrator.");
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
