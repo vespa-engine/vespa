@@ -22,6 +22,7 @@ class GracePeriodCircuitBreakerTest {
         AtomicLong now = new AtomicLong(0);
         long SECOND = 1000;
         CircuitBreaker breaker = new GracePeriodCircuitBreaker(now::get, Duration.ofSeconds(1), Duration.ofMinutes(1));
+        Throwable error = new Error();
 
         assertEquals(CLOSED, breaker.state(), "Initial state is closed");
 
@@ -34,7 +35,7 @@ class GracePeriodCircuitBreakerTest {
         now.addAndGet(100 * SECOND);
         assertEquals(CLOSED, breaker.state(), "State is closed some time after a success");
 
-        breaker.failure();
+        breaker.failure(error);
         assertEquals(CLOSED, breaker.state(), "State is closed right after a failure");
 
         now.addAndGet(SECOND);
@@ -46,7 +47,7 @@ class GracePeriodCircuitBreakerTest {
         breaker.success();
         assertEquals(CLOSED, breaker.state(), "State is closed after a new success");
 
-        breaker.failure();
+        breaker.failure(error);
         now.addAndGet(60 * SECOND);
         assertEquals(HALF_OPEN, breaker.state(), "State is half-open until doom period has passed");
 
