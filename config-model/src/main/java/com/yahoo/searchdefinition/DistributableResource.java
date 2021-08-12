@@ -76,8 +76,16 @@ public class DistributableResource {
     public String getFileReference() { return fileReference; }
 
     public void validate() {
-        if (path == null || path.isEmpty())
-            throw new IllegalArgumentException("Distributable resource must have a file or uri.");
+        switch (pathType) {
+            case FILE:
+            case URI:
+                if (path == null || path.isEmpty())
+                    throw new IllegalArgumentException("Distributable URI/FILE resource must have a file or uri.");
+                break;
+            case BLOB:
+                if (blob == null)
+                    throw new IllegalArgumentException("Distributable BLOB can not be null.");
+        }
     }
 
     public String toString() {
