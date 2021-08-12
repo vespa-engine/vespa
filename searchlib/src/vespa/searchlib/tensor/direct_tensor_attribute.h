@@ -21,7 +21,7 @@ public:
                        const document::TensorUpdate &update,
                        bool create_empty_if_non_existing) override;
     virtual std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    virtual bool onLoad() override;
+    virtual bool onLoad(vespalib::Executor *executor) override;
     virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;
 

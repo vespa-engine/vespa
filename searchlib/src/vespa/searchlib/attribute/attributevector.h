@@ -38,6 +38,7 @@ namespace document {
 
 namespace vespalib {
     class GenericHeader;
+    class Executor;
 }
 
 namespace search {
@@ -447,6 +448,7 @@ public:
 
     bool isEnumeratedSaveFormat() const;
     bool load();
+    bool load(vespalib::Executor * executor);
     void commit() { commit(false); }
     void commit(bool forceUpdateStats);
     void commit(const CommitParam & param);
@@ -570,7 +572,7 @@ private:
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
     virtual bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);
-    virtual bool onLoad();
+    virtual bool onLoad(vespalib::Executor * executor);
 
 
     BaseName                              _baseFileName;

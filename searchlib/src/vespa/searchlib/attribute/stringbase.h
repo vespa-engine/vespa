@@ -93,7 +93,7 @@ protected:
     using EnumEntryType = const char*;
     ChangeVector _changes;
     Change _defaultValue;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 

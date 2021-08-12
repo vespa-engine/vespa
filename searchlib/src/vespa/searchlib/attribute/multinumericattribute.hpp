@@ -128,7 +128,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
 
 template <typename B, typename M>
 bool
-MultiValueNumericAttribute<B, M>::onLoad()
+MultiValueNumericAttribute<B, M>::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<MValueType> attrReader(*this);
     bool ok(attrReader.getHasLoadData());

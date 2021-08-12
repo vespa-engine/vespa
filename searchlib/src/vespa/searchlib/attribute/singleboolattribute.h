@@ -22,7 +22,7 @@ public:
     bool addDoc(DocId & doc) override;
     void onAddDocs(DocId docIdLimit) override;
     void onUpdateStat() override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     void onSave(IAttributeSaveTarget &saveTarget) override;
     void clearDocs(DocId lidLow, DocId lidLimit) override;
     void onShrinkLidSpace() override;

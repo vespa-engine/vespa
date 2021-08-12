@@ -126,7 +126,7 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 
 template <typename B>
 bool
-SingleValueNumericAttribute<B>::onLoad()
+SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());

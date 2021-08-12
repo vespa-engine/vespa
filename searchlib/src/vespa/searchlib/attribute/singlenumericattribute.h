@@ -101,7 +101,7 @@ public:
     void removeOldGenerations(generation_t firstUsed) override;
     void onGenerationChange(generation_t generation) override;
     bool addDoc(DocId & doc) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 

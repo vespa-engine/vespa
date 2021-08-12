@@ -178,7 +178,7 @@ SingleBoolAttribute::getSearch(std::unique_ptr<QueryTermSimple> term, const attr
 }
 
 bool
-SingleBoolAttribute::onLoad()
+SingleBoolAttribute::onLoad(vespalib::Executor *)
 {
     PrimitiveReader<uint32_t> attrReader(*this);
     bool ok(attrReader.hasData());

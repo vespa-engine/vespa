@@ -86,7 +86,7 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
 
 template <typename B, typename M>
 bool
-MultiValueNumericEnumAttribute<B, M>::onLoad()
+MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
 {
     AttributeReader attrReader(*this);
     bool ok(attrReader.getHasLoadData());

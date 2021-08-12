@@ -151,7 +151,7 @@ protected:
 public:
     MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 

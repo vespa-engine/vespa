@@ -163,7 +163,7 @@ public:
     void removeOldGenerations(generation_t firstUsed) override;
 
     void onGenerationChange(generation_t generation) override;
-    bool onLoad() override;
+    bool onLoad(vespalib::Executor *executor) override;
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
