@@ -22,7 +22,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
     public HostedVespaClusterPolicy(FlagSource flagSource, Zone zone) {
         // Note that the "group" in this flag refers to hierarchical groups of a content cluster.
-        this.groupSuspensionInPermanentSuspendFlag = Flags.GROUP_SUSPENSION_IN_PERMANENT_SUSPEND.bindTo(flagSource);
+        this.groupSuspensionInPermanentSuspendFlag = Flags.GROUP_PERMANENT_SUSPENSION.bindTo(flagSource);
         this.zone = zone;
     }
 

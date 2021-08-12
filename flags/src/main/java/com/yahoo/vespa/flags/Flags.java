@@ -126,8 +126,8 @@ public class Flags {
             "Whether the Orchestrator can assume any missing proxy services are down.",
             "Takes effect on first (re)start of config server");
 
-    public static final UnboundBooleanFlag GROUP_SUSPENSION_IN_PERMANENT_SUSPEND = defineFeatureFlag(
-            "group-suspension-in-permanent-suspend", true,
+    public static final UnboundBooleanFlag GROUP_PERMANENT_SUSPENSION = defineFeatureFlag(
+            "group-permanent-suspension", true,
             List.of("hakonhall"), "2021-09-11", "2021-11-11",
             "Allow all content nodes in a hierarchical group to suspend at the same time when" +
             "permanently suspending a host.",
