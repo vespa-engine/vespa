@@ -33,6 +33,6 @@ struct CTFMetaData {
 };
 
 std::vector<InterpretedFunction::Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash,
-                                                                      CTFMetaData *meta = nullptr);
+                                                                      CTFMetaData *meta);
 
 } // namespace vespalib::eval

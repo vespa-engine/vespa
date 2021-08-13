@@ -95,8 +95,9 @@ private:
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
     // for testing; use with care; the tensor function must be kept alive
-    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function);
-    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData &meta);
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta);
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)
+      : InterpretedFunction(factory, function, nullptr) {}
     InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types);
     InterpretedFunction(const ValueBuilderFactory &factory, const Function &function, const NodeTypes &types)
         : InterpretedFunction(factory, function.root(), types) {}
