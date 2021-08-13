@@ -15,12 +15,13 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
+RemoteSlobrok::RemoteSlobrok(const vespalib::string &name, const vespalib::string &spec,
                              ExchangeManager &manager)
-    : _exchanger(manager),
+    : _name(name),
+      _spec(spec),
+      _exchanger(manager),
       _rpcsrvmanager(manager._rpcsrvmanager),
       _remote(nullptr),
-      _rpcserver(name, spec, *this),
       _reconnecter(getSupervisor()->GetScheduler(), *this),
       _failCnt(0),
       _remAddPeerReq(nullptr),
@@ -28,13 +29,14 @@ RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
       _remAddReq(nullptr),
       _remRemReq(nullptr),
       _remFetchReq(nullptr),
+      _checkServerReq(nullptr),
       _pending()
 {
-    _rpcserver.healthCheck();
+    tryConnect();
 }
 
 void RemoteSlobrok::shutdown() {
-    _reconnecter.disable();
+    _reconnecter.Kill();
 
     _pending.clear();
 
@@ -43,6 +45,9 @@ void RemoteSlobrok::shutdown() {
         _remote = nullptr;
     }
 
+    if (_checkServerReq != nullptr) {
+        _checkServerReq->Abort();
+    }
     if (_remFetchReq != nullptr) {
         _remFetchReq->Abort();
     }
@@ -63,7 +68,6 @@ void RemoteSlobrok::shutdown() {
 
 RemoteSlobrok::~RemoteSlobrok() {
     shutdown();
-    // _rpcserver destructor called automatically
 }
 
 void
@@ -183,6 +187,10 @@ RemoteSlobrok::pushMine()
 void
 RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
 {
+    if (req == _checkServerReq) {
+        handleCheckServerResult();
+        return;
+    }
     if (req == _remFetchReq) {
         handleFetchResult();
         return;
@@ -292,23 +300,9 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
 
 
 void
-RemoteSlobrok::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg)
-{
-    if (++_failCnt > 10) {
-        LOG(warning, "remote location broker at %s failed: %s",
-            rpcsrv->getSpec().c_str(), errmsg.c_str());
-    } else {
-        LOG(debug, "remote location broker at %s failed: %s",
-            rpcsrv->getSpec().c_str(), errmsg.c_str());
-    }
-    LOG_ASSERT(rpcsrv == &_rpcserver);
-    fail();
-}
-
-
-void
 RemoteSlobrok::fail()
 {
+    LOG_ASSERT(_checkServerReq == nullptr);
     // disconnect
     if (_remote != nullptr) {
         _remote->SubRef();
@@ -336,42 +330,60 @@ RemoteSlobrok::maybePushMine()
     }
 }
 
-
-void
-RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv)
-{
-    LOG_ASSERT(rpcsrv == &_rpcserver);
-    (void) rpcsrv;
-
-    // connection was OK, so disable any pending reconnect
-    _reconnecter.disable();
-
-    if (_remote != nullptr) {
-        maybeStartFetch();
-        // the rest here should only be done on first notifyOk
-        return;
-    }
-    _remote = getSupervisor()->GetTarget(getSpec().c_str());
-    maybeStartFetch();
-
-    // at this point, we will do (in sequence):
-    // ask peer to connect to us too;
-    // ask peer for its list of managed rpcservers, adding to our database
-    // add our managed rpcserver on peer
-    // any failure will cause disconnect and retry.
-
-    _remAddPeerReq = getSupervisor()->AllocRPCRequest();
-    _remAddPeerReq->SetMethodName("slobrok.admin.addPeer");
-    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
-    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
-    _remote->InvokeAsync(_remAddPeerReq, 3.0, this);
-    // when _remAddPeerReq is returned, our managed list is added via doAdd()
-}
-
 void
 RemoteSlobrok::tryConnect()
 {
-    _rpcserver.healthCheck();
+    if (_remote == nullptr) {
+        _remote = getSupervisor()->GetTarget(getSpec().c_str());
+        LOG_ASSERT(_checkServerReq == nullptr);
+        _checkServerReq = getSupervisor()->AllocRPCRequest();
+        _checkServerReq->SetMethodName("slobrok.callback.listNamesServed");
+        _remote->InvokeAsync(_checkServerReq, 25.0, this);
+    }
+}
+
+void RemoteSlobrok::handleCheckServerResult() {
+    LOG_ASSERT(_checkServerReq != nullptr);
+    auto & req = *_checkServerReq;
+    _checkServerReq = nullptr;
+    if (req.GetErrorCode() == FRTE_RPC_ABORT) {
+        LOG(debug, "slobrok[%s].check aborted", _name.c_str());
+        req.SubRef();
+        return;
+    }
+    bool isOk = false;
+    if (req.CheckReturnTypes("S")) {
+        const FRT_Values &answer = *req.GetReturn();
+        const FRT_StringValue *strings = answer[0]._string_array._pt;
+        for (uint32_t i = 0; i < answer[0]._string_array._len; ++i) {
+            if (strcmp(strings[i]._str, _name.c_str()) == 0) {
+                isOk = true;
+            }
+        }
+    }
+    req.SubRef();
+    if (isOk) {
+        LOG_ASSERT(_remote != nullptr);
+        // connection was OK, so disable any pending reconnect
+        _reconnecter.disable();
+        maybeStartFetch();
+        // at this point, we will do (in sequence):
+        // ask peer to connect to us too;
+        // ask peer for its list of managed rpcservers, adding to our database
+        // add our managed rpcserver on peer
+        // any failure will cause disconnect and retry.
+        _remAddPeerReq = getSupervisor()->AllocRPCRequest();
+        _remAddPeerReq->SetMethodName("slobrok.admin.addPeer");
+        _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+        _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+        _remote->InvokeAsync(_remAddPeerReq, 3.0, this);
+        // when _remAddPeerReq is returned, our managed list is added via doAdd()
+    } else {
+        if (++_failCnt > 10) {
+            LOG(warning, "remote location broker at %s failed", _spec.c_str());
+        }
+        fail();
+    }
 }
 
 FRT_Supervisor *
