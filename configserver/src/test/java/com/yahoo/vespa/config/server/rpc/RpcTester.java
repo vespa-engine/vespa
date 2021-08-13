@@ -114,7 +114,7 @@ public class RpcTester implements AutoCloseable {
     }
 
     RpcServer createRpcServer(ConfigserverConfig config) throws IOException {
-        return new RpcServer(config,
+        RpcServer rpcServer = new RpcServer(config,
                              new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                           configserverConfig,
                                                           new SuperModelManager(
@@ -128,6 +128,8 @@ public class RpcTester implements AutoCloseable {
                              new FileServer(temporaryFolder.newFolder()),
                              new NoopRpcAuthorizer(),
                              new RpcRequestHandlerProvider());
+        rpcServer.setUpGetConfigHandlers();
+        return rpcServer;
     }
 
     void startRpcServer()  {
