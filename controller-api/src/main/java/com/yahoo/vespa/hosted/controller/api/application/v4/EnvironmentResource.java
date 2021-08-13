@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.InstanceInformation;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.EnvironmentId;
@@ -10,9 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -24,7 +20,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.io.InputStream;
 
 /**
  * @author Tony Vaagenes
@@ -39,20 +34,7 @@ public interface EnvironmentResource {
 
     String APPLICATION_TEST_ZIP = "applicationTestZip";
     String APPLICATION_ZIP = "applicationZip";
-    String DEPLOY_OPTIONS = "deployOptions";
     String SUBMIT_OPTIONS = "submitOptions";
-
-    @POST
-    @Path("{environmentId}/region/{regionId}/instance/{instanceId}/deploy")
-    @Consumes({MediaType.MULTIPART_FORM_DATA})
-    DeployResult deploy(@PathParam("tenantId") TenantId tenantId,
-                        @PathParam("applicationId") ApplicationId applicationId,
-                        @PathParam("environmentId") EnvironmentId environmentId,
-                        @PathParam("regionId") RegionId regionId,
-                        @PathParam("instanceId") InstanceId instanceId,
-                        @FormDataParam(APPLICATION_ZIP) InputStream applicationZipFile,
-                        @FormDataParam(APPLICATION_ZIP) FormDataContentDisposition fileMetaData,
-                        @FormDataParam(DEPLOY_OPTIONS) FormDataBodyPart deployOptions);
 
     @DELETE
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}")
