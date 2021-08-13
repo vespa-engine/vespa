@@ -8,7 +8,6 @@
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
@@ -194,7 +193,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
     assert(attr->hasLoadData());
     vespalib::Timer timer;
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
-    if (!attr->load()) {
+    if (!attr->load(&_executor)) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
             attr->getBaseFileName().c_str());
         return false;
@@ -235,12 +234,14 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
                                            const vespalib::string &documentSubDbName,
                                            const AttributeSpec &spec,
                                            uint64_t currentSerialNum,
-                                           const IAttributeFactory &factory)
+                                           const IAttributeFactory &factory,
+                                           vespalib::Executor & executor)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
       _spec(spec),
       _currentSerialNum(currentSerialNum),
       _factory(factory),
+      _executor(executor),
       _header(),
       _header_ok(false)
 {

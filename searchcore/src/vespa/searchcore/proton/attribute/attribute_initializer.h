@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace search::attribute { class AttributeHeader; }
+namespace vespalib { class Executor; }
 
 namespace proton {
 
@@ -29,6 +30,7 @@ private:
     const AttributeSpec             _spec;
     const uint64_t                  _currentSerialNum;
     const IAttributeFactory        &_factory;
+    vespalib::Executor             &_executor;
     std::unique_ptr<const search::attribute::AttributeHeader> _header;
     bool                            _header_ok;
 
@@ -45,7 +47,8 @@ private:
 
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
-                         const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory);
+                         const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory,
+                         vespalib::Executor & executor);
     ~AttributeInitializer();
 
     AttributeInitializerResult init() const;
