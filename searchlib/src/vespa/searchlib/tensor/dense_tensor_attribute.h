@@ -25,7 +25,8 @@ private:
     void consider_remove_from_index(DocId docid);
     vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
-
+    class ThreadedLoader;
+    class ForegroundLoader;
 public:
     DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                          const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
