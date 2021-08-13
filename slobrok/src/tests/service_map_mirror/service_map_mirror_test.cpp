@@ -12,9 +12,9 @@ using vespalib::make_string_short::fmt;
 
 using Map = std::map<vespalib::string, vespalib::string>;
 
-Map dump(const ServiceMapMirror &history) {
+Map dump(const ServiceMapMirror &mirror) {
     Map result;
-    for (const auto & entry : history.allMappings()) {
+    for (const auto & entry : mirror.allMappings()) {
         result[entry.name] = entry.spec;
     }
     return result;
@@ -92,6 +92,48 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     EXPECT_EQ(map["key/1983/name"], "tcp/host11983.domain.tld:19099");
     EXPECT_EQ(map["key/1969/name"], "tcp/woodstock:19069");
     EXPECT_EQ(map.size(), 1983ul);
+
+    auto cur = mirror.currentGeneration();
+    std::vector<vespalib::string> removes = {
+        "key/123/name",
+        "key/1983/name",
+        "key/234/name",
+        "key/345/name",
+        "key/123/name",
+        "key/456/name"
+    };
+    ServiceMappingList updates = {
+        ServiceMapping{ "key/567/name", "bar/1/foo" },
+        ServiceMapping{ "key/678/name", "bar/2/foo" },
+        ServiceMapping{ "key/234/name", "bar/3/foo" },
+        ServiceMapping{ "key/345/name", "bar/4/foo" },
+        ServiceMapping{ "key/789/name", "bar/5/foo" },
+        ServiceMapping{ "key/666/name", "bar/6/foo" },
+        ServiceMapping{ "key/567/name", "bar/7/foo" }
+    };
+    auto nxt = cur;
+    nxt.add();
+    nxt.add();
+    mirror.apply(MapDiff{cur, removes, updates, nxt});
+    EXPECT_EQ(mirror.currentGeneration(), GenCnt(1988));
+    map = dump(mirror);
+    EXPECT_FALSE(map.contains("key/123/name"));
+    EXPECT_FALSE(map.contains("key/1983/name"));
+    EXPECT_FALSE(map.contains("key/456/name"));
+    EXPECT_TRUE(map.contains("key/0/name"));
+    EXPECT_TRUE(map.contains("key/234/name"));
+    EXPECT_TRUE(map.contains("key/345/name"));
+    EXPECT_TRUE(map.contains("key/567/name"));
+    EXPECT_TRUE(map.contains("key/666/name"));
+    EXPECT_TRUE(map.contains("key/678/name"));
+    EXPECT_TRUE(map.contains("key/789/name"));
+    EXPECT_EQ(map["key/234/name"], "bar/3/foo");
+    EXPECT_EQ(map["key/345/name"], "bar/4/foo");
+    EXPECT_EQ(map["key/567/name"], "bar/7/foo");
+    EXPECT_EQ(map["key/666/name"], "bar/6/foo");
+    EXPECT_EQ(map["key/678/name"], "bar/2/foo");
+    EXPECT_EQ(map["key/789/name"], "bar/5/foo");
+    EXPECT_EQ(map.size(), 1981ul);
 
     mirror.unregisterListener(observer);
 }
