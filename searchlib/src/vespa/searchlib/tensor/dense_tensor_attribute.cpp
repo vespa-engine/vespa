@@ -12,6 +12,9 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
@@ -220,23 +223,45 @@ DenseTensorAttribute::onLoad(vespalib::Executor *executor)
     uint32_t numDocs(tensorReader.getDocIdLimit());
     _refVector.reset();
     _refVector.unsafe_reserve(numDocs);
+    auto complete_executor = (_index && !use_index_file && executor)
+            ? std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000)
+            : std::unique_ptr<vespalib::ThreadStackExecutor>();
+    std::atomic<uint64_t> pending(0);
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         if (tensorReader.is_present()) {
             auto raw = _denseTensorStore.allocRawBuffer();
             tensorReader.readTensor(raw.data, _denseTensorStore.getBufSize());
             _refVector.push_back(raw.ref);
             if (_index && !use_index_file) {
-                // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
-                setCommittedDocIdLimit(lid + 1);
-                _index->add_document(lid);
-                if ((lid % 256) == 0) {
-                    commit();
+                if (executor != nullptr) {
+                    while (pending > 1000) { std::this_thread::yield(); }
+                    ++pending;
+                    executor->execute(vespalib::makeLambdaTask([this, raw, lid, &pending, &complete_executor]() {
+                        auto prepared = _index->prepare_add_document(lid, _denseTensorStore.get_typed_cells(raw.ref), getGenerationHandler().takeGuard());
+                        complete_executor->execute(vespalib::makeLambdaTask([this, lid, &pending, result=std::move(prepared)]() mutable {
+                            setCommittedDocIdLimit(std::max(getCommittedDocIdLimit(), lid + 1));
+                            _index->complete_add_document(lid, std::move(result));
+                            --pending;
+                            if ((lid % 256) == 0) {
+                                commit();
+                            };
+                        }));
+                    }));
+                } else {
+                    // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
+                    setCommittedDocIdLimit(lid + 1);
+                    _index->add_document(lid);
+                    if ((lid % 256) == 0) {
+                        commit();
+                    }
                 }
             }
         } else {
             _refVector.push_back(EntryRef());
         }
     }
+    while (pending > 0) { std::this_thread::sleep_for(1ms); }
+    commit();
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
     if (_index && use_index_file) {
@@ -252,8 +277,7 @@ DenseTensorAttribute::onLoad(vespalib::Executor *executor)
 std::unique_ptr<AttributeSaver>
 DenseTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().
-                                             takeGuard());
+    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
     auto index_saver = (_index ? _index->make_saver() : std::unique_ptr<NearestNeighborIndexSaver>());
     return std::make_unique<DenseTensorAttributeSaver>
         (std::move(guard),
