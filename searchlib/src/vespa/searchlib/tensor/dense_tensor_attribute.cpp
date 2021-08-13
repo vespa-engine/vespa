@@ -229,7 +229,6 @@ public:
                 _cond.wait(guard);
             }
         }
-        while (_pending > 1000) { std::this_thread::yield(); }
         ++_pending;
         _shared_executor.execute(vespalib::makeLambdaTask([this, ref, lid]() {
             auto prepared = _attr._index->prepare_add_document(lid, _attr._denseTensorStore.get_typed_cells(ref), _attr.getGenerationHandler().takeGuard());
@@ -238,7 +237,8 @@ public:
                 _attr._index->complete_add_document(lid, std::move(result));
                 {
                     std::unique_lock guard(_mutex);
-                    if (--_pending == MAX_PENDING/2) {
+                    --_pending;
+                    if ((_pending == MAX_PENDING/2) || (_pending == 0)) {
                         _cond.notify_all();
                     }
                 }
@@ -249,7 +249,10 @@ public:
         }));
     }
     void wait_complete() override {
-        while (_pending > 0) { std::this_thread::sleep_for(1ms); }
+        std::unique_lock guard(_mutex);
+        while (_pending > 0) {
+            _cond.wait(guard);
+        }
     }
 private:
     static constexpr uint32_t MAX_PENDING = 1000;
