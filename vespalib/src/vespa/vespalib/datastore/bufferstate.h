@@ -99,7 +99,7 @@ public:
     /**
      * Transition from ACTIVE to HOLD state.
      */
-    void onHold();
+    void onHold(uint32_t buffer_id);
 
     /**
      * Transition from HOLD to FREE state.
@@ -157,7 +157,7 @@ public:
     void cleanHold(void *buffer, size_t offset, ElemCount numElems) {
         _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
     }
-    void dropBuffer(void *&buffer);
+    void dropBuffer(uint32_t buffer_id, void *&buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
     size_t getDeadElems() const { return _deadElems; }
@@ -192,6 +192,7 @@ public:
     FreeList &freeList() { return _freeList; }
     const FreeListList *freeListList() const { return _freeListList; }
     FreeListList *freeListList() { return _freeListList; }
+    void resume_primary_buffer(uint32_t buffer_id);
 
 };
 
