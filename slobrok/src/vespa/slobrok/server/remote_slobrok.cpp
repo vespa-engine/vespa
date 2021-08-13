@@ -36,7 +36,7 @@ RemoteSlobrok::RemoteSlobrok(const vespalib::string &name, const vespalib::strin
 }
 
 void RemoteSlobrok::shutdown() {
-    _reconnecter.disable();
+    _reconnecter.Kill();
 
     _pending.clear();
 
@@ -302,6 +302,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
 void
 RemoteSlobrok::fail()
 {
+    LOG_ASSERT(_checkServerReq == nullptr);
     // disconnect
     if (_remote != nullptr) {
         _remote->SubRef();
