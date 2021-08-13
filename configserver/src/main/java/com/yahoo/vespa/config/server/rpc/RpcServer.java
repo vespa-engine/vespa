@@ -105,6 +105,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private final FileDownloader downloader;
     private volatile boolean allTenantsLoaded = false;
     private boolean isRunning = false;
+    boolean isServingConfigRequests = false;
 
     static class ApplicationState {
         private final AtomicLong activeGeneration = new AtomicLong(0);
@@ -143,7 +144,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.rpcAuthorizer = rpcAuthorizer;
         downloader = fileServer.downloader();
         handlerProvider.setInstance(this);
-        setUpHandlers();
+        setUpFileDistributionHandlers();
     }
 
     private static int threadsToUse() {
@@ -211,11 +212,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Set up RPC method handlers.
+     * Set up RPC method handlers, except handlers for getting config (see #setUpGetConfigHandlers())
      */
-    private void setUpHandlers() {
-        // The getConfig method in this class will handle RPC calls for getting config
-        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3));
+    private void setUpFileDistributionHandlers() {
         getSupervisor().addMethod(new Method("ping", "", "i", this::ping)
                                   .methodDesc("ping")
                                   .returnDesc(0, "ret code", "return code, 0 is OK"));
@@ -227,6 +226,20 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                                      .methodDesc("set which file references to download")
                                      .paramDesc(0, "file references", "file reference to download")
                                      .returnDesc(0, "ret", "0 if success, 1 otherwise"));
+    }
+
+    /**
+     * Set up RPC method handlers for getting config
+     */
+    public void setUpGetConfigHandlers() {
+        // The getConfig method in this class will handle RPC calls for getting config
+        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this::getConfigV3));
+        isServingConfigRequests = true;
+    }
+
+
+    public boolean isServingConfigRequests() {
+        return isServingConfigRequests;
     }
 
     private ApplicationState getState(ApplicationId id) {
@@ -328,7 +341,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     /**
-     * Returns the tenant for this request, empty if there is no tenant for this request
+     * Returns the tenant for this request, empty if there is none
      * (which on hosted Vespa means that the requesting host is not currently active for any tenant)
      */
     Optional<TenantName> resolveTenant(JRTServerConfigRequest request, Trace trace) {
@@ -337,9 +350,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         ApplicationId applicationId = hostRegistry.getKeyForHost(hostname);
         if (applicationId == null) {
             if (GetConfigProcessor.logDebug(trace)) {
-                String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName();
-                log.log(Level.FINE, message);
-                log.log(Level.FINE, () -> "hosts in host registry: " + hostRegistry.getAllHosts());
+                String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName() +
+                                 ". Hosts in host registry: " + hostRegistry.getAllHosts();
+                log.log(Level.FINE, () -> message);
                 trace.trace(6, message);
             }
             return Optional.empty();
