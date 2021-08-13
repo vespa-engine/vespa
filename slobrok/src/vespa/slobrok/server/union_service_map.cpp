@@ -17,10 +17,12 @@ void UnionServiceMap::add(const ServiceMapping &mapping)
     if (iter == _mappings.end()) {
         _mappings[key].emplace_back(mapping.spec, 1u);
         _proxy.add(mapping);
+        LOG(debug, "add new %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     } else {
         Mappings &values = iter->second;
         for (CountedSpec &old : values) {
             if (old.spec == mapping.spec) {
+                LOG(debug, "add ref to existing %s->%s", mapping.name.c_str(), mapping.spec.c_str());
                 ++old.count;
                 return;
             }
@@ -41,6 +43,7 @@ void UnionServiceMap::remove(const ServiceMapping &mapping)
         LOG(error, "Broken invariant: did not find %s in mappings", key.c_str());
         return;
     }
+    LOG(debug, "remove ref from %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     Mappings &values = iter->second;
     bool found = false;
     for (CountedSpec &old : values) {

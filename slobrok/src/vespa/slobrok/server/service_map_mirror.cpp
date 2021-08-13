@@ -13,7 +13,7 @@ ServiceMapMirror::ServiceMapMirror()
 {}
 
 ServiceMapMirror::~ServiceMapMirror() {
-    clear();
+    LOG_ASSERT(_listeners.size() == 0);
 }
 
 void ServiceMapMirror::apply(const MapDiff &diff) {
@@ -87,4 +87,3 @@ void ServiceMapMirror::unregisterListener(MapListener &listener) {
 
 
 } // namespace slobrok
-

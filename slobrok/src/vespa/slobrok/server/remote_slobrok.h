@@ -76,6 +76,7 @@ public:
     const std::string & getName() const { return _rpcserver.getName(); }
     const std::string & getSpec() const { return _rpcserver.getSpec(); }
     ServiceMapMirror &remoteMap() { return _serviceMapMirror; }
+    void shutdown();
 
     // interfaces implemented:
     void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
