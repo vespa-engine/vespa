@@ -29,6 +29,7 @@ RemoteSlobrok::RemoteSlobrok(const vespalib::string &name, const vespalib::strin
       _remAddReq(nullptr),
       _remRemReq(nullptr),
       _remFetchReq(nullptr),
+      _checkServerReq(nullptr),
       _pending()
 {
     tryConnect();
