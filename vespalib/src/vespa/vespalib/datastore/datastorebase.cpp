@@ -120,6 +120,47 @@ DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
     _primary_buffer_ids[typeId] = buffer_id;
 }
 
+bool
+DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t elems_needed)
+{
+    auto type_handler = _typeHandlers[type_id];
+    uint32_t buffer_id = _primary_buffer_ids[type_id];
+    uint32_t active_buffers_count = type_handler->get_active_buffers_count();
+    constexpr uint32_t min_active_buffers = 4u;
+    if (active_buffers_count < min_active_buffers) {
+        return false;
+    }
+    if (type_handler->get_num_arrays_for_new_buffer() == 0u) {
+        return false;
+    }
+    assert(!_states[buffer_id].getCompacting());
+    uint32_t min_buffer_id = buffer_id;
+    size_t min_used = _states[buffer_id].size();
+    uint32_t checked_active_buffers = 1u;
+    for (auto &alt_buffer_id : type_handler->get_active_buffers()) {
+        if (alt_buffer_id != buffer_id && !_states[alt_buffer_id].getCompacting()) {
+            ++checked_active_buffers;
+            if (_states[alt_buffer_id].size() < min_used) {
+                min_buffer_id = alt_buffer_id;
+                min_used = _states[alt_buffer_id].size();
+            }
+        }
+    }
+    if (checked_active_buffers < min_active_buffers) {
+        return false;
+    }
+    auto array_size = type_handler->getArraySize();
+    if (elems_needed + min_used > type_handler->getMaxArrays() * array_size) {
+        return false;
+    }
+    if (min_buffer_id != buffer_id) {
+        // Resume another active buffer for same type as primary buffer
+        _primary_buffer_ids[type_id] = min_buffer_id;
+        _states[min_buffer_id].resume_primary_buffer(min_buffer_id);
+    }
+    return true;
+}
+
 void
 DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
@@ -129,8 +170,11 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded
     size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
     uint32_t bufferId = _primary_buffer_ids[typeId];
     if (elemsNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
-        // Don't try to resize existing buffer, new buffer will be large enough
-        switch_primary_buffer(typeId, elemsNeeded);
+        if (consider_grow_active_buffer(typeId, elemsNeeded)) {
+            fallbackResize(_primary_buffer_ids[typeId], elemsNeeded);
+        } else {
+            switch_primary_buffer(typeId, elemsNeeded);
+        }
     } else {
         fallbackResize(bufferId, elemsNeeded);
     }
@@ -214,7 +258,7 @@ DataStoreBase::dropBuffers()
 {
     uint32_t numBuffers = _buffers.size();
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        _states[bufferId].dropBuffer(_buffers[bufferId].getBuffer());
+        _states[bufferId].dropBuffer(bufferId, _buffers[bufferId].getBuffer());
     }
     _genHolder.clearHoldLists();
 }
@@ -234,7 +278,7 @@ DataStoreBase::getMemoryUsage() const
 void
 DataStoreBase::holdBuffer(uint32_t bufferId)
 {
-    _states[bufferId].onHold();
+    _states[bufferId].onHold(bufferId);
     size_t holdBytes = 0u;  // getMemStats() still accounts held buffers
     GenerationHeldBase::UP hold(new BufferHold(holdBytes, *this, bufferId));
     _genHolder.hold(std::move(hold));
@@ -429,8 +473,8 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
 {
     uint32_t buffer_id = get_primary_buffer_id(typeId);
     const BufferTypeBase *typeHandler = _typeHandlers[typeId];
-    assert(typeHandler->getActiveBuffers() >= 1u);
-    if (typeHandler->getActiveBuffers() == 1u) {
+    assert(typeHandler->get_active_buffers_count() >= 1u);
+    if (typeHandler->get_active_buffers_count() == 1u) {
         // Single active buffer for type, no need for scan
         _states[buffer_id].setCompacting();
         _states[buffer_id].disableElemHoldList();
