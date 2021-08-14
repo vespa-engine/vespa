@@ -23,7 +23,8 @@ class ExchangeManager;
  *
  * Handles one single partner slobrok
  **/
-class RemoteSlobrok: public FRT_IRequestWait
+class RemoteSlobrok: public IRpcServerManager,
+                     public FRT_IRequestWait
 {
 private:
     class Reconnecter : public FNET_Task
@@ -41,12 +42,11 @@ private:
         void PerformTask() override;
     };
 
-    vespalib::string     _name;
-    vespalib::string     _spec;
     ExchangeManager     &_exchanger;
     RpcServerManager    &_rpcsrvmanager;
     FRT_Target          *_remote;
     ServiceMapMirror     _serviceMapMirror;
+    ManagedRpcServer     _rpcserver;
     Reconnecter          _reconnecter;
     int                  _failCnt;
 
@@ -55,18 +55,16 @@ private:
     FRT_RPCRequest      *_remAddReq;
     FRT_RPCRequest      *_remRemReq;
     FRT_RPCRequest      *_remFetchReq;
-    FRT_RPCRequest      *_checkServerReq;
 
     std::deque<std::unique_ptr<NamedService>> _pending;
     void pushMine();
     void doPending();
-    void handleCheckServerResult();
     void handleFetchResult();
 
 public:
     RemoteSlobrok(const RemoteSlobrok&) = delete;
     RemoteSlobrok& operator= (const RemoteSlobrok&) = delete;
-    RemoteSlobrok(const vespalib::string &name, const vespalib::string &spec, ExchangeManager &manager);
+    RemoteSlobrok(const std::string &name, const std::string &spec, ExchangeManager &manager);
     ~RemoteSlobrok() override;
 
     void fail();
@@ -75,14 +73,16 @@ public:
     void maybePushMine();
     void maybeStartFetch();
     void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
-    const vespalib::string & getName() const { return _name; }
-    const vespalib::string & getSpec() const { return _spec; }
+    const std::string & getName() const { return _rpcserver.getName(); }
+    const std::string & getSpec() const { return _rpcserver.getSpec(); }
     ServiceMapMirror &remoteMap() { return _serviceMapMirror; }
     void shutdown();
-    FRT_Supervisor *getSupervisor();
 
     // interfaces implemented:
+    void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
+    void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) override;
     void RequestDone(FRT_RPCRequest *req) override;
+    FRT_Supervisor *getSupervisor() override;
 };
 
 //-----------------------------------------------------------------------------
