@@ -138,7 +138,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
 
 
 void
-BufferState::onHold(uint32_t buffer_id)
+BufferState::onHold()
 {
     assert(_state == ACTIVE);
     assert(_typeHandler != nullptr);
@@ -148,7 +148,7 @@ BufferState::onHold(uint32_t buffer_id)
     assert(_holdElems <= (_usedElems - _deadElems));
     _deadElems = 0;
     _holdElems = _usedElems; // Put everyting on hold
-    _typeHandler->onHold(buffer_id, &_usedElems, &_deadElems);
+    _typeHandler->onHold(&_usedElems, &_deadElems);
     if ( ! isFreeListEmpty()) {
         removeFromFreeListList();
         FreeList().swap(_freeList);
@@ -191,7 +191,7 @@ BufferState::onFree(void *&buffer)
 
 
 void
-BufferState::dropBuffer(uint32_t buffer_id, void *&buffer)
+BufferState::dropBuffer(void *&buffer)
 {
     if (_state == FREE) {
         assert(buffer == nullptr);
@@ -199,7 +199,7 @@ BufferState::dropBuffer(uint32_t buffer_id, void *&buffer)
     }
     assert(buffer != nullptr || _allocElems == 0);
     if (_state == ACTIVE) {
-        onHold(buffer_id);
+        onHold();
     }
     if (_state == HOLD) {
         onFree(buffer);
@@ -299,12 +299,6 @@ BufferState::fallbackResize(uint32_t bufferId,
     buffer = _buffer.get();
     _allocElems = alloc.elements;
     std::atomic_thread_fence(std::memory_order_release);
-}
-
-void
-BufferState::resume_primary_buffer(uint32_t buffer_id)
-{
-    _typeHandler->resume_primary_buffer(buffer_id, &_usedElems, &_deadElems);
 }
 
 }
