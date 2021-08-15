@@ -6,7 +6,6 @@
 #include <vespa/vespalib/util/gencnt.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <map>
-#include <mutex>
 #include "map_listener.h"
 #include "service_mapping.h"
 #include "map_diff.h"
@@ -52,7 +51,6 @@ private:
     using Waiter = std::pair<DiffCompletionHandler *, Generation>;
     using WaitList = std::vector<Waiter>;
 
-    mutable std::mutex _lock;
     Map        _map;
     WaitList   _waitList;
     UpdateLog  _log;
