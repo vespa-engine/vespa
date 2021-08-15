@@ -495,8 +495,8 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
     StateExplorerUtils::memory_usage_to_slime(_graph.links.getMemoryUsage(), memUsageObj.setObject("links"));
     StateExplorerUtils::memory_usage_to_slime(_visited_set_pool.memory_usage(), memUsageObj.setObject("visited_set_pool"));
     auto& visitedObj = object.setObject("visited_set");
-    visitedObj.setLong("created", _visited_set_pool.create_count());
-    visitedObj.setLong("created", _visited_set_pool.reuse_count());
+    visitedObj.setLong("create_count", _visited_set_pool.create_count());
+    visitedObj.setLong("reuse_count", _visited_set_pool.reuse_count());
     object.setLong("nodes", _graph.size());
     auto& histogram_array = object.setArray("level_histogram");
     auto& links_hst_array = object.setArray("level_0_links_histogram");
