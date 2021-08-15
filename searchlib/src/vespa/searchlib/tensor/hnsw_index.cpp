@@ -658,17 +658,17 @@ HnswIndex::count_reachable_nodes() const
     if (search_level < 0) {
         return 0;
     }
-    auto visited = _visited_set_pool.get(_graph.size());
+    std::vector<bool> visited(_graph.size());
     LinkArray found_links;
     found_links.push_back(entry.docid);
-    visited.mark(entry.docid);
+    visited[entry.docid] = true;
     while (search_level >= 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
             uint32_t docid = found_links[idx];
             auto neighbors = _graph.get_link_array(docid, search_level);
             for (uint32_t neighbor : neighbors) {
-                if (visited.is_marked(neighbor)) continue;
-                visited.mark(neighbor);
+                if (visited[neighbor]) continue;
+                visited[neighbor] = true;
                 found_links.push_back(neighbor);
             }
         }
