@@ -394,22 +394,34 @@ RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
     FRT_Values &args = *req->GetParams();
     const char *rpcserverPattern = args[0]._string._str;
     LOG(debug, "RPC: lookupRpcServers(%s)", rpcserverPattern);
-    std::vector<const NamedService *> rpcsrvlist =
-        _rpcsrvmap.lookupPattern(rpcserverPattern);
-    FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(rpcsrvlist.size());
-    FRT_StringValue *specs = dst.AddStringArray(rpcsrvlist.size());
-    for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-        dst.SetString(&names[i], rpcsrvlist[i]->getName().c_str());
-        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec().c_str());
+    // fetch data:
+    const auto & visible = _env.globalHistory();
+    auto diff = visible.makeDiffFrom(0);
+    std::vector<ServiceMapping> matches;
+    for (const auto & entry : diff.updated) {
+        if (RpcServerMap::match(entry.name.c_str(), rpcserverPattern)) {
+            matches.push_back(entry);
+        }
     }
-    if (rpcsrvlist.size() < 1) {
+    // fill return values:
+    FRT_Values &dst = *req->GetReturn();
+    size_t sz = matches.size();
+    FRT_StringValue *names  = dst.AddStringArray(sz);
+    FRT_StringValue *specs  = dst.AddStringArray(sz);
+    size_t j = 0;
+    for (const auto & entry : matches) {
+        dst.SetString(&names[j], entry.name.c_str());
+        dst.SetString(&specs[j], entry.spec.c_str());
+        ++j;
+    }
+    // debug logging:
+    if (sz < 1) {
         LOG(debug, "RPC: lookupRpcServers(%s) -> no match",
             rpcserverPattern);
     } else {
-        LOG(debug, "RPC: lookupRpcServers(%s) -> %u matches, first [%s,%s]",
-            rpcserverPattern, (unsigned int)rpcsrvlist.size(),
-            rpcsrvlist[0]->getName().c_str(), rpcsrvlist[0]->getSpec().c_str());
+        LOG(debug, "RPC: lookupRpcServers(%s) -> %zu matches, first [%s,%s]",
+            rpcserverPattern, sz,
+            matches[0].name.c_str(), matches[0].spec.c_str());
     }
     return;
 }
@@ -419,21 +431,20 @@ void
 RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req)
 {
     _cnts.adminReqs++;
-    std::vector<const NamedService *> rpcsrvlist = _rpcsrvmap.allManaged();
+    // TODO: use local history here
+    const auto & visible = _env.globalHistory();
+    auto diff = visible.makeDiffFrom(0);
+    size_t sz = diff.updated.size();
     FRT_Values &dst = *req->GetReturn();
-    FRT_StringValue *names = dst.AddStringArray(rpcsrvlist.size());
-    FRT_StringValue *specs = dst.AddStringArray(rpcsrvlist.size());
-    for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-        dst.SetString(&names[i], rpcsrvlist[i]->getName().c_str());
-        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec().c_str());
+    FRT_StringValue *names = dst.AddStringArray(sz);
+    FRT_StringValue *specs = dst.AddStringArray(sz);
+    size_t j = 0;
+    for (const auto & entry : diff.updated) {
+        dst.SetString(&names[j], entry.name.c_str());
+        dst.SetString(&specs[j], entry.spec.c_str());
+        ++j;
     }
-    if (rpcsrvlist.size() < 1) {
-        LOG(debug, "RPC: listManagedRpcServers() -> 0 managed");
-    } else {
-        LOG(debug, "RPC: listManagedRpcServers() -> %u managed, first [%s,%s]",
-            (unsigned int)rpcsrvlist.size(),
-            rpcsrvlist[0]->getName().c_str(), rpcsrvlist[0]->getSpec().c_str());
-    }
+    LOG(debug, "listManagedRpcServers -> %zu entries returned", sz);
     return;
 }
 
@@ -444,15 +455,17 @@ RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
     FRT_Values &args = *req->GetParams();
     const char *name = args[0]._string._str;
     LOG(debug, "RPC: lookupManaged(%s)", name);
-    const ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
-
-    if (found == nullptr) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, "Not found");
-    } else {
-        FRT_Values &dst = *req->GetReturn();
-        dst.AddString(found->getName().c_str());
-        dst.AddString(found->getSpec().c_str());
+    const auto & visible = _env.globalHistory();
+    auto diff = visible.makeDiffFrom(0);
+    for (const auto & entry : diff.updated) {
+        if (entry.name == name) {
+            FRT_Values &dst = *req->GetReturn();
+            dst.AddString(entry.name.c_str());
+            dst.AddString(entry.spec.c_str());
+            return;
+        }
     }
+    req->SetError(FRTE_RPC_METHOD_FAILED, "Not found");
     return;
 }
 
@@ -460,33 +473,22 @@ void
 RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
 {
     _cnts.adminReqs++;
-
-    std::vector<const NamedService *> mrpcsrvlist = _rpcsrvmap.allManaged();
-
+    const auto & visible = _env.globalHistory();
+    auto diff = visible.makeDiffFrom(0);
+    size_t sz = diff.updated.size();
     FRT_Values &dst = *req->GetReturn();
-    size_t sz = mrpcsrvlist.size();
     FRT_StringValue *names  = dst.AddStringArray(sz);
     FRT_StringValue *specs  = dst.AddStringArray(sz);
     FRT_StringValue *owner  = dst.AddStringArray(sz);
-
-    int j = 0;
-    for (uint32_t i = 0; i < mrpcsrvlist.size(); ++i, ++j) {
-        dst.SetString(&names[j], mrpcsrvlist[i]->getName().c_str());
-        dst.SetString(&specs[j], mrpcsrvlist[i]->getSpec().c_str());
+    size_t j = 0;
+    for (const auto & entry : diff.updated) {
+        dst.SetString(&names[j], entry.name.c_str());
+        dst.SetString(&specs[j], entry.spec.c_str());
         dst.SetString(&owner[j], _env.mySpec().c_str());
+        ++j;
     }
-
-    if (sz > 0) {
-        LOG(debug, "listManagedRpcServers -> %u, last [%s,%s,%s]",
-            (unsigned int)mrpcsrvlist.size(),
-            dst[0]._string_array._pt[sz-1]._str,
-            dst[1]._string_array._pt[sz-1]._str,
-            dst[2]._string_array._pt[sz-1]._str);
-    } else {
-        LOG(debug, "listManagedRpcServers -> %u", (unsigned int) mrpcsrvlist.size());
-    }
+    LOG(debug, "listAllRpcServers -> %zu entries returned", sz);
     return;
-
 }
 
 
@@ -495,10 +497,8 @@ RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)
 {
     _cnts.mirrorReqs++;
     FRT_Values &args = *req->GetParams();
-
     vespalib::GenCnt gencnt(args[0]._intval32);
     uint32_t msTimeout = args[1]._intval32;
-
     req->getStash().create<IncrementalFetch>(_env.getSupervisor(), req,
                                              _globalHistory, gencnt).invoke(msTimeout);
 }
@@ -577,7 +577,6 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
         }
     }
     LOG(debug, "RPC version: %s", ver.c_str());
-
     req->GetReturn()->AddString(ver.c_str());
     return;
 }
