@@ -3,8 +3,10 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
@@ -47,6 +49,7 @@ public class SearchBuilder {
     private final ApplicationPackage app;
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
+    private final FileRegistry fileRegistry;
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
     /** True to build the document aspect only, skipping instantiation of rank profiles */
@@ -72,17 +75,17 @@ public class SearchBuilder {
 
     /** Used for generating documents for typed access to document fields in Java */
     public SearchBuilder(boolean documentsOnly) {
-        this(MockApplicationPackage.createEmpty(), new BaseDeployLogger(), new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
+        this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
     }
 
     /** For testing only */
     public SearchBuilder(ApplicationPackage app, DeployLogger deployLogger) {
-        this(app, deployLogger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
+        this(app, new MockFileRegistry(), deployLogger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /** For testing only */
     public SearchBuilder(ApplicationPackage app, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
-        this(app, deployLogger, new TestProperties(), rankProfileRegistry, new QueryProfileRegistry());
+        this(app, new MockFileRegistry(), deployLogger, new TestProperties(), rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
@@ -92,17 +95,19 @@ public class SearchBuilder {
 
     /** For testing only */
     public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
-        this(MockApplicationPackage.createEmpty(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
+        this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
     }
 
     public SearchBuilder(ApplicationPackage app,
+                         FileRegistry fileRegistry,
                          DeployLogger deployLogger,
                          ModelContext.Properties properties,
                          RankProfileRegistry rankProfileRegistry,
                          QueryProfileRegistry queryProfileRegistry) {
-        this(app, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
+        this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
     }
     private SearchBuilder(ApplicationPackage app,
+                          FileRegistry fileRegistry,
                           DeployLogger deployLogger,
                           ModelContext.Properties properties,
                           RankProfileRegistry rankProfileRegistry,
@@ -111,6 +116,7 @@ public class SearchBuilder {
         this.app = app;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
+        this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
@@ -160,7 +166,7 @@ public class SearchBuilder {
     private String importString(String str, String searchDefDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            return importRawSearch(new SDParser(stream, deployLogger, properties, app, rankProfileRegistry, documentsOnly)
+            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, app, rankProfileRegistry, documentsOnly)
                                            .search(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
@@ -347,7 +353,7 @@ public class SearchBuilder {
     }
 
     private static SearchBuilder createFromFiles(Collection<String> fileNames, DeployLogger logger) throws IOException, ParseException {
-        return createFromFiles(fileNames, logger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
+        return createFromFiles(fileNames, new MockFileRegistry(), logger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /**
@@ -365,7 +371,7 @@ public class SearchBuilder {
                                                RankProfileRegistry rankProfileRegistry,
                                                QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
-        return createFromFiles(Collections.singletonList(fileName), deployLogger, new TestProperties(),
+        return createFromFiles(Collections.singletonList(fileName), new MockFileRegistry(), deployLogger, new TestProperties(),
                                rankProfileRegistry, queryprofileRegistry);
     }
 
@@ -373,12 +379,14 @@ public class SearchBuilder {
      * Convenience factory methdd to create a SearchBuilder from multiple SD files..
      */
     private static SearchBuilder createFromFiles(Collection<String> fileNames,
+                                                FileRegistry fileRegistry,
                                                 DeployLogger deployLogger,
                                                 ModelContext.Properties properties,
                                                 RankProfileRegistry rankProfileRegistry,
                                                 QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+                                                  fileRegistry,
                                                   deployLogger,
                                                   properties,
                                                   rankProfileRegistry,
@@ -390,30 +398,34 @@ public class SearchBuilder {
         return builder;
     }
 
-    public static SearchBuilder createFromDirectory(String dir, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
-        return createFromDirectory(dir, logger, properties, new RankProfileRegistry());
+    public static SearchBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
+        return createFromDirectory(dir, fileRegistry, logger, properties, new RankProfileRegistry());
     }
     public static SearchBuilder createFromDirectory(String dir,
+                                                    FileRegistry fileRegistry,
                                                     DeployLogger logger,
                                                     ModelContext.Properties properties,
                                                     RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
-        return createFromDirectory(dir, logger, properties, rankProfileRegistry, createQueryProfileRegistryFromDirectory(dir));
+        return createFromDirectory(dir, fileRegistry, logger, properties, rankProfileRegistry, createQueryProfileRegistryFromDirectory(dir));
     }
     private static SearchBuilder createFromDirectory(String dir,
+                                                     FileRegistry fileRegistry,
                                                      DeployLogger logger,
                                                      ModelContext.Properties properties,
                                                      RankProfileRegistry rankProfileRegistry,
                                                      QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
-        return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionDirectory(dir), logger, properties, rankProfileRegistry, queryProfileRegistry);
+        return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionDirectory(dir), fileRegistry, logger, properties, rankProfileRegistry, queryProfileRegistry);
     }
 
     private static SearchBuilder createFromDirectory(String dir,
                                                      ApplicationPackage applicationPackage,
+                                                     FileRegistry fileRegistry,
                                                      DeployLogger deployLogger,
                                                      ModelContext.Properties properties,
                                                      RankProfileRegistry rankProfileRegistry,
                                                      QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
         SearchBuilder builder = new SearchBuilder(applicationPackage,
+                                                  fileRegistry,
                                                   deployLogger,
                                                   properties,
                                                   rankProfileRegistry,

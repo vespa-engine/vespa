@@ -4,11 +4,14 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -199,9 +202,10 @@ public class TensorTransformTestCase extends SchemaTestCase {
         Search s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
+                                                                           new LargeRankExpressions(new MockFileRegistry()),
                                                                            queryProfiles,
                                                                            new ImportedMlModels(),
-                                                                           new AttributeFields(s)).configProperties();
+                                                                           new AttributeFields(s), new TestProperties()).configProperties();
         return testRankProperties;
     }
 

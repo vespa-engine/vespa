@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
@@ -41,7 +42,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
     private RankProfileList() {
         rankingConstants = new RankingConstants();
-        largeRankExpressions = new LargeRankExpressions();
+        largeRankExpressions = new LargeRankExpressions(new MockFileRegistry());
         onnxModels = new OnnxModels();
         dryRunOnnxOnSetup = true;
     }

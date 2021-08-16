@@ -10,7 +10,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -27,7 +26,7 @@ public class Index implements Cloneable, Serializable {
     public enum Type {
 
         VESPA("vespa");
-        private String name;
+        private final String name;
         Type(String name) { this.name = name; }
         public String getName() { return name; }
 

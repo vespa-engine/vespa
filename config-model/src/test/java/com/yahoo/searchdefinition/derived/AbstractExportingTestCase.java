@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -34,7 +35,7 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
         toDir.mkdirs();
         deleteContent(toDir);
 
-        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", logger, properties);
+        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", new MockFileRegistry(), logger, properties);
         return derive(dirName, searchDefinitionName, properties, builder, logger);
     }
 

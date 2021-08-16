@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -118,6 +119,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     public List<NamedReader> getSchemas() {
         ArrayList<NamedReader> readers = new ArrayList<>();
         SearchBuilder searchBuilder = new SearchBuilder(this,
+                                                        new MockFileRegistry(),
                                                         new BaseDeployLogger(),
                                                         new TestProperties(),
                                                         new RankProfileRegistry(),
