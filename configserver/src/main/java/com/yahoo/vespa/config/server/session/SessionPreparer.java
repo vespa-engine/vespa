@@ -127,7 +127,6 @@ public class SessionPreparer {
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
                 preparation.writeApplicationRoles();
-                preparation.distribute();
             }
             log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() + " : " + applicationId);
             return preparation.result();
@@ -296,12 +295,6 @@ public class SessionPreparer {
         void writeApplicationRoles() {
             applicationRoles.ifPresent(roles -> applicationRolesStore.writeApplicationRoles(applicationId, roles));
             checkTimeout("write application roles to zookeeper");
-        }
-
-        void distribute() {
-            prepareResult.asList().forEach(modelResult -> modelResult.model
-                                           .distributeFiles(modelResult.fileDistributionProvider.getFileDistribution()));
-            checkTimeout("distribute files");
         }
 
         PrepareResult result() {

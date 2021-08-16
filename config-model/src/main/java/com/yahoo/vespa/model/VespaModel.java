@@ -19,7 +19,6 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.Provisioned;
@@ -31,9 +30,9 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.QrConfig;
 import com.yahoo.path.Path;
+import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
-import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
@@ -271,7 +270,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false,
-                              new FileDistributor(deployState.getFileRegistry(), List.of(), deployState.isHosted()));
+                              new FileDistributor(deployState.getFileRegistry()));
     }
 
     private void validateWrapExceptions() {
@@ -596,11 +595,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     public Set<String> allConfigIds() {
         return id2producer.keySet();
-    }
-
-    @Override
-    public void distributeFiles(FileDistribution fileDistribution) {
-        getFileDistributor().sendDeployedFiles(fileDistribution);
     }
 
     @Override

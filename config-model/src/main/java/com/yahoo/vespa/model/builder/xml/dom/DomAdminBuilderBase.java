@@ -68,11 +68,11 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected Admin doBuild(DeployState deployState, AbstractConfigProducer parent, Element adminElement) {
+    protected Admin doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));
-        FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent, deployState.isHosted());
+        FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
         Admin admin = new Admin(parent, monitoring, metrics, multitenant, fileDistributionConfigProducer, deployState.isHosted());
         admin.setApplicationType(applicationType);
@@ -82,8 +82,8 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         return admin;
     }
 
-    private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent, boolean isHosted) {
-        return new FileDistributionConfigProducer(parent, fileRegistry, configServerSpecs, isHosted);
+    private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer<?> parent) {
+        return new FileDistributionConfigProducer(parent, fileRegistry);
     }
 
     protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);
