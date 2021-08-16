@@ -56,9 +56,9 @@ public class AclMaintainer {
         this.containerOperations = containerOperations;
         this.ipAddresses = ipAddresses;
         this.metrics = metrics;
-        var now = System.currentTimeMillis();
-        this.lastSuccess = new HashMap<>(Map.of(IPVersion.IPv4.id(), now,
-                                                IPVersion.IPv6.id(), now));
+        long timestamp = System.currentTimeMillis() / 1_000;
+        this.lastSuccess = new HashMap<>(Map.of(IPVersion.IPv4.id(), timestamp,
+                                                IPVersion.IPv6.id(), timestamp));
     }
 
     // ip(6)tables operate while having the xtables lock, run with synchronized to prevent multiple NodeAgents
@@ -69,8 +69,11 @@ public class AclMaintainer {
         // Apply acl to the filter table
         boolean updatedIPv4 = editFlushOnError(context, IPVersion.IPv4, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv4));
         boolean updatedIPv6 = editFlushOnError(context, IPVersion.IPv6, "filter", FilterTableLineEditor.from(context.acl(), IPVersion.IPv6));
-        updateMetric(context, updatedIPv4, IPVersion.IPv4.id());
-        updateMetric(context, updatedIPv6, IPVersion.IPv6.id());
+
+        Dimensions dimensions = generateDimensions(context);
+
+        updateMetric(dimensions, updatedIPv4, IPVersion.IPv4.id());
+        updateMetric(dimensions, updatedIPv6, IPVersion.IPv6.id());
 
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv4).ifPresent(addr -> applyRedirect(context, addr));
         ipAddresses.getAddress(context.hostname().value(), IPVersion.IPv6).ifPresent(addr -> applyRedirect(context, addr));
@@ -129,17 +132,18 @@ public class AclMaintainer {
         };
     }
 
-    void updateMetric(NodeAgentContext context, boolean updated, String ipVersion) {
-        Dimensions dimensions = generateDimensions(context);
-        if (!updated) {
-            metrics.declareGauge(Metrics.APPLICATION_NODE, ipVersion + METRIC_NAME_POSTFIX, dimensions, Metrics.DimensionType.PRETAGGED)
-                    .sample((System.currentTimeMillis() - lastSuccess.get(ipVersion)) / 1000);
-            return;
+    void updateMetric(Dimensions dimensions, boolean updated, String ipVersion) {
+        long updateAgeInSec;
+        long timestamp = System.currentTimeMillis() / 1_000;
+        if (updated) {
+            updateAgeInSec = 0;
+            lastSuccess.put(ipVersion, timestamp);
+        } else {
+            updateAgeInSec = timestamp - lastSuccess.get(ipVersion);
         }
 
         metrics.declareGauge(Metrics.APPLICATION_NODE, ipVersion + METRIC_NAME_POSTFIX, dimensions, Metrics.DimensionType.PRETAGGED)
-                .sample(0);
-        lastSuccess.put(ipVersion, System.currentTimeMillis());
+                .sample(updateAgeInSec);
 
     }
 
