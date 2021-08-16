@@ -18,15 +18,13 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
 
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
 
-LocalRpcMonitorMap::PerService *
+LocalRpcMonitorMap::PerService &
 LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
-    if (iter != _map.end()) {
-        PerService & psd = iter->second;
-        LOG_ASSERT(psd.spec() == mapping.spec);
-        return &psd;
-    }
-    return nullptr;
+    LOG_ASSERT(iter != _map.end());
+    PerService & psd = iter->second;
+    LOG_ASSERT(psd.spec() == mapping.spec);
+    return psd;
 }
 
 ServiceMapHistory & LocalRpcMonitorMap::history() {
@@ -85,24 +83,22 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
 
 void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string) {
     ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
-    auto * psd = lookup(mapping);
-    LOG_ASSERT(psd);
-    LOG_ASSERT(psd->srv.get() == rpcsrv);
+    auto &psd = lookup(mapping);
+    LOG_ASSERT(psd.srv.get() == rpcsrv);
     LOG(debug, "failed: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-    if (psd->up) {
-        psd->up = false;
+    if (psd.up) {
+        psd.up = false;
         _dispatcher.remove(mapping);
     }
 }
 
 void LocalRpcMonitorMap::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
     ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
-    auto * psd = lookup(mapping);
-    LOG_ASSERT(psd);
-    LOG_ASSERT(psd->srv.get() == rpcsrv);
+    auto &psd = lookup(mapping);
+    LOG_ASSERT(psd.srv.get() == rpcsrv);
     LOG(debug, "ok: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-    if (! psd->up) {
-        psd->up = true;
+    if (! psd.up) {
+        psd.up = true;
         _dispatcher.add(mapping);
     }
 }
