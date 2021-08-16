@@ -1,11 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// vespa status command
+// vespa config command
 // author: bratseth
 
 package cmd
 
 import (
-    "fmt"
     "github.com/spf13/cobra"
 	"github.com/spf13/viper"
     "github.com/vespa-engine/vespa/utils"
@@ -36,11 +35,7 @@ func readConfig() {
     viper.SetConfigName(configName)
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	} else {
-		fmt.Println("Not using config file:", err.Error())
-	}
+	viper.ReadInConfig();
 }
 
 // WIP: Not used yet

@@ -17,14 +17,22 @@ func init() {
     Out = os.Stdout
 }
 
+// Prints in default color
+func Print(messages ...string) {
+    fmt.Println(messages)
+}
+
+// Prints in a color appropriate for errors
 func Error(messages ...string) {
     print("\033[31m", messages)
 }
 
+// Prints in a color appropriate for success messages
 func Success(messages ...string) {
     print("\033[32m", messages)
 }
 
+// Prints in a color appropriate for detail messages
 func Detail(messages ...string) {
     print("\033[33m", messages)
 }

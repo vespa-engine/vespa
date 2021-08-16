@@ -24,6 +24,7 @@ const (
 
 func GetTarget(targetContext Context) *Target {
     if strings.HasPrefix(targetArgument, "http") {
+        // TODO: Add default ports if missing
         switch targetContext {
             case deployContext:
                 return &Target{
