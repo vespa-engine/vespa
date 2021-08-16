@@ -118,6 +118,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
     srandom(time(nullptr) ^ getpid());
     _rpcsrvmap.proxy().registerListener(_globalVisibleHistory);
     _rpcsrvmap.proxy().registerListener(_localRpcMonitorMap);
+    _localRpcMonitorMap.dispatcher().registerListener(_consensusMap);
     _rpcHooks.initRPC(getSupervisor());
 }
 
