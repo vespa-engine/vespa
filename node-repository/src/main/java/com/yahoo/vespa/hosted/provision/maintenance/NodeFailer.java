@@ -155,17 +155,13 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
-            if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
-                nodesByFailureReason.put(node, "Not receiving config requests from node");
-            } else {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
-                List<String> failureReports = reasonsToFailParentHost(hostNode);
-                if (failureReports.size() > 0) {
-                    if (hostNode.equals(node)) {
-                        nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
-                    } else {
-                        nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
-                    }
+            Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+            List<String> failureReports = reasonsToFailParentHost(hostNode);
+            if (failureReports.size() > 0) {
+                if (hostNode.equals(node)) {
+                    nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                } else {
+                    nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
                 }
             }
         }
@@ -336,6 +332,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                                                .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
                                                                                         startOfThrottleWindow));
 
+        log.info("node = " + node + ", recentlyFailedNodes.size() = " + recentlyFailedNodes.size() +
+                 ", throttlePolicy.allowedToFailOf(" + allNodes.size() + ") = " +
+                 throttlePolicy.allowedToFailOf(allNodes.size()));
         // Allow failing any node within policy
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
