@@ -121,10 +121,17 @@ SBEnv::SBEnv(const ConfigShim &shim)
     _rpcHooks.initRPC(getSupervisor());
 }
 
+void SBEnv::cleanup() {
+    auto pList = _exchanger.getPartnerList();
+    for (const auto & partner : pList) {
+        _exchanger.removePartner(partner);
+    }
+}
 
 SBEnv::~SBEnv()
 {
     getTransport()->WaitFinished();
+    cleanup();
 }
 
 FNET_Scheduler *
@@ -183,6 +190,7 @@ SBEnv::MainLoop()
         EV_STARTED("slobrok");
         getTransport()->Main();
         LOG(debug, "slobrok: main event loop done");
+        cleanup();
     } catch (vespalib::Exception &e) {
         LOG(error, "invalid config: %s", e.what());
         EV_STOPPING("slobrok", "invalid config");

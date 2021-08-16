@@ -58,6 +58,7 @@ private:
     LocalRpcMonitorMap                         _localRpcMonitorMap;
     ServiceMapHistory                          _globalVisibleHistory;
 
+    void cleanup();
 public:
     explicit SBEnv(const ConfigShim &shim);
     ~SBEnv();
