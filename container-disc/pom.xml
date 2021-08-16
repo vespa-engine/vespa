@@ -229,9 +229,7 @@
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
                 jersey-client-${jersey2.version}.jar,
                 jersey-common-${jersey2.version}.jar,
-                jersey-container-servlet-${jersey2.version}.jar,
-                jersey-container-servlet-core-${jersey2.version}.jar,
-                jersey-entity-filtering-${jersey2.version}.jar, <!-- new feature from 2.16, provided for convenience -->
+                jersey-entity-filtering-${jersey2.version}.jar, <!-- needed by jersey-media-json-jackson -->
                 jersey-guava-${jersey2.version}.jar,
                 jersey-media-jaxb-${jersey2.version}.jar,
                 jersey-media-json-jackson-${jersey2.version}.jar,
