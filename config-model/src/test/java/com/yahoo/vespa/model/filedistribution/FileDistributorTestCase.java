@@ -2,16 +2,12 @@
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.test.MockHosts;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,8 +20,7 @@ public class FileDistributorTestCase {
     @Test
     public void fileDistributor() {
         MockHosts hosts = new MockHosts();
-
-        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry(), List.of(), false);
+        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry());
 
         String file1 = "component/path1";
         String file2 = "component/path2";
@@ -38,24 +33,6 @@ public class FileDistributorTestCase {
 
         assertNotNull(ref1);
         assertNotNull(ref2);
-
-        MockFileDistribution dbHandler = new MockFileDistribution();
-        fileDistributor.sendDeployedFiles(dbHandler);
-        assertEquals(3, dbHandler.filesToDownloadCalled); // One time for each host
-    }
-
-    private static class MockFileDistribution implements FileDistribution {
-        int filesToDownloadCalled = 0;
-
-        @Override
-        public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
-            filesToDownloadCalled++;
-        }
-
-        @Override
-        public File getFileReferencesDir() {
-            return null;
-        }
     }
 
 }

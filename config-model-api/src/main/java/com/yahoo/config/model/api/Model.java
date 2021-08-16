@@ -6,7 +6,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
 import java.time.Instant;
@@ -44,7 +43,8 @@ public interface Model {
      *
      * @param fileDistribution instance that can be called to distribute files
      */
-    void distributeFiles(FileDistribution fileDistribution);
+    // TODO: Remove when Vespa < 7.453 is gone from production
+    default void distributeFiles(FileDistribution fileDistribution) {};
 
     /** The set of files that should be distributed to the hosts in this model. */
     Set<FileReference> fileReferences();
