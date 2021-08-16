@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
@@ -30,6 +31,7 @@ constexpr float alloc_grow_factor = 0.3;
 // TODO: Adjust these numbers to what we accept as max in config.
 constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 64;
+constexpr vespalib::duration MAX_COUNT_DURATION(100ms);
 
 bool has_link_to(vespalib::ConstArrayRef<uint32_t> links, uint32_t id) {
     for (uint32_t link : links) {
@@ -276,8 +278,7 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
 
 HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,
                      RandomLevelGenerator::UP level_generator, const Config& cfg)
-    :
-      _graph(),
+    : _graph(),
       _vectors(vectors),
       _distance_func(std::move(distance_func)),
       _level_generator(std::move(level_generator)),
@@ -486,7 +487,15 @@ void
 HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
 {
     auto& object = inserter.insertObject();
-    StateExplorerUtils::memory_usage_to_slime(memory_usage(), object.setObject("memory_usage"));
+    auto& memUsageObj = object.setObject("memory_usage");
+    StateExplorerUtils::memory_usage_to_slime(memory_usage(), memUsageObj.setObject("all"));
+    StateExplorerUtils::memory_usage_to_slime(_graph.node_refs.getMemoryUsage(), memUsageObj.setObject("node_refs"));
+    StateExplorerUtils::memory_usage_to_slime(_graph.nodes.getMemoryUsage(), memUsageObj.setObject("nodes"));
+    StateExplorerUtils::memory_usage_to_slime(_graph.links.getMemoryUsage(), memUsageObj.setObject("links"));
+    StateExplorerUtils::memory_usage_to_slime(_visited_set_pool.memory_usage(), memUsageObj.setObject("visited_set_pool"));
+    auto& visitedObj = object.setObject("visited_set");
+    visitedObj.setLong("create_count", _visited_set_pool.create_count());
+    visitedObj.setLong("reuse_count", _visited_set_pool.reuse_count());
     object.setLong("nodes", _graph.size());
     auto& histogram_array = object.setArray("level_histogram");
     auto& links_hst_array = object.setArray("level_0_links_histogram");
@@ -500,9 +509,13 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
     for (uint32_t hist_val : histograms.links_histogram) {
         links_hst_array.addLong(hist_val);
     }
-    uint32_t reachable = count_reachable_nodes();
-    uint32_t unreachable = valid_nodes - reachable;
-    object.setLong("unreachable_nodes", unreachable);
+    auto count_result = count_reachable_nodes();
+    uint32_t unreachable = valid_nodes - count_result.first;
+    if (count_result.second) {
+        object.setLong("unreachable_nodes", unreachable);
+    } else {
+        object.setLong("unreachable_nodes_incomplete_count", unreachable);
+    }
     auto entry_node = _graph.get_entry_node();
     object.setLong("entry_docid", entry_node.docid);
     object.setLong("entry_level", entry_node.level);
@@ -650,31 +663,35 @@ HnswIndex::check_link_symmetry() const
     return all_sym;
 }
 
-uint32_t
+std::pair<uint32_t, bool>
 HnswIndex::count_reachable_nodes() const
 {
     auto entry = _graph.get_entry_node();
     int search_level = entry.level;
     if (search_level < 0) {
-        return 0;
+        return {0, true};
     }
-    auto visited = _visited_set_pool.get(_graph.size());
+    std::vector<bool> visited(_graph.size());
     LinkArray found_links;
     found_links.push_back(entry.docid);
-    visited.mark(entry.docid);
+    visited[entry.docid] = true;
+    vespalib::steady_time doom = vespalib::steady_clock::now() + MAX_COUNT_DURATION;
     while (search_level >= 0) {
         for (uint32_t idx = 0; idx < found_links.size(); ++idx) {
+            if (vespalib::steady_clock::now() > doom) {
+                return {found_links.size(), false};
+            }
             uint32_t docid = found_links[idx];
             auto neighbors = _graph.get_link_array(docid, search_level);
             for (uint32_t neighbor : neighbors) {
-                if (visited.is_marked(neighbor)) continue;
-                visited.mark(neighbor);
+                if (visited[neighbor]) continue;
+                visited[neighbor] = true;
                 found_links.push_back(neighbor);
             }
         }
         --search_level;
     }
-    return found_links.size();
+    return {found_links.size(), true};
 }
 
 } // namespace
