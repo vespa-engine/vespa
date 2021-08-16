@@ -9,11 +9,9 @@ namespace slobrok {
 
 LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
   : _map(),
-    _dispatcher(),
     _history(),
     _supervisor(supervisor)
 {
-    _dispatcher.registerListener(_history);
 }
 
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
@@ -48,7 +46,7 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
             mapping.name.c_str(), mapping.spec.c_str(),
             exists.name().c_str(), exists.spec().c_str());
         if (exists.up) {
-            _dispatcher.remove(exists.mapping());
+            _history.remove(exists.mapping());
         }
         _map.erase(old);
     }
@@ -71,10 +69,9 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
                 mapping.name.c_str(),
                 exists.spec().c_str(),
                 mapping.spec.c_str());
-            return;
         }
         if (exists.up) {
-            _dispatcher.remove(exists.mapping());
+            _history.remove(exists.mapping());
         }
         _map.erase(iter);
     } else {
@@ -91,7 +88,7 @@ void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::strin
     LOG(debug, "failed: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     if (psd->up) {
         psd->up = false;
-        _dispatcher.remove(mapping);
+        _history.remove(mapping);
     }
 }
 
@@ -103,7 +100,7 @@ void LocalRpcMonitorMap::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
     LOG(debug, "ok: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     if (! psd->up) {
         psd->up = true;
-        _dispatcher.add(mapping);
+        _history.add(mapping);
     }
 }
 

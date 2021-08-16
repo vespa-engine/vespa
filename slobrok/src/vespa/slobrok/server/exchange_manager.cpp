@@ -39,7 +39,6 @@ ExchangeManager::addPartner(const std::string & name, const std::string & spec)
     auto [ it, wasNew ] = _partners.emplace(name, std::make_unique<RemoteSlobrok>(name, spec, *this));
     LOG_ASSERT(wasNew);
     RemoteSlobrok & partner = *it->second;
-    partner.remoteMap().registerListener(_env.consensusMap());
     partner.tryConnect();
     return OkState();
 }
@@ -52,7 +51,6 @@ ExchangeManager::removePartner(const std::string & name)
     LOG_ASSERT(oldremote);
     _partners.erase(name);
     oldremote->shutdown();
-    oldremote->remoteMap().unregisterListener(_env.consensusMap());
 }
 
 std::vector<std::string>

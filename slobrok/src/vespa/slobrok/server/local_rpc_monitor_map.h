@@ -1,16 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "map_listener.h"
+#include "map_source.h"
+#include "service_mapping.h"
+#include "service_map_history.h"
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
 #include "map_listener.h"
-#include "map_listener.h"
-#include "map_source.h"
 #include "named_service.h"
-#include "proxy_map_source.h"
-#include "service_map_history.h"
-#include "service_mapping.h"
-
 #include <vector>
 #include <memory>
 #include <map>
@@ -39,7 +37,6 @@ private:
     using Map = std::map<vespalib::string, PerService>;
 
     Map _map;
-    ProxyMapSource _dispatcher;
     ServiceMapHistory _history;
     FRT_Supervisor &_supervisor;
 
@@ -49,7 +46,6 @@ public:
     LocalRpcMonitorMap(FRT_Supervisor &_supervisor);
     ~LocalRpcMonitorMap();
 
-    MapSource &dispatcher() { return _dispatcher; }
     ServiceMapHistory & history();
 
     void add(const ServiceMapping &mapping) override;
