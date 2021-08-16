@@ -14,7 +14,7 @@ import java.util.List;
  *
  * @author Vegard Havdal
  */
-class NullNetwork implements Network {
+public class NullNetwork implements Network {
 
     @Override
     public boolean waitUntilReady(double seconds) {

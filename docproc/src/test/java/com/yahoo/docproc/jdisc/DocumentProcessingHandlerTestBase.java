@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.jdisc;
 
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
+import com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocprocService;
@@ -28,6 +30,8 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.jdisc.MbusClient;
 import com.yahoo.messagebus.jdisc.test.RemoteServer;
 import com.yahoo.messagebus.jdisc.test.ServerTestDriver;
+import com.yahoo.messagebus.network.NetworkMultiplexer;
+import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.vespa.config.content.DistributionConfig;
@@ -58,10 +62,12 @@ public abstract class DocumentProcessingHandlerTestBase {
 
         driver = ServerTestDriver.newInactiveInstanceWithProtocol(protocol, true);
 
-        sessionCache = new SessionCache(new ContainerMbusConfig.Builder().build(),
-                                        driver.client().slobroksConfig(),
+        RPCNetwork net = new RPCNetwork(NetworkMultiplexerProvider.asParameters(new ContainerMbusConfig.Builder().build(),
+                                                                                driver.client().slobroksConfig(),
+                                                                                "test"));
+        sessionCache = new SessionCache(NetworkMultiplexer.dedicated(net),
+                                        new ContainerMbusConfig.Builder().build(),
                                         new MessagebusConfig.Builder().build(),
-                                        "test",
                                         protocol);
 
         ContainerBuilder builder = driver.parent().newContainerBuilder();

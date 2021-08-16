@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  *
  * @author jonmv
  */
-public class NetworkMultiplexer extends AbstractComponent implements NetworkOwner {
+public class NetworkMultiplexer implements NetworkOwner {
 
     private static final Logger log = Logger.getLogger(NetworkMultiplexer.class.getName());
 
@@ -114,14 +114,13 @@ public class NetworkMultiplexer extends AbstractComponent implements NetworkOwne
             net.shutdown();
     }
 
-    @Override
-    public void deconstruct() {
+    public void destroy() {
         if ( ! shared)
-            throw new UnsupportedOperationException("Deconstruct called on a dedicated multiplexer; " +
-                                                    "this shuts down when detached from");
+            throw new UnsupportedOperationException("Destroy called on a dedicated multiplexer; " +
+                                                    "this automatically shuts down when detached from");
 
         if ( ! owners.isEmpty())
-            log.warning("NetworkMultiplexer shut down before all owners detached: " + this);
+            log.warning("NetworkMultiplexer destroyed before all owners detached: " + this);
 
         net.shutdown();
     }

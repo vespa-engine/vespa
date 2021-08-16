@@ -9,6 +9,9 @@ import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
+import com.yahoo.messagebus.network.NetworkMultiplexer;
+import com.yahoo.messagebus.network.rpc.RPCNetwork;
+import com.yahoo.messagebus.shared.NullNetwork;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import org.junit.Test;
@@ -37,14 +40,13 @@ public class MbusClientProviderTest {
     }
 
     private void testClient(SessionConfig config) {
-        SessionCache cache = new SessionCache(new ContainerMbusConfig.Builder().build(),
+        SessionCache cache = new SessionCache(NetworkMultiplexer.dedicated(new NullNetwork()),
+                                              new ContainerMbusConfig.Builder().build(),
                                               new DocumentmanagerConfig.Builder().build(),
                                               new LoadTypeConfig.Builder().build(),
-                                              new SlobroksConfig.Builder().build(),
                                               new MessagebusConfig.Builder().build(),
                                               new DocumentProtocolPoliciesConfig.Builder().build(),
-                                              new DistributionConfig.Builder().build(),
-                                              "test");
+                                              new DistributionConfig.Builder().build());
         MbusClientProvider p = new MbusClientProvider(cache, config);
         assertNotNull(p.get());
         p.deconstruct();

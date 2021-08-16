@@ -32,6 +32,8 @@ public final class ApplicationContainer extends Container implements
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
 
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.SessionCache"));
     }
 

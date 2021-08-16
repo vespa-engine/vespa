@@ -9,16 +9,13 @@ import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -81,7 +78,7 @@ public class NetworkMultiplexerTest {
         shared.detach(owner2);
         assertFalse(net.shutDown.get());
 
-        shared.deconstruct();
+        shared.destroy();
         assertTrue(net.shutDown.get());
     }
 
