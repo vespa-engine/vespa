@@ -118,8 +118,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
     srandom(time(nullptr) ^ getpid());
     _localMonitorSubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _localRpcMonitorMap);
     _consensusSubscription = MapSubscription::subscribe(_localRpcMonitorMap.dispatcher(), _consensusMap);
-    // TODO: use consensus as source here:
-    _globalHistorySubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _globalVisibleHistory);
+    _globalHistorySubscription = MapSubscription::subscribe(_consensusMap, _globalVisibleHistory);
     _rpcHooks.initRPC(getSupervisor());
 }
 
