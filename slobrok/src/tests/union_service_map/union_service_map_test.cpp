@@ -13,8 +13,8 @@ TEST(UnionServiceMapTest, forwards_simple_requests) {
     ProxyMapSource source;
     UnionServiceMap unionizer;
     MockMapListener observer;
-    unionizer.registerListener(observer);
-    source.registerListener(unionizer);
+    auto subscription1 = MapSubscription::subscribe(unionizer, observer);
+    auto subscription2 = MapSubscription::subscribe(source, unionizer);
 
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
 
@@ -45,10 +45,10 @@ TEST(UnionServiceMapTest, handles_refcount) {
     ProxyMapSource source3;
     UnionServiceMap unionizer;
     MockMapListener observer;
-    unionizer.registerListener(observer);
-    source1.registerListener(unionizer);
-    source2.registerListener(unionizer);
-    source3.registerListener(unionizer);
+    auto subscription1 = MapSubscription::subscribe(unionizer, observer);
+    auto subscription2 = MapSubscription::subscribe(source1, unionizer);
+    auto subscription3 = MapSubscription::subscribe(source2, unionizer);
+    auto subscription4 = MapSubscription::subscribe(source3, unionizer);
 
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
     ServiceMapping one{"foo/1", "bar/1"};
@@ -94,10 +94,10 @@ TEST(UnionServiceMapTest, handles_conflicts) {
     ProxyMapSource source3;
     UnionServiceMap unionizer;
     MockMapListener observer;
-    unionizer.registerListener(observer);
-    source1.registerListener(unionizer);
-    source2.registerListener(unionizer);
-    source3.registerListener(unionizer);
+    auto subscription1 = MapSubscription::subscribe(unionizer, observer);
+    auto subscription2 = MapSubscription::subscribe(source1, unionizer);
+    auto subscription3 = MapSubscription::subscribe(source2, unionizer);
+    auto subscription4 = MapSubscription::subscribe(source3, unionizer);
 
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
     ServiceMapping one{"foo/1", "bar/1"};

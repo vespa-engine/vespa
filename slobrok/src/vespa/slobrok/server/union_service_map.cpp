@@ -16,7 +16,7 @@ void UnionServiceMap::add(const ServiceMapping &mapping)
     auto iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         _mappings[key].emplace_back(mapping.spec, 1u);
-        _proxy.add(mapping);
+        ProxyMapSource::add(mapping);
         LOG(debug, "add new %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     } else {
         Mappings &values = iter->second;
@@ -29,7 +29,7 @@ void UnionServiceMap::add(const ServiceMapping &mapping)
         }
         if (values.size() == 1u) {
             LOG(warning, "Multiple specs seen for name '%s', un-publishing", key.c_str());
-            _proxy.remove(ServiceMapping{key, values[0].spec});
+            ProxyMapSource::remove(ServiceMapping{key, values[0].spec});
         }
         values.emplace_back(mapping.spec, 1u);
     }
@@ -63,13 +63,13 @@ void UnionServiceMap::remove(const ServiceMapping &mapping)
         LOG_ASSERT(old_size == 2u);
         LOG(info, "Had multiple mappings for %s, but now only %s remains",
             key.c_str(), values[0].spec.c_str());
-        _proxy.add(ServiceMapping{key, values[0].spec});
+        ProxyMapSource::add(ServiceMapping{key, values[0].spec});
     }
     if (values.size() == 0u) {
         LOG_ASSERT(old_size == 1u);
         LOG(debug, "Last reference for %s -> %s removed",
             key.c_str(), mapping.spec.c_str());
-        _proxy.remove(mapping);
+        ProxyMapSource::remove(mapping);
         _mappings.erase(iter);
     }
 }
@@ -80,16 +80,6 @@ void UnionServiceMap::update(const ServiceMapping &old_mapping,
     LOG_ASSERT(old_mapping.name == new_mapping.name);
     remove(old_mapping);
     add(new_mapping);
-}
-
-void UnionServiceMap::registerListener(MapListener &listener)
-{
-    _proxy.registerListener(listener);
-}
-
-void UnionServiceMap::unregisterListener(MapListener &listener)
-{
-    _proxy.unregisterListener(listener);
 }
 
 } // namespace slobrok

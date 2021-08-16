@@ -42,7 +42,8 @@ private:
     ProxyMapSource _dispatcher;
     ServiceMapHistory _history;
     FRT_Supervisor &_supervisor;
-
+    std::unique_ptr<MapSubscription> _subscription;
+    
     PerService * lookup(const ServiceMapping &mapping);
     
 public:

@@ -47,15 +47,15 @@ TEST(ServiceMapMirrorTest, empty_inspection) {
     EXPECT_TRUE(bar.empty());
 
     MockMapListener observer;
-    mirror.registerListener(observer);
-    mirror.unregisterListener(observer);
+    auto subscription = MapSubscription::subscribe(mirror, observer);
+    subscription.reset();
     EXPECT_EQ(observer.last_event, MockEvent::NONE);
 }
 
 TEST(ServiceMapMirrorTest, full_inspection) {
     ServiceMapMirror mirror;
     MockMapListener observer;
-    mirror.registerListener(observer);
+    auto subscription = MapSubscription::subscribe(mirror, observer);
     for (int i = 0; i < 1984; ++i) {
         EXPECT_EQ(mirror.currentGeneration(), GenCnt(i));
         auto name = fmt("key/%d/name", i);
@@ -134,8 +134,6 @@ TEST(ServiceMapMirrorTest, full_inspection) {
     EXPECT_EQ(map["key/678/name"], "bar/2/foo");
     EXPECT_EQ(map["key/789/name"], "bar/5/foo");
     EXPECT_EQ(map.size(), 1981ul);
-
-    mirror.unregisterListener(observer);
 }
 
 

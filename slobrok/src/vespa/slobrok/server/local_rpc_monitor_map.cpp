@@ -11,9 +11,9 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
   : _map(),
     _dispatcher(),
     _history(),
-    _supervisor(supervisor)
+    _supervisor(supervisor),
+    _subscription(MapSubscription::subscribe(_dispatcher, _history))
 {
-    _dispatcher.registerListener(_history);
 }
 
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
