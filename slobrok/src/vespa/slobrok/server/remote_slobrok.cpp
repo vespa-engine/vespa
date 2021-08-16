@@ -154,8 +154,9 @@ void RemoteSlobrok::handleFetchResult() {
         if (_remFetchReq->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
             LOG(debug, "partner slobrok too old - not mirroring");
         } else {
-        LOG(warning, "fetchLocalView() failed with partner %s: %s",
-            getName().c_str(), _remFetchReq->GetErrorMessage());            
+            LOG(debug, "fetchLocalView() failed with partner %s: %s",
+                getName().c_str(), _remFetchReq->GetErrorMessage());            
+            fail();
         }
         _serviceMapMirror.clear();
         success = false;
