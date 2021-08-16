@@ -28,6 +28,8 @@ public:
     UnionServiceMap();
     virtual ~UnionServiceMap();
 
+    bool wouldConflict(const ServiceMapping &mapping) const;
+
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
     void update(const ServiceMapping &old_mapping,

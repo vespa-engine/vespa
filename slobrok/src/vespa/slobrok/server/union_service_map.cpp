@@ -10,6 +10,20 @@ namespace slobrok {
 UnionServiceMap::UnionServiceMap() = default;
 UnionServiceMap::~UnionServiceMap() = default;
 
+bool UnionServiceMap::wouldConflict(const ServiceMapping &mapping) const
+{
+    const vespalib::string &key = mapping.name;
+    auto iter = _mappings.find(key);
+    if (iter == _mappings.end()) {
+        return false;
+    }
+    const Mappings &values = iter->second;
+    if (values.size() != 1) {
+        return true;
+    }
+    return (values[0].spec != mapping.spec);
+}
+
 void UnionServiceMap::add(const ServiceMapping &mapping)
 {
     const vespalib::string &key = mapping.name;

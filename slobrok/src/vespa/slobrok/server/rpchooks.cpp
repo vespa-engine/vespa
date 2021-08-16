@@ -242,6 +242,12 @@ RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req)
         return;
     }
     // can we say now, that this will fail?
+    ServiceMapping mapping{dName, dSpec};
+    if (_env.consensusMap().wouldConflict(mapping)) {
+        req->SetError(FRTE_RPC_METHOD_FAILED, "Conflicting mapping exists already");
+        LOG(info, "cannot register %s at %s: conflict", dName, dSpec);
+        return;
+    }
     OkState state = _rpcsrvmanager.addMyReservation(dName, dSpec);
     if (state.failed()) {
         req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
