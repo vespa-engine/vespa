@@ -8,6 +8,7 @@ import (
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
+    "strings"
 )
 
 func init() {
@@ -30,8 +31,13 @@ var queryCmd = &cobra.Command{
 }
 
 func query(argument string) {
-    // TODO: Add ? if missing as prefix
-    // TODO: Add query= prefix if no "query=" in the argument string
+    if ! strings.Contains(argument, "query=") {
+        argument = "?query=" + argument
+    }
+    if ! strings.HasPrefix(argument, "?") {
+        argument = "?" + argument
+    }
+
     path := "/search/" + argument
     response := utils.HttpGet(GetTarget(queryContext).query, path, "Container")
     if (response == nil) {
