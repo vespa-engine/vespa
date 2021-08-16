@@ -7,6 +7,8 @@ LOG_SETUP(".slobrok.server.local_rpc_monitor_map");
 
 namespace slobrok {
 
+LocalRpcMonitorMap::PerService::~PerService() = default;
+
 LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
   : _map(),
     _dispatcher(),
@@ -31,6 +33,31 @@ ServiceMapHistory & LocalRpcMonitorMap::history() {
     return _history;
 }
 
+void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
+                                  std::unique_ptr<ScriptCommand> inflight)
+{
+    LOG(debug, "try local add: mapping %s->%s",
+        mapping.name.c_str(), mapping.spec.c_str());
+    auto old = _map.find(mapping.name);
+    if (old != _map.end()) {
+        PerService & exists = old->second;
+        if (exists.spec() == mapping.spec) {
+            LOG(debug, "added mapping %s->%s was already present",
+                mapping.name.c_str(), mapping.spec.c_str());
+            inflight->doneHandler(OkState(0, "already registered"));
+            return;
+        }
+        LOG(warning, "tried addLocal for mapping %s->%s, but already had conflicting mapping %s->%s",
+            mapping.name.c_str(), mapping.spec.c_str(),
+            exists.name().c_str(), exists.spec().c_str());
+        inflight->doneHandler(OkState(FRTE_RPC_METHOD_FAILED, "conflict"));
+        return;
+    }
+    auto [ iter, was_inserted ] =
+        _map.try_emplace(mapping.name, localService(mapping, std::move(inflight)));
+    LOG_ASSERT(was_inserted);
+}
+
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
     LOG(debug, "try add: mapping %s->%s",
         mapping.name.c_str(), mapping.spec.c_str());
@@ -40,6 +67,7 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
         if (exists.spec() == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
+            exists.localOnly = false;
             return;
         }
         LOG(warning, "added mapping %s->%s, but already had conflicting mapping %s->%s",
@@ -51,11 +79,7 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
         _map.erase(old);
     }
     auto [ iter, was_inserted ] =
-        _map.try_emplace(mapping.name,
-                         false,
-                         std::make_unique<ManagedRpcServer>(mapping.name,
-                                                            mapping.spec,
-                                                            *this));
+        _map.try_emplace(mapping.name, globalService(mapping));
     LOG_ASSERT(was_inserted);
 }
 
@@ -86,9 +110,17 @@ void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::strin
     auto &psd = lookup(mapping);
     LOG_ASSERT(psd.srv.get() == rpcsrv);
     LOG(debug, "failed: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
+    if (psd.inflight) {
+        auto target = std::move(psd.inflight);
+        target->doneHandler(OkState(13, "failed check using listNames callback"));
+    }
     if (psd.up) {
         psd.up = false;
         _dispatcher.remove(mapping);
+    }
+    if (psd.localOnly) {
+        auto iter = _map.find(mapping.name);
+        _map.erase(iter);
     }
 }
 
@@ -97,6 +129,10 @@ void LocalRpcMonitorMap::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
     auto &psd = lookup(mapping);
     LOG_ASSERT(psd.srv.get() == rpcsrv);
     LOG(debug, "ok: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
+    if (psd.inflight) {
+        auto target = std::move(psd.inflight);
+        target->doneHandler(OkState());
+    }
     if (! psd.up) {
         psd.up = true;
         _dispatcher.add(mapping);
