@@ -56,11 +56,9 @@ public class AclMaintainer {
         this.containerOperations = containerOperations;
         this.ipAddresses = ipAddresses;
         this.metrics = metrics;
-        this.lastSuccess = new HashMap<>(){{
-            put(IPVersion.IPv4.id(), System.currentTimeMillis());
-            put(IPVersion.IPv6.id(), System.currentTimeMillis());
-        }};
-
+        var now = System.currentTimeMillis();
+        this.lastSuccess = new HashMap<>(Map.of(IPVersion.IPv4.id(), now,
+                                                IPVersion.IPv6.id(), now));
     }
 
     // ip(6)tables operate while having the xtables lock, run with synchronized to prevent multiple NodeAgents
