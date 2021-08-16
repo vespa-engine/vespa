@@ -10,28 +10,27 @@ import (
 )
 
 func TestStatusConfigServerCommand(t *testing.T) {
+    reset()
     assertConfigServerStatus("http://127.0.0.1:19071", []string{}, t)
 }
 
 func TestStatusConfigServerCommandWithTarget(t *testing.T) {
-    assertConfigServerStatus("http://mydeploytarget", []string{"-d", "http://mydeploytarget"}, t)
-
-	// Reset persistent flag
-    executeCommand(t, []string{"status", "container", "-d", "http://127.0.0.1:19071"}, []string{})
+    reset()
+    assertConfigServerStatus("http://mydeploytarget", []string{"-t", "http://mydeploytarget"}, t)
 }
 
 func TestStatusContainerCommand(t *testing.T) {
+    reset()
     assertContainerStatus("http://127.0.0.1:8080", []string{}, t)
 }
 
 func TestStatusContainerCommandWithTarget(t *testing.T) {
-    assertContainerStatus("http://mycontainertarget", []string{"-c", "http://mycontainertarget"}, t)
-
-	// Reset persistent flag
-    executeCommand(t, []string{"status", "container", "-c", "http://127.0.0.1:8080"}, []string{})
+    reset()
+    assertContainerStatus("http://mycontainertarget", []string{"-t", "http://mycontainertarget"}, t)
 }
 
 func TestStatusErrorResponse(t *testing.T) {
+    reset()
     assertContainerError("http://127.0.0.1:8080", []string{}, t)
 }
 

@@ -13,13 +13,18 @@ import (
     "testing"
 )
 
-// The HTTP status code that will be returned from the next invocation. Defauult: 200
+// The HTTP status code that will be returned from the next invocation. Default: 200
 var nextStatus int
 
 // A recording of the last HTTP request made through this
 var lastRequest *http.Request
 
-func init() {
+func reset() {
+    // Persistent flags in Cobra persists over tests
+	rootCmd.SetArgs([]string{"status", "-t", ""})
+	rootCmd.Execute()
+
+    lastRequest = nil
     nextStatus = 200
 }
 
@@ -57,3 +62,4 @@ func concat(array1 []string, array2 []string) []string {
     }
     return result
 }
+
