@@ -419,10 +419,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         return protocolRepository.getProtocol(name.toString());
     }
 
-    public Protocol getProtocol(Utf8String name) {
-        return getProtocol((Utf8Array)name);
-    }
-
     public void deliverReply(Reply reply, ReplyHandler handler) {
         msn.deliverReply(reply, handler);
     }

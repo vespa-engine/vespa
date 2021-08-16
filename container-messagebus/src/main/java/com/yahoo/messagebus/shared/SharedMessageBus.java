@@ -6,6 +6,7 @@ import com.yahoo.jdisc.AbstractResource;
 
 import java.util.Objects;
 import java.util.logging.Level;
+
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBus;
@@ -66,4 +67,6 @@ public class SharedMessageBus extends AbstractResource {
         }
         return new RPCNetwork(params);
     }
+
+
 }
