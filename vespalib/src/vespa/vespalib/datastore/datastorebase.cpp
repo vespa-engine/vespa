@@ -171,7 +171,10 @@ DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded
     uint32_t bufferId = _primary_buffer_ids[typeId];
     if (elemsNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
         if (consider_grow_active_buffer(typeId, elemsNeeded)) {
-            fallbackResize(_primary_buffer_ids[typeId], elemsNeeded);
+            bufferId = _primary_buffer_ids[typeId];
+            if (elemsNeeded > _states[bufferId].remaining()) {
+                fallbackResize(bufferId, elemsNeeded);
+            }
         } else {
             switch_primary_buffer(typeId, elemsNeeded);
         }
@@ -442,6 +445,7 @@ void
 DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 {
     for (uint32_t bufferId : toHold) {
+        assert(_states[bufferId].getCompacting());
         holdBuffer(bufferId);
     }
 }
