@@ -1,16 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.config.SessionConfig;
-import com.yahoo.container.jdisc.messagebus.MbusClientProvider;
-import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.messagebus.network.NetworkMultiplexer;
-import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.shared.NullNetwork;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
