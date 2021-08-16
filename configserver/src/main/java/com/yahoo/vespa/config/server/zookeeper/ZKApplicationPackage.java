@@ -29,9 +29,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_ZK_SUBPATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
@@ -45,7 +47,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     private final ZKApplication zkApplication;
 
-    private final Map<Version, PreGeneratedFileRegistry> fileRegistryMap = new HashMap<>();
+    private final Map<Version, FileRegistry> fileRegistryMap = new HashMap<>();
     private final Optional<AllocatedHosts> allocatedHosts;
 
     public static final String fileRegistryNode = "fileregistry";
@@ -91,7 +93,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
                                                      importFileRegistry(Joiner.on("/").join(fileRegistryNode, version))));
     }
 
-    private PreGeneratedFileRegistry importFileRegistry(String fileRegistryNode) {
+    private FileRegistry importFileRegistry(String fileRegistryNode) {
         try {
             return PreGeneratedFileRegistry.importRegistry(zkApplication.getDataReader(Path.fromString(fileRegistryNode)));
         } catch (Exception e) {
@@ -159,9 +161,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return Collections.unmodifiableMap(fileRegistryMap);
     }
 
-    private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(Version vespaVersion) {
+    private Optional<FileRegistry> getFileRegistry(Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
-        Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
+        Optional<FileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
         if (fileRegistry.isEmpty()) {
             fileRegistry = Optional.of(fileRegistryMap.values().iterator().next());
         }
@@ -241,11 +243,21 @@ public class ZKApplicationPackage implements ApplicationPackage {
             return Optional.empty();
     }
 
+    private static Set<String> getPaths(FileRegistry fileRegistry) {
+        Set<String> paths = new LinkedHashSet<>();
+        synchronized (fileRegistry) {
+            for (FileRegistry.Entry e : fileRegistry.export()) {
+                paths.add(e.relativePath);
+            }
+        }
+        return paths;
+    }
+
     @Override
     public List<ComponentInfo> getComponentsInfo(Version vespaVersion) {
         List<ComponentInfo> components = new ArrayList<>();
-        PreGeneratedFileRegistry fileRegistry = getPreGeneratedFileRegistry(vespaVersion).get();
-        for (String path : fileRegistry.getPaths()) {
+        FileRegistry fileRegistry = getFileRegistry(vespaVersion).get();
+        for (String path : getPaths(fileRegistry)) {
             if (path.startsWith(COMPONENT_DIR + File.separator) && path.endsWith(".jar")) {
                 ComponentInfo component = new ComponentInfo(path);
                 components.add(component);
