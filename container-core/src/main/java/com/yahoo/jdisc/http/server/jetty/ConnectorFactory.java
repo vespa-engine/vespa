@@ -100,7 +100,9 @@ public class ConnectorFactory {
             }
             return connectionFactoriesForTlsMixedMode(metric);
         } else {
-            return List.of(newHttp1ConnectionFactory(), newHttp2ClearTextConnectionFactory());
+            return connectorConfig.http2Enabled()
+                    ? List.of(newHttp1ConnectionFactory(), newHttp2ClearTextConnectionFactory())
+                    : List.of(newHttp1ConnectionFactory());
         }
     }
 
