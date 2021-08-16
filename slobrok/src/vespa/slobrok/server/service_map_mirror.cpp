@@ -8,7 +8,8 @@ namespace slobrok {
 
 ServiceMapMirror::ServiceMapMirror()
   : _map(),
-    _currGen(0)
+    _currGen(0),
+    _lock()
 {}
 
 ServiceMapMirror::~ServiceMapMirror() {
@@ -16,6 +17,7 @@ ServiceMapMirror::~ServiceMapMirror() {
 }
 
 void ServiceMapMirror::apply(const MapDiff &diff) {
+    std::lock_guard guard(_lock);
     LOG(debug, "Applying diff from gen %u", diff.fromGen.getAsInt());
     LOG_ASSERT(diff.fromGen == _currGen);
     for (const auto & name : diff.removed) {
@@ -52,6 +54,7 @@ void ServiceMapMirror::apply(const MapDiff &diff) {
 }
 
 void ServiceMapMirror::clear() {
+    std::lock_guard guard(_lock);
     for (const auto & [ k, v ] : _map) {
         ServiceMapping mapping{k, v};
         for (auto * listener : _listeners) {
@@ -63,6 +66,7 @@ void ServiceMapMirror::clear() {
 }
 
 ServiceMappingList ServiceMapMirror::allMappings() const {
+    std::lock_guard guard(_lock);
     ServiceMappingList result;
     result.reserve(_map.size());
     for (const auto & [ k, v ] : _map) {
@@ -72,10 +76,12 @@ ServiceMappingList ServiceMapMirror::allMappings() const {
 }
 
 void ServiceMapMirror::registerListener(MapListener &listener) {
+    std::lock_guard guard(_lock);
     _listeners.insert(&listener);
 }
 
 void ServiceMapMirror::unregisterListener(MapListener &listener) {
+    std::lock_guard guard(_lock);
     _listeners.erase(&listener);
 }
 
