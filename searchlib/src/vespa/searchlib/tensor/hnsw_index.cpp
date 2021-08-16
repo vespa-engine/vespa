@@ -30,7 +30,7 @@ constexpr size_t min_num_arrays_for_new_buffer = 512_Ki;
 constexpr float alloc_grow_factor = 0.3;
 // TODO: Adjust these numbers to what we accept as max in config.
 constexpr size_t max_level_array_size = 16;
-constexpr size_t max_link_array_size = 64;
+constexpr size_t max_link_array_size = 193;
 constexpr vespalib::duration MAX_COUNT_DURATION(100ms);
 
 bool has_link_to(vespalib::ConstArrayRef<uint32_t> links, uint32_t id) {
