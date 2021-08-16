@@ -5,6 +5,7 @@
 #include "nearest_neighbor_index_saver.h"
 #include "hnsw_graph.h"
 #include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
 
 namespace search::tensor {
@@ -17,18 +18,19 @@ namespace search::tensor {
  **/
 class HnswIndexSaver : public NearestNeighborIndexSaver {
 public:
-    using LevelVector = std::vector<vespalib::datastore::EntryRef>;
-
     HnswIndexSaver(const HnswGraph &graph);
-    ~HnswIndexSaver();
+    ~HnswIndexSaver() override;
     void save(BufferWriter& writer) const override;
 
 private:
     struct MetaData {
+        using EntryRef = vespalib::datastore::EntryRef;
         uint32_t entry_docid;
         int32_t  entry_level;
-        std::vector<LevelVector> nodes;
-        MetaData() : entry_docid(0), entry_level(-1), nodes() {}
+        std::vector<EntryRef, vespalib::allocator_large<EntryRef>> refs;
+        std::vector<uint32_t, vespalib::allocator_large<uint32_t>> nodes;
+        MetaData();
+        ~MetaData();
     };
     const HnswGraph::LinkStore &_graph_links;
     MetaData _meta_data;

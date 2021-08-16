@@ -6,7 +6,31 @@
 
 namespace search::tensor {
 
-HnswIndexSaver::~HnswIndexSaver() {}
+namespace {
+
+size_t
+countValidLinks(const HnswGraph & graph) {
+    size_t count(0);
+    size_t num_nodes = graph.node_refs.size();
+    for (size_t i = 0; i < num_nodes; ++i) {
+        auto node_ref = graph.node_refs[i].load_acquire();
+        if (node_ref.valid()) {
+            count += graph.nodes.get(node_ref).size();
+        }
+    }
+    return count;
+}
+
+}
+
+HnswIndexSaver::MetaData::MetaData()
+    : entry_docid(0),
+      entry_level(-1),
+      refs(),
+      nodes()
+{}
+HnswIndexSaver::MetaData::~MetaData() = default;
+HnswIndexSaver::~HnswIndexSaver() = default;
 
 HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     : _graph_links(graph.links), _meta_data()
@@ -15,19 +39,22 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     _meta_data.entry_docid = entry.docid;
     _meta_data.entry_level = entry.level;
     size_t num_nodes = graph.node_refs.size();
-    _meta_data.nodes.reserve(num_nodes);
+    assert (num_nodes <= 0xfffffffful);
+    size_t linkCount = countValidLinks(graph);
+    assert (linkCount <= 0xfffffffful);
+    _meta_data.refs.reserve(linkCount);
+    _meta_data.nodes.reserve(num_nodes+1);
     for (size_t i = 0; i < num_nodes; ++i) {
-        LevelVector node;
+        _meta_data.nodes.push_back(_meta_data.refs.size());
         auto node_ref = graph.node_refs[i].load_acquire();
         if (node_ref.valid()) {
             auto levels = graph.nodes.get(node_ref);
             for (const auto& links_ref : levels) {
-                auto level = links_ref.load_acquire();
-                node.push_back(level);
+                _meta_data.refs.push_back(links_ref.load_acquire());
             }
         }
-        _meta_data.nodes.emplace_back(std::move(node));
     }
+    _meta_data.nodes.push_back(_meta_data.refs.size());
 }
 
 void
@@ -35,12 +62,14 @@ HnswIndexSaver::save(BufferWriter& writer) const
 {
     writer.write(&_meta_data.entry_docid, sizeof(uint32_t));
     writer.write(&_meta_data.entry_level, sizeof(int32_t));
-    uint32_t num_nodes = _meta_data.nodes.size();
+    uint32_t num_nodes = _meta_data.nodes.size() - 1;
     writer.write(&num_nodes, sizeof(uint32_t));
-    for (const auto &node : _meta_data.nodes) {
-        uint32_t num_levels = node.size();
+    for (uint32_t i(0); i < num_nodes; i++) {
+        uint32_t offset = _meta_data.nodes[i];
+        uint32_t num_levels = _meta_data.nodes[i+1] - offset;
         writer.write(&num_levels, sizeof(uint32_t));
-        for (auto links_ref : node) {
+        for (; offset <_meta_data.nodes[i+1]; offset++) {
+            auto links_ref = _meta_data.refs[offset];
             if (links_ref.valid()) {
                 vespalib::ConstArrayRef<uint32_t> link_array = _graph_links.get(links_ref);
                 uint32_t num_links = link_array.size();
