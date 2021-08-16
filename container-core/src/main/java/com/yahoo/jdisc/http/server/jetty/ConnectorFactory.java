@@ -8,7 +8,8 @@ import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
-import org.eclipse.jetty.http2.parser.RateControl;
+import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
@@ -82,7 +83,7 @@ public class ConnectorFactory {
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
         if (!isSslEffectivelyEnabled(connectorConfig)) {
-            return List.of(newHttp1ConnectionFactory());
+            return List.of(newHttp1ConnectionFactory(), newHttp2ClearTextConnectionFactory());
         } else if (connectorConfig.ssl().enabled()) {
             return connectionFactoriesForHttps(metric);
         } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
@@ -96,7 +97,7 @@ public class ConnectorFactory {
                     throw new IllegalStateException();
             }
         } else {
-            return List.of(newHttp1ConnectionFactory());
+            return List.of(newHttp1ConnectionFactory(), newHttp2ClearTextConnectionFactory());
         }
     }
 
@@ -163,11 +164,21 @@ public class ConnectorFactory {
 
     private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
         HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
+        setHttp2Config(factory);
+        return factory;
+    }
+
+    private HTTP2CServerConnectionFactory newHttp2ClearTextConnectionFactory() {
+        HTTP2CServerConnectionFactory factory = new HTTP2CServerConnectionFactory(newHttpConfiguration());
+        setHttp2Config(factory);
+        return factory;
+    }
+
+    private void setHttp2Config(AbstractHTTP2ServerConnectionFactory factory) {
         factory.setStreamIdleTimeout(toMillis(connectorConfig.http2().streamIdleTimeout()));
         factory.setMaxConcurrentStreams(connectorConfig.http2().maxConcurrentStreams());
         factory.setInitialSessionRecvWindow(1 << 24);
         factory.setInitialStreamRecvWindow(1 << 20);
-        return factory;
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
