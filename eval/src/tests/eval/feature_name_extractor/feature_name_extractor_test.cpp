@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
+#include <vespa/eval/eval/feature_name_extractor.h>
 
-using search::features::rankingexpression::FeatureNameExtractor;
+using vespalib::eval::FeatureNameExtractor;
 
 void verify_extract(const vespalib::string &input,
                     const vespalib::string &expect_symbol,

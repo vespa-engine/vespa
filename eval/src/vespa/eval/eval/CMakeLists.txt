@@ -13,6 +13,7 @@ vespa_add_library(eval_eval OBJECT
     fast_addr_map.cpp
     fast_forest.cpp
     fast_value.cpp
+    feature_name_extractor.cpp
     function.cpp
     gbdt.cpp
     int8float.cpp

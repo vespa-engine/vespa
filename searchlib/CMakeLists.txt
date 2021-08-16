@@ -209,7 +209,6 @@ vespa_define_module(
     src/tests/queryeval/weak_and_scorers
     src/tests/queryeval/weighted_set_term
     src/tests/queryeval/wrappers
-    src/tests/rankingexpression/feature_name_extractor
     src/tests/rankingexpression/intrinsic_blueprint_adapter
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
