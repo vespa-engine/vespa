@@ -2,8 +2,6 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.ConfigBuilder;
-import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
@@ -36,24 +34,6 @@ import java.util.Map;
 class InstanceResolver {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(InstanceResolver.class.getName());
-
-    /**
-     * Resolves this config key into a correctly typed ConfigInstance using the given config builder.
-     * FIXME: Make private once config overrides are deprecated.?
-     *
-     * @param builder a ConfigBuilder to create the instance from.
-     * @param targetDef the def to use
-     * @return the config instance or null of no producer for this found in model
-     */
-    static ConfigInstance resolveToInstance(ConfigInstance.Builder builder, InnerCNode targetDef) {
-        try {
-            if (targetDef != null) applyDef(builder, targetDef);
-            Class<? extends ConfigInstance> clazz = getConfigClass(builder.getClass());
-            return clazz.getConstructor(builder.getClass()).newInstance(builder);
-        } catch (Exception e) {
-            throw new ConfigurationRuntimeException(e);
-        }
-    }
 
     /**
      * If some fields on the builder are null now, set them from the def. Do recursively.
@@ -124,15 +104,6 @@ class InstanceResolver {
                 }
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends ConfigInstance> getConfigClass(Class<? extends ConfigInstance.Builder> builderClass) {
-        Class<?> configClass = builderClass.getEnclosingClass();
-        if (configClass == null || ! ConfigInstance.class.isAssignableFrom(configClass)) {
-            throw new ConfigurationRuntimeException("Builder class " + builderClass + " has enclosing class " + configClass + ", which is not a ConfigInstance");
-        }
-        return (Class<? extends ConfigInstance>) configClass;
     }
 
     static String packageName(ConfigDefinitionKey cKey, PackagePrefix packagePrefix) {

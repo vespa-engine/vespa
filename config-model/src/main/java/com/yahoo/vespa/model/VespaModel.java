@@ -14,7 +14,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.ConfigModelRepo;
@@ -42,7 +41,6 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig.GenericConfigBuilder;
 import com.yahoo.vespa.model.InstanceResolver.PackagePrefix;
@@ -64,7 +62,6 @@ import com.yahoo.vespa.model.ml.OnnxModelInfo;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
-import com.yahoo.yolean.Exceptions;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -483,7 +480,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         log.log(Level.FINE, () -> "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
                 " for config id " + quote(configProducer.getConfigId()) +
                 ", found=" + found + ", foundOverride=" + foundOverride);
-
     }
 
     /**
@@ -509,23 +505,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         ConfigInstance.Builder builder = createBuilder(new ConfigDefinitionKey(key));
         getConfig(builder, key.getConfigId());
         return builder;
-    }
-
-    private ConfigPayload getConfigFromBuilder(ConfigInstance.Builder builder, InnerCNode targetDef) {
-        if (builder instanceof GenericConfigBuilder) return ((GenericConfigBuilder) builder).getPayload();
-
-        try {
-            ConfigInstance instance = InstanceResolver.resolveToInstance(builder, targetDef);
-            log.log(Level.FINE, () -> "getConfigFromBuilder for builder " + builder.getClass().getName() + ", instance=" + instance);
-            return ConfigPayload.fromInstance(instance);
-        } catch (ConfigurationRuntimeException e) {
-            // This can happen in cases where services ask for config that no longer exist before they have been able
-            // to reconfigure themselves. This happens for instance whenever jdisc reconfigures itself until
-            // ticket 6599572 is fixed. When that happens, consider propagating a full error rather than empty payload
-            // back to the client.
-            log.log(Level.INFO, "Error resolving instance for builder '" + builder.getClass().getName() + "', returning empty config: " + Exceptions.toMessageString(e));
-            return ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
-        }
     }
 
     @Override
