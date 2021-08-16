@@ -60,7 +60,6 @@ private:
     UnionServiceMap                            _consensusMap;
     ServiceMapHistory                          _globalVisibleHistory;
 
-    void cleanup();
 public:
     explicit SBEnv(const ConfigShim &shim);
     ~SBEnv();
