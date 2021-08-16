@@ -462,30 +462,21 @@ RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
 {
     _cnts.adminReqs++;
 
-    std::vector<const NamedService *> mrpcsrvlist = _rpcsrvmap.allManaged();
-
+    const auto & visible = _env.globalHistory();
+    auto diff = visible.makeDiffFrom(0);
     FRT_Values &dst = *req->GetReturn();
-    size_t sz = mrpcsrvlist.size();
+    size_t sz = diff.updated.size();
     FRT_StringValue *names  = dst.AddStringArray(sz);
     FRT_StringValue *specs  = dst.AddStringArray(sz);
     FRT_StringValue *owner  = dst.AddStringArray(sz);
-
-    int j = 0;
-    for (uint32_t i = 0; i < mrpcsrvlist.size(); ++i, ++j) {
-        dst.SetString(&names[j], mrpcsrvlist[i]->getName().c_str());
-        dst.SetString(&specs[j], mrpcsrvlist[i]->getSpec().c_str());
+    size_t j = 0;
+    for (const auto & entry : diff.updated) {
+        dst.SetString(&names[j], entry.name.c_str());
+        dst.SetString(&specs[j], entry.spec.c_str());
         dst.SetString(&owner[j], _env.mySpec().c_str());
+        ++j;
     }
-
-    if (sz > 0) {
-        LOG(debug, "listManagedRpcServers -> %u, last [%s,%s,%s]",
-            (unsigned int)mrpcsrvlist.size(),
-            dst[0]._string_array._pt[sz-1]._str,
-            dst[1]._string_array._pt[sz-1]._str,
-            dst[2]._string_array._pt[sz-1]._str);
-    } else {
-        LOG(debug, "listManagedRpcServers -> %u", (unsigned int) mrpcsrvlist.size());
-    }
+    LOG(debug, "listManagedRpcServers -> %zu entries returned", sz);
     return;
 
 }
