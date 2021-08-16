@@ -21,7 +21,7 @@ DO`,
 )
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(readConfig)
 	rootCmd.PersistentFlags().StringVarP(&targetArgument, "target", "t", "local", "The name or URL of the recipient of this command")
 }
 

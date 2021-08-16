@@ -22,12 +22,10 @@ var configCmd = &cobra.Command{
     Short: "Configure the Vespa command",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-    	//viper.BindPFlag("container-target", rootCmd.PersistentFlags().Lookup("container-target"))
-    	//viper.SetDefault("container-target", "http://127.0.0.1:8080")
     },
 }
 
-func initConfig() {
+func readConfig() {
     home, err := os.UserHomeDir()
     configName := ".vespa"
     configType := "yaml"
@@ -38,23 +36,6 @@ func initConfig() {
     viper.SetConfigName(configName)
 	viper.AutomaticEnv()
 
-    // Viper bug: WriteConfig() will not create the file if missing
-    configPath := filepath.Join(home, configName + "." + configType)
-    _, statErr := os.Stat(configPath)
-    if !os.IsExist(statErr) {
-        fmt.Println("Creating blank config file")
-        if _, createErr := os.Create(configPath); createErr != nil {
-            utils.Error("Warning: Can not remember flag parameters: " + createErr.Error())
-        }
-    }
-
-	err2 := viper.WriteConfig()
-	if err2 != nil {
-	    fmt.Println("WriteConfig err:", err2.Error())
-	} else {
-	    fmt.Println("No WriteConfig error")
-	}
-
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	} else {
@@ -62,3 +43,26 @@ func initConfig() {
 	}
 }
 
+// WIP: Not used yet
+func writeConfig() {
+  	//viper.BindPFlag("container-target", rootCmd.PersistentFlags().Lookup("container-target"))
+  	//viper.SetDefault("container-target", "http://127.0.0.1:8080")
+
+    home, _ := os.UserHomeDir()
+    configName := ".vespa"
+    configType := "yaml"
+
+    // Viper bug: WriteConfig() will not create the file if missing
+    configPath := filepath.Join(home, configName + "." + configType)
+    _, statErr := os.Stat(configPath)
+    if !os.IsExist(statErr) {
+        if _, createErr := os.Create(configPath); createErr != nil {
+            utils.Error("Warning: Can not remember flag parameters: " + createErr.Error())
+        }
+    }
+
+	writeErr := viper.WriteConfig()
+	if writeErr != nil {
+	    utils.Error("Could not write config:", writeErr.Error())
+	}
+}
