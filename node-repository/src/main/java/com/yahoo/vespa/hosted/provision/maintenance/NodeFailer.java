@@ -155,17 +155,13 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
-            if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
-                nodesByFailureReason.put(node, "Not receiving config requests from node");
-            } else {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
-                List<String> failureReports = reasonsToFailParentHost(hostNode);
-                if (failureReports.size() > 0) {
-                    if (hostNode.equals(node)) {
-                        nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
-                    } else {
-                        nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
-                    }
+            Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+            List<String> failureReports = reasonsToFailParentHost(hostNode);
+            if (failureReports.size() > 0) {
+                if (hostNode.equals(node)) {
+                    nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                } else {
+                    nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
                 }
             }
         }

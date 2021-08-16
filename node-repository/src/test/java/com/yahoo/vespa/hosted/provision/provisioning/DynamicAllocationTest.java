@@ -310,7 +310,7 @@ public class DynamicAllocationTest {
         tester.activate(application, hosts);
 
         NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
-        assertEquals(Set.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
+        assertEquals(Set.of("127.0.127.13", "::d"), activeNodes.asList().get(0).ipConfig().primary());
         assertEquals(Set.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
     }
 

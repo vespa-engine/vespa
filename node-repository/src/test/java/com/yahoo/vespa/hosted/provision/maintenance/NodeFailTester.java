@@ -114,6 +114,34 @@ public class NodeFailTester {
         return tester;
     }
 
+    /** Create hostCount hosts, one app with containerCount containers, and one app with contentCount content nodes. */
+    public static NodeFailTester withTwoApplications(int hostCount, int containerCount, int contentCount) {
+        NodeFailTester tester = new NodeFailTester();
+        tester.createHostNodes(hostCount);
+
+        // Create tenant host application
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.75.0").build();
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion("6.75.0").build();
+        Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
+        Capacity capacity1 = Capacity.from(new ClusterResources(containerCount, 1, new NodeResources(1, 4, 10, 0.3)), false, true);
+        Capacity capacity2 = Capacity.from(new ClusterResources(contentCount, 1, new NodeResources(1, 4, 10, 0.3)), false, true);
+        tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
+        tester.activate(app1, clusterApp1, capacity1);
+        tester.activate(app2, clusterApp2, capacity2);
+        assertEquals(Set.of(tester.nodeRepository.nodes().list().nodeType(NodeType.host).asList()),
+                     Set.of(tester.nodeRepository.nodes().list(Node.State.active).owner(tenantHostApp).asList()));
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app1).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(Node.State.active).owner(app2).size());
+
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
+                app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
+                app2, new MockDeployer.ApplicationContext(app2, clusterApp2, capacity2));
+        tester.initializeMaintainers(apps);
+        return tester;
+    }
+
     public static NodeFailTester withTwoApplications(int numberOfHosts) {
         NodeFailTester tester = new NodeFailTester();
 
