@@ -332,9 +332,6 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                                                .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
                                                                                         startOfThrottleWindow));
 
-        log.info("node = " + node + ", recentlyFailedNodes.size() = " + recentlyFailedNodes.size() +
-                 ", throttlePolicy.allowedToFailOf(" + allNodes.size() + ") = " +
-                 throttlePolicy.allowedToFailOf(allNodes.size()));
         // Allow failing any node within policy
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
