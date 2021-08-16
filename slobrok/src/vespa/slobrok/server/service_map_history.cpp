@@ -43,8 +43,7 @@ ServiceMapHistory::UpdateLog::updatedSince(const Generation &gen) const {
 //-----------------------------------------------------------------------------
 
 ServiceMapHistory::ServiceMapHistory()
-  : _lock(),
-    _map(),
+  : _map(),
     _waitList(),
     _log()
 {}
@@ -56,63 +55,49 @@ ServiceMapHistory::~ServiceMapHistory() {
 
 void ServiceMapHistory::notify_updated() {
     WaitList waitList;
-    {
-        std::lock_guard guard(_lock);
-        std::swap(waitList, _waitList);
-    }
+    std::swap(waitList, _waitList);
     for (auto & [ handler, gen ] : waitList) {
         handler->handle(makeDiffFrom(gen));
     }
 }
 
 void ServiceMapHistory::asyncGenerationDiff(DiffCompletionHandler *handler, const Generation &fromGen) {
-    {
-        std::lock_guard guard(_lock);
-        if (fromGen == myGen()) {
-            _waitList.emplace_back(handler, fromGen);
-            return;
-        }
+    if (fromGen == myGen()) {
+        _waitList.emplace_back(handler, fromGen);
+        return;
     }
     handler->handle(makeDiffFrom(fromGen));
 }
 
 bool ServiceMapHistory::cancel(DiffCompletionHandler *handler) {
-    std::lock_guard guard(_lock);
     size_t removed = std::erase_if(_waitList, [=](const Waiter &elem){ return elem.first == handler; });
     return (removed > 0);
 }
 
 void ServiceMapHistory::remove(const ServiceMapping &mapping) {
-    {
-        std::lock_guard guard(_lock);
-        auto iter = _map.find(mapping.name);
-        if (iter == _map.end()) {
-            LOG(debug, "already removed: %s", mapping.name.c_str());
-            return; // already removed
-        }
-        LOG_ASSERT(iter->second == mapping.spec);
-        _map.erase(iter);
-        _log.add(mapping.name);
+    auto iter = _map.find(mapping.name);
+    if (iter == _map.end()) {
+        LOG(debug, "already removed: %s", mapping.name.c_str());
+        return; // already removed
     }
+    LOG_ASSERT(iter->second == mapping.spec);
+    _map.erase(iter);
+    _log.add(mapping.name);
     notify_updated();
 }
 
 void ServiceMapHistory::add(const ServiceMapping &mapping) {
-    {
-        std::lock_guard guard(_lock);
-        auto iter = _map.find(mapping.name);
-        if (iter != _map.end() && iter->second == mapping.spec) {
-            // already ok
-            return;
-        }
-        _map.insert_or_assign(mapping.name, mapping.spec);
-        _log.add(mapping.name);
+    auto iter = _map.find(mapping.name);
+    if (iter != _map.end() && iter->second == mapping.spec) {
+        // already ok
+        return;
     }
+    _map.insert_or_assign(mapping.name, mapping.spec);
+    _log.add(mapping.name);
     notify_updated();
 }
 
 MapDiff ServiceMapHistory::makeDiffFrom(const Generation &fromGen) const {
-    std::lock_guard guard(_lock);
     if (_log.isInRange(fromGen)) {
         std::vector<vespalib::string> removes;
         ServiceMappingList updates;

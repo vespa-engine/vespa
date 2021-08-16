@@ -7,7 +7,6 @@
 #include "map_source.h"
 #include <vespa/vespalib/util/gencnt.h>
 #include <map>
-#include <mutex>
 #include <set>
 
 namespace slobrok {
@@ -41,7 +40,6 @@ private:
     using Map = std::map<vespalib::string, vespalib::string>;
     Map _map;
     Generation _currGen;
-    mutable std::mutex _lock;
     std::set<MapListener *> _listeners;
 };
 
