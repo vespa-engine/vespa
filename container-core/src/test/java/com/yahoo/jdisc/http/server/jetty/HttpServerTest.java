@@ -34,10 +34,7 @@ import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.junit.Rule;
@@ -79,6 +76,7 @@ import static com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.CLOSE;
 import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
+import static com.yahoo.jdisc.http.server.jetty.Utils.createHttp2Client;
 import static com.yahoo.jdisc.http.server.jetty.Utils.createSslTestDriver;
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
 import static org.cthul.matchers.CthulMatchers.containsPattern;
@@ -90,7 +88,6 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeast;
@@ -518,25 +515,6 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
-    @Test
-    public void requireThatServerCanRespondToHttp2Request() throws Exception {
-        Path privateKeyFile = tmpFolder.newFile().toPath();
-        Path certificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-
-        MetricConsumerMock metricConsumer = new MetricConsumerMock();
-        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
-        try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
-            String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
-            SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
-            assertNull(response.getBodyText());
-            assertEquals(OK, response.getCode());
-        }
-        assertTrue(driver.close());
-        ConnectionLogEntry entry = connectionLog.logEntries().get(0);
-        assertEquals("HTTP/2.0", entry.httpProtocol().get());
-    }
 
     @Test
     public void requireThatTlsClientAuthenticationEnforcerRejectsRequestsForNonWhitelistedPaths() throws IOException {
@@ -757,18 +735,6 @@ public class HttpServerTest {
         }
 
         assertTrue(driver.close());
-    }
-
-    private static CloseableHttpAsyncClient createHttp2Client(JettyTestDriver driver) {
-        TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
-                                                          .setSslContext(driver.sslContext())
-                                                          .build();
-        var client = H2AsyncClientBuilder.create()
-                                         .disableAutomaticRetries()
-                                         .setTlsStrategy(tlsStrategy)
-                                         .build();
-        client.start();
-        return client;
     }
 
     private static JettyTestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
