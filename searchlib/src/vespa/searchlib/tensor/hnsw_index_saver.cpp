@@ -9,7 +9,7 @@ namespace search::tensor {
 namespace {
 
 size_t
-countValidLinks(const HnswGraph & graph) {
+count_valid_link_arrays(const HnswGraph & graph) {
     size_t count(0);
     size_t num_nodes = graph.node_refs.size();
     for (size_t i = 0; i < num_nodes; ++i) {
@@ -39,10 +39,10 @@ HnswIndexSaver::HnswIndexSaver(const HnswGraph &graph)
     _meta_data.entry_docid = entry.docid;
     _meta_data.entry_level = entry.level;
     size_t num_nodes = graph.node_refs.size();
-    assert (num_nodes <= 0xfffffffful);
-    size_t linkCount = countValidLinks(graph);
-    assert (linkCount <= 0xfffffffful);
-    _meta_data.refs.reserve(linkCount);
+    assert (num_nodes <= (std::numeric_limits<uint32_t>::max() - 1));
+    size_t link_array_count = count_valid_link_arrays(graph);
+    assert (link_array_count <= std::numeric_limits<uint32_t>::max());
+    _meta_data.refs.reserve(link_array_count);
     _meta_data.nodes.reserve(num_nodes+1);
     for (size_t i = 0; i < num_nodes; ++i) {
         _meta_data.nodes.push_back(_meta_data.refs.size());
@@ -66,9 +66,10 @@ HnswIndexSaver::save(BufferWriter& writer) const
     writer.write(&num_nodes, sizeof(uint32_t));
     for (uint32_t i(0); i < num_nodes; i++) {
         uint32_t offset = _meta_data.nodes[i];
-        uint32_t num_levels = _meta_data.nodes[i+1] - offset;
+        uint32_t next_offset = _meta_data.nodes[i+1];
+        uint32_t num_levels = next_offset - offset;
         writer.write(&num_levels, sizeof(uint32_t));
-        for (; offset <_meta_data.nodes[i+1]; offset++) {
+        for (; offset < next_offset; offset++) {
             auto links_ref = _meta_data.refs[offset];
             if (links_ref.valid()) {
                 vespalib::ConstArrayRef<uint32_t> link_array = _graph_links.get(links_ref);
