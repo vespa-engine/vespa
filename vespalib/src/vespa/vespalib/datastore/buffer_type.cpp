@@ -32,10 +32,10 @@ BufferTypeBase::BufferTypeBase(uint32_t arraySize,
       _maxArrays(maxArrays),
       _numArraysForNewBuffer(std::min(numArraysForNewBuffer, maxArrays)),
       _allocGrowFactor(allocGrowFactor),
-      _activeBuffers(0),
       _holdBuffers(0),
       _holdUsedElems(0),
-      _aggr_counts()
+      _aggr_counts(),
+      _active_buffers()
 {
 }
 
@@ -48,10 +48,10 @@ BufferTypeBase::BufferTypeBase(uint32_t arraySize,
 
 BufferTypeBase::~BufferTypeBase()
 {
-    assert(_activeBuffers == 0);
     assert(_holdBuffers == 0);
     assert(_holdUsedElems == 0);
     assert(_aggr_counts.empty());
+    assert(_active_buffers.empty());
 }
 
 ElemCount
@@ -63,8 +63,9 @@ BufferTypeBase::getReservedElements(uint32_t bufferId) const
 void
 BufferTypeBase::onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* deadElems, void* buffer)
 {
-    ++_activeBuffers;
     _aggr_counts.add_buffer(usedElems, deadElems);
+    assert(std::find(_active_buffers.begin(), _active_buffers.end(), bufferId) == _active_buffers.end());
+    _active_buffers.emplace_back(bufferId);
     size_t reservedElems = getReservedElements(bufferId);
     if (reservedElems != 0u) {
         initializeReservedElements(buffer, reservedElems);
@@ -74,10 +75,12 @@ BufferTypeBase::onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* dea
 }
 
 void
-BufferTypeBase::onHold(const ElemCount* usedElems, const ElemCount* deadElems)
+BufferTypeBase::onHold(uint32_t buffer_id, const ElemCount* usedElems, const ElemCount* deadElems)
 {
-    --_activeBuffers;
     ++_holdBuffers;
+    auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
+    assert(itr != _active_buffers.end());
+    _active_buffers.erase(itr);
     _aggr_counts.remove_buffer(usedElems, deadElems);
     _holdUsedElems += *usedElems;
 }
@@ -88,6 +91,17 @@ BufferTypeBase::onFree(ElemCount usedElems)
     --_holdBuffers;
     assert(_holdUsedElems >= usedElems);
     _holdUsedElems -= usedElems;
+}
+
+void
+BufferTypeBase::resume_primary_buffer(uint32_t buffer_id, ElemCount* used_elems, ElemCount* dead_elems)
+{
+    auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
+    assert(itr != _active_buffers.end());
+    _active_buffers.erase(itr);
+    _active_buffers.emplace_back(buffer_id);
+    _aggr_counts.remove_buffer(used_elems, dead_elems);
+    _aggr_counts.add_buffer(used_elems, dead_elems);
 }
 
 const alloc::MemoryAllocator*
@@ -141,10 +155,11 @@ BufferTypeBase::calcArraysToAlloc(uint32_t bufferId, ElemCount elemsNeeded, bool
 uint32_t
 BufferTypeBase::get_scaled_num_arrays_for_new_buffer() const
 {
-    if (_activeBuffers <= 1u || _numArraysForNewBuffer == 0u) {
+    uint32_t active_buffers_count = get_active_buffers_count();
+    if (active_buffers_count <= 1u || _numArraysForNewBuffer == 0u) {
         return _numArraysForNewBuffer;
     }
-    double scale_factor = std::pow(1.0 + _allocGrowFactor, _activeBuffers - 1);
+    double scale_factor = std::pow(1.0 + _allocGrowFactor, active_buffers_count - 1);
     double scaled_result = _numArraysForNewBuffer * scale_factor;
     if (scaled_result >= _maxArrays) {
         return _maxArrays;
