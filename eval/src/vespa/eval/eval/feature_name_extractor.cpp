@@ -2,9 +2,7 @@
 
 #include "feature_name_extractor.h"
 
-namespace search {
-namespace features {
-namespace rankingexpression {
+namespace vespalib::eval {
 
 namespace {
 
@@ -81,6 +79,4 @@ FeatureNameExtractor::extract_symbol(const char *pos_in, const char *end_in,
     pos_out = pos_in;
 }
 
-} // namespace rankingexpression
-} // namespace features
-} // namespace search
+}
