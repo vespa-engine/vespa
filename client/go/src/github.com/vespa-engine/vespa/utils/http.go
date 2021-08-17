@@ -36,7 +36,7 @@ func CreateClient(timeout time.Duration) HttpClient {
 }
 
 // Convenience function for doing a HTTP GET
-func HttpGet(host string, path string, description string) (response *http.Response) {
+func HttpGet(host string, path string, description string) *http.Response {
     url, urlError := url.Parse(host + path)
     if urlError != nil {
         Error("Invalid target url '" + host + path + "'")
@@ -45,8 +45,7 @@ func HttpGet(host string, path string, description string) (response *http.Respo
     return HttpDo(&http.Request{URL: url,}, time.Second * 10, description)
 }
 
-// TODO: Always use this and rename to HttpDo
-func HttpDo(request *http.Request, timeout time.Duration, description string) (response *http.Response) {
+func HttpDo(request *http.Request, timeout time.Duration, description string) *http.Response {
     response, error := ActiveHttpClient.Do(request, timeout)
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
