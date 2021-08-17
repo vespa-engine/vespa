@@ -35,9 +35,9 @@ private:
         std::unique_ptr<ScriptCommand> inflight;
         std::unique_ptr<ManagedRpcServer> srv;
 
-        vespalib::string name() { return srv->getName(); }
-        vespalib::string spec() { return srv->getSpec(); }
-        ServiceMapping mapping() { return ServiceMapping{srv->getName(), srv->getSpec()}; }
+        vespalib::string name() const { return srv->getName(); }
+        vespalib::string spec() const { return srv->getSpec(); }
+        ServiceMapping mapping() const { return ServiceMapping{srv->getName(), srv->getSpec()}; }
     };
 
     std::unique_ptr<ManagedRpcServer> managedFor(const ServiceMapping &mapping) {
