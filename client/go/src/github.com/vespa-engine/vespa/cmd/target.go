@@ -15,14 +15,14 @@ type target struct {
     document string
 }
 
-type Context int32
+type context int32
 const (
-    deployContext Context = 0
-    queryContext   Context = 1
-    documentContext  Context = 2
+    deployContext   context = 0
+    queryContext    context = 1
+    documentContext context = 2
 )
 
-func getTarget(targetContext Context) *target {
+func getTarget(targetContext context) *target {
     if strings.HasPrefix(targetArgument, "http") {
         // TODO: Add default ports if missing
         switch targetContext {
