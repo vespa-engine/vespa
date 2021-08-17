@@ -90,7 +90,7 @@ public class ConnectorFactory {
     }
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
-        boolean vespaTlsEnabled = TransportSecurityUtils.isTransportSecurityEnabled();
+        boolean vespaTlsEnabled = TransportSecurityUtils.isTransportSecurityEnabled() && connectorConfig.implicitTlsEnabled();
         MixedMode tlsMixedMode = TransportSecurityUtils.getInsecureMixedMode();
         if (connectorConfig.ssl().enabled() || (vespaTlsEnabled && tlsMixedMode == DISABLED)) {
             return connectionFactoriesForHttps(metric);
