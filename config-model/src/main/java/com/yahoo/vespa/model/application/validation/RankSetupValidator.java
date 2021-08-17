@@ -6,7 +6,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
-import com.yahoo.path.Path;
+import com.yahoo.searchdefinition.DistributableResource;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankExpressionBody;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
@@ -160,15 +160,22 @@ public class RankSetupValidator extends Validator {
         List<String> config = new ArrayList<>();
         // Assist verify-ranksetup in finding the actual ONNX model files
         for (OnnxModel model : db.getDerivedConfiguration().getSearch().onnxModels().asMap().values()) {
-            String modelPath = getFileRepositoryPath(model.getFilePath(), model.getFileReference());
-            config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, model.getFileReference()));
-            config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
+            String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
+            int index = config.size() / 2;
+            config.add(String.format("file[%d].ref \"%s\"", index, model.getFileReference()));
+            config.add(String.format("file[%d].path \"%s\"", index, modelPath));
         }
 
         for (RankExpressionBody expr : db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values()) {
-            String modelPath = getFileRepositoryPath(expr.getFilePath(), expr.getFileReference());
-            config.add(String.format("file[%d].ref \"%s\"", config.size() / 2, expr.getFileReference()));
-            config.add(String.format("file[%d].path \"%s\"", config.size() / 2, modelPath));
+            int index = config.size() / 2;
+            config.add(String.format("file[%d].ref \"%s\"", index, expr.getFileReference()));
+            if (expr.getPathType() != DistributableResource.PathType.BLOB) {
+                String modelPath = getFileRepositoryPath(expr.getFilePath().getName(), expr.getFileReference());
+                config.add(String.format("file[%d].path \"%s\"", index, modelPath));
+            } else {
+                String modelPath = getFileRepositoryPath(expr.getName(), expr.getFileReference());
+                config.add(String.format("file[%d].path \"%s\"", index, modelPath));
+            }
         }
 
         if ( ! config.isEmpty() ) {
@@ -177,10 +184,10 @@ public class RankSetupValidator extends Validator {
         IOUtils.writeFile(dir + configName, configContent, false);
     }
 
-    public static String getFileRepositoryPath(Path path, String fileReference) {
+    public static String getFileRepositoryPath(String name, String fileReference) {
         ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder());  // assume defaults
         String fileRefDir = Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir());
-        return Paths.get(fileRefDir, fileReference, path.getName()).toString();
+        return Paths.get(fileRefDir, fileReference, name).toString();
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
