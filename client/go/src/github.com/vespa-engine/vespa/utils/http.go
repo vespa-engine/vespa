@@ -12,7 +12,7 @@ import (
     "time"
 )
 
-// Set this to a mock HttpClient to unit test HTTP requests
+// Set this to a mock HttpClient instead to unit test HTTP requests
 var ActiveHttpClient = CreateClient()
 
 type HttpClient interface {
@@ -20,6 +20,7 @@ type HttpClient interface {
 }
 
 type defaultHttpClient struct {
+    timeout time.Duration // The timeout set on this client
     client http.Client
 }
 
@@ -27,8 +28,9 @@ func (c defaultHttpClient) Do(request *http.Request) (response *http.Response, e
     return c.client.Do(request)
 }
 
-func CreateClient() (client HttpClient) {
+func CreateClient() HttpClient {
     return &defaultHttpClient{
+        timeout: time.Second * 10,
         client: http.Client{Timeout: time.Second * 10,},
     }
 }
@@ -62,3 +64,14 @@ func HttpDo(request *http.Request, description string) (response *http.Response)
         return response
     }
 }
+
+// TODO: Always use this and rename to HttpDo
+func HttpDoWithoutReadingData(request *http.Request, description string) (response *http.Response) {
+    response, error := ActiveHttpClient.Do(request)
+    if error != nil {
+        Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
+        Detail(error.Error())
+    }
+    return response
+}
+
