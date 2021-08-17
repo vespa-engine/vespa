@@ -259,14 +259,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return true;
     }
 
-
+    // Returns the set of applications that failed to redeploy
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
         return prepareAllAppsBeforeActivating.value()
                 ? redeployApplicationsPrepareAllFirst(applicationIds)
                 : redeployApplicationsLegacy(applicationIds);
     }
 
-    // Returns applications that failed to redeploy
     private List<ApplicationId> redeployApplicationsPrepareAllFirst(List<ApplicationId> applicationIds) throws InterruptedException {
         ExecutorService executor = getExecutor();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
@@ -282,7 +281,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         shutdownExecutor(executor);
         return failed;
     }
-
 
     private List<ApplicationId> redeployApplicationsLegacy(List<ApplicationId> applicationIds) throws InterruptedException {
         // Keep track of deployment status per application
@@ -304,11 +302,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private enum DeploymentStatus { inProgress, done, failed};
 
     private List<ApplicationId> checkDeploymentsLegacy(Map<ApplicationId, Future<?>> deployments) {
-
         int applicationCount = deployments.size();
         Set<ApplicationId> failedDeployments = new LinkedHashSet<>();
         Set<ApplicationId> finishedDeployments = new LinkedHashSet<>();
-
         Instant lastLogged = Instant.EPOCH;
 
         do {
@@ -332,10 +328,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 logProgressLegacy(applicationCount, failedDeployments, finishedDeployments);
                 lastLogged = Instant.now();
             }
-            } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
+        } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
 
-            logProgressLegacy(applicationCount, failedDeployments, finishedDeployments);
-            return new ArrayList<>(failedDeployments);
+        logProgressLegacy(applicationCount, failedDeployments, finishedDeployments);
+        return new ArrayList<>(failedDeployments);
     }
 
     private DeploymentStatus getDeploymentStatusLegacy(ApplicationId applicationId, Future<?> future) {
@@ -344,7 +340,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             return DeploymentStatus.done;
         } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof TransientException) {
-                log.log(Level.INFO, "Redeploying " + applicationId);
+                log.log(Level.INFO, "Redeploying " + applicationId +
+                                    " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
             } else {
                 log.log(Level.WARNING, "Redeploying " + applicationId + " failed, will retry", e);
             }
