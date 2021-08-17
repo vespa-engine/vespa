@@ -5,6 +5,7 @@
 package cmd
 
 import (
+    "bufio"
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
@@ -21,7 +22,7 @@ var queryCmd = &cobra.Command{
     Long:  `TODO`,
     Args: func(cmd *cobra.Command, args []string) error {
         if len(args) != 1 {
-          return errors.New("vespa query requires a single argument containing the query string")
+            return errors.New("vespa query requires a single argument containing the query string")
         }
         return nil
     },
@@ -44,11 +45,18 @@ func query(argument string) {
         return
     }
 
+    defer response.Body.Close()
     if (response.StatusCode == 200) {
-        utils.Print("TODO: Print response data")
+        scanner := bufio.NewScanner(response.Body)
+        for ;scanner.Scan(); {
+            utils.Print(scanner.Text())
+        }
+        if err := scanner.Err(); err != nil {
+            utils.Error(err.Error())
+        }
     } else if response.StatusCode % 100 == 4 {
         utils.Error("Invalid query (status ", response.Status, ")")
-        utils.Detail("TODO: Print response data")
+        utils.Detail()
     } else {
         utils.Error("Request failed")
         utils.Detail(response.Status)

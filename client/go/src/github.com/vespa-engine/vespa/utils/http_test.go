@@ -19,16 +19,16 @@ func (c mockHttpClient) Do(request *http.Request) (response *http.Response, erro
     var body string
     if request.URL.String() == "http://host/okpath" {
         status = 200
-        body = "OK"
+        body = "OK body"
     } else {
         status = 500
-        body = "Unexpected url"
+        body = "Unexpected url body"
     }
 
     return &http.Response{
         StatusCode: status,
-        Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
         Header:     make(http.Header),
+        Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
     },
     nil
 }

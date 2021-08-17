@@ -16,6 +16,9 @@ import (
 // The HTTP status code that will be returned from the next invocation. Default: 200
 var nextStatus int
 
+// The response body code that will be returned from the next invocation. Default: ""
+var nextBody string
+
 // A recording of the last HTTP request made through this
 var lastRequest *http.Request
 
@@ -26,6 +29,7 @@ func reset() {
 
     lastRequest = nil
     nextStatus = 200
+    nextBody = ""
 }
 
 func executeCommand(t *testing.T, args []string, moreArgs []string) (standardout string) {
@@ -46,7 +50,7 @@ func (c mockHttpClient) Do(request *http.Request) (response *http.Response, erro
     lastRequest = request
     return &http.Response{
         StatusCode: nextStatus,
-        Body:       ioutil.NopCloser(bytes.NewBufferString("")),
+        Body:       ioutil.NopCloser(bytes.NewBufferString(nextBody)),
         Header:     make(http.Header),
     },
     nil

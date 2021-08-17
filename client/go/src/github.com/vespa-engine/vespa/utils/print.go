@@ -19,7 +19,7 @@ func init() {
 
 // Prints in default color
 func Print(messages ...string) {
-    fmt.Println(messages)
+    print("", messages)
 }
 
 // Prints in a color appropriate for errors
@@ -41,7 +41,9 @@ func print(prefix string, messages []string) {
     fmt.Fprint(Out, prefix)
     for i := 0; i < len(messages); i++ {
         fmt.Fprint(Out, messages[i])
-        fmt.Fprint(Out, " ")
+        if (i < len(messages) - 1) {
+            fmt.Fprint(Out, " ")
+        }
     }
     fmt.Fprintln(Out, "")
 }

@@ -12,7 +12,7 @@ import (
 func TestDeployZip(t *testing.T) {
     reset()
 	assert.Equal(t,
-	             "\x1b[32mSuccess \n",
+	             "\x1b[32mSuccess\n",
 	             executeCommand(t, []string{"deploy", "testdata/application.zip"}, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", t)
 }
@@ -20,7 +20,7 @@ func TestDeployZip(t *testing.T) {
 func TestDeployZipWithURLTargetArgument(t *testing.T) {
     reset()
 	assert.Equal(t,
-	             "\x1b[32mSuccess \n",
+	             "\x1b[32mSuccess\n",
 	             executeCommand(t, []string{"deploy", "testdata/application.zip", "-t", "http://target:19071"}, []string{}))
 	assertDeployRequestMade("http://target:19071", t)
 }
@@ -28,7 +28,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 func TestDeployZipWitLocalTargetArgument(t *testing.T) {
     reset()
 	assert.Equal(t,
-	             "\x1b[32mSuccess \n",
+	             "\x1b[32mSuccess\n",
 	             executeCommand(t, []string{"deploy", "testdata/application.zip", "-t", "local"}, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", t)
 }
@@ -36,7 +36,7 @@ func TestDeployZipWitLocalTargetArgument(t *testing.T) {
 func TestDeployDirectory(t *testing.T) {
     reset()
 	assert.Equal(t,
-	             "\x1b[32mSuccess \n",
+	             "\x1b[32mSuccess\n",
 	             executeCommand(t, []string{"deploy", "testdata/src/main/application"}, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", t)
 }

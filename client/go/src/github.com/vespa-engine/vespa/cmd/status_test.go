@@ -46,7 +46,7 @@ func TestStatusErrorResponse(t *testing.T) {
 
 func assertConfigServerStatus(target string, args []string, t *testing.T) {
 	assert.Equal(t,
-	             "\x1b[32mConfig server at " + target + " is ready \n",
+	             "\x1b[32mConfig server at " + target + " is ready\n",
 	             executeCommand(t, []string{"status", "config-server"}, args),
 	             "vespa status config-server")
     assert.Equal(t, target + "/ApplicationStatus", lastRequest.URL.String())
@@ -54,13 +54,13 @@ func assertConfigServerStatus(target string, args []string, t *testing.T) {
 
 func assertContainerStatus(target string, args []string, t *testing.T) {
 	assert.Equal(t,
-	             "\x1b[32mContainer at " + target + " is ready \n",
+	             "\x1b[32mContainer at " + target + " is ready\n",
 	             executeCommand(t, []string{"status", "container"}, args),
 	             "vespa status container")
     assert.Equal(t, target + "/ApplicationStatus", lastRequest.URL.String())
 
 	assert.Equal(t,
-	             "\x1b[32mContainer at " + target + " is ready \n",
+	             "\x1b[32mContainer at " + target + " is ready\n",
 	             executeCommand(t, []string{"status"}, args),
 	             "vespa status (the default)")
     assert.Equal(t, target + "/ApplicationStatus", lastRequest.URL.String())
@@ -69,7 +69,7 @@ func assertContainerStatus(target string, args []string, t *testing.T) {
 func assertContainerError(target string, args []string, t *testing.T) {
     nextStatus = 500
 	assert.Equal(t,
-	             "\x1b[31mContainer at " + target + " is not ready \n\x1b[33mResponse status:  \n",
+	             "\x1b[31mContainer at " + target + " is not ready\n\x1b[33mResponse status: \n",
 	             executeCommand(t, []string{"status", "container"}, args),
 	             "vespa status container")
 }
