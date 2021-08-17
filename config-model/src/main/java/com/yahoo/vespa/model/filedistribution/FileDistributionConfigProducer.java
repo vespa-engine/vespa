@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.filedistribution;
 
-import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.Host;
 
@@ -18,8 +17,8 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer<Abstr
     private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
     private final FileDistributor fileDistributor;
 
-    public FileDistributionConfigProducer(AbstractConfigProducer<?> ancestor, FileRegistry fileRegistry) {
-        this(ancestor, new FileDistributor(fileRegistry));
+    public FileDistributionConfigProducer(AbstractConfigProducer<?> ancestor, String fileSourceHost) {
+        this(ancestor, new FileDistributor(fileSourceHost));
     }
 
     private FileDistributionConfigProducer(AbstractConfigProducer<?> parent, FileDistributor fileDistributor) {

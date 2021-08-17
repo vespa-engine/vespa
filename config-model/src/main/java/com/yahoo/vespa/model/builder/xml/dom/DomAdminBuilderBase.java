@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -39,15 +38,15 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     private final ApplicationType applicationType;
     protected final List<ConfigServerSpec> configServerSpecs;
-    private final FileRegistry fileRegistry;
+    private final String fileSourceHost;
     protected final boolean multitenant;
 
     DomAdminBuilderBase(ApplicationType applicationType,
-                        FileRegistry fileRegistry,
+                        String fileSourceHost,
                         boolean multitenant,
                         List<ConfigServerSpec> configServerSpecs) {
         this.applicationType = applicationType;
-        this.fileRegistry = fileRegistry;
+        this.fileSourceHost = fileSourceHost;
         this.multitenant = multitenant;
         this.configServerSpecs = configServerSpecs;
     }
@@ -83,7 +82,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer<?> parent) {
-        return new FileDistributionConfigProducer(parent, fileRegistry);
+        return new FileDistributionConfigProducer(parent, fileSourceHost);
     }
 
     protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);

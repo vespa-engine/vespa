@@ -22,7 +22,7 @@ public class FileDistributorTestCase {
     public void fileDistributor() {
         MockHosts hosts = new MockHosts();
         FileRegistry fileRegistry = new MockFileRegistry();
-        FileDistributor fileDistributor = new FileDistributor(fileRegistry);
+        FileDistributor fileDistributor = new FileDistributor("mockhost");
 
         String file1 = "component/path1";
         String file2 = "component/path2";
