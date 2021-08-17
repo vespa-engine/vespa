@@ -73,17 +73,6 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
                      " as an expedited change was made to its nodes");
     }
 
-    private boolean hasBeenReadied(ApplicationId applicationId, NodeList nodes) {
-        Optional<Instant> lastDeployTime = deployer().lastDeployTime(applicationId);
-        if (lastDeployTime.isEmpty()) return false;
-
-        return nodes.stream()
-                    .flatMap(node -> node.history().events().stream())
-                    .filter(event -> event.type() == History.Event.Type.readied)
-                    .map(History.Event::at)
-                    .anyMatch(e -> lastDeployTime.get().isBefore(e));
-    }
-
     private boolean hasNodesWithChanges(ApplicationId applicationId, NodeList nodes) {
         Optional<Instant> lastDeployTime = deployer().lastDeployTime(applicationId);
         if (lastDeployTime.isEmpty()) return false;
