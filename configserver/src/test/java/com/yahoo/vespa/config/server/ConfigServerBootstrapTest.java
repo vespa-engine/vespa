@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -23,9 +23,13 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,10 +41,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_FILE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
+import static com.yahoo.vespa.flags.Flags.PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -49,15 +55,31 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  * @author Harald Musum
  */
+@RunWith(Parameterized.class)
 public class ConfigServerBootstrapTest {
 
     private final MockCurator curator = new MockCurator();
+
+    private final FlagSource flagSource;
+
+    public ConfigServerBootstrapTest(FlagSource flagSource) {
+        this.flagSource = flagSource;
+    }
+
+    @Parameterized.Parameters
+    public static List<InMemoryFlagSource> flagSources() {
+        return List.of(new InMemoryFlagSource().withBooleanFlag(PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP.id(), false),
+                       new InMemoryFlagSource().withBooleanFlag(PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP.id(), true));
+    }
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void testBootstrap() throws Exception {
+        System.out.println("Running with PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP=" +
+                           PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP.bindTo(flagSource).value());
+
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(7, false);
         DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
@@ -72,8 +94,13 @@ public class ConfigServerBootstrapTest {
         provisioner.allocations().values().iterator().next().remove(0);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_PROGRAMMATICALLY,
+                                                                    flagSource);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -104,8 +131,13 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_FILE);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_FILE,
+                                                                    flagSource);
         assertTrue(vipStatus.isInRotation()); // default is in rotation when using status file
 
         bootstrap.start();
@@ -135,8 +167,13 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_PROGRAMMATICALLY,
+                                                                    flagSource);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
@@ -179,8 +216,13 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_PROGRAMMATICALLY,
+                                                                    flagSource);
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());

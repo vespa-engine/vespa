@@ -275,6 +275,13 @@ public class Flags {
             "Takes effect on redeploy",
             TENANT_ID);
 
+    public static final UnboundBooleanFlag PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP = defineFeatureFlag(
+            "prepare-all-apps-before-activating-at-bootstrap", false,
+            List.of("hmusum"), "2021-08-17", "2021-10-17",
+            "Prepare all apps before activating when doing config server bootstrap",
+            "Takes effect on restart of config server",
+            ZONE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

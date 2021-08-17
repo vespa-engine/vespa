@@ -12,6 +12,10 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -20,9 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,27 +75,50 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
+    private final BooleanFlag prepareAllAppsBeforeActivating;
 
     @Inject
-    public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                 VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus) {
+    public ConfigServerBootstrap(ApplicationRepository applicationRepository,
+                                 RpcServer server,
+                                 VersionState versionState,
+                                 StateMonitor stateMonitor,
+                                 VipStatus vipStatus,
+                                 FlagSource flagSource) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus, BOOTSTRAP_IN_CONSTRUCTOR, EXIT_JVM,
              applicationRepository.configserverConfig().hostedVespa()
                      ? VipStatusMode.VIP_STATUS_FILE
-                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY);
+                     : VipStatusMode.VIP_STATUS_PROGRAMMATICALLY,
+             flagSource);
     }
 
     // For testing only
-    ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, VipStatusMode vipStatusMode) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus,
-             FOR_TESTING_NO_BOOTSTRAP_OF_APPS, CONTINUE, vipStatusMode);
+    ConfigServerBootstrap(ApplicationRepository applicationRepository,
+                          RpcServer server,
+                          VersionState versionState,
+                          StateMonitor stateMonitor,
+                          VipStatus vipStatus,
+                          VipStatusMode vipStatusMode,
+                          FlagSource flagSource) {
+        this(applicationRepository,
+             server,
+             versionState,
+             stateMonitor,
+             vipStatus,
+             FOR_TESTING_NO_BOOTSTRAP_OF_APPS,
+             CONTINUE,
+             vipStatusMode,
+             flagSource);
     }
 
-    private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
-                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                  Mode mode, RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
-                                  VipStatusMode vipStatusMode) {
+    private ConfigServerBootstrap(ApplicationRepository applicationRepository,
+                                  RpcServer server,
+                                  VersionState versionState,
+                                  StateMonitor stateMonitor,
+                                  VipStatus vipStatus,
+                                  Mode mode,
+                                  RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
+                                  VipStatusMode vipStatusMode,
+                                  FlagSource flagSource) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -100,6 +129,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
+        prepareAllAppsBeforeActivating = Flags.PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP
+                .bindTo(flagSource).with(FetchVector.Dimension.ZONE_ID, applicationRepository.zone().toString());
 
         log.log(Level.FINE, () -> "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
@@ -228,8 +259,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return true;
     }
 
-    // Returns applications that failed to redeploy
+
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
+        return prepareAllAppsBeforeActivating.value()
+                ? redeployApplicationsPrepareAllFirst(applicationIds)
+                : redeployApplicationsLegacy(applicationIds);
+    }
+
+    // Returns applications that failed to redeploy
+    private List<ApplicationId> redeployApplicationsPrepareAllFirst(List<ApplicationId> applicationIds) throws InterruptedException {
         ExecutorService executor = getExecutor();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
 
@@ -243,6 +281,82 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
         shutdownExecutor(executor);
         return failed;
+    }
+
+
+    private List<ApplicationId> redeployApplicationsLegacy(List<ApplicationId> applicationIds) throws InterruptedException {
+        // Keep track of deployment status per application
+        Map<ApplicationId, Future<?>> deployments = new HashMap<>();
+        ExecutorService executor = getExecutor();
+        log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
+        applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
+            log.log(Level.INFO, () -> "Starting redeployment of " + appId);
+            applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
+                                 .ifPresent(Deployment::activate);
+            log.log(Level.INFO, () -> appId + " redeployed");
+        })));
+
+        List<ApplicationId> failed = checkDeploymentsLegacy(deployments);
+        shutdownExecutor(executor);
+        return failed;
+    }
+
+    private enum DeploymentStatus { inProgress, done, failed};
+
+    private List<ApplicationId> checkDeploymentsLegacy(Map<ApplicationId, Future<?>> deployments) {
+
+        int applicationCount = deployments.size();
+        Set<ApplicationId> failedDeployments = new LinkedHashSet<>();
+        Set<ApplicationId> finishedDeployments = new LinkedHashSet<>();
+
+        Instant lastLogged = Instant.EPOCH;
+
+        do {
+            deployments.forEach((applicationId, future) -> {
+                if (finishedDeployments.contains(applicationId) || failedDeployments.contains(applicationId)) return;
+                DeploymentStatus status = getDeploymentStatusLegacy(applicationId, future);
+                switch (status) {
+                    case done:
+                        finishedDeployments.add(applicationId);
+                        break;
+                    case inProgress:
+                        break;
+                    case failed:
+                        failedDeployments.add(applicationId);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown deployment status " + status);
+                }
+            });
+            if ( ! Duration.between(lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()) {
+                logProgressLegacy(applicationCount, failedDeployments, finishedDeployments);
+                lastLogged = Instant.now();
+            }
+            } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
+
+            logProgressLegacy(applicationCount, failedDeployments, finishedDeployments);
+            return new ArrayList<>(failedDeployments);
+    }
+
+    private DeploymentStatus getDeploymentStatusLegacy(ApplicationId applicationId, Future<?> future) {
+        try {
+            future.get(1, TimeUnit.MILLISECONDS);
+            return DeploymentStatus.done;
+        } catch (ExecutionException | InterruptedException e) {
+            if (e.getCause() instanceof TransientException) {
+                log.log(Level.INFO, "Redeploying " + applicationId);
+            } else {
+                log.log(Level.WARNING, "Redeploying " + applicationId + " failed, will retry", e);
+            }
+            return DeploymentStatus.failed;
+        } catch (TimeoutException e) {
+            return DeploymentStatus.inProgress;
+        }
+    }
+
+    private void logProgressLegacy(int applicationCount, Set<ApplicationId> failedDeployments, Set<ApplicationId> finishedDeployments) {
+        log.log(Level.INFO, () -> finishedDeployments.size() + " of " + applicationCount + " apps redeployed " +
+                                  "(" + failedDeployments.size() + " failed)");
     }
 
     private void shutdownExecutor(ExecutorService executor) throws InterruptedException {
