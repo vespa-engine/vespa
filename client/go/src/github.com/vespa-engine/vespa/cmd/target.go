@@ -22,7 +22,7 @@ const (
     documentContext  Context = 2
 )
 
-func GetTarget(targetContext Context) *Target {
+func getTarget(targetContext Context) *Target {
     if strings.HasPrefix(targetArgument, "http") {
         // TODO: Add default ports if missing
         switch targetContext {

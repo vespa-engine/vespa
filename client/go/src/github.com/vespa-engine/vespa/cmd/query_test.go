@@ -33,5 +33,5 @@ func assertQuery(expectedPrefix string, query string, t *testing.T) {
 	             "query result\n",
 	             executeCommand(t, []string{"query", query},[]string{}),
 	             "query output")
-    assert.Equal(t, GetTarget(queryContext).query + "/search/" + expectedPrefix + query, lastRequest.URL.String())
+    assert.Equal(t, getTarget(queryContext).query + "/search/" + expectedPrefix + query, lastRequest.URL.String())
 }

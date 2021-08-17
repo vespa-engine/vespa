@@ -20,7 +20,7 @@ var statusCmd = &cobra.Command{
     Short: "Verifies that a vespa target is ready to use (container by default)",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status(GetTarget(queryContext).query, "Container")
+        status(getTarget(queryContext).query, "Container")
     },
 }
 
@@ -29,7 +29,7 @@ var statusContainerCmd = &cobra.Command{
     Short: "Verifies that your Vespa container endpoint is ready [Default]",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status(GetTarget(queryContext).query, "Container")
+        status(getTarget(queryContext).query, "Container")
     },
 }
 
@@ -38,7 +38,7 @@ var statusConfigServerCmd = &cobra.Command{
     Short: "Verifies that your Vespa config server endpoint is ready",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status(GetTarget(deployContext).deploy, "Config server")
+        status(getTarget(deployContext).deploy, "Config server")
     },
 }
 

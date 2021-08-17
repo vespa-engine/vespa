@@ -40,7 +40,7 @@ func query(argument string) {
     }
 
     path := "/search/" + argument
-    response := utils.HttpGet(GetTarget(queryContext).query, path, "Container")
+    response := utils.HttpGet(getTarget(queryContext).query, path, "Container")
     if (response == nil) {
         return
     }
