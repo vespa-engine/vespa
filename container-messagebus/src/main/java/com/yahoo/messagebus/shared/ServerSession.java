@@ -10,13 +10,16 @@ import com.yahoo.messagebus.Reply;
  */
 public interface ServerSession extends SharedResource {
 
-    public MessageHandler getMessageHandler();
+    MessageHandler getMessageHandler();
 
-    public void setMessageHandler(MessageHandler msgHandler);
+    void setMessageHandler(MessageHandler msgHandler);
 
-    public void sendReply(Reply reply);
+    void sendReply(Reply reply);
 
-    public String connectionSpec();
+    String connectionSpec();
 
-    public String name();
+    String name();
+
+    void close();
+
 }

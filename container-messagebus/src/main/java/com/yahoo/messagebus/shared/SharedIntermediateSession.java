@@ -96,6 +96,11 @@ public class SharedIntermediateSession extends AbstractResource
     }
 
     @Override
+    public void close() {
+        session.destroy();
+    }
+
+    @Override
     protected void destroy() {
         log.log(Level.FINE, "Destroying shared intermediate session.");
         session.destroy();
