@@ -9,7 +9,7 @@ import (
     "strings"
 )
 
-type Target struct {
+type target struct {
     deploy string
     query string
     document string
@@ -22,20 +22,20 @@ const (
     documentContext  Context = 2
 )
 
-func getTarget(targetContext Context) *Target {
+func getTarget(targetContext Context) *target {
     if strings.HasPrefix(targetArgument, "http") {
         // TODO: Add default ports if missing
         switch targetContext {
             case deployContext:
-                return &Target{
+                return &target{
                     deploy: targetArgument,
                 }
             case queryContext:
-                return &Target{
+                return &target{
                     query: targetArgument,
                 }
             case documentContext:
-                return &Target{
+                return &target{
                     document: targetArgument,
                 }
         }
@@ -44,7 +44,7 @@ func getTarget(targetContext Context) *Target {
     // Otherwise, target is a name
 
     if targetArgument == "" || targetArgument == "local" {
-        return &Target{
+        return &target{
             deploy: "http://127.0.0.1:19071",
             query: "http://127.0.0.1:8080",
             document: "http://127.0.0.1:8080",
