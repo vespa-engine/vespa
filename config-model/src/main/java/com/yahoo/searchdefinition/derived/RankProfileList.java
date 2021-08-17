@@ -41,9 +41,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public static RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
-        rankingConstants = new RankingConstants();
-        largeRankExpressions = new LargeRankExpressions(new MockFileRegistry());
-        onnxModels = new OnnxModels();
+        rankingConstants = new RankingConstants(null);
+        largeRankExpressions = new LargeRankExpressions(null);
+        onnxModels = new OnnxModels(null);
         dryRunOnnxOnSetup = true;
     }
 
@@ -56,6 +56,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public RankProfileList(Search search,
                            RankingConstants rankingConstants,
                            LargeRankExpressions largeRankExpressions,
+                           OnnxModels onnxModels,
                            AttributeFields attributeFields,
                            RankProfileRegistry rankProfileRegistry,
                            QueryProfileRegistry queryProfiles,
@@ -64,7 +65,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
         this.largeRankExpressions = largeRankExpressions;
-        onnxModels = search == null ? new OnnxModels() : search.onnxModels();  // as ONNX models come from parsing rank expressions
+        this.onnxModels = onnxModels;  // as ONNX models come from parsing rank expressions
         dryRunOnnxOnSetup = deployProperties.featureFlags().dryRunOnnxOnSetup();
         deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
     }

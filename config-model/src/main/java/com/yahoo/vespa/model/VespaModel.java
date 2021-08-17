@@ -125,10 +125,13 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private final RankProfileList rankProfileList;
 
     /** The global ranking constants of this model */
-    private final RankingConstants rankingConstants = new RankingConstants();
+    private final RankingConstants rankingConstants;
 
-    /** External rank expression files of this */
+    /** Large rank expression files of this */
     private final LargeRankExpressions largeRankExpressions;
+
+    /** Large rank expression files of this */
+    private final OnnxModels onnxModels;
 
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
@@ -172,13 +175,14 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete, FileDistributor fileDistributor)
             throws IOException, SAXException {
         super("vespamodel");
-        this.version = deployState.getVespaVersion();
+        version = deployState.getVespaVersion();
         largeRankExpressions = new LargeRankExpressions(deployState.getFileRegistry());
-        this.validationOverrides = deployState.validationOverrides();
-        configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
+        rankingConstants = new RankingConstants(deployState.getFileRegistry());
+        onnxModels = new OnnxModels(deployState.getFileRegistry());
+        validationOverrides = deployState.validationOverrides();
+        applicationPackage = deployState.getApplicationPackage();
+        provisioned = deployState.provisioned();
         VespaModelBuilder builder = new VespaDomBuilder();
-        this.applicationPackage = deployState.getApplicationPackage();
-        this.provisioned = deployState.provisioned();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
         createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
@@ -186,6 +190,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         rankProfileList = new RankProfileList(null, // null search -> global
                                               rankingConstants,
                                               largeRankExpressions,
+                                              onnxModels,
                                               AttributeFields.empty,
                                               deployState.rankProfileRegistry(),
                                               deployState.getQueryProfiles().getRegistry(),
@@ -194,7 +199,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
         HostSystem hostSystem = root.hostSystem();
         if (complete) { // create a completed, frozen model
-            configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
+            configModelRepo.readConfigModels(deployState, this, builder, root, new VespaConfigModelRegistry(configModelRegistry));
             addServiceClusters(deployState, builder);
             setupRouting(deployState);
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
@@ -266,6 +271,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     public LargeRankExpressions rankExpressionFiles() { return largeRankExpressions; }
 
+    public OnnxModels onnxModels() { return onnxModels; }
+
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false,
@@ -296,8 +303,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                           QueryProfiles queryProfiles) {
         if ( ! importedModels.all().isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels.all()) {
-                OnnxModels onnxModels = onnxModelInfoFromSource(model);
-                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry, onnxModels);
+                onnxModelInfoFromSource(model);
+                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
                                                                           model.name(), profile, queryProfiles.getRegistry(), model);
@@ -309,8 +316,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
                 String modelName = generatedModelDir.getPath().last();
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
-                OnnxModels onnxModels = onnxModelInfoFromStore(modelName);
-                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry, onnxModels);
+                onnxModelInfoFromStore(modelName);
+                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
                 convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
@@ -319,8 +326,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
     }
 
-    private OnnxModels onnxModelInfoFromSource(ImportedMlModel model) {
-        OnnxModels onnxModels = new OnnxModels();
+    private void onnxModelInfoFromSource(ImportedMlModel model) {
         if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
             String path = model.source();
             String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
@@ -329,14 +335,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             }
             loadOnnxModelInfo(onnxModels, model.name(), path);
         }
-        return onnxModels;
     }
 
-    private OnnxModels onnxModelInfoFromStore(String modelName) {
-        OnnxModels onnxModels = new OnnxModels();
+    private void onnxModelInfoFromStore(String modelName) {
         String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
         loadOnnxModelInfo(onnxModels, modelName, path);
-        return onnxModels;
     }
 
     private void loadOnnxModelInfo(OnnxModels onnxModels, String name, String path) {
