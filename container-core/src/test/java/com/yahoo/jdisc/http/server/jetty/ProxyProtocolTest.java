@@ -119,6 +119,7 @@ class ProxyProtocolTest {
             Path certificateFile, Path privateKeyFile, RequestLog requestLog,
             ConnectionLog connectionLog, boolean mixedMode) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
+                .http2Enabled(true)
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                         .enabled(true)
                         .mixedMode(mixedMode))
