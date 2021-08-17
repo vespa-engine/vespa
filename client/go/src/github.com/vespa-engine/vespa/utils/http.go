@@ -13,25 +13,26 @@ import (
 )
 
 // Set this to a mock HttpClient instead to unit test HTTP requests
-var ActiveHttpClient = CreateClient()
+var ActiveHttpClient = CreateClient(time.Second * 10)
 
 type HttpClient interface {
-    Do(*http.Request) (response *http.Response, error error)
+    Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
 }
 
 type defaultHttpClient struct {
-    timeout time.Duration // The timeout set on this client
     client http.Client
 }
 
-func (c defaultHttpClient) Do(request *http.Request) (response *http.Response, error error) {
+func (c defaultHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
+    if c.client.Timeout != timeout { // Create a new client with the right timeout
+        c.client = http.Client{Timeout: timeout,}
+    }
     return c.client.Do(request)
 }
 
-func CreateClient() HttpClient {
+func CreateClient(timeout time.Duration) HttpClient {
     return &defaultHttpClient{
-        timeout: time.Second * 10,
-        client: http.Client{Timeout: time.Second * 10,},
+        client: http.Client{Timeout: timeout,},
     }
 }
 
@@ -46,7 +47,7 @@ func HttpGet(host string, path string, description string) (response *http.Respo
 }
 
 func HttpDo(request *http.Request, description string) (response *http.Response) {
-    response, error := ActiveHttpClient.Do(request)
+    response, error := ActiveHttpClient.Do(request, time.Second * 10) // TODO: Pass in timeout
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
         Detail(error.Error())
@@ -67,7 +68,7 @@ func HttpDo(request *http.Request, description string) (response *http.Response)
 
 // TODO: Always use this and rename to HttpDo
 func HttpDoWithoutReadingData(request *http.Request, description string) (response *http.Response) {
-    response, error := ActiveHttpClient.Do(request)
+    response, error := ActiveHttpClient.Do(request, time.Second * 10) // TODO: Pass in timeout
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
         Detail(error.Error())

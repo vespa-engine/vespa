@@ -10,11 +10,12 @@ import (
 	"io/ioutil"
     "net/http"
     "testing"
+    "time"
 )
 
 type mockHttpClient struct {}
 
-func (c mockHttpClient) Do(request *http.Request) (response *http.Response, error error) {
+func (c mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
     var status int
     var body string
     if request.URL.String() == "http://host/okpath" {

@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
     "net/http"
     "testing"
+    "time"
 )
 
 // The HTTP status code that will be returned from the next invocation. Default: 200
@@ -46,7 +47,7 @@ func executeCommand(t *testing.T, args []string, moreArgs []string) (standardout
 type mockHttpClient struct {
 }
 
-func (c mockHttpClient) Do(request *http.Request) (response *http.Response, error error) {
+func (c mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
     lastRequest = request
     return &http.Response{
         StatusCode: nextStatus,
