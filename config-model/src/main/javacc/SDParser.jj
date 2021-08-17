@@ -55,6 +55,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -75,6 +76,7 @@ public class SDParser {
 
     private DocumentTypeManager docMan = null;
     private ApplicationPackage app;
+    private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
     private RankProfileRegistry rankProfileRegistry;
@@ -86,12 +88,14 @@ public class SDParser {
      * @param documentsOnly true to only parse the document aspect of a search definition (e.g skip rank profiles)
      */
     public SDParser(SimpleCharStream stream,
+                    FileRegistry fileRegistry,
                     DeployLogger deployLogger,
                     ModelContext.Properties properties,
                     ApplicationPackage applicationPackage,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
+        this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.app = applicationPackage;
@@ -430,7 +434,7 @@ Search rootSchema(String dir) :
     Search search;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, deployLogger, properties);
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, fileRegistry,deployLogger, properties);
                                      rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
                                      rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
@@ -471,7 +475,7 @@ Object rootSchemaItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch(app, deployLogger, properties);
+    Search search = new DocumentOnlySearch(app, fileRegistry, deployLogger, properties);
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )

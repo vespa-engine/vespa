@@ -67,14 +67,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                                                     attributeFields, deployProperties).derive(largeExpressions));
     }
 
-    /**
-     * Only for testing
-     */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
-                          AttributeFields attributeFields) {
-        this(rankProfile, new LargeRankExpressions(), queryProfiles, importedModels, attributeFields, new TestProperties());
-    }
-
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();
         for (Pair<String, String> property : properties)

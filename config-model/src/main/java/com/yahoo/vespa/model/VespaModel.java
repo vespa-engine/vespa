@@ -12,6 +12,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
@@ -127,7 +128,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private final RankingConstants rankingConstants = new RankingConstants();
 
     /** External rank expression files of this */
-    private final LargeRankExpressions largeRankExpressions = new LargeRankExpressions();
+    private final LargeRankExpressions largeRankExpressions;
 
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
@@ -172,6 +173,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             throws IOException, SAXException {
         super("vespamodel");
         this.version = deployState.getVespaVersion();
+        largeRankExpressions = new LargeRankExpressions(deployState.getFileRegistry());
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();

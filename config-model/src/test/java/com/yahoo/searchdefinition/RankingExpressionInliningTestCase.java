@@ -2,6 +2,8 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -209,7 +211,7 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
 
     private String getRankingExpression(String name, RankProfile rankProfile, Search search) {
         Optional<String> rankExpression =
-                new RawRankProfile(rankProfile, new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search))
+                new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search), new TestProperties())
                         .configProperties()
                         .stream()
                         .filter(r -> r.getFirst().equals("rankingExpression(" + name + ").rankingScript"))
