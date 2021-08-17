@@ -13,11 +13,10 @@ import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * This maintainer detects changes to nodes that must be expedited, and redeploys affected applications.
@@ -41,14 +40,25 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
 
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        Map<ApplicationId, NodeList> nodesByApplication = nodeRepository().nodes().list()
-                                                                          .nodeType(NodeType.tenant, NodeType.proxy)
-                                                                          .matching(node -> node.allocation().isPresent())
-                                                                          .groupingBy(node -> node.allocation().get().owner());
-        return nodesByApplication.entrySet().stream()
-                                 .filter(entry -> hasNodesWithChanges(entry.getKey(), entry.getValue()))
-                                 .map(Map.Entry::getKey)
-                                 .collect(Collectors.toCollection(LinkedHashSet::new));
+        var applications = new HashSet<ApplicationId>();
+
+        nodeRepository().nodes()
+                        .list()
+                        .nodeType(NodeType.tenant, NodeType.proxy)
+                        .matching(node -> node.allocation().isPresent())
+                        .groupingBy(node -> node.allocation().get().owner())
+                        .entrySet()
+                        .stream()
+                        .filter(entry -> hasNodesWithChanges(entry.getKey(), entry.getValue()))
+                        .map(Map.Entry::getKey)
+                        .forEach(applications::add);
+
+        // A ready proxy node should trigger a redeployment as it will activate the node.
+        if (!nodeRepository().nodes().list(Node.State.ready, Node.State.reserved).nodeType(NodeType.proxy).isEmpty()) {
+            applications.add(ApplicationId.from("hosted-vespa", "routing", "default"));
+        }
+
+        return applications;
     }
 
     /**
