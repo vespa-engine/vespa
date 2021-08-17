@@ -30,35 +30,38 @@ class LocalRpcMonitorMap : public IRpcServerManager,
 {
 private:
     struct PerService {
-        bool up = false;
-        bool localOnly = false;
-        std::unique_ptr<ScriptCommand> inflight = {};
-        std::unique_ptr<ManagedRpcServer> srv = {};
-        ~PerService();
-        PerService() = default;
-
-        PerService(PerService &&) = default;
-        PerService& operator=(PerService &&) = default;
+        bool up;
+        bool localOnly;
+        std::unique_ptr<ScriptCommand> inflight;
+        std::unique_ptr<ManagedRpcServer> srv;
 
         vespalib::string name() { return srv->getName(); }
         vespalib::string spec() { return srv->getSpec(); }
         ServiceMapping mapping() { return ServiceMapping{srv->getName(), srv->getSpec()}; }
     };
 
+    std::unique_ptr<ManagedRpcServer> managedFor(const ServiceMapping &mapping) {
+        return std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
+    }
+
     PerService localService(const ServiceMapping &mapping,
                             std::unique_ptr<ScriptCommand> inflight)
     {
-        PerService result;
-        result.localOnly = true;
-        result.inflight = std::move(inflight);
-        result.srv = std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
-        return result;
+        return PerService{
+            .up = false,
+            .localOnly = true,
+            .inflight = std::move(inflight),
+            .srv = managedFor(mapping)
+        };
     }
-        
+
     PerService globalService(const ServiceMapping &mapping) {
-        PerService result;
-        result.srv = std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
-        return result;
+        return PerService{
+            .up = false,
+            .localOnly = false,
+            .inflight = {},
+            .srv = managedFor(mapping)
+        };
     }        
 
     using Map = std::map<vespalib::string, PerService>;

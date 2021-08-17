@@ -7,7 +7,7 @@ LOG_SETUP(".slobrok.server.local_rpc_monitor_map");
 
 namespace slobrok {
 
-LocalRpcMonitorMap::PerService::~PerService() = default;
+#pragma GCC diagnostic ignored "-Winline"
 
 LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
   : _map(),
