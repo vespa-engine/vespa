@@ -50,6 +50,8 @@ private:
     Reconnecter          _reconnecter;
     int                  _failCnt;
 
+    std::unique_ptr<MapSubscription> _consensusSubscription;
+
     FRT_RPCRequest      *_remAddPeerReq;
     FRT_RPCRequest      *_remListReq;
     FRT_RPCRequest      *_remAddReq;

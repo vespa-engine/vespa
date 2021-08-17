@@ -14,8 +14,7 @@ namespace slobrok {
 /**
  * Listens to events from multiple maps and publishes the union of them.
  **/
-class UnionServiceMap
-    : public MapSource, public MapListener
+class UnionServiceMap : public ProxyMapSource
 {
 private:
     struct CountedSpec {
@@ -24,7 +23,7 @@ private:
     };
     using Mappings = std::vector<CountedSpec>;
     std::map<vespalib::string, Mappings> _mappings;
-    ProxyMapSource _proxy;
+
 public:
     UnionServiceMap();
     virtual ~UnionServiceMap();
@@ -33,9 +32,6 @@ public:
     void remove(const ServiceMapping &mapping) override;
     void update(const ServiceMapping &old_mapping,
                 const ServiceMapping &new_mapping) override;
-
-    void registerListener(MapListener &listener) override;
-    void unregisterListener(MapListener &listener) override;
 };
 
 } // namespace slobrok

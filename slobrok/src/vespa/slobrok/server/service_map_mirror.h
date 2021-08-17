@@ -33,10 +33,10 @@ public:
 
     ServiceMappingList allMappings() const;
 
+private:
     void registerListener(MapListener &listener) override;
     void unregisterListener(MapListener &listener) override;
 
-private:
     using Map = std::map<vespalib::string, vespalib::string>;
     Map _map;
     Generation _currGen;

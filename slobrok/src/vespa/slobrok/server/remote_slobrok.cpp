@@ -20,9 +20,11 @@ RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
     : _exchanger(manager),
       _rpcsrvmanager(manager._rpcsrvmanager),
       _remote(nullptr),
+      _serviceMapMirror(),
       _rpcserver(name, spec, *this),
       _reconnecter(getSupervisor()->GetScheduler(), *this),
       _failCnt(0),
+      _consensusSubscription(MapSubscription::subscribe(_serviceMapMirror, _exchanger._env.consensusMap())),
       _remAddPeerReq(nullptr),
       _remListReq(nullptr),
       _remAddReq(nullptr),
@@ -152,8 +154,9 @@ void RemoteSlobrok::handleFetchResult() {
         if (_remFetchReq->GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
             LOG(debug, "partner slobrok too old - not mirroring");
         } else {
-        LOG(warning, "fetchLocalView() failed with partner %s: %s",
-            getName().c_str(), _remFetchReq->GetErrorMessage());            
+            LOG(debug, "fetchLocalView() failed with partner %s: %s",
+                getName().c_str(), _remFetchReq->GetErrorMessage());            
+            fail();
         }
         _serviceMapMirror.clear();
         success = false;
