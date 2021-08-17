@@ -26,6 +26,7 @@ public class RankingConstants {
 
     public void add(RankingConstant constant) {
         constant.validate();
+        constant.register(fileRegistry);
         String name = constant.getName();
         if (constants.containsKey(name))
             throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");

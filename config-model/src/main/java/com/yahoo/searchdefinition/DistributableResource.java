@@ -1,6 +1,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.utils.FileSender;
@@ -16,7 +17,7 @@ public class DistributableResource {
     private final String name;
     private final ByteBuffer blob;
     private String path;
-    private String fileReference = "";
+    private FileReference fileReference = new FileReference("");
     private PathType pathType = PathType.FILE;
 
     public PathType getPathType() {
@@ -54,18 +55,7 @@ public class DistributableResource {
 
     /** Initiate sending of this constant to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        fileReference = sendToServices(services).value();
-    }
-    private FileReference sendToServices(Collection<? extends AbstractService> services) {
-        switch (pathType) {
-            case FILE:
-                return FileSender.sendFileToServices(path, services);
-            case URI:
-                return FileSender.sendUriToServices(path, services);
-            case BLOB:
-                return FileSender.sendBlobToServices(blob, services);
-        }
-        throw new IllegalArgumentException("Unknown path type " + pathType);
+        FileSender.send(fileReference, services);
     }
 
     public String getName() { return name; }
@@ -73,7 +63,7 @@ public class DistributableResource {
     public String getFileName() { return path; }
     public Path getFilePath() { return Path.fromString(path); }
     public String getUri() { return path; }
-    public String getFileReference() { return fileReference; }
+    public String getFileReference() { return fileReference.value(); }
 
     public void validate() {
         switch (pathType) {
@@ -85,6 +75,22 @@ public class DistributableResource {
             case BLOB:
                 if (blob == null)
                     throw new IllegalArgumentException("Distributable BLOB can not be null.");
+        }
+    }
+
+    void register(FileRegistry fileRegistry) {
+        switch (pathType) {
+            case FILE:
+                fileReference = fileRegistry.addFile(path);
+                break;
+            case URI:
+                fileReference = fileRegistry.addUri(path);
+                break;
+            case BLOB:
+                fileReference = fileRegistry.addBlob(blob);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown path type " + pathType);
         }
     }
 

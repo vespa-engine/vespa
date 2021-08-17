@@ -24,6 +24,7 @@ public class OnnxModels {
     }
     public void add(OnnxModel model) {
         model.validate();
+        model.register(fileRegistry);
         String name = model.getName();
         models.put(name, model);
     }

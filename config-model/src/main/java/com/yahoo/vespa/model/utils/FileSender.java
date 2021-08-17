@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +24,24 @@ import java.util.logging.Level;
  */
 public class FileSender implements Serializable {
 
+    /**
+     * Send the given file to all given services.
+     *
+     * @param fileReference  The file reference to send.
+     * @param services  The services to send the file to.
+     * @throws IllegalStateException if services is empty.
+     */
+    public static void send(FileReference fileReference, Collection<? extends AbstractService> services) {
+        if (services.isEmpty()) {
+            throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
+                    "using 'count' instead of <node> tags.");
+        }
+
+        for (AbstractService service : services) {
+            // The same reference will be returned from each call.
+            service.send(fileReference);
+        }
+    }
     /**
      * Send the given file to all given services.
      *
@@ -44,34 +61,6 @@ public class FileSender implements Serializable {
         for (AbstractService service : services) {
             // The same reference will be returned from each call.
             fileref = service.sendFile(relativePath);
-        }
-        return fileref;
-    }
-
-    public static FileReference sendUriToServices(String uri, Collection<? extends AbstractService> services) {
-        if (services.isEmpty()) {
-            throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
-                    "using 'count' instead of <node> tags.");
-        }
-
-        FileReference fileref = null;
-        for (AbstractService service : services) {
-            // The same reference will be returned from each call.
-            fileref = service.sendUri(uri);
-        }
-        return fileref;
-    }
-
-    public static FileReference sendBlobToServices(ByteBuffer blob, Collection<? extends AbstractService> services) {
-        if (services.isEmpty()) {
-            throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
-                    "using 'count' instead of <node> tags.");
-        }
-
-        FileReference fileref = null;
-        for (AbstractService service : services) {
-            // The same reference will be returned from each call.
-            fileref = service.sendBlob(blob);
         }
         return fileref;
     }

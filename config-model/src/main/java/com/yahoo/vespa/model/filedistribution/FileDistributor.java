@@ -5,7 +5,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.vespa.model.Host;
 
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,24 +40,8 @@ public class FileDistributor {
         return addFileReference(fileRegistry.addFile(relativePath), host);
     }
 
-    /**
-     * Adds the given file to the associated application packages' registry of file and marks the file
-     * for distribution to the given host.
-     *
-     * @return the reference to the file, created by the application package
-     */
-    public FileReference sendUriToHost(String uri, Host host) {
-        return addFileReference(fileRegistry.addUri(uri), host);
-    }
-
-    /**
-     * Adds the given blob to the associated application packages' registry of file and marks the file
-     * for distribution to the given host.
-     *
-     * @return the reference to the file, created by the application package
-     */
-    public FileReference sendBlobToHost(ByteBuffer blob, Host host) {
-        return addFileReference(fileRegistry.addBlob(blob), host);
+    public void sendFileReference(FileReference reference, Host host) {
+        addFileReference(reference, host);
     }
 
     private FileReference addFileReference(FileReference reference, Host host) {

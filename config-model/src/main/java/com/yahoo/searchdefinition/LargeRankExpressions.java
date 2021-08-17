@@ -18,6 +18,7 @@ public class LargeRankExpressions {
 
     public void add(RankExpressionBody expression) {
         expression.validate();
+        expression.register(fileRegistry);
         String name = expression.getName();
         if (expressions.containsKey(name)) {
             throw new IllegalArgumentException("Rank expression '" + name +
