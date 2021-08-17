@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "cmd.h"
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
 #include "map_listener.h"
@@ -30,11 +31,38 @@ class LocalRpcMonitorMap : public IRpcServerManager,
 private:
     struct PerService {
         bool up;
+        bool localOnly;
+        std::unique_ptr<ScriptCommand> inflight;
         std::unique_ptr<ManagedRpcServer> srv;
+
         vespalib::string name() { return srv->getName(); }
         vespalib::string spec() { return srv->getSpec(); }
         ServiceMapping mapping() { return ServiceMapping{srv->getName(), srv->getSpec()}; }
     };
+
+    std::unique_ptr<ManagedRpcServer> managedFor(const ServiceMapping &mapping) {
+        return std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
+    }
+
+    PerService localService(const ServiceMapping &mapping,
+                            std::unique_ptr<ScriptCommand> inflight)
+    {
+        return PerService{
+            .up = false,
+            .localOnly = true,
+            .inflight = std::move(inflight),
+            .srv = managedFor(mapping)
+        };
+    }
+
+    PerService globalService(const ServiceMapping &mapping) {
+        return PerService{
+            .up = false,
+            .localOnly = false,
+            .inflight = {},
+            .srv = managedFor(mapping)
+        };
+    }        
 
     using Map = std::map<vespalib::string, PerService>;
 
@@ -44,7 +72,7 @@ private:
     FRT_Supervisor &_supervisor;
     std::unique_ptr<MapSubscription> _subscription;
     
-    PerService * lookup(const ServiceMapping &mapping);
+    PerService &lookup(ManagedRpcServer *rpcsrv);
     
 public:
     LocalRpcMonitorMap(FRT_Supervisor &_supervisor);
@@ -53,6 +81,9 @@ public:
     MapSource &dispatcher() { return _dispatcher; }
     ServiceMapHistory & history();
 
+    /** for use by register API, will call doneHandler() on inflight script */
+    void addLocal(const ServiceMapping &mapping,
+                  std::unique_ptr<ScriptCommand> inflight);
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
 
