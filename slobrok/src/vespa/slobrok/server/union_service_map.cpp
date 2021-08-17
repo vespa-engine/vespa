@@ -19,9 +19,19 @@ bool UnionServiceMap::wouldConflict(const ServiceMapping &mapping) const
     }
     const Mappings &values = iter->second;
     if (values.size() != 1) {
+        for (const auto & entry : values) {
+            LOG(warning, "mapping %s->%s clashes with pre-existing conflict, spec [%s] exists with refcount %zu",
+                mapping.name.c_str(), mapping.spec.c_str(), entry.spec.c_str(), entry.count);
+        }
         return true;
     }
-    return (values[0].spec != mapping.spec);
+    const auto & entry = values[0];
+    if (entry.spec == mapping.spec) {
+        return false;
+    }
+    LOG(warning, "mapping %s->%s clashes with existing value, spec [%s] exists with refcount %zu",
+        mapping.name.c_str(), mapping.spec.c_str(), entry.spec.c_str(), entry.count);
+    return true;
 }
 
 void UnionServiceMap::add(const ServiceMapping &mapping)
