@@ -36,8 +36,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     public DomAdminV4Builder(ConfigModelContext context, boolean multitenant, List<ConfigServerSpec> configServerSpecs,
                              Collection<ContainerModel> containerModels) {
-        super(context.getApplicationType(), context.getDeployState().getFileRegistry().fileSourceHost(), multitenant,
-              configServerSpecs);
+        super(context.getApplicationType(), multitenant, configServerSpecs);
         this.containerModels = containerModels;
         this.context = context;
     }
