@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.vespa.model.Host;
 
 import java.util.HashSet;
@@ -21,13 +20,13 @@ import java.util.Set;
  */
 public class FileDistributor {
 
-    private final FileRegistry fileRegistry;
+    private final String fileSourceHost;
 
     /** A map from file reference to the hosts to which that file reference should be distributed */
     private final Map<FileReference, Set<Host>> filesToHosts = new LinkedHashMap<>();
 
-    public FileDistributor(FileRegistry fileRegistry) {
-        this.fileRegistry = fileRegistry;
+    public FileDistributor(String fileSourceHost) {
+        this.fileSourceHost = fileSourceHost;
     }
 
     public void sendFileReference(FileReference reference, Host host) {
@@ -55,7 +54,7 @@ public class FileDistributor {
 
     /** Returns the host which is the source of the files */
     public String fileSourceHost() {
-        return fileRegistry.fileSourceHost();
+        return fileSourceHost;
     }
 
     public Set<FileReference> allFilesToSend() {

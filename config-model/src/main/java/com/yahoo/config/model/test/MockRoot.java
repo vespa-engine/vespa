@@ -66,7 +66,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger());
         this.deployState = deployState;
-        fileDistributor = new FileDistributor(deployState.getFileRegistry());
+        fileDistributor = new FileDistributor(deployState.getFileRegistry().fileSourceHost());
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
@@ -149,7 +149,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
         try {
             Document doc = XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(servicesXml)));
-            setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, deployState.getFileRegistry(),
+            setAdmin(new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, deployState.getFileRegistry().fileSourceHost(),
                                            false, new ArrayList<>()).
                     build(deployState, this, XML.getChildren(doc.getDocumentElement(), "admin").get(0)));
         } catch (SAXException | IOException e) {
