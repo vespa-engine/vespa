@@ -8,7 +8,8 @@ import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
-import org.eclipse.jetty.http2.parser.RateControl;
+import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
@@ -21,13 +22,21 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+
+import static com.yahoo.security.tls.MixedMode.DISABLED;
+import static com.yahoo.security.tls.MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER;
+import static com.yahoo.security.tls.MixedMode.TLS_CLIENT_MIXED_SERVER;
 
 /**
  * @author Einar M R Rosenvinge
  * @author bjorncs
  */
 public class ConnectorFactory {
+
+    private static final Logger log = Logger.getLogger(ConnectorFactory.class.getName());
 
     private final ConnectorConfig connectorConfig;
     private final SslContextFactoryProvider sslContextFactoryProvider;
@@ -50,7 +59,7 @@ public class ConnectorFactory {
     private static void validateProxyProtocolConfiguration(ConnectorConfig config) {
         ConnectorConfig.ProxyProtocol proxyProtocolConfig = config.proxyProtocol();
         if (proxyProtocolConfig.enabled()) {
-            boolean tlsMixedModeEnabled = TransportSecurityUtils.getInsecureMixedMode() != MixedMode.DISABLED;
+            boolean tlsMixedModeEnabled = TransportSecurityUtils.getInsecureMixedMode() != DISABLED;
             if (!isSslEffectivelyEnabled(config) || tlsMixedModeEnabled) {
                 throw new IllegalArgumentException("Proxy protocol can only be enabled if connector is effectively HTTPS only");
             }
@@ -81,61 +90,51 @@ public class ConnectorFactory {
     }
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
-        if (!isSslEffectivelyEnabled(connectorConfig)) {
-            return List.of(newHttp1ConnectionFactory());
-        } else if (connectorConfig.ssl().enabled()) {
+        boolean vespaTlsEnabled = TransportSecurityUtils.isTransportSecurityEnabled() && connectorConfig.implicitTlsEnabled();
+        MixedMode tlsMixedMode = TransportSecurityUtils.getInsecureMixedMode();
+        if (connectorConfig.ssl().enabled() || (vespaTlsEnabled && tlsMixedMode == DISABLED)) {
             return connectionFactoriesForHttps(metric);
-        } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
-            switch (TransportSecurityUtils.getInsecureMixedMode()) {
-                case TLS_CLIENT_MIXED_SERVER:
-                case PLAINTEXT_CLIENT_MIXED_SERVER:
-                    return connectionFactoriesForHttpsMixedMode(metric);
-                case DISABLED:
-                    return connectionFactoriesForHttps(metric);
-                default:
-                    throw new IllegalStateException();
+        } else if (vespaTlsEnabled) {
+            if (tlsMixedMode != TLS_CLIENT_MIXED_SERVER && tlsMixedMode != PLAINTEXT_CLIENT_MIXED_SERVER) {
+                throw new IllegalArgumentException("Unknown mixed mode " + tlsMixedMode);
             }
+            return connectionFactoriesForTlsMixedMode(metric);
         } else {
-            return List.of(newHttp1ConnectionFactory());
+            return connectorConfig.http2Enabled()
+                    ? List.of(newHttp1ConnectionFactory(), newHttp2ClearTextConnectionFactory())
+                    : List.of(newHttp1ConnectionFactory());
         }
     }
 
     private List<ConnectionFactory> connectionFactoriesForHttps(Metric metric) {
+        List<ConnectionFactory> factories = new ArrayList<>();
         ConnectorConfig.ProxyProtocol proxyProtocolConfig = connectorConfig.proxyProtocol();
         HttpConnectionFactory http1Factory = newHttp1ConnectionFactory();
+        ALPNServerConnectionFactory alpnFactory;
+        SslConnectionFactory sslFactory;
         if (connectorConfig.http2Enabled()) {
-            HTTP2ServerConnectionFactory http2Factory = newHttp2ConnectionFactory();
-            ALPNServerConnectionFactory alpnFactory = newAlpnConnectionFactory();
-            SslConnectionFactory sslFactory = newSslConnectionFactory(metric, alpnFactory);
-            if (proxyProtocolConfig.enabled()) {
-                ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                if (proxyProtocolConfig.mixedMode()) {
-                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
-                    return List.of(detectorFactory, proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
-                } else {
-                    return List.of(proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
-                }
-            } else {
-                return List.of(sslFactory, alpnFactory, http1Factory, http2Factory);
-            }
+            alpnFactory = newAlpnConnectionFactory();
+            sslFactory = newSslConnectionFactory(metric, alpnFactory);
         } else {
-            SslConnectionFactory sslFactory = newSslConnectionFactory(metric, http1Factory);
-            if (proxyProtocolConfig.enabled()) {
-                ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                if (proxyProtocolConfig.mixedMode()) {
-                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
-                    return List.of(detectorFactory, proxyProtocolFactory, sslFactory, http1Factory);
-                } else {
-                    return List.of(proxyProtocolFactory, sslFactory, http1Factory);
-                }
-            } else {
-                return List.of(sslFactory, http1Factory);
-            }
+            alpnFactory = null;
+            sslFactory = newSslConnectionFactory(metric, http1Factory);
         }
+        if (proxyProtocolConfig.enabled()) {
+            if (proxyProtocolConfig.mixedMode()) {
+                factories.add(newDetectorConnectionFactory(sslFactory));
+            }
+            factories.add(newProxyProtocolConnectionFactory(sslFactory));
+        }
+        factories.add(sslFactory);
+        if (connectorConfig.http2Enabled()) factories.add(alpnFactory);
+        factories.add(http1Factory);
+        if (connectorConfig.http2Enabled()) factories.add(newHttp2ConnectionFactory());
+        return List.copyOf(factories);
     }
 
-    private List<ConnectionFactory> connectionFactoriesForHttpsMixedMode(Metric metric) {
-        // No support for proxy-protocol/http2 when using HTTP with TLS mixed mode
+    private List<ConnectionFactory> connectionFactoriesForTlsMixedMode(Metric metric) {
+        log.warning(String.format("TLS mixed mode enabled for port %d - HTTP/2 and proxy-protocol are not supported",
+                connectorConfig.listenPort()));
         HttpConnectionFactory httpFactory = newHttp1ConnectionFactory();
         SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
         DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
@@ -163,11 +162,21 @@ public class ConnectorFactory {
 
     private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
         HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
+        setHttp2Config(factory);
+        return factory;
+    }
+
+    private HTTP2CServerConnectionFactory newHttp2ClearTextConnectionFactory() {
+        HTTP2CServerConnectionFactory factory = new HTTP2CServerConnectionFactory(newHttpConfiguration());
+        setHttp2Config(factory);
+        return factory;
+    }
+
+    private void setHttp2Config(AbstractHTTP2ServerConnectionFactory factory) {
         factory.setStreamIdleTimeout(toMillis(connectorConfig.http2().streamIdleTimeout()));
         factory.setMaxConcurrentStreams(connectorConfig.http2().maxConcurrentStreams());
         factory.setInitialSessionRecvWindow(1 << 24);
         factory.setInitialStreamRecvWindow(1 << 20);
-        return factory;
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
