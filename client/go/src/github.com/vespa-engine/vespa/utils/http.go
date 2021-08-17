@@ -67,8 +67,8 @@ func HttpDo(request *http.Request, description string) (response *http.Response)
 }
 
 // TODO: Always use this and rename to HttpDo
-func HttpDoWithoutReadingData(request *http.Request, description string) (response *http.Response) {
-    response, error := ActiveHttpClient.Do(request, time.Second * 10) // TODO: Pass in timeout
+func HttpDoWithoutReadingData(request *http.Request, timeout time.Duration, description string) (response *http.Response) {
+    response, error := ActiveHttpClient.Do(request, timeout)
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
         Detail(error.Error())

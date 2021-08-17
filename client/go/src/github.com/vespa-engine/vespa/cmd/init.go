@@ -13,6 +13,7 @@ import (
     "net/http"
     "net/url"
     "os"
+    "time"
 )
 
 func init() {
@@ -36,18 +37,18 @@ var initCmd = &cobra.Command{
 }
 
 func initApplication(name string, source string) {
-    // TODO: Support third-party full github url sources
-    //err := os.Mkdir(name, 0755)
-    //if err != nil {
-    //    utils.Error("Could not create directory '" + name + "'")
-    //    utils.Detail(err.Error())
-    //}
+    createErr := os.Mkdir(name, 0755)
+    if createErr != nil {
+        utils.Error("Could not create directory '" + name + "'")
+        utils.Detail(createErr.Error())
+    }
+
     zipUrl, _ := url.Parse("https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip")
     request := &http.Request{
         URL: zipUrl,
         Method: "GET",
     }
-    response := utils.HttpDoWithoutReadingData(request, "GitHub")
+    response := utils.HttpDoWithoutReadingData(request, time.Minute * 60, "GitHub")
     if response.StatusCode != 200 {
         utils.Error("Could not download sample apps from github")
         utils.Detail(response.Status)
