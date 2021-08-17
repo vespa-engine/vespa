@@ -60,8 +60,9 @@ public class NetworkMultiplexerTest {
         Protocol protocol1 = new SimpleProtocol();
         Protocol protocol2 = new SimpleProtocol();
         owner1.protocols.put(name, protocol1);
-        owner2.protocols.put(name, protocol2);
         assertEquals(protocol1, shared.getProtocol(name));
+        owner2.protocols.put(name, protocol2);
+        assertEquals(protocol2, shared.getProtocol(name));
 
         Message message1 = new SimpleMessage("one");
         Message message2 = new SimpleMessage("two");

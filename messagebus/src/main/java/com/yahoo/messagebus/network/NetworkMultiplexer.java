@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network;
 
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.text.Utf8Array;
@@ -81,12 +80,12 @@ public class NetworkMultiplexer implements NetworkOwner {
 
     @Override
     public Protocol getProtocol(Utf8Array name) {
-        for (NetworkOwner owner : owners) {
-            Protocol protocol = owner.getProtocol(name);
-            if (protocol != null)
-                return protocol;
-        }
-        return null;
+        // Should ideally couple this to the actual receiver ...
+        Protocol protocol = null;
+        for (NetworkOwner owner : owners)
+            protocol = owner.getProtocol(name) == null ? protocol : owner.getProtocol(name);
+
+        return protocol;
     }
 
     @Override
