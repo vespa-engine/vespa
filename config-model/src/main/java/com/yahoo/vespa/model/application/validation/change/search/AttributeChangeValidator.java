@@ -105,6 +105,7 @@ public class AttributeChangeValidator {
                 validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
                 validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isHuge, "huge", result);
+                validateAttributeSetting(id, currAttr, nextAttr, Attribute::isPaged, "paged", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);

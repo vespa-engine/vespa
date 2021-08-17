@@ -5,23 +5,24 @@
 namespace search::attribute {
 
 Config::Config() noexcept :
-    _basicType(BasicType::NONE),
-    _type(CollectionType::SINGLE),
-    _fastSearch(false),
-    _huge(false),
-    _enableBitVectors(false),
-    _enableOnlyBitVector(false),
-    _isFilter(false),
-    _fastAccess(false),
-    _mutable(false),
-    _match(Match::UNCASED),
-    _dictionary(),
-    _growStrategy(),
-    _compactionStrategy(),
-    _predicateParams(),
-    _tensorType(vespalib::eval::ValueType::error_type()),
-    _distance_metric(DistanceMetric::Euclidean),
-    _hnsw_index_params()
+        _basicType(BasicType::NONE),
+        _type(CollectionType::SINGLE),
+        _fastSearch(false),
+        _huge(false),
+        _enableBitVectors(false),
+        _enableOnlyBitVector(false),
+        _isFilter(false),
+        _fastAccess(false),
+        _mutable(false),
+        _paged(false),
+        _match(Match::UNCASED),
+        _dictionary(),
+        _growStrategy(),
+        _compactionStrategy(),
+        _predicateParams(),
+        _tensorType(vespalib::eval::ValueType::error_type()),
+        _distance_metric(DistanceMetric::Euclidean),
+        _hnsw_index_params()
 {
 }
 
@@ -35,6 +36,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) no
       _isFilter(false),
       _fastAccess(false),
       _mutable(false),
+      _paged(false),
       _match(Match::UNCASED),
       _dictionary(),
       _growStrategy(),
@@ -64,6 +66,7 @@ Config::operator==(const Config &b) const
            _isFilter == b._isFilter &&
            _fastAccess == b._fastAccess &&
            _mutable == b._mutable &&
+           _paged == b._paged &&
            _match == b._match &&
            _dictionary == b._dictionary &&
            _growStrategy == b._growStrategy &&

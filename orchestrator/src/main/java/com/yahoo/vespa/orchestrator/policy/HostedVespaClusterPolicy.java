@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.model.ClusterApi;
@@ -18,26 +17,22 @@ import static com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy.ENOUGH_SERVI
 
 public class HostedVespaClusterPolicy implements ClusterPolicy {
 
-    private final BooleanFlag groupSuspensionFlag;
+    private final BooleanFlag groupSuspensionInPermanentSuspendFlag;
     private final Zone zone;
 
     public HostedVespaClusterPolicy(FlagSource flagSource, Zone zone) {
         // Note that the "group" in this flag refers to hierarchical groups of a content cluster.
-        this.groupSuspensionFlag = Flags.GROUP_SUSPENSION.bindTo(flagSource);
+        this.groupSuspensionInPermanentSuspendFlag = Flags.GROUP_PERMANENT_SUSPENSION.bindTo(flagSource);
         this.zone = zone;
     }
 
     @Override
     public SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        boolean enableContentGroupSuspension = groupSuspensionFlag
-                .with(FetchVector.Dimension.APPLICATION_ID, clusterApi.getApplication().applicationId().serializedForm())
-                .value();
-
         if (clusterApi.noServicesOutsideGroupIsDown()) {
             return SuspensionReasons.nothingNoteworthy();
         }
 
-        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi, enableContentGroupSuspension).asPercentage();
+        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi, true).asPercentage();
         if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
             return SuspensionReasons.nothingNoteworthy();
         }
@@ -69,7 +64,10 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return;
         }
 
-        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi, false).asPercentage();
+        boolean enableContentGroupSuspension = groupSuspensionInPermanentSuspendFlag.value();
+
+        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi, enableContentGroupSuspension)
+                .asPercentage();
         if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
             return;
         }

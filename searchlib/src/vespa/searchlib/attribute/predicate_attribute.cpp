@@ -185,7 +185,7 @@ struct DummyObserver : SimpleIndexDeserializeObserver<> {
 }
 
 bool
-PredicateAttribute::onLoad()
+PredicateAttribute::onLoad(vespalib::Executor *)
 {
     auto loaded_buffer = attribute::LoadUtils::loadDAT(*this);
     char *rawBuffer = const_cast<char *>(static_cast<const char *>(loaded_buffer->buffer()));

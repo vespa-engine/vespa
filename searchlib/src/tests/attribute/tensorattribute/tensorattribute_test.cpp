@@ -26,7 +26,9 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
@@ -145,6 +147,12 @@ public:
     void expect_adds(const EntryVector &exp_adds) const {
         EXPECT_EQUAL(exp_adds, _adds);
     }
+    void expect_prepare_adds(const EntryVector &exp) const {
+        EXPECT_EQUAL(exp, _prepare_adds);
+    }
+    void expect_complete_adds(const EntryVector &exp) const {
+        EXPECT_EQUAL(exp, _complete_adds);
+    }
     void expect_empty_remove() const {
         EXPECT_TRUE(_removes.empty());
     }
@@ -256,10 +264,16 @@ struct FixtureTraits {
     bool use_direct_tensor_attribute = false;
     bool enable_hnsw_index = false;
     bool use_mock_index = false;
+    bool use_mmap_file_allocator = false;
 
     FixtureTraits dense() && {
         use_dense_tensor_attribute = true;
         enable_hnsw_index = false;
+        return *this;
+    }
+
+    FixtureTraits mmap_file_allocator() && {
+        use_mmap_file_allocator = true;
         return *this;
     }
 
@@ -298,6 +312,7 @@ struct Fixture {
     std::unique_ptr<NearestNeighborIndexFactory> _index_factory;
     std::shared_ptr<TensorAttribute> _tensorAttr;
     std::shared_ptr<AttributeVector> _attr;
+    vespalib::ThreadStackExecutor _executor;
     bool _denseTensors;
     FixtureTraits _traits;
 
@@ -310,6 +325,7 @@ struct Fixture {
           _index_factory(),
           _tensorAttr(),
           _attr(),
+          _executor(1, 0x10000),
           _denseTensors(false),
           _traits(traits)
     {
@@ -326,6 +342,9 @@ struct Fixture {
         _cfg.setTensorType(ValueType::from_spec(_typeSpec));
         if (_cfg.tensorType().is_dense()) {
             _denseTensors = true;
+        }
+        if (_traits.use_mmap_file_allocator) {
+            _cfg.setPaged(true);
         }
         if (_traits.use_mock_index) {
             _index_factory = std::make_unique<MockNearestNeighborIndexFactory>();
@@ -449,6 +468,13 @@ struct Fixture {
         _tensorAttr = makeAttr();
         _attr = _tensorAttr;
         bool loadok = _attr->load();
+        EXPECT_TRUE(loadok);
+    }
+
+    void loadWithExecutor() {
+        _tensorAttr = makeAttr();
+        _attr = _tensorAttr;
+        bool loadok = _attr->load(&_executor);
         EXPECT_TRUE(loadok);
     }
 
@@ -885,11 +911,28 @@ TEST_F("onLoads() ignores saved nearest neighbor index if not enabled in config"
     EXPECT_EQUAL(f.as_dense_tensor().nearest_neighbor_index(), nullptr);
 }
 
+TEST_F("onLoad() uses executor if major index parameters are changed", DenseTensorAttributeMockIndex)
+{
+    f.save_example_tensors_with_mock_index();
+    f.set_hnsw_index_params(HnswIndexParams(5, 20, DistanceMetric::Euclidean));
+    EXPECT_EQUAL(0ul, f._executor.getStats().acceptedTasks);
+    f.loadWithExecutor();
+    EXPECT_EQUAL(2ul, f._executor.getStats().acceptedTasks);
+    f.assert_example_tensors();
+    auto& index = f.mock_index();
+    EXPECT_EQUAL(0, index.get_index_value());
+    index.expect_adds({});
+    index.expect_prepare_adds({{1, {3, 5}}, {2, {7, 9}}});
+    index.expect_complete_adds({{1, {3, 5}}, {2, {7, 9}}});
+}
+
 TEST_F("onLoad() ignores saved nearest neighbor index if major index parameters are changed", DenseTensorAttributeMockIndex)
 {
     f.save_example_tensors_with_mock_index();
     f.set_hnsw_index_params(HnswIndexParams(5, 20, DistanceMetric::Euclidean));
+    EXPECT_EQUAL(0ul, f._executor.getStats().acceptedTasks);
     f.load();
+    EXPECT_EQUAL(0ul, f._executor.getStats().acceptedTasks);
     f.assert_example_tensors();
     auto& index = f.mock_index();
     EXPECT_EQUAL(0, index.get_index_value());
@@ -998,6 +1041,19 @@ TEST_F("NN blueprint handles strong filter triggering brute force search", Neare
     bp->set_global_filter(*strong_filter);
     EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
     EXPECT_FALSE(bp->may_approximate());
+}
+
+TEST("Dense tensor attribute with paged flag uses mmap file allocator")
+{
+    vespalib::string basedir("mmap-file-allocator-factory-dir");
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup(basedir);
+    {
+        Fixture f(vec_2d_spec, FixtureTraits().dense().mmap_file_allocator());
+        vespalib::string allocator_dir(basedir + "/0.my_attr");
+        EXPECT_TRUE(vespalib::isDirectory(allocator_dir));
+    }
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
+    vespalib::rmdir(basedir, true);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

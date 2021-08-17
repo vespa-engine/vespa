@@ -14,6 +14,7 @@ import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
@@ -121,17 +122,17 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ORCHESTRATE_MISSING_PROXIES = defineFeatureFlag(
-            "orchestrate-missing-proxies", false,
+            "orchestrate-missing-proxies", true,
             List.of("hakonhall"), "2021-08-05", "2021-10-05",
             "Whether the Orchestrator can assume any missing proxy services are down.",
             "Takes effect on first (re)start of config server");
 
-    public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
-            "group-suspension", true,
-            List.of("hakon"), "2021-01-22", "2021-08-22",
-            "Allow all content nodes in a hierarchical group to suspend at the same time",
-            "Takes effect on the next suspension request to the Orchestrator.",
-            APPLICATION_ID);
+    public static final UnboundBooleanFlag GROUP_PERMANENT_SUSPENSION = defineFeatureFlag(
+            "group-permanent-suspension", true,
+            List.of("hakonhall"), "2021-09-11", "2021-11-11",
+            "Allow all content nodes in a hierarchical group to suspend at the same time when" +
+            "permanently suspending a host.",
+            "Takes effect on the next permanent suspension request to the Orchestrator.");
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
@@ -236,7 +237,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
-            "dry-run-onnx-on-setup", false,
+            "dry-run-onnx-on-setup", true,
             List.of("baldersheim"), "2021-06-23", "2021-09-01",
             "Whether to dry run onnx models on setup for better error checking",
             "Takes effect on next internal redeployment",
@@ -247,12 +248,6 @@ public class Flags {
             List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
             "List of applications where encryption of their host should be deferred",
             "Takes effect on next run of HostEncrypter");
-
-    public static final UnboundBooleanFlag PODMAN3 = defineFeatureFlag(
-            "podman3", true,
-            List.of("mpolden"), "2021-07-05", "2021-09-01",
-            "Whether to use Podman 3 on supported hosts",
-            "Takes effect on host-admin restart");
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
@@ -267,6 +262,12 @@ public class Flags {
             "Apis allowed to proxy through the service view api",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag SEPARATE_TENANT_IAM_ROLES = defineFeatureFlag(
+            "separate-tenant-iam-roles", false,
+            List.of("mortent"), "2021-08-12", "2021-11-01",
+            "Create separate iam roles for tenant",
+            "Takes effect on redeploy",
+            TENANT_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

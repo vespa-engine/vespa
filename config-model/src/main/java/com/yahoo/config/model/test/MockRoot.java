@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 
@@ -41,10 +40,10 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
     private static final long serialVersionUID = 1L;
 
-    private HostSystem hostSystem;
+    private final HostSystem hostSystem;
 
     private final DeployState deployState;
-    private FileDistributor fileDistributor;
+    private final FileDistributor fileDistributor;
     private Admin admin;
 
     public MockRoot() {
@@ -67,7 +66,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger());
         this.deployState = deployState;
-        fileDistributor = new FileDistributor(deployState.getFileRegistry(), List.of(), deployState.isHosted());
+        fileDistributor = new FileDistributor(deployState.getFileRegistry());
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {

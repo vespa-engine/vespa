@@ -2,7 +2,6 @@
 vespa_add_library(searchlib_features_rankingexpression OBJECT
     SOURCES
     expression_replacer.cpp
-    feature_name_extractor.cpp
     intrinsic_blueprint_adapter.cpp
     intrinsic_expression.cpp
     DEPENDS

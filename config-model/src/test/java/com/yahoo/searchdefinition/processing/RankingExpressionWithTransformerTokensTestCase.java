@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -86,7 +87,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
                 "  document test {}\n" +
                 "  rank-profile my_profile inherits default {}\n" +
                 "}";
-        SearchBuilder searchBuilder = new SearchBuilder(application, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
+        SearchBuilder searchBuilder = new SearchBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
         searchBuilder.importString(sdContent);
         searchBuilder.build();
         Search search = searchBuilder.getSearch();

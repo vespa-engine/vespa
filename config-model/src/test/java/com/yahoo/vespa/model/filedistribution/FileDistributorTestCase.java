@@ -2,16 +2,13 @@
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.test.MockHosts;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,38 +21,23 @@ public class FileDistributorTestCase {
     @Test
     public void fileDistributor() {
         MockHosts hosts = new MockHosts();
-
-        FileDistributor fileDistributor = new FileDistributor(new MockFileRegistry(), List.of(), false);
+        FileRegistry fileRegistry = new MockFileRegistry();
+        FileDistributor fileDistributor = new FileDistributor(fileRegistry);
 
         String file1 = "component/path1";
         String file2 = "component/path2";
-        FileReference ref1 = fileDistributor.sendFileToHost(file1, hosts.host1);
-        fileDistributor.sendFileToHost(file1, hosts.host2); // same file reference as above
-        FileReference ref2 = fileDistributor.sendFileToHost(file2, hosts.host3);
+        FileReference ref1 = fileRegistry.addFile(file1);
+        FileReference ref2 = fileRegistry.addFile(file2);
+        fileDistributor.sendFileReference(ref1, hosts.host1);
+        fileDistributor.sendFileReference(ref2, hosts.host1);
+        fileDistributor.sendFileReference(ref1, hosts.host2); // same file reference as above
+        fileDistributor.sendFileReference(ref2, hosts.host3);
 
         assertEquals(new HashSet<>(Arrays.asList(hosts.host1, hosts.host2, hosts.host3)),
                 fileDistributor.getTargetHosts());
 
         assertNotNull(ref1);
         assertNotNull(ref2);
-
-        MockFileDistribution dbHandler = new MockFileDistribution();
-        fileDistributor.sendDeployedFiles(dbHandler);
-        assertEquals(3, dbHandler.filesToDownloadCalled); // One time for each host
-    }
-
-    private static class MockFileDistribution implements FileDistribution {
-        int filesToDownloadCalled = 0;
-
-        @Override
-        public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
-            filesToDownloadCalled++;
-        }
-
-        @Override
-        public File getFileReferencesDir() {
-            return null;
-        }
     }
 
 }

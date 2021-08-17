@@ -19,7 +19,7 @@
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -120,7 +120,7 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory);
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory, _shared_executor);
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
@@ -196,9 +196,9 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
         LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
-        AttributeInitializer::UP initializer =
-            std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName,
-                        aspec, newSpec.getCurrentSerialNum(), *_factory);
+        auto initializer = std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()),
+                                                                  _documentSubDbName, aspec, newSpec.getCurrentSerialNum(),
+                                                                  *_factory, _shared_executor);
         initializerRegistry.add(std::move(initializer));
 
         // TODO: Might want to use hardlinks to make attribute vector

@@ -183,7 +183,7 @@ public:
     HnswNode get_node(uint32_t docid) const;
     void set_node(uint32_t docid, const HnswNode &node);
     bool check_link_symmetry() const;
-    uint32_t count_reachable_nodes() const;
+    std::pair<uint32_t, bool> count_reachable_nodes() const;
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();

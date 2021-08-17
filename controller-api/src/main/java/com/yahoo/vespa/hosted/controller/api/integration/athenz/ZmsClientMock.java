@@ -6,6 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
@@ -165,6 +166,19 @@ public class ZmsClientMock implements ZmsClient {
     @Override
     public List<AthenzIdentity> listMembers(AthenzRole athenzRole) {
         return List.of();
+    }
+
+    @Override
+    public List<AthenzService> listServices(AthenzDomain athenzDomain) {
+        return List.of();
+    }
+
+    @Override
+    public void createOrUpdateService(AthenzService athenzService) {
+    }
+
+    @Override
+    public void deleteService(AthenzService athenzService) {
     }
 
     @Override

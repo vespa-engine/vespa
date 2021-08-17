@@ -101,14 +101,14 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
 }
 
 template <typename B>
-bool FlagAttributeT<B>::onLoad()
+bool FlagAttributeT<B>::onLoad(vespalib::Executor * executor)
 {
     for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
         _bitVectorStore[i].reset();
         _bitVectors[i] = nullptr;
     }
     _bitVectorSize = 0;
-    return B::onLoad();
+    return B::onLoad(executor);
 }
 
 template <typename B>

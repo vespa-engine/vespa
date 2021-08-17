@@ -38,6 +38,7 @@ namespace document {
 
 namespace vespalib {
     class GenericHeader;
+    class Executor;
 }
 
 namespace search {
@@ -282,6 +283,14 @@ public:
 
     virtual IExtendAttribute * getExtendInterface();
 
+    /**
+     * Returns the number of readers holding a generation guard.
+     * Should be called by the writer thread.
+     **/
+    uint32_t getGenerationRefCount(generation_t gen) const {
+        return _genHandler.getGenerationRefCount(gen);
+    }
+
 protected:
     /**
      * Called when a new document has been added, but only for
@@ -290,14 +299,6 @@ protected:
      * Should return true if underlying structures were resized.
      **/
     virtual bool onAddDoc(DocId) { return false; }
-
-    /**
-     * Returns the number of readers holding a generation guard.
-     * Should be called by the writer thread.
-     */
-    uint32_t getGenerationRefCount(generation_t gen) const {
-        return _genHandler.getGenerationRefCount(gen);
-    }
 
     const GenerationHandler & getGenerationHandler() const {
         return _genHandler;
@@ -447,6 +448,7 @@ public:
 
     bool isEnumeratedSaveFormat() const;
     bool load();
+    bool load(vespalib::Executor * executor);
     void commit() { commit(false); }
     void commit(bool forceUpdateStats);
     void commit(const CommitParam & param);
@@ -570,7 +572,7 @@ private:
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
     virtual bool applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);
-    virtual bool onLoad();
+    virtual bool onLoad(vespalib::Executor * executor);
 
 
     BaseName                              _baseFileName;

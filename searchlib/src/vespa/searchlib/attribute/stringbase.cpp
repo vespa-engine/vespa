@@ -364,7 +364,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
 }
 
 bool
-StringAttribute::onLoad()
+StringAttribute::onLoad(vespalib::Executor *)
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());

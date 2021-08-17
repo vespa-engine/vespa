@@ -89,7 +89,12 @@ public:
         for (size_t i = 0; i < _eval_context.num_params(); ++i) {
             _eval_context.bind_param(i, inputs().get_object(i).get());
         }
-        _eval_context.eval();
+        try {
+            _eval_context.eval();
+        } catch (const Ort::Exception &ex) {
+            LOG(warning, "onnx model evaluation failed: %s", ex.what());
+            _eval_context.clear_results();
+        }
     }
 };
 
@@ -162,6 +167,8 @@ OnnxBlueprint::setup(const IIndexEnvironment &env,
         if (!error_msg.empty()) {
             return fail("onnx model dry-run failed: %s", error_msg.c_str());
         }
+    } else {
+        LOG(warning, "dry-run disabled for onnx model '%s'", model_cfg->name().c_str());
     }
     return true;
 }

@@ -1,5 +1,6 @@
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
@@ -9,9 +10,15 @@ import java.util.Map;
 
 public class LargeRankExpressions {
     private final Map<String, RankExpressionBody> expressions = new HashMap<>();
+    private final FileRegistry fileRegistry;
+
+    public LargeRankExpressions(FileRegistry fileRegistry) {
+        this.fileRegistry = fileRegistry;
+    }
 
     public void add(RankExpressionBody expression) {
         expression.validate();
+        expression.register(fileRegistry);
         String name = expression.getName();
         if (expressions.containsKey(name)) {
             throw new IllegalArgumentException("Rank expression '" + name +

@@ -135,7 +135,7 @@ class HttpRequestStrategy implements RequestStrategy {
      * or the user has turned off retries for this type of operation.
      */
     private boolean retry(HttpRequest request, Throwable thrown, int attempt) {
-        breaker.failure();
+        breaker.failure(thrown);
         if (   (thrown instanceof IOException)               // General IO problems.
             || (thrown instanceof CancellationException)     // TLS session disconnect.
             || (thrown instanceof CancelledKeyException)) {  // Selection cancelled.
@@ -163,7 +163,7 @@ class HttpRequestStrategy implements RequestStrategy {
             return true;
         }
 
-        breaker.failure();
+        breaker.failure(response);
         logResponse(FINE, response, request, attempt);
         if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
             return retry(request, attempt);
@@ -239,13 +239,13 @@ class HttpRequestStrategy implements RequestStrategy {
     @Override
     public CompletableFuture<HttpResponse> enqueue(DocumentId documentId, HttpRequest request) {
         RetriableFuture<HttpResponse> result = new RetriableFuture<>(); // Carries the aggregate result of the operation, including retries.
-        CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
-        RetriableFuture<HttpResponse> previous = inflightById.put(documentId, result);
         if (destroyed.get()) {
             result.complete();
             return result;
         }
 
+        CompletableFuture<HttpResponse> vessel = new CompletableFuture<>(); // Holds the computation of a single dispatch to the HTTP client.
+        RetriableFuture<HttpResponse> previous = inflightById.put(documentId, result);
         if (previous == null) {
             acquireSlot();
             offer(request, vessel);

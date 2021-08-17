@@ -118,8 +118,7 @@ SimpleIndex<Posting, Key, DocId>::deserialize(vespalib::DataBuffer &buffer, Post
             postings.emplace_back(doc_id, deserializer.deserialize(buffer));
         }
         vespalib::datastore::EntryRef ref;
-        _btree_posting_lists.apply(ref, &postings[0], &postings[postings.size()],
-                                   0, 0);
+        _btree_posting_lists.apply(ref, &postings[0], &postings[postings.size()], 0, 0);
         builder.insert(key, ref);
     }
     _dictionary.assign(builder);

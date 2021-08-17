@@ -60,7 +60,7 @@ SerializedFastValueAttribute::getTensor(DocId docId) const
 }
 
 bool
-SerializedFastValueAttribute::onLoad()
+SerializedFastValueAttribute::onLoad(vespalib::Executor *)
 {
     BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {

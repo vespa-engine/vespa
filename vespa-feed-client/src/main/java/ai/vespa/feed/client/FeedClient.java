@@ -68,8 +68,11 @@ public interface FeedClient extends Closeable {
         /** Called by the client whenever a successful response is obtained. */
         default void success() { }
 
-        /** Called by the client whenever a transient or fatal error occurs. */
-        default void failure() { }
+        /** Called by the client whenever an error HTTP response is received. */
+        default void failure(HttpResponse response) { }
+
+        /** Called by the client whenever an exception occurs trying to obtain a HTTP response. */
+        default void failure(Throwable cause) { }
 
         /** The current state of the circuit breaker. */
         State state();

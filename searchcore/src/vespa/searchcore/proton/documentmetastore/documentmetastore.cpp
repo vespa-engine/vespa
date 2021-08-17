@@ -285,7 +285,7 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, TreeType::Bui
 }
 
 bool
-DocumentMetaStore::onLoad()
+DocumentMetaStore::onLoad(vespalib::Executor *)
 {
     documentmetastore::Reader reader(LoadUtils::openDAT(*this));
     unload();

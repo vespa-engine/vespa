@@ -34,10 +34,7 @@ import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.junit.Rule;
@@ -61,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -78,6 +76,7 @@ import static com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.CLOSE;
 import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
+import static com.yahoo.jdisc.http.server.jetty.Utils.createHttp2Client;
 import static com.yahoo.jdisc.http.server.jetty.Utils.createSslTestDriver;
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
 import static org.cthul.matchers.CthulMatchers.containsPattern;
@@ -89,8 +88,8 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -456,11 +455,28 @@ public class HttpServerTest {
 
     @Test
     public void requireThatConnectionIsClosedAfterXRequests() throws Exception {
-        final int MAX_KEEPALIVE_REQUESTS = 100;
-        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(new EchoRequestHandler(),
-                new ServerConfig.Builder(),
-                new ConnectorConfig.Builder().maxRequestsPerConnection(MAX_KEEPALIVE_REQUESTS));
-        for (int i = 0; i < MAX_KEEPALIVE_REQUESTS - 1; i++) {
+        final int MAX_REQUESTS = 10;
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
+                .maxRequestsPerConnection(MAX_REQUESTS)
+                .ssl(new ConnectorConfig.Ssl.Builder()
+                        .enabled(true)
+                        .clientAuth(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH)
+                        .privateKeyFile(privateKeyFile.toString())
+                        .certificateFile(certificateFile.toString())
+                        .caCertificateFile(certificateFile.toString()));
+        ServerConfig.Builder serverConfig = new ServerConfig.Builder()
+                .connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new EchoRequestHandler(),
+                serverConfig,
+                connectorConfig,
+                binder -> {});
+
+        // HTTP/1.1
+        for (int i = 0; i < MAX_REQUESTS - 1; i++) {
             driver.client().get("/status.html")
                     .expectStatusCode(is(OK))
                     .expectNoHeader(CONNECTION);
@@ -468,6 +484,22 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader(CONNECTION, is(CLOSE));
+
+        // HTTP/2
+        try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
+            String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
+            for (int i = 0; i < MAX_REQUESTS - 1; i++) {
+                SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+                assertEquals(OK, response.getCode());
+            }
+            try {
+                client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+                fail();
+            } catch (ExecutionException e) {
+                // Note: this is a weakness with Apache Http Client 5; the failed stream/request will not be retried on a new connection
+                assertEquals(e.getMessage(), "org.apache.hc.core5.http2.H2StreamResetException: Stream refused");
+            }
+        }
         assertTrue(driver.close());
     }
 
@@ -483,25 +515,6 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
-    @Test
-    public void requireThatServerCanRespondToHttp2Request() throws Exception {
-        Path privateKeyFile = tmpFolder.newFile().toPath();
-        Path certificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-
-        MetricConsumerMock metricConsumer = new MetricConsumerMock();
-        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
-        try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
-            String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
-            SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
-            assertNull(response.getBodyText());
-            assertEquals(OK, response.getCode());
-        }
-        assertTrue(driver.close());
-        ConnectionLogEntry entry = connectionLog.logEntries().get(0);
-        assertEquals("HTTP/2.0", entry.httpProtocol().get());
-    }
 
     @Test
     public void requireThatTlsClientAuthenticationEnforcerRejectsRequestsForNonWhitelistedPaths() throws IOException {
@@ -722,18 +735,6 @@ public class HttpServerTest {
         }
 
         assertTrue(driver.close());
-    }
-
-    private static CloseableHttpAsyncClient createHttp2Client(JettyTestDriver driver) {
-        TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
-                                                          .setSslContext(driver.sslContext())
-                                                          .build();
-        var client = H2AsyncClientBuilder.create()
-                                         .disableAutomaticRetries()
-                                         .setTlsStrategy(tlsStrategy)
-                                         .build();
-        client.start();
-        return client;
     }
 
     private static JettyTestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {

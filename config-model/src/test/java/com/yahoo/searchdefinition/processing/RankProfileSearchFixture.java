@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.ApplicationPackage;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.path.Path;
@@ -38,10 +39,10 @@ class RankProfileSearchFixture {
                                                                               new OnnxImporter(),
                                                                               new LightGBMImporter(),
                                                                               new XGBoostImporter());
-    private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+    private final RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
     private final QueryProfileRegistry queryProfileRegistry;
-    private Search search;
-    private Map<String, RankProfile> compiledRankProfiles = new HashMap<>();
+    private final Search search;
+    private final Map<String, RankProfile> compiledRankProfiles = new HashMap<>();
 
     public RankProfileRegistry getRankProfileRegistry() {
         return rankProfileRegistry;
@@ -64,7 +65,7 @@ class RankProfileSearchFixture {
                              String rankProfiles, String constant, String field)
             throws ParseException {
         this.queryProfileRegistry = queryProfileRegistry;
-        SearchBuilder builder = new SearchBuilder(applicationpackage, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
+        SearchBuilder builder = new SearchBuilder(applicationpackage, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
         String sdContent = "search test {\n" +
                            "  " + (constant != null ? constant : "") + "\n" +
                            "  document test {\n" +

@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -82,13 +83,13 @@ public class Search implements ImmutableSearch {
     private final Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
     /** External rank expression files of this */
-    private final LargeRankExpressions largeRankExpressions = new LargeRankExpressions();
+    private final LargeRankExpressions largeRankExpressions;
 
     /** Ranking constants of this */
-    private final RankingConstants rankingConstants = new RankingConstants();
+    private final RankingConstants rankingConstants;
 
     /** Onnx models of this */
-    private final OnnxModels onnxModels = new OnnxModels();
+    private final OnnxModels onnxModels;
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
@@ -99,7 +100,7 @@ public class Search implements ImmutableSearch {
 
     /** Testing only */
     public Search(String name) {
-        this(name, null, new BaseDeployLogger(), new TestProperties());
+        this(name, null, null, new BaseDeployLogger(), new TestProperties());
     }
     /**
      * Creates a proper search definition
@@ -107,20 +108,23 @@ public class Search implements ImmutableSearch {
      * @param name of the the searchdefinition
      * @param applicationPackage the application containing this
      */
-    public Search(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties) {
-        this(applicationPackage, deployLogger, properties, false);
+    public Search(String name, ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(applicationPackage, fileRegistry, deployLogger, properties, false);
         this.name = name;
     }
 
-    protected Search(ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties) {
-        this(applicationPackage, deployLogger, properties, true);
+    protected Search(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties) {
+        this(applicationPackage, fileRegistry, deployLogger, properties, true);
     }
 
-    private Search(ApplicationPackage applicationPackage, DeployLogger deployLogger, ModelContext.Properties properties, boolean documentsOnly) {
+    private Search(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger deployLogger, ModelContext.Properties properties, boolean documentsOnly) {
         this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
+        largeRankExpressions = new LargeRankExpressions(fileRegistry);
+        rankingConstants = new RankingConstants(fileRegistry);
+        onnxModels = new OnnxModels(fileRegistry);
     }
 
     protected void setName(String name) {

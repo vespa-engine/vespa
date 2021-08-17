@@ -20,15 +20,11 @@ struct Predicate {
     static const std::string RANGE_MIN;
     static const std::string RANGE_MAX;
     static const std::string CHILDREN;
-    static const std::string PARTITIONS;
-    static const std::string EDGE_PARTITIONS;
     static const std::string HASHED_PARTITIONS;
     static const std::string HASHED_EDGE_PARTITIONS;
     static const std::string HASH;
     static const std::string PAYLOAD;
-    static const std::string LABEL;
     static const std::string VALUE;
-    static const std::string LOWER_BOUND;
     static const std::string UPPER_BOUND;
 
     static const int TYPE_CONJUNCTION = 1;

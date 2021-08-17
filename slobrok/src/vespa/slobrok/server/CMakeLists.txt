@@ -6,11 +6,13 @@ vespa_add_library(slobrok_slobrokserver
     exchange_manager.cpp
     i_monitored_server.cpp
     i_rpc_server_manager.cpp
+    local_rpc_monitor_map.cpp
     managed_rpc_server.cpp
     map_diff.cpp
     map_listener.cpp
     map_source.cpp
     metrics_producer.cpp
+    mock_map_listener.cpp
     monitor.cpp
     named_service.cpp
     proxy_map_source.cpp
@@ -24,8 +26,10 @@ vespa_add_library(slobrok_slobrokserver
     rpcmirror.cpp
     sbenv.cpp
     service_map_history.cpp
+    service_map_mirror.cpp
     service_mapping.cpp
     slobrokserver.cpp
+    union_service_map.cpp
     INSTALL lib64
     DEPENDS
     slobrok

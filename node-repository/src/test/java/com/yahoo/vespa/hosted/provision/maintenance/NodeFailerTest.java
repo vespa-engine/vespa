@@ -403,44 +403,6 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void failing_ready_nodes() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
-
-        // Add ready node
-        NodeResources newNodeResources = new NodeResources(3, 4, 5, 1);
-        tester.createReadyNodes(1, 16, newNodeResources);
-
-        // For a day all nodes work so nothing happens
-        for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
-            tester.clock.advance(Duration.ofMinutes(interval));
-            tester.allNodesMakeAConfigRequestExcept();
-            tester.runMaintainers();
-            assertEquals( 5, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        }
-        
-        NodeList ready = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant);
-
-        // Two ready hosts and a ready node die, but only 2 of those are failed out
-        tester.clock.advance(Duration.ofMinutes(180));
-        Node failingNode = ready.stream().filter(node -> node.resources().equals(newNodeResources)).findFirst().get();
-        List<Node> otherNodes = ready.stream()
-                                     .filter(node -> !node.resources().equals(newNodeResources))
-                                     .collect(Collectors.toList());
-        tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), failingNode);
-        tester.runMaintainers();
-        assertEquals( 3, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        assertEquals( 2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-
-        // Another ready node dies and the node that died earlier, are allowed to fail
-        tester.clock.advance(Duration.ofDays(1));
-        tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), failingNode, otherNodes.get(3));
-        tester.runMaintainers();
-        assertEquals( 1, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        assertEquals(otherNodes.get(1), tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).first().get());
-        assertEquals( 4, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-    }
-
-    @Test
     public void host_not_failed_without_config_requests() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
@@ -627,61 +589,20 @@ public class NodeFailerTest {
     public void node_failing_throttle() {
         // Throttles based on a absolute number in small zone
         {
-            // 50 regular tenant nodes, 10 hosts with each 3 tenant nodes, total 90 nodes
+            // 10 hosts with 3 tenant nodes each, total 40 nodes
             NodeFailTester tester = NodeFailTester.withTwoApplications(10);
-            List<Node> readyNodes = tester.createReadyNodes(50, 30);
             NodeList hosts = tester.nodeRepository.nodes().list().nodeType(NodeType.host);
-            List<Node> deadNodes = readyNodes.subList(0, 4);
-
-            // 2 hours pass, 4 physical nodes die
-            for (int minutes = 0, interval = 30; minutes < 2 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
-
-            // 2 nodes are failed (the minimum amount that are always allowed to fail)
-            tester.runMaintainers();
-            assertEquals(2, tester.nodeRepository.nodes().list(Node.State.failed).size());
-            assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
-            assertEquals("Throttled node failures", 2, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
-
-            // 6 more hours pass, no more nodes are failed
-            for (int minutes = 0, interval = 30; minutes < 6 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
-            tester.runMaintainers();
-            assertEquals(2, tester.nodeRepository.nodes().list(Node.State.failed).size());
-            assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
-            assertEquals("Throttled node failures", 2, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
-
-            // 18 more hours pass, the remaining dead nodes are allowed to fail
-            for (int minutes = 0, interval = 30; minutes < 18 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
-            tester.runMaintainers();
-            assertEquals(4, tester.nodeRepository.nodes().list(Node.State.failed).size());
-
-            // 24 more hours pass, nothing happens
-            for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
 
             // 3 hosts fail. 2 of them and all of their children are allowed to fail
             List<Node> failedHosts = hosts.asList().subList(0, 3);
             failedHosts.forEach(host -> {
                 tester.serviceMonitor.setHostDown(host.hostname());
-                deadNodes.add(host);
             });
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(61));
-            tester.allNodesMakeAConfigRequestExcept(deadNodes);
 
             tester.runMaintainers();
-            assertEquals(4 + /* already failed */
-                         2 + /* hosts */
+            assertEquals(2 + /* hosts */
                          (2 * 3) /* containers per host */,
                          tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
@@ -690,61 +611,58 @@ public class NodeFailerTest {
             // 24 more hours pass without any other nodes being failed out
             for (int minutes = 0, interval = 30; minutes <= 23 * 60; minutes += interval) {
                 tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
             }
             tester.runMaintainers();
-            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(8, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled host failures", 1, tester.metric.values.get(NodeFailer.throttledHostFailuresMetric));
 
             // The final host and its containers are failed out
             tester.clock.advance(Duration.ofMinutes(30));
             tester.runMaintainers();
-            assertEquals(16, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric, as no throttled attempt is made", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("No throttled node failures", 0, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
             // Nothing else to fail
             tester.clock.advance(Duration.ofHours(25));
-            tester.allNodesMakeAConfigRequestExcept(deadNodes);
             tester.runMaintainers();
-            assertEquals(16, tester.nodeRepository.nodes().list(Node.State.failed).size());
+            assertEquals(12, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("No throttled node failures", 0, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
         }
 
         // Throttles based on percentage in large zone
         {
-            NodeFailTester tester = NodeFailTester.withNoApplications();
-            List<Node> readyNodes = tester.createReadyNodes(500);
-            List<Node> deadNodes = readyNodes.subList(0, 15);
+            NodeFailTester tester = NodeFailTester.withTwoApplications(300, 100, 100);
+            NodeList allNodes = tester.nodeRepository.nodes().list();
+            assertEquals(500, allNodes.size());
 
             // 2 hours pass, 15 nodes (3%) die
-            for (int minutes = 0, interval = 30; minutes < 2 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
             tester.runMaintainers();
+            allNodes.state(Node.State.active)
+                    .nodeType(NodeType.tenant)
+                    .stream()
+                    .limit(15)
+                    .forEach(host -> tester.serviceMonitor.setHostDown(host.hostname()));
+            tester.runMaintainers();
+            tester.clock.advance(Duration.ofHours(2));
+            tester.runMaintainers();
+
             // 2% are allowed to fail
             assertEquals(10, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric.", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled node failures", 5, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
             // 6 more hours pass, no more nodes are failed
-            for (int minutes = 0, interval = 30; minutes < 6 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
+            tester.clock.advance(Duration.ofHours(6));
             tester.runMaintainers();
             assertEquals(10, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric.", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("Throttled node failures", 5, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
 
             // 18 more hours pass, 24 hours since the first 10 nodes were failed. The remaining 5 are failed
-            for (int minutes = 0, interval = 30; minutes < 18 * 60; minutes += interval) {
-                tester.clock.advance(Duration.ofMinutes(interval));
-                tester.allNodesMakeAConfigRequestExcept(deadNodes);
-            }
+            tester.clock.advance(Duration.ofHours(18));
             tester.runMaintainers();
             assertEquals(15, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric, as no throttled attempt is made.", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));

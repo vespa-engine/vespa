@@ -30,7 +30,7 @@ DirectTensorAttribute::~DirectTensorAttribute()
 }
 
 bool
-DirectTensorAttribute::onLoad()
+DirectTensorAttribute::onLoad(vespalib::Executor *)
 {
     BlobSequenceReader tensorReader(*this);
     if (!tensorReader.hasData()) {

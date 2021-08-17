@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_initializer_test");
@@ -89,6 +90,7 @@ struct Fixture
     DirectoryHandler _dirHandler;
     std::shared_ptr<AttributeDiskLayout> _diskLayout;
     AttributeFactory       _factory;
+    vespalib::ThreadStackExecutor _executor;
     Fixture();
     ~Fixture();
     std::unique_ptr<AttributeInitializer> createInitializer(const AttributeSpec &spec, SerialNum serialNum);
@@ -97,7 +99,8 @@ struct Fixture
 Fixture::Fixture()
     : _dirHandler(test_dir),
       _diskLayout(AttributeDiskLayout::create(test_dir)),
-      _factory()
+      _factory(),
+      _executor(1, 0x10000)
 {
 }
 
@@ -106,7 +109,7 @@ Fixture::~Fixture() = default;
 std::unique_ptr<AttributeInitializer>
 Fixture::createInitializer(const AttributeSpec &spec, SerialNum serialNum)
 {
-    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", spec, serialNum, _factory);
+    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", spec, serialNum, _factory, _executor);
 }
 
 TEST("require that integer attribute can be initialized")

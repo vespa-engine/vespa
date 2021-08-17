@@ -6,6 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
@@ -53,6 +54,12 @@ public interface ZmsClient extends AutoCloseable {
     void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry);
 
     List<AthenzIdentity> listMembers(AthenzRole athenzRole);
+
+    List<AthenzService> listServices(AthenzDomain athenzDomain);
+
+    void createOrUpdateService(AthenzService athenzService);
+
+    void deleteService(AthenzService athenzService);
 
     void close();
 }

@@ -25,8 +25,7 @@ ExchangeManager::~ExchangeManager() = default;
 OkState
 ExchangeManager::addPartner(const std::string & name, const std::string & spec)
 {
-    RemoteSlobrok *oldremote = lookupPartner(name);
-    if (oldremote != nullptr) {
+    if (RemoteSlobrok *oldremote = lookupPartner(name)) {
         // already a partner, should be OK
         if (spec != oldremote->getSpec()) {
             return OkState(FRTE_RPC_METHOD_FAILED, "name already partner with different spec");
@@ -37,11 +36,9 @@ ExchangeManager::addPartner(const std::string & name, const std::string & spec)
         }
         return OkState();
     }
-
-    LOG_ASSERT(_partners.find(name) == _partners.end());
-    auto newPartner = std::make_unique<RemoteSlobrok>(name, spec, *this);
-    RemoteSlobrok & partner = *newPartner;
-    _partners.emplace(name, std::move(newPartner));
+    auto [ it, wasNew ] = _partners.emplace(name, std::make_unique<RemoteSlobrok>(name, spec, *this));
+    LOG_ASSERT(wasNew);
+    RemoteSlobrok & partner = *it->second;
     partner.tryConnect();
     return OkState();
 }
@@ -53,6 +50,7 @@ ExchangeManager::removePartner(const std::string & name)
     auto oldremote = std::move(_partners[name]);
     LOG_ASSERT(oldremote);
     _partners.erase(name);
+    oldremote->shutdown();
 }
 
 std::vector<std::string>
@@ -109,6 +107,7 @@ void
 ExchangeManager::healthCheck()
 {
     for (const auto & [ name, partner ] : _partners) {
+        partner->maybeStartFetch();
         partner->maybePushMine();
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());

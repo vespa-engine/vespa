@@ -7,7 +7,6 @@ import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Optional;
 
 /**
  * @author bjorncs
@@ -17,12 +16,6 @@ public class RequestUtils {
 
     public static Connection getConnection(Request request) {
         return request.getHttpChannel().getConnection();
-    }
-
-    public static Optional<HttpConnection> getHttp1Connection(Request request) {
-        Connection connection = getConnection(request);
-        if (connection instanceof HttpConnection) return Optional.of((HttpConnection) connection);
-        return Optional.empty();
     }
 
     public static JDiscServerConnector getConnector(Request request) {

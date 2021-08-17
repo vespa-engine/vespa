@@ -61,8 +61,9 @@ public:
     virtual void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) = 0;
     size_t getArraySize() const { return _arraySize; }
     virtual void onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* deadElems, void* buffer);
-    void onHold(const ElemCount* usedElems, const ElemCount* deadElems);
+    void onHold(uint32_t buffer_id, const ElemCount* usedElems, const ElemCount* deadElems);
     virtual void onFree(ElemCount usedElems);
+    void resume_primary_buffer(uint32_t buffer_id, ElemCount* used_elems, ElemCount* dead_elems);
     virtual const alloc::MemoryAllocator* get_memory_allocator() const;
 
     /**
@@ -72,9 +73,11 @@ public:
 
     void clampMaxArrays(uint32_t maxArrays);
 
-    uint32_t getActiveBuffers() const { return _activeBuffers; }
+    uint32_t get_active_buffers_count() const { return _active_buffers.size(); }
+    const std::vector<uint32_t>& get_active_buffers() const noexcept { return _active_buffers; }
     size_t getMaxArrays() const { return _maxArrays; }
-    uint32_t getNumArraysForNewBuffer() const { return _numArraysForNewBuffer; }
+    uint32_t get_scaled_num_arrays_for_new_buffer() const;
+    uint32_t get_num_arrays_for_new_buffer() const noexcept { return _numArraysForNewBuffer; }
 protected:
 
     struct BufferCounts {
@@ -120,6 +123,7 @@ protected:
     uint32_t _holdBuffers;
     size_t   _holdUsedElems;  // Number of used elements in all held buffers for this type.
     AggregatedBufferCounts _aggr_counts;
+    std::vector<uint32_t>  _active_buffers;
 };
 
 /**

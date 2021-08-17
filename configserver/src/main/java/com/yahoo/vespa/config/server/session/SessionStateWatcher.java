@@ -46,8 +46,6 @@ public class SessionStateWatcher {
     private synchronized void sessionStatusChanged(Status newStatus) {
         long sessionId = session.getSessionId();
 
-        log.fine("Session " + sessionId + " for " + session.getApplicationId() + " changed: " + newStatus);
-
         switch (newStatus) {
             case NEW:
             case UNKNOWN:
@@ -69,8 +67,6 @@ public class SessionStateWatcher {
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
-
-        log.fine("Session " + sessionId + " for " + session.getApplicationId() + " changed: " + newStatus + " [DONE]");
     }
 
     private void createLocalSession(long sessionId) {
@@ -96,10 +92,16 @@ public class SessionStateWatcher {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
-                    if (log.isLoggable(Level.FINE))
-                        log.log(Level.FINE, session.logPre() + "Session change: Session "
-                                            + session.getSessionId() + " changed status to " + newStatus.name());
+
+                    String debugMessage = log.isLoggable(Level.FINE) ?
+                            session.logPre() + "Session " + session.getSessionId()
+                            + " changed status to " + newStatus.name() :
+                            null;
+                    if (debugMessage != null) log.fine(debugMessage);
+
                     sessionStatusChanged(newStatus);
+
+                    if (debugMessage != null) log.fine(debugMessage + ": Done");
                 }
             } catch (Exception e) {
                 log.log(Level.WARNING, session.logPre() + "Error handling session change to " +

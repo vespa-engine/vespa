@@ -13,7 +13,6 @@ namespace vespalib {
  */
 template <typename T>
 class allocator_large {
-    using PtrAndSize = alloc::MemoryAllocator::PtrAndSize;
 public:
     allocator_large() noexcept : _allocator(alloc::MemoryAllocator::select_allocator()) {}
     using value_type = T;

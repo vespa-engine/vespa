@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
@@ -45,15 +46,19 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
         assertEquals(SummaryTransform.ATTRIBUTE, actualTransform);
     }
 
+    private static Search createSearch(String documentType) {
+        return new Search(documentType, MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+    }
+
     private static Search createSearchWithDocument(String documentName) {
-        Search search = new Search(documentName, MockApplicationPackage.createEmpty(), new TestableDeployLogger(), new TestProperties());
+        Search search = createSearch(documentName);
         SDDocumentType document = new SDDocumentType(documentName, search);
         search.addDocument(document);
         return search;
     }
 
     private static ImportedFields createSingleImportedField(String fieldName) {
-        Search targetSearch = new Search("target_doc", MockApplicationPackage.createEmpty(), new TestableDeployLogger(), new TestProperties());
+        Search targetSearch = createSearch("target_doc");
         SDField targetField = new SDField("target_field", DataType.INT);
         DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);

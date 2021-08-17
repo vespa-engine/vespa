@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
@@ -17,9 +18,15 @@ import java.util.Map;
 public class RankingConstants {
 
     private final Map<String, RankingConstant> constants = new HashMap<>();
+    private final FileRegistry fileRegistry;
+
+    public RankingConstants(FileRegistry fileRegistry) {
+        this.fileRegistry = fileRegistry;
+    }
 
     public void add(RankingConstant constant) {
         constant.validate();
+        constant.register(fileRegistry);
         String name = constant.getName();
         if (constants.containsKey(name))
             throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");

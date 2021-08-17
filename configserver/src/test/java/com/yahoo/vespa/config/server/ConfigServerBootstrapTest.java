@@ -77,12 +77,14 @@ public class ConfigServerBootstrapTest {
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
         assertFalse(rpcServer.isRunning());
+        assertTrue(rpcServer.isServingConfigRequests());
         assertFalse(vipStatus.isInRotation());
     }
 
@@ -108,6 +110,7 @@ public class ConfigServerBootstrapTest {
 
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
         bootstrap.deconstruct();
@@ -140,7 +143,8 @@ public class ConfigServerBootstrapTest {
         // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
         // rpc server should not be running and it should be out of rotation
         assertEquals(StateMonitor.Status.initializing, stateMonitor.status());
-        assertFalse(rpcServer.isRunning());
+        assertTrue(rpcServer.isRunning());
+        assertFalse(rpcServer.isServingConfigRequests());
         assertFalse(vipStatus.isInRotation());
 
         bootstrap.deconstruct();
@@ -161,7 +165,7 @@ public class ConfigServerBootstrapTest {
                 .zone(new Zone(Environment.dev, RegionName.defaultName()))
                 .curator(curator)
                 .build();
-        tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
+        tester.deployApp("src/test/apps/app/", vespaVersion);
         ApplicationId applicationId = tester.applicationId();
 
         VersionState versionState = createVersionState();
@@ -179,6 +183,7 @@ public class ConfigServerBootstrapTest {
                                                                     stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
+        assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
     }

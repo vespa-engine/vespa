@@ -368,35 +368,15 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
 
         TableWriter getWriter() {
-            return engine().getWriter(newContext().getCairoSecurityContext(), name);
+            return engine().getWriter(newContext().getCairoSecurityContext(), name, "getWriter");
         }
 
         void gc() {
             synchronized (writeLock) {
-                // We remove full days at once and we want to see at least three days to not every only see weekend data
-                Instant oldestToKeep = clock.instant().minus(Duration.ofDays(4));
-                SqlExecutionContext context = newContext();
-                int partitions = 0;
                 try {
-                    List<String> removeList = new ArrayList<>();
-                    for (String dirEntry : dir.list()) {
-                        File partitionDir = new File(dir, dirEntry);
-                        if (!partitionDir.isDirectory()) continue;
-
-                        partitions++;
-                        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
-                        Instant partitionDay = Instant.from(formatter.parse(dirEntry.substring(0, 10) + "T00:00:00"));
-                        if (partitionDay.isBefore(oldestToKeep))
-                            removeList.add(dirEntry);
-
-                    }
-                    // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
-                    if (removeList.size() < partitions && !removeList.isEmpty()) {
-                        issue("alter table " + name + " drop partition list " +
-                              removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
-                              context);
-                    }
-                } catch (SqlException e) {
+                    issue("alter table " + name + " drop partition where at < dateadd('d', -4, now());", newContext());
+                }
+                catch (SqlException e) {
                     log.log(Level.WARNING, "Failed to gc old metrics data in " + dir + " table " + name, e);
                 }
             }

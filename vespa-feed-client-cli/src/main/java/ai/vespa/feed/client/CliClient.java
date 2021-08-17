@@ -60,11 +60,6 @@ public class CliClient {
                 CountDownLatch latch = new CountDownLatch(1);
                 AtomicReference<FeedException> fatal = new AtomicReference<>();
                 long startNanos = System.nanoTime();
-                feeder.feedMany(in, new ResultCallback() {
-                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
-                    @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
-                    @Override public void onComplete() { latch.countDown(); }
-                });
                 if (cliArgs.showProgress()) {
                     Thread progressPrinter = new Thread(() -> {
                         try {
@@ -73,11 +68,18 @@ public class CliClient {
                             }
                         }
                         catch (InterruptedException | IOException ignored) { } // doesn't happen
-                    });
+                    }, "progress-printer");
                     progressPrinter.setDaemon(true);
                     progressPrinter.start();
                 }
+
+                feeder.feedMany(in, new ResultCallback() {
+                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
+                    @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
+                    @Override public void onComplete() { latch.countDown(); }
+                });
                 latch.await();
+
                 if (cliArgs.benchmarkModeEnabled()) {
                     printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemOut);
                 }
@@ -150,7 +152,7 @@ public class CliClient {
     }
 
     static void printBenchmarkResult(long durationNanos, OperationStats stats, OutputStream systemOut) throws IOException {
-        JsonFactory factory = new JsonFactory();
+        JsonFactory factory = new JsonFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         long okCount = stats.successes();
         long errorCount = stats.requests() - okCount;
         double throughput = okCount * 1e9 / Math.max(1, durationNanos);

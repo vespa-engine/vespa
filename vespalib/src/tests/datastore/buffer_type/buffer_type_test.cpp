@@ -49,7 +49,7 @@ struct Fixture {
     }
     ~Fixture() {
         for (auto& setup : setups) {
-            bufferType.onHold(&setup._usedElems, &setup._deadElems);
+            bufferType.onHold(setup._bufferId, &setup._usedElems, &setup._deadElems);
             bufferType.onFree(setup._usedElems);
         }
     }
@@ -130,40 +130,40 @@ TEST("require that arrays to alloc is capped to min arrays")
     TEST_DO(assertArraysToAlloc(17, Setup().used(34 * 4).needed(4).minArrays(16)));
 }
 
-TEST("arrays to alloc considers used elements across all active buffers (no resizing)")
+TEST("arrays to alloc considers used elements across all active buffers of same type (no resizing)")
 {
     Fixture f(Setup().used(6 * 4));
     f.assertArraysToAlloc(6 * 0.5);
-    f.add_setup(Setup().used(8 * 4));
+    f.add_setup(Setup().used(8 * 4).bufferId(2));
     f.assertArraysToAlloc((6 + 8) * 0.5);
-    f.add_setup(Setup().used(10 * 4));
+    f.add_setup(Setup().used(10 * 4).bufferId(3));
     f.assertArraysToAlloc((6 + 8 + 10) * 0.5);
 }
 
-TEST("arrays to alloc only considers used elements in current buffer when resizing")
+TEST("arrays to alloc considers used elements across all active buffers of same type when resizing")
 {
     Fixture f(Setup().used(6 * 4));
     f.assertArraysToAlloc(6 * 0.5);
-    f.add_setup(Setup().used(8 * 4).resizing(true));
-    f.assertArraysToAlloc(8 + 8 * 0.5);
+    f.add_setup(Setup().used(8 * 4).resizing(true).bufferId(2));
+    f.assertArraysToAlloc(8 + (6 + 8) * 0.5);
 }
 
-TEST("arrays to alloc considers (and subtracts) dead elements across all active buffers (no resizing)")
+TEST("arrays to alloc considers (and subtracts) dead elements across all active buffers of same type (no resizing)")
 {
     Fixture f(Setup().used(6 * 4).dead(2 * 4));
     f.assertArraysToAlloc((6 - 2) * 0.5);
-    f.add_setup(Setup().used(12 * 4).dead(4 * 4));
+    f.add_setup(Setup().used(12 * 4).dead(4 * 4).bufferId(2));
     f.assertArraysToAlloc((6 - 2 + 12 - 4) * 0.5);
-    f.add_setup(Setup().used(20 * 4).dead(6 * 4));
+    f.add_setup(Setup().used(20 * 4).dead(6 * 4).bufferId(3));
     f.assertArraysToAlloc((6 - 2 + 12 - 4 + 20 - 6) * 0.5);
 }
 
-TEST("arrays to alloc only considers (and subtracts) dead elements in current buffer when resizing")
+TEST("arrays to alloc considers (and subtracts) dead elements across all active buffers of same type when resizing")
 {
     Fixture f(Setup().used(6 * 4).dead(2 * 4));
     f.assertArraysToAlloc((6 - 2) * 0.5);
-    f.add_setup(Setup().used(12 * 4).dead(4 * 4).resizing(true));
-    f.assertArraysToAlloc(12 + (12 - 4) * 0.5);
+    f.add_setup(Setup().used(12 * 4).dead(4 * 4).resizing(true).bufferId(2));
+    f.assertArraysToAlloc(12 + (6 - 2 + 12 - 4) * 0.5);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -6,7 +6,7 @@ from onnx import helper, TensorProto
 INPUT1 = helper.make_tensor_value_info('in1', TensorProto.FLOAT, [2])
 INPUT2 = helper.make_tensor_value_info('in2', TensorProto.FLOAT, ['batch'])
 
-OUTPUT = helper.make_tensor_value_info('out', TensorProto.FLOAT, ['batch'])
+OUTPUT = helper.make_tensor_value_info('out', TensorProto.FLOAT, [2])
 
 nodes = [
     helper.make_node(

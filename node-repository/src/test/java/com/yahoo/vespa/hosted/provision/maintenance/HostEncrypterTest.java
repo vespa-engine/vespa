@@ -70,9 +70,11 @@ public class HostEncrypterTest {
         NodeList allNodes = tester.nodeRepository().nodes().list();
         NodeList encryptingHosts = allNodes.encrypting().parents();
 
-        assertEquals(1, encryptingHosts.size());
+        assertEquals(1, encryptingHosts.nodeType(NodeType.proxyhost).size());
+
+        assertEquals(1, encryptingHosts.nodeType(NodeType.host).size());
         assertEquals("Host of included application is encrypted", Set.of(app1),
-                     allNodes.childrenOf(encryptingHosts.asList().get(0)).stream()
+                     allNodes.childrenOf(encryptingHosts.nodeType(NodeType.host).asList().get(0)).stream()
                              .map(node -> node.allocation().get().owner())
                              .collect(Collectors.toSet()));
     }

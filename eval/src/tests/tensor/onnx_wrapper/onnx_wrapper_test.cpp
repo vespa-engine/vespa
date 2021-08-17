@@ -178,6 +178,9 @@ TEST(OnnxTest, simple_onnx_model_can_be_evaluated)
     ctx.eval();
     EXPECT_EQ(output.cells().typify<float>()[0], 80.0);
     //-------------------------------------------------------------------------
+    ctx.clear_results();
+    EXPECT_EQ(output.cells().typify<float>()[0], 0.0);
+    //-------------------------------------------------------------------------
 }
 
 TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
@@ -223,6 +226,9 @@ TEST(OnnxTest, dynamic_onnx_model_can_be_evaluated)
     ctx.bind_param(2, new_bias);
     ctx.eval();
     EXPECT_EQ(output.cells().typify<float>()[0], 81.0);
+    //-------------------------------------------------------------------------
+    ctx.clear_results();
+    EXPECT_EQ(output.cells().typify<float>()[0], 0.0);
     //-------------------------------------------------------------------------
 }
 
@@ -270,6 +276,9 @@ TEST(OnnxTest, int_types_onnx_model_can_be_evaluated)
     ctx.eval();
     EXPECT_EQ(output.cells().typify<double>()[0], 80.0);
     //-------------------------------------------------------------------------
+    ctx.clear_results();
+    EXPECT_EQ(output.cells().typify<double>()[0], 0.0);
+    //-------------------------------------------------------------------------
 }
 
 TEST(OnnxTest, we_guess_batch_dimension_size_when_inference_fails) {    
@@ -310,6 +319,15 @@ TEST(OnnxTest, we_guess_batch_dimension_size_when_inference_fails) {
     auto expect_4 = TensorSpec::from_expr("tensor<float>(d0[4]):[2,4,6,8]");
     EXPECT_EQ(out_3, expect_3);
     EXPECT_EQ(out_4, expect_4);
+    //-------------------------------------------------------------------------
+    auto zero_3 = TensorSpec::from_expr("tensor<float>(d0[3]):[0,0,0]");
+    auto zero_4 = TensorSpec::from_expr("tensor<float>(d0[4]):[0,0,0,0]");
+    ctx_3.clear_results();
+    EXPECT_EQ(TensorSpec::from_value(ctx_3.get_result(0)), zero_3);
+    EXPECT_EQ(TensorSpec::from_value(ctx_4.get_result(0)), expect_4);
+    ctx_4.clear_results();
+    EXPECT_EQ(TensorSpec::from_value(ctx_3.get_result(0)), zero_3);
+    EXPECT_EQ(TensorSpec::from_value(ctx_4.get_result(0)), zero_4);
     //-------------------------------------------------------------------------
 }
 
@@ -356,6 +374,14 @@ TEST(OnnxTest, zero_copy_unstable_types) {
     EXPECT_EQ(cells16.typify<BFloat16>()[1], 2.0);
     EXPECT_EQ(cells16.typify<BFloat16>()[2], 3.0);
     //-------------------------------------------------------------------------
+    ctx.clear_results();
+    EXPECT_EQ(cells8.typify<Int8Float>()[0], 0.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[1], 0.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[2], 0.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[0], 0.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[1], 0.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[2], 0.0);
+    //-------------------------------------------------------------------------
 }
 
 TEST(OnnxTest, converted_unstable_types) {
@@ -400,6 +426,14 @@ TEST(OnnxTest, converted_unstable_types) {
     EXPECT_EQ(cells16.typify<BFloat16>()[0], 1.0);
     EXPECT_EQ(cells16.typify<BFloat16>()[1], 2.0);
     EXPECT_EQ(cells16.typify<BFloat16>()[2], 3.0);
+    //-------------------------------------------------------------------------
+    ctx.clear_results();
+    EXPECT_EQ(cells8.typify<Int8Float>()[0], 0.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[1], 0.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[2], 0.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[0], 0.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[1], 0.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[2], 0.0);
     //-------------------------------------------------------------------------
 }
 

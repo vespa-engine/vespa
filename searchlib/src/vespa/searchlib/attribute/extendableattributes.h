@@ -63,7 +63,7 @@ public:
         this->_data.back() = v;
         return true;
     }
-    bool onLoad() override {
+    bool onLoad(vespalib::Executor *) override {
         return false; // Emulate that this attribute is never loaded
     }
     void onAddDocs(typename Super::DocId lidLimit) override {
@@ -88,7 +88,7 @@ public:
     SingleStringExtAttribute(const vespalib::string & name);
     bool addDoc(DocId & docId) override;
     bool add(const char * v, int32_t w = 1) override;
-    bool onLoad() override {
+    bool onLoad(vespalib::Executor *) override {
         return false; // Emulate that this attribute is never loaded
     }
     void onAddDocs(DocId ) override { }
@@ -139,7 +139,7 @@ public:
         this->checkSetMaxValueCount(idx.back() - idx[idx.size() - 2]);
         return true;
     }
-    bool onLoad() override {
+    bool onLoad(vespalib::Executor *) override {
         return false; // Emulate that this attribute is never loaded
     }
     void onAddDocs(uint32_t lidLimit) override {
@@ -167,7 +167,7 @@ public:
     MultiStringExtAttribute(const vespalib::string & name);
     bool addDoc(DocId & docId) override;
     bool add(const char * v, int32_t w = 1) override;
-    bool onLoad() override {
+    bool onLoad(vespalib::Executor *) override {
         return false; // Emulate that this attribute is never loaded
     }
     void onAddDocs(DocId ) override { }

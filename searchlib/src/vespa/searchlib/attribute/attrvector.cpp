@@ -116,7 +116,7 @@ void addString(const char * v, StringAttribute::OffsetVector & offsets, std::vec
     buffer.push_back('\0');
 }
 
-bool StringDirectAttribute::onLoad()
+bool StringDirectAttribute::onLoad(vespalib::Executor *)
 {
     {
         std::vector<char> empty;

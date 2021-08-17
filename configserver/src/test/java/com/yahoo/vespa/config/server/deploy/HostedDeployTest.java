@@ -98,7 +98,7 @@ public class HostedDeployTest {
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .configserverConfig(createConfigserverConfig()).build();
         String dockerImageRepository = "docker.foo.com:4443/bar/baz";
-        tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
                 .dockerImageRepository(dockerImageRepository)
                 .athenzDomain("myDomain"));
@@ -117,7 +117,7 @@ public class HostedDeployTest {
         DeployTester tester = new DeployTester.Builder()
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .configserverConfig(createConfigserverConfig()).build();
-        tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .tenantSecretStores(tenantSecretStores));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
@@ -332,7 +332,7 @@ public class HostedDeployTest {
 
         // Deploy with version that does not exist on hosts and with app package that has no write access control,
         // validation of access control should not be done, since the app is already deployed in prod
-        tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0", Instant.now());
+        tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0");
         assertEquals(7, tester.getAllocatedHostsOf(applicationId).getHosts().size());
     }
 
@@ -343,7 +343,7 @@ public class HostedDeployTest {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(clock),
                                                     createFailingModelFactory(Version.fromString("1.0.0"))); // older than default
         DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
-        tester.deployApp("src/test/apps/validationOverride/", clock.instant());
+        tester.deployApp("src/test/apps/validationOverride/");
 
         // Redeployment from local active works
         {
@@ -364,7 +364,7 @@ public class HostedDeployTest {
         // However, redeployment from the outside fails after this date
         {
             try {
-                tester.deployApp("src/test/apps/validationOverride/", "myApp", Instant.now());
+                tester.deployApp("src/test/apps/validationOverride/", "myApp");
                 fail("Expected redeployment to fail");
             }
             catch (Exception expected) {

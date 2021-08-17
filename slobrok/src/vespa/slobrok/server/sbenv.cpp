@@ -110,12 +110,16 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
+      _localRpcMonitorMap(*_supervisor),
       _rpcsrvmanager(*this),
       _exchanger(*this, _rpcsrvmap),
       _rpcsrvmap()
 {
     srandom(time(nullptr) ^ getpid());
-    _rpcsrvmap.proxy().registerListener(_globalVisibleHistory);
+    _localMonitorSubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _localRpcMonitorMap);
+    _consensusSubscription = MapSubscription::subscribe(_localRpcMonitorMap.dispatcher(), _consensusMap);
+    // TODO: use consensus as source here:
+    _globalHistorySubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _globalVisibleHistory);
     _rpcHooks.initRPC(getSupervisor());
 }
 

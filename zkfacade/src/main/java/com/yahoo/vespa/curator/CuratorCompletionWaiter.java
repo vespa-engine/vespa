@@ -111,9 +111,15 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
 
     public static Curator.CompletionWaiter createAndInitialize(Curator curator, Path parentPath, String waiterNode, String id) {
         Path waiterPath = parentPath.append(waiterNode);
-        log.fine("Recreating ZK path: " + waiterPath);
+
+        String debugMessage = log.isLoggable(Level.FINE) ? "Recreating ZK path " + waiterPath : null;
+        if (debugMessage != null) log.fine(debugMessage);
+
         curator.delete(waiterPath);
         curator.createAtomically(waiterPath);
+
+        if (debugMessage != null) log.fine(debugMessage + ": Done");
+
         return new CuratorCompletionWaiter(curator, waiterPath.getAbsolute(), id, Clock.systemUTC());
     }
 

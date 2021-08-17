@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -102,7 +103,7 @@ public class RankProfileTestCase extends SchemaTestCase {
         assertEquals(8, rankProfile.getNumThreadsPerSearch());
         assertEquals(70, rankProfile.getMinHitsPerThread());
         assertEquals(1200, rankProfile.getNumSearchPartitions());
-        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new LargeRankExpressions(), new QueryProfileRegistry(),
+        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
                                                            new ImportedMlModels(), attributeFields, deployProperties);
         if (expectedTermwiseLimit != null) {
             assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
@@ -158,8 +159,12 @@ public class RankProfileTestCase extends SchemaTestCase {
         }
     }
 
+    private static RawRankProfile createRawRankProfile(RankProfile profile, Search search) {
+        return new RawRankProfile(profile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search), new TestProperties());
+    }
+
     private static void assertAttributeTypeSettings(RankProfile profile, Search search) {
-        RawRankProfile rawProfile = new RawRankProfile(profile, new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search));
+        RawRankProfile rawProfile = createRawRankProfile(profile, search);
         assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.a").get());
         assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.attribute.b").get());
         assertEquals("tensor(x[5])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").get());
@@ -201,7 +206,7 @@ public class RankProfileTestCase extends SchemaTestCase {
     }
 
     private static void assertQueryFeatureTypeSettings(RankProfile profile, Search search) {
-        RawRankProfile rawProfile = new RawRankProfile(profile, new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search));
+        RawRankProfile rawProfile =createRawRankProfile(profile, search);
         assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.query.tensor1").get());
         assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.query.tensor2").get());
         assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.query.tensor3").isPresent());

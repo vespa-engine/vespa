@@ -41,11 +41,12 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
 /**
  * Main component that bootstraps and starts config server threads.
  *
- * If config server has been upgraded to a new version since the last time it was running it will redeploy all
- * applications. If that is done successfully the RPC server will start and the health status code will change from
- * 'initializing' to 'up'. If VIP status mode is VIP_STATUS_PROGRAMMATICALLY the config server
- * will be put into rotation (start serving status.html with 200 OK), if the mode is VIP_STATUS_FILE a VIP status
- * file is created or removed by some external program based on the health status code.
+ * Starts RPC server without allowing config requests. If config server has been upgraded to a new version since the
+ * last time it was running it will redeploy all applications. If that is done successfully the RPC server will start
+ * allowing config requets and the health status code will change from 'initializing' to 'up'. If VIP status mode is
+ * VIP_STATUS_PROGRAMMATICALLY the config server will be put into rotation (start serving status.html with 200 OK),
+ * if the mode is VIP_STATUS_FILE a VIP status file is created or removed by some external program based on the
+ * health status code.
  *
  * @author Ulf Lilleengen
  * @author hmusum
@@ -138,6 +139,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     public void start() {
+        startRpcServerWithFileDistribution(); // No config requests allowed yet, will be allowed after bootstrapping done
         if (versionState.isUpgraded()) {
             log.log(Level.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
@@ -155,7 +157,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             }
         }
         applicationRepository.bootstrappingDone();
-        startRpcServer();
+        allowConfigRpcRequests(server);
         up();
     }
 
@@ -177,7 +179,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             vipStatus.setInRotation(false);
     }
 
-    private void startRpcServer() {
+    private void startRpcServerWithFileDistribution() {
         rpcServerExecutor.execute(server);
 
         Instant end = Instant.now().plus(Duration.ofSeconds(10));
@@ -191,6 +193,11 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         }
         if (!server.isRunning())
             throw new RuntimeException("RPC server not started in 10 seconds");
+    }
+
+    private void allowConfigRpcRequests(RpcServer rpcServer) {
+        log.log(Level.INFO, "Allowing RPC config requests");
+        rpcServer.setUpGetConfigHandlers();
     }
 
     private void redeployingApplicationsFailed() {

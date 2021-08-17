@@ -147,20 +147,22 @@ TEST_F(OnnxFeatureTest, input_features_and_output_names_can_be_specified) {
 TEST_F(OnnxFeatureTest, fragile_model_can_be_evaluated) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[2]):[docid,10]");
-    add_onnx(OnnxModel("fragile", fragile_model));
+    add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(true));
     EXPECT_TRUE(try_compile(onnx_feature("fragile")));
     EXPECT_EQ(get(1), TensorSpec::from_expr("tensor<float>(d0[2]):[2,15]"));
     EXPECT_EQ(get(3), TensorSpec::from_expr("tensor<float>(d0[2]):[6,15]"));
 }
 
-TEST_F(OnnxFeatureTest, runtime_broken_model_can_be_set_up_without_dry_run) {
+TEST_F(OnnxFeatureTest, broken_model_evaluates_to_all_zeros) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[3]):[docid,10,31515]");
     add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(false));
     EXPECT_TRUE(try_compile(onnx_feature("fragile")));
+    EXPECT_EQ(get(1), TensorSpec::from_expr("tensor<float>(d0[2]):[0,0]"));
+    EXPECT_EQ(get(3), TensorSpec::from_expr("tensor<float>(d0[2]):[0,0]"));
 }
 
-TEST_F(OnnxFeatureTest, runtime_broken_model_fails_with_dry_run) {
+TEST_F(OnnxFeatureTest, broken_model_fails_with_dry_run) {
     add_expr("in1", "tensor<float>(x[2]):[docid,5]");
     add_expr("in2", "tensor<float>(x[3]):[docid,10,31515]");
     add_onnx(OnnxModel("fragile", fragile_model).dry_run_on_setup(true));

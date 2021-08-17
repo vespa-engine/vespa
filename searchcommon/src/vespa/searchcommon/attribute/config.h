@@ -40,6 +40,7 @@ public:
     CollectionType collectionType()       const { return _type; }
     bool fastSearch()                     const { return _fastSearch; }
     bool huge()                           const { return _huge; }
+    bool paged()                          const { return _paged; }
     const PredicateParams &predicateParams() const { return _predicateParams; }
     const vespalib::eval::ValueType & tensorType() const { return _tensorType; }
     DistanceMetric distance_metric() const { return _distance_metric; }
@@ -116,6 +117,7 @@ public:
      */
     Config & setIsFilter(bool isFilter) { _isFilter = isFilter; return *this; }
     Config & setMutable(bool isMutable) { _mutable = isMutable; return *this; }
+    Config & setPaged(bool paged_in) { _paged = paged_in; return *this; }
     Config & setFastAccess(bool v) { _fastAccess = v; return *this; }
     Config & setGrowStrategy(const GrowStrategy &gs) { _growStrategy = gs; return *this; }
     Config & setCompactionStrategy(const CompactionStrategy &compactionStrategy) {
@@ -137,6 +139,7 @@ private:
     bool           _isFilter;
     bool           _fastAccess;
     bool           _mutable;
+    bool           _paged;
     Match                          _match;
     DictionaryConfig               _dictionary;
     GrowStrategy                   _growStrategy;

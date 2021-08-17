@@ -2,22 +2,10 @@
 
 #pragma once
 
-#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/feature_name_extractor.h>
 
-namespace search {
-namespace features {
-namespace rankingexpression {
+namespace search::features::rankingexpression {
 
-/**
- * Custom symbol extractor used to extract ranking feature names when
- * parsing ranking expressions.
- **/
-struct FeatureNameExtractor : public vespalib::eval::SymbolExtractor {
-    void extract_symbol(const char *pos_in, const char *end_in,
-                        const char *&pos_out, vespalib::string &symbol_out) const override;
-};
+using FeatureNameExtractor = vespalib::eval::FeatureNameExtractor;
 
-} // namespace rankingexpression
-} // namespace features
-} // namespace search
-
+}

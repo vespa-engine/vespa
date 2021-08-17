@@ -55,6 +55,7 @@ public:
 
 
 using GrowthStats = std::vector<int>;
+using BufferStats = std::vector<int>;
 
 constexpr float ALLOC_GROW_FACTOR = 0.4;
 constexpr size_t HUGE_PAGE_ARRAY_SIZE = (MemoryAllocator::HUGEPAGE_SIZE / sizeof(int));
@@ -122,6 +123,19 @@ public:
             }
             ++i;
         }
+    }
+    BufferStats getBuffers(size_t bufs) {
+        BufferStats buffers;
+        while (buffers.size() < bufs) {
+            RefType iRef = (_type.getArraySize() == 1) ?
+                           (_store.template allocator<DataType>(_typeId).alloc().ref) :
+                           (_store.template allocator<DataType>(_typeId).allocArray(_type.getArraySize()).ref);
+            int buffer_id = iRef.bufferId();
+            if (buffers.empty() || buffers.back() != buffer_id) {
+                buffers.push_back(buffer_id);
+            }
+        }
+        return buffers;
     }
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
@@ -563,16 +577,16 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
     assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
                     { 4 }, 20, 4, 0);
     // Resize if buffer size is less than 4, min size 0
-    assertGrowStats({ 4, 4, 4, 4, 8, 16, 16, 32, 64, 64 },
+    assertGrowStats({ 4, 4, 8, 32, 32, 64, 64, 128, 128, 128 },
                     { 0, 1, 2, 4 }, 4, 0, 4);
     // Always switch to new buffer, min size 16
     assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
                     { 16 }, 68, 16, 0);
     // Resize if buffer size is less than 16, min size 0
-    assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
+    assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
                     { 0, 1, 2, 4, 8, 16 }, 4, 0, 16);
     // Resize if buffer size is less than 16, min size 4
-    assertGrowStats({ 16, 16, 16, 32, 32, 64, 128, 128, 128 },
+    assertGrowStats({ 16, 32, 32, 128, 128, 128, 128, 128, 128 },
                     { 4, 8, 16 }, 20, 4, 16);
     // Always switch to new buffer, min size 0
     assertGrowStats({ 1, 1, 1, 1, 1, 2, 2, 4, 8, 8, 16, 32 },
@@ -580,7 +594,7 @@ TEST(DataStoreTest, require_that_buffer_growth_works)
 
     // Buffers with sizes larger than the huge page size of the mmap allocator.
     ASSERT_EQ(524288u, HUGE_PAGE_ARRAY_SIZE);
-    assertGrowStats({ 262144, 262144, 262144, 524288, 524288, 524288 * 2, 524288 * 3, 524288 * 4, 524288 * 5, 524288 * 5 },
+    assertGrowStats({ 262144, 524288, 524288, 524288 * 3, 524288 * 3, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5, 524288 * 5 },
                     { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 },
                     4, 0, HUGE_PAGE_ARRAY_SIZE / 2, HUGE_PAGE_ARRAY_SIZE * 5);
 }
@@ -614,12 +628,12 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
      *   4) Cap bytes to alloc to the max offset EntryRef can handle.
      *      The max bytes to alloc is: maxArrays * arraySize * elementSize.
      */
-    assertGrowStats<uint8_t>({8192,8192,8192,16384,16384,32768,65536,65536,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint8_t>({16384,16384,16384,32768,32768,65536,131072,131072,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint8_t>({16384,16384,16384,32768,32768,65536,131072,131072,229376,229376,229376,229376}, 7);
-    assertGrowStats<uint32_t>({8192,8192,8192,16384,16384,32768,65536,65536,98304,98304,98304,98304}, 3);
-    assertGrowStats<uint32_t>({16384,16384,16384,32768,32768,65536,131072,131072,163840,163840,163840,163840}, 5);
-    assertGrowStats<uint32_t>({16384,16384,16384,32768,32768,65536,131072,131072,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint8_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
+    assertGrowStats<uint8_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);
+    assertGrowStats<uint8_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
+    assertGrowStats<uint32_t>({8192,16384,16384,65536,65536,98304,98304,98304,98304,98304,98304,98304}, 3);
+    assertGrowStats<uint32_t>({16384,16384,65536,65536,131072,131072,163840,163840,163840,163840,163840,163840}, 5);
+    assertGrowStats<uint32_t>({16384,32768,32768,131072,131072,229376,229376,229376,229376,229376,229376,229376}, 7);
 }
 
 namespace {
@@ -666,8 +680,24 @@ TEST(DataStoreTest, can_set_memory_allocator)
     EXPECT_EQ(AllocStats(3, 3), stats);
 }
 
+namespace {
+
+void
+assertBuffers(BufferStats exp_buffers, size_t num_arrays_for_new_buffer)
+{
+    EXPECT_EQ(exp_buffers, IntGrowStore(1, 1, 1024, num_arrays_for_new_buffer).getBuffers(exp_buffers.size()));
+}
+
+}
+
+TEST(DataStoreTest, can_reuse_active_buffer_as_primary_buffer)
+{
+    assertBuffers({ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, 0);
+    assertBuffers({ 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3}, 16);
+}
+
 TEST(DataStoreTest, control_static_sizes) {
-    EXPECT_EQ(72, sizeof(BufferTypeBase));
+    EXPECT_EQ(96, sizeof(BufferTypeBase));
     EXPECT_EQ(32, sizeof(BufferState::FreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));
     EXPECT_EQ(144, sizeof(BufferState));

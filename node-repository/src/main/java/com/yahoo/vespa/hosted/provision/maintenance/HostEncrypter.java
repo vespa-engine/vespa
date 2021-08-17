@@ -116,9 +116,6 @@ public class HostEncrypter extends NodeRepositoryMaintainer {
     }
 
     private boolean encryptHost(Node host, NodeList allNodes, Set<ApplicationId> deferredApplications) {
-        // TODO: Require a minimum number of proxies in Orchestrator. For now skip proxy hosts.
-        if (host.type() == NodeType.proxyhost) return false;
-
         Set<ApplicationId> applicationsOnHost = allNodes.childrenOf(host).stream()
                                                         .filter(node -> node.allocation().isPresent())
                                                         .map(node -> node.allocation().get().owner())

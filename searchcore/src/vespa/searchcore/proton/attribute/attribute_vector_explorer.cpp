@@ -158,6 +158,8 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         object.setLong("numDocs", status.getNumDocs());
         object.setLong("lastSerialNum", status.getLastSyncToken());
         object.setLong("allocatedMemory", status.getAllocated());
+        object.setLong("usedMemory", status.getUsed());
+        object.setLong("onHoldMemory", status.getOnHold());
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
     }
 }

@@ -362,11 +362,15 @@ AttributeVector::isEnumeratedSaveFormat() const
     return isEnumerated(datHeader);
 }
 
-
 bool
 AttributeVector::load() {
+    return load(nullptr);
+}
+
+bool
+AttributeVector::load(vespalib::Executor * executor) {
     assert(!_loaded);
-    bool loaded = onLoad();
+    bool loaded = onLoad(executor);
     if (loaded) {
         commit();
     }
@@ -374,7 +378,7 @@ AttributeVector::load() {
     return _loaded;
 }
 
-bool AttributeVector::onLoad() { return false; }
+bool AttributeVector::onLoad(vespalib::Executor *) { return false; }
 int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
 bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
