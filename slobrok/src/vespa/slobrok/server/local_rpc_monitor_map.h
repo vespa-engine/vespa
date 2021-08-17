@@ -72,7 +72,7 @@ private:
     FRT_Supervisor &_supervisor;
     std::unique_ptr<MapSubscription> _subscription;
     
-    PerService &lookup(const ServiceMapping &mapping);
+    PerService &lookup(ManagedRpcServer *rpcsrv);
     
 public:
     LocalRpcMonitorMap(FRT_Supervisor &_supervisor);

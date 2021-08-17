@@ -21,11 +21,11 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
 
 LocalRpcMonitorMap::PerService &
-LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
-    auto iter = _map.find(mapping.name);
+LocalRpcMonitorMap::lookup(ManagedRpcServer *rpcsrv) {
+    auto iter = _map.find(rpcsrv->getName());
     LOG_ASSERT(iter != _map.end());
     PerService & psd = iter->second;
-    LOG_ASSERT(psd.spec() == mapping.spec);
+    LOG_ASSERT(psd.srv.get() == rpcsrv);
     return psd;
 }
 
@@ -114,36 +114,32 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
 }
 
 void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string) {
-    ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
-    auto &psd = lookup(mapping);
-    LOG_ASSERT(psd.srv.get() == rpcsrv);
-    LOG(debug, "failed: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
+    auto &psd = lookup(rpcsrv);
+    LOG(debug, "failed: %s->%s", psd.name().c_str(), psd.spec().c_str());
     if (psd.inflight) {
         auto target = std::move(psd.inflight);
         target->doneHandler(OkState(13, "failed check using listNames callback"));
     }
     if (psd.up) {
         psd.up = false;
-        _dispatcher.remove(mapping);
+        _dispatcher.remove(psd.mapping());
     }
     if (psd.localOnly) {
-        auto iter = _map.find(mapping.name);
+        auto iter = _map.find(psd.name());
         _map.erase(iter);
     }
 }
 
 void LocalRpcMonitorMap::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
-    ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
-    auto &psd = lookup(mapping);
-    LOG_ASSERT(psd.srv.get() == rpcsrv);
-    LOG(debug, "ok: %s->%s", mapping.name.c_str(), mapping.spec.c_str());
+    auto &psd = lookup(rpcsrv);
+    LOG(debug, "ok: %s->%s", psd.name().c_str(), psd.spec().c_str());
     if (psd.inflight) {
         auto target = std::move(psd.inflight);
         target->doneHandler(OkState());
     }
     if (! psd.up) {
         psd.up = true;
-        _dispatcher.add(mapping);
+        _dispatcher.add(psd.mapping());
     }
 }
 
