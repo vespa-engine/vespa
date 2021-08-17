@@ -249,12 +249,6 @@ public class Flags {
             "List of applications where encryption of their host should be deferred",
             "Takes effect on next run of HostEncrypter");
 
-    public static final UnboundBooleanFlag PODMAN3 = defineFeatureFlag(
-            "podman3", true,
-            List.of("mpolden"), "2021-07-05", "2021-09-01",
-            "Whether to use Podman 3 on supported hosts",
-            "Takes effect on host-admin restart");
-
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
             List.of("geirst", "vekterli"), "2021-07-16", "2021-10-01",
