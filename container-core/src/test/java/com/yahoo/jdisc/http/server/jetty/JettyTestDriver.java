@@ -75,7 +75,6 @@ public class JettyTestDriver {
                 requestHandler,
                 new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
                 new ConnectorConfig.Builder()
-                        .http2Enabled(true)
                         .ssl(new ConnectorConfig.Ssl.Builder()
                                 .enabled(true)
                                 .clientAuth(tlsClientAuth == TlsClientAuth.NEED
