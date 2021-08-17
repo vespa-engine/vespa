@@ -12,9 +12,9 @@ import java.util.List;
 /**
  * <p>Used by SharedMessageBus as a network when the container runs in LocalApplication with no network services.</p>
  *
- * @author <a href="mailto:vegardh@yahoo-inc.com">Vegard Havdal</a>
+ * @author Vegard Havdal
  */
-class NullNetwork implements Network {
+public class NullNetwork implements Network {
 
     @Override
     public boolean waitUntilReady(double seconds) {

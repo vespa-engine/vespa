@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.shared;
 
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.*;
@@ -8,6 +9,7 @@ import com.yahoo.messagebus.jdisc.test.MessageQueue;
 import com.yahoo.messagebus.jdisc.test.RemoteClient;
 import com.yahoo.messagebus.jdisc.test.RemoteServer;
 import com.yahoo.messagebus.jdisc.test.ReplyQueue;
+import com.yahoo.messagebus.jdisc.test.TestUtils;
 import com.yahoo.messagebus.network.local.LocalNetwork;
 import com.yahoo.messagebus.network.local.LocalWire;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
@@ -77,7 +79,7 @@ public class SharedIntermediateSessionTestCase {
     public void requireThatReplyHandlerCanNotBeSet() throws ListenFailedException {
         Slobrok slobrok = new Slobrok();
         try {
-            newIntermediateSession(slobrok.configId(),
+            newIntermediateSession(TestUtils.configFor(slobrok),
                                    new IntermediateSessionParams().setReplyHandler(new ReplyQueue()),
                                    false);
             fail();
@@ -111,7 +113,7 @@ public class SharedIntermediateSessionTestCase {
     @Test
     public void requireThatSessionCanSendMessage() throws InterruptedException {
         RemoteServer server = RemoteServer.newInstanceWithInternSlobrok();
-        SharedIntermediateSession session = newIntermediateSession(server.slobrokId(),
+        SharedIntermediateSession session = newIntermediateSession(server.slobroksConfig(),
                                                                    new IntermediateSessionParams(),
                                                                    true);
         ReplyQueue queue = new ReplyQueue();
@@ -134,7 +136,7 @@ public class SharedIntermediateSessionTestCase {
         RemoteClient client = RemoteClient.newInstanceWithInternSlobrok(true);
         MessageQueue queue = new MessageQueue();
         IntermediateSessionParams params = new IntermediateSessionParams().setMessageHandler(queue);
-        SharedIntermediateSession session = newIntermediateSession(client.slobrokId(), params, true);
+        SharedIntermediateSession session = newIntermediateSession(client.slobroksConfig(), params, true);
         Route route = Route.parse(session.connectionSpec());
 
         assertTrue(client.sendMessage(new SimpleMessage("foo").setRoute(route)).isAccepted());
@@ -156,13 +158,13 @@ public class SharedIntermediateSessionTestCase {
         } catch (ListenFailedException e) {
             fail();
         }
-        return newIntermediateSession(slobrok.configId(), new IntermediateSessionParams(), network);
+        return newIntermediateSession(TestUtils.configFor(slobrok), new IntermediateSessionParams(), network);
     }
 
-    private static SharedIntermediateSession newIntermediateSession(String slobrokId,
+    private static SharedIntermediateSession newIntermediateSession(SlobroksConfig slobroksConfig,
                                                                     IntermediateSessionParams params,
                                                                     boolean network) {
-        RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(slobrokId);
+        RPCNetworkParams netParams = new RPCNetworkParams().setSlobroksConfig(slobroksConfig);
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(new SimpleProtocol());
         SharedMessageBus mbus = network
                                 ? SharedMessageBus.newInstance(mbusParams, netParams)

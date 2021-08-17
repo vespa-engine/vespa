@@ -18,7 +18,6 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
-import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
@@ -77,7 +76,6 @@ public final class ConfiguredApplication implements Application {
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
     private final Optional<SlobrokConfigSubscriber> slobrokConfigSubscriber;
-    private final SessionCache sessionCache;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -127,7 +125,6 @@ public final class ConfiguredApplication implements Application {
         this.slobrokConfigSubscriber = (subscriberFactory instanceof CloudSubscriberFactory)
                 ? Optional.of(new SlobrokConfigSubscriber(configId))
                 : Optional.empty();
-        this.sessionCache = new SessionCache(configId);
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
     }
 
@@ -148,8 +145,8 @@ public final class ConfiguredApplication implements Application {
     }
 
     /**
-     * The container has no RPC methods, but we still need an RPC sever
-     * to register in Slobrok to enable orchestration
+     * The container has no RPC methods, but we still need an RPC server
+     * to register in Slobrok to enable orchestration.
      */
     private Register registerInSlobrok(QrConfig qrConfig) {
         if ( ! qrConfig.rpc().enabled()) return null;
@@ -349,7 +346,6 @@ public final class ConfiguredApplication implements Application {
                 bind(OsgiFramework.class).toInstance(restrictedOsgiFramework);
                 bind(com.yahoo.jdisc.Timer.class).toInstance(timerSingleton);
                 bind(FilterChainRepository.class).toInstance(defaultFilterChainRepository);
-                bind(SessionCache.class).toInstance(sessionCache); // Needed by e.g. FeedHandler
             }
         });
     }

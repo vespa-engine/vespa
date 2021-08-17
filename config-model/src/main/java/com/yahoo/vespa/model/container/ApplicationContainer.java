@@ -9,6 +9,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.model.container.component.SimpleComponent;
 
 /**
  * A container that is typically used by container clusters set up from the user application.
@@ -30,6 +31,10 @@ public final class ApplicationContainer extends Container implements
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
+
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.SessionCache"));
     }
 
     @Override

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.concurrent.SystemTimer;
 import java.util.logging.Level;
 import com.yahoo.messagebus.network.Network;
+import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.network.NetworkOwner;
 import com.yahoo.messagebus.routing.Resender;
 import com.yahoo.messagebus.routing.RetryPolicy;
@@ -64,7 +64,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private final ProtocolRepository protocolRepository = new ProtocolRepository();
     private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<>(null);
     private final Map<String, MessageHandler> sessions = new ConcurrentHashMap<>();
-    private final Network net;
+    private final NetworkMultiplexer net;
     private final Messenger msn;
     private final Resender resender;
     private int maxPendingCount;
@@ -117,13 +117,25 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
 
     /**
      * <p>Constructs an instance of message bus. This requires a network object
-     * that it will associate with. This assignment may not change during the
-     * lifetime of this message bus.</p>
+     * that it will associate with. This assignment may not change during the lifetime
+     * of this message bus, and this bus will be the single owner of this net.</p>
      *
      * @param net    The network to associate with.
      * @param params The parameters that controls this bus.
      */
     public MessageBus(Network net, MessageBusParams params) {
+        this(NetworkMultiplexer.dedicated(net), params);
+    }
+
+    /**
+     * <p>Constructs an instance of message bus. This requires a network multiplexer
+     * that it will associate with. This assignment may not change during the
+     * lifetime of this message bus.</p>
+     *
+     * @param net    The network multiplexer to associate with.
+     * @param params The parameters that controls this bus.
+     */
+    public MessageBus(NetworkMultiplexer net, MessageBusParams params) {
         // Add all known protocols to the repository.
         maxPendingCount = params.getMaxPendingCount();
         maxPendingSize  = params.getMaxPendingSize();
@@ -134,7 +146,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         // Attach and start network.
         this.net = net;
         net.attach(this);
-        if ( ! net.waitUntilReady(120))
+        if ( ! net.net().waitUntilReady(120))
             throw new IllegalStateException("Network failed to become ready in time.");
 
         // Start messenger.
@@ -167,7 +179,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
                 careTaker.join();
             } catch (InterruptedException e) { }
             protocolRepository.clearPolicyCache();
-            net.shutdown();
+            net.detach(this);
             msn.destroy();
             if (resender != null) {
                 resender.destroy();
@@ -186,7 +198,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      */
     public void sync() {
         msn.sync();
-        net.sync();
+        net.net().sync();
     }
 
     /**
@@ -267,9 +279,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
         IntermediateSession session = new IntermediateSession(this, params);
         sessions.put(params.getName(), session);
-        if (params.getBroadcastName()) {
-            net.registerSession(params.getName());
-        }
+        net.registerSession(params.getName(), this, params.getBroadcastName());
         return session;
     }
 
@@ -310,9 +320,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
         DestinationSession session = new DestinationSession(this, params);
         sessions.put(params.getName(), session);
-        if (params.getBroadcastName()) {
-            net.registerSession(params.getName());
-        }
+        net.registerSession(params.getName(), this, params.getBroadcastName());
         return session;
     }
 
@@ -325,9 +333,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * @param broadcastName Whether or not session name was broadcast.
      */
     public synchronized void unregisterSession(String name, boolean broadcastName) {
-        if (broadcastName) {
-            net.unregisterSession(name);
-        }
+        net.unregisterSession(name, this, broadcastName);
         sessions.remove(name);
     }
 
@@ -371,7 +377,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
             deliverError(msg, ErrorCode.SEQUENCE_ERROR, "Bucket sequences not supported when resender is enabled.");
             return;
         }
-        SendProxy proxy = new SendProxy(this, net, resender);
+        SendProxy proxy = new SendProxy(this, net.net(), resender);
         msn.deliverMessage(msg, proxy);
     }
 
@@ -396,7 +402,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         if (msgHandler == null) {
             deliverError(msg, ErrorCode.UNKNOWN_SESSION, "Session '" + session + "' does not exist.");
         } else if (!checkPending(msg)) {
-            deliverError(msg, ErrorCode.SESSION_BUSY, "Session '" + net.getConnectionSpec() + "/" + session +
+            deliverError(msg, ErrorCode.SESSION_BUSY, "Session '" + net.net().getConnectionSpec() + "/" + session +
                                                       "' is busy, try again later.");
         } else {
             msn.deliverMessage(msg, msgHandler);
@@ -419,11 +425,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         return protocolRepository.getProtocol(name.toString());
     }
 
-    public Protocol getProtocol(Utf8String name) {
-        return getProtocol((Utf8Array)name);
-    }
-
-    @Override
     public void deliverReply(Reply reply, ReplyHandler handler) {
         msn.deliverReply(reply, handler);
     }
@@ -569,7 +570,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * @return The connection string.
      */
     public String getConnectionSpec() {
-        return net.getConnectionSpec();
+        return net.net().getConnectionSpec();
     }
 
     /**
@@ -608,5 +609,5 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
 
     }
-}
 
+}

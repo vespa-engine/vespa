@@ -18,6 +18,7 @@ import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceLevel;
+import com.yahoo.messagebus.network.NetworkOwner;
 import com.yahoo.messagebus.routing.Hop;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingNode;
@@ -30,9 +31,9 @@ import com.yahoo.text.Utf8Array;
  */
 public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWaiter, RPCSendAdapter {
 
-    private RPCNetwork net = null;
-    private String clientIdent = "client";
-    private String serverIdent = "server";
+    private final RPCNetwork net;
+    private final String clientIdent;
+    private final String serverIdent;
 
     protected abstract Method buildMethod();
     protected abstract String getReturnSpec();
@@ -41,13 +42,16 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
     protected abstract Reply createReply(Values ret, String serviceName, Trace trace);
     protected abstract Params toParams(Values req);
     protected abstract void createResponse(Values ret, Reply reply, Version version, byte [] payload);
-    @Override
-    public final void attach(RPCNetwork net) {
+
+    protected RPCSend(RPCNetwork net) {
         this.net = net;
         String prefix = net.getIdentity().getServicePrefix();
         if (prefix != null && prefix.length() > 0) {
-            clientIdent = "'" + prefix + "'";
-            serverIdent = clientIdent;
+            this.serverIdent = this.clientIdent = "'" + prefix + "'";
+        }
+        else {
+            this.clientIdent = "client";
+            this.serverIdent = "server";
         }
         net.getSupervisor().addMethod(buildMethod());
     }
@@ -76,7 +80,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
             }
             Reply reply = new EmptyReply();
             reply.getTrace().swap(ctx.trace);
-            net.getOwner().deliverReply(reply, recipient);
+            recipient.handleReply(reply);
         } else {
             req.setContext(ctx);
             address.getTarget().getJRTTarget().invokeAsync(req, ctx.timeout, this);
@@ -121,16 +125,16 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
             switch (req.errorCode()) {
                 case com.yahoo.jrt.ErrorCode.TIMEOUT:
                     error = new Error(ErrorCode.TIMEOUT,
-                            "A timeout occured while waiting for '" + serviceName + "' (" +
+                            "A timeout occurred while waiting for '" + serviceName + "' (" +
                                     ctx.timeout + " seconds expired); " + req.errorMessage());
                     break;
                 case com.yahoo.jrt.ErrorCode.CONNECTION:
                     error = new Error(ErrorCode.CONNECTION_ERROR,
-                            "A connection error occured for '" + serviceName + "'; " + req.errorMessage());
+                            "A connection error occurred for '" + serviceName + "'; " + req.errorMessage());
                     break;
                 default:
                     error = new Error(ErrorCode.NETWORK_ERROR,
-                            "A network error occured for '" + serviceName + "'; " + req.errorMessage());
+                            "A network error occurred for '" + serviceName + "'; " + req.errorMessage());
             }
         } else {
             reply = createReply(req.returnValues(), serviceName, ctx.trace);
@@ -143,7 +147,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         if (error != null) {
             reply.addError(error);
         }
-        net.getOwner().deliverReply(reply, ctx.recipient);
+        ctx.recipient.handleReply(reply);
     }
 
     protected final class Params {
@@ -172,20 +176,20 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         // Make sure that the owner understands the protocol.
         Protocol protocol = net.getOwner().getProtocol(p.protocolName);
         if (protocol == null) {
-            replyError(request, p.version, p.traceLevel,
+            replyError(request, p.version, protocol, p.traceLevel,
                     new Error(ErrorCode.UNKNOWN_PROTOCOL,
                             "Protocol '" + p.protocolName + "' is not known by " + serverIdent + "."));
             return;
         }
         Routable routable = protocol.decode(p.version, p.payload);
         if (routable == null) {
-            replyError(request, p.version, p.traceLevel,
+            replyError(request, p.version, protocol, p.traceLevel,
                     new Error(ErrorCode.DECODE_ERROR,
                             "Protocol '" + protocol.getName() + "' failed to decode routable."));
             return;
         }
         if (routable instanceof Reply) {
-            replyError(request, p.version, p.traceLevel,
+            replyError(request, p.version, protocol, p.traceLevel,
                     new Error(ErrorCode.DECODE_ERROR,
                             "Payload decoded to a reply when expecting a message."));
             return;
@@ -194,7 +198,7 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         if (p.route != null && p.route.length() > 0) {
             msg.setRoute(net.getRoute(p.route));
         }
-        msg.setContext(new ReplyContext(request, p.version));
+        msg.setContext(new ReplyContext(request, p.version, protocol));
         msg.pushHandler(this);
         msg.setRetryEnabled(p.retryEnabled);
         msg.setRetry(p.retry);
@@ -222,13 +226,12 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
         // Encode and return the reply through the RPC request.
         byte[] payload = new byte[0];
         if (reply.getType() != 0) {
-            Protocol protocol = net.getOwner().getProtocol(reply.getProtocol());
-            if (protocol != null) {
-                payload = protocol.encode(ctx.version, reply);
+            if (ctx.protocol != null) {
+                payload = ctx.protocol.encode(ctx.version, reply);
             }
             if (payload == null || payload.length == 0) {
                 reply.addError(new Error(ErrorCode.ENCODE_ERROR,
-                        "An error occured while encoding the reply."));
+                        "An error occurred while encoding the reply."));
             }
         }
         createResponse(ctx.request.returnValues(), reply, ctx.version, payload);
@@ -241,11 +244,12 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
      * @param request    The JRT request to reply to.
      * @param version    The version to serialize for.
      * @param traceLevel The trace level to set in the reply.
+     * @param protocol   The message protocol to serialize with.
      * @param err        The error to reply with.
      */
-    private void replyError(Request request, Version version, int traceLevel, Error err) {
+    private void replyError(Request request, Version version, Protocol protocol, int traceLevel, Error err) {
         Reply reply = new EmptyReply();
-        reply.setContext(new ReplyContext(request, version));
+        reply.setContext(new ReplyContext(request, version, protocol));
         reply.getTrace().setLevel(traceLevel);
         reply.addError(err);
         handleReply(reply);
@@ -268,10 +272,12 @@ public abstract class RPCSend implements MethodHandler, ReplyHandler, RequestWai
 
         final Request request;
         final Version version;
+        final Protocol protocol;
 
-        ReplyContext(Request request, Version version) {
+        ReplyContext(Request request, Version version, Protocol protocol) {
             this.request = request;
             this.version = version;
+            this.protocol = protocol;
         }
     }
 }

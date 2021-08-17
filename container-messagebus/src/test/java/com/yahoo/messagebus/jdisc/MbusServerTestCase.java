@@ -331,9 +331,7 @@ public class MbusServerTestCase {
         int refCount = 1;
 
         @Override
-        public void sendReply(Reply reply) {
-
-        }
+        public void sendReply(Reply reply) { }
 
         @Override
         public MessageHandler getMessageHandler() {
@@ -341,9 +339,7 @@ public class MbusServerTestCase {
         }
 
         @Override
-        public void setMessageHandler(MessageHandler msgHandler) {
-
-        }
+        public void setMessageHandler(MessageHandler msgHandler) { }
 
         @Override
         public String connectionSpec() {
@@ -356,14 +352,12 @@ public class MbusServerTestCase {
         }
 
         @Override
+        public void close() { }
+
+        @Override
         public ResourceReference refer() {
             ++refCount;
-            return new ResourceReference() {
-                @Override
-                public void close() {
-                    --refCount;
-                }
-            };
+            return () -> --refCount;
         }
 
         @Override

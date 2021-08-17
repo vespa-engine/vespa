@@ -77,6 +77,11 @@ public class SharedDestinationSession extends AbstractResource implements Messag
     }
 
     @Override
+    public void close() {
+        session.destroy();
+    }
+
+    @Override
     protected void destroy() {
         log.log(Level.FINE, "Destroying shared destination session.");
         session.destroy();

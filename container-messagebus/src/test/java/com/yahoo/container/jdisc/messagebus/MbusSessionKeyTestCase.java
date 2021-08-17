@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Check the completeness of the mbus session key classes.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class MbusSessionKeyTestCase {
 
