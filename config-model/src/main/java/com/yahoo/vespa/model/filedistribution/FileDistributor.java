@@ -30,23 +30,8 @@ public class FileDistributor {
         this.fileRegistry = fileRegistry;
     }
 
-    /**
-     * Adds the given file to the associated application packages' registry of file and marks the file
-     * for distribution to the given host.
-     *
-     * @return the reference to the file, created by the application package
-     */
-    public FileReference sendFileToHost(String relativePath, Host host) {
-        return addFileReference(fileRegistry.addFile(relativePath), host);
-    }
-
     public void sendFileReference(FileReference reference, Host host) {
-        addFileReference(reference, host);
-    }
-
-    private FileReference addFileReference(FileReference reference, Host host) {
         filesToHosts.computeIfAbsent(reference, k -> new HashSet<>()).add(host);
-        return reference;
     }
 
     /** Returns the files which has been marked for distribution to the given host */
