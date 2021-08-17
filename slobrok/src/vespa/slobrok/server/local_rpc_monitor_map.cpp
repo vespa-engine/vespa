@@ -76,6 +76,10 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
         if (exists.up) {
             _dispatcher.remove(exists.mapping());
         }
+        if (exists.inflight) {
+            auto target = std::move(exists.inflight);
+            target->doneHandler(OkState(13, "conflict during initialization"));
+        }
         _map.erase(old);
     }
     auto [ iter, was_inserted ] =
@@ -97,6 +101,10 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
         }
         if (exists.up) {
             _dispatcher.remove(exists.mapping());
+        }
+        if (exists.inflight) {
+            auto target = std::move(exists.inflight);
+            target->doneHandler(OkState(13, "removed during initialization"));
         }
         _map.erase(iter);
     } else {
