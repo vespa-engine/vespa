@@ -52,8 +52,7 @@ public class FileDBRegistry implements FileRegistry {
 
     @Override
     public FileReference addBlob(ByteBuffer blob) {
-        long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);
-        String blobName = Long.toHexString(blobHash);
+        String blobName = FileRegistry.blobName(blob);
         String relativePath = blobToRelativeFile(blob, blobName);
         synchronized (this) {
             Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
