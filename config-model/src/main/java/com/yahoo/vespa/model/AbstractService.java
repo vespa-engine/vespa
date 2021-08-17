@@ -464,12 +464,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
             host = getHost().getHost();
         getRoot().getFileDistributor().sendFileReference(reference, host);
     }
-    public FileReference sendFile(String relativePath) {
-        Host host = null;
-        if (getHost() != null) // false when running application tests without hosts
-            host = getHost().getHost();
-        return getRoot().getFileDistributor().sendFileToHost(relativePath, host);
-    }
 
     /** The service HTTP port for health status */
     public int getHealthPort() { return -1;}

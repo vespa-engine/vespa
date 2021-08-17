@@ -129,8 +129,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private void sendUserConfiguredFiles(DeployState deployState) {
         // Files referenced from user configs to all components.
+        FileSender fileSender = new FileSender(containers, deployState.getFileRegistry(), deployState.getDeployLogger());
         for (Component<?, ?> component : getAllComponents()) {
-            FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
+            fileSender.sendUserConfiguredFiles(component);
         }
     }
 
