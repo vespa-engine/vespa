@@ -121,7 +121,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private void addAndSendApplicationBundles(DeployState deployState) {
         for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getVespaVersion())) {
-            FileReference reference = FileSender.sendFileToServices(component.getPathRelativeToAppDir(), containers);
+            FileReference reference = deployState.getFileRegistry().addFile(component.getPathRelativeToAppDir());
+            FileSender.send(reference, containers);
             applicationBundles.add(reference);
         }
     }
