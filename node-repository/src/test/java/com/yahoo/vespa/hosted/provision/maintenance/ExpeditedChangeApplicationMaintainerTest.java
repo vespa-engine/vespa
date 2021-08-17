@@ -68,9 +68,15 @@ public class ExpeditedChangeApplicationMaintainerTest {
         maintainer.maintain();
         assertEquals("Operator change -> redeployment", 5, fixture.deployer.redeployments);
 
+        clock.advance(Duration.ofSeconds(1));
+        fixture.tester.makeReadyNodes(1, fixture.nodeResources, NodeType.proxy);
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("No further operator changes -> no (new) redeployments", 5, fixture.deployer.redeployments);
+        assertEquals("Ready proxy node -> redeployment", 6, fixture.deployer.redeployments);
+
+        clock.advance(Duration.ofMinutes(2));
+        maintainer.maintain();
+        assertEquals("No further operator changes -> no (new) redeployments", 6, fixture.deployer.redeployments);
     }
 
     private static class Fixture {
@@ -82,7 +88,7 @@ public class ExpeditedChangeApplicationMaintainerTest {
         final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
-        final ApplicationId app3 = ApplicationId.from(TenantName.from("vespa-hosted"), ApplicationName.from("routing"), InstanceName.from("default"));
+        final ApplicationId app3 = ApplicationId.from(TenantName.from("hosted-vespa"), ApplicationName.from("routing"), InstanceName.from("default"));
         final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         final ClusterSpec clusterApp3 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("routing")).vespaVersion("6.42").build();
