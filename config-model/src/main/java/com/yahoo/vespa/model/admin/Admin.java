@@ -290,17 +290,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addFileDistribution(HostResource host) {
-        FileDistributor fileDistributor = fileDistribution.getFileDistributor();
-        HostResource hostResource = hostSystem().getHostByHostname(fileDistributor.fileSourceHost());
-        if (hostResource == null && ! multitenant)
-            throw new IllegalArgumentException("Could not find " + fileDistributor.fileSourceHost() +
-                                               " in the application's " + hostSystem());
-
         FileDistributionConfigProvider configProvider =
-                new FileDistributionConfigProvider(fileDistribution,
-                                                   fileDistributor,
-                                                   false,
-                                                   host.getHost());
+                new FileDistributionConfigProvider(fileDistribution, fileDistribution.getFileDistributor(), host.getHost());
         fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
     }
 

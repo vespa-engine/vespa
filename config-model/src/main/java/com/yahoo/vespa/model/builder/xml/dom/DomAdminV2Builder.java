@@ -32,10 +32,9 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     private static final String ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK = "standalone-zookeeper";
 
     public DomAdminV2Builder(ConfigModelContext.ApplicationType applicationType,
-                             String fileSourceHost,
                              boolean multitenant,
                              List<ConfigServerSpec> configServerSpecs) {
-        super(applicationType, fileSourceHost, multitenant, configServerSpecs);
+        super(applicationType, multitenant, configServerSpecs);
     }
 
     @Override

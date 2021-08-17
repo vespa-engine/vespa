@@ -17,13 +17,9 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer<Abstr
     private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
     private final FileDistributor fileDistributor;
 
-    public FileDistributionConfigProducer(AbstractConfigProducer<?> ancestor, String fileSourceHost) {
-        this(ancestor, new FileDistributor(fileSourceHost));
-    }
-
-    private FileDistributionConfigProducer(AbstractConfigProducer<?> parent, FileDistributor fileDistributor) {
+    public FileDistributionConfigProducer(AbstractConfigProducer<?> parent) {
         super(parent, "filedistribution");
-        this.fileDistributor = fileDistributor;
+        this.fileDistributor = new FileDistributor();
     }
 
     public FileDistributor getFileDistributor() {

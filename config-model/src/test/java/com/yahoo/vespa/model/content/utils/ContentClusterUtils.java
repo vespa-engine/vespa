@@ -9,7 +9,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
@@ -60,7 +59,7 @@ public class ContentClusterUtils {
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
         Document doc = XML.getDocument(clusterXml);
         Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), false,
-                                new FileDistributionConfigProducer(root, HostName.getLocalhost()),
+                                new FileDistributionConfigProducer(root),
                                 root.getDeployState().isHosted());
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(),
                                                                null,null, root, null);

@@ -210,9 +210,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     private Admin buildAdmin(Element xml, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
         DeployState deployState = DeployState.createTestState();
         final DomAdminV2Builder domAdminBuilder =
-                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT,
-                                      deployState.getFileRegistry().fileSourceHost(), multitenant,
-                                      configServerSpecs);
+                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, multitenant, configServerSpecs);
         Admin admin = domAdminBuilder.build(deployState, root, xml);
         admin.addPerHostServices(root.hostSystem().getHosts(), deployState);
         return admin;

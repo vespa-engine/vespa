@@ -14,16 +14,13 @@ public class FileDistributionConfigProvider extends AbstractConfigProducer
         implements FiledistributorrpcConfig.Producer, FilereferencesConfig.Producer {
 
     private final FileDistributor fileDistributor;
-    private final boolean sendAllFiles;
     private final Host host;
 
     public FileDistributionConfigProvider(AbstractConfigProducer parent,
                                           FileDistributor fileDistributor,
-                                          boolean sendAllFiles,
                                           Host host) {
         super(parent, host.getHostname());
         this.fileDistributor = fileDistributor;
-        this.sendAllFiles = sendAllFiles;
         this.host = host;
     }
 
@@ -34,16 +31,8 @@ public class FileDistributionConfigProvider extends AbstractConfigProducer
 
     @Override
     public void getConfig(FilereferencesConfig.Builder builder) {
-        for (FileReference reference : getFileReferences()) {
+        for (FileReference reference : fileDistributor.filesToSendToHost(host)) {
             builder.filereferences(reference.value());
-        }
-    }
-
-    private Collection<FileReference> getFileReferences() {
-        if (sendAllFiles) {
-            return fileDistributor.allFilesToSend();
-        } else {
-            return fileDistributor.filesToSendToHost(host);
         }
     }
 }

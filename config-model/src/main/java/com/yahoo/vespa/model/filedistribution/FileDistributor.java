@@ -20,14 +20,11 @@ import java.util.Set;
  */
 public class FileDistributor {
 
-    private final String fileSourceHost;
 
     /** A map from file reference to the hosts to which that file reference should be distributed */
     private final Map<FileReference, Set<Host>> filesToHosts = new LinkedHashMap<>();
 
-    public FileDistributor(String fileSourceHost) {
-        this.fileSourceHost = fileSourceHost;
-    }
+    public FileDistributor() { }
 
     public void sendFileReference(FileReference reference, Host host) {
         filesToHosts.computeIfAbsent(reference, k -> new HashSet<>()).add(host);
@@ -50,11 +47,6 @@ public class FileDistributor {
         for (Set<Host> hostSubset: filesToHosts.values())
             hosts.addAll(hostSubset);
         return hosts;
-    }
-
-    /** Returns the host which is the source of the files */
-    public String fileSourceHost() {
-        return fileSourceHost;
     }
 
     public Set<FileReference> allFilesToSend() {

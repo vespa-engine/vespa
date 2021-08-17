@@ -38,15 +38,12 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     private final ApplicationType applicationType;
     protected final List<ConfigServerSpec> configServerSpecs;
-    private final String fileSourceHost;
     protected final boolean multitenant;
 
     DomAdminBuilderBase(ApplicationType applicationType,
-                        String fileSourceHost,
                         boolean multitenant,
                         List<ConfigServerSpec> configServerSpecs) {
         this.applicationType = applicationType;
-        this.fileSourceHost = fileSourceHost;
         this.multitenant = multitenant;
         this.configServerSpecs = configServerSpecs;
     }
@@ -82,7 +79,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer<?> parent) {
-        return new FileDistributionConfigProducer(parent, fileSourceHost);
+        return new FileDistributionConfigProducer(parent);
     }
 
     protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);
