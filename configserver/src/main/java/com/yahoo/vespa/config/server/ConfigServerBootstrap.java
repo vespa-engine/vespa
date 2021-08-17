@@ -20,10 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.FOR_TESTING_NO_BOOTSTRAP_OF_APPS;
@@ -228,84 +228,178 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return true;
     }
 
-    // Returns the set of applications that failed to redeploy
+    // Returns applications that failed to redeploy
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
-                                                                new DaemonThreadFactory("redeploy-apps-"));
-        // Keep track of deployment status per application
-        Map<ApplicationId, Future<?>> deployments = new HashMap<>();
+        ExecutorService executor = getExecutor();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
-        applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
-            log.log(Level.INFO, () -> "Starting redeployment of " + appId);
-            applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
-                                 .ifPresent(Deployment::activate);
-            log.log(Level.INFO, () -> appId + " redeployed");
-        })));
 
-        List<ApplicationId> failedDeployments = checkDeployments(deployments);
+        PreparedApplications preparedApplications = prepare(applicationIds, executor);
+        if (preparedApplications.hasPrepareFailures()) {
+            log.log(Level.INFO, "Failed preparing applications: " + preparedApplications.failed());
+            return preparedApplications.failed();
+        }
 
-        executor.shutdown();
-        executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+        List<ApplicationId> failed = activate(preparedApplications.deploymentInfos());
 
-        return failedDeployments;
+        shutdownExecutor(executor);
+        return failed;
     }
 
-    private enum DeploymentStatus { inProgress, done, failed};
+    private void shutdownExecutor(ExecutorService executor) throws InterruptedException {
+        executor.shutdown();
+        if ( ! executor.awaitTermination(1, TimeUnit.HOURS)) {
+            log.log(Level.WARNING, "Awaiting termination of executor failed");
+            executor.shutdownNow();
+        }
+    }
 
-    private List<ApplicationId> checkDeployments(Map<ApplicationId, Future<?>> deployments) {
+    private ExecutorService getExecutor() {
+        return Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
+                                            new DaemonThreadFactory("redeploy-apps-"));
+    }
+
+    private PreparedApplications prepare(List<ApplicationId> applicationIds, ExecutorService executor) {
+        Map<ApplicationId, Future<Optional<Deployment>>> prepared = new HashMap<>();
+        applicationIds.forEach(appId -> prepared.put(appId, executor.submit(() -> {
+            log.log(Level.INFO, () -> "Preparing " + appId);
+            Optional<Deployment> deployment = applicationRepository.deployFromLocalActive(appId, true /* bootstrap */);
+            if (deployment.isPresent()) {
+                deployment.get().prepare();
+                log.log(Level.INFO, () -> appId + " prepared");
+            } else {
+                log.log(Level.INFO, () -> "No deployment present for appId, not prepared");
+            }
+            return deployment;
+        })));
+
+        return waitForPrepare(prepared);
+    }
+
+    private List<ApplicationId> activate(List<DeploymentInfo> deployments) {
+        List<ApplicationId> failedActivations = new ArrayList<>();
+        deployments.forEach(d -> {
+            ApplicationId applicationId = d.applicationId();
+            log.log(Level.INFO, () -> "Activating " + applicationId);
+            try {
+                d.deployment().ifPresent(Deployment::activate);
+            } catch (Exception e) {
+                log.log(Level.INFO, () -> "Failed activating " + applicationId + ":" + e.getMessage());
+                failedActivations.add(applicationId);
+            }
+            log.log(Level.INFO, () -> applicationId + " activated");
+        });
+        return failedActivations;
+    }
+
+    private PreparedApplications waitForPrepare(Map<ApplicationId, Future<Optional<Deployment>>> deployments) {
         int applicationCount = deployments.size();
-        Set<ApplicationId> failedDeployments = new LinkedHashSet<>();
-        Set<ApplicationId> finishedDeployments = new LinkedHashSet<>();
+        PreparedApplications applications = new PreparedApplications();
         Instant lastLogged = Instant.EPOCH;
 
         do {
             deployments.forEach((applicationId, future) -> {
-                if (finishedDeployments.contains(applicationId) || failedDeployments.contains(applicationId)) return;
+                if (applications.prepareFinished(applicationId)) return;
 
-                DeploymentStatus status = getDeploymentStatus(applicationId, future);
-                switch (status) {
-                    case done:
-                        finishedDeployments.add(applicationId);
+                DeploymentInfo status = getDeploymentStatus(applicationId, future);
+                switch (status.status()) {
+                    case success:
+                    case failed:
+                        applications.add(status);
                         break;
                     case inProgress:
-                        break;
-                    case failed:
-                        failedDeployments.add(applicationId);
                         break;
                     default:
                         throw new IllegalArgumentException("Unknown deployment status " + status);
                 }
             });
             if ( ! Duration.between(lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()) {
-                logProgress(applicationCount, failedDeployments, finishedDeployments);
+                logProgress(applicationCount, applications);
                 lastLogged = Instant.now();
             }
-        } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
+        } while (applications.failCount() + applications.successCount() < applicationCount);
 
-        logProgress(applicationCount, failedDeployments, finishedDeployments);
-        return new ArrayList<>(failedDeployments);
+        logProgress(applicationCount, applications);
+        return applications;
     }
 
-    private void logProgress(int applicationCount, Set<ApplicationId> failedDeployments, Set<ApplicationId> finishedDeployments) {
-        log.log(Level.INFO, () -> finishedDeployments.size() + " of " + applicationCount + " apps redeployed " +
-                                  "(" + failedDeployments.size() + " failed)");
+    private void logProgress(int applicationCount, PreparedApplications preparedApplications) {
+        log.log(Level.INFO, () -> preparedApplications.successCount() + " of " + applicationCount + " apps prepared " +
+                                  "(" + preparedApplications.failCount() + " failed)");
     }
 
-    private DeploymentStatus getDeploymentStatus(ApplicationId applicationId, Future<?> future) {
+    private DeploymentInfo getDeploymentStatus(ApplicationId applicationId, Future<Optional<Deployment>> future) {
         try {
-            future.get(1, TimeUnit.MILLISECONDS);
-            return DeploymentStatus.done;
+            Optional<Deployment> deployment = future.get(1, TimeUnit.MILLISECONDS);
+            return new DeploymentInfo(applicationId, DeploymentInfo.Status.success, deployment);
         } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof TransientException) {
-                log.log(Level.INFO, "Redeploying " + applicationId +
+                log.log(Level.INFO, "Preparing" + " " + applicationId +
                                     " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
             } else {
-                log.log(Level.WARNING, "Redeploying " + applicationId + " failed, will retry", e);
+                log.log(Level.WARNING, "Preparing" + " " + applicationId + " failed, will retry", e);
             }
-            return DeploymentStatus.failed;
+            return new DeploymentInfo(applicationId, DeploymentInfo.Status.failed);
         } catch (TimeoutException e) {
-            return DeploymentStatus.inProgress;
+            return new DeploymentInfo(applicationId, DeploymentInfo.Status.inProgress);
         }
+    }
+
+    private static class DeploymentInfo {
+
+        public enum Status { inProgress, success, failed }
+
+        private final ApplicationId applicationId;
+        private final Status status;
+        private final Optional<Deployment> deployment;
+
+        public DeploymentInfo(ApplicationId applicationId, Status status) {
+            this(applicationId, status, Optional.empty());
+        }
+
+        public DeploymentInfo(ApplicationId applicationId, Status status, Optional<Deployment> deployment) {
+            this.applicationId = applicationId;
+            this.status = status;
+            this.deployment = deployment;
+        }
+
+        public ApplicationId applicationId() { return applicationId; }
+
+        public Status status() { return status; }
+
+        public Optional<Deployment> deployment() { return deployment; }
+
+    }
+
+    private static class PreparedApplications {
+        private final List<DeploymentInfo> deploymentInfos = new ArrayList<>();
+
+        public void add(DeploymentInfo deploymentInfo) {
+            this.deploymentInfos.add(deploymentInfo);
+        }
+
+        List<ApplicationId> success() { return withStatus(DeploymentInfo.Status.success); }
+
+        List<ApplicationId> failed() { return withStatus(DeploymentInfo.Status.failed); }
+
+        List<ApplicationId> withStatus(DeploymentInfo.Status status) {
+            return deploymentInfos.stream()
+                                  .filter(deploymentInfo -> deploymentInfo.status() == status)
+                                  .map(DeploymentInfo::applicationId)
+                                  .collect(Collectors.toList());
+        }
+
+        int successCount() { return success().size(); }
+
+        int failCount() { return failed().size(); }
+
+        boolean hasPrepareFailures() { return failCount() > 0; }
+
+        List<DeploymentInfo> deploymentInfos() { return deploymentInfos; }
+
+        boolean prepareFinished(ApplicationId applicationId) {
+            return failed().contains(applicationId) || success().contains(applicationId);
+        }
+
     }
 
 }
