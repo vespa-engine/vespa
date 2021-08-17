@@ -13,7 +13,6 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
@@ -129,8 +128,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
-        prepareAllAppsBeforeActivating = Flags.PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP
-                .bindTo(flagSource).with(FetchVector.Dimension.ZONE_ID, applicationRepository.zone().toString());
+        prepareAllAppsBeforeActivating = Flags.PREPARE_ALL_APPS_BEFORE_ACTIVATING_AT_BOOTSTRAP.bindTo(flagSource);
 
         log.log(Level.FINE, () -> "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
