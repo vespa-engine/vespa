@@ -53,13 +53,9 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
                         .map(Map.Entry::getKey)
                         .forEach(applications::add);
 
-        // A ready proxy node should trigger a redeployment as it will activates the ready node.
-        ApplicationId proxyApplicationId = ApplicationId.from("hosted-vespa", "routing", "default");
-        if (!applications.contains(proxyApplicationId)) {
-            NodeList readyProxyNodes = nodeRepository().nodes().list(Node.State.ready).nodeType(NodeType.proxy);
-            if (hasBeenReadied(proxyApplicationId, readyProxyNodes)) {
-                applications.add(proxyApplicationId);
-            }
+        // A ready proxy node should trigger a redeployment as it will activate the node.
+        if (!nodeRepository().nodes().list(Node.State.ready, Node.State.reserved).nodeType(NodeType.proxy).isEmpty()) {
+            applications.add(ApplicationId.from("hosted-vespa", "routing", "default"));
         }
 
         return applications;
