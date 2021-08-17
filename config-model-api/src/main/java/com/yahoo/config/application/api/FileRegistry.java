@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import com.yahoo.config.FileReference;
+import net.jpountz.xxhash.XXHashFactory;
 
 
 /**
@@ -32,6 +33,11 @@ public interface FileRegistry {
             this.relativePath = relativePath;
             this.reference = reference;
         }
+    }
+
+    static String blobName(ByteBuffer blob) {
+        long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);
+        return Long.toHexString(blobHash);
     }
 
 }

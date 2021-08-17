@@ -80,11 +80,20 @@ public class PreGeneratedFileRegistry implements FileRegistry {
 
     @Override
     public FileReference addUri(String uri) {
-        return new FileReference(path2Hash.get(uri));
+        String reference = path2Hash.get(uri);
+        if (reference == null) {
+            throw new IllegalArgumentException("Uri '" + uri + "' not found");
+        }
+        return new FileReference(reference);
     }
     @Override
     public FileReference addBlob(ByteBuffer blob) {
-        return new FileReference(path2Hash.get(blob));
+        String blobName = FileRegistry.blobName(blob);
+        String reference = path2Hash.get(blobName);
+        if (reference == null) {
+            throw new IllegalArgumentException("Blob '" + blobName + "(" + blob.remaining()+ ")' not found");
+        }
+        return new FileReference(reference);
     }
 
     @Override
