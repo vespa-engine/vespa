@@ -86,10 +86,10 @@ public class Search implements ImmutableSearch {
     private final LargeRankExpressions largeRankExpressions;
 
     /** Ranking constants of this */
-    private final RankingConstants rankingConstants = new RankingConstants();
+    private final RankingConstants rankingConstants;
 
     /** Onnx models of this */
-    private final OnnxModels onnxModels = new OnnxModels();
+    private final OnnxModels onnxModels;
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
@@ -123,6 +123,8 @@ public class Search implements ImmutableSearch {
         this.properties = properties;
         this.documentsOnly = documentsOnly;
         largeRankExpressions = new LargeRankExpressions(fileRegistry);
+        rankingConstants = new RankingConstants(fileRegistry);
+        onnxModels = new OnnxModels(fileRegistry);
     }
 
     protected void setName(String name) {
