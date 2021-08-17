@@ -12,6 +12,7 @@ import (
     "net/url"
     "os"
     "strings"
+    "time"
 )
 
 func init() {
@@ -75,7 +76,8 @@ func put(documentId string, jsonFile string) {
         Body: ioutil.NopCloser(fileReader),
     }
     serviceDescription := "Container (document/v1 API)"
-    response := utils.HttpDo(request, serviceDescription)
+    response := utils.HttpDo(request, time.Second * 60, serviceDescription)
+    defer response.Body.Close()
     if (response == nil) {
         return
     } else if response.StatusCode == 200 {

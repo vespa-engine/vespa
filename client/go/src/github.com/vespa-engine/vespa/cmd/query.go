@@ -44,6 +44,7 @@ func query(argument string) {
     if (response == nil) {
         return
     }
+    defer response.Body.Close()
 
     defer response.Body.Close()
     if (response.StatusCode == 200) {

@@ -10,6 +10,7 @@ import (
 
 var (
 	// flags
+	// todo: add timeout flag
 	targetArgument string
 
 	rootCmd = &cobra.Command{

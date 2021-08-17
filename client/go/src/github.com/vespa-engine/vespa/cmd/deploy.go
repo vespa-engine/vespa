@@ -16,6 +16,7 @@ import (
     "os"
     "path/filepath"
     "strings"
+    "time"
 )
 
 func init() {
@@ -76,7 +77,8 @@ func deploy(application string) {
         Body: ioutil.NopCloser(zipFileReader),
     }
     serviceDescription := "Deploy service"
-    response := utils.HttpDo(request, serviceDescription)
+    response := utils.HttpDo(request, time.Minute * 10, serviceDescription)
+    defer response.Body.Close()
     if (response == nil) {
         return
     } else if response.StatusCode == 200 {

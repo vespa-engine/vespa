@@ -48,7 +48,7 @@ func initApplication(name string, source string) {
         URL: zipUrl,
         Method: "GET",
     }
-    response := utils.HttpDoWithoutReadingData(request, time.Minute * 60, "GitHub")
+    response := utils.HttpDo(request, time.Minute * 60, "GitHub")
     if response.StatusCode != 200 {
         utils.Error("Could not download sample apps from github")
         utils.Detail(response.Status)

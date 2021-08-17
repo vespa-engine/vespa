@@ -5,7 +5,6 @@
 package utils
 
 import (
-    "bufio"
     "net/http"
     "net/url"
     "strings"
@@ -43,31 +42,11 @@ func HttpGet(host string, path string, description string) (response *http.Respo
         Error("Invalid target url '" + host + path + "'")
         return nil
     }
-    return HttpDo(&http.Request{URL: url,}, description)
-}
-
-func HttpDo(request *http.Request, description string) (response *http.Response) {
-    response, error := ActiveHttpClient.Do(request, time.Second * 10) // TODO: Pass in timeout
-    if error != nil {
-        Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
-        Detail(error.Error())
-        return
-    }
-    defer response.Body.Close()
-
-    scanner := bufio.NewScanner(response.Body)
-
-    if error := scanner.Err(); error != nil {
-        Error("Error reading data from", strings.ToLower(description), "at", request.URL.Host)
-        Detail(error.Error())
-        return nil
-    } else {
-        return response
-    }
+    return HttpDo(&http.Request{URL: url,}, time.Second * 10, description)
 }
 
 // TODO: Always use this and rename to HttpDo
-func HttpDoWithoutReadingData(request *http.Request, timeout time.Duration, description string) (response *http.Response) {
+func HttpDo(request *http.Request, timeout time.Duration, description string) (response *http.Response) {
     response, error := ActiveHttpClient.Do(request, timeout)
     if error != nil {
         Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)

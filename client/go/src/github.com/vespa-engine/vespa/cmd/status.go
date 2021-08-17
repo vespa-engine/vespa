@@ -48,6 +48,7 @@ func status(target string, description string) {
     if (response == nil) {
         return
     }
+    defer response.Body.Close()
 
     if response.StatusCode != 200 {
         utils.Error(description, "at", target, "is not ready")
