@@ -6,7 +6,6 @@ package cmd
 
 import (
     "errors"
-    "gopkg.in/src-d/go-git.v4"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
     "io"
@@ -64,18 +63,4 @@ func initApplication(name string, source string) {
         return
     }
     utils.Success("Downloaded zip, possibly")
-}
-
-func gitStuff(name string, source string) {
-    _, err := git.PlainClone("./" + name, false, &git.CloneOptions{ // TODO: Path
-        URL: "https://github.com/vespa-engine/sample-apps",
-        Progress: os.Stdout,
-        Depth: 1,
-    })
-    if err != nil {
-        utils.Error("Could not clone repo in '" + source + "'")
-        utils.Detail(err.Error())
-    } else {
-       utils.Success("Initialized to " + name)
-    }
 }
