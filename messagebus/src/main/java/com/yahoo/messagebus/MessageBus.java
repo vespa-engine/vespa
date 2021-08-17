@@ -279,9 +279,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
         IntermediateSession session = new IntermediateSession(this, params);
         sessions.put(params.getName(), session);
-        if (params.getBroadcastName()) {
-            net.registerSession(params.getName(), this);
-        }
+        net.registerSession(params.getName(), this, params.getBroadcastName());
         return session;
     }
 
@@ -322,9 +320,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
         DestinationSession session = new DestinationSession(this, params);
         sessions.put(params.getName(), session);
-        if (params.getBroadcastName()) {
-            net.registerSession(params.getName(), this);
-        }
+        net.registerSession(params.getName(), this, params.getBroadcastName());
         return session;
     }
 
@@ -337,9 +333,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * @param broadcastName Whether or not session name was broadcast.
      */
     public synchronized void unregisterSession(String name, boolean broadcastName) {
-        if (broadcastName) {
-            net.unregisterSession(name, this);
-        }
+        net.unregisterSession(name, this, broadcastName);
         sessions.remove(name);
     }
 

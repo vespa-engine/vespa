@@ -40,9 +40,9 @@ public class NetworkMultiplexerTest {
         assertFalse(net.shutDown.get());
 
         shared.attach(owner1);
-        shared.registerSession("s1", owner1);
+        shared.registerSession("s1", owner1, true);
         try {
-            shared.registerSession("s1", owner1);
+            shared.registerSession("s1", owner1, true);
             fail("Illegal to register same session multiple times with the same owner");
         }
         catch (IllegalArgumentException expected) {
@@ -51,8 +51,9 @@ public class NetworkMultiplexerTest {
         assertEquals(Set.of("s1"), net.registered);
 
         shared.attach(owner2);
-        shared.registerSession("s1", owner2);
-        shared.registerSession("s2", owner2);
+        shared.registerSession("s1", owner2, true);
+        shared.registerSession("s2", owner2, true);
+        shared.registerSession("s3", owner2, false);
         assertEquals(Set.of("s1", "s2"), net.registered);
 
         Utf8String name = new Utf8String("protocol");
@@ -65,12 +66,14 @@ public class NetworkMultiplexerTest {
         Message message1 = new SimpleMessage("one");
         Message message2 = new SimpleMessage("two");
         Message message3 = new SimpleMessage("three");
+        Message message4 = new SimpleMessage("four");
         shared.deliverMessage(message1, "s1");
         shared.deliverMessage(message2, "s2");
-        shared.unregisterSession("s1", owner1);
+        shared.unregisterSession("s1", owner1, true);
         shared.deliverMessage(message3, "s1");
+        shared.deliverMessage(message4, "s3");
         assertEquals(Map.of("s1", List.of(message1)), owner1.messages);
-        assertEquals(Map.of("s2", List.of(message2), "s1", List.of(message3)), owner2.messages);
+        assertEquals(Map.of("s2", List.of(message2), "s1", List.of(message3), "s3", List.of(message4)), owner2.messages);
 
         shared.detach(owner1);
         assertEquals(protocol2, shared.getProtocol(name));

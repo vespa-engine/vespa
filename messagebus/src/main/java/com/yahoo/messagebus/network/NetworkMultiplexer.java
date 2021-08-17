@@ -50,11 +50,12 @@ public class NetworkMultiplexer implements NetworkOwner {
         return new NetworkMultiplexer(net, false);
     }
 
-    public void registerSession(String session, NetworkOwner owner) {
+    public void registerSession(String session, NetworkOwner owner, boolean broadcast) {
         sessions.compute(session, (name, owners) -> {
             if (owners == null) {
                 owners = new ConcurrentLinkedQueue<>();
-                net.registerSession(session);
+                if (broadcast)
+                    net.registerSession(session);
             }
             else if (owners.contains(owner))
                 throw new IllegalArgumentException("Session '" + session + "' with owner '" + owner + "' already registered with this");
@@ -64,13 +65,14 @@ public class NetworkMultiplexer implements NetworkOwner {
         });
     }
 
-    public void unregisterSession(String session, NetworkOwner owner) {
+    public void unregisterSession(String session, NetworkOwner owner, boolean broadcast) {
         sessions.compute(session, (name, owners) -> {
             if (owners == null || ! owners.remove(owner))
                 throw new IllegalArgumentException("Session '" + session + "' not registered with owner '" + owner + "'");
 
             if (owners.isEmpty()) {
-                net.unregisterSession(session);
+                if (broadcast)
+                    net.unregisterSession(session);
                 return null;
             }
             return owners;
