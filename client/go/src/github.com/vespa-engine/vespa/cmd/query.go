@@ -17,7 +17,7 @@ func init() {
 }
 
 var queryCmd = &cobra.Command{
-    Use:   "query",
+    Use:   "query \"select from sources * where title contains 'foo'&hits=5\"",
     Short: "Issue a query to Vespa",
     Long:  `TODO`,
     Args: func(cmd *cobra.Command, args []string) error {

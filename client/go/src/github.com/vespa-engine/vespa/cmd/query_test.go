@@ -10,19 +10,19 @@ import (
 )
 
 func TestQuery(t *testing.T) {
-    assertQuery("", "?query=select from * where title contains foo&hits=5", t)
+    assertQuery("", "?query=select from sources * where title contains 'foo'&hits=5", t)
 }
 
 func TestQueryWithParameters(t *testing.T) {
-    assertQuery("?", "query=select from * where title contains foo&hits=5", t)
+    assertQuery("?", "query=select from sources * where title contains 'foo'&hits=5", t)
 }
 
 func TestSimpleQueryMissingQuestionMark(t *testing.T) {
-    assertQuery("?", "query=select from * where title contains foo", t)
+    assertQuery("?", "query=select from sources * where title contains 'foo'", t)
 }
 
 func TestSimpleQueryMissingQuestionMarkAndQueryEquals(t *testing.T) {
-    assertQuery("?query=", "select from * where title contains foo", t)
+    assertQuery("?query=", "select from sources * where text contains 'foo'", t)
 }
 
 func assertQuery(expectedPrefix string, query string, t *testing.T) {

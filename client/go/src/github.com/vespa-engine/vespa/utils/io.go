@@ -6,7 +6,9 @@ package utils
 
 import (
     "errors"
+    "io"
     "os"
+    "strings"
 )
 
 // Returns true if the given path exists
@@ -19,4 +21,11 @@ func PathExists(path string) bool {
 func IsDirectory(path string) bool {
     info, err := os.Stat(path)
     return ! errors.Is(err, os.ErrNotExist) && info.IsDir()
+}
+
+// Returns the content of a reader as a string
+func ReaderToString(reader io.ReadCloser) string {
+    buffer := new(strings.Builder)
+    io.Copy(buffer, reader)
+    return buffer.String()
 }
