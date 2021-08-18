@@ -204,7 +204,7 @@ public class Reindexer {
                                                                 .setResizeRate(10)
                                                                 .setMinWindowSize(1));
         parameters.setRemoteDataHandler(cluster.name());
-        parameters.setMaxPending(32);
+        parameters.setMaxPending(8);
         parameters.setResumeToken(progress);
         parameters.setFieldSet(type.getName() + ":[document]");
         parameters.setPriority(DocumentProtocol.Priority.NORMAL_3);
