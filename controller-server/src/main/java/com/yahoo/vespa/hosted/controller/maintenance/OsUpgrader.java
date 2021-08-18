@@ -89,15 +89,15 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     /** Returns the available upgrade budget for given zone */
     private Duration zoneBudgetOf(Duration totalBudget, ZoneApi zone) {
-        if (!spendBudget(zone)) return Duration.ZERO;
+        if (!spendBudgetOn(zone)) return Duration.ZERO;
         long consecutiveZones = upgradePolicy.asList().stream()
-                                             .filter(parallelZones -> parallelZones.stream().anyMatch(this::spendBudget))
+                                             .filter(parallelZones -> parallelZones.stream().anyMatch(this::spendBudgetOn))
                                              .count();
         return totalBudget.dividedBy(consecutiveZones);
     }
 
     /** Returns whether to spend upgrade budget on given zone */
-    private boolean spendBudget(ZoneApi zone) {
+    private boolean spendBudgetOn(ZoneApi zone) {
         if (!zone.getEnvironment().isProduction()) return false;
         if (controller().zoneRegistry().systemZone().getVirtualId().equals(zone.getVirtualId())) return false; // Controller zone
         return true;
