@@ -88,6 +88,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         {
             metrics::DoubleValueMetric enumStore;
             metrics::DoubleValueMetric multiValue;
+            metrics::DoubleValueMetric address_space;
             metrics::LongValueMetric   feedingBlocked;
 
             ResourceUsageMetrics(metrics::MetricSet *parent);
