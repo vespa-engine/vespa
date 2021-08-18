@@ -14,10 +14,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -52,8 +49,8 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     // Returns the applications that need to be redeployed by this config server at this point in time.
     @Override
-    protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        if (deployer().bootstrapping()) return Set.of();
+    protected Map<ApplicationId, String> applicationsNeedingMaintenance() {
+        if (deployer().bootstrapping()) return Map.of();
 
         // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
         // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployWithLock
@@ -66,8 +63,8 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         return deploymentTimes.entrySet().stream()
                               .sorted(Map.Entry.comparingByValue())
                               .map(Map.Entry::getKey)
-                              .filter(id -> shouldMaintain(id))
-                              .collect(Collectors.toCollection(LinkedHashSet::new));
+                              .filter(this::shouldMaintain)
+                              .collect(Collectors.toMap(applicationId -> applicationId, applicationId -> "current deployment being too old"));
     }
 
     private boolean shouldMaintain(ApplicationId id) {
