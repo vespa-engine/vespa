@@ -164,17 +164,14 @@ configure_vespa_malloc () {
 }
 
 configure_numa_ctl () {
-    numactl=""
-    if numactl --interleave all true &> /dev/null; then
-        # We are allowed to use numactl
-        numactl="numactl --interleave all"
-        if [ "$VESPA_AFFINITY_CPU_SOCKET" ]; then
-            numcpu=`numactl --hardware 2>/dev/null | grep available | cut -d' ' -f2`
-            if [ "$numcpu" ] && [ "$numcpu" -gt 1 ]; then
-                log_debug_message "Starting $0 with affinity $VESPA_AFFINITY_CPU_SOCKET out of $numcpu"
-                node=$(($VESPA_AFFINITY_CPU_SOCKET % $numcpu))
-                numactl="numactl --cpunodebind=$node --membind=$node"
-            fi
+    # We are allowed to use numactl
+    numactl="numactl --interleave all"
+    if [ "$VESPA_AFFINITY_CPU_SOCKET" ]; then
+        numcpu=`numactl --hardware 2>/dev/null | grep available | cut -d' ' -f2`
+        if [ "$numcpu" ] && [ "$numcpu" -gt 1 ]; then
+            log_debug_message "Starting $0 with affinity $VESPA_AFFINITY_CPU_SOCKET out of $numcpu"
+            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numcpu))
+            numactl="numactl --cpunodebind=$node --membind=$node"
         fi
     fi
 }

@@ -111,25 +111,22 @@ configure_cpu() {
 
 configure_numactl() {
     log_message debug "starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID}"
-    if numactl --interleave all true &> /dev/null; then
-        # We are allowed to use numactl
-        numnodes=$(numactl --hardware |
-                   grep available |
-                   awk '$3 == "nodes" { print $2 }')
-        if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
-           [ "$numnodes" -gt 1 ]
-        then
-            node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
-            log_message debug "with affinity to $VESPA_AFFINITY_CPU_SOCKET out of $numnodes cpu sockets"
-            numactlcmd="numactl --cpunodebind=$node --membind=$node"
-        else
-            log_message debug "with memory interleaving on all nodes"
-            numactlcmd="numactl --interleave all"
-        fi
+
+    # We are allowed to use numactl
+    numnodes=$(numactl --hardware |
+               grep available |
+               awk '$3 == "nodes" { print $2 }')
+    if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
+       [ "$numnodes" -gt 1 ]
+    then
+        node=$(($VESPA_AFFINITY_CPU_SOCKET % $numnodes))
+        log_message debug "with affinity to $VESPA_AFFINITY_CPU_SOCKET out of $numnodes cpu sockets"
+        numactlcmd="numactl --cpunodebind=$node --membind=$node"
     else
-            log_message debug "without numactl (no permission or not available)"
-            numactlcmd=""
+        log_message debug "with memory interleaving on all nodes"
+        numactlcmd="numactl --interleave all"
     fi
+
     log_message debug "numactlcmd: $numactlcmd"
 }
 
