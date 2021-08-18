@@ -5,19 +5,29 @@
 package cmd
 
 import (
+    "github.com/vespa-engine/vespa/utils"
     "github.com/stretchr/testify/assert"
     "os"
     "testing"
+    "path/filepath"
 )
 
 func TestInit(t *testing.T) {
     assertCreated("mytestapp", "album-recommendation-selfhosted", t)
 }
 
-func assertCreated(destinationName string, sampleAppName string, t *testing.T) {
+func assertCreated(app string, sampleAppName string, t *testing.T) {
     reset()
     existingSampleAppsZip = "testdata/sample-apps-master.zip"
-    standardOut := executeCommand(t, []string{"init", destinationName, sampleAppName}, []string{})
-	defer os.RemoveAll(destinationName)
-	assert.Equal(t, "\x1b[32mCreated " + destinationName + "\n", standardOut)
+    standardOut := executeCommand(t, []string{"init", app, sampleAppName}, []string{})
+	defer os.RemoveAll(app)
+	assert.Equal(t, "\x1b[32mCreated " + app + "\n", standardOut)
+	assert.True(t, utils.PathExists(filepath.Join(app, "README.md")))
+	assert.True(t, utils.PathExists(filepath.Join(app, "src", "main", "application")))
+	assert.True(t, utils.IsDirectory(filepath.Join(app, "src", "main", "application")))
+
+    servicesStat, _ := os.Stat(filepath.Join(app, "src", "main", "application", "services.xml"))
+    var servicesSize int64
+    servicesSize = 2474
+	assert.Equal(t, servicesSize, servicesStat.Size())
 }
