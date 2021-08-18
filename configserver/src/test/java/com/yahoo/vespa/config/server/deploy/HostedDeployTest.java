@@ -23,7 +23,9 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
+import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -118,12 +120,38 @@ public class HostedDeployTest {
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
                 .configserverConfig(createConfigserverConfig()).build();
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("4.5.6")
                 .tenantSecretStores(tenantSecretStores));
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals(tenantSecretStores, ((Deployment) deployment.get()).session().getTenantSecretStores());
+    }
+
+    @Test
+    public void testDeployOnUnknownVersion() throws IOException {
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("1.0.0")));
+        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
+
+        // No version requested: OK
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder());
+
+        // Bootstrap deployment on wrong version: OK (Must be allowed for self-hosted upgrades.)
+        try {
+            tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder().vespaVersion("1.0.1").isBootstrap(true));
+        }
+        catch (InternalServerException expected) { // Fails actual building, since this is hosted, but self-hosted this is OK.
+            assertTrue(expected.getCause() instanceof UnknownVespaVersionException);
+        }
+
+
+        // Regular deployment with requested, unknown version: not OK.
+        try {
+            tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder().vespaVersion("1.0.1"));
+            fail("Requesting an unknown node version should not be allowed");
+        }
+        catch (UnknownVespaVersionException expected) { }
     }
 
     @Test
