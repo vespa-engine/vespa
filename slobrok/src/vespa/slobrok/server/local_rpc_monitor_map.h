@@ -29,15 +29,36 @@ class LocalRpcMonitorMap : public IRpcServerManager,
                            public MapListener
 {
 private:
+    class DeleteTask : public FNET_Task {
+        using MUP = std::unique_ptr<ManagedRpcServer>;
+        std::vector<MUP> _deleteList;
+    public:
+        void later(MUP rpcsrv) {
+            _deleteList.emplace_back(std::move(rpcsrv));
+            ScheduleNow();
+        }
+        void PerformTask() override {
+            std::vector<MUP> deleteAfterSwap;
+            std::swap(deleteAfterSwap, _deleteList);
+        }
+        DeleteTask(FNET_Scheduler *scheduler)
+          : FNET_Task(scheduler),
+            _deleteList()
+        {}
+        ~DeleteTask() { Kill(); }
+    };
+
+    DeleteTask _delete;
+
     struct PerService {
         bool up;
         bool localOnly;
         std::unique_ptr<ScriptCommand> inflight;
         std::unique_ptr<ManagedRpcServer> srv;
 
-        vespalib::string name() { return srv->getName(); }
-        vespalib::string spec() { return srv->getSpec(); }
-        ServiceMapping mapping() { return ServiceMapping{srv->getName(), srv->getSpec()}; }
+        vespalib::string name() const { return srv->getName(); }
+        vespalib::string spec() const { return srv->getSpec(); }
+        ServiceMapping mapping() const { return ServiceMapping{srv->getName(), srv->getSpec()}; }
     };
 
     std::unique_ptr<ManagedRpcServer> managedFor(const ServiceMapping &mapping) {
@@ -72,7 +93,7 @@ private:
     FRT_Supervisor &_supervisor;
     std::unique_ptr<MapSubscription> _subscription;
     
-    PerService &lookup(ManagedRpcServer *rpcsrv);
+    PerService *lookup(ManagedRpcServer *rpcsrv);
     
 public:
     LocalRpcMonitorMap(FRT_Supervisor &_supervisor);
