@@ -174,6 +174,7 @@ BuildRequires: bison >= 3.0.0
 Requires: which
 Requires: initscripts
 Requires: libcgroup-tools
+Requires: numactl
 Requires: perl
 Requires: perl-Carp
 Requires: perl-Data-Dumper
