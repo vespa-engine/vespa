@@ -8,6 +8,7 @@ import (
     "archive/zip"
     "errors"
     "fmt"
+    "path/filepath"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
     "io"
@@ -15,6 +16,7 @@ import (
     "net/http"
     "net/url"
     "os"
+    "strings"
     "time"
 )
 
@@ -27,12 +29,12 @@ func init() {
 }
 
 var initCmd = &cobra.Command{
+    // TODO: "application" and "list" subcommands?
     Use:   "init applicationName source",
     Short: "Creates the files and directory structure for a new Vespa application",
     Long:  `TODO`,
     Args: func(cmd *cobra.Command, args []string) error {
         if len(args) != 2 {
-            // TODO: Support creating an "empty" application by not specifying a source
             return errors.New("vespa init requires a project name and source")
         }
         return nil
@@ -56,8 +58,6 @@ func initApplication(name string, source string) {
         utils.Error("Could not create directory '" + name + "'")
         utils.Detail(createErr.Error())
         return
-    } else {
-        utils.Success("Created " + name)
     }
 
 	zipReader, zipOpenError := zip.OpenReader(zipFile.Name())
@@ -68,18 +68,25 @@ func initApplication(name string, source string) {
 	defer zipReader.Close()
 
     fmt.Println("Reading zip ...")
-	for _, f := range zipReader.File {
-		fmt.Println("Entry:", f.Name)
-		rc, err := f.Open()
-		if err != nil {
-		    utils.Error(err.Error())
-		}
-		// _, err = io.CopyN(os.Stdout, rc, 68)
-		if err != nil {
-		    utils.Error(err.Error())
-		}
-		rc.Close()
+    found := false
+    for _, f := range zipReader.File {
+        zipEntryPrefix := "sample-apps-master/" + source + "/"
+	    if strings.HasPrefix(f.Name, zipEntryPrefix) {
+            fmt.Println("Matched:", f.Name)
+	        found = true
+	        copyError := copy(f, name, zipEntryPrefix)
+	        if copyError != nil {
+                utils.Error("Could not copy zip entry '" + f.Name + "' to " + name)
+                utils.Detail(copyError.Error())
+                return
+	        }
+        }
 	}
+	if !found {
+	    utils.Error("Could not find source application '" + source + "'")
+	} else {
+        utils.Success("Created " + name)
+    }
 }
 
 func getSampleAppsZip() *os.File {
@@ -121,4 +128,35 @@ func getSampleAppsZip() *os.File {
         return nil
     }
     return destination
+}
+
+func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {
+    destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
+    if strings.HasSuffix(f.Name, "/") {
+        if f.Name != zipEntryPrefix { // root is already created
+            //_, dir := filepath.Split(strings.TrimSuffix(f.Name, "/"))
+            // dir := strings.TrimPrefix(f.Name, zipEntryPrefix)
+            createError := os.Mkdir(destinationPath, 0755)
+            if createError != nil {
+                return createError
+            }
+        }
+    } else {
+        zipEntry, zipEntryOpenError := f.Open()
+        if zipEntryOpenError != nil {
+            return zipEntryOpenError
+        }
+        defer zipEntry.Close()
+
+        destination, createError := os.Create(destinationPath)
+        if createError != nil {
+            return createError
+        }
+
+        _, copyError := io.Copy(destination, zipEntry)
+        if copyError != nil {
+            return copyError
+        }
+    }
+    return nil
 }

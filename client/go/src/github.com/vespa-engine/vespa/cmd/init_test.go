@@ -11,7 +11,7 @@ import (
 )
 
 func TestInit(t *testing.T) {
-    assertCreated("mytestapp", "album-recommendation-selfhosting", t)
+    assertCreated("mytestapp", "album-recommendation-selfhosted", t)
 }
 
 func assertCreated(destinationName string, sampleAppName string, t *testing.T) {
