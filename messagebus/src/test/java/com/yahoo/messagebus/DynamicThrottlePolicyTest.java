@@ -97,7 +97,7 @@ public class DynamicThrottlePolicyTest {
     /** Sort of a dummy test, as the conditions are perfect. In a more realistic scenario, below, the algorithm needs luck to climb this high. */
     @Test
     public void singlePolicySingleWorkerWithIncreasingParallelism() {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             CustomTimer timer = new CustomTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
             int scaleFactor = (int) Math.pow(10, i);
@@ -120,11 +120,11 @@ public class DynamicThrottlePolicyTest {
     /** A more realistic test, where throughput gradually flattens with increasing window size, and with more variance in throughput. */
     @Test
     public void singlePolicyIncreasingWorkersWithNoParallelism() {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             CustomTimer timer = new CustomTimer();
             DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
             int scaleFactor = (int) Math.pow(10, i);
-            long operations = 5_000L * scaleFactor;
+            long operations = 2_000L * scaleFactor;
             // workPerSuccess determines the latency of the simulated server, which again determines the impact of the
             // synthetic attractors of the algorithm, around latencies which give (close to) integer log10(1 / latency).
             // With a value of 5, the impact is that the algorithm is pushed upwards slightly above 10k window size,
@@ -143,7 +143,7 @@ public class DynamicThrottlePolicyTest {
             double maxMaxPending = numberOfWorkers * maximumTasksPerWorker;
             assertInRange(minMaxPending, summary.averagePending, maxMaxPending);
             assertInRange(minMaxPending, summary.averageWindows[0], maxMaxPending);
-            assertInRange(1, summary.inefficiency, 1 + 0.2 * i); // Even slower ramp-up.
+            assertInRange(1, summary.inefficiency, 1 + 0.25 * i); // Even slower ramp-up.
             assertInRange(0, summary.waste, 0);
         }
     }
