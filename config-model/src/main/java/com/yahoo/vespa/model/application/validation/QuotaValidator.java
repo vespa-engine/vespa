@@ -93,7 +93,8 @@ public class QuotaValidator extends Validator {
 
     private void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < spend) {
-            throwBudgetException("Please free up some capacity! This deployment's quota use ($%.2f) exceeds reserved quota ($%.2f)!", spend, budget, systemName);
+            throw new IllegalArgumentException((systemName.equals(SystemName.Public) ? "" : systemName.value() + ": ") +
+                    "Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.");
         }
     }
 
