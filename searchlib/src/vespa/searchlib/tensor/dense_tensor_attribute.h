@@ -43,9 +43,11 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;
     uint32_t getVersion() const override;
+    void onCommit() override;
     void onGenerationChange(generation_t next_gen) override;
     void removeOldGenerations(generation_t first_used_gen) override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
+    void onShrinkLidSpace() override;
 
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid) const override;

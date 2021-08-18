@@ -40,6 +40,7 @@ struct HnswGraph {
     using LinkArrayRef = LinkStore::ConstArrayRef;
 
     NodeRefVector node_refs;
+    std::atomic<uint32_t> node_refs_size;
     NodeStore     nodes;
     LinkStore     links;
 
@@ -51,6 +52,8 @@ struct HnswGraph {
     NodeRef make_node_for_document(uint32_t docid, uint32_t num_levels);
 
     void remove_node_for_document(uint32_t docid);
+
+    void trim_node_refs_size();
 
     NodeRef get_node_ref(uint32_t docid) const {
         return node_refs[docid].load_acquire();

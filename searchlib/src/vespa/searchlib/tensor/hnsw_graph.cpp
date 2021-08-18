@@ -9,6 +9,7 @@ namespace search::tensor {
 
 HnswGraph::HnswGraph()
   : node_refs(),
+    node_refs_size(1u),
     nodes(HnswIndex::make_default_node_store_config()),
     links(HnswIndex::make_default_link_store_config()),
     entry_docid_and_level()
@@ -30,6 +31,9 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
     vespalib::Array<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
     node_refs[docid].store_release(node_ref);
+    if (docid >= node_refs_size.load(std::memory_order_relaxed)) {
+        node_refs_size.store(docid + 1, std::memory_order_release);
+    }
     return node_ref;
 }
 
@@ -47,6 +51,19 @@ HnswGraph::remove_node_for_document(uint32_t docid)
         auto old_links_ref = levels[i].load_acquire();
         links.remove(old_links_ref);
     }
+    if (docid + 1 == node_refs_size.load(std::memory_order_relaxed)) {
+        trim_node_refs_size();
+    }
+}
+
+void
+HnswGraph::trim_node_refs_size()
+{
+    uint32_t check_doc_id = node_refs_size.load(std::memory_order_relaxed) - 1;
+    while (check_doc_id > 0u && !node_refs[check_doc_id].load_relaxed().valid()) {
+        --check_doc_id;
+    }
+    node_refs_size.store(check_doc_id + 1, std::memory_order_release);
 }
 
 void     

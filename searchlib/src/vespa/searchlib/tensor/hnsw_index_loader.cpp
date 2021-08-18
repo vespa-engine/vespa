@@ -38,7 +38,9 @@ HnswIndexLoader::load(const fileutil::LoadedBuffer& buf)
         }
     }
     if (_failed) return false;
-    _graph.node_refs.ensure_size(num_nodes);
+    _graph.node_refs.ensure_size(std::max(num_nodes, 1u));
+    _graph.node_refs_size.store(std::max(num_nodes, 1u), std::memory_order_release);
+    _graph.trim_node_refs_size();
     auto entry_node_ref = _graph.get_node_ref(entry_docid);
     _graph.set_entry_node({entry_docid, entry_node_ref, entry_level});
     return true;

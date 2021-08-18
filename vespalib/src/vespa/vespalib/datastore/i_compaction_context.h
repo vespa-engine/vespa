@@ -16,6 +16,7 @@ struct ICompactionContext {
     using UP = std::unique_ptr<ICompactionContext>;
     virtual ~ICompactionContext() {}
     virtual void compact(vespalib::ArrayRef<EntryRef> refs) = 0;
+    virtual void compact(vespalib::ArrayRef<AtomicEntryRef> refs) = 0;
 };
 
 }

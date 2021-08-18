@@ -14,7 +14,10 @@ namespace vespalib::slime { struct Inserter; }
 
 namespace search::fileutil { class LoadedBuffer; }
 
-namespace search { class BitVector; }
+namespace search {
+class BitVector;
+class CompactionStrategy;
+}
 
 namespace search::tensor {
 
@@ -59,8 +62,11 @@ public:
     virtual void remove_document(uint32_t docid) = 0;
     virtual void transfer_hold_lists(generation_t current_gen) = 0;
     virtual void trim_hold_lists(generation_t first_used_gen) = 0;
+    virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;
+    virtual vespalib::MemoryUsage update_stat() = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
     virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
+    virtual void shrink_lid_space(uint32_t doc_id_limit) = 0;
 
     /**
      * Creates a saver that is used to save the index to binary form.
