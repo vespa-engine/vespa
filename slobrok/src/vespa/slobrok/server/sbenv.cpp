@@ -124,10 +124,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
 }
 
 
-SBEnv::~SBEnv()
-{
-    getTransport()->WaitFinished();
-}
+SBEnv::~SBEnv() = default;
 
 FNET_Scheduler *
 SBEnv::getScheduler() {
