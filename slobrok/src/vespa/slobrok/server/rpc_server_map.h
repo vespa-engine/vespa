@@ -33,11 +33,11 @@ private:
     ReservedNameMap      _reservations;
     ProxyMapSource      _proxy;
 
-    static bool match(const char *name, const char *pattern);
-
     void add(NamedService *rpcsrv);
 
 public:
+    static bool match(const char *name, const char *pattern);
+
     typedef std::vector<const NamedService *> RpcSrvlist;
 
     MapSource &proxy() { return _proxy; }
