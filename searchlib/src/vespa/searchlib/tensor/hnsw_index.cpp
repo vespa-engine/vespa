@@ -503,36 +503,40 @@ HnswIndex::compact_link_arrays(bool compact_memory, bool compact_address_space)
     }
 }
 
+namespace {
+
 bool
-HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
+consider_compact_arrays(const CompactionStrategy& compaction_strategy, vespalib::MemoryUsage& memory_usage, vespalib::AddressSpace& address_space_usage, std::function<void(bool,bool)> compact_arrays)
 {
-    size_t used_bytes = _cached_level_arrays_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_level_arrays_memory_usage.deadBytes();
+    size_t used_bytes = memory_usage.usedBytes();
+    size_t dead_bytes = memory_usage.deadBytes();
     bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
-    size_t used_address_space = _cached_level_arrays_address_space_usage.used();
-    size_t dead_address_space = _cached_level_arrays_address_space_usage.dead();
+    size_t used_address_space = address_space_usage.used();
+    size_t dead_address_space = address_space_usage.dead();
     bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
     if (compact_memory || compact_address_space) {
-        compact_level_arrays(compact_memory, compact_address_space);
+        compact_arrays(compact_memory, compact_address_space);
         return true;
     }
     return false;
 }
 
+}
+
+bool
+HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
+{
+    return consider_compact_arrays(compaction_strategy, _cached_level_arrays_memory_usage, _cached_level_arrays_address_space_usage,
+                                   [this](bool compact_memory, bool compact_address_space)
+                                   { compact_level_arrays(compact_memory, compact_address_space); });
+}
+
 bool
 HnswIndex::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
 {
-    size_t used_bytes = _cached_link_arrays_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_link_arrays_memory_usage.deadBytes();
-    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
-    size_t used_address_space = _cached_level_arrays_address_space_usage.used();
-    size_t dead_address_space = _cached_level_arrays_address_space_usage.dead();
-    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
-    if (compact_memory || compact_address_space) {
-        compact_link_arrays(compact_memory, compact_address_space);
-        return true;
-    }
-    return false;
+    return consider_compact_arrays(compaction_strategy, _cached_link_arrays_memory_usage, _cached_link_arrays_address_space_usage,
+                                   [this](bool compact_memory, bool compact_address_space)
+                                   { compact_link_arrays(compact_memory, compact_address_space); });
 }
 
 bool
