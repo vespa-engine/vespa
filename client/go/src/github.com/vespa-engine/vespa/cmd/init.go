@@ -7,7 +7,6 @@ package cmd
 import (
     "archive/zip"
     "errors"
-    "fmt"
     "path/filepath"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
@@ -67,13 +66,11 @@ func initApplication(name string, source string) {
 	}
 	defer zipReader.Close()
 
-    fmt.Println("Reading zip ...")
     found := false
     for _, f := range zipReader.File {
         zipEntryPrefix := "sample-apps-master/" + source + "/"
 	    if strings.HasPrefix(f.Name, zipEntryPrefix) {
-            fmt.Println("Matched:", f.Name)
-	        found = true
+ 	        found = true
 	        copyError := copy(f, name, zipEntryPrefix)
 	        if copyError != nil {
                 utils.Error("Could not copy zip entry '" + f.Name + "' to " + name)
@@ -134,8 +131,6 @@ func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {
     destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
     if strings.HasSuffix(f.Name, "/") {
         if f.Name != zipEntryPrefix { // root is already created
-            //_, dir := filepath.Split(strings.TrimSuffix(f.Name, "/"))
-            // dir := strings.TrimPrefix(f.Name, zipEntryPrefix)
             createError := os.Mkdir(destinationPath, 0755)
             if createError != nil {
                 return createError
