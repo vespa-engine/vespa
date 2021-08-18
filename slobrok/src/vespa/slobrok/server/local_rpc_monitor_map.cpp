@@ -84,6 +84,7 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
         if (removed.up) {
             _dispatcher.remove(removed.mapping());
         }
+        _delete.later(std::move(removed.srv));
     }
     auto [ iter, was_inserted ] =
         _map.try_emplace(mapping.name, globalService(mapping));
@@ -109,6 +110,7 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
         if (removed.up) {
             _dispatcher.remove(removed.mapping());
         }
+        _delete.later(std::move(removed.srv));
     } else {
         LOG(debug, "tried to remove non-existing mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str());
