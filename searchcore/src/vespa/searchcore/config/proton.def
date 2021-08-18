@@ -431,12 +431,20 @@ visit.ignoremaxbytes bool default=true
 ## When set to 0 (default) we use 1 separate thread per document database.
 initialize.threads int default = 0
 
+## Portion of max address space used in components in attribute vectors
+## before put and update operations in feed is blocked.
+writefilter.attribute.address_space_limit double default = 0.9
+
 ## Portion of enumstore address space that can be used before put and update
 ## portion of feed is blocked.
+## Deprecated -> Use address_space_limit
+## TODO: remove this when enum store is removed from AttributeUsageStats
 writefilter.attribute.enumstorelimit double default = 0.9
 
 ## Portion of attribute multivalue mapping address space that can be used
 ## before put and update portion of feed is blocked.
+## Deprecated -> Use address_space_limit
+## TODO: remove this when multi value is removed from AttributeUsageStats
 writefilter.attribute.multivaluelimit double default = 0.9
 
 ## Portion of physical memory that can be resident memory in anonymous mapping

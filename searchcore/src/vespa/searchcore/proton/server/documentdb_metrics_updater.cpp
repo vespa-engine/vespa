@@ -306,7 +306,7 @@ DocumentDBMetricsUpdater::updateAttributeResourceUsageMetrics(DocumentDBTaggedMe
     bool feedBlocked = !_writeFilter.acceptWriteOperation();
     double enumStoreUsed = stats.enumStoreUsage().getUsage().usage();
     double multiValueUsed = stats.multiValueUsage().getUsage().usage();
-    double address_space_used = stats.max_usage().getUsage().usage();
+    double address_space_used = stats.max_address_space_usage().getUsage().usage();
     metrics.resourceUsage.enumStore.set(enumStoreUsed);
     metrics.resourceUsage.multiValue.set(multiValueUsed);
     metrics.resourceUsage.address_space.set(address_space_used);

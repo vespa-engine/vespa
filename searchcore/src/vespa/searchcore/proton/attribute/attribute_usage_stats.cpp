@@ -34,7 +34,7 @@ operator<<(std::ostream& out, const AttributeUsageStats& rhs)
 {
     out << "{enum_store=" << rhs.enumStoreUsage() <<
             ", multi_value=" << rhs.multiValueUsage() <<
-            ", max_usage=" << rhs.max_usage() << "}";
+            ", max_address_space_usage=" << rhs.max_address_space_usage() << "}";
     return out;
 }
 

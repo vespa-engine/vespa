@@ -12,7 +12,7 @@ expect_max_usage(size_t used, const vespalib::string& attr_name,
                  const vespalib::string& comp_name, const vespalib::string& sub_name,
                  const AttributeUsageStats& stats)
 {
-    const auto& max = stats.max_usage();
+    const auto& max = stats.max_address_space_usage();
     EXPECT_EQ(used, max.getUsage().used());
     EXPECT_EQ(attr_name, max.getAttributeName());
     EXPECT_EQ(comp_name, max.get_component_name());

@@ -27,7 +27,7 @@ public:
 
     const AddressSpaceUsageStats& enumStoreUsage() const { return _enumStoreUsage; }
     const AddressSpaceUsageStats& multiValueUsage() const { return _multiValueUsage; }
-    const AddressSpaceUsageStats& max_usage() const { return _max_usage; }
+    const AddressSpaceUsageStats& max_address_space_usage() const { return _max_usage; }
 
     bool operator==(const AttributeUsageStats& rhs) const {
         return (_enumStoreUsage == rhs._enumStoreUsage) &&
