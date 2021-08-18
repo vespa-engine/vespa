@@ -22,7 +22,7 @@ func init() {
 }
 
 var documentCmd = &cobra.Command{
-    Use:   "document document.json",
+    Use:   "document mynamespace/mydocumenttype/myid document.json",
     Short: "Issue document operations (put by default)",
     Long:  `TODO`,
     // TODO: Check args
@@ -35,6 +35,8 @@ var documentPutCmd = &cobra.Command{
     Use:   "put mynamespace/mydocumenttype/myid mydocument.json",
     Short: "Puts the document in the given file",
     Long:  `TODO`,
+    // TODO: This crashes with the above
+    // TODO: Extract document id from the content
     // TODO: Check args
     Run: func(cmd *cobra.Command, args []string) {
         put(args[0], args[1])
@@ -56,7 +58,6 @@ func get(documentId string) {
 }
 
 func put(documentId string, jsonFile string) {
-    // TODO: documentId == mynamespace/music/docid/1
     url, _ := url.Parse(getTarget(documentContext).document + "/document/v1/" + documentId)
 
     header := http.Header{}
@@ -81,9 +82,10 @@ func put(documentId string, jsonFile string) {
     if (response == nil) {
         return
     } else if response.StatusCode == 200 {
-        utils.Success("Success")
+        utils.Success("Success") // TODO: Change to something including document id
     } else if response.StatusCode % 100 == 4 {
         utils.Error("Invalid document JSON")
+        utils.Detail(response.Status)
         // TODO: Output error in body
     } else {
         utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host)

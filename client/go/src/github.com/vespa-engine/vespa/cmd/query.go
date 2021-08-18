@@ -32,6 +32,9 @@ var queryCmd = &cobra.Command{
 }
 
 func query(argument string) {
+    // TODO: url-encode query
+    // TODO: assume yql not query. or autodetect
+
     if ! strings.Contains(argument, "query=") {
         argument = "?query=" + argument
     }
@@ -48,6 +51,7 @@ func query(argument string) {
 
     defer response.Body.Close()
     if (response.StatusCode == 200) {
+        // TODO: Pretty-print body
         scanner := bufio.NewScanner(response.Body)
         for ;scanner.Scan(); {
             utils.Print(scanner.Text())
