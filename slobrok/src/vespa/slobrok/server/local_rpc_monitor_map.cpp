@@ -10,8 +10,29 @@ namespace slobrok {
 
 #pragma GCC diagnostic ignored "-Winline"
 
+void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
+    {
+        std::vector<MUP> deleteAfterSwap;
+        std::swap(deleteAfterSwap, _deleteList);
+    }
+    std::vector<Event> todo;
+    std::swap(todo, _queue);
+    for (const auto & entry : todo) {
+        switch (entry.type) {
+        case EventType::ADD:
+            _target.doAdd(entry.mapping);
+            break;
+        case EventType::REMOVE:
+            _target.doRemove(entry.mapping);
+            break;
+        default:
+            abort();
+        }
+    }
+}
+
 LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
-  : _delete(supervisor.GetScheduler()),
+  : _delayedTasks(supervisor.GetScheduler(), *this),
     _map(),
     _dispatcher(),
     _history(),
@@ -65,6 +86,14 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
 }
 
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
+    _delayedTasks.handleLater(Event::add(mapping));
+}
+
+void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
+    _delayedTasks.handleLater(Event::remove(mapping));
+}
+
+void LocalRpcMonitorMap::doAdd(const ServiceMapping &mapping) {
     LOG(debug, "try add: mapping %s->%s",
         mapping.name.c_str(), mapping.spec.c_str());
     auto old = _map.find(mapping.name);
@@ -88,14 +117,14 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
         if (removed.up) {
             _dispatcher.remove(removed.mapping());
         }
-        _delete.later(std::move(removed.srv));
+        _delayedTasks.deleteLater(std::move(removed.srv));
     }
     auto [ iter, was_inserted ] =
         _map.try_emplace(mapping.name, globalService(mapping));
     LOG_ASSERT(was_inserted);
 }
 
-void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
+void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end()) {
         PerService removed = std::move(iter->second);
@@ -114,7 +143,7 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
         if (removed.up) {
             _dispatcher.remove(removed.mapping());
         }
-        _delete.later(std::move(removed.srv));
+        _delayedTasks.deleteLater(std::move(removed.srv));
     } else {
         LOG(debug, "tried to remove non-existing mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str());
@@ -135,7 +164,7 @@ void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::strin
             if (removed.up) {
                 _dispatcher.remove(removed.mapping());
             }
-            _delete.later(std::move(removed.srv));
+            _delayedTasks.deleteLater(std::move(removed.srv));
         } else if (psd->up) {
             psd->up = false;
             _dispatcher.remove(psd->mapping());
