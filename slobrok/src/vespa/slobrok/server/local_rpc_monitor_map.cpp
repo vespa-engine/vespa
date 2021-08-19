@@ -2,6 +2,7 @@
 
 #include "local_rpc_monitor_map.h"
 #include "sbenv.h"
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.server.local_rpc_monitor_map");
 
@@ -10,7 +11,8 @@ namespace slobrok {
 #pragma GCC diagnostic ignored "-Winline"
 
 LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
-  : _map(),
+  : _delete(supervisor.GetScheduler()),
+    _map(),
     _dispatcher(),
     _history(),
     _supervisor(supervisor),
@@ -20,13 +22,17 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
 
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
 
-LocalRpcMonitorMap::PerService &
+LocalRpcMonitorMap::PerService *
 LocalRpcMonitorMap::lookup(ManagedRpcServer *rpcsrv) {
     auto iter = _map.find(rpcsrv->getName());
-    LOG_ASSERT(iter != _map.end());
+    if (iter == _map.end()) {
+        return nullptr;
+    }
     PerService & psd = iter->second;
-    LOG_ASSERT(psd.srv.get() == rpcsrv);
-    return psd;
+    if (psd.srv.get() != rpcsrv) {
+        return nullptr;
+    }
+    return &psd;
 }
 
 ServiceMapHistory & LocalRpcMonitorMap::history() {
@@ -40,7 +46,7 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         mapping.name.c_str(), mapping.spec.c_str());
     auto old = _map.find(mapping.name);
     if (old != _map.end()) {
-        PerService & exists = old->second;
+        const PerService & exists = old->second;
         if (exists.spec() == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
@@ -70,17 +76,19 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
             exists.localOnly = false;
             return;
         }
+        PerService removed = std::move(exists);
+        _map.erase(old);
         LOG(warning, "added mapping %s->%s, but already had conflicting mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str(),
-            exists.name().c_str(), exists.spec().c_str());
-        if (exists.up) {
-            _dispatcher.remove(exists.mapping());
-        }
-        if (exists.inflight) {
-            auto target = std::move(exists.inflight);
+            removed.name().c_str(), removed.spec().c_str());
+        if (removed.inflight) {
+            auto target = std::move(removed.inflight);
             target->doneHandler(OkState(13, "conflict during initialization"));
         }
-        _map.erase(old);
+        if (removed.up) {
+            _dispatcher.remove(removed.mapping());
+        }
+        _delete.later(std::move(removed.srv));
     }
     auto [ iter, was_inserted ] =
         _map.try_emplace(mapping.name, globalService(mapping));
@@ -90,23 +98,23 @@ void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
 void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end()) {
+        PerService removed = std::move(iter->second);
+        _map.erase(iter);
         LOG(debug, "remove: mapping %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-        PerService & exists = iter->second;
-        if (mapping.spec != exists.spec()) {
+        if (mapping.spec != removed.spec()) {
             LOG(warning, "inconsistent specs for name '%s': had '%s', but was asked to remove '%s'",
                 mapping.name.c_str(),
-                exists.spec().c_str(),
+                removed.spec().c_str(),
                 mapping.spec.c_str());
-            return;
         }
-        if (exists.up) {
-            _dispatcher.remove(exists.mapping());
-        }
-        if (exists.inflight) {
-            auto target = std::move(exists.inflight);
+        if (removed.inflight) {
+            auto target = std::move(removed.inflight);
             target->doneHandler(OkState(13, "removed during initialization"));
         }
-        _map.erase(iter);
+        if (removed.up) {
+            _dispatcher.remove(removed.mapping());
+        }
+        _delete.later(std::move(removed.srv));
     } else {
         LOG(debug, "tried to remove non-existing mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str());
@@ -114,32 +122,38 @@ void LocalRpcMonitorMap::remove(const ServiceMapping &mapping) {
 }
 
 void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string) {
-    auto &psd = lookup(rpcsrv);
-    LOG(debug, "failed: %s->%s", psd.name().c_str(), psd.spec().c_str());
-    if (psd.inflight) {
-        auto target = std::move(psd.inflight);
-        target->doneHandler(OkState(13, "failed check using listNames callback"));
-    }
-    if (psd.up) {
-        psd.up = false;
-        _dispatcher.remove(psd.mapping());
-    }
-    if (psd.localOnly) {
-        auto iter = _map.find(psd.name());
-        _map.erase(iter);
+    if (auto *psd = lookup(rpcsrv)) {
+        LOG(debug, "failed: %s->%s", psd->name().c_str(), psd->spec().c_str());
+        if (psd->inflight) {
+            auto target = std::move(psd->inflight);
+            target->doneHandler(OkState(13, "failed check using listNames callback"));
+        }
+        if (psd->localOnly) {
+            PerService removed = std::move(*psd);
+            auto iter = _map.find(removed.name());
+            _map.erase(iter);
+            if (removed.up) {
+                _dispatcher.remove(removed.mapping());
+            }
+            _delete.later(std::move(removed.srv));
+        } else if (psd->up) {
+            psd->up = false;
+            _dispatcher.remove(psd->mapping());
+        }
     }
 }
 
 void LocalRpcMonitorMap::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
-    auto &psd = lookup(rpcsrv);
-    LOG(debug, "ok: %s->%s", psd.name().c_str(), psd.spec().c_str());
-    if (psd.inflight) {
-        auto target = std::move(psd.inflight);
-        target->doneHandler(OkState());
-    }
-    if (! psd.up) {
-        psd.up = true;
-        _dispatcher.add(psd.mapping());
+    if (auto *psd = lookup(rpcsrv)) {
+        LOG(debug, "ok: %s->%s", psd->name().c_str(), psd->spec().c_str());
+        if (psd->inflight) {
+            auto target = std::move(psd->inflight);
+            target->doneHandler(OkState());
+        }
+        if (! psd->up) {
+            psd->up = true;
+            _dispatcher.add(psd->mapping());
+        }
     }
 }
 
