@@ -32,7 +32,6 @@ public class PreGeneratedFileRegistryTestCase {
 
         checkConsistentEntry(fileRegistry.export().get(0), importedRegistry);
         checkConsistentEntry(fileRegistry.export().get(1), importedRegistry);
-        assertEquals(fileRegistry.fileSourceHost(), importedRegistry.fileSourceHost());
     }
 
     void checkConsistentEntry(FileRegistry.Entry entry, FileRegistry registry) {

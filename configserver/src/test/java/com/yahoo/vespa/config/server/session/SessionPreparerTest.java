@@ -188,7 +188,7 @@ public class SessionPreparerTest {
         HostRegistry hostValidator = new HostRegistry();
         hostValidator.update(applicationId("foo"), Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, new BaseDeployLogger(), new PrepareParams.Builder().applicationId(applicationId("default")).build(),
-                         Optional.empty(), Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient());
+                         Optional.empty(), Instant.now(), app.getAppDir(), app, createSessionZooKeeperClient(app.getAppDir()));
     }
     
     @Test
@@ -203,7 +203,7 @@ public class SessionPreparerTest {
         hostValidator.update(applicationId, Collections.singletonList("mytesthost"));
         preparer.prepare(hostValidator, logger, new PrepareParams.Builder().applicationId(applicationId).build(),
                          Optional.empty(), Instant.now(), app.getAppDir(), app,
-                         createSessionZooKeeperClient());
+                         createSessionZooKeeperClient(app.getAppDir()));
         assertEquals(logged.toString(), "");
     }
 
@@ -212,7 +212,7 @@ public class SessionPreparerTest {
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId()).build();
         int sessionId = 1;
         prepare(testApp, params);
-        assertThat(createSessionZooKeeperClient(sessionId).readApplicationId().get(), is(applicationId()));
+        assertThat(createSessionZooKeeperClient(testApp, sessionId).readApplicationId().get(), is(applicationId()));
     }
 
     @Test
@@ -345,7 +345,7 @@ public class SessionPreparerTest {
         FilesApplicationPackage applicationPackage = getApplicationPackage(app);
         return preparer.prepare(new HostRegistry(), getLogger(), params,
                                 Optional.empty(), Instant.now(), applicationPackage.getAppDir(),
-                                applicationPackage, createSessionZooKeeperClient(sessionId));
+                                applicationPackage, createSessionZooKeeperClient(applicationPackage.getAppDir(), sessionId));
     }
 
     private FilesApplicationPackage getApplicationPackage(File testFile) throws IOException {
@@ -369,12 +369,12 @@ public class SessionPreparerTest {
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
     }
 
-    private SessionZooKeeperClient createSessionZooKeeperClient() {
-        return createSessionZooKeeperClient(1);
+    private SessionZooKeeperClient createSessionZooKeeperClient(File appDir) {
+        return createSessionZooKeeperClient(appDir, 1);
     }
 
-    private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        return new SessionZooKeeperClient(curator, applicationId().tenant(), sessionId, ConfigUtils.getCanonicalHostName());
+    private SessionZooKeeperClient createSessionZooKeeperClient(File appDir, long sessionId) {
+        return new SessionZooKeeperClient(curator, applicationId().tenant(), sessionId, preparer.getFileDistributionFactory().createProvider(appDir), ConfigUtils.getCanonicalHostName());
     }
 
     private Path sessionPath(long sessionId) {

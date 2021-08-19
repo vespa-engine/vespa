@@ -71,11 +71,14 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    private ConfigserverConfig configserverConfig;
+
     @Before
     public void setupRepo() throws IOException {
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
@@ -196,7 +199,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private SessionCreateHandler createHandler() {
         return new SessionCreateHandler(SessionCreateHandler.testOnlyContext(),
                                         applicationRepository,
-                                        new ConfigserverConfig.Builder().build());
+                                        configserverConfig);
     }
 
     private HttpRequest post() throws FileNotFoundException {

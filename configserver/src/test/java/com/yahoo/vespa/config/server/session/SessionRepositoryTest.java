@@ -286,6 +286,7 @@ public class SessionRepositoryTest {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
                                                                 tenantName,
                                                                 sessionId,
+                                                                tenantRepository.getFileDistributionFactory().createProvider(new File("dummy")),
                                                                 ConfigUtils.getCanonicalHostName());
         zkc.createNewSession(Instant.now());
         if (wait) {

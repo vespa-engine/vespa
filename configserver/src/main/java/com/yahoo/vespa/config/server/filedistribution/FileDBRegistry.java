@@ -7,12 +7,16 @@ import com.yahoo.net.HostName;
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * @author Tony Vaagenes
@@ -20,11 +24,44 @@ import java.util.Optional;
 public class FileDBRegistry implements FileRegistry {
 
     private final AddFileInterface manager;
-    private final List<Entry> entries = new ArrayList<>();
     private final Map<String, FileReference> fileReferenceCache = new HashMap<>();
+    private static final String entryDelimiter = "\t";
+    private static final Pattern entryDelimiterPattern = Pattern.compile(entryDelimiter, Pattern.LITERAL);
 
     public FileDBRegistry(AddFileInterface manager) {
         this.manager = manager;
+    }
+    public static FileRegistry create(AddFileInterface manager, Reader persistedState) {
+        try (BufferedReader reader = new BufferedReader(persistedState)) {
+            String ignoredFileSourceHost = reader.readLine();
+            if (ignoredFileSourceHost == null)
+                throw new RuntimeException("No file source host");
+            return new FileDBRegistry(manager, decode(reader));
+        } catch (IOException e) {
+            throw new RuntimeException("Error while reading pre-generated file registry", e);
+        }
+    }
+
+    static Map<String, FileReference> decode(BufferedReader reader) {
+        Map<String, FileReference> refs = new HashMap<>();
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = entryDelimiterPattern.split(line);
+                if (parts.length < 2)
+                    throw new IllegalArgumentException("Cannot split '" + line + "' into two parts");
+                refs.put(parts[0], new FileReference(parts[1]));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error while reading pre-generated file registry", e);
+        }
+        return refs;
+    }
+    private FileDBRegistry(AddFileInterface manager, Map<String, FileReference> knownReferences) {
+        this.manager = manager;
+        for (Map.Entry<String, FileReference> e : knownReferences.entrySet()) {
+            fileReferenceCache.put(e.getKey(), e.getValue());
+        }
     }
 
     @Override
@@ -32,7 +69,6 @@ public class FileDBRegistry implements FileRegistry {
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
         return cachedReference.orElseGet(() -> {
             FileReference newRef = manager.addFile(relativePath);
-            entries.add(new Entry(relativePath, newRef));
             fileReferenceCache.put(relativePath, newRef);
             return newRef;
         });
@@ -44,7 +80,6 @@ public class FileDBRegistry implements FileRegistry {
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(uri));
         return cachedReference.orElseGet(() -> {
             FileReference newRef = manager.addUri(uri, relativePath);
-            entries.add(new Entry(uri, newRef));
             fileReferenceCache.put(uri, newRef);
             return newRef;
         });
@@ -58,7 +93,6 @@ public class FileDBRegistry implements FileRegistry {
             Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
             return cachedReference.orElseGet(() -> {
                 FileReference newRef = manager.addBlob(blob, relativePath);
-                entries.add(new Entry(blobName, newRef));
                 fileReferenceCache.put(blobName, newRef);
                 return newRef;
             });
@@ -66,12 +100,11 @@ public class FileDBRegistry implements FileRegistry {
     }
 
     @Override
-    public String fileSourceHost() {
-        return HostName.getLocalhost();
-    }
-
-    @Override
     public synchronized List<Entry> export() {
+        List<Entry> entries = new ArrayList<>();
+        for (Map.Entry<String, FileReference> entry : fileReferenceCache.entrySet()) {
+            entries.add(new Entry(entry.getKey(), entry.getValue()));
+        }
         return entries;
     }
 

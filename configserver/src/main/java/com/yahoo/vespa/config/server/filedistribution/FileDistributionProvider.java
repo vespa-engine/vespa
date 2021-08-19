@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.application.api.FileRegistry;
 
 import java.io.File;
+import java.io.Reader;
 
 /**
  * Provides file distribution registry and invoker.
@@ -15,13 +16,23 @@ public class FileDistributionProvider {
 
     private final FileRegistry fileRegistry;
     private final FileDistribution fileDistribution;
+    private final AddFileInterface fileManager;
 
     public FileDistributionProvider(File applicationDir, FileDistribution fileDistribution) {
-        this(new FileDBRegistry(new ApplicationFileManager(applicationDir, new FileDirectory(fileDistribution.getFileReferencesDir()))), fileDistribution);
+        this(new ApplicationFileManager(applicationDir, new FileDirectory(fileDistribution.getFileReferencesDir())), fileDistribution);
         ensureDirExists(fileDistribution.getFileReferencesDir());
     }
 
     FileDistributionProvider(FileRegistry fileRegistry, FileDistribution fileDistribution) {
+       this(null, fileRegistry, fileDistribution);
+    }
+
+    private FileDistributionProvider(AddFileInterface fileManager, FileDistribution fileDistribution) {
+        this(fileManager, new FileDBRegistry(fileManager), fileDistribution);
+    }
+
+    private FileDistributionProvider(AddFileInterface fileManager, FileRegistry fileRegistry, FileDistribution fileDistribution) {
+        this.fileManager = fileManager;
         this.fileRegistry = fileRegistry;
         this.fileDistribution = fileDistribution;
     }
@@ -32,6 +43,10 @@ public class FileDistributionProvider {
 
     public FileDistribution getFileDistribution() {
         return fileDistribution;
+    }
+
+    public FileRegistry createPregeneratedFileRegistry(Reader persistedState) {
+        return FileDBRegistry.create(fileManager, persistedState);
     }
 
     private static void ensureDirExists(File dir) {

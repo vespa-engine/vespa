@@ -104,6 +104,10 @@ public class SessionPreparer {
         this.flagSource = flagSource;
     }
 
+    public FileDistributionFactory getFileDistributionFactory() {
+        return fileDistributionFactory;
+    }
+
     /**
      * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
      *

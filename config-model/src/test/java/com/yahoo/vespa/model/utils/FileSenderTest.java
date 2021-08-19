@@ -58,11 +58,6 @@ public class FileSenderTest {
         }
 
         @Override
-        public String fileSourceHost() {
-            return null;
-        }
-
-        @Override
         public List<Entry> export() {
             return null;
         }
