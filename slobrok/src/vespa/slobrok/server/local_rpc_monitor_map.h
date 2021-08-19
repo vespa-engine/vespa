@@ -5,7 +5,6 @@
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
 #include "map_listener.h"
-#include "map_listener.h"
 #include "map_source.h"
 #include "named_service.h"
 #include "proxy_map_source.h"
