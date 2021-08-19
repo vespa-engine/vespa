@@ -107,6 +107,27 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void leadingUpgradeAllowsApplicationChangeWhileUpgrading() {
+        var applicationPackage = new ApplicationPackageBuilder().region("us-east-3")
+                                                                .upgradeRollout("leading")
+                                                                .build();
+        var app = tester.newDeploymentContext();
+
+        app.submit(applicationPackage).deploy();
+
+        Change upgrade = Change.of(new Version("7.8.9"));
+        tester.controllerTester().upgradeSystem(upgrade.platform().get());
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest);
+        tester.triggerJobs();
+        app.assertRunning(productionUsEast3);
+        assertEquals(upgrade, app.instance().change());
+
+        app.submit(applicationPackage);
+        assertEquals(upgrade.with(app.lastSubmission().get()), app.instance().change());
+    }
+
+        @Test
     public void abortsJobsOnNewApplicationChange() {
         var app = tester.newDeploymentContext();
         app.submit()

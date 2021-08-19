@@ -193,9 +193,10 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
+      "public com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout upgradeRollout()",
       "public java.util.List changeBlocker()",
       "public java.util.Optional globalServiceId()",
       "public boolean canUpgradeAt(java.time.Instant)",
@@ -348,6 +349,23 @@
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy canary",
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy defaultPolicy",
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy conservative"
+    ]
+  },
+  "com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout[] values()",
+      "public static com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout separate",
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout leading"
     ]
   },
   "com.yahoo.config.application.api.DeploymentSpec": {

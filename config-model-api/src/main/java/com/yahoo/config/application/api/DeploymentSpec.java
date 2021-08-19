@@ -510,6 +510,18 @@ public class DeploymentSpec {
         conservative
     }
 
+
+    /** Determines when application changes deploy, when there is already an ongoing platform upgrade. */
+    public enum UpgradeRollout {
+        /** Separate: Application changes wait for upgrade to complete, unless upgrade fails. */
+        separate,
+        /** Leading: Application changes are allowed to start and catch up to the platform upgrade. */
+        leading
+        // /** Simultaneous: Application changes deploy independently of platform upgrades. */
+        // simultaneous
+    }
+
+
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {
         

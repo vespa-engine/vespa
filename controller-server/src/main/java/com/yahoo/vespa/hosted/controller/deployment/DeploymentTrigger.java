@@ -411,6 +411,8 @@ public class DeploymentTrigger {
     private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance) {
         if (status.application().require(instance).change().application().isPresent()) return true; // Replacing a previous application change is ok.
         if (status.hasFailures()) return true; // Allow changes to fix upgrade problems.
+        if (status.application().deploymentSpec().instance(instance) // Leading upgrade allows app change to join in.
+                  .map(spec -> spec.upgradeRollout() == DeploymentSpec.UpgradeRollout.leading).orElse(false)) return true;
         return status.application().require(instance).change().platform().isEmpty();
     }
 
