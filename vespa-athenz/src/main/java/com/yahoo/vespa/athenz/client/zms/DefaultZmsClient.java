@@ -34,6 +34,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -224,19 +225,19 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public List<AthenzUser> listPendingRoleApprovals(AthenzRole athenzRole) {
+    public Map<AthenzUser, String> listPendingRoleApprovals(AthenzRole athenzRole) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s?pending=true", athenzRole.domain().getName(), athenzRole.roleName()));
         HttpUriRequest request = RequestBuilder.get()
                 .setUri(uri)
                 .build();
         RoleEntity roleEntity =  execute(request, response -> readEntity(response, RoleEntity.class));
+
         return roleEntity.roleMembers().stream()
                 .filter(RoleEntity.Member::pendingApproval)
-                .map(RoleEntity.Member::memberName)
-                .map(AthenzIdentities::from)
-                .filter(identity -> AthenzIdentities.USER_PRINCIPAL_DOMAIN.equals(identity.getDomain()))
-                .map(AthenzUser.class::cast)
-                .collect(Collectors.toList());
+                .filter(re -> AthenzIdentities.USER_PRINCIPAL_DOMAIN.equals(AthenzIdentities.from(re.memberName()).getDomain()))
+                .collect(Collectors.toUnmodifiableMap(
+                        m -> (AthenzUser) AthenzIdentities.from(m.memberName()),
+                        RoleEntity.Member::auditRef));
     }
 
     @Override

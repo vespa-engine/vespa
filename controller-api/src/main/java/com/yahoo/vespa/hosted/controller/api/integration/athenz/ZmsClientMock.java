@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -155,8 +156,8 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public List<AthenzUser> listPendingRoleApprovals(AthenzRole athenzRole) {
-        return List.of();
+    public Map<AthenzUser,String> listPendingRoleApprovals(AthenzRole athenzRole) {
+        return Map.of();
     }
 
     @Override
