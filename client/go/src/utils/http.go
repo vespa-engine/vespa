@@ -19,19 +19,19 @@ type HttpClient interface {
 }
 
 type defaultHttpClient struct {
-    client http.Client
+    client *http.Client
 }
 
 func (c defaultHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
     if c.client.Timeout != timeout { // Create a new client with the right timeout
-        c.client = http.Client{Timeout: timeout,}
+        c.client = &http.Client{Timeout: timeout,}
     }
     return c.client.Do(request)
 }
 
 func CreateClient(timeout time.Duration) HttpClient {
     return &defaultHttpClient{
-        client: http.Client{Timeout: timeout,},
+        client: &http.Client{Timeout: timeout,},
     }
 }
 
