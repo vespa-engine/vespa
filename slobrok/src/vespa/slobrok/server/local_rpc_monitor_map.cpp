@@ -25,8 +25,6 @@ void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
         case EventType::REMOVE:
             _target.doRemove(entry.mapping);
             break;
-        default:
-            abort();
         }
     }
 }
