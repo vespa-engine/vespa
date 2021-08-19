@@ -80,6 +80,10 @@ public:
         return _globalVisibleHistory;
     }
 
+    LocalRpcMonitorMap& localMonitorMap() {
+        return _localRpcMonitorMap;
+    }
+
     ServiceMapHistory& localHistory() {
         return _localRpcMonitorMap.history();
     }
