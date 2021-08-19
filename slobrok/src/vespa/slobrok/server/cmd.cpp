@@ -72,7 +72,7 @@ ScriptCommand::doRequest()
 
 void cleanupReservation(ScriptData & data)
 {
-    RpcServerMap &map = data.env._rpcsrvmap;
+    RpcServerMap &map = data.env.rpcServerMap();
     const ReservedName *rsvp = map.getReservation(data.name.c_str());
     if (rsvp != nullptr && rsvp->isLocal) {
         map.removeReservation(data.name.c_str());
@@ -88,8 +88,8 @@ ScriptCommand::doneHandler(OkState result)
     ScriptData & data = *dataUP;
     const char *name_p = data.name.c_str();
     const char *spec_p = data.spec.c_str();
-    ExchangeManager &xch = data.env._exchanger;
-    RpcServerManager &rsm = data.env._rpcsrvmanager;
+    ExchangeManager &xch = data.env.exchangeManager();
+    RpcServerManager &rsm = data.env.rpcServerManager();
 
     if (result.failed()) {
         LOG(warning, "failed [%s->%s] in state %d: %s", name_p, spec_p, data._state, result.errorMsg.c_str());
