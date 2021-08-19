@@ -114,7 +114,7 @@ public class ControllerTest {
         context.runJob(stagingTest);
 
         // production job succeeding now
-        context.jobAborted(productionUsWest1);
+        context.triggerJobs().jobAborted(productionUsWest1);
         context.runJob(productionUsWest1);
 
         // causes triggering of next production job

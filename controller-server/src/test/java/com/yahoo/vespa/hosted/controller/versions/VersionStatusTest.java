@@ -304,7 +304,7 @@ public class VersionStatusTest {
                      Confidence.low, confidence(tester.controller(), version2));
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
-        canary2.failDeployment(systemTest);
+        canary2.triggerJobs().jobAborted(systemTest).jobAborted(stagingTest);
         canary2.runJob(stagingTest);
         canary2.deployPlatform(version2);
         tester.controllerTester().computeVersionStatus();

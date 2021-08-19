@@ -105,16 +105,6 @@ public class DeploymentTrigger {
                                                        instance = instance.withChange(instance.change().with(outstanding.application().get()));
                                                        return instance.withChange(remainingChange(instance, status));
                                                    });
-
-                    // Abort irrelevant, running jobs to get new application out faster.
-                    Map<JobId, List<Versions>> newJobsToRun = jobs.deploymentStatus(application.get()).jobsToRun();
-                    for (Run run : jobs.active(application.get().id().instance(instanceName))) {
-                        if (   ! run.id().type().environment().isManuallyDeployed()
-                            &&   newJobsToRun.getOrDefault(run.id().job(), List.of()).stream()
-                                             .noneMatch(versions ->    versions.targetsMatch(run.versions())
-                                                                    && versions.sourcesMatchIfPresent(run.versions())))
-                            jobs.abort(run.id());
-                    }
                 }
             }
             applications().store(application);
@@ -303,24 +293,22 @@ public class DeploymentTrigger {
                    .collect(toList());
     }
 
-    /**
-     * Finds the next step to trigger for the given application, if any, and returns these as a list.
-     */
+    /** Finds the next step to trigger for the given application, if any, and returns these as a list. */
     private List<Job> computeReadyJobs(DeploymentStatus status) {
         List<Job> jobs = new ArrayList<>();
         status.jobsToRun().forEach((job, versionsList) -> {
-                for (Versions versions : versionsList)
-                    status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
-                          .filter(readyAt -> ! clock.instant().isBefore(readyAt))
-                          .filter(__ -> ! status.jobs().get(job).get().isRunning())
-                          .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
-                          .ifPresent(readyAt -> {
-                              jobs.add(deploymentJob(status.application().require(job.application().instance()),
-                                                     versions,
-                                                     job.type(),
-                                                     status.instanceJobs(job.application().instance()).get(job.type()),
-                                                     readyAt));
-                          });
+            for (Versions versions : versionsList)
+                status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
+                      .filter(readyAt -> ! clock.instant().isBefore(readyAt))
+                      .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
+                      .filter(__ -> abortIfRunning(versionsList, status.jobs().get(job).get())) // Abort and trigger this later if running with outdated parameters.
+                      .ifPresent(readyAt -> {
+                          jobs.add(deploymentJob(status.application().require(job.application().instance()),
+                                                 versions,
+                                                 job.type(),
+                                                 status.instanceJobs(job.application().instance()).get(job.type()),
+                                                 readyAt));
+                      });
         });
         return Collections.unmodifiableList(jobs);
     }
@@ -332,6 +320,19 @@ public class DeploymentTrigger {
                 && ! controller.applications().isHealthy(new DeploymentId(job.application(), deployment.zone())))
                 return true;
         }
+        return false;
+    }
+
+    /** Returns whether the job is not running, and also aborts it if it's running with outdated versions. */
+    private boolean abortIfRunning(List<Versions> versionsList, JobStatus status) {
+        if ( ! status.isRunning())
+            return true;
+
+        Run last = status.lastTriggered().get();
+        if (versionsList.stream().noneMatch(versions ->    versions.targetsMatch(last.versions())
+                                                        && versions.sourcesMatchIfPresent(last.versions())))
+            controller.jobController().abort(last.id());
+
         return false;
     }
 
