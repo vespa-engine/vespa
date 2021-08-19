@@ -10,7 +10,8 @@ import (
 
 var (
 	// flags
-	// todo: add timeout flag
+	// TODO: add timeout flag
+	// TODO: add flag to show http request made
 	targetArgument string
 
 	rootCmd = &cobra.Command{

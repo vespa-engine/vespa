@@ -9,7 +9,9 @@ import (
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
+    "regexp"
     "strings"
+    "net/url"
 )
 
 func init() {
@@ -17,12 +19,12 @@ func init() {
 }
 
 var queryCmd = &cobra.Command{
-    Use:   "query \"select from sources * where title contains 'foo'&hits=5\"",
+    Use:   "query \"yql=select from sources * where title contains 'foo'\" hits=5",
     Short: "Issue a query to Vespa",
     Long:  `TODO`,
     Args: func(cmd *cobra.Command, args []string) error {
-        if len(args) != 1 {
-            return errors.New("vespa query requires a single argument containing the query string")
+        if len(args) < 1 {
+            return errors.New("vespa query requires at least one argument containing the query string")
         }
         return nil
     },
@@ -32,17 +34,16 @@ var queryCmd = &cobra.Command{
 }
 
 func query(argument string) {
-    // TODO: url-encode query
-    // TODO: assume yql not query. or autodetect
-
-    if ! strings.Contains(argument, "query=") {
-        argument = "?query=" + argument
-    }
-    if ! strings.HasPrefix(argument, "?") {
-        argument = "?" + argument
+    if ! startsByParameter(argument) { // Default parameter
+        argument = "yql=" + argument
     }
 
-    path := "/search/" + argument
+    argument = escapePayload(argument)
+    if argument == "" {
+        return
+    }
+
+    path := "/search/?" + argument
     response := utils.HttpGet(getTarget(queryContext).query, path, "Container")
     if (response == nil) {
         return
@@ -66,4 +67,18 @@ func query(argument string) {
         utils.Error("Request failed")
         utils.Detail(response.Status)
     }
+}
+
+func startsByParameter(argument string) bool {
+    match, _ := regexp.MatchString("[a-zA-Z0-9_]+=", "peach") // TODO: Allow dot in parameters
+    return match
+}
+
+func escapePayload(argument string) string {
+    equalsIndex := strings.Index(argument, "=")
+    if equalsIndex < 1 {
+        utils.Error("A query argument must be on the form parameter=value, but was '" + argument + "'")
+        return ""
+    }
+    return argument[0:equalsIndex] + "=" + url.QueryEscape(argument[equalsIndex + 1:len(argument)])
 }
