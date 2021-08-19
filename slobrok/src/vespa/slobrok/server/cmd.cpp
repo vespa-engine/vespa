@@ -55,7 +55,7 @@ ScriptCommand::makeRegRpcSrvCmd(SBEnv &env,
 }
 
 ScriptCommand
-ScriptCommand::makeRemRemCmd(SBEnv &env, const std::string & name, const std::string &spec)
+ScriptCommand::makeIgnoreCmd(SBEnv &env, const std::string & name, const std::string &spec)
 {
     auto data = std::make_unique<ScriptData>(env, name, spec, nullptr);
     data->_state = ScriptData::XCH_IGNORE;
@@ -92,9 +92,10 @@ ScriptCommand::doneHandler(OkState result)
     RpcServerManager &rsm = data.env._rpcsrvmanager;
 
     if (result.failed()) {
-        LOG(warning, "failed [%s->%s] in state %d: %s",
-            name_p, spec_p, data._state, result.errorMsg.c_str());
-        cleanupReservation(data);
+        LOG(warning, "failed [%s->%s] in state %d: %s", name_p, spec_p, data._state, result.errorMsg.c_str());
+        if (data._state != ScriptData::XCH_IGNORE) {
+            cleanupReservation(data);
+        }
         // XXX should handle different state errors differently?
         if (data.registerRequest != nullptr) {
             data.registerRequest->SetError(FRTE_RPC_METHOD_FAILED, result.errorMsg.c_str());
@@ -124,14 +125,13 @@ ScriptCommand::doneHandler(OkState result)
         data._state = ScriptData::RDC_INVAL;
         // all OK
         data.registerRequest->Return();
-        goto alldone;
+        cleanupReservation(data);
+        return;
     } else if (data._state == ScriptData::XCH_IGNORE) {
-        goto alldone;
+        return;
     }
     // no other state should be possible
     LOG_ABORT("should not be reached");
- alldone:
-    cleanupReservation(data);
 }
 
 //-----------------------------------------------------------------------------

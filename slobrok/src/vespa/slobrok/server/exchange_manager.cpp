@@ -68,7 +68,7 @@ void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
     WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, *this,
-                                           ScriptCommand::makeRemRemCmd(_env, name, spec));
+                                           ScriptCommand::makeIgnoreCmd(_env, name, spec));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
