@@ -68,21 +68,6 @@ import static org.junit.Assert.fail;
 public class QueryTestCase {
 
     @Test
-    public void tmpI() {
-        List<Integer> activeDocsPerNode = List.of(0, 2);
-
-        long activeDocs = activeDocsPerNode.stream().mapToLong(activeDocsOnNode -> activeDocsOnNode).sum();
-        long average = activeDocs / activeDocsPerNode.size();
-        long deviation = activeDocsPerNode.stream().mapToLong(activeDocsOnNode -> Math.abs(activeDocsOnNode - average)).sum();
-        boolean isDeviationSmall = deviation <= maxUnbalance(activeDocs);
-        System.out.println(activeDocsPerNode + " isDeviationSmall: " + isDeviationSmall);
-    }
-
-    double maxUnbalance(long activeDocs) {
-        return Math.max(1, activeDocs * 0.1);
-    }
-
-    @Test
     public void testSimpleFunctionality() {
         Query q = new Query(QueryTestCase.httpEncode("/sdfsd.html?query=this is a simple query&aParameter"));
         assertEquals("this is a simple query", q.getModel().getQueryString());
