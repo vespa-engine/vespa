@@ -31,6 +31,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -103,6 +104,7 @@ public class SessionRepository {
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
+    private final FileDistributionFactory fileDistributionFactory;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final FlagSource flagSource;
     private final TenantFileSystemDirs tenantFileSystemDirs;
@@ -129,6 +131,7 @@ public class SessionRepository {
                              Curator curator,
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
+                             FileDistributionFactory fileDistributionFactory,
                              PermanentApplicationPackage permanentApplicationPackage,
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
@@ -148,6 +151,7 @@ public class SessionRepository {
         this.curator = curator;
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
+        this.fileDistributionFactory = fileDistributionFactory;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);
@@ -781,7 +785,8 @@ public class SessionRepository {
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId, maxNodeSize);
+        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId,
+                fileDistributionFactory.createProvider(getSessionAppDir(sessionId)), maxNodeSize);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

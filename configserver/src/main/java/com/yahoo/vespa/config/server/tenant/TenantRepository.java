@@ -350,6 +350,7 @@ public class TenantRepository {
                                                                     curator,
                                                                     metrics,
                                                                     zkSessionWatcherExecutor,
+                                                                    fileDistributionFactory,
                                                                     permanentApplicationPackage,
                                                                     flagSource,
                                                                     zkCacheExecutor,
@@ -562,6 +563,10 @@ public class TenantRepository {
 
     public Collection<Tenant> getAllTenants() {
         return ImmutableSet.copyOf(tenants.values());
+    }
+
+    public FileDistributionFactory getFileDistributionFactory() {
+        return fileDistributionFactory;
     }
 
     /**

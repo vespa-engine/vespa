@@ -3,12 +3,14 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.net.HostName;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,42 +25,43 @@ import java.util.regex.Pattern;
 public class PreGeneratedFileRegistry implements FileRegistry {
 
     private final String fileSourceHost;
-    private final Map<String, String> path2Hash = new LinkedHashMap<>();
+    private final Map<String, FileReference> path2Hash;
 
     private static final String entryDelimiter = "\t";
     private static final Pattern entryDelimiterPattern = Pattern.compile(entryDelimiter, Pattern.LITERAL);
 
+    public static Map<String, FileReference> decode(BufferedReader reader) {
+        Map<String, FileReference> refs = new HashMap<>();
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = entryDelimiterPattern.split(line);
+                if (parts.length < 2)
+                    throw new IllegalArgumentException("Cannot split '" + line + "' into two parts");
+                refs.put(parts[0], new FileReference(parts[1]));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error while reading pre-generated file registry", e);
+        }
+        return refs;
+    }
     private PreGeneratedFileRegistry(Reader readerArg) {
         try (BufferedReader reader = new BufferedReader(readerArg)) {
             fileSourceHost = reader.readLine();
             if (fileSourceHost == null)
                 throw new RuntimeException("Error while reading pre-generated file registry");
 
-            String line;
-            while ((line = reader.readLine()) != null) {
-                addFromLine(line);
-            }
+            path2Hash = decode(reader);
         } catch (IOException e) {
             throw new RuntimeException("Error while reading pre-generated file registry", e);
         }
-    }
-
-    private void addFromLine(String line) {
-        String[] parts = entryDelimiterPattern.split(line);
-        if (parts.length < 2)
-            throw new IllegalArgumentException("Cannot split '" + line + "' into two parts");
-        addEntry(parts[0], parts[1]);
-    }
-
-    private void addEntry(String relativePath, String hash) {
-        path2Hash.put(relativePath, hash);
     }
 
     public static String exportRegistry(FileRegistry registry) {
         List<Entry> entries = registry.export();
         StringBuilder builder = new StringBuilder();
 
-        builder.append(registry.fileSourceHost()).append('\n');
+        builder.append(HostName.getLocalhost()).append('\n');
         for (FileRegistry.Entry entry : entries) {
             builder.append(entry.relativePath).append(entryDelimiter).append(entry.reference.value()).append('\n');
         }
@@ -71,34 +74,29 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     }
 
     public FileReference addFile(String relativePath) {
-        String reference = path2Hash.get(relativePath);
+        FileReference reference = path2Hash.get(relativePath);
         if (reference == null) {
             throw new IllegalArgumentException("File '" + relativePath + "' not found");
         }
-        return new FileReference(reference);
+        return reference;
     }
 
     @Override
     public FileReference addUri(String uri) {
-        String reference = path2Hash.get(uri);
+        FileReference reference = path2Hash.get(uri);
         if (reference == null) {
             throw new IllegalArgumentException("Uri '" + uri + "' not found");
         }
-        return new FileReference(reference);
+        return reference;
     }
     @Override
     public FileReference addBlob(ByteBuffer blob) {
         String blobName = FileRegistry.blobName(blob);
-        String reference = path2Hash.get(blobName);
+        FileReference reference = path2Hash.get(blobName);
         if (reference == null) {
             throw new IllegalArgumentException("Blob '" + blobName + "(" + blob.remaining()+ ")' not found");
         }
-        return new FileReference(reference);
-    }
-
-    @Override
-    public String fileSourceHost() {
-        return fileSourceHost;
+        return reference;
     }
 
     public Set<String> getPaths() {
@@ -108,8 +106,8 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     @Override
     public List<Entry> export() {
         List<Entry> entries = new ArrayList<>();
-        for (Map.Entry<String, String> entry : path2Hash.entrySet()) {
-            entries.add(new Entry(entry.getKey(), new FileReference(entry.getValue())));
+        for (Map.Entry<String, FileReference> entry : path2Hash.entrySet()) {
+            entries.add(new Entry(entry.getKey(), entry.getValue()));
         }
         return entries;
     }

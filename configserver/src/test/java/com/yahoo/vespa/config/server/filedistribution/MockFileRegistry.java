@@ -37,9 +37,6 @@ public class MockFileRegistry implements FileRegistry {
         return fileReference;
     }
 
-    @Override
-    public String fileSourceHost() { return HostName.getLocalhost(); }
-
     public List<Entry> export() { return entries; }
 
     @Override

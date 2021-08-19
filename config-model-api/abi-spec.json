@@ -424,7 +424,7 @@
       "public abstract com.yahoo.config.FileReference addUri(java.lang.String)",
       "public abstract com.yahoo.config.FileReference addBlob(java.nio.ByteBuffer)",
       "public com.yahoo.config.FileReference addApplicationPackage()",
-      "public abstract java.lang.String fileSourceHost()",
+      "public java.lang.String fileSourceHost()",
       "public abstract java.util.List export()",
       "public static java.lang.String blobName(java.nio.ByteBuffer)"
     ],

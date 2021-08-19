@@ -83,10 +83,6 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
         throw new RuntimeException("addBlob(ByteBuffer blob) is not implemented here.");
     }
 
-    public String fileSourceHost() {
-        return HostName.getLocalhost();
-    }
-
     private static Constructor<FileReference> createFileReferenceConstructor() {
         try {
             Constructor<FileReference> method = FileReference.class.getDeclaredConstructor(String.class);
