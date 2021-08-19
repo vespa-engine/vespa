@@ -38,6 +38,26 @@ import static org.junit.Assert.assertTrue;
 public class StatelessOnnxEvaluationTest {
 
     @Test
+    public void testStatelessOnnxModelNameCollision() throws IOException {
+        Path appDir = Path.fromString("src/test/cfg/application/onnx_name_collision");
+        try {
+            ImportedModelTester tester = new ImportedModelTester("onnx", appDir);
+            VespaModel model = tester.createVespaModel();
+            ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
+            RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
+            cluster.getConfig(b);
+            RankProfilesConfig config = new RankProfilesConfig(b);
+            assertEquals(2, config.rankprofile().size());
+
+            Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
+            assertTrue(modelNames.contains("foobar"));
+            assertTrue(modelNames.contains("barfoo"));
+        } finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        }
+    }
+
+    @Test
     public void testStatelessOnnxModelEvaluation() throws IOException {
         Path appDir = Path.fromString("src/test/cfg/application/onnx");
         Path storedAppDir = appDir.append("copy");
