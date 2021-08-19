@@ -399,11 +399,14 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeploymentSpec.UpgradePolicy readUpgradePolicy(Element parent, Element fallbackParent) {
-        String policy;
         Element upgradeElement = XML.getChild(parent, upgradeTag);
         if (upgradeElement == null)
             upgradeElement = XML.getChild(fallbackParent, upgradeTag);
-        if (upgradeElement == null || (policy = upgradeElement.getAttribute("policy")).isEmpty())
+        if (upgradeElement == null)
+            return DeploymentSpec.UpgradePolicy.defaultPolicy;
+
+        String policy = upgradeElement.getAttribute("policy");
+        if (policy.isEmpty())
             return DeploymentSpec.UpgradePolicy.defaultPolicy;
 
         switch (policy) {
@@ -416,11 +419,14 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeploymentSpec.UpgradeRollout readUpgradeRollout(Element parent, Element fallbackParent) {
-        String rollout;
         Element upgradeElement = XML.getChild(parent, upgradeTag);
         if (upgradeElement == null)
             upgradeElement = XML.getChild(fallbackParent, upgradeTag);
-        if (upgradeElement == null || (rollout = upgradeElement.getAttribute("rollout")).isEmpty())
+        if (upgradeElement == null)
+            return DeploymentSpec.UpgradeRollout.separate;
+
+        String rollout = upgradeElement.getAttribute("rollout");
+        if (rollout.isEmpty())
             return DeploymentSpec.UpgradeRollout.separate;
 
         switch (rollout) {
