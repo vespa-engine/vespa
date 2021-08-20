@@ -47,8 +47,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
-                         ValidationTester.censorNumbers(e.getMessage()));
+            assertEquals("Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.", e.getMessage());
         }
     }
 
@@ -59,8 +58,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
-                         ValidationTester.censorNumbers(e.getMessage()));
+            assertEquals("publiccd: Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.", e.getMessage());
         }
     }
 
@@ -71,8 +69,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
-                    ValidationTester.censorNumbers(e.getMessage()));
+            assertEquals("publiccd: Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.", e.getMessage());
 
         }
     }
