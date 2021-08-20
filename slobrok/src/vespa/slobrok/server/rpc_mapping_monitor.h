@@ -41,12 +41,14 @@ private:
     FRT_Supervisor& _orb;
     DelayedTasks _delayedTasks;
     Map _map;
-    MappingMonitorListener* _target;
+    MappingMonitorOwner &_owner;
+
+    bool active(const ServiceMapping &mapping, ManagedRpcServer *rpcsrv) const;
+
 public:
-    RpcMappingMonitor(FRT_Supervisor &orb);
+    RpcMappingMonitor(FRT_Supervisor &orb, MappingMonitorOwner &owner);
     ~RpcMappingMonitor();
 
-    void target(MappingMonitorListener *listener) override;
     void start(const ServiceMapping& mapping) override;
     void stop(const ServiceMapping& mapping) override;
 

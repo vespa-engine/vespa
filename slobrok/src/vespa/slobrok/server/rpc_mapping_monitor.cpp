@@ -12,24 +12,14 @@ void RpcMappingMonitor::DelayedTasks::PerformTask() {
     std::swap(deleteAfterSwap, _deleteList);
 }
 
-RpcMappingMonitor::RpcMappingMonitor(FRT_Supervisor &orb)
+RpcMappingMonitor::RpcMappingMonitor(FRT_Supervisor &orb, MappingMonitorOwner &owner)
   : _orb(orb),
     _delayedTasks(orb.GetScheduler()),
     _map(),
-    _target(nullptr)
+    _owner(owner)
 {}
 
 RpcMappingMonitor::~RpcMappingMonitor() = default;
-
-void RpcMappingMonitor::target(MappingMonitorListener *listener) {
-    if (listener == nullptr) {
-        LOG_ASSERT(_target != nullptr);
-    } else {
-        LOG_ASSERT(_target == nullptr);
-    }
-    _target = listener;
-    LOG(debug, "new target %p", _target);
-}
 
 void RpcMappingMonitor::start(const ServiceMapping& mapping) {
     LOG(spam, "start %s->%s", mapping.name.c_str(), mapping.spec.c_str());
@@ -46,39 +36,32 @@ void RpcMappingMonitor::stop(const ServiceMapping& mapping) {
     _map.erase(iter);
 }
 
+
+bool RpcMappingMonitor::active(const ServiceMapping &mapping, ManagedRpcServer *rpcsrv) const {
+    auto iter = _map.find(mapping);
+    if (iter == _map.end()) {
+        return false;
+    }
+    return iter->second.get() == rpcsrv;
+}
+        
 void RpcMappingMonitor::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) {
     ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
     LOG(spam, "notifyFailed %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-    Map::const_iterator iter = _map.find(mapping);
-    if (iter == _map.end()) {
-        return;
-    }
-    const MUP & managedRpcServer = iter->second;
-    if (managedRpcServer.get() != rpcsrv) {
-        return;
-    }
-    if (_target) {
+    if (active(mapping, rpcsrv)) {
         LOG(debug, "service %s [at %s] failed: %s",
             mapping.name.c_str(), mapping.spec.c_str(), errmsg.c_str());
-        _target->down(mapping);
+        _owner.down(mapping);
     }
 }
 
 void RpcMappingMonitor::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
     ServiceMapping mapping{rpcsrv->getName(), rpcsrv->getSpec()};
     LOG(spam, "notifyOk %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-    Map::const_iterator iter = _map.find(mapping);
-    if (iter == _map.end()) {
-        return;
-    }
-    const MUP & managedRpcServer = iter->second;
-    if (managedRpcServer.get() != rpcsrv) {
-        return;
-    }
-    if (_target) {
+    if (active(mapping, rpcsrv)) {
         LOG(debug, "service %s [at %s] up ok -> target",
             mapping.name.c_str(), mapping.spec.c_str());
-        _target->up(mapping);
+        _owner.up(mapping);
     }
 }
 
