@@ -62,6 +62,12 @@
       framework bundles, July 2021. -->
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-server</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.glassfish.jersey.media</groupId>
+          <artifactId>jersey-media-jaxb</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
