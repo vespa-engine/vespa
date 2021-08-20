@@ -11,6 +11,7 @@ vespa_add_library(slobrok_slobrokserver
     map_diff.cpp
     map_listener.cpp
     map_source.cpp
+    mapping_monitor.cpp
     metrics_producer.cpp
     mock_map_listener.cpp
     monitor.cpp
@@ -20,6 +21,7 @@ vespa_add_library(slobrok_slobrokserver
     remote_check.cpp
     remote_slobrok.cpp
     reserved_name.cpp
+    rpc_mapping_monitor.cpp
     rpc_server_manager.cpp
     rpc_server_map.cpp
     rpchooks.cpp
