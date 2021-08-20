@@ -3,10 +3,13 @@
 #include "compile_tensor_function.h"
 #include "tensor_function.h"
 
+#include <vespa/vespalib/util/classname.h>
+
 namespace vespalib::eval {
 
 namespace {
 
+using vespalib::getClassName;
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
 
@@ -36,7 +39,16 @@ struct ProgramCompiler {
     Stash &stash;
     std::vector<Frame> stack;
     std::vector<Instruction> prog;
-    ProgramCompiler(const ValueBuilderFactory &factory_in, Stash &stash_in) : factory(factory_in), stash(stash_in), stack(), prog() {}
+    CTFMetaData *meta;
+    ProgramCompiler(const ValueBuilderFactory &factory_in, Stash &stash_in, CTFMetaData *meta_in)
+      : factory(factory_in), stash(stash_in), stack(), prog(), meta(meta_in) {}
+    ~ProgramCompiler();
+
+    void maybe_add_meta(const TensorFunction &node, const Instruction &instr) {
+        if (meta != nullptr) {
+            meta->steps.emplace_back(getClassName(node), instr.resolve_symbol());
+        }
+    }
 
     void append(const std::vector<Instruction> &other_prog) {
         prog.insert(prog.end(), other_prog.begin(), other_prog.end());
@@ -44,9 +56,11 @@ struct ProgramCompiler {
 
     void open(const TensorFunction &node) {
         if (auto if_node = as<tensor_function::If>(node)) {
-            append(compile_tensor_function(factory, if_node->cond(), stash));
-            auto true_prog = compile_tensor_function(factory, if_node->true_child(), stash);
-            auto false_prog = compile_tensor_function(factory, if_node->false_child(), stash);
+            append(compile_tensor_function(factory, if_node->cond(), stash, meta));
+            maybe_add_meta(node, Instruction(op_skip_if_false));
+            auto true_prog = compile_tensor_function(factory, if_node->true_child(), stash, meta);
+            maybe_add_meta(node, Instruction(op_skip));
+            auto false_prog = compile_tensor_function(factory, if_node->false_child(), stash, meta);
             true_prog.emplace_back(op_skip, false_prog.size());
             prog.emplace_back(op_skip_if_false, true_prog.size());
             append(true_prog);
@@ -58,6 +72,7 @@ struct ProgramCompiler {
 
     void close(const TensorFunction &node) {
         prog.push_back(node.compile_self(factory, stash));
+        maybe_add_meta(node, prog.back());
     }
 
     std::vector<Instruction> compile(const TensorFunction &function) {
@@ -73,11 +88,14 @@ struct ProgramCompiler {
         return std::move(prog);
     }
 };
+ProgramCompiler::~ProgramCompiler() = default;
 
 } // namespace vespalib::eval::<unnamed>
 
-std::vector<Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash) {
-    ProgramCompiler compiler(factory, stash);
+CTFMetaData::~CTFMetaData() = default;
+
+std::vector<Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash, CTFMetaData *meta) {
+    ProgramCompiler compiler(factory, stash, meta);
     return compiler.compile(function);
 }
 
