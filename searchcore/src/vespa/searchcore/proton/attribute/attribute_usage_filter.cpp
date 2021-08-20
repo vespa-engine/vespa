@@ -14,38 +14,24 @@ void makeAddressSpaceMessage(std::ostream &os,
     os << "{ used: " <<
         usage.getUsage().used() << ", dead: " <<
         usage.getUsage().dead() << ", limit: " <<
-        usage.getUsage().limit() << "}, attributeName: \"" <<
-        usage.getAttributeName() << "\", subdb: \"" <<
-        usage.getSubDbName() << "\"}";
+        usage.getUsage().limit() << "}, " <<
+        "attributeName: \"" << usage.getAttributeName() << "\", " <<
+        "componentName: \"" << usage.get_component_name() << "\", " <<
+        "subdb: \"" << usage.getSubDbName() << "\"}";
 }
 
-void makeEnumStoreMessage(std::ostream &os,
-                          double used, double limit,
-                          const AddressSpaceUsageStats &usage)
+void make_error_message(std::ostream &os,
+                        double used, double limit,
+                        const AddressSpaceUsageStats &usage)
 {
-    os << "enumStoreLimitReached: { "
+    os << "addressSpaceLimitReached: { "
         "action: \""
         "add more content nodes"
         "\", "
         "reason: \""
-        "enum store address space used (" << used << ") > "
+        "max address space in attribute vector components used (" << used << ") > "
         "limit (" << limit << ")"
-        "\", enumStore: ";
-    makeAddressSpaceMessage(os, usage);
-}
-
-void makeMultiValueMessage(std::ostream &os,
-                           double used, double limit,
-                           const AddressSpaceUsageStats &usage)
-{
-    os << "multiValueLimitReached: { "
-        "action: \""
-        "add more content nodes"
-        "\", "
-        "reason: \""
-        "multiValue address space used (" << used << ") > "
-        "limit (" << limit << ")"
-        "\", multiValue: ";
+        "\", addressSpace: ";
     makeAddressSpaceMessage(os, usage);
 }
 
@@ -57,20 +43,11 @@ AttributeUsageFilter::recalcState(const Guard &guard)
     (void) guard;
     bool hasMessage = false;
     std::ostringstream message;
-    const AddressSpaceUsageStats &enumStoreUsage = _attributeStats.enumStoreUsage();
-    double enumStoreUsed = enumStoreUsage.getUsage().usage();
-    if (enumStoreUsed > _config._enumStoreLimit) {
+    const auto &max_usage = _attributeStats.max_address_space_usage();
+    double used = max_usage.getUsage().usage();
+    if (used > _config._address_space_limit) {
         hasMessage = true;
-        makeEnumStoreMessage(message, enumStoreUsed, _config._enumStoreLimit, enumStoreUsage);
-    }
-    const AddressSpaceUsageStats &multiValueUsage = _attributeStats.multiValueUsage();
-    double multiValueUsed = multiValueUsage.getUsage().usage();
-    if (multiValueUsed > _config._multiValueLimit) {
-        if (hasMessage) {
-            message << ", ";
-        }
-        hasMessage = true;
-        makeMultiValueMessage(message, multiValueUsed, _config._multiValueLimit, multiValueUsage);
+        make_error_message(message, used, _config._address_space_limit, max_usage);
     }
     if (hasMessage) {
         _state = State(false, message.str());
@@ -124,20 +101,6 @@ AttributeUsageFilter::set_listener(std::unique_ptr<IAttributeUsageListener> list
 {
     Guard guard(_lock);
     _listener = std::move(listener);
-}
-
-double
-AttributeUsageFilter::getEnumStoreUsedRatio() const
-{
-    Guard guard(_lock);
-    return _attributeStats.enumStoreUsage().getUsage().usage();
-}
-
-double
-AttributeUsageFilter::getMultiValueUsedRatio() const
-{
-    Guard guard(_lock);
-    return _attributeStats.multiValueUsage().getUsage().usage();
 }
 
 bool

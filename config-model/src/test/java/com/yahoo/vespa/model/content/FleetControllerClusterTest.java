@@ -124,11 +124,10 @@ public class FleetControllerClusterTest {
 
     private void assertLimits(double expDisk, double expMemory, FleetcontrollerConfig config) {
         var limits = config.cluster_feed_block_limit();
-        assertEquals(4, limits.size());
+        assertEquals(3, limits.size());
         assertEquals(expDisk, limits.get("disk"), DELTA);
         assertEquals(expMemory, limits.get("memory"), DELTA);
-        assertEquals(0.89, limits.get("attribute-enum-store"), DELTA);
-        assertEquals(0.89, limits.get("attribute-multi-value"), DELTA);
+        assertEquals(0.89, limits.get("attribute-address-space"), DELTA);
     }
 
     private FleetcontrollerConfig getConfigForResourceLimitsTuning(Double diskLimit, Double memoryLimit) {

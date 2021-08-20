@@ -1,11 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/persistence/spi/resource_usage.h>
+#include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/persistenceengine/resource_usage_tracker.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <atomic>
@@ -131,7 +132,7 @@ struct AttributeUsageStatsBuilder
     ~AttributeUsageStatsBuilder();
 
     AttributeUsageStatsBuilder& reset() { stats = AttributeUsageStats(); return *this; }
-    AttributeUsageStatsBuilder& merge(const NamedAttribute& named_attribute, size_t used_enum_store, size_t used_multivalue);
+    AttributeUsageStatsBuilder& merge(const NamedAttribute& named_attribute, size_t used_address_space);
 
     AttributeUsageStats build() { return stats; }
 
@@ -140,11 +141,11 @@ struct AttributeUsageStatsBuilder
 AttributeUsageStatsBuilder::~AttributeUsageStatsBuilder() = default;
 
 AttributeUsageStatsBuilder&
-AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute, size_t used_enum_store, size_t used_multivalue)
+AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute, size_t used_address_space)
 {
-    vespalib::AddressSpace enum_store_usage(used_enum_store, 0, usage_limit);
-    vespalib::AddressSpace multivalue_usage(used_multivalue, 0, usage_limit);
-    search::AddressSpaceUsage as_usage(enum_store_usage, multivalue_usage);
+    vespalib::AddressSpace address_space_usage(used_address_space, 0, usage_limit);
+    search::AddressSpaceUsage as_usage;
+    as_usage.set("comp", address_space_usage);
     stats.merge(as_usage, named_attribute.attribute, named_attribute.subdb);
     return *this;
 }
@@ -153,11 +154,10 @@ double rel_usage(size_t usage) noexcept {
     return (double) usage / (double) usage_limit;
 }
 
-ResourceUsage make_resource_usage(const vespalib::string& enum_store_name, size_t used_enum_store, const vespalib::string &multivalue_name, size_t used_multivalue)
+ResourceUsage make_resource_usage(const vespalib::string& attr_name, size_t used_address_space)
 {
-    AttributeResourceUsage enum_store_usage(rel_usage(used_enum_store), enum_store_name);
-    AttributeResourceUsage multivalue_usage(rel_usage(used_multivalue), multivalue_name);
-    return ResourceUsage(0.0, 0.0, enum_store_usage, multivalue_usage);
+    AttributeResourceUsage address_space_usage(rel_usage(used_address_space), attr_name);
+    return ResourceUsage(0.0, 0.0, address_space_usage);
 }
 
 }
@@ -170,24 +170,24 @@ TEST_F(ResourceUsageTrackerTest, aggregates_attribute_usage)
     auto aul2 = _tracker->make_attribute_usage_listener("doctype2");
     AttributeUsageStatsBuilder b1;
     AttributeUsageStatsBuilder b2;
-    b1.merge(ready_a1, 10, 20).merge(ready_a2, 5, 30);
-    b2.merge(ready_a1, 15, 15);
+    b1.merge(ready_a1, 10).merge(ready_a2, 5);
+    b2.merge(ready_a1, 15);
     aul1->notify_attribute_usage(b1.build());
     aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.0.ready.a2", 30), get_usage());
-    b1.merge(notready_a1, 5, 31);
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
+    b1.merge(notready_a1, 16);
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.2.notready.a1", 31), get_usage());
-    b1.reset().merge(ready_a1, 10, 20).merge(ready_a2, 5, 30);
+    EXPECT_EQ(make_resource_usage("doctype1.2.notready.a1.comp", 16), get_usage());
+    b1.reset().merge(ready_a1, 10).merge(ready_a2, 5);
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype1.0.ready.a2", 30), get_usage());
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
     aul2.reset();
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 10, "doctype1.0.ready.a2", 30), get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 10), get_usage());
     aul1.reset();
-    EXPECT_EQ(make_resource_usage("", 0, "", 0), get_usage());
+    EXPECT_EQ(make_resource_usage("", 0), get_usage());
     aul2 = _tracker->make_attribute_usage_listener("doctype2");
     aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1", 15, "doctype2.0.ready.a1", 15), get_usage());
+    EXPECT_EQ(make_resource_usage("doctype2.0.ready.a1.comp", 15), get_usage());
 }
 
 TEST_F(ResourceUsageTrackerTest, can_skip_scan_when_aggregating_attributes)
@@ -198,16 +198,16 @@ TEST_F(ResourceUsageTrackerTest, can_skip_scan_when_aggregating_attributes)
     auto aul2 = _tracker->make_attribute_usage_listener("doctype2");
     AttributeUsageStatsBuilder b1;
     AttributeUsageStatsBuilder b2;
-    b1.merge(ready_a1, 20, 20).merge(ready_a2, 5, 30);
-    b2.merge(ready_a1, 15, 15);
+    b1.merge(ready_a1, 20).merge(ready_a2, 5);
+    b2.merge(ready_a1, 15);
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 20), get_usage());
     EXPECT_EQ(2u, get_update_count());
     aul1->notify_attribute_usage(b1.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 20), get_usage());
     EXPECT_EQ(2u, get_update_count()); // usage for doctype1 has not changed
     aul2->notify_attribute_usage(b2.build());
-    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1", 20, "doctype1.0.ready.a2", 30), get_usage());
+    EXPECT_EQ(make_resource_usage("doctype1.0.ready.a1.comp", 20), get_usage());
     EXPECT_EQ(2u, get_update_count()); // usage for doctype2 is less than usage for doctype1
     aul2.reset();
     aul1.reset();

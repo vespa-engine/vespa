@@ -13,7 +13,7 @@ namespace storage::spi {
 class AttributeResourceUsage
 {
     double _usage;
-    vespalib::string _name; // document_type.subdb.attribute
+    vespalib::string _name; // document_type.subdb.attribute.component
 public:
     
     AttributeResourceUsage(double usage, const vespalib::string& name)

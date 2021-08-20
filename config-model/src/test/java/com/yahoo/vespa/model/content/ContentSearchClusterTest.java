@@ -99,7 +99,7 @@ public class ContentSearchClusterTest {
 
     private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit, ContentCluster cluster) {
         var limits = getFleetcontrollerConfig(cluster).cluster_feed_block_limit();
-        assertEquals(4, limits.size());
+        assertEquals(3, limits.size());
         assertEquals(expDiskLimit, limits.get("disk"), EPSILON);
         assertEquals(expMemoryLimit, limits.get("memory"), EPSILON);
     }

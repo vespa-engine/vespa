@@ -151,8 +151,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.lidspacecompaction.removeblockrate,
                     isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
-                    proton.writefilter.attribute.enumstorelimit,
-                    proton.writefilter.attribute.multivaluelimit),
+                    proton.writefilter.attribute.addressSpaceLimit),
             vespalib::from_s(proton.writefilter.sampleinterval),
             BlockableMaintenanceJobConfig(
                     proton.maintenancejobs.resourcelimitfactor,
