@@ -110,7 +110,10 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
-      _localRpcMonitorMap(*_supervisor),
+      _localRpcMonitorMap(*_supervisor,
+                          [this] (MappingMonitorOwner &owner) {
+                              return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
+                          }),
       _rpcsrvmanager(*this),
       _exchanger(*this, _rpcsrvmap),
       _rpcsrvmap()
