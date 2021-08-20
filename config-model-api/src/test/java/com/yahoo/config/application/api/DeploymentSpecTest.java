@@ -118,6 +118,7 @@ public class DeploymentSpecTest {
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
 
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
+        assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
     }
 
     @Test
@@ -360,33 +361,43 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void productionSpecWithUpgradeRollout() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <instance id='default'>" +
+                "      <upgrade rollout='leading' />" +
+                "   </instance>" +
+                "   <instance id='custom'/>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("leading", spec.requireInstance("default").upgradeRollout().toString());
+        assertEquals("separate", spec.requireInstance("custom").upgradeRollout().toString());
+    }
+
+    @Test
     public void productionSpecWithUpgradePolicy() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <instance id='default'>" +
                 "      <upgrade policy='canary'/>" +
-                "      <prod>" +
-                "         <region active='true'>us-west-1</region>" +
-                "         <region active='true'>us-central-1</region>" +
-                "         <region active='true'>us-east-3</region>" +
-                "      </prod>" +
                 "   </instance>" +
+                "   <instance id='custom'/>" +
                 "</deployment>"
         );
-
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.requireInstance("default").upgradePolicy().toString());
+        assertEquals("defaultPolicy", spec.requireInstance("custom").upgradePolicy().toString());
     }
 
     @Test
     public void upgradePolicyDefault() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <upgrade policy='canary'/>" +
-                "   <instance id='instance1'>" +
-                "   </instance>" +
+                "   <upgrade policy='canary' rollout='leading'/>" +
+                "   <instance id='instance1'/>" +
                 "   <instance id='instance2'>" +
-                "      <upgrade policy='conservative'/>" +
+                "      <upgrade policy='conservative' rollout='separate'/>" +
                 "   </instance>" +
                 "</deployment>"
         );
@@ -394,6 +405,8 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("canary", spec.requireInstance("instance1").upgradePolicy().toString());
         assertEquals("conservative", spec.requireInstance("instance2").upgradePolicy().toString());
+        assertEquals("leading", spec.requireInstance("instance1").upgradeRollout().toString());
+        assertEquals("separate", spec.requireInstance("instance2").upgradeRollout().toString());
     }
 
     @Test

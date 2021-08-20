@@ -107,6 +107,27 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void leadingUpgradeAllowsApplicationChangeWhileUpgrading() {
+        var applicationPackage = new ApplicationPackageBuilder().region("us-east-3")
+                                                                .upgradeRollout("leading")
+                                                                .build();
+        var app = tester.newDeploymentContext();
+
+        app.submit(applicationPackage).deploy();
+
+        Change upgrade = Change.of(new Version("7.8.9"));
+        tester.controllerTester().upgradeSystem(upgrade.platform().get());
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest);
+        tester.triggerJobs();
+        app.assertRunning(productionUsEast3);
+        assertEquals(upgrade, app.instance().change());
+
+        app.submit(applicationPackage);
+        assertEquals(upgrade.with(app.lastSubmission().get()), app.instance().change());
+    }
+
+    @Test
     public void abortsJobsOnNewApplicationChange() {
         var app = tester.newDeploymentContext();
         app.submit()
@@ -120,15 +141,15 @@ public class DeploymentTriggerTest {
         app.submit();
         assertTrue(tester.jobs().active(id).isPresent());
 
-        tester.runner().run();
-        assertFalse(tester.jobs().active(id).isPresent());
-
         tester.triggerJobs();
-        assertEquals(EnumSet.of(systemTest, stagingTest), tester.jobs().active().stream()
-                                                                .map(run -> run.id().type())
-                                                                .collect(Collectors.toCollection(() -> EnumSet.noneOf(JobType.class))));
+        tester.runner().run();
+        assertTrue(tester.jobs().active(id).isPresent()); // old run
 
-        app.deploy();
+        app.runJob(systemTest).runJob(stagingTest).runJob(stagingTest); // outdated run is aborted when otherwise blocking a new run
+        tester.triggerJobs();
+        app.jobAborted(productionUsCentral1);
+
+        app.runJob(productionUsCentral1).runJob(productionUsWest1).runJob(productionUsEast3);
         assertEquals(Change.empty(), app.instance().change());
 
         tester.controllerTester().upgradeSystem(new Version("8.9"));
@@ -138,6 +159,8 @@ public class DeploymentTriggerTest {
 
         // Jobs are not aborted when the new submission remains outstanding.
         app.submit();
+        app.runJob(systemTest).runJob(stagingTest);
+        tester.triggerJobs();
         tester.runner().run();
         assertEquals(EnumSet.of(productionUsCentral1), tester.jobs().active().stream()
                                                              .map(run -> run.id().type())
@@ -468,8 +491,9 @@ public class DeploymentTriggerTest {
         Version version2 = Version.fromString("7.2");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().maintain();
-        app1.runJob(systemTest).runJob(stagingTest) // tests for previous version — these are "reused" later.
-            .runJob(systemTest).runJob(stagingTest).timeOutConvergence(productionUsCentral1);
+        tester.triggerJobs();
+        app1.jobAborted(systemTest).jobAborted(stagingTest);
+        app1.runJob(systemTest).runJob(stagingTest).timeOutConvergence(productionUsCentral1);
         assertEquals(version2, app1.deployment(productionUsCentral1.zone(main)).version());
         Instant triggered = app1.instanceJobs().get(productionUsCentral1).lastTriggered().get().start();
         tester.clock().advance(Duration.ofHours(1));
@@ -481,7 +505,8 @@ public class DeploymentTriggerTest {
         assertEquals("Change becomes latest non-broken version", Change.of(version1), app1.instance().change());
 
         // version1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
-        app1.failDeployment(productionEuWest1);
+        app1.runJob(systemTest).runJob(stagingTest)
+            .failDeployment(productionEuWest1);
         assertEquals(triggered, app1.instanceJobs().get(productionUsCentral1).lastTriggered().get().start());
 
         // Roll out a new application version, which gives a dual change -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
@@ -548,7 +573,7 @@ public class DeploymentTriggerTest {
         app.runJob(systemTest).runJob(stagingTest);
 
         // Finish old run of the aborted production job.
-        app.jobAborted(productionUsEast3);
+        app.triggerJobs().jobAborted(productionUsEast3);
 
         // New upgrade is already tested for both jobs.
 
@@ -701,16 +726,15 @@ public class DeploymentTriggerTest {
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
         app2.deploy();
         app3.deploy();
-        app1.assertRunning(stagingTest);
-        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(stagingTest);
+        assertEquals(0, tester.jobs().active().size());
 
         tester.controllerTester().upgradeSystem(new Version("6.2"));
         tester.upgrader().maintain();
         app1.submit(applicationPackage);
-        app1.jobAborted(stagingTest);
 
         // Tests for app1 trigger before the others since it carries an application upgrade.
-        tester.readyJobsTrigger().maintain();
+        tester.readyJobsTrigger().run();
         app1.assertRunning(systemTest);
         app1.assertRunning(stagingTest);
         assertEquals(2, tester.jobs().active().size());

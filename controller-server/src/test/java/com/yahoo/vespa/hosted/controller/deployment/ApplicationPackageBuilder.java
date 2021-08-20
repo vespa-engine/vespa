@@ -53,6 +53,7 @@ public class ApplicationPackageBuilder {
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
     private String upgradePolicy = null;
+    private String upgradeRollout = null;
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
@@ -72,6 +73,11 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
         this.upgradePolicy = upgradePolicy;
+        return this;
+    }
+
+    public ApplicationPackageBuilder upgradeRollout(String upgradeRollout) {
+        this.upgradeRollout = upgradeRollout;
         return this;
     }
 
@@ -221,10 +227,11 @@ public class ApplicationPackageBuilder {
         }
         xml.append(">\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
-        if (upgradePolicy != null) {
-            xml.append("    <upgrade policy='");
-            xml.append(upgradePolicy);
-            xml.append("'/>\n");
+        if (upgradePolicy != null || upgradeRollout != null) {
+            xml.append("    <upgrade ");
+            if (upgradePolicy != null) xml.append("policy='").append(upgradePolicy).append("' ");
+            if (upgradeRollout != null) xml.append("rollout='").append(upgradeRollout).append("' ");
+            xml.append("/>\n");
         }
         xml.append(notifications);
         if (explicitSystemTest)

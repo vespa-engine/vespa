@@ -413,7 +413,7 @@
           "id": 1,
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/run/1",
           "start": "(ignore)",
-          "status": "aborted",
+          "status": "running",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
@@ -469,7 +469,7 @@
           "id": 2,
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/2",
           "start": "(ignore)",
-          "status": "aborted",
+          "status": "running",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
