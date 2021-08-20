@@ -170,7 +170,6 @@ configure_vespa_malloc
 
 if $no_valgrind ; then
     numactl=$(get_numa_ctl_cmd)
-    configure_numa_ctl
     ulimit -c unlimited
     log_debug_message "Starting $0 with : " \
          $numactl env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
