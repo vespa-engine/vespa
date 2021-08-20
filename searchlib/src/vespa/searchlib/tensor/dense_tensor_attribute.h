@@ -25,6 +25,7 @@ private:
     void consider_remove_from_index(DocId docid);
     vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     class ThreadedLoader;
     class ForegroundLoader;
 public:

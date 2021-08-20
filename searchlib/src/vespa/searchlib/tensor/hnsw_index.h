@@ -172,6 +172,7 @@ public:
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
+    void populate_address_space_usage(search::AddressSpaceUsage& usage) const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
     void shrink_lid_space(uint32_t doc_id_limit) override;
 

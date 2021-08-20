@@ -15,6 +15,7 @@ namespace vespalib::slime { struct Inserter; }
 namespace search::fileutil { class LoadedBuffer; }
 
 namespace search {
+class AddressSpaceUsage;
 class BitVector;
 class CompactionStrategy;
 }
@@ -65,6 +66,7 @@ public:
     virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage update_stat() = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
+    virtual void populate_address_space_usage(search::AddressSpaceUsage& usage) const = 0;
     virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
     virtual void shrink_lid_space(uint32_t doc_id_limit) = 0;
 

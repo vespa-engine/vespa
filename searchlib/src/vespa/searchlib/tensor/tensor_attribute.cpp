@@ -3,6 +3,7 @@
 #include "tensor_attribute.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -15,11 +16,12 @@
 using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
+using search::AddressSpaceComponents;
+using search::StateExplorerUtils;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using search::StateExplorerUtils;
 
 namespace search::tensor {
 
@@ -187,6 +189,12 @@ TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
                                               object.setObject("ref_vector").setObject("memory_usage"));
     StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
                                               object.setObject("tensor_store").setObject("memory_usage"));
+}
+
+void
+TensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    usage.set(AddressSpaceComponents::tensor_store, _tensorStore.get_address_space_usage());
 }
 
 vespalib::eval::Value::UP

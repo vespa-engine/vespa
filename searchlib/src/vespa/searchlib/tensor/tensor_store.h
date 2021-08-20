@@ -53,6 +53,10 @@ public:
         return _store.getMemoryUsage();
     }
 
+    vespalib::AddressSpace get_address_space_usage() const {
+        return _store.getAddressSpaceUsage();
+    }
+
     uint32_t startCompactWorstBuffer() {
         return _store.startCompactWorstBuffer(_typeId);
     }
