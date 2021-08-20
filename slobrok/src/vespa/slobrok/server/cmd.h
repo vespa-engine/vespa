@@ -25,7 +25,7 @@ public:
     ~ScriptCommand();
 
     static ScriptCommand makeRegRpcSrvCmd(SBEnv &env, const std::string &name, const std::string &spec, FRT_RPCRequest *req);
-    static ScriptCommand makeRemRemCmd(SBEnv &env, const std::string &name, const std::string &spec);
+    static ScriptCommand makeIgnoreCmd(SBEnv &env, const std::string &name, const std::string &spec);
 
     void doneHandler(OkState result);
     void doRequest();

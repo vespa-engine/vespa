@@ -60,6 +60,14 @@ private:
     UnionServiceMap                            _consensusMap;
     ServiceMapHistory                          _globalVisibleHistory;
 
+    RpcServerManager                           _rpcsrvmanager;
+    ExchangeManager                            _exchanger;
+    RpcServerMap                               _rpcsrvmap;
+
+    std::unique_ptr<MapSubscription>           _localMonitorSubscription;
+    std::unique_ptr<MapSubscription>           _consensusSubscription;
+    std::unique_ptr<MapSubscription>           _globalHistorySubscription;
+
 public:
     explicit SBEnv(const ConfigShim &shim);
     ~SBEnv();
@@ -72,12 +80,16 @@ public:
     void suspend();
     void resume();
 
-    RpcServerManager         _rpcsrvmanager;
-    ExchangeManager          _exchanger;
-    RpcServerMap             _rpcsrvmap;
+    RpcServerManager& rpcServerManager() { return _rpcsrvmanager; }
+    ExchangeManager& exchangeManager() { return _exchanger; }
+    RpcServerMap& rpcServerMap() { return _rpcsrvmap; }
 
     ServiceMapHistory& globalHistory() {
         return _globalVisibleHistory;
+    }
+
+    LocalRpcMonitorMap& localMonitorMap() {
+        return _localRpcMonitorMap;
     }
 
     ServiceMapHistory& localHistory() {
@@ -99,11 +111,6 @@ public:
     OkState removePeer(const std::string& name, const std::string &spec);
 
     void countFailedHeartbeat() { _rpcHooks.countFailedHeartbeat(); }
-
-private:
-    std::unique_ptr<MapSubscription>           _localMonitorSubscription;
-    std::unique_ptr<MapSubscription>           _consensusSubscription;
-    std::unique_ptr<MapSubscription>           _globalHistorySubscription;
 };
 
 } // namespace slobrok

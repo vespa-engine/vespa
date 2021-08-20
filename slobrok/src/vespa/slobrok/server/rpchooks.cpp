@@ -234,7 +234,12 @@ RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req)
 
     LOG(debug, "RPC: invoked registerRpcServer(%s,%s)", dName, dSpec);
     _cnts.registerReqs++;
-
+    {
+        // TODO: run only this path, and complete the request instead of ignoring
+        auto script = ScriptCommand::makeIgnoreCmd(_env, dName, dSpec);
+        ServiceMapping mapping{dName, dSpec};
+        _env.localMonitorMap().addLocal(mapping, std::make_unique<ScriptCommand>(std::move(script)));
+    }
     // is this already OK?
     if (_rpcsrvmanager.alreadyManaged(dName, dSpec)) {
         LOG(debug, "registerRpcServer(%s,%s) OK, already managed",

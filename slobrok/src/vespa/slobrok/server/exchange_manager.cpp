@@ -15,7 +15,7 @@ namespace slobrok {
 ExchangeManager::ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap)
     : _partners(),
       _env(env),
-      _rpcsrvmanager(env._rpcsrvmanager),
+      _rpcsrvmanager(env.rpcServerManager()),
       _rpcsrvmap(rpcsrvmap)
 {
 }
@@ -68,7 +68,7 @@ void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
     WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, *this,
-                                           ScriptCommand::makeRemRemCmd(_env, name, spec));
+                                           ScriptCommand::makeIgnoreCmd(_env, name, spec));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
