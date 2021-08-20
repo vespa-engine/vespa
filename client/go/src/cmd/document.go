@@ -22,9 +22,9 @@ func init() {
 }
 
 var documentCmd = &cobra.Command{
-    Use:   "document mynamespace/mydocumenttype/myid document.json",
+    Use:   "document",
     Short: "Issue document operations (put by default)",
-    Long:  `TODO`,
+    Long:  `TODO: Example  mynamespace/mydocumenttype/myid document.json`,
     // TODO: Check args
     Run: func(cmd *cobra.Command, args []string) {
         put(args[0], args[1])

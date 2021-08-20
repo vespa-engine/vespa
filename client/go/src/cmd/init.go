@@ -29,9 +29,9 @@ func init() {
 
 var initCmd = &cobra.Command{
     // TODO: "application" and "list" subcommands?
-    Use:   "init applicationName source",
+    Use:   "init",
     Short: "Creates the files and directory structure for a new Vespa application",
-    Long:  `TODO`,
+    Long:  `TODO: vespa init applicationName source`,
     Args: func(cmd *cobra.Command, args []string) error {
         if len(args) != 2 {
             return errors.New("vespa init requires a project name and source")

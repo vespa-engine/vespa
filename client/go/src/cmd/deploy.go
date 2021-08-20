@@ -21,28 +21,59 @@ import (
 
 func init() {
     rootCmd.AddCommand(deployCmd)
+    deployCmd.AddCommand(deployPrepareCmd)
+    deployCmd.AddCommand(deployActivateCmd)
 }
 
 var deployCmd = &cobra.Command{
-    Use:   "deploy application-package-dir OR application.zip",
+    Use:   "deploy",
     Short: "Deploys an application package",
-    Long:  `TODO`,
+    Long:  `TODO: Use prepare or deploy activate`,
+    Run: func(cmd *cobra.Command, args []string) {
+        utils.Error("Use either deploy prepare or deploy activate")
+    },
+}
+
+var deployPrepareCmd = &cobra.Command{
+    Use:   "prepare",
+    Short: "Prepares an application for activation",
+    Long:  `TODO:  prepare application-package-dir OR application.zip`,
     Args: func(cmd *cobra.Command, args []string) error {
         if len(args) > 1 {
-          return errors.New("Expected an application as the only argument")
+          return errors.New("Expected an application package as the only argument")
         }
         return nil
     },
     Run: func(cmd *cobra.Command, args []string) {
         if len(args) == 0 {
-            deploy("src/main/application")
+            deploy(true, "src/main/application")
         } else {
-            deploy(args[0])
+            deploy(true, args[0])
         }
     },
 }
 
-func deploy(application string) {
+var deployActivateCmd = &cobra.Command{
+    Use:   "activate",
+    Short: "Activates an application package. If no package argument, the previously prepared package is activated.",
+    Long:  `TODO: activate  [application-package-dir OR application.zip]`,
+    Args: func(cmd *cobra.Command, args []string) error {
+        if len(args) > 1 {
+          return errors.New("Expected an application package as the only argument")
+        }
+        return nil
+    },
+    Run: func(cmd *cobra.Command, args []string) {
+        if len(args) == 0 {
+            deploy(false, "")
+        } else {
+            deploy(false, args[0])
+        }
+    },
+}
+
+func deploy(prepare bool, application string) {
+    // TODO: Support no application (activate)
     if ! strings.HasSuffix(application, ".zip") {
         tempZip, error := ioutil.TempFile("", "application.zip")
         if error != nil {
@@ -67,11 +98,19 @@ func deploy(application string) {
         return
     }
 
-    url, _ := url.Parse(getTarget(deployContext).deploy + "/application/v2/tenant/default/prepareandactivate")
+    var deployUrl *url.URL
+    if prepare {
+        deployUrl, _ = url.Parse(getTarget(deployContext).deploy + "/application/v2/tenant/default/prepare")
+    } else if application == "" {
+        deployUrl, _ = url.Parse(getTarget(deployContext).deploy + "/application/v2/tenant/default/activate")
+    } else {
+        deployUrl, _ = url.Parse(getTarget(deployContext).deploy + "/application/v2/tenant/default/prepareandactivate")
+    }
+
     header := http.Header{}
     header.Add("Content-Type", "application/zip")
     request := &http.Request{
-        URL: url,
+        URL: deployUrl,
         Method: "POST",
         Header: header,
         Body: ioutil.NopCloser(zipFileReader),
