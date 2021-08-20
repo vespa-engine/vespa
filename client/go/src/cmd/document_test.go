@@ -17,14 +17,15 @@ func TestDocumentPut(t *testing.T) {
 
 func assertDocumentPut(documentId string, jsonFile string, t *testing.T) {
     reset()
+    client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",
-	             executeCommand(t, []string{"document", documentId, jsonFile}, []string{}))
+	             executeCommand(t, client, []string{"document", documentId, jsonFile}, []string{}))
     target := getTarget(documentContext).document
-    assert.Equal(t, target + "/document/v1/" + documentId, lastRequest.URL.String())
-    assert.Equal(t, "application/json", lastRequest.Header.Get("Content-Type"))
-    assert.Equal(t, "POST", lastRequest.Method)
+    assert.Equal(t, target + "/document/v1/" + documentId, client.lastRequest.URL.String())
+    assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
+    assert.Equal(t, "POST", client.lastRequest.Method)
 
     fileContent, _ := ioutil.ReadFile(jsonFile)
-    assert.Equal(t, string(fileContent), utils.ReaderToString(lastRequest.Body))
+    assert.Equal(t, string(fileContent), utils.ReaderToString(client.lastRequest.Body))
 }

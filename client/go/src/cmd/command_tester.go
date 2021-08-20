@@ -14,27 +14,14 @@ import (
     "time"
 )
 
-// The HTTP status code that will be returned from the next invocation. Default: 200
-var nextStatus int
-
-// The response body code that will be returned from the next invocation. Default: ""
-var nextBody string
-
-// A recording of the last HTTP request made through this
-var lastRequest *http.Request
-
 func reset() {
     // Persistent flags in Cobra persists over tests
 	rootCmd.SetArgs([]string{"status", "-t", ""})
 	rootCmd.Execute()
-
-    lastRequest = nil
-    nextStatus = 200
-    nextBody = ""
 }
 
-func executeCommand(t *testing.T, args []string, moreArgs []string) (standardout string) {
-    utils.ActiveHttpClient = mockHttpClient{}
+func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
+    utils.ActiveHttpClient = client
 	b := bytes.NewBufferString("")
     utils.Out = b
 	rootCmd.SetArgs(concat(args, moreArgs))
@@ -45,13 +32,24 @@ func executeCommand(t *testing.T, args []string, moreArgs []string) (standardout
 }
 
 type mockHttpClient struct {
+    // The HTTP status code that will be returned from the next invocation. Default: 200
+    nextStatus int
+
+    // The response body code that will be returned from the next invocation. Default: ""
+    nextBody string
+
+    // A recording of the last HTTP request made through this
+    lastRequest *http.Request
 }
 
-func (c mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
-    lastRequest = request
+func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
+    if c.nextStatus == 0 {
+        c.nextStatus = 200
+    }
+    c.lastRequest = request
     return &http.Response{
-        StatusCode: nextStatus,
-        Body:       ioutil.NopCloser(bytes.NewBufferString(nextBody)),
+        StatusCode: c.nextStatus,
+        Body:       ioutil.NopCloser(bytes.NewBufferString(c.nextBody)),
         Header:     make(http.Header),
     },
     nil
