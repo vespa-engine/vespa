@@ -36,6 +36,7 @@ LOG_SETUP("tensorattribute_test");
 using document::WrongTensorTypeException;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::CompactionStrategy;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
 using search::queryeval::GlobalFilter;
@@ -199,11 +200,18 @@ public:
     void trim_hold_lists(generation_t first_used_gen) override {
         _trim_gen = first_used_gen;
     }
+    bool consider_compact(const CompactionStrategy&) override {
+        return false;
+    }
+    vespalib::MemoryUsage update_stat() override {
+        return vespalib::MemoryUsage();
+    }
     vespalib::MemoryUsage memory_usage() const override {
         ++_memory_usage_cnt;
         return vespalib::MemoryUsage();
     }
     void get_state(const vespalib::slime::Inserter&) const override {}
+    void shrink_lid_space(uint32_t) override { }
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override {
         if (_index_value != 0) {
             return std::make_unique<MockIndexSaver>(_index_value);

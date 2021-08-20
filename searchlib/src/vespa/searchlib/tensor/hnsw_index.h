@@ -80,6 +80,10 @@ protected:
     RandomLevelGenerator::UP _level_generator;
     Config _cfg;
     mutable vespalib::ReusableSetPool _visited_set_pool;
+    vespalib::MemoryUsage  _cached_level_arrays_memory_usage;
+    vespalib::AddressSpace _cached_level_arrays_address_space_usage;
+    vespalib::MemoryUsage  _cached_link_arrays_memory_usage;
+    vespalib::AddressSpace _cached_link_arrays_address_space_usage;
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -161,8 +165,15 @@ public:
     void remove_document(uint32_t docid) override;
     void transfer_hold_lists(generation_t current_gen) override;
     void trim_hold_lists(generation_t first_used_gen) override;
+    void compact_level_arrays(bool compact_memory, bool compact_addreess_space);
+    void compact_link_arrays(bool compact_memory, bool compact_address_space);
+    bool consider_compact_level_arrays(const CompactionStrategy& compaction_strategy);
+    bool consider_compact_link_arrays(const CompactionStrategy& compaction_strategy);
+    bool consider_compact(const CompactionStrategy& compaction_strategy) override;
+    vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
+    void shrink_lid_space(uint32_t doc_id_limit) override;
 
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
     bool load(const fileutil::LoadedBuffer& buf) override;
@@ -184,6 +195,7 @@ public:
     void set_node(uint32_t docid, const HnswNode &node);
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
+    HnswGraph& get_graph() { return _graph; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();

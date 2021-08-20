@@ -400,6 +400,18 @@ DenseTensorAttribute::getVersion() const
 }
 
 void
+DenseTensorAttribute::onCommit()
+{
+    TensorAttribute::onCommit();
+    if (_index) {
+        if (_index->consider_compact(getConfig().getCompactionStrategy())) {
+            incGeneration();
+            updateStat(true);
+        }
+    }
+}
+
+void
 DenseTensorAttribute::onGenerationChange(generation_t next_gen)
 {
     // TODO: Change onGenerationChange() to send current generation instead of next generation.
@@ -427,6 +439,15 @@ DenseTensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
     if (_index) {
         ObjectInserter index_inserter(object, "nearest_neighbor_index");
         _index->get_state(index_inserter);
+    }
+}
+
+void
+DenseTensorAttribute::onShrinkLidSpace()
+{
+    TensorAttribute::onShrinkLidSpace();
+    if (_index) {
+        _index->shrink_lid_space(getCommittedDocIdLimit());
     }
 }
 

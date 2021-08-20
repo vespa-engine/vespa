@@ -5,6 +5,7 @@
 #include "hnsw_index_loader.h"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
+#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -228,7 +229,7 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
                         FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter) const
 {
     NearestPriQ candidates;
-    uint32_t doc_id_limit = _graph.node_refs.size();
+    uint32_t doc_id_limit = _graph.node_refs_size.load(std::memory_order_acquire);
     if (filter) {
         doc_id_limit = std::min(filter->size(), doc_id_limit);
     }
@@ -253,9 +254,11 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
         }
         candidates.pop();
         for (uint32_t neighbor_docid : _graph.get_link_array(cand.node_ref, level)) {
+            if (neighbor_docid >= doc_id_limit) {
+                continue;
+            }
             auto neighbor_ref = _graph.get_node_ref(neighbor_docid);
             if ((! neighbor_ref.valid())
-                || (neighbor_docid >= doc_id_limit)
                 || visited.is_marked(neighbor_docid))
             {
                 continue;
@@ -282,7 +285,12 @@ HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distan
       _vectors(vectors),
       _distance_func(std::move(distance_func)),
       _level_generator(std::move(level_generator)),
-      _cfg(cfg)
+      _cfg(cfg),
+      _visited_set_pool(),
+      _cached_level_arrays_memory_usage(),
+      _cached_level_arrays_address_space_usage(0, 0, (1ull << 32)),
+      _cached_link_arrays_memory_usage(),
+      _cached_link_arrays_address_space_usage(0, 0, (1ull << 32))
 {
     assert(_distance_func);
 }
@@ -472,6 +480,93 @@ HnswIndex::trim_hold_lists(generation_t first_used_gen)
     _graph.links.trimHoldLists(first_used_gen);
 }
 
+void
+HnswIndex::compact_level_arrays(bool compact_memory, bool compact_address_space)
+{
+    auto context = _graph.nodes.compactWorst(compact_memory, compact_address_space);
+    uint32_t doc_id_limit = _graph.node_refs.size();
+    vespalib::ArrayRef<AtomicEntryRef> refs(&_graph.node_refs[0], doc_id_limit);
+    context->compact(refs);
+}
+
+void
+HnswIndex::compact_link_arrays(bool compact_memory, bool compact_address_space)
+{
+    auto context = _graph.links.compactWorst(compact_memory, compact_address_space);
+    uint32_t doc_id_limit = _graph.node_refs.size();
+    for (uint32_t doc_id = 1; doc_id < doc_id_limit; ++doc_id) {
+        EntryRef level_ref = _graph.node_refs[doc_id].load_relaxed();
+        if (level_ref.valid()) {
+            vespalib::ArrayRef<AtomicEntryRef> refs(_graph.nodes.get_writable(level_ref));
+            context->compact(refs);
+        }
+    }
+}
+
+namespace {
+
+bool
+consider_compact_arrays(const CompactionStrategy& compaction_strategy, vespalib::MemoryUsage& memory_usage, vespalib::AddressSpace& address_space_usage, std::function<void(bool,bool)> compact_arrays)
+{
+    size_t used_bytes = memory_usage.usedBytes();
+    size_t dead_bytes = memory_usage.deadBytes();
+    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
+    size_t used_address_space = address_space_usage.used();
+    size_t dead_address_space = address_space_usage.dead();
+    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
+    if (compact_memory || compact_address_space) {
+        compact_arrays(compact_memory, compact_address_space);
+        return true;
+    }
+    return false;
+}
+
+}
+
+bool
+HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
+{
+    return consider_compact_arrays(compaction_strategy, _cached_level_arrays_memory_usage, _cached_level_arrays_address_space_usage,
+                                   [this](bool compact_memory, bool compact_address_space)
+                                   { compact_level_arrays(compact_memory, compact_address_space); });
+}
+
+bool
+HnswIndex::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
+{
+    return consider_compact_arrays(compaction_strategy, _cached_link_arrays_memory_usage, _cached_link_arrays_address_space_usage,
+                                   [this](bool compact_memory, bool compact_address_space)
+                                   { compact_link_arrays(compact_memory, compact_address_space); });
+}
+
+bool
+HnswIndex::consider_compact(const CompactionStrategy& compaction_strategy)
+{
+    bool result = false;
+    if (consider_compact_level_arrays(compaction_strategy)) {
+        result = true;
+    }
+    if (consider_compact_link_arrays(compaction_strategy)) {
+        result = true;
+    }
+    return result;
+}
+
+vespalib::MemoryUsage
+HnswIndex::update_stat()
+{
+    vespalib::MemoryUsage result;
+    result.merge(_graph.node_refs.getMemoryUsage());
+    _cached_level_arrays_memory_usage = _graph.nodes.getMemoryUsage();
+    _cached_level_arrays_address_space_usage = _graph.nodes.addressSpaceUsage();
+    result.merge(_cached_level_arrays_memory_usage);
+    _cached_link_arrays_memory_usage = _graph.links.getMemoryUsage();
+    _cached_link_arrays_address_space_usage = _graph.links.addressSpaceUsage();
+    result.merge(_cached_link_arrays_memory_usage);
+    result.merge(_visited_set_pool.memory_usage());
+    return result;
+}
+
 vespalib::MemoryUsage
 HnswIndex::memory_usage() const
 {
@@ -524,6 +619,18 @@ HnswIndex::get_state(const vespalib::slime::Inserter& inserter) const
     cfgObj.setLong("max_links_on_inserts", _cfg.max_links_on_inserts());
     cfgObj.setLong("neighbors_to_explore_at_construction",
                    _cfg.neighbors_to_explore_at_construction());
+}
+
+void
+HnswIndex::shrink_lid_space(uint32_t doc_id_limit)
+{
+    assert(doc_id_limit >= 1u);
+    assert(doc_id_limit >= _graph.node_refs_size.load(std::memory_order_relaxed));
+    uint32_t old_doc_id_limit = _graph.node_refs.size();
+    if (doc_id_limit >= old_doc_id_limit) {
+        return;
+    }
+    _graph.node_refs.shrink(doc_id_limit);
 }
 
 std::unique_ptr<NearestNeighborIndexSaver>
