@@ -220,7 +220,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
                 return null;
 
             if ( ! host.resources().satisfies(node.resources())) return null;
-            NodeResources freeCapacity = freeCapacityWith(movesMade, host);
+            NodeResources freeCapacity = availableCapacityWith(movesMade, host);
             if (freeCapacity.satisfies(node.resources())) return List.of();
 
             List<Move> shortest = null;
@@ -291,8 +291,8 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             return list;
         }
 
-        private NodeResources freeCapacityWith(List<Move> moves, Node host) {
-            NodeResources resources = hostCapacity.freeCapacityOf(host);
+        private NodeResources availableCapacityWith(List<Move> moves, Node host) {
+            NodeResources resources = hostCapacity.availableCapacityOf(host);
             for (Move move : moves) {
                 if ( ! move.toHost().equals(host)) continue;
                 resources = resources.subtract(move.node().resources());
