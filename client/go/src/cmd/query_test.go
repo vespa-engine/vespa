@@ -21,12 +21,10 @@ func TestQueryWithMultipleParameters(t *testing.T) {
                 "select from sources * where title contains 'foo'", "hits=5")
 }
 
-func IgnoreTestSimpleQueryMissingQuestionMark(t *testing.T) {
-    assertQuery(t, "?", "query=select from sources * where title contains 'foo'")
-}
-
-func IgnoreTestSimpleQueryMissingQuestionMarkAndQueryEquals(t *testing.T) {
-    assertQuery(t, "?query=", "select from sources * where text contains 'foo'")
+func TestQueryWithExplicitYqlParameter(t *testing.T) {
+    assertQuery(t,
+                "?yql=select+from+sources+%2A+where+title+contains+%27foo%27",
+                "yql=select from sources * where title contains 'foo'")
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
