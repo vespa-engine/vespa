@@ -101,7 +101,7 @@ private:
     void doAdd(const ServiceMapping &mapping);
     void doRemove(const ServiceMapping &mapping);
 
-    PerService * lookup(const ServiceMapping &mapping);
+    PerService & lookup(const ServiceMapping &mapping);
     
 public:
     LocalRpcMonitorMap(FRT_Supervisor &supervisor,

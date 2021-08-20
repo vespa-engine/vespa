@@ -38,7 +38,7 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor,
 
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
 
-LocalRpcMonitorMap::PerService *
+LocalRpcMonitorMap::PerService &
 LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     LOG(spam, "lookup %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     auto iter = _map.find(mapping.name);
@@ -53,7 +53,7 @@ LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
         iter->first.c_str(), psd.spec.c_str(),
         psd.up ? "up" : "down",
         psd.localOnly ? "local" : "global");
-    return &psd;
+    return psd;
 }
 
 ServiceMapHistory & LocalRpcMonitorMap::history() {
@@ -155,38 +155,36 @@ void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {
 }
 
 void LocalRpcMonitorMap::down(const ServiceMapping& mapping) {
-    if (auto *psd = lookup(mapping)) {
-        LOG(debug, "failed: %s->%s", mapping.name.c_str(), psd->spec.c_str());
-        if (psd->inflight) {
-            auto target = std::move(psd->inflight);
-            target->doneHandler(OkState(13, "failed check using listNames callback"));
-        }
-        if (psd->localOnly) {
-            PerService removed = std::move(*psd);
-            auto iter = _map.find(mapping.name);
-            _mappingMonitor->stop(mapping);
-            _map.erase(iter);
-            if (removed.up) {
-                _dispatcher.remove(mapping);
-            }
-        } else if (psd->up) {
-            psd->up = false;
+    PerService &psd = lookup(mapping);
+    LOG(debug, "failed: %s->%s", mapping.name.c_str(), psd.spec.c_str());
+    if (psd.inflight) {
+        auto target = std::move(psd.inflight);
+        target->doneHandler(OkState(13, "failed check using listNames callback"));
+    }
+    if (psd.localOnly) {
+        PerService removed = std::move(psd);
+        auto iter = _map.find(mapping.name);
+        _mappingMonitor->stop(mapping);
+        _map.erase(iter);
+        if (removed.up) {
             _dispatcher.remove(mapping);
         }
+    } else if (psd.up) {
+        psd.up = false;
+        _dispatcher.remove(mapping);
     }
 }
 
 void LocalRpcMonitorMap::up(const ServiceMapping& mapping) {
-    if (auto *psd = lookup(mapping)) {
-        LOG(debug, "ok: %s->%s", mapping.name.c_str(), psd->spec.c_str());
-        if (psd->inflight) {
-            auto target = std::move(psd->inflight);
-            target->doneHandler(OkState());
-        }
-        if (! psd->up) {
-            psd->up = true;
-            _dispatcher.add(mapping);
-        }
+    PerService &psd = lookup(mapping);
+    LOG(debug, "ok: %s->%s", mapping.name.c_str(), psd.spec.c_str());
+    if (psd.inflight) {
+        auto target = std::move(psd.inflight);
+        target->doneHandler(OkState());
+    }
+    if (! psd.up) {
+        psd.up = true;
+        _dispatcher.add(mapping);
     }
 }
 
