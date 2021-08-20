@@ -2,10 +2,10 @@
 #pragma once
 
 #include "cmd.h"
-#include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
 #include "map_listener.h"
 #include "map_source.h"
+#include "mapping_monitor.h"
 #include "named_service.h"
 #include "proxy_map_source.h"
 #include "service_map_history.h"
@@ -24,8 +24,8 @@ namespace slobrok {
  * Tracks up/down status for name->spec combinations
  * that are considered for publication locally.
  **/
-class LocalRpcMonitorMap : public IRpcServerManager,
-                           public MapListener
+class LocalRpcMonitorMap : public MapListener,
+                           public MappingMonitorOwner
 {
 private:
     enum class EventType { ADD, REMOVE };
@@ -42,16 +42,9 @@ private:
     };
 
     class DelayedTasks : public FNET_Task {
-        using MUP = std::unique_ptr<ManagedRpcServer>;
-        std::vector<MUP>    _deleteList;
         std::vector<Event>  _queue;
         LocalRpcMonitorMap &_target;
     public:
-        void deleteLater(MUP rpcsrv) {
-            _deleteList.emplace_back(std::move(rpcsrv));
-            ScheduleNow();
-        }
-
         void handleLater(Event event) {
             _queue.emplace_back(std::move(event));
             ScheduleNow();
@@ -61,7 +54,6 @@ private:
 
         DelayedTasks(FNET_Scheduler *scheduler, LocalRpcMonitorMap &target)
           : FNET_Task(scheduler),
-            _deleteList(),
             _queue(),
             _target(target)
         {}
@@ -75,16 +67,8 @@ private:
         bool up;
         bool localOnly;
         std::unique_ptr<ScriptCommand> inflight;
-        std::unique_ptr<ManagedRpcServer> srv;
-
-        vespalib::string name() const { return srv->getName(); }
-        vespalib::string spec() const { return srv->getSpec(); }
-        ServiceMapping mapping() const { return ServiceMapping{srv->getName(), srv->getSpec()}; }
+        vespalib::string spec;
     };
-
-    std::unique_ptr<ManagedRpcServer> managedFor(const ServiceMapping &mapping) {
-        return std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
-    }
 
     PerService localService(const ServiceMapping &mapping,
                             std::unique_ptr<ScriptCommand> inflight)
@@ -93,7 +77,7 @@ private:
             .up = false,
             .localOnly = true,
             .inflight = std::move(inflight),
-            .srv = managedFor(mapping)
+            .spec = mapping.spec
         };
     }
 
@@ -102,7 +86,7 @@ private:
             .up = false,
             .localOnly = false,
             .inflight = {},
-            .srv = managedFor(mapping)
+            .spec = mapping.spec
         };
     }        
 
@@ -111,16 +95,17 @@ private:
     Map _map;
     ProxyMapSource _dispatcher;
     ServiceMapHistory _history;
-    FRT_Supervisor &_supervisor;
+    MappingMonitor::UP _mappingMonitor;
     std::unique_ptr<MapSubscription> _subscription;
     
-    PerService *lookup(ManagedRpcServer *rpcsrv);
-
     void doAdd(const ServiceMapping &mapping);
     void doRemove(const ServiceMapping &mapping);
+
+    PerService * lookup(const ServiceMapping &mapping);
     
 public:
-    LocalRpcMonitorMap(FRT_Supervisor &_supervisor);
+    LocalRpcMonitorMap(FRT_Supervisor &supervisor,
+                       MappingMonitorFactory mappingMonitorFactory);
     ~LocalRpcMonitorMap();
 
     MapSource &dispatcher() { return _dispatcher; }
@@ -133,9 +118,8 @@ public:
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
 
-    void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;
-    void notifyOkRpcSrv(ManagedRpcServer *rpcsrv) override;
-    FRT_Supervisor *getSupervisor() override;
+    void up(const ServiceMapping& mapping) override;
+    void down(const ServiceMapping& mapping) override;
 };
 
 //-----------------------------------------------------------------------------

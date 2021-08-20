@@ -11,10 +11,6 @@ namespace slobrok {
 #pragma GCC diagnostic ignored "-Winline"
 
 void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
-    {
-        std::vector<MUP> deleteAfterSwap;
-        std::swap(deleteAfterSwap, _deleteList);
-    }
     std::vector<Event> todo;
     std::swap(todo, _queue);
     for (const auto & entry : todo) {
@@ -29,12 +25,13 @@ void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
     }
 }
 
-LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
+LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor,
+                                       MappingMonitorFactory mappingMonitorFactory)
   : _delayedTasks(supervisor.GetScheduler(), *this),
     _map(),
     _dispatcher(),
     _history(),
-    _supervisor(supervisor),
+    _mappingMonitor(mappingMonitorFactory(*this)),
     _subscription(MapSubscription::subscribe(_dispatcher, _history))
 {
 }
@@ -42,15 +39,20 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor)
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
 
 LocalRpcMonitorMap::PerService *
-LocalRpcMonitorMap::lookup(ManagedRpcServer *rpcsrv) {
-    auto iter = _map.find(rpcsrv->getName());
+LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
+    LOG(spam, "lookup %s->%s", mapping.name.c_str(), mapping.spec.c_str());
+    auto iter = _map.find(mapping.name);
     if (iter == _map.end()) {
-        return nullptr;
+        LOG_ABORT("not in map");
     }
     PerService & psd = iter->second;
-    if (psd.srv.get() != rpcsrv) {
-        return nullptr;
+    if (psd.spec != mapping.spec) {
+        LOG_ABORT("conflict in map: %s->%s");
     }
+    LOG(spam, "found in map: %s->%s [%s,%s]",
+        iter->first.c_str(), psd.spec.c_str(),
+        psd.up ? "up" : "down",
+        psd.localOnly ? "local" : "global");
     return &psd;
 }
 
@@ -66,7 +68,7 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
     auto old = _map.find(mapping.name);
     if (old != _map.end()) {
         const PerService & exists = old->second;
-        if (exists.spec() == mapping.spec) {
+        if (exists.spec == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
             inflight->doneHandler(OkState(0, "already registered"));
@@ -74,13 +76,14 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         }
         LOG(warning, "tried addLocal for mapping %s->%s, but already had conflicting mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str(),
-            exists.name().c_str(), exists.spec().c_str());
+            mapping.name.c_str(), exists.spec.c_str());
         inflight->doneHandler(OkState(FRTE_RPC_METHOD_FAILED, "conflict"));
         return;
     }
     auto [ iter, was_inserted ] =
         _map.try_emplace(mapping.name, localService(mapping, std::move(inflight)));
     LOG_ASSERT(was_inserted);
+    _mappingMonitor->start(mapping);
 }
 
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
@@ -97,41 +100,45 @@ void LocalRpcMonitorMap::doAdd(const ServiceMapping &mapping) {
     auto old = _map.find(mapping.name);
     if (old != _map.end()) {
         PerService & exists = old->second;
-        if (exists.spec() == mapping.spec) {
+        if (exists.spec == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
             exists.localOnly = false;
             return;
         }
         PerService removed = std::move(exists);
+        ServiceMapping toRemove{old->first, removed.spec};
+        _mappingMonitor->stop(toRemove);
         _map.erase(old);
         LOG(warning, "added mapping %s->%s, but already had conflicting mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str(),
-            removed.name().c_str(), removed.spec().c_str());
+            toRemove.name.c_str(), removed.spec.c_str());
         if (removed.inflight) {
             auto target = std::move(removed.inflight);
             target->doneHandler(OkState(13, "conflict during initialization"));
         }
         if (removed.up) {
-            _dispatcher.remove(removed.mapping());
+            _dispatcher.remove(toRemove);
         }
-        _delayedTasks.deleteLater(std::move(removed.srv));
     }
     auto [ iter, was_inserted ] =
         _map.try_emplace(mapping.name, globalService(mapping));
     LOG_ASSERT(was_inserted);
+    _mappingMonitor->start(mapping);
 }
 
 void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end()) {
         PerService removed = std::move(iter->second);
+        ServiceMapping toRemove{iter->first, removed.spec};
+        _mappingMonitor->stop(toRemove);
         _map.erase(iter);
         LOG(debug, "remove: mapping %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-        if (mapping.spec != removed.spec()) {
+        if (mapping.spec != removed.spec) {
             LOG(warning, "inconsistent specs for name '%s': had '%s', but was asked to remove '%s'",
                 mapping.name.c_str(),
-                removed.spec().c_str(),
+                removed.spec.c_str(),
                 mapping.spec.c_str());
         }
         if (removed.inflight) {
@@ -139,53 +146,48 @@ void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {
             target->doneHandler(OkState(13, "removed during initialization"));
         }
         if (removed.up) {
-            _dispatcher.remove(removed.mapping());
+            _dispatcher.remove(toRemove);
         }
-        _delayedTasks.deleteLater(std::move(removed.srv));
     } else {
         LOG(debug, "tried to remove non-existing mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str());
     }
 }
 
-void LocalRpcMonitorMap::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string) {
-    if (auto *psd = lookup(rpcsrv)) {
-        LOG(debug, "failed: %s->%s", psd->name().c_str(), psd->spec().c_str());
+void LocalRpcMonitorMap::down(const ServiceMapping& mapping) {
+    if (auto *psd = lookup(mapping)) {
+        LOG(debug, "failed: %s->%s", mapping.name.c_str(), psd->spec.c_str());
         if (psd->inflight) {
             auto target = std::move(psd->inflight);
             target->doneHandler(OkState(13, "failed check using listNames callback"));
         }
         if (psd->localOnly) {
             PerService removed = std::move(*psd);
-            auto iter = _map.find(removed.name());
+            auto iter = _map.find(mapping.name);
+            _mappingMonitor->stop(mapping);
             _map.erase(iter);
             if (removed.up) {
-                _dispatcher.remove(removed.mapping());
+                _dispatcher.remove(mapping);
             }
-            _delayedTasks.deleteLater(std::move(removed.srv));
         } else if (psd->up) {
             psd->up = false;
-            _dispatcher.remove(psd->mapping());
+            _dispatcher.remove(mapping);
         }
     }
 }
 
-void LocalRpcMonitorMap::notifyOkRpcSrv(ManagedRpcServer *rpcsrv) {
-    if (auto *psd = lookup(rpcsrv)) {
-        LOG(debug, "ok: %s->%s", psd->name().c_str(), psd->spec().c_str());
+void LocalRpcMonitorMap::up(const ServiceMapping& mapping) {
+    if (auto *psd = lookup(mapping)) {
+        LOG(debug, "ok: %s->%s", mapping.name.c_str(), psd->spec.c_str());
         if (psd->inflight) {
             auto target = std::move(psd->inflight);
             target->doneHandler(OkState());
         }
         if (! psd->up) {
             psd->up = true;
-            _dispatcher.add(psd->mapping());
+            _dispatcher.add(mapping);
         }
     }
-}
-
-FRT_Supervisor * LocalRpcMonitorMap::getSupervisor() {
-    return &_supervisor;
 }
 
 } // namespace slobrok
