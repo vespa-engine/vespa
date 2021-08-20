@@ -56,6 +56,28 @@ LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     return psd;
 }
 
+void LocalRpcMonitorMap::addToMap(const ServiceMapping &mapping, PerService psd) {
+    auto [ iter, was_inserted ] =
+        _map.try_emplace(mapping.name, std::move(psd));
+    LOG_ASSERT(was_inserted);
+    _mappingMonitor->start(mapping);
+}
+
+LocalRpcMonitorMap::RemovedData
+LocalRpcMonitorMap::removeFromMap(Map::iterator iter) {
+    auto name = iter->first;
+    PerService psd = std::move(iter->second);
+    ServiceMapping mapping{iter->first, psd.spec};
+    _mappingMonitor->stop(mapping);
+    _map.erase(iter);
+    return RemovedData {
+        .mapping = mapping,
+        .up = psd.up,
+        .localOnly = psd.localOnly,
+        .inflight = std::move(psd.inflight)
+    };
+}
+
 ServiceMapHistory & LocalRpcMonitorMap::history() {
     return _history;
 }
@@ -80,10 +102,7 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         inflight->doneHandler(OkState(FRTE_RPC_METHOD_FAILED, "conflict"));
         return;
     }
-    auto [ iter, was_inserted ] =
-        _map.try_emplace(mapping.name, localService(mapping, std::move(inflight)));
-    LOG_ASSERT(was_inserted);
-    _mappingMonitor->start(mapping);
+    addToMap(mapping, localService(mapping, std::move(inflight)));
 }
 
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
@@ -106,39 +125,31 @@ void LocalRpcMonitorMap::doAdd(const ServiceMapping &mapping) {
             exists.localOnly = false;
             return;
         }
-        PerService removed = std::move(exists);
-        ServiceMapping toRemove{old->first, removed.spec};
-        _mappingMonitor->stop(toRemove);
-        _map.erase(old);
+        auto removed = removeFromMap(old);
         LOG(warning, "added mapping %s->%s, but already had conflicting mapping %s->%s",
             mapping.name.c_str(), mapping.spec.c_str(),
-            toRemove.name.c_str(), removed.spec.c_str());
+            removed.mapping.name.c_str(), removed.mapping.spec.c_str());
         if (removed.inflight) {
             auto target = std::move(removed.inflight);
             target->doneHandler(OkState(13, "conflict during initialization"));
         }
         if (removed.up) {
-            _dispatcher.remove(toRemove);
+            _dispatcher.remove(removed.mapping);
         }
     }
-    auto [ iter, was_inserted ] =
-        _map.try_emplace(mapping.name, globalService(mapping));
-    LOG_ASSERT(was_inserted);
-    _mappingMonitor->start(mapping);
+    addToMap(mapping, globalService(mapping));
 }
 
 void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {
     auto iter = _map.find(mapping.name);
     if (iter != _map.end()) {
-        PerService removed = std::move(iter->second);
-        ServiceMapping toRemove{iter->first, removed.spec};
-        _mappingMonitor->stop(toRemove);
-        _map.erase(iter);
-        LOG(debug, "remove: mapping %s->%s", mapping.name.c_str(), mapping.spec.c_str());
-        if (mapping.spec != removed.spec) {
+        auto removed = removeFromMap(iter);
+        LOG(debug, "remove: mapping %s->%s",
+            removed.mapping.name.c_str(), removed.mapping.spec.c_str());
+        if (mapping.spec != removed.mapping.spec) {
             LOG(warning, "inconsistent specs for name '%s': had '%s', but was asked to remove '%s'",
                 mapping.name.c_str(),
-                removed.spec.c_str(),
+                removed.mapping.spec.c_str(),
                 mapping.spec.c_str());
         }
         if (removed.inflight) {
@@ -146,7 +157,7 @@ void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {
             target->doneHandler(OkState(13, "removed during initialization"));
         }
         if (removed.up) {
-            _dispatcher.remove(toRemove);
+            _dispatcher.remove(removed.mapping);
         }
     } else {
         LOG(debug, "tried to remove non-existing mapping %s->%s",
@@ -162,12 +173,10 @@ void LocalRpcMonitorMap::down(const ServiceMapping& mapping) {
         target->doneHandler(OkState(13, "failed check using listNames callback"));
     }
     if (psd.localOnly) {
-        PerService removed = std::move(psd);
         auto iter = _map.find(mapping.name);
-        _mappingMonitor->stop(mapping);
-        _map.erase(iter);
+        auto removed = removeFromMap(iter);
         if (removed.up) {
-            _dispatcher.remove(mapping);
+            _dispatcher.remove(removed.mapping);
         }
     } else if (psd.up) {
         psd.up = false;

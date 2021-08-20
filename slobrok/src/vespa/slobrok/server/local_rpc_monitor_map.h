@@ -102,7 +102,18 @@ private:
     void doRemove(const ServiceMapping &mapping);
 
     PerService & lookup(const ServiceMapping &mapping);
-    
+
+    void addToMap(const ServiceMapping &mapping, PerService psd);
+
+    struct RemovedData {
+        ServiceMapping mapping;
+        bool up;
+        bool localOnly;
+        std::unique_ptr<ScriptCommand> inflight;
+    };
+
+    RemovedData removeFromMap(Map::iterator iter);
+
 public:
     LocalRpcMonitorMap(FRT_Supervisor &supervisor,
                        MappingMonitorFactory mappingMonitorFactory);
