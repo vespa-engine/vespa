@@ -31,8 +31,7 @@ class ResourceUsageTracker : public std::enable_shared_from_this<ResourceUsageTr
     storage::spi::IResourceUsageListener* _listener;
     IDiskMemUsageNotifier&      _disk_mem_usage_notifier;
     vespalib::hash_map<vespalib::string, AttributeUsageStats> _attribute_usage;
-    vespalib::string            _attribute_enum_store_max_document_type;
-    vespalib::string            _attribute_multivalue_max_document_type;
+    vespalib::string            _attribute_address_space_max_document_type;
     void remove_listener();
     void remove_document_type(const vespalib::string &document_type);
     void notify_attribute_usage(const vespalib::string &document_type, const AttributeUsageStats &attribute_usage);

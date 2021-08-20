@@ -30,8 +30,7 @@ get_attribute_usage_element(const vespalib::Slime& root, const vespalib::string&
     return AttributeResourceUsage(usage, name.make_string());
 }
 
-const vespalib::string attr_es_name("doctype.subdb.esattr");
-const vespalib::string attr_mv_name("doctype.subdb.mvattr");
+const vespalib::string attr_name("doctype.subdb.attr.enum-store");
 
 }
 
@@ -43,12 +42,12 @@ struct ServiceLayerHostInfoReporterTest : ::testing::Test {
     ServiceLayerHostInfoReporterTest();
     ~ServiceLayerHostInfoReporterTest();
 
-    void notify(double disk_usage, double memory_usage, const AttributeResourceUsage &attribute_enum_store_usage, const AttributeResourceUsage &attribute_multivalue_usage)  {
+    void notify(double disk_usage, double memory_usage, const AttributeResourceUsage &attribute_address_space_usage)  {
         auto& listener = static_cast<spi::IResourceUsageListener&>(_reporter);
-        listener.update_resource_usage(ResourceUsage(disk_usage, memory_usage, attribute_enum_store_usage, attribute_multivalue_usage));
+        listener.update_resource_usage(ResourceUsage(disk_usage, memory_usage, attribute_address_space_usage));
     }
     void notify(double disk_usage, double memory_usage) {
-        notify(disk_usage, memory_usage, {0.0, ""}, {0.0, ""});
+        notify(disk_usage, memory_usage, {0.0, ""});
     }
     void set_noise_level(double level) {
         _reporter.set_noise_level(level);
@@ -60,7 +59,8 @@ struct ServiceLayerHostInfoReporterTest : ::testing::Test {
     ResourceUsage get_slime_usage() {
         vespalib::Slime root;
         util::reporterToSlime(_reporter, root);
-        return ResourceUsage(get_usage_element(root, "disk"), get_usage_element(root, "memory"), get_attribute_usage_element(root, "attribute-enum-store"), get_attribute_usage_element(root, "attribute-multi-value"));
+        return ResourceUsage(get_usage_element(root, "disk"), get_usage_element(root, "memory"),
+                             get_attribute_usage_element(root, "attribute-address-space"));
     }
 };
 
@@ -97,12 +97,9 @@ TEST_F(ServiceLayerHostInfoReporterTest, request_almost_immediate_node_state_as_
     EXPECT_EQ(3, requested_almost_immediate_replies());
     EXPECT_EQ(ResourceUsage(0.8, 0.7), get_old_usage());
     EXPECT_EQ(ResourceUsage(0.7999, 0.6999), get_usage());
-    notify(0.8, 0.7, {0.1, attr_es_name}, {});
-    EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {}), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {}), get_usage());
-    notify(0.8, 0.7, {0.1, attr_es_name}, {0.2, attr_mv_name});
-    EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {0.2, attr_mv_name}), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {0.2, attr_mv_name}), get_usage());
+    notify(0.8, 0.7, {0.1, attr_name});
+    EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_name}), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_name}), get_usage());
 }
 
 TEST_F(ServiceLayerHostInfoReporterTest, can_set_noise_level)
@@ -125,25 +122,14 @@ TEST_F(ServiceLayerHostInfoReporterTest, can_set_noise_level)
 }
 
 TEST_F(ServiceLayerHostInfoReporterTest,
-       first_valid_attribute_enum_store_sample_triggers_immediate_node_state_when_below_noise_level)
+       first_valid_attribute_address_space_sample_triggers_immediate_node_state_when_below_noise_level)
 {
     set_noise_level(0.02);
     constexpr double usage_below_noise_level = 0.019;
-    notify(0.0, 0.0, {usage_below_noise_level, attr_es_name}, {});
+    notify(0.0, 0.0, {usage_below_noise_level, attr_name});
     EXPECT_EQ(1, requested_almost_immediate_replies());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_noise_level, attr_es_name}, {}), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_noise_level, attr_es_name}, {}), get_usage());
-}
-
-TEST_F(ServiceLayerHostInfoReporterTest,
-       first_valid_attribute_multi_value_sample_triggers_immediate_node_state_when_below_noise_level)
-{
-    set_noise_level(0.02);
-    constexpr double usage_below_noise_level = 0.019;
-    notify(0.0, 0.0, {}, {usage_below_noise_level, attr_mv_name});
-    EXPECT_EQ(1, requested_almost_immediate_replies());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_noise_level, attr_mv_name}), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_noise_level, attr_mv_name}), get_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_noise_level, attr_name}), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_noise_level, attr_name}), get_usage());
 }
 
 TEST_F(ServiceLayerHostInfoReporterTest, json_report_generated)
@@ -151,8 +137,8 @@ TEST_F(ServiceLayerHostInfoReporterTest, json_report_generated)
     EXPECT_EQ(ResourceUsage(0.0, 0.0), get_slime_usage());
     notify(0.5, 0.4);
     EXPECT_EQ(ResourceUsage(0.5, 0.4), get_slime_usage());
-    notify(0.5, 0.4, {0.3, attr_es_name}, {0.2, attr_mv_name});
-    EXPECT_EQ(ResourceUsage(0.5, 0.4, {0.3, attr_es_name}, {0.2, attr_mv_name}), get_slime_usage());
+    notify(0.5, 0.4, {0.3, attr_name});
+    EXPECT_EQ(ResourceUsage(0.5, 0.4, {0.3, attr_name}), get_slime_usage());
 }
 
 }

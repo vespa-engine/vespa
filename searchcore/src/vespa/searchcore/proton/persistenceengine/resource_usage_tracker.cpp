@@ -73,8 +73,7 @@ ResourceUsageTracker::ResourceUsageTracker(IDiskMemUsageNotifier& disk_mem_usage
       _listener(nullptr),
       _disk_mem_usage_notifier(disk_mem_usage_notifier),
       _attribute_usage(),
-      _attribute_enum_store_max_document_type(),
-      _attribute_multivalue_max_document_type()
+      _attribute_address_space_max_document_type()
 {
     _disk_mem_usage_notifier.addDiskMemUsageListener(this);
 }
@@ -88,7 +87,7 @@ void
 ResourceUsageTracker::notifyDiskMemUsage(DiskMemUsageState state)
 {
     std::lock_guard guard(_lock);
-    _resource_usage = ResourceUsage(state.diskState().usage(), state.memoryState().usage(), _resource_usage.get_attribute_enum_store_usage(), _resource_usage.get_attribute_multivalue_usage());
+    _resource_usage = ResourceUsage(state.diskState().usage(), state.memoryState().usage(), _resource_usage.get_attribute_address_space_usage());
     if (_listener != nullptr) {
         _listener->update_resource_usage(_resource_usage);
     }
@@ -125,6 +124,7 @@ namespace {
 
 bool same_usage(const AddressSpaceUsageStats &lhs, const AddressSpaceUsageStats &rhs) {
     return ((lhs.getUsage().usage() == rhs.getUsage().usage()) &&
+            (lhs.get_component_name() == rhs.get_component_name()) &&
             (lhs.getAttributeName() == rhs.getAttributeName()) &&
             (lhs.getSubDbName() == rhs.getSubDbName()));
 }
@@ -140,18 +140,15 @@ ResourceUsageTracker::notify_attribute_usage(const vespalib::string &document_ty
 {
     std::lock_guard guard(_lock);
     auto& old_usage = _attribute_usage[document_type];
-    if (same_usage(old_usage.enumStoreUsage(), attribute_usage.enumStoreUsage()) && 
-        same_usage(old_usage.multiValueUsage(), attribute_usage.multiValueUsage())) {
+    if (same_usage(old_usage.max_address_space_usage(), attribute_usage.max_address_space_usage())) {
         return; // usage for document type has not changed
     }
     old_usage = attribute_usage;
-    double enum_store_max = attribute_usage.enumStoreUsage().getUsage().usage();
-    double multivalue_max = attribute_usage.multiValueUsage().getUsage().usage();
-    double old_enum_store_max = _resource_usage.get_attribute_enum_store_usage().get_usage();
-    double old_multivalue_max = _resource_usage.get_attribute_multivalue_usage().get_usage();
+    double address_space_max = attribute_usage.max_address_space_usage().getUsage().usage();
+    double old_address_space_max = _resource_usage.get_attribute_address_space_usage().get_usage();
 
-    if (can_skip_scan(enum_store_max, old_enum_store_max, document_type == _attribute_enum_store_max_document_type) &&
-        can_skip_scan(multivalue_max, old_multivalue_max, document_type == _attribute_multivalue_max_document_type)) {
+    if (can_skip_scan(address_space_max, old_address_space_max,
+                      document_type == _attribute_address_space_max_document_type)) {
         return; // usage for document type is less than or equal to usage for other document types
     }
     if (scan_attribute_usage(false, guard) && _listener != nullptr) {
@@ -168,7 +165,7 @@ class MaxAttributeUsage
     double                        _max_usage;
 
     vespalib::string get_name() const {
-        return *_document_type + "." + _max->getSubDbName() + "." + _max->getAttributeName();
+        return *_document_type + "." + _max->getSubDbName() + "." + _max->getAttributeName() + "." + _max->get_component_name();
     }
 
 public:
@@ -203,23 +200,19 @@ public:
 bool
 ResourceUsageTracker::scan_attribute_usage(bool force_changed, std::lock_guard<std::mutex>&)
 {
-    MaxAttributeUsage enum_store_max;
-    MaxAttributeUsage multivalue_max;
+    MaxAttributeUsage address_space_max;
     for (const auto& kv : _attribute_usage) {
-        enum_store_max.sample(kv.first, kv.second.enumStoreUsage());
-        multivalue_max.sample(kv.first, kv.second.multiValueUsage());
+        address_space_max.sample(kv.first, kv.second.max_address_space_usage());
     }
     ResourceUsage new_resource_usage(_resource_usage.get_disk_usage(),
                                      _resource_usage.get_memory_usage(),
-                                     enum_store_max.get_max_resource_usage(),
-                                     multivalue_max.get_max_resource_usage());
+                                     address_space_max.get_max_resource_usage());
 
     bool changed = (new_resource_usage != _resource_usage) ||
                    force_changed;
     if (changed) {
         _resource_usage = std::move(new_resource_usage);
-        _attribute_enum_store_max_document_type = enum_store_max.get_document_type();
-        _attribute_multivalue_max_document_type = multivalue_max.get_document_type();
+        _attribute_address_space_max_document_type = address_space_max.get_document_type();
     }
     return changed;
 }
