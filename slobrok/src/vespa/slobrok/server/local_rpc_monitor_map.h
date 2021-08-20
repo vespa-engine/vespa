@@ -29,26 +29,48 @@ class LocalRpcMonitorMap : public IRpcServerManager,
                            public MapListener
 {
 private:
-    class DeleteTask : public FNET_Task {
+    enum class EventType { ADD, REMOVE };
+
+    struct Event {
+        EventType type;
+        ServiceMapping mapping;
+        static Event add(const ServiceMapping &value) {
+            return Event{EventType::ADD, value};
+        }
+        static Event remove(const ServiceMapping &value) {
+            return Event{EventType::REMOVE, value};
+        }
+    };
+
+    class DelayedTasks : public FNET_Task {
         using MUP = std::unique_ptr<ManagedRpcServer>;
-        std::vector<MUP> _deleteList;
+        std::vector<MUP>    _deleteList;
+        std::vector<Event>  _queue;
+        LocalRpcMonitorMap &_target;
     public:
-        void later(MUP rpcsrv) {
+        void deleteLater(MUP rpcsrv) {
             _deleteList.emplace_back(std::move(rpcsrv));
             ScheduleNow();
         }
-        void PerformTask() override {
-            std::vector<MUP> deleteAfterSwap;
-            std::swap(deleteAfterSwap, _deleteList);
+
+        void handleLater(Event event) {
+            _queue.emplace_back(std::move(event));
+            ScheduleNow();
         }
-        DeleteTask(FNET_Scheduler *scheduler)
+
+        void PerformTask() override;
+
+        DelayedTasks(FNET_Scheduler *scheduler, LocalRpcMonitorMap &target)
           : FNET_Task(scheduler),
-            _deleteList()
+            _deleteList(),
+            _queue(),
+            _target(target)
         {}
-        ~DeleteTask() { Kill(); }
+
+        ~DelayedTasks() { Kill(); }
     };
 
-    DeleteTask _delete;
+    DelayedTasks _delayedTasks;
 
     struct PerService {
         bool up;
@@ -94,6 +116,9 @@ private:
     std::unique_ptr<MapSubscription> _subscription;
     
     PerService *lookup(ManagedRpcServer *rpcsrv);
+
+    void doAdd(const ServiceMapping &mapping);
+    void doRemove(const ServiceMapping &mapping);
     
 public:
     LocalRpcMonitorMap(FRT_Supervisor &_supervisor);
@@ -105,6 +130,7 @@ public:
     /** for use by register API, will call doneHandler() on inflight script */
     void addLocal(const ServiceMapping &mapping,
                   std::unique_ptr<ScriptCommand> inflight);
+
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
 
