@@ -62,7 +62,7 @@ public class HostCapacity {
     }
 
     private int compareWithoutInactive(Node a, Node b) {
-        int result = compare(freeCapacityOf(b, true), freeCapacityOf(a, true));
+        int result = compare(availableCapacityOf(b, true, false), availableCapacityOf(a, true, false));
         if (result != 0) return result;
 
         // If resources are equal we want to assign to the one with the most IP addresses free
@@ -73,33 +73,41 @@ public class HostCapacity {
         return NodeResourceComparator.defaultOrder().compare(a, b);
     }
 
-    /** Returns whether host has room for requested capacity */
-    boolean hasCapacity(Node host, NodeResources requestedCapacity) {
-        return freeCapacityOf(host, false).satisfies(requestedCapacity) && freeIps(host) > 0;
+    /** Returns whether host can allocate a node with requested capacity */
+    public boolean hasCapacity(Node host, NodeResources requestedCapacity) {
+        return availableCapacityOf(host).satisfies(requestedCapacity);
     }
 
     /** Returns the number of available IP addresses on given host */
     int freeIps(Node host) {
         if (host.type() == NodeType.host) {
             return host.ipConfig().pool().eventuallyUnusedAddressCount(allNodes);
-        } else {
-            return host.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
         }
+        return host.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
+    }
+
+    /** Returns the capacity of given host that is both free and usable */
+    public NodeResources availableCapacityOf(Node host) {
+        return availableCapacityOf(host, false, true);
     }
 
     /**
-     * Calculate the remaining capacity of a host.
+     * Calculate the unused capacity of given host.
      *
-     * @param host the host to find free capacity of.
-     * @return a default (empty) capacity if not host, otherwise the free/unallocated/rest capacity
+     * Note that unlike {@link this#availableCapacityOf(Node)}, this only considers resources and returns any unused
+     * capacity even if the host does not have available IP addresses.
+     *
+     * @param host the host to find free capacity of
+     * @return a default (empty) capacity if not host, otherwise the free capacity
      */
-    public NodeResources freeCapacityOf(Node host) {
-        return freeCapacityOf(host, false);
+    public NodeResources unusedCapacityOf(Node host) {
+        return availableCapacityOf(host, false, false);
     }
 
-    NodeResources freeCapacityOf(Node host, boolean excludeInactive) {
+    private NodeResources availableCapacityOf(Node host, boolean excludeInactive, boolean requireIps) {
         // Only hosts have free capacity
-        if ( ! host.type().canRun(NodeType.tenant)) return new NodeResources(0, 0, 0, 0);
+        if ( ! host.type().canRun(NodeType.tenant)) return NodeResources.zero();
+        if (   requireIps && freeIps(host) == 0) return NodeResources.zero();
 
         NodeResources hostResources = hostResourcesCalculator.advertisedResourcesOf(host.flavor());
         return allNodes.childrenOf(host).asList().stream()
