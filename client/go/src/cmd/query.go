@@ -29,28 +29,36 @@ var queryCmd = &cobra.Command{
         return nil
     },
     Run: func(cmd *cobra.Command, args []string) {
-        query(args[0])
+        query(args)
     },
 }
 
-func query(argument string) {
-    if ! startsByParameter(argument) { // Default parameter
-        argument = "yql=" + argument
+func query(arguments []string) {
+    var argBuilder strings.Builder;
+    for i := 0; i < len(arguments); i++ {
+        argument := arguments[i]
+
+        if ! startsByParameter(argument) { // Default parameter
+            argument = "yql=" + argument
+        }
+
+        argument = escapePayload(argument)
+        if argument == "" {
+            return
+        }
+        if i > 0 {
+            argBuilder.WriteString("&")
+        }
+        argBuilder.WriteString(argument)
     }
 
-    argument = escapePayload(argument)
-    if argument == "" {
-        return
-    }
-
-    path := "/search/?" + argument
+    path := "/search/?" + argBuilder.String()
     response := utils.HttpGet(getTarget(queryContext).query, path, "Container")
     if (response == nil) {
         return
     }
     defer response.Body.Close()
 
-    defer response.Body.Close()
     if (response.StatusCode == 200) {
         // TODO: Pretty-print body
         scanner := bufio.NewScanner(response.Body)
@@ -70,7 +78,7 @@ func query(argument string) {
 }
 
 func startsByParameter(argument string) bool {
-    match, _ := regexp.MatchString("[a-zA-Z0-9_]+=", "peach") // TODO: Allow dot in parameters
+    match, _ := regexp.MatchString("[a-zA-Z0-9_]+=", argument) // TODO: Allow dot in parameters
     return match
 }
 
