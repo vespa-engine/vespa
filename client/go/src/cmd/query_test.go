@@ -27,8 +27,6 @@ func IgnoreTestSimpleQueryMissingQuestionMarkAndQueryEquals(t *testing.T) {
 }
 
 func assertQuery(expectedQuery string, query string, t *testing.T) {
-    reset()
-
     client := &mockHttpClient{ nextBody: "query result", }
 	assert.Equal(t,
 	             "query result\n",

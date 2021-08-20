@@ -10,7 +10,6 @@ import (
 )
 
 func TestDeployZip(t *testing.T) {
-    reset()
     client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",
@@ -19,7 +18,6 @@ func TestDeployZip(t *testing.T) {
 }
 
 func TestDeployZipWithURLTargetArgument(t *testing.T) {
-    reset()
     client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",
@@ -28,7 +26,6 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 }
 
 func TestDeployZipWitLocalTargetArgument(t *testing.T) {
-    reset()
     client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",
@@ -37,7 +34,6 @@ func TestDeployZipWitLocalTargetArgument(t *testing.T) {
 }
 
 func TestDeployDirectory(t *testing.T) {
-    reset()
     client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",

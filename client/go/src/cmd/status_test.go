@@ -10,37 +10,30 @@ import (
 )
 
 func TestStatusConfigServerCommand(t *testing.T) {
-    reset()
     assertConfigServerStatus("http://127.0.0.1:19071", []string{}, t)
 }
 
 func TestStatusConfigServerCommandWithURLTarget(t *testing.T) {
-    reset()
     assertConfigServerStatus("http://mydeploytarget", []string{"-t", "http://mydeploytarget"}, t)
 }
 
 func TestStatusConfigServerCommandWithLocalTarget(t *testing.T) {
-    reset()
     assertConfigServerStatus("http://127.0.0.1:19071", []string{"-t", "local"}, t)
 }
 
 func TestStatusContainerCommand(t *testing.T) {
-    reset()
     assertContainerStatus("http://127.0.0.1:8080", []string{}, t)
 }
 
 func TestStatusContainerCommandWithUrlTarget(t *testing.T) {
-    reset()
     assertContainerStatus("http://mycontainertarget", []string{"-t", "http://mycontainertarget"}, t)
 }
 
 func TestStatusContainerCommandWithLocalTarget(t *testing.T) {
-    reset()
     assertContainerStatus("http://127.0.0.1:8080", []string{"-t", "local"}, t)
 }
 
 func TestStatusErrorResponse(t *testing.T) {
-    reset()
     assertContainerError("http://127.0.0.1:8080", []string{}, t)
 }
 

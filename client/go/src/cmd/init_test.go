@@ -17,7 +17,6 @@ func TestInit(t *testing.T) {
 }
 
 func assertCreated(app string, sampleAppName string, t *testing.T) {
-    reset()
     existingSampleAppsZip = "testdata/sample-apps-master.zip"
     standardOut := executeCommand(t, &mockHttpClient{}, []string{"init", app, sampleAppName}, []string{})
 	defer os.RemoveAll(app)

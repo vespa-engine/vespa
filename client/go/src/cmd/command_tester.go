@@ -14,14 +14,13 @@ import (
     "time"
 )
 
-func reset() {
-    // Persistent flags in Cobra persists over tests
-	rootCmd.SetArgs([]string{"status", "-t", ""})
-	rootCmd.Execute()
-}
-
 func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
     utils.ActiveHttpClient = client
+
+    // Reset - persistent flags in Cobra persists over tests
+	rootCmd.SetArgs([]string{"status", "-t", ""})
+	rootCmd.Execute()
+
 	b := bytes.NewBufferString("")
     utils.Out = b
 	rootCmd.SetArgs(concat(args, moreArgs))

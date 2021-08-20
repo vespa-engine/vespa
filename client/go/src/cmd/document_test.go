@@ -16,7 +16,6 @@ func TestDocumentPut(t *testing.T) {
 }
 
 func assertDocumentPut(documentId string, jsonFile string, t *testing.T) {
-    reset()
     client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",
