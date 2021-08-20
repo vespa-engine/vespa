@@ -23,7 +23,7 @@ func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArg
 
 	b := bytes.NewBufferString("")
     utils.Out = b
-	rootCmd.SetArgs(concat(args, moreArgs))
+	rootCmd.SetArgs(append(args, moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(b)
 	assert.Empty(t, err, "No error")
@@ -53,15 +53,3 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (respo
     },
     nil
 }
-
-func concat(array1 []string, array2 []string) []string {
-    result := make([]string, len(array1) + len(array2))
-    for i := 0; i < len(array1); i++ {
-        result[i] = array1[i]
-    }
-    for i := 0; i < len(array2); i++ {
-        result[i + len(array1)] = array2[i]
-    }
-    return result
-}
-
