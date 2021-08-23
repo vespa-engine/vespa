@@ -141,8 +141,8 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void upgradeOs(ZoneId zone, NodeType type, Version version, Optional<Duration> upgradeBudget) {
-        upgradeBudget.ifPresent(d -> this.osUpgradeBudgets.put(Objects.hash(zone, type, version), d));
+    public void upgradeOs(ZoneId zone, NodeType type, Version version, Duration upgradeBudget) {
+        this.osUpgradeBudgets.put(Objects.hash(zone, type, version), upgradeBudget);
         this.targetVersions.compute(zone, (ignored, targetVersions) -> {
             if (targetVersions == null) {
                 targetVersions = TargetVersions.EMPTY;

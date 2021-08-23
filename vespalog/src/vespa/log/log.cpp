@@ -102,11 +102,9 @@ Logger::setTarget()
 void
 Logger::ensurePrefix(const char *name)
 {
-    const char *start = name;
     if (name[0] != '\0' && name[0] != '.') {
         const char *end = strchr(name, '.');
         int len = end ? end - name : strlen(name);
-        start += len;
 
         if (_prefix[0]) {
             // Make sure the prefix already set is identical to this one

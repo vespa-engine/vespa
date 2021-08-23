@@ -43,6 +43,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     @Override
     public void start() {
         log.log(Level.FINE, "Starting message bus server.");
+        session.connect();
         running.set(true);
     }
 
@@ -50,7 +51,6 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     public void close() {
         log.log(Level.FINE, "Closing message bus server.");
         running.set(false);
-        session.close();
     }
 
     @Override

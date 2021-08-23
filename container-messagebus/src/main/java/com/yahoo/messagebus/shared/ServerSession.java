@@ -2,13 +2,14 @@
 package com.yahoo.messagebus.shared;
 
 import com.yahoo.jdisc.SharedResource;
+import com.yahoo.messagebus.Connectable;
 import com.yahoo.messagebus.MessageHandler;
 import com.yahoo.messagebus.Reply;
 
 /**
  * @author Simon Thoresen Hult
  */
-public interface ServerSession extends SharedResource {
+public interface ServerSession extends SharedResource, Connectable {
 
     MessageHandler getMessageHandler();
 
@@ -19,7 +20,5 @@ public interface ServerSession extends SharedResource {
     String connectionSpec();
 
     String name();
-
-    void close();
 
 }

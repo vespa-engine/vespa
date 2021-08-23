@@ -64,9 +64,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.messagebus.Connectable": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void connect()"
+    ],
+    "fields": []
+  },
   "com.yahoo.messagebus.DestinationSession": {
     "superClass": "java.lang.Object",
     "interfaces": [
+      "com.yahoo.messagebus.Connectable",
       "com.yahoo.messagebus.MessageHandler"
     ],
     "attributes": [
@@ -81,7 +95,8 @@
       "public com.yahoo.messagebus.MessageHandler getMessageHandler()",
       "public java.lang.String getConnectionSpec()",
       "public java.lang.String getName()",
-      "public void handleMessage(com.yahoo.messagebus.Message)"
+      "public void handleMessage(com.yahoo.messagebus.Message)",
+      "public void connect()"
     ],
     "fields": []
   },
@@ -213,7 +228,8 @@
     "superClass": "java.lang.Object",
     "interfaces": [
       "com.yahoo.messagebus.MessageHandler",
-      "com.yahoo.messagebus.ReplyHandler"
+      "com.yahoo.messagebus.ReplyHandler",
+      "com.yahoo.messagebus.Connectable"
     ],
     "attributes": [
       "public",
@@ -228,7 +244,8 @@
       "public java.lang.String getConnectionSpec()",
       "public java.lang.String getName()",
       "public void handleMessage(com.yahoo.messagebus.Message)",
-      "public void handleReply(com.yahoo.messagebus.Reply)"
+      "public void handleReply(com.yahoo.messagebus.Reply)",
+      "public void connect()"
     ],
     "fields": []
   },
@@ -319,8 +336,11 @@
       "public com.yahoo.messagebus.SourceSession createSourceSession(com.yahoo.messagebus.SourceSessionParams)",
       "public com.yahoo.messagebus.IntermediateSession createIntermediateSession(java.lang.String, boolean, com.yahoo.messagebus.MessageHandler, com.yahoo.messagebus.ReplyHandler)",
       "public synchronized com.yahoo.messagebus.IntermediateSession createIntermediateSession(com.yahoo.messagebus.IntermediateSessionParams)",
+      "public synchronized com.yahoo.messagebus.IntermediateSession createDetachedIntermediateSession(com.yahoo.messagebus.IntermediateSessionParams)",
       "public com.yahoo.messagebus.DestinationSession createDestinationSession(java.lang.String, boolean, com.yahoo.messagebus.MessageHandler)",
       "public synchronized com.yahoo.messagebus.DestinationSession createDestinationSession(com.yahoo.messagebus.DestinationSessionParams)",
+      "public synchronized com.yahoo.messagebus.DestinationSession createDetachedDestinationSession(com.yahoo.messagebus.DestinationSessionParams)",
+      "public void connect(java.lang.String, boolean)",
       "public synchronized void unregisterSession(java.lang.String, boolean)",
       "public void handleMessage(com.yahoo.messagebus.Message)",
       "public void handleReply(com.yahoo.messagebus.Reply)",

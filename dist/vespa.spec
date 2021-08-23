@@ -146,6 +146,13 @@ BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
+%if 0%{?fc36}
+BuildRequires: protobuf-devel
+BuildRequires: llvm-devel >= 13.0.0
+BuildRequires: boost-devel >= 1.76
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
 %endif
 %if 0%{?el7} && 0%{?amzn2}
 BuildRequires: vespa-xxhash-devel = 0.8.0
@@ -247,6 +254,9 @@ Requires: vespa-valgrind >= 3.17.0-1
 %endif
 %if 0%{?fc35}
 %define _vespa_llvm_version 12
+%endif
+%if 0%{?fc36}
+%define _vespa_llvm_version 13
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -375,6 +385,9 @@ Requires: llvm-libs >= 12.0.0
 %endif
 %if 0%{?fc35}
 Requires: llvm-libs >= 12.0.0
+%endif
+%if 0%{?fc36}
+Requires: llvm-libs >= 13.0.0
 %endif
 %endif
 Requires: vespa-onnxruntime = 1.7.1

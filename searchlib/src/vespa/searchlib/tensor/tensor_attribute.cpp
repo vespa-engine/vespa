@@ -8,6 +8,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -53,6 +54,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(tensorStore),
+      _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0),
       _cached_tensor_store_memory_usage()
@@ -195,6 +197,11 @@ void
 TensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     usage.set(AddressSpaceComponents::tensor_store, _tensorStore.get_address_space_usage());
+    if (!_is_dense) {
+        auto stats = vespalib::SharedStringRepo::stats();
+        usage.set(AddressSpaceComponents::shared_string_repo,
+                  vespalib::AddressSpace(stats.max_part_usage, 0, stats.part_limit()));
+    }
 }
 
 vespalib::eval::Value::UP
