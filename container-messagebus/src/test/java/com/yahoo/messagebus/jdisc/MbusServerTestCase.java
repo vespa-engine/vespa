@@ -352,7 +352,7 @@ public class MbusServerTestCase {
         }
 
         @Override
-        public void close() { }
+        public void connect() { }
 
         @Override
         public ResourceReference refer() {

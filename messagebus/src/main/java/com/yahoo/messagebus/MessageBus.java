@@ -271,6 +271,12 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * @return The created session.
      */
     public synchronized IntermediateSession createIntermediateSession(IntermediateSessionParams params) {
+        IntermediateSession session = createDetachedIntermediateSession(params);
+        connect(params.getName(), params.getBroadcastName());
+        return session;
+    }
+
+    public synchronized IntermediateSession createDetachedIntermediateSession(IntermediateSessionParams params) {
         if (destroyed.get()) {
             throw new IllegalStateException("Object is destroyed.");
         }
@@ -279,7 +285,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
         IntermediateSession session = new IntermediateSession(this, params);
         sessions.put(params.getName(), session);
-        net.registerSession(params.getName(), this, params.getBroadcastName());
         return session;
     }
 
@@ -312,6 +317,12 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * @return The created session.
      */
     public synchronized DestinationSession createDestinationSession(DestinationSessionParams params) {
+        DestinationSession session = createDetachedDestinationSession(params);
+        connect(params.getName(), params.getBroadcastName());
+        return session;
+    }
+
+    public synchronized DestinationSession createDetachedDestinationSession(DestinationSessionParams params) {
         if (destroyed.get()) {
             throw new IllegalStateException("Object is destroyed.");
         }
@@ -320,8 +331,12 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         }
         DestinationSession session = new DestinationSession(this, params);
         sessions.put(params.getName(), session);
-        net.registerSession(params.getName(), this, params.getBroadcastName());
         return session;
+    }
+
+    /** Connects the given session to the network, so it will receive requests. */
+    public void connect(String session, boolean broadcast) {
+        net.registerSession(session, this, broadcast);
     }
 
     /**
