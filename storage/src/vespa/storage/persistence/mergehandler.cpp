@@ -649,14 +649,12 @@ namespace {
     void findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
                         uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
     {
-        uint32_t chunkSize = 0;
         for (const auto& entry : status.diff) {
             uint16_t entry_has_mask = (entry._hasMask & active_nodes_mask);
             if ((entry_has_mask == 0u) ||
                 (constrictHasMask && (entry_has_mask != hasMask))) {
                 continue;
             }
-            chunkSize += entry._bodySize + entry._headerSize;
             cmd.getDiff().emplace_back(entry);
             if (constrictHasMask) {
                 cmd.getDiff().back()._entry._hasMask = newHasMask;
