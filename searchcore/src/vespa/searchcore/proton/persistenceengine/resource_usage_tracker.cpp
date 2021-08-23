@@ -83,6 +83,13 @@ ResourceUsageTracker::~ResourceUsageTracker()
     _disk_mem_usage_notifier.removeDiskMemUsageListener(this);
 }
 
+storage::spi::ResourceUsage
+ResourceUsageTracker::get_resource_usage() const
+{
+    std::lock_guard guard(_lock);
+    return _resource_usage;
+}
+
 void
 ResourceUsageTracker::notifyDiskMemUsage(DiskMemUsageState state)
 {
