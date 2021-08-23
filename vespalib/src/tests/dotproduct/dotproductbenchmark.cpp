@@ -107,7 +107,7 @@ SparseBenchmark::SparseBenchmark(size_t numDocs, size_t numValues, size_t numQue
 }
 SparseBenchmark::~SparseBenchmark() = default;
 
-std::function<void(int)> use_sum = [](int) noexcept { };
+std::function<void(int64_t)> use_sum = [](int64_t) noexcept { };
 
 class UnorderedSparseBenchmark : public SparseBenchmark
 {
