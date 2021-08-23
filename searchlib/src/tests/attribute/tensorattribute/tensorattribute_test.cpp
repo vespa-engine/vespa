@@ -716,8 +716,14 @@ Fixture::test_populate_address_space_usage()
 {
     search::AddressSpaceUsage usage = _attr->getAddressSpaceUsage();
     const auto& all = usage.get_all();
-    EXPECT_EQUAL(1u, all.size());
-    EXPECT_EQUAL(1u, all.count("tensor-store"));
+    if (_denseTensors) {
+        EXPECT_EQUAL(1u, all.size());
+        EXPECT_EQUAL(1u, all.count("tensor-store"));
+    } else {
+        EXPECT_EQUAL(2u, all.size());
+        EXPECT_EQUAL(1u, all.count("tensor-store"));
+        EXPECT_EQUAL(1u, all.count("shared-string-repo"));
+    }
 }
 
 template <class MakeFixture>
