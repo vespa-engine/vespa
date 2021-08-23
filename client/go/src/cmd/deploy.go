@@ -121,10 +121,12 @@ func deploy(prepare bool, application string) {
     }
     serviceDescription := "Deploy service"
     response := utils.HttpDo(request, time.Minute * 10, serviceDescription)
-    defer response.Body.Close()
     if (response == nil) {
         return
-    } else if response.StatusCode == 200 {
+    }
+
+    defer response.Body.Close()
+    if response.StatusCode == 200 {
         utils.Success("Success")
     } else if response.StatusCode / 100 == 4 {
         utils.Error("Invalid application package", "(" + response.Status + "):")

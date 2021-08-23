@@ -79,10 +79,12 @@ func put(documentId string, jsonFile string) {
     }
     serviceDescription := "Container (document API)"
     response := utils.HttpDo(request, time.Second * 60, serviceDescription)
-    defer response.Body.Close()
     if (response == nil) {
         return
-    } else if response.StatusCode == 200 {
+    }
+
+    defer response.Body.Close()
+    if response.StatusCode == 200 {
         utils.Success("Success") // TODO: Change to something including document id
     } else if response.StatusCode / 100 == 4 {
         utils.Error("Invalid document (" + response.Status + "):")
