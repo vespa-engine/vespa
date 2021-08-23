@@ -26,7 +26,7 @@ class ResourceUsageTracker : public std::enable_shared_from_this<ResourceUsageTr
 {
     class ListenerGuard;
     class AttributeUsageListener;
-    std::mutex                  _lock;
+    mutable std::mutex          _lock;
     storage::spi::ResourceUsage _resource_usage;
     storage::spi::IResourceUsageListener* _listener;
     IDiskMemUsageNotifier&      _disk_mem_usage_notifier;
@@ -39,6 +39,7 @@ class ResourceUsageTracker : public std::enable_shared_from_this<ResourceUsageTr
 public:
     ResourceUsageTracker(IDiskMemUsageNotifier& notifier);
     ~ResourceUsageTracker() override;
+    storage::spi::ResourceUsage get_resource_usage() const;
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     std::unique_ptr<vespalib::IDestructorCallback> set_listener(storage::spi::IResourceUsageListener& listener);
     std::unique_ptr<IAttributeUsageListener> make_attribute_usage_listener(const vespalib::string &document_type);
