@@ -50,7 +50,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
                                " with time budget " + zoneUpgradeBudget));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getVirtualId(), application.nodeType(),
                                                                                  target.osVersion().version(),
-                                                                                 Optional.of(zoneUpgradeBudget));
+                                                                                 zoneUpgradeBudget);
     }
 
     @Override
