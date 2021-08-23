@@ -9,9 +9,10 @@ import (
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
-    "regexp"
     "strings"
+    "net/http"
     "net/url"
+    "time"
 )
 
 func init() {
@@ -19,9 +20,10 @@ func init() {
 }
 
 var queryCmd = &cobra.Command{
-    Use:   "query \"yql=select from sources * where title contains 'foo'\" hits=5",
+    Use:   "query",
     Short: "Issue a query to Vespa",
-    Long:  `TODO`,
+    Long:  `TODO, example  \"yql=select from sources * where title contains 'foo'\" hits=5`,
+    // TODO: Support referencing a query json file
     Args: func(cmd *cobra.Command, args []string) error {
         if len(args) < 1 {
             return errors.New("vespa query requires at least one argument containing the query string")
@@ -29,28 +31,25 @@ var queryCmd = &cobra.Command{
         return nil
     },
     Run: func(cmd *cobra.Command, args []string) {
-        query(args[0])
+        query(args)
     },
 }
 
-func query(argument string) {
-    if ! startsByParameter(argument) { // Default parameter
-        argument = "yql=" + argument
+func query(arguments []string) {
+    url, _ := url.Parse(getTarget(queryContext).query + "/search/")
+    urlQuery := url.Query()
+    for i := 0; i < len(arguments); i++ {
+        key, value := splitArg(arguments[i])
+        urlQuery.Set(key, value)
     }
+    url.RawQuery = urlQuery.Encode()
 
-    argument = escapePayload(argument)
-    if argument == "" {
-        return
-    }
-
-    path := "/search/?" + argument
-    response := utils.HttpGet(getTarget(queryContext).query, path, "Container")
+    response := utils.HttpDo(&http.Request{URL: url,}, time.Second * 10, "Container")
     if (response == nil) {
         return
     }
     defer response.Body.Close()
 
-    defer response.Body.Close()
     if (response.StatusCode == 200) {
         // TODO: Pretty-print body
         scanner := bufio.NewScanner(response.Body)
@@ -69,16 +68,11 @@ func query(argument string) {
     }
 }
 
-func startsByParameter(argument string) bool {
-    match, _ := regexp.MatchString("[a-zA-Z0-9_]+=", "peach") // TODO: Allow dot in parameters
-    return match
-}
-
-func escapePayload(argument string) string {
+func splitArg(argument string) (string, string) {
     equalsIndex := strings.Index(argument, "=")
     if equalsIndex < 1 {
-        utils.Error("A query argument must be on the form parameter=value, but was '" + argument + "'")
-        return ""
+        return "yql", argument
+    } else {
+        return argument[0:equalsIndex], argument[equalsIndex + 1:len(argument)]
     }
-    return argument[0:equalsIndex] + "=" + url.QueryEscape(argument[equalsIndex + 1:len(argument)])
 }
