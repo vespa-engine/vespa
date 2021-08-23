@@ -8,11 +8,20 @@ import (
     "github.com/stretchr/testify/assert"
     "github.com/vespa-engine/vespa/utils"
     "io/ioutil"
+    "strconv"
     "testing"
 )
 
 func TestDocumentPut(t *testing.T) {
 	assertDocumentPut("mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams.json", t)
+}
+
+func TestDocumentPutDocumentError(t *testing.T) {
+	assertDocumentError(t, 401, "Document error")
+}
+
+func TestDocumentPutServerError(t *testing.T) {
+	assertDocumentServerError(t, 501, "Server error")
 }
 
 func assertDocumentPut(documentId string, jsonFile string, t *testing.T) {
@@ -27,4 +36,22 @@ func assertDocumentPut(documentId string, jsonFile string, t *testing.T) {
 
     fileContent, _ := ioutil.ReadFile(jsonFile)
     assert.Equal(t, string(fileContent), utils.ReaderToString(client.lastRequest.Body))
+}
+
+func assertDocumentError(t *testing.T, status int, errorMessage string) {
+    client := &mockHttpClient{ nextStatus: status, nextBody: errorMessage, }
+	assert.Equal(t,
+	             "\x1b[31mInvalid document (Status " + strconv.Itoa(status) + "):\n" + errorMessage + "\n",
+	             executeCommand(t, client, []string{"document",
+	                                                "mynamespace/music/docid/1",
+	                                                "testdata/A-Head-Full-of-Dreams.json"}, []string{}))
+}
+
+func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
+    client := &mockHttpClient{ nextStatus: status, nextBody: errorMessage, }
+	assert.Equal(t,
+	             "\x1b[31mError from container (document api) at 127.0.0.1:8080 (Status " + strconv.Itoa(status) + "):\n" + errorMessage + "\n",
+	             executeCommand(t, client, []string{"document",
+	                                                "mynamespace/music/docid/1",
+	                                                "testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }

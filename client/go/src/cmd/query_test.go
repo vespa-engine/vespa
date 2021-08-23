@@ -6,6 +6,7 @@ package cmd
 
 import (
     "github.com/stretchr/testify/assert"
+    "strconv"
     "testing"
 )
 
@@ -27,6 +28,14 @@ func TestQueryWithExplicitYqlParameter(t *testing.T) {
                 "yql=select from sources * where title contains 'foo'")
 }
 
+func TestIllegalQuery(t *testing.T) {
+    assertQueryError(t, 401, "query error message")
+}
+
+func TestServerError(t *testing.T) {
+    assertQueryServiceError(t, 501, "server error message")
+}
+
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
     client := &mockHttpClient{ nextBody: "query result", }
 	assert.Equal(t,
@@ -35,3 +44,20 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	             "query output")
     assert.Equal(t, getTarget(queryContext).query + "/search/" + expectedQuery, client.lastRequest.URL.String())
 }
+
+func assertQueryError(t *testing.T, status int, errorMessage string) {
+    client := &mockHttpClient{ nextStatus: status, nextBody: errorMessage, }
+	assert.Equal(t,
+	             "\x1b[31mInvalid query (Status " + strconv.Itoa(status) + "):\n" + errorMessage + "\n",
+	             executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
+	             "error output")
+}
+
+func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
+    client := &mockHttpClient{ nextStatus: status, nextBody: errorMessage, }
+	assert.Equal(t,
+	             "\x1b[31mError from container at 127.0.0.1:8080 (Status " + strconv.Itoa(status) + "):\n" + errorMessage + "\n",
+	             executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
+	             "error output")
+}
+

@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
     "net/http"
     "testing"
+    "strconv"
     "time"
 )
 
@@ -47,6 +48,7 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (respo
     }
     c.lastRequest = request
     return &http.Response{
+        Status:     "Status " + strconv.Itoa(c.nextStatus),
         StatusCode: c.nextStatus,
         Body:       ioutil.NopCloser(bytes.NewBufferString(c.nextBody)),
         Header:     make(http.Header),

@@ -126,12 +126,12 @@ func deploy(prepare bool, application string) {
         return
     } else if response.StatusCode == 200 {
         utils.Success("Success")
-    } else if response.StatusCode % 100 == 4 {
-        utils.Error("Invalid application package")
-        // TODO: Output error in body
+    } else if response.StatusCode / 100 == 4 {
+        utils.Error("Invalid application package", "(" + response.Status + "):")
+        utils.PrintReader(response.Body)
     } else {
-        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host)
-        utils.Detail("Response status:", response.Status)
+        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "(" + response.Status + "):")
+        utils.PrintReader(response.Body)
     }
 }
 

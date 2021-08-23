@@ -6,6 +6,7 @@ package cmd
 
 import (
     "github.com/stretchr/testify/assert"
+    "strconv"
     "testing"
 )
 
@@ -41,7 +42,14 @@ func TestDeployDirectory(t *testing.T) {
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
 
-// TODO: Test error replies (5xx and 4xx with error message)
+func TestDeployApplicationPackageError(t *testing.T) {
+    assertApplicationPackageError(t, 401, "Application package error")
+}
+
+func TestDeployError(t *testing.T) {
+    assertDeployServerError(t, 501, "Deploy service error")
+}
+
 // TODO: Test prepare and activate prepared
 
 func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T) {
@@ -53,4 +61,18 @@ func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T
     buf := make([]byte, 7) // Just check the first few bytes
     body.Read(buf)
     assert.Equal(t, "PK\x03\x04\x14\x00\b", string(buf))
+}
+
+func assertApplicationPackageError(t *testing.T, status int, errorMessage string) {
+    client := &mockHttpClient{ nextStatus: status, nextBody: errorMessage, }
+	assert.Equal(t,
+	             "\x1b[31mInvalid application package (Status " + strconv.Itoa(status) + "):\n" + errorMessage + "\n",
+	             executeCommand(t, client, []string{"deploy", "activate", "testdata/src/main/application"}, []string{}))
+}
+
+func assertDeployServerError(t *testing.T, status int, errorMessage string) {
+    client := &mockHttpClient{ nextStatus: status, nextBody: errorMessage, }
+	assert.Equal(t,
+	             "\x1b[31mError from deploy service at 127.0.0.1:19071 (Status " + strconv.Itoa(status) + "):\n" + errorMessage + "\n",
+	             executeCommand(t, client, []string{"deploy", "activate", "testdata/src/main/application"}, []string{}))
 }

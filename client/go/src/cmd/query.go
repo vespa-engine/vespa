@@ -51,12 +51,12 @@ func query(arguments []string) {
 
     if (response.StatusCode == 200) {
         utils.PrintReader(response.Body)
-    } else if response.StatusCode % 100 == 4 {
-        utils.Error("Invalid query (status ", response.Status, ")")
-        utils.Detail()
+    } else if response.StatusCode / 100 == 4 {
+        utils.Error("Invalid query (" + response.Status + "):")
+        utils.PrintReader(response.Body)
     } else {
-        utils.Error("Request failed")
-        utils.Detail(response.Status)
+        utils.Error("Error from container at", url.Host, "(" + response.Status + "):")
+        utils.PrintReader(response.Body)
     }
 }
 

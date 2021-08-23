@@ -77,19 +77,18 @@ func put(documentId string, jsonFile string) {
         Header: header,
         Body: ioutil.NopCloser(fileReader),
     }
-    serviceDescription := "Container (document/v1 API)"
+    serviceDescription := "Container (document API)"
     response := utils.HttpDo(request, time.Second * 60, serviceDescription)
     defer response.Body.Close()
     if (response == nil) {
         return
     } else if response.StatusCode == 200 {
         utils.Success("Success") // TODO: Change to something including document id
-    } else if response.StatusCode % 100 == 4 {
-        utils.Error("Invalid document")
-        utils.Detail(response.Status)
-        // TODO: Output error in body
+    } else if response.StatusCode / 100 == 4 {
+        utils.Error("Invalid document (" + response.Status + "):")
+        utils.PrintReader(response.Body)
     } else {
-        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host)
-        utils.Detail("Response status:", response.Status)
+        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "(" + response.Status + "):")
+        utils.PrintReader(response.Body)
     }
 }

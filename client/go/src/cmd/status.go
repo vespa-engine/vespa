@@ -52,7 +52,7 @@ func status(target string, description string) {
 
     if response.StatusCode != 200 {
         utils.Error(description, "at", target, "is not ready")
-        utils.Detail("Response status:", response.Status)
+        utils.Detail(response.Status)
     } else {
         utils.Success(description, "at", target, "is ready")
     }
