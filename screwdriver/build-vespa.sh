@@ -3,6 +3,8 @@
 
 set -e
 
+export VESPA_MAVEN_EXTRA_OPTS="-Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
+
 readonly SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly NUM_THREADS=$(( $(nproc) + 2 ))
 

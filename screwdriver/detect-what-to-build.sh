@@ -6,6 +6,9 @@ if (( ${#BASH_SOURCE[@]} == 1 )); then
     exit 1
 fi
 
+export SHOULD_BUILD=systemtest
+return 0 
+
 if [[ $SD_PULL_REQUEST == false ]]; then
     export SHOULD_BUILD=all
     return 0
