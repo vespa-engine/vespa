@@ -290,8 +290,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addFileDistribution(HostResource host) {
-        FileDistributionConfigProvider configProvider =
-                new FileDistributionConfigProvider(fileDistribution, fileDistribution.getFileDistributor(), host.getHost());
+        FileDistributionConfigProvider configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
         fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
     }
 
