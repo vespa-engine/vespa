@@ -5,9 +5,11 @@ import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.text.Utf8Array;
 
+import java.util.Deque;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -29,8 +31,8 @@ public class NetworkMultiplexer implements NetworkOwner {
     private static final Logger log = Logger.getLogger(NetworkMultiplexer.class.getName());
 
     private final Network net;
-    private final Queue<NetworkOwner> owners = new ConcurrentLinkedQueue<>();
-    private final Map<String, Queue<NetworkOwner>> sessions = new ConcurrentHashMap<>();
+    private final Deque<NetworkOwner> owners = new ConcurrentLinkedDeque<>();
+    private final Map<String, Deque<NetworkOwner>> sessions = new ConcurrentHashMap<>();
     private final boolean shared;
 
     private NetworkMultiplexer(Network net, boolean shared) {
@@ -52,23 +54,21 @@ public class NetworkMultiplexer implements NetworkOwner {
     public void registerSession(String session, NetworkOwner owner, boolean broadcast) {
         sessions.compute(session, (name, owners) -> {
             if (owners == null) {
-                owners = new ConcurrentLinkedQueue<>();
+                owners = new ConcurrentLinkedDeque<>();
                 if (broadcast)
                     net.registerSession(session);
             }
             else if (owners.contains(owner))
                 throw new IllegalArgumentException("Session '" + session + "' with owner '" + owner + "' already registered with this");
 
-            owners.add(owner);
+            owners.push(owner);
             return owners;
         });
     }
 
     public void unregisterSession(String session, NetworkOwner owner, boolean broadcast) {
-        sessions.compute(session, (name, owners) -> {
-            if (owners == null || ! owners.remove(owner))
-                throw new IllegalArgumentException("Session '" + session + "' not registered with owner '" + owner + "'");
-
+        sessions.computeIfPresent(session, (name, owners) -> {
+            owners.remove(owner);
             if (owners.isEmpty()) {
                 if (broadcast)
                     net.unregisterSession(session);
