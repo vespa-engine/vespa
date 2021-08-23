@@ -35,6 +35,7 @@ protected:
     virtual vespalib::MemoryUsage update_stat();
     virtual vespalib::MemoryUsage memory_usage() const;
     void populate_state(vespalib::slime::Cursor& object) const;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);

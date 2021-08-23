@@ -10,7 +10,7 @@
 namespace search::tensor {
 
 /**
- * Stroage of a hierarchical navigable small world graph (HNSW)
+ * Storage of a hierarchical navigable small world graph (HNSW)
  * that is used for approximate K-nearest neighbor search.
  */
 struct HnswGraph {

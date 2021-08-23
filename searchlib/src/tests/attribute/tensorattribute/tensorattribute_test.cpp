@@ -34,6 +34,7 @@
 LOG_SETUP("tensorattribute_test");
 
 using document::WrongTensorTypeException;
+using search::AddressSpaceUsage;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::CompactionStrategy;
@@ -210,6 +211,7 @@ public:
         ++_memory_usage_cnt;
         return vespalib::MemoryUsage();
     }
+    void populate_address_space_usage(AddressSpaceUsage&) const override {}
     void get_state(const vespalib::slime::Inserter&) const override {}
     void shrink_lid_space(uint32_t) override { }
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override {
@@ -517,6 +519,7 @@ struct Fixture {
     void testTensorTypeFileHeaderTag();
     void testEmptyTensor();
     void testOnHoldAccounting();
+    void test_populate_address_space_usage();
 };
 
 
@@ -708,6 +711,15 @@ Fixture::testOnHoldAccounting()
     EXPECT_EQUAL(0u, getStatus().getOnHold());
 }
 
+void
+Fixture::test_populate_address_space_usage()
+{
+    search::AddressSpaceUsage usage = _attr->getAddressSpaceUsage();
+    const auto& all = usage.get_all();
+    EXPECT_EQUAL(1u, all.size());
+    EXPECT_EQUAL(1u, all.count("tensor-store"));
+}
+
 template <class MakeFixture>
 void testAll(MakeFixture &&f)
 {
@@ -718,6 +730,7 @@ void testAll(MakeFixture &&f)
     TEST_DO(f()->testTensorTypeFileHeaderTag());
     TEST_DO(f()->testEmptyTensor());
     TEST_DO(f()->testOnHoldAccounting());
+    TEST_DO(f()->test_populate_address_space_usage());
 }
 
 TEST("Test sparse tensors with generic tensor attribute")
@@ -788,6 +801,16 @@ TEST_F("Hnsw index is integrated in dense tensor attribute and can be saved and 
     EXPECT_NOT_EQUAL(&index_a, &index_b);
     expect_level_0(2, index_b.get_node(1));
     expect_level_0(1, index_b.get_node(2));
+}
+
+TEST_F("Populates address space usage", DenseTensorAttributeHnswIndex)
+{
+    search::AddressSpaceUsage usage = f._attr->getAddressSpaceUsage();
+    const auto& all = usage.get_all();
+    EXPECT_EQUAL(3u, all.size());
+    EXPECT_EQUAL(1u, all.count("tensor-store"));
+    EXPECT_EQUAL(1u, all.count("hnsw-node-store"));
+    EXPECT_EQUAL(1u, all.count("hnsw-link-store"));
 }
 
 

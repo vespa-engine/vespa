@@ -6,6 +6,8 @@
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
 #include <vespa/searchcommon/common/compaction_strategy.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -20,6 +22,7 @@ LOG_SETUP(".searchlib.tensor.hnsw_index");
 
 namespace search::tensor {
 
+using search::AddressSpaceComponents;
 using search::StateExplorerUtils;
 using vespalib::datastore::EntryRef;
 
@@ -576,6 +579,13 @@ HnswIndex::memory_usage() const
     result.merge(_graph.links.getMemoryUsage());
     result.merge(_visited_set_pool.memory_usage());
     return result;
+}
+
+void
+HnswIndex::populate_address_space_usage(search::AddressSpaceUsage& usage) const
+{
+    usage.set(AddressSpaceComponents::hnsw_node_store, _graph.nodes.addressSpaceUsage());
+    usage.set(AddressSpaceComponents::hnsw_link_store, _graph.links.addressSpaceUsage());
 }
 
 void

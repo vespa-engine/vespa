@@ -125,6 +125,15 @@ DenseTensorAttribute::memory_usage() const
     return result;
 }
 
+void
+DenseTensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    TensorAttribute::populate_address_space_usage(usage);
+    if (_index) {
+        _index->populate_address_space_usage(usage);
+    }
+}
+
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
