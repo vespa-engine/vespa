@@ -314,7 +314,6 @@ get_numa_ctl_cmd () {
             numactlcmd="numactl --interleave all"
         fi
     else
-        log_warning_message "Permission denied to use numactl. Continuing without using numactl."
         numactlcmd=""
     fi
 
