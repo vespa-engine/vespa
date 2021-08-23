@@ -46,10 +46,8 @@ static bool isFromVespaMalloc(const void * addr)
 void * local_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
     static mmap_function real_func = NULL;
-    // This is a dirty trick for use with vespamalloc as there can be
-    // no allocations before the initial mmap from vespamalloc has succeded.
     if (real_func == NULL) {
-        real_func = (mmap_function) _dl_sym (RTLD_NEXT, "mmap", __builtin_return_address (0));
+        real_func = (mmap_function) dlsym (RTLD_NEXT, "mmap");
         if (real_func == NULL) {
             fprintf (stderr, "Could not find the mmap function!\n");
             abort();
