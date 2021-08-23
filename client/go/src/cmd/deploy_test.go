@@ -41,6 +41,9 @@ func TestDeployDirectory(t *testing.T) {
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
 
+// TODO: Test error replies (5xx and 4xx with error message)
+// TODO: Test prepare and activate prepared
+
 func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T) {
     assert.Equal(t, target + "/application/v2/tenant/default/prepareandactivate", client.lastRequest.URL.String())
     assert.Equal(t, "application/zip", client.lastRequest.Header.Get("Content-Type"))

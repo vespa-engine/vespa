@@ -74,7 +74,11 @@ var deployActivateCmd = &cobra.Command{
 
 func deploy(prepare bool, application string) {
     // TODO: Support no application (activate)
-    if ! strings.HasSuffix(application, ".zip") {
+    // TODO: Support application home as argument instead of src/main and
+    //       - if target exists, use target/application.zip
+    //       - else if src/main/application exists, use that
+    //       - else if current dir has services.xml use that
+    if filepath.Ext(application) != ".zip" {
         tempZip, error := ioutil.TempFile("", "application.zip")
         if error != nil {
             utils.Error("Could not create a temporary zip file for the application package")

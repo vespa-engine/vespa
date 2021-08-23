@@ -84,7 +84,7 @@ func put(documentId string, jsonFile string) {
     } else if response.StatusCode == 200 {
         utils.Success("Success") // TODO: Change to something including document id
     } else if response.StatusCode % 100 == 4 {
-        utils.Error("Invalid document JSON")
+        utils.Error("Invalid document")
         utils.Detail(response.Status)
         // TODO: Output error in body
     } else {
