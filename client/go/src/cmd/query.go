@@ -9,9 +9,10 @@ import (
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
-    "regexp"
     "strings"
+    "net/http"
     "net/url"
+    "time"
 )
 
 func init() {
@@ -35,26 +36,15 @@ var queryCmd = &cobra.Command{
 }
 
 func query(arguments []string) {
-    var argBuilder strings.Builder;
+    url, _ := url.Parse(getTarget(queryContext).query + "/search/")
+    urlQuery := url.Query()
     for i := 0; i < len(arguments); i++ {
-        argument := arguments[i]
-
-        if ! startsByParameter(argument) { // Default parameter
-            argument = "yql=" + argument
-        }
-
-        argument = escapePayload(argument)
-        if argument == "" {
-            return
-        }
-        if i > 0 {
-            argBuilder.WriteString("&")
-        }
-        argBuilder.WriteString(argument)
+        key, value := splitArg(arguments[i])
+        urlQuery.Set(key, value)
     }
+    url.RawQuery = urlQuery.Encode()
 
-    path := "/search/?" + argBuilder.String()
-    response := utils.HttpGet(getTarget(queryContext).query, path, "Container")
+    response := utils.HttpDo(&http.Request{URL: url,}, time.Second * 10, "Container")
     if (response == nil) {
         return
     }
@@ -78,16 +68,11 @@ func query(arguments []string) {
     }
 }
 
-func startsByParameter(argument string) bool {
-    match, _ := regexp.MatchString("[a-zA-Z0-9_]+=", argument) // TODO: Allow dot in parameters
-    return match
-}
-
-func escapePayload(argument string) string {
+func splitArg(argument string) (string, string) {
     equalsIndex := strings.Index(argument, "=")
     if equalsIndex < 1 {
-        utils.Error("A query argument must be on the form parameter=value, but was '" + argument + "'")
-        return ""
+        return "yql", argument
+    } else {
+        return argument[0:equalsIndex], argument[equalsIndex + 1:len(argument)]
     }
-    return argument[0:equalsIndex] + "=" + url.QueryEscape(argument[equalsIndex + 1:len(argument)])
 }

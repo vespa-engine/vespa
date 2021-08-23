@@ -17,7 +17,7 @@ func TestQuery(t *testing.T) {
 
 func TestQueryWithMultipleParameters(t *testing.T) {
     assertQuery(t,
-                "?yql=select+from+sources+%2A+where+title+contains+%27foo%27&hits=5",
+                "?hits=5&yql=select+from+sources+%2A+where+title+contains+%27foo%27",
                 "select from sources * where title contains 'foo'", "hits=5")
 }
 
