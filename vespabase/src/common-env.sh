@@ -303,7 +303,7 @@ get_numa_ctl_cmd () {
                grep available |
                awk '$3 == "nodes" { print $2 }')
 
-    if [ -n "$numanodes" ]; then
+    if [ -n "$numnodes" ]; then
         # We are allowed to use numactl and have NUMA nodes
         if [ "$VESPA_AFFINITY_CPU_SOCKET" ] &&
            [ "$numnodes" -gt 1 ]
