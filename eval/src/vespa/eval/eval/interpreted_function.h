@@ -13,7 +13,7 @@ namespace vespalib::eval {
 namespace nodes { struct Node; }
 struct TensorFunction;
 class TensorSpec;
-class CTFMetaData;
+struct CTFMetaData;
 
 /**
  * A Function that has been prepared for execution. This will

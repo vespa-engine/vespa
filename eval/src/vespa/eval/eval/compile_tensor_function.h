@@ -27,6 +27,12 @@ struct CTFMetaData {
     struct Step {
         vespalib::string class_name;
         vespalib::string symbol_name;
+        Step(vespalib::string &&class_name_in,
+             vespalib::string &&symbol_name_in)
+            : class_name(std::move(class_name_in)),
+              symbol_name(std::move(symbol_name_in))
+        {
+        }
     };
     std::vector<Step> steps;
     ~CTFMetaData();
