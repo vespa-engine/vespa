@@ -12,7 +12,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Node repository interface intended for use by the controller.
@@ -59,7 +58,7 @@ public interface NodeRepository {
     void upgrade(ZoneId zone, NodeType type, Version version);
 
     /** Upgrade OS for all nodes of given type to a new version */
-    void upgradeOs(ZoneId zone, NodeType type, Version version, Optional<Duration> upgradeBudget);
+    void upgradeOs(ZoneId zone, NodeType type, Version version, Duration upgradeBudget);
 
     /** Get target versions for upgrades in given zone */
     TargetVersions targetVersionsOf(ZoneId zone);
