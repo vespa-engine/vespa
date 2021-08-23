@@ -53,4 +53,3 @@ func HttpDo(request *http.Request, timeout time.Duration, description string) *h
     }
     return response
 }
-

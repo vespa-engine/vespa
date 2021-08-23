@@ -5,7 +5,6 @@
 package cmd
 
 import (
-    "bufio"
     "errors"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/utils"
@@ -51,14 +50,7 @@ func query(arguments []string) {
     defer response.Body.Close()
 
     if (response.StatusCode == 200) {
-        // TODO: Pretty-print body
-        scanner := bufio.NewScanner(response.Body)
-        for ;scanner.Scan(); {
-            utils.Print(scanner.Text())
-        }
-        if err := scanner.Err(); err != nil {
-            utils.Error(err.Error())
-        }
+        utils.PrintReader(response.Body)
     } else if response.StatusCode % 100 == 4 {
         utils.Error("Invalid query (status ", response.Status, ")")
         utils.Detail()

@@ -58,6 +58,7 @@ func get(documentId string) {
 }
 
 func put(documentId string, jsonFile string) {
+    // TODO: Support document id in JSON, see https://docs.vespa.ai/en/reference/document-json-format.html
     url, _ := url.Parse(getTarget(documentContext).document + "/document/v1/" + documentId)
 
     header := http.Header{}

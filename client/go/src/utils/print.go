@@ -5,6 +5,7 @@
 package utils
 
 import (
+    "bufio"
     "fmt"
     "io"
     "os"
@@ -35,6 +36,18 @@ func Success(messages ...string) {
 // Prints in a color appropriate for detail messages
 func Detail(messages ...string) {
     print("\033[33m", messages)
+}
+
+// Prints all the text of the given reader
+func PrintReader(reader io.ReadCloser) {
+    // TODO: Pretty-print body
+    scanner := bufio.NewScanner(reader)
+    for ;scanner.Scan(); {
+        Print(scanner.Text())
+    }
+    if err := scanner.Err(); err != nil {
+        Error(err.Error())
+    }
 }
 
 func print(prefix string, messages []string) {
