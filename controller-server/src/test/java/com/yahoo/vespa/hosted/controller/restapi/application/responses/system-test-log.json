@@ -73,6 +73,21 @@
       {
         "at": 0,
         "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
         "message": "Tester container successfully installed!"
       }
     ],
@@ -98,6 +113,21 @@
         "at": 0,
         "type": "info",
         "message": "######## Details for all nodes ########"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": 0,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
       },
       {
         "at": 0,
@@ -259,7 +289,7 @@
       }
     ]
   },
-  "lastId": 48,
+  "lastId": 54,
   "steps": {
     "deployTester": {
       "status": "succeeded",

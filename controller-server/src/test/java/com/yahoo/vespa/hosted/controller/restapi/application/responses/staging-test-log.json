@@ -59,6 +59,21 @@
         "at": 14503000,
         "type": "info",
         "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
+        "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
       }
     ],
     "deployInitialReal": [
@@ -102,6 +117,21 @@
       {
         "at": 14503000,
         "type": "info",
+        "message": "host-tenant:application:default-staging.us-east-3: unorchestrated"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
+        "message": "--- platform vespa/vespa:6.1"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
+        "message": "--- container on port 43 has config generation 1, wanted is 2"
+      },
+      {
+        "at": 14503000,
+        "type": "info",
         "message": "Deployment expired before installation was successful."
       }
     ],
@@ -120,7 +150,7 @@
       }
     ]
   },
-  "lastId": 21,
+  "lastId": 27,
   "steps": {
     "deployTester": {
       "status": "succeeded",
