@@ -27,6 +27,19 @@ func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
 	                            "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
 }
 
+func TestDocumentPostWithIdAsPutInDocument(t *testing.T) {
+	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Put.json"},
+	                            "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Put.json", t)
+}
+
+func TestDocumentIdNotSpecified(t *testing.T) {
+	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"}
+    client := &mockHttpClient{}
+	assert.Equal(t,
+	             "\x1b[31mNo document id given neither as argument or an 'id' key in the json file\n",
+	             executeCommand(t, client, arguments, []string{}))
+}
+
 func TestDocumentPostDocumentError(t *testing.T) {
 	assertDocumentError(t, 401, "Document error")
 }
