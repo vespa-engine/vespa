@@ -39,7 +39,7 @@ func Detail(messages ...string) {
 }
 
 // Prints all the text of the given reader
-func PrintReader(reader io.ReadCloser) {
+func PrintReader(reader io.Reader) {
     // TODO: Pretty-print body
     scanner := bufio.NewScanner(reader)
     for ;scanner.Scan(); {
