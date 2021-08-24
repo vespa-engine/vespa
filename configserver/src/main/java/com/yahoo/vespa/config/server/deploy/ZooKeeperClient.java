@@ -8,13 +8,13 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.server.filedistribution.FileDBRegistry;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.yolean.Exceptions;
@@ -228,7 +228,7 @@ public class ZooKeeperClient {
     }
 
     private void write(Version vespaVersion, FileRegistry fileRegistry) {
-        String exportedRegistry = PreGeneratedFileRegistry.exportRegistry(fileRegistry);
+        String exportedRegistry = FileDBRegistry.exportRegistry(fileRegistry);
         curator.set(getZooKeeperAppPath(ZKApplicationPackage.fileRegistryNode).append(vespaVersion.toFullString()),
                     Utf8.toBytes(exportedRegistry));
     }

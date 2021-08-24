@@ -26,20 +26,28 @@ public class ApplicationFileManager implements AddFileInterface {
     }
 
     @Override
-    public FileReference addFile(String relativePath) {
+    public FileReference addFile(String relativePath) throws IOException {
         return fileDirectory.addFile(new File(applicationDir, relativePath));
     }
 
     @Override
     public FileReference addUri(String uri, String relativePath) {
         download(uri, relativePath);
-        return addFile(relativePath);
+        try {
+            return addFile(relativePath);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     @Override
     public FileReference addBlob(ByteBuffer blob, String relativePath) {
         writeBlob(blob, relativePath);
-        return addFile(relativePath);
+        try {
+            return addFile(relativePath);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     private void writeBlob(ByteBuffer blob, String relativePath) {

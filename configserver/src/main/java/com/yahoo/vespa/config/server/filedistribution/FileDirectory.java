@@ -97,15 +97,11 @@ public class FileDirectory  {
         return hasher.hash(ByteBuffer.wrap(wholeFile), hasher.hash(ByteBuffer.wrap(Utf8.toBytes(file.getName())), 0));
     }
 
-    public FileReference addFile(File source) {
-        try {
-            Long hash = computeHash(source);
-            verifyExistingFile(source, hash);
-            FileReference fileReference = fileReferenceFromHash(hash);
-            return addFile(source, fileReference);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
+    public FileReference addFile(File source) throws IOException {
+        Long hash = computeHash(source);
+        verifyExistingFile(source, hash);
+        FileReference fileReference = fileReferenceFromHash(hash);
+        return addFile(source, fileReference);
     }
 
     // If there exists a directory for a file reference, but content does not have correct hash or the file we want to add

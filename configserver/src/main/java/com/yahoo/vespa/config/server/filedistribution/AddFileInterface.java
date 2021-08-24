@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -10,6 +11,6 @@ import java.nio.ByteBuffer;
  */
 public interface AddFileInterface {
     FileReference addUri(String uri, String relativePath);
-    FileReference addFile(String relativePath);
+    FileReference addFile(String relativePath) throws IOException;
     FileReference addBlob(ByteBuffer blob, String relativePath);
 }

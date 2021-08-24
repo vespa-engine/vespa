@@ -3,10 +3,10 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.net.HostName;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,11 +30,16 @@ public class MockFileRegistry implements FileRegistry {
     public FileReference addFile(String relativePath) {
         if (relativePath.isEmpty())
             relativePath = "./";
-        addFileInterface.addFile(relativePath);
 
-        FileReference fileReference = new FileReference(relativePath);
-        entries.add(new Entry(relativePath, fileReference));
-        return fileReference;
+        try {
+            addFileInterface.addFile(relativePath);
+
+            FileReference fileReference = new FileReference(relativePath);
+            entries.add(new Entry(relativePath, fileReference));
+            return fileReference;
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public List<Entry> export() { return entries; }
