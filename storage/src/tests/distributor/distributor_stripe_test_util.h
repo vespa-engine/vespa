@@ -124,6 +124,7 @@ public:
     const storage::distributor::DistributorNodeContext& node_context() const;
     storage::distributor::DistributorStripeOperationContext& operation_context();
     const DocumentSelectionParser& doc_selection_parser() const;
+    DistributorMetricSet& metrics();
 
     bool tick();
 
@@ -167,6 +168,8 @@ public:
                       const lib::ClusterStateBundle& state,
                       uint32_t early_return = false,
                       bool require_primary_to_be_written = true);
+
+    void set_redundancy(uint32_t redundancy);
 
     using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 

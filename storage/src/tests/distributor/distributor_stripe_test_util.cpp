@@ -91,6 +91,17 @@ DistributorStripeTestUtil::setup_stripe(int redundancy,
     _stripe->update_distribution_config(new_configs);
 }
 
+void
+DistributorStripeTestUtil::set_redundancy(uint32_t redundancy)
+{
+    auto distribution = std::make_shared<lib::Distribution>(
+            lib::Distribution::getDefaultDistributionConfig(redundancy, 100));
+    // Same rationale for not triggering a full distribution change as
+    // in setup_stripe() above
+    _node->getComponentRegister().setDistribution(distribution);
+    _stripe->propagateDefaultDistribution(std::move(distribution));
+}
+
 std::shared_ptr<DistributorConfiguration>
 DistributorStripeTestUtil::make_config() const
 {
@@ -396,6 +407,12 @@ DistributorStripeTestUtil::operation_context() {
 const DocumentSelectionParser&
 DistributorStripeTestUtil::doc_selection_parser() const {
     return _stripe->_component;
+}
+
+DistributorMetricSet&
+DistributorStripeTestUtil::metrics()
+{
+    return *_metrics;
 }
 
 bool

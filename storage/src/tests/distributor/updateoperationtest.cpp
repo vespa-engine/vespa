@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/operations/external/updateoperation.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
-#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/storage/distributor/operations/external/updateoperation.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
@@ -26,7 +26,7 @@ using document::test::makeDocumentBucket;
 
 namespace storage::distributor {
 
-struct UpdateOperationTest : Test, DistributorTestUtil {
+struct UpdateOperationTest : Test, DistributorStripeTestUtil {
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType* _html_type;
 
@@ -68,7 +68,7 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
 
     return std::make_shared<UpdateOperation>(
             node_context(), operation_context(), getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
-            getDistributor().getMetrics().updates);
+            metrics().updates);
 }
 
 void
@@ -87,7 +87,7 @@ UpdateOperationTest::replyToMessage(UpdateOperation& callback, DistributorMessag
 }
 
 TEST_F(UpdateOperationTest, simple) {
-    setupDistributor(1, 1, "storage:1 distributor:1");
+    setup_stripe(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
     DistributorMessageSenderStub sender;
@@ -101,12 +101,12 @@ TEST_F(UpdateOperationTest, simple) {
               "timestamp 100, timestamp of updated doc: 90) ReturnCode(NONE)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates;
-    EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
+    auto& m = metrics().updates;
+    EXPECT_EQ(0, m.diverging_timestamp_updates.getValue());
 }
 
 TEST_F(UpdateOperationTest, not_found) {
-    setupDistributor(1, 1, "storage:1 distributor:1");
+    setup_stripe(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
     DistributorMessageSenderStub sender;
@@ -122,7 +122,7 @@ TEST_F(UpdateOperationTest, not_found) {
 }
 
 TEST_F(UpdateOperationTest, multi_node) {
-    setupDistributor(2, 2, "distributor:1 storage:2");
+    setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
@@ -141,12 +141,12 @@ TEST_F(UpdateOperationTest, multi_node) {
               "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)",
               dumpBucket(_bId));
 
-    auto& metrics = getDistributor().getMetrics().updates;
-    EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
+    auto& m = metrics().updates;
+    EXPECT_EQ(0, m.diverging_timestamp_updates.getValue());
 }
 
 TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
-    setupDistributor(2, 2, "distributor:1 storage:2");
+    setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
@@ -161,12 +161,12 @@ TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
               "(best node 1)) ReturnCode(NONE)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates;
-    EXPECT_EQ(1, metrics.diverging_timestamp_updates.getValue());
+    auto& m = metrics().updates;
+    EXPECT_EQ(1, m.diverging_timestamp_updates.getValue());
 }
 
 TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
-    setupDistributor(2, 2, "distributor:1 storage:1");
+    setup_stripe(2, 2, "distributor:1 storage:1");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
@@ -179,8 +179,8 @@ TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
               "ReturnCode(TEST_AND_SET_CONDITION_FAILED, bork bork)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates;
-    EXPECT_EQ(1, metrics.failures.test_and_set_failed.getValue());
+    auto& m = metrics().updates;
+    EXPECT_EQ(1, m.failures.test_and_set_failed.getValue());
 }
 
 // Create-if-missing updates have a rather finicky behavior in the backend, wherein they'll
@@ -195,7 +195,7 @@ TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
 // of zero in this case, but this would cause complications during rolling upgrades that would
 // need explicit workaround logic anyway.
 TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treated_as_zero_timestamp) {
-    setupDistributor(2, 2, "distributor:1 storage:2");
+    setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3", true));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
@@ -212,12 +212,12 @@ TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treat
               "timestamp 100, timestamp of updated doc: 0) ReturnCode(NONE)",
               sender.getLastReply(true));
 
-    auto& metrics = getDistributor().getMetrics().updates;
-    EXPECT_EQ(0, metrics.diverging_timestamp_updates.getValue());
+    auto& m = metrics().updates;
+    EXPECT_EQ(0, m.diverging_timestamp_updates.getValue());
 }
 
 TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest_non_auto_created_replica) {
-    setupDistributor(2, 3, "distributor:1 storage:3");
+    setup_stripe(2, 3, "distributor:1 storage:3");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3,2=1/2/3", true));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
@@ -236,10 +236,10 @@ TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest
     EXPECT_NE(newest.first, BucketId());
     EXPECT_EQ(newest.second, 1);
 
-    auto& metrics = getDistributor().getMetrics().updates;
+    auto& m = metrics().updates;
     // Implementation detail: since we get diverging results from nodes 2 and 1, these are
     // counted as separate diverging updates.
-    EXPECT_EQ(2, metrics.diverging_timestamp_updates.getValue());
+    EXPECT_EQ(2, m.diverging_timestamp_updates.getValue());
 }
 
 }

@@ -1,21 +1,21 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
-#include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
+#include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/uuid_generator.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <tests/distributor/distributortestutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
@@ -46,7 +46,7 @@ struct MockUuidGenerator : UuidGenerator {
 
 }
 
-struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
+struct ReadForWriteVisitorOperationStarterTest : Test, DistributorStripeTestUtil {
     document::TestDocMan            _test_doc_man;
     VisitorOperation::Config        _default_config;
     std::unique_ptr<OperationOwner> _op_owner;
@@ -65,7 +65,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
 
     void SetUp() override {
         createLinks();
-        setupDistributor(1, 1, "version:1 distributor:1 storage:1");
+        setup_stripe(1, 1, "version:1 distributor:1 storage:1");
         _op_owner = std::make_unique<OperationOwner>(_sender, getClock());
         _sender.setPendingMessageTracker(pending_message_tracker());
 
@@ -86,7 +86,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
         return std::make_shared<VisitorOperation>(
                 node_context(), operation_context(),
                 getDistributorBucketSpace(), cmd, _default_config,
-                getDistributor().getMetrics().visits);
+                metrics().visits);
     }
 
     OperationSequencer& operation_sequencer() {

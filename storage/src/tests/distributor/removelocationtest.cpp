@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storage/distributor/operations/external/removelocationoperation.h>
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
+#include <vespa/storage/distributor/operations/external/removelocationoperation.h>
+#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -13,7 +13,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct RemoveLocationOperationTest : Test, DistributorTestUtil {
+struct RemoveLocationOperationTest : Test, DistributorStripeTestUtil {
     std::unique_ptr<RemoveLocationOperation> op;
 
     void SetUp() override {
@@ -33,15 +33,14 @@ struct RemoveLocationOperationTest : Test, DistributorTestUtil {
                 doc_selection_parser(),
                 getDistributorBucketSpace(),
                 msg,
-                getDistributor().getMetrics().
-                removelocations);
+                metrics().removelocations);
 
         op->start(_sender, framework::MilliSecTime(0));
     }
 };
 
 TEST_F(RemoveLocationOperationTest, simple) {
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(34, 0x000001234), "0=1,1=1");
     addNodesToBucketDB(document::BucketId(34, 0x100001234), "0=1,2=1");

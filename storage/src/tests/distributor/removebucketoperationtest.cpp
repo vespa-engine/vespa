@@ -1,23 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "dummy_cluster_context.h"
 #include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
 
-struct RemoveBucketOperationTest : Test, DistributorTestUtil {
+struct RemoveBucketOperationTest : Test, DistributorStripeTestUtil {
     void SetUp() override {
         createLinks();
     };
@@ -32,8 +32,8 @@ TEST_F(RemoveBucketOperationTest, simple) {
                        "0=10/100/1/t,"
                        "1=10/100/1/t,"
                        "2=10/100/1/t");
-    setRedundancy(1);
-    enableDistributorClusterState("distributor:1 storage:3");
+    set_redundancy(1);
+    enable_cluster_state("distributor:1 storage:3");
 
     RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
@@ -65,7 +65,7 @@ TEST_F(RemoveBucketOperationTest, bucket_info_mismatch_failure) {
     getComponentRegisterImpl().setDistribution(
             std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(1, 10)));
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
@@ -100,7 +100,7 @@ TEST_F(RemoveBucketOperationTest, fail_with_invalid_bucket_info) {
     getComponentRegisterImpl().setDistribution(
             std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(1, 10)));
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     RemoveBucketOperation op(dummy_cluster_context,
                              BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
