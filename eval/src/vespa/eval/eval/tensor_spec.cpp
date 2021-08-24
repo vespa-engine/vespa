@@ -284,6 +284,20 @@ TensorSpec::to_slime(slime::Cursor &tensor) const
     }
 }
 
+vespalib::string
+TensorSpec::to_expr() const
+{
+    vespalib::string out = _type;
+    out.append(":{");
+    CommaTracker cell_list;
+    for (const auto &cell: _cells) {
+        cell_list.maybe_add_comma(out);
+        out.append(make_string("%s:%g", as_string(cell.first).c_str(), cell.second.value));
+    }
+    out.append("}");
+    return out;
+}
+
 TensorSpec
 TensorSpec::from_slime(const slime::Inspector &tensor)
 {
