@@ -5,6 +5,8 @@
 package cmd
 
 import (
+    "bytes"
+    "encoding/json"
     "github.com/spf13/cobra"
     "github.com/vespa-engine/vespa/util"
     "io/ioutil"
@@ -17,34 +19,37 @@ import (
 
 func init() {
     rootCmd.AddCommand(documentCmd)
-    statusCmd.AddCommand(documentPutCmd)
-    statusCmd.AddCommand(documentGetCmd)
+    documentCmd.AddCommand(documentPostCmd)
+    documentCmd.AddCommand(documentGetCmd)
 }
 
 var documentCmd = &cobra.Command{
     Use:   "document",
-    Short: "Issue document operations (put by default)",
+    Short: "Issue document operations",
     Long:  `TODO: Example  mynamespace/mydocumenttype/myid document.json`,
     // TODO: Check args
     Run: func(cmd *cobra.Command, args []string) {
-        put(args[0], args[1])
+        util.Error("Use either document post or document get")
     },
 }
 
-var documentPutCmd = &cobra.Command{
-    Use:   "put mynamespace/mydocumenttype/myid mydocument.json",
-    Short: "Puts the document in the given file",
+var documentPostCmd = &cobra.Command{
+    Use:   "post",
+    Short: "Posts the document in the given file",
     Long:  `TODO`,
-    // TODO: This crashes with the above
     // TODO: Extract document id from the content
     // TODO: Check args
     Run: func(cmd *cobra.Command, args []string) {
-        put(args[0], args[1])
+        if len(args) == 10 {
+            post("", args[0])
+        } else {
+            post(args[0], args[1])
+        }
     },
 }
 
 var documentGetCmd = &cobra.Command{
-    Use:   "get documentId",
+    Use:   "get",
     Short: "Gets a document",
     Long:  `TODO`,
     // TODO: Check args
@@ -57,8 +62,7 @@ func get(documentId string) {
     // TODO
 }
 
-func put(documentId string, jsonFile string) {
-    // TODO: Support document id in JSON, see https://docs.vespa.ai/en/reference/document-json-format.html
+func post(documentId string, jsonFile string) {
     url, _ := url.Parse(getTarget(documentContext).document + "/document/v1/" + documentId)
 
     header := http.Header{}
@@ -71,11 +75,26 @@ func put(documentId string, jsonFile string) {
         return
     }
 
+    documentData := util.ReaderToBytes(fileReader)
+
+    if documentId == "" {
+        var doc map[string]interface{}
+        json.Unmarshal(documentData, &doc)
+        documentId = doc["id"].(string)
+        if documentId == "" {
+            documentId = doc["put"].(string) // document feeder format
+        }
+        if documentId == "" {
+            util.Error("No document id given neither as argument or an 'id' key in the json file")
+            return
+        }
+    }
+
     request := &http.Request{
         URL: url,
         Method: "POST",
         Header: header,
-        Body: ioutil.NopCloser(fileReader),
+        Body: ioutil.NopCloser(bytes.NewReader(documentData)),
     }
     serviceDescription := "Container (document API)"
     response := util.HttpDo(request, time.Second * 60, serviceDescription)
