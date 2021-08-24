@@ -19,6 +19,7 @@ func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArg
     util.ActiveHttpClient = client
 
     // Reset - persistent flags in Cobra persists over tests
+    util.Out = bytes.NewBufferString("")
 	rootCmd.SetArgs([]string{"status", "-t", ""})
 	rootCmd.Execute()
 
