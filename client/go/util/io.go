@@ -5,6 +5,7 @@
 package util
 
 import (
+    "bytes"
     "errors"
     "io"
     "os"
@@ -24,8 +25,15 @@ func IsDirectory(path string) bool {
 }
 
 // Returns the content of a reader as a string
-func ReaderToString(reader io.ReadCloser) string {
+func ReaderToString(reader io.Reader) string {
     buffer := new(strings.Builder)
     io.Copy(buffer, reader)
     return buffer.String()
+}
+
+// Returns the content of a reader as a byte array
+func ReaderToBytes(reader io.Reader) []byte {
+    buffer := new(bytes.Buffer)
+	buffer.ReadFrom(reader)
+	return buffer.Bytes()
 }

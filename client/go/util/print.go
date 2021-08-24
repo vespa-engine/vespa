@@ -5,7 +5,8 @@
 package util
 
 import (
-    "bufio"
+    "bytes"
+    "encoding/json"
     "fmt"
     "io"
     "os"
@@ -40,13 +41,13 @@ func Detail(messages ...string) {
 
 // Prints all the text of the given reader
 func PrintReader(reader io.Reader) {
-    // TODO: Pretty-print body
-    scanner := bufio.NewScanner(reader)
-    for ;scanner.Scan(); {
-        Print(scanner.Text())
-    }
-    if err := scanner.Err(); err != nil {
-        Error(err.Error())
+    bodyBytes := ReaderToBytes(reader)
+    var prettyJSON bytes.Buffer
+    parseError := json.Indent(&prettyJSON, bodyBytes, "", "    ")
+    if parseError != nil { // Not JSON: Print plainly
+        Print(string(bodyBytes))
+    } else {
+        Print(string(prettyJSON.Bytes()))
     }
 }
 

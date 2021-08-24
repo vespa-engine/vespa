@@ -16,6 +16,12 @@ func TestQuery(t *testing.T) {
                 "select from sources * where title contains 'foo'")
 }
 
+func TestQueryNonJsonResult(t *testing.T) {
+    assertQuery(t,
+                "?yql=select+from+sources+%2A+where+title+contains+%27foo%27",
+                "select from sources * where title contains 'foo'")
+}
+
 func TestQueryWithMultipleParameters(t *testing.T) {
     assertQuery(t,
                 "?hits=5&yql=select+from+sources+%2A+where+title+contains+%27foo%27",
@@ -37,6 +43,15 @@ func TestServerError(t *testing.T) {
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
+    client := &mockHttpClient{ nextBody: "{\"query\":\"result\"}", }
+	assert.Equal(t,
+	             "{\n    \"query\": \"result\"\n}\n",
+	             executeCommand(t, client, []string{"query"}, query),
+	             "query output")
+    assert.Equal(t, getTarget(queryContext).query + "/search/" + expectedQuery, client.lastRequest.URL.String())
+}
+
+func assertQueryNonJsonResult(t *testing.T, expectedQuery string, query ...string) {
     client := &mockHttpClient{ nextBody: "query result", }
 	assert.Equal(t,
 	             "query result\n",
