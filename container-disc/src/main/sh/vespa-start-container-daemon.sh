@@ -221,3 +221,4 @@ exec $numactlcmd $envcmd java \
         -cp "$CP" \
         "$@" \
         com.yahoo.jdisc.core.StandaloneMain file:${VESPA_HOME}/lib/jars/container-disc-jar-with-dependencies.jar
+
