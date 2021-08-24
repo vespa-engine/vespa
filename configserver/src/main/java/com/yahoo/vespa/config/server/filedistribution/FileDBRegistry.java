@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.net.HostName;
@@ -9,7 +8,6 @@ import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
@@ -25,17 +23,15 @@ import java.util.regex.Pattern;
  */
 public class FileDBRegistry implements FileRegistry {
 
-    private final boolean silenceNonExistingFiles;
     private final AddFileInterface manager;
     private final Map<String, FileReference> fileReferenceCache = new HashMap<>();
     private static final String entryDelimiter = "\t";
     private static final Pattern entryDelimiterPattern = Pattern.compile(entryDelimiter, Pattern.LITERAL);
 
     public FileDBRegistry(AddFileInterface manager) {
-        silenceNonExistingFiles = false;
         this.manager = manager;
     }
-    public static FileDBRegistry create(AddFileInterface manager, Reader persistedState) {
+    public static FileRegistry create(AddFileInterface manager, Reader persistedState) {
         try (BufferedReader reader = new BufferedReader(persistedState)) {
             String ignoredFileSourceHost = reader.readLine();
             if (ignoredFileSourceHost == null)
@@ -62,30 +58,20 @@ public class FileDBRegistry implements FileRegistry {
         return refs;
     }
     private FileDBRegistry(AddFileInterface manager, Map<String, FileReference> knownReferences) {
-        silenceNonExistingFiles = true;
         this.manager = manager;
-        fileReferenceCache.putAll(knownReferences);
+        for (Map.Entry<String, FileReference> e : knownReferences.entrySet()) {
+            fileReferenceCache.put(e.getKey(), e.getValue());
+        }
     }
 
     @Override
     public synchronized FileReference addFile(String relativePath) {
         Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(relativePath));
         return cachedReference.orElseGet(() -> {
-            try {
-                FileReference newRef = manager.addFile(relativePath);
-                fileReferenceCache.put(relativePath, newRef);
-                return newRef;
-            } catch (FileNotFoundException e) {
-                if (silenceNonExistingFiles) {
-                    return new FileReference("non-existing-file");
-                } else {
-                    throw new IllegalArgumentException(e);
-                }
-            } catch (IOException e) {
-                throw new IllegalArgumentException(e);
-            }
-            }
-        );
+            FileReference newRef = manager.addFile(relativePath);
+            fileReferenceCache.put(relativePath, newRef);
+            return newRef;
+        });
     }
 
     @Override
@@ -102,7 +88,7 @@ public class FileDBRegistry implements FileRegistry {
     @Override
     public FileReference addBlob(ByteBuffer blob) {
         String blobName = FileRegistry.blobName(blob);
-        String relativePath = blobToRelativeFile(blobName);
+        String relativePath = blobToRelativeFile(blob, blobName);
         synchronized (this) {
             Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));
             return cachedReference.orElseGet(() -> {
@@ -122,22 +108,6 @@ public class FileDBRegistry implements FileRegistry {
         return entries;
     }
 
-    synchronized Map<String, FileReference> getMap() {
-        return ImmutableMap.copyOf(fileReferenceCache);
-    }
-
-    public static String exportRegistry(FileRegistry registry) {
-        List<Entry> entries = registry.export();
-        StringBuilder builder = new StringBuilder();
-
-        builder.append(HostName.getLocalhost()).append('\n');
-        for (FileRegistry.Entry entry : entries) {
-            builder.append(entry.relativePath).append(entryDelimiter).append(entry.reference.value()).append('\n');
-        }
-
-        return builder.toString();
-    }
-
     private static String uriToRelativeFile(String uri) {
         String relative = "uri/" + XXHashFactory.fastestJavaInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0);
         if (uri.endsWith(".json")) {
@@ -150,8 +120,9 @@ public class FileDBRegistry implements FileRegistry {
         return relative;
     }
 
-    private static String blobToRelativeFile(String blobName) {
-        return "blob/" + blobName;
+    private static String blobToRelativeFile(ByteBuffer blob, String blobName) {
+        String relative = "blob/" + blobName;
+        return relative;
     }
 
 }

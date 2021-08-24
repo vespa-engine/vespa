@@ -39,9 +39,7 @@ public interface FileRegistry {
     }
 
     static String blobName(ByteBuffer blob) {
-        blob.mark();
         long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);
-        blob.reset();
         return Long.toHexString(blobHash);
     }
 
