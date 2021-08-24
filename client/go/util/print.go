@@ -2,9 +2,11 @@
 // Print functions for color-coded text.
 // Author: bratseth
 
-package utils
+package util
 
 import (
+    "bytes"
+    "encoding/json"
     "fmt"
     "io"
     "os"
@@ -35,6 +37,18 @@ func Success(messages ...string) {
 // Prints in a color appropriate for detail messages
 func Detail(messages ...string) {
     print("\033[33m", messages)
+}
+
+// Prints all the text of the given reader
+func PrintReader(reader io.Reader) {
+    bodyBytes := ReaderToBytes(reader)
+    var prettyJSON bytes.Buffer
+    parseError := json.Indent(&prettyJSON, bodyBytes, "", "    ")
+    if parseError != nil { // Not JSON: Print plainly
+        Print(string(bodyBytes))
+    } else {
+        Print(string(prettyJSON.Bytes()))
+    }
 }
 
 func print(prefix string, messages []string) {

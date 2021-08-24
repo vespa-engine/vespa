@@ -5,10 +5,9 @@
 package cmd
 
 import (
-    "bufio"
     "errors"
     "github.com/spf13/cobra"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "strings"
     "net/http"
     "net/url"
@@ -44,27 +43,20 @@ func query(arguments []string) {
     }
     url.RawQuery = urlQuery.Encode()
 
-    response := utils.HttpDo(&http.Request{URL: url,}, time.Second * 10, "Container")
+    response := util.HttpDo(&http.Request{URL: url,}, time.Second * 10, "Container")
     if (response == nil) {
         return
     }
     defer response.Body.Close()
 
     if (response.StatusCode == 200) {
-        // TODO: Pretty-print body
-        scanner := bufio.NewScanner(response.Body)
-        for ;scanner.Scan(); {
-            utils.Print(scanner.Text())
-        }
-        if err := scanner.Err(); err != nil {
-            utils.Error(err.Error())
-        }
-    } else if response.StatusCode % 100 == 4 {
-        utils.Error("Invalid query (status ", response.Status, ")")
-        utils.Detail()
+        util.PrintReader(response.Body)
+    } else if response.StatusCode / 100 == 4 {
+        util.Error("Invalid query (" + response.Status + "):")
+        util.PrintReader(response.Body)
     } else {
-        utils.Error("Request failed")
-        utils.Detail(response.Status)
+        util.Error("Error from container at", url.Host, "(" + response.Status + "):")
+        util.PrintReader(response.Body)
     }
 }
 

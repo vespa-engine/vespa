@@ -64,7 +64,7 @@ func assertContainerStatus(target string, args []string, t *testing.T) {
 func assertContainerError(target string, args []string, t *testing.T) {
     client := &mockHttpClient{ nextStatus: 500,}
 	assert.Equal(t,
-	             "\x1b[31mContainer at " + target + " is not ready\n\x1b[33mResponse status: \n",
+	             "\x1b[31mContainer at " + target + " is not ready\n\x1b[33mStatus 500\n",
 	             executeCommand(t, client, []string{"status", "container"}, args),
 	             "vespa status container")
 }

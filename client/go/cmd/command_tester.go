@@ -6,23 +6,25 @@ package cmd
 
 import (
     "bytes"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "github.com/stretchr/testify/assert"
 	"io/ioutil"
     "net/http"
     "testing"
+    "strconv"
     "time"
 )
 
 func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
-    utils.ActiveHttpClient = client
+    util.ActiveHttpClient = client
 
     // Reset - persistent flags in Cobra persists over tests
+    util.Out = bytes.NewBufferString("")
 	rootCmd.SetArgs([]string{"status", "-t", ""})
 	rootCmd.Execute()
 
 	b := bytes.NewBufferString("")
-    utils.Out = b
+    util.Out = b
 	rootCmd.SetArgs(append(args, moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(b)
@@ -47,6 +49,7 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (respo
     }
     c.lastRequest = request
     return &http.Response{
+        Status:     "Status " + strconv.Itoa(c.nextStatus),
         StatusCode: c.nextStatus,
         Body:       ioutil.NopCloser(bytes.NewBufferString(c.nextBody)),
         Header:     make(http.Header),

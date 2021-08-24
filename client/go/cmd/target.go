@@ -5,7 +5,7 @@
 package cmd
 
 import (
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "strings"
 )
 
@@ -55,6 +55,6 @@ func getTarget(targetContext context) *target {
         return nil // TODO
     }
 
-    utils.Error("Unknown target argument '" + targetArgument + ": Use 'local', 'cloud' or an URL")
+    util.Error("Unknown target argument '" + targetArgument + ": Use 'local', 'cloud' or an URL")
     return nil
 }

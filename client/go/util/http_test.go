@@ -2,7 +2,7 @@
 // Basic testing of our HTTP client wrapper
 // Author: bratseth
 
-package utils
+package util
 
 import (
     "bytes"

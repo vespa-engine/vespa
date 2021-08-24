@@ -5,7 +5,7 @@
 package cmd
 
 import (
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "github.com/stretchr/testify/assert"
     "os"
     "testing"
@@ -21,9 +21,9 @@ func assertCreated(app string, sampleAppName string, t *testing.T) {
     standardOut := executeCommand(t, &mockHttpClient{}, []string{"init", app, sampleAppName}, []string{})
 	defer os.RemoveAll(app)
 	assert.Equal(t, "\x1b[32mCreated " + app + "\n", standardOut)
-	assert.True(t, utils.PathExists(filepath.Join(app, "README.md")))
-	assert.True(t, utils.PathExists(filepath.Join(app, "src", "main", "application")))
-	assert.True(t, utils.IsDirectory(filepath.Join(app, "src", "main", "application")))
+	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))
+	assert.True(t, util.PathExists(filepath.Join(app, "src", "main", "application")))
+	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))
 
     servicesStat, _ := os.Stat(filepath.Join(app, "src", "main", "application", "services.xml"))
     var servicesSize int64

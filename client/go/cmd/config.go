@@ -7,7 +7,7 @@ package cmd
 import (
     "github.com/spf13/cobra"
 	"github.com/spf13/viper"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "os"
     "path/filepath"
 )
@@ -52,12 +52,12 @@ func writeConfig() {
     _, statErr := os.Stat(configPath)
     if !os.IsExist(statErr) {
         if _, createErr := os.Create(configPath); createErr != nil {
-            utils.Error("Warning: Can not remember flag parameters: " + createErr.Error())
+            util.Error("Warning: Can not remember flag parameters: " + createErr.Error())
         }
     }
 
 	writeErr := viper.WriteConfig()
 	if writeErr != nil {
-	    utils.Error("Could not write config:", writeErr.Error())
+	    util.Error("Could not write config:", writeErr.Error())
 	}
 }
