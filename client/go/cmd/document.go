@@ -26,10 +26,10 @@ func init() {
 var documentCmd = &cobra.Command{
     Use:   "document",
     Short: "Issue document operations",
-    Long:  `TODO: Example  mynamespace/mydocumenttype/myid document.json`,
+    Long:  `TODO: Example vespa document mynamespace/mydocumenttype/myid document.json`,
     // TODO: Check args
     Run: func(cmd *cobra.Command, args []string) {
-        util.Error("Use either document post or document get")
+        post("", args[0])
     },
 }
 
@@ -37,10 +37,9 @@ var documentPostCmd = &cobra.Command{
     Use:   "post",
     Short: "Posts the document in the given file",
     Long:  `TODO`,
-    // TODO: Extract document id from the content
     // TODO: Check args
     Run: func(cmd *cobra.Command, args []string) {
-        if len(args) == 10 {
+        if len(args) == 1 {
             post("", args[0])
         } else {
             post(args[0], args[1])
@@ -63,8 +62,6 @@ func get(documentId string) {
 }
 
 func post(documentId string, jsonFile string) {
-    url, _ := url.Parse(getTarget(documentContext).document + "/document/v1/" + documentId)
-
     header := http.Header{}
     header.Add("Content-Type", "application/json")
 
@@ -89,6 +86,8 @@ func post(documentId string, jsonFile string) {
             return
         }
     }
+
+    url, _ := url.Parse(getTarget(documentContext).document + "/document/v1/" + documentId)
 
     request := &http.Request{
         URL: url,

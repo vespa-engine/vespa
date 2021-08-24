@@ -13,11 +13,18 @@ import (
 )
 
 func TestDocumentPostWithIdArg(t *testing.T) {
-	assertDocumentPost("mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams.json", t)
+	assertDocumentPost([]string{"document", "post", "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams.json"},
+	                            "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
 func TestDocumentPostWithIdInDocument(t *testing.T) {
-	assertDocumentPost("", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
+	                            "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+}
+
+func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
+	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
+	                            "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
 }
 
 func TestDocumentPostDocumentError(t *testing.T) {
@@ -28,11 +35,11 @@ func TestDocumentPostServerError(t *testing.T) {
 	assertDocumentServerError(t, 501, "Server error")
 }
 
-func assertDocumentPost(documentId string, jsonFile string, t *testing.T) {
+func assertDocumentPost(arguments []string, documentId string, jsonFile string, t *testing.T) {
     client := &mockHttpClient{}
 	assert.Equal(t,
 	             "\x1b[32mSuccess\n",
-	             executeCommand(t, client, []string{"document", "post", documentId, jsonFile}, []string{}))
+	             executeCommand(t, client, arguments, []string{}))
     target := getTarget(documentContext).document
     assert.Equal(t, target + "/document/v1/" + documentId, client.lastRequest.URL.String())
     assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
@@ -40,6 +47,15 @@ func assertDocumentPost(documentId string, jsonFile string, t *testing.T) {
 
     fileContent, _ := ioutil.ReadFile(jsonFile)
     assert.Equal(t, string(fileContent), util.ReaderToString(client.lastRequest.Body))
+}
+
+func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.T) {
+    client := &mockHttpClient{}
+	assert.Equal(t,
+	             "\x1b[32mSuccess\n",
+	             executeCommand(t, client, []string{"document", jsonFile}, []string{}))
+    target := getTarget(documentContext).document
+    assert.Equal(t, target + "/document/v1/" + documentId, client.lastRequest.URL.String())
 }
 
 func assertDocumentError(t *testing.T, status int, errorMessage string) {
