@@ -7,7 +7,7 @@ package cmd
 import (
     "errors"
     "github.com/spf13/cobra"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "strings"
     "net/http"
     "net/url"
@@ -43,20 +43,20 @@ func query(arguments []string) {
     }
     url.RawQuery = urlQuery.Encode()
 
-    response := utils.HttpDo(&http.Request{URL: url,}, time.Second * 10, "Container")
+    response := util.HttpDo(&http.Request{URL: url,}, time.Second * 10, "Container")
     if (response == nil) {
         return
     }
     defer response.Body.Close()
 
     if (response.StatusCode == 200) {
-        utils.PrintReader(response.Body)
+        util.PrintReader(response.Body)
     } else if response.StatusCode / 100 == 4 {
-        utils.Error("Invalid query (" + response.Status + "):")
-        utils.PrintReader(response.Body)
+        util.Error("Invalid query (" + response.Status + "):")
+        util.PrintReader(response.Body)
     } else {
-        utils.Error("Error from container at", url.Host, "(" + response.Status + "):")
-        utils.PrintReader(response.Body)
+        util.Error("Error from container at", url.Host, "(" + response.Status + "):")
+        util.PrintReader(response.Body)
     }
 }
 

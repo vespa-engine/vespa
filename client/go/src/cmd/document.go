@@ -6,7 +6,7 @@ package cmd
 
 import (
     "github.com/spf13/cobra"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "io/ioutil"
     "net/http"
     "net/url"
@@ -66,8 +66,8 @@ func put(documentId string, jsonFile string) {
 
     fileReader, fileError := os.Open(jsonFile)
     if fileError != nil {
-        utils.Error("Could not open file at " + jsonFile)
-        utils.Detail(fileError.Error())
+        util.Error("Could not open file at " + jsonFile)
+        util.Detail(fileError.Error())
         return
     }
 
@@ -78,19 +78,19 @@ func put(documentId string, jsonFile string) {
         Body: ioutil.NopCloser(fileReader),
     }
     serviceDescription := "Container (document API)"
-    response := utils.HttpDo(request, time.Second * 60, serviceDescription)
+    response := util.HttpDo(request, time.Second * 60, serviceDescription)
     if (response == nil) {
         return
     }
 
     defer response.Body.Close()
     if response.StatusCode == 200 {
-        utils.Success("Success") // TODO: Change to something including document id
+        util.Success("Success") // TODO: Change to something including document id
     } else if response.StatusCode / 100 == 4 {
-        utils.Error("Invalid document (" + response.Status + "):")
-        utils.PrintReader(response.Body)
+        util.Error("Invalid document (" + response.Status + "):")
+        util.PrintReader(response.Body)
     } else {
-        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "(" + response.Status + "):")
-        utils.PrintReader(response.Body)
+        util.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "(" + response.Status + "):")
+        util.PrintReader(response.Body)
     }
 }

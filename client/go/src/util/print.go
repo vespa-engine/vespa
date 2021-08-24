@@ -2,7 +2,7 @@
 // Print functions for color-coded text.
 // Author: bratseth
 
-package utils
+package util
 
 import (
     "bufio"

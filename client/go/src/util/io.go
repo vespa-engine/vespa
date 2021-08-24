@@ -2,7 +2,7 @@
 // File utilities.
 // Author: bratseth
 
-package utils
+package util
 
 import (
     "errors"

@@ -6,7 +6,7 @@ package cmd
 
 import (
     "github.com/spf13/cobra"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
 )
 
 func init() {
@@ -44,16 +44,16 @@ var statusConfigServerCmd = &cobra.Command{
 
 func status(target string, description string) {
     path := "/ApplicationStatus"
-    response := utils.HttpGet(target, path, description)
+    response := util.HttpGet(target, path, description)
     if (response == nil) {
         return
     }
     defer response.Body.Close()
 
     if response.StatusCode != 200 {
-        utils.Error(description, "at", target, "is not ready")
-        utils.Detail(response.Status)
+        util.Error(description, "at", target, "is not ready")
+        util.Detail(response.Status)
     } else {
-        utils.Success(description, "at", target, "is ready")
+        util.Success(description, "at", target, "is ready")
     }
 }

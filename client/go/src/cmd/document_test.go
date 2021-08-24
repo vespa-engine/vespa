@@ -6,7 +6,7 @@ package cmd
 
 import (
     "github.com/stretchr/testify/assert"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "io/ioutil"
     "strconv"
     "testing"
@@ -35,7 +35,7 @@ func assertDocumentPut(documentId string, jsonFile string, t *testing.T) {
     assert.Equal(t, "POST", client.lastRequest.Method)
 
     fileContent, _ := ioutil.ReadFile(jsonFile)
-    assert.Equal(t, string(fileContent), utils.ReaderToString(client.lastRequest.Body))
+    assert.Equal(t, string(fileContent), util.ReaderToString(client.lastRequest.Body))
 }
 
 func assertDocumentError(t *testing.T, status int, errorMessage string) {

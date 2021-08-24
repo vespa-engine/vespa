@@ -2,7 +2,7 @@
 // A HTTP wrapper which handles some errors and provides a way to replace the HTTP client by a mock.
 // Author: bratseth
 
-package utils
+package util
 
 import (
     "net/http"

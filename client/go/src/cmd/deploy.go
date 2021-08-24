@@ -8,7 +8,7 @@ import (
     "archive/zip"
     "errors"
     "github.com/spf13/cobra"
-    "github.com/vespa-engine/vespa/utils"
+    "github.com/vespa-engine/vespa/util"
     "io"
     "io/ioutil"
     "net/http"
@@ -30,7 +30,7 @@ var deployCmd = &cobra.Command{
     Short: "Deploys an application package",
     Long:  `TODO: Use prepare or deploy activate`,
     Run: func(cmd *cobra.Command, args []string) {
-        utils.Error("Use either deploy prepare or deploy activate")
+        util.Error("Use either deploy prepare or deploy activate")
     },
 }
 
@@ -81,14 +81,14 @@ func deploy(prepare bool, application string) {
     if filepath.Ext(application) != ".zip" {
         tempZip, error := ioutil.TempFile("", "application.zip")
         if error != nil {
-            utils.Error("Could not create a temporary zip file for the application package")
-            utils.Detail(error.Error())
+            util.Error("Could not create a temporary zip file for the application package")
+            util.Detail(error.Error())
             return
         }
 
         error = zipDir(application, tempZip.Name())
         if (error != nil) {
-            utils.Error(error.Error())
+            util.Error(error.Error())
             return
         }
         defer os.Remove(tempZip.Name())
@@ -97,8 +97,8 @@ func deploy(prepare bool, application string) {
 
     zipFileReader, zipFileError := os.Open(application)
     if zipFileError != nil {
-        utils.Error("Could not open application package at " + application)
-        utils.Detail(zipFileError.Error())
+        util.Error("Could not open application package at " + application)
+        util.Detail(zipFileError.Error())
         return
     }
 
@@ -120,20 +120,20 @@ func deploy(prepare bool, application string) {
         Body: ioutil.NopCloser(zipFileReader),
     }
     serviceDescription := "Deploy service"
-    response := utils.HttpDo(request, time.Minute * 10, serviceDescription)
+    response := util.HttpDo(request, time.Minute * 10, serviceDescription)
     if (response == nil) {
         return
     }
 
     defer response.Body.Close()
     if response.StatusCode == 200 {
-        utils.Success("Success")
+        util.Success("Success")
     } else if response.StatusCode / 100 == 4 {
-        utils.Error("Invalid application package", "(" + response.Status + "):")
-        utils.PrintReader(response.Body)
+        util.Error("Invalid application package", "(" + response.Status + "):")
+        util.PrintReader(response.Body)
     } else {
-        utils.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "(" + response.Status + "):")
-        utils.PrintReader(response.Body)
+        util.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "(" + response.Status + "):")
+        util.PrintReader(response.Body)
     }
 }
 
@@ -142,11 +142,11 @@ func zipDir(dir string, destination string) error {
         message := "Path must be relative, but '" + dir + "'"
         return errors.New(message)
     }
-    if ! utils.PathExists(dir) {
+    if ! util.PathExists(dir) {
         message := "'" + dir + "' should be an application package zip or dir, but does not exist"
         return errors.New(message)
     }
-    if ! utils.IsDirectory(dir) {
+    if ! util.IsDirectory(dir) {
         message := "'" + dir + "' should be an application package dir, but is a (non-zip) file"
         return errors.New(message)
     }
