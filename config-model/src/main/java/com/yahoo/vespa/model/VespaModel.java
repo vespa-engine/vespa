@@ -135,7 +135,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
 
-    private final FileDistributor fileDistributor;
+    private final FileDistributor fileDistributor = new FileDistributor();
 
     private final Provisioned provisioned;
 
@@ -168,10 +168,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param deployState the global deploy state to use for this model.
      */
     public VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState) throws IOException, SAXException {
-        this(configModelRegistry, deployState, true, null);
+        this(configModelRegistry, deployState, true);
     }
 
-    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete, FileDistributor fileDistributor)
+    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete)
             throws IOException, SAXException {
         super("vespamodel");
         version = deployState.getVespaVersion();
@@ -201,7 +201,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             configModelRepo.readConfigModels(deployState, this, builder, root, new VespaConfigModelRegistry(configModelRegistry));
             addServiceClusters(deployState, builder);
             setupRouting(deployState);
-            this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(hostSystem.getHosts(), deployState);
             freezeModelTopology();
             root.prepare(configModelRepo);
@@ -209,14 +208,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             validateWrapExceptions();
             hostSystem.dumpPortAllocations();
             propagateRestartOnDeploy();
-            // must happen after stuff above
-            this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
         }
-        else { // create a model with no services instantiated and the given file distributor
-            this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
-            this.fileDistributor = fileDistributor;
-        }
+        // else: create a model with no services instantiated (no-op)
 
+        // must be done last
+        this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
     }
 
     @Override
@@ -272,8 +268,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
-        return new VespaModel(new NullConfigModelRegistry(), deployState, false,
-                              new FileDistributor());
+        return new VespaModel(new NullConfigModelRegistry(), deployState, false);
     }
 
     private void validateWrapExceptions() {

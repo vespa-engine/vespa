@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.ConfigProxy;
 import com.yahoo.vespa.model.Host;
-import com.yahoo.vespa.model.HostSystem;
 
 public class FileDistributionConfigProvider extends AbstractConfigProducer<AbstractConfigProducer<?>> implements FiledistributorrpcConfig.Producer {
 

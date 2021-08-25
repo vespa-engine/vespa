@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -15,15 +15,9 @@ import java.util.Map;
 public class FileDistributionConfigProducer extends AbstractConfigProducer<AbstractConfigProducer<?>> {
 
     private final Map<Host, FileDistributionConfigProvider> fileDistributionConfigProviders = new IdentityHashMap<>();
-    private final FileDistributor fileDistributor;
 
     public FileDistributionConfigProducer(AbstractConfigProducer<?> parent) {
         super(parent, "filedistribution");
-        this.fileDistributor = new FileDistributor();
-    }
-
-    public FileDistributor getFileDistributor() {
-        return fileDistributor;
     }
 
     public void addFileDistributionConfigProducer(Host host, FileDistributionConfigProvider fileDistributionConfigProvider) {
