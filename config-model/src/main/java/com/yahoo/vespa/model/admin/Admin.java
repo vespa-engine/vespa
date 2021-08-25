@@ -26,7 +26,6 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
-import com.yahoo.vespa.model.filedistribution.FileDistributor;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -1,10 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.filedistribution.FileDistributor;
+import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
 
 import java.util.Set;
 
@@ -22,7 +22,7 @@ public interface ConfigProducerRoot extends ConfigProducer {
      * @param id string id of descendant
      * @param descendant the producer to add to this root node
      */
-    void addDescendant(String id, AbstractConfigProducer descendant);
+    void addDescendant(String id, AbstractConfigProducer<?> descendant);
 
     /**
      * @return an unmodifiable copy of the set of configIds in this root.
@@ -39,7 +39,7 @@ public interface ConfigProducerRoot extends ConfigProducer {
      */
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, String configId);
 
-    FileDistributor getFileDistributor();
+    FileReferencesRepository fileReferencesRepository();
 
     Admin getAdmin();
 

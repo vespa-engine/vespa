@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.test;
 
 import com.yahoo.config.ConfigInstance;
@@ -17,7 +17,7 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
-import com.yahoo.vespa.model.filedistribution.FileDistributor;
+import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -43,7 +43,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
     private final HostSystem hostSystem;
 
     private final DeployState deployState;
-    private final FileDistributor fileDistributor;
+    private final FileReferencesRepository fileReferencesRepository;
     private Admin admin;
 
     public MockRoot() {
@@ -66,7 +66,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger());
         this.deployState = deployState;
-        fileDistributor = new FileDistributor();
+        fileReferencesRepository = new FileReferencesRepository();
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
@@ -119,15 +119,11 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return deployState;
     }
 
-    public FileDistributor getFileDistributor() {
-        return fileDistributor;
-    }
+    public FileReferencesRepository fileReferencesRepository() { return fileReferencesRepository; }
 
-    public HostSystem hostSystem() {
-        return hostSystem;
-    }
+    public HostSystem hostSystem() { return hostSystem; }
 
-    public void addDescendant(String configId, AbstractConfigProducer descendant) {
+    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +
@@ -138,7 +134,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
     }
 
     @Override
-    public void addChild(AbstractConfigProducer abstractConfigProducer) {
+    public void addChild(AbstractConfigProducer<?> abstractConfigProducer) {
         super.addChild(abstractConfigProducer);
     }
 

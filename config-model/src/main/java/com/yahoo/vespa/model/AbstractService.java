@@ -459,7 +459,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * @param reference file reference (hash)
      */
     public void send(FileReference reference) {
-        getRoot().getFileDistributor().sendFileReference(reference);
+        getRoot().fileReferencesRepository().add(reference);
     }
 
     /** The service HTTP port for health status */
