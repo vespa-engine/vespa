@@ -156,11 +156,19 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?el7} && 0%{?amzn2}
 BuildRequires: vespa-xxhash-devel = 0.8.0
+%define _use_vespa_xxhash 1
 BuildRequires: vespa-openblas-devel = 0.3.17
+%define _use_vespa_openblas 1
 BuildRequires: vespa-re2-devel = 20210801
+%define _use_vespa_re2 1
 %else
 BuildRequires: xxhash-devel >= 0.8.0
+%if 0%{?el7} || 0%{?el8}
+BuildRequires: vespa-openblas-devel = 0.3.17
+%define _use_vespa_openblas 1
+%else
 BuildRequires: openblas-devel
+%endif
 BuildRequires: re2-devel
 %endif
 BuildRequires: zlib-devel
@@ -223,11 +231,7 @@ Requires: vespa-valgrind >= 3.17.0-1
 %endif
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
-%if 0%{?amzn2}
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include
-%else
-%define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
-%endif
 %endif
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
@@ -240,7 +244,7 @@ Requires: vespa-valgrind >= 3.17.0-1
 %define _vespa_llvm_version 10
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
-%define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
+%define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?fedora}
 %if 0%{?fc32}
@@ -276,11 +280,7 @@ Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function. Exclude automated reqires for libraries in /opt/vespa-deps/lib64.
-%if 0%{?amzn2}
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime|openblas|re2|xxhash)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
-%else
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
-%endif
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash})\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
 
 
 %description
@@ -323,22 +323,17 @@ Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-libzstd >= 1.4.5-2
-%if 0%{?el8}
-Requires: openblas
-Requires: glibc-langpack-en
-%else
-%if 0%{?amzn2}
+%if 0%{?el8} || 0%{?el7}
 Requires: vespa-openblas = 0.3.17
 %else
 Requires: openblas-serial
-%endif
 %endif
 %if 0%{?amzn2}
 Requires: vespa-re2 = 20210801
 %else
 Requires: re2
 %endif
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?el8}
 Requires: glibc-langpack-en
 %endif
 
