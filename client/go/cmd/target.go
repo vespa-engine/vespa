@@ -22,6 +22,18 @@ const (
     documentContext context = 2
 )
 
+func deployTarget() string {
+    return getTarget(deployContext).deploy
+}
+
+func queryTarget() string {
+    return getTarget(queryContext).query
+}
+
+func documentTarget() string {
+    return getTarget(documentContext).document
+}
+
 func getTarget(targetContext context) *target {
     if strings.HasPrefix(targetArgument, "http") {
         // TODO: Add default ports if missing

@@ -35,7 +35,7 @@ var queryCmd = &cobra.Command{
 }
 
 func query(arguments []string) {
-    url, _ := url.Parse(getTarget(queryContext).query + "/search/")
+    url, _ := url.Parse(queryTarget() + "/search/")
     urlQuery := url.Query()
     for i := 0; i < len(arguments); i++ {
         key, value := splitArg(arguments[i])
