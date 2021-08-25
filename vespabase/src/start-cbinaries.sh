@@ -163,29 +163,13 @@ configure_vespa_malloc () {
     fi
 }
 
-configure_numa_ctl () {
-    numactl=""
-    if numactl --interleave all true &> /dev/null; then
-        # We are allowed to use numactl
-        numactl="numactl --interleave all"
-        if [ "$VESPA_AFFINITY_CPU_SOCKET" ]; then
-            numcpu=`numactl --hardware 2>/dev/null | grep available | cut -d' ' -f2`
-            if [ "$numcpu" ] && [ "$numcpu" -gt 1 ]; then
-                log_debug_message "Starting $0 with affinity $VESPA_AFFINITY_CPU_SOCKET out of $numcpu"
-                node=$(($VESPA_AFFINITY_CPU_SOCKET % $numcpu))
-                numactl="numactl --cpunodebind=$node --membind=$node"
-            fi
-        fi
-    fi
-}
-
 configure_valgrind
 configure_huge_pages
 configure_use_madvise
 configure_vespa_malloc
 
 if $no_valgrind ; then
-    configure_numa_ctl
+    numactl=$(get_numa_ctl_cmd)
     ulimit -c unlimited
     log_debug_message "Starting $0 with : " \
          $numactl env LD_PRELOAD=$LD_PRELOAD $0-bin "$@"
