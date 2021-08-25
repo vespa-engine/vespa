@@ -88,7 +88,7 @@ endfunction()
 function(setup_vespa_default_build_settings_fedora_35)
   message("-- Setting up default build settings for fedora 35")
   set(DEFAULT_EXTRA_INCLUDE_DIRECTORY "${VESPA_DEPS}/include" "/usr/include/openblas" PARENT_SCOPE)
-  set(DEFAULT_VESPA_LLVM_VERSION "12" PARENT_SCOPE)
+  set(DEFAULT_VESPA_LLVM_VERSION "13" PARENT_SCOPE)
 endfunction()
 
 function(setup_vespa_default_build_settings_fedora_36)
