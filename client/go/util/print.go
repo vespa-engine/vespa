@@ -29,6 +29,14 @@ func Error(messages ...string) {
 	print("\033[31m", messages)
 }
 
+// FatalIfError prints error and exists if given err is non-nill.
+func FatalIfErr(err error) {
+	if err != nil {
+		Error(err.Error())
+		os.Exit(1)
+	}
+}
+
 // Prints in a color appropriate for success messages
 func Success(messages ...string) {
 	print("\033[32m", messages)

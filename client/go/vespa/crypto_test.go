@@ -1,8 +1,8 @@
 package vespa
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestCreateKeyPair(t *testing.T) {
