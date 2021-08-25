@@ -26,7 +26,7 @@ public class FileDBRegistryTestCase {
     private static final String FOO_FILE = "files/foo.json";
     private static final String NO_FOO_FILE = "files/no_foo.json";
     private static final String BLOB_NAME = "myblob.name";
-    private static final FileReference BLOB_REF = new FileReference("b3424b78130fc005");
+    private static final FileReference BLOB_REF = new FileReference("12f292a25163dd9");
     private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
     @Test
     public void importAndExport() throws IOException {
