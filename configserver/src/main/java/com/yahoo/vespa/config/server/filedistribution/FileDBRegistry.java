@@ -100,8 +100,7 @@ public class FileDBRegistry implements FileRegistry {
     }
 
     @Override
-    public FileReference addBlob(ByteBuffer blob) {
-        String blobName = FileRegistry.blobName(blob);
+    public FileReference addBlob(String blobName, ByteBuffer blob) {
         String relativePath = blobToRelativeFile(blobName);
         synchronized (this) {
             Optional<FileReference> cachedReference = Optional.ofNullable(fileReferenceCache.get(blobName));

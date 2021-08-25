@@ -16,7 +16,7 @@ public interface FileRegistry {
 
     FileReference addFile(String relativePath);
     FileReference addUri(String uri);
-    FileReference addBlob(ByteBuffer blob);
+    FileReference addBlob(String name, ByteBuffer blob);
     default FileReference addApplicationPackage() { return addFile(""); }
 
     /**

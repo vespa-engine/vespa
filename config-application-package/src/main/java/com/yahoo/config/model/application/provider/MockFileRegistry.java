@@ -35,9 +35,8 @@ public class MockFileRegistry implements FileRegistry {
     }
 
     @Override
-    public FileReference addBlob(ByteBuffer blob) {
-        long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);
-        String relativePath = Long.toHexString(blobHash) + ".blob";
+    public FileReference addBlob(String name, ByteBuffer blob) {
+        String relativePath = "./" + name;
         FileReference fileReference = new FileReference(relativePath);
         entries.add(new Entry(relativePath, fileReference));
         return fileReference;

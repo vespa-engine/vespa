@@ -53,7 +53,7 @@ public class FileSenderTest {
         }
 
         @Override
-        public FileReference addBlob(ByteBuffer blob) {
+        public FileReference addBlob(String name, ByteBuffer blob) {
             return null;
         }
 

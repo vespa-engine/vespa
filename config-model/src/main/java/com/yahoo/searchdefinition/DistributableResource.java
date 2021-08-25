@@ -38,6 +38,7 @@ public class DistributableResource {
         Objects.requireNonNull(blob, "Blob cannot be null");
         this.name = name;
         this.blob = blob;
+        path = name;
         pathType = PathType.BLOB;
     }
 
@@ -87,7 +88,7 @@ public class DistributableResource {
                 fileReference = fileRegistry.addUri(path);
                 break;
             case BLOB:
-                fileReference = fileRegistry.addBlob(blob);
+                fileReference = fileRegistry.addBlob(path, blob);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown path type " + pathType);

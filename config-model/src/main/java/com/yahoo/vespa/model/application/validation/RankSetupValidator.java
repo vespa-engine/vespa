@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -143,27 +144,22 @@ public class RankSetupValidator extends Validator {
         writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifcb.build());
     }
 
-    private void writeExtraVerifyRanksetupConfig(String dir, DocumentDatabase db) throws IOException {
-        List<String> config = new ArrayList<>();
-
-        // Assist verify-ranksetup in finding the actual ONNX model files
-        for (OnnxModel model : db.getDerivedConfiguration().getSearch().onnxModels().asMap().values()) {
+    private void writeExtraVerifyRanksetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
+        for (DistributableResource model : resources) {
             String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
             int index = config.size() / 2;
             config.add(String.format("file[%d].ref \"%s\"", index, model.getFileReference()));
             config.add(String.format("file[%d].path \"%s\"", index, modelPath));
             log.log(Level.INFO, index + ": " + model.getPathType() + " -> " + model.getName() + " -> " + modelPath + " -> " + model.getFileReference());
         }
+    }
 
-        for (RankExpressionBody expr : db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values()) {
-            int index = config.size() / 2;
-            String modelPath = (expr.getPathType() == DistributableResource.PathType.BLOB)
-                    ? getFileRepositoryPath(expr.getName(), expr.getFileReference())
-                    : getFileRepositoryPath(expr.getFilePath().getName(), expr.getFileReference());
-            config.add(String.format("file[%d].ref \"%s\"", index, expr.getFileReference()));
-            config.add(String.format("file[%d].path \"%s\"", index, modelPath));
-            log.log(Level.INFO, index + ": " + expr.getPathType() + " -> " + expr.getName() + " -> " + modelPath + " -> " + expr.getFileReference());
-        }
+    private void writeExtraVerifyRanksetupConfig(String dir, DocumentDatabase db) throws IOException {
+        List<String> config = new ArrayList<>();
+
+        // Assist verify-ranksetup in finding the actual ONNX model files
+        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSearch().onnxModels().asMap().values());
+        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values());
 
         String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
         IOUtils.writeFile(dir + "verify-ranksetup.cfg", configContent, false);
