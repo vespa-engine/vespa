@@ -19,12 +19,16 @@ import (
 )
 
 func Deploy(prepare bool, application string, target string) {
-	// TODO: Support no application (activate)
-	// TODO: Support application home as argument instead of src/main and
-	//       - if target exists, use target/application.zip
-	//       - else if src/main/application exists, use that
-	//       - else if current dir has services.xml use that
-	if filepath.Ext(application) != ".zip" {
+	source, noSourceError := determineSource(application)
+	if noSourceError != nil {
+		util.Error(noSourceError.Error())
+		return
+	}
+
+	var zippedSource string
+	if filepath.Ext(source) == ".zip" {
+		zippedSource = source
+	} else { // create zip
 		tempZip, error := ioutil.TempFile("", "application.zip")
 		if error != nil {
 			util.Error("Could not create a temporary zip file for the application package")
@@ -32,18 +36,18 @@ func Deploy(prepare bool, application string, target string) {
 			return
 		}
 
-		error = zipDir(application, tempZip.Name())
+		error = zipDir(source, tempZip.Name())
 		if error != nil {
 			util.Error(error.Error())
 			return
 		}
 		defer os.Remove(tempZip.Name())
-		application = tempZip.Name()
+		zippedSource = tempZip.Name()
 	}
 
-	zipFileReader, zipFileError := os.Open(application)
+	zipFileReader, zipFileError := os.Open(zippedSource)
 	if zipFileError != nil {
-		util.Error("Could not open application package at " + application)
+		util.Error("Could not open application package at " + source)
 		util.Detail(zipFileError.Error())
 		return
 	}
@@ -81,6 +85,28 @@ func Deploy(prepare bool, application string, target string) {
 		util.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "("+response.Status+"):")
 		util.PrintReader(response.Body)
 	}
+}
+
+// Use heuristics to determine the source (directory or zip) of an application package deployment
+func determineSource(application string) (string, error) {
+	if filepath.Ext(application) == ".zip" {
+		return application, nil
+	}
+	if util.PathExists(filepath.Join(application, "target")) {
+		source := filepath.Join(application, "target", "application.zip")
+		if !util.PathExists(source) {
+			return "", errors.New("target/ exists but have no application.zip. Run mvn package first")
+		} else {
+			return source, nil
+		}
+	}
+	if util.PathExists(filepath.Join(application, "src", "main", "application")) {
+		return filepath.Join(application, "src", "main", "application"), nil
+	}
+	if util.PathExists(filepath.Join(application, "services.xml")) {
+		return application, nil
+	}
+	return "", errors.New("Could not find an application package source in '" + application + "'")
 }
 
 func zipDir(dir string, destination string) error {
