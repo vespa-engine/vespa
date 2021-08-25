@@ -28,6 +28,7 @@ AttributesConfigScout::adjust(AttributesConfig::Attribute &attr,
     attr.enableonlybitvector = liveAttr.enableonlybitvector;
     attr.fastsearch = liveAttr.fastsearch;
     attr.huge = liveAttr.huge;
+    attr.paged = liveAttr.paged;
     // Note: Predicate attributes only handle changes for the dense-posting-list-threshold config.
     attr.densepostinglistthreshold = liveAttr.densepostinglistthreshold;
     attr.distancemetric = liveAttr.distancemetric;
