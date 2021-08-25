@@ -76,20 +76,12 @@ InterpretedFunction::Instruction::nop()
     return Instruction(my_nop);
 }
 
-InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)
+InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta)
     : _program(),
       _stash(),
       _factory(factory)
 {
-    _program = compile_tensor_function(factory, function, _stash);
-}
-
-InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData &meta)
-    : _program(),
-      _stash(),
-      _factory(factory)
-{
-    _program = compile_tensor_function(factory, function, _stash, &meta);
+    _program = compile_tensor_function(factory, function, _stash, meta);
 }
 
 InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types)
@@ -99,7 +91,7 @@ InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, con
 {
     const TensorFunction &plain_fun = make_tensor_function(factory, root, types, _stash);
     const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, _stash);
-    _program = compile_tensor_function(factory, optimized, _stash);
+    _program = compile_tensor_function(factory, optimized, _stash, nullptr);
 }
 
 InterpretedFunction::~InterpretedFunction() = default;

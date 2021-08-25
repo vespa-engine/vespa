@@ -180,7 +180,7 @@ TEST("require that compilation meta-data can be collected") {
     const auto &flag = tensor_function::inject(ValueType::from_spec("double"), 0, stash);
     const auto &root = tensor_function::if_node(flag, concat_x5, mapped_x5, stash);
     CTFMetaData meta;
-    InterpretedFunction ifun(FastValueBuilderFactory::get(), root, meta);
+    InterpretedFunction ifun(FastValueBuilderFactory::get(), root, &meta);
     fprintf(stderr, "compilation meta-data:\n");
     for (const auto &step: meta.steps) {
         fprintf(stderr, "  %s -> %s\n", step.class_name.c_str(), step.symbol_name.c_str());        
