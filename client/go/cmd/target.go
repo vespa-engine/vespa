@@ -5,68 +5,69 @@
 package cmd
 
 import (
-    "github.com/vespa-engine/vespa/util"
-    "strings"
+	"github.com/vespa-engine/vespa/util"
+	"strings"
 )
 
 type target struct {
-    deploy string
-    query string
-    document string
+	deploy   string
+	query    string
+	document string
 }
 
 type context int32
+
 const (
-    deployContext   context = 0
-    queryContext    context = 1
-    documentContext context = 2
+	deployContext   context = 0
+	queryContext    context = 1
+	documentContext context = 2
 )
 
 func deployTarget() string {
-    return getTarget(deployContext).deploy
+	return getTarget(deployContext).deploy
 }
 
 func queryTarget() string {
-    return getTarget(queryContext).query
+	return getTarget(queryContext).query
 }
 
 func documentTarget() string {
-    return getTarget(documentContext).document
+	return getTarget(documentContext).document
 }
 
 func getTarget(targetContext context) *target {
-    if strings.HasPrefix(targetArgument, "http") {
-        // TODO: Add default ports if missing
-        switch targetContext {
-            case deployContext:
-                return &target{
-                    deploy: targetArgument,
-                }
-            case queryContext:
-                return &target{
-                    query: targetArgument,
-                }
-            case documentContext:
-                return &target{
-                    document: targetArgument,
-                }
-        }
-    }
+	if strings.HasPrefix(targetArgument, "http") {
+		// TODO: Add default ports if missing
+		switch targetContext {
+		case deployContext:
+			return &target{
+				deploy: targetArgument,
+			}
+		case queryContext:
+			return &target{
+				query: targetArgument,
+			}
+		case documentContext:
+			return &target{
+				document: targetArgument,
+			}
+		}
+	}
 
-    // Otherwise, target is a name
+	// Otherwise, target is a name
 
-    if targetArgument == "" || targetArgument == "local" {
-        return &target{
-            deploy: "http://127.0.0.1:19071",
-            query: "http://127.0.0.1:8080",
-            document: "http://127.0.0.1:8080",
-        }
-    }
+	if targetArgument == "" || targetArgument == "local" {
+		return &target{
+			deploy:   "http://127.0.0.1:19071",
+			query:    "http://127.0.0.1:8080",
+			document: "http://127.0.0.1:8080",
+		}
+	}
 
-    if targetArgument == "cloud" {
-        return nil // TODO
-    }
+	if targetArgument == "cloud" {
+		return nil // TODO
+	}
 
-    util.Error("Unknown target argument '" + targetArgument + ": Use 'local', 'cloud' or an URL")
-    return nil
+	util.Error("Unknown target argument '" + targetArgument + ": Use 'local', 'cloud' or an URL")
+	return nil
 }

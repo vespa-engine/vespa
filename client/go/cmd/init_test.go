@@ -5,28 +5,28 @@
 package cmd
 
 import (
-    "github.com/vespa-engine/vespa/util"
-    "github.com/stretchr/testify/assert"
-    "os"
-    "testing"
-    "path/filepath"
+	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/util"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
 func TestInit(t *testing.T) {
-    assertCreated("mytestapp", "album-recommendation-selfhosted", t)
+	assertCreated("mytestapp", "album-recommendation-selfhosted", t)
 }
 
 func assertCreated(app string, sampleAppName string, t *testing.T) {
-    existingSampleAppsZip = "testdata/sample-apps-master.zip"
-    standardOut := executeCommand(t, &mockHttpClient{}, []string{"init", app, sampleAppName}, []string{})
+	existingSampleAppsZip = "testdata/sample-apps-master.zip"
+	standardOut := executeCommand(t, &mockHttpClient{}, []string{"init", app, sampleAppName}, []string{})
 	defer os.RemoveAll(app)
-	assert.Equal(t, "\x1b[32mCreated " + app + "\n", standardOut)
+	assert.Equal(t, "\x1b[32mCreated "+app+"\n", standardOut)
 	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))
 	assert.True(t, util.PathExists(filepath.Join(app, "src", "main", "application")))
 	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))
 
-    servicesStat, _ := os.Stat(filepath.Join(app, "src", "main", "application", "services.xml"))
-    var servicesSize int64
-    servicesSize = 2474
+	servicesStat, _ := os.Stat(filepath.Join(app, "src", "main", "application", "services.xml"))
+	var servicesSize int64
+	servicesSize = 2474
 	assert.Equal(t, servicesSize, servicesStat.Size())
 }

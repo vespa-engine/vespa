@@ -5,26 +5,26 @@
 package cmd
 
 import (
-    "bytes"
-    "github.com/vespa-engine/vespa/util"
-    "github.com/stretchr/testify/assert"
+	"bytes"
+	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/util"
 	"io/ioutil"
-    "net/http"
-    "testing"
-    "strconv"
-    "time"
+	"net/http"
+	"strconv"
+	"testing"
+	"time"
 )
 
 func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
-    util.ActiveHttpClient = client
+	util.ActiveHttpClient = client
 
-    // Reset - persistent flags in Cobra persists over tests
-    util.Out = bytes.NewBufferString("")
+	// Reset - persistent flags in Cobra persists over tests
+	util.Out = bytes.NewBufferString("")
 	rootCmd.SetArgs([]string{"status", "-t", ""})
 	rootCmd.Execute()
 
 	b := bytes.NewBufferString("")
-    util.Out = b
+	util.Out = b
 	rootCmd.SetArgs(append(args, moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(b)
@@ -33,26 +33,26 @@ func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArg
 }
 
 type mockHttpClient struct {
-    // The HTTP status code that will be returned from the next invocation. Default: 200
-    nextStatus int
+	// The HTTP status code that will be returned from the next invocation. Default: 200
+	nextStatus int
 
-    // The response body code that will be returned from the next invocation. Default: ""
-    nextBody string
+	// The response body code that will be returned from the next invocation. Default: ""
+	nextBody string
 
-    // A recording of the last HTTP request made through this
-    lastRequest *http.Request
+	// A recording of the last HTTP request made through this
+	lastRequest *http.Request
 }
 
 func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
-    if c.nextStatus == 0 {
-        c.nextStatus = 200
-    }
-    c.lastRequest = request
-    return &http.Response{
-        Status:     "Status " + strconv.Itoa(c.nextStatus),
-        StatusCode: c.nextStatus,
-        Body:       ioutil.NopCloser(bytes.NewBufferString(c.nextBody)),
-        Header:     make(http.Header),
-    },
-    nil
+	if c.nextStatus == 0 {
+		c.nextStatus = 200
+	}
+	c.lastRequest = request
+	return &http.Response{
+			Status:     "Status " + strconv.Itoa(c.nextStatus),
+			StatusCode: c.nextStatus,
+			Body:       ioutil.NopCloser(bytes.NewBufferString(c.nextBody)),
+			Header:     make(http.Header),
+		},
+		nil
 }

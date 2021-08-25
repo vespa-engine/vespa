@@ -5,35 +5,35 @@
 package util
 
 import (
-    "bytes"
-    "errors"
-    "io"
-    "os"
-    "strings"
+	"bytes"
+	"errors"
+	"io"
+	"os"
+	"strings"
 )
 
 // Returns true if the given path exists
 func PathExists(path string) bool {
-    _, err := os.Stat(path)
-    return ! errors.Is(err, os.ErrNotExist)
+	_, err := os.Stat(path)
+	return !errors.Is(err, os.ErrNotExist)
 }
 
 // Returns true is the given path points to an existing directory
 func IsDirectory(path string) bool {
-    info, err := os.Stat(path)
-    return ! errors.Is(err, os.ErrNotExist) && info.IsDir()
+	info, err := os.Stat(path)
+	return !errors.Is(err, os.ErrNotExist) && info.IsDir()
 }
 
 // Returns the content of a reader as a string
 func ReaderToString(reader io.Reader) string {
-    buffer := new(strings.Builder)
-    io.Copy(buffer, reader)
-    return buffer.String()
+	buffer := new(strings.Builder)
+	io.Copy(buffer, reader)
+	return buffer.String()
 }
 
 // Returns the content of a reader as a byte array
 func ReaderToBytes(reader io.Reader) []byte {
-    buffer := new(bytes.Buffer)
+	buffer := new(bytes.Buffer)
 	buffer.ReadFrom(reader)
 	return buffer.Bytes()
 }
