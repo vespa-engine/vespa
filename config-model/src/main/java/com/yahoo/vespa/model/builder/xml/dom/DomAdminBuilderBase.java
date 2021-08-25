@@ -65,8 +65,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));
-        Admin admin = new Admin(parent, monitoring, metrics, multitenant, deployState.isHosted());
-        admin.setApplicationType(applicationType);
+        Admin admin = new Admin(parent, monitoring, metrics, multitenant, deployState.isHosted(), applicationType);
         doBuildAdmin(deployState, admin, adminElement);
         new ModelConfigProvider(admin);
 

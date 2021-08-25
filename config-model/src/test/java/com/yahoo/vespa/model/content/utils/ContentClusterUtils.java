@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -56,13 +56,15 @@ public class ContentClusterUtils {
     }
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
-        Document doc = XML.getDocument(clusterXml);
+        ConfigModelContext.ApplicationType applicationType = ConfigModelContext.ApplicationType.DEFAULT;
         Admin admin = new Admin(root,
                                 new DefaultMonitoring(),
                                 new Metrics(),
                                 false,
-                                root.getDeployState().isHosted());
-        ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(),
+                                root.getDeployState().isHosted(),
+                                applicationType);
+        Document doc = XML.getDocument(clusterXml);
+        ConfigModelContext context = ConfigModelContext.create(applicationType, root.getDeployState(),
                                                                null,null, root, null);
 
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
