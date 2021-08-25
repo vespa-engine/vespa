@@ -82,13 +82,14 @@ public class BenchmarkingCluster implements Cluster {
             if (responsesByCode[code] > 0)
                 responses.put(code, responsesByCode[code]);
 
-        return new OperationStats(requests.get(),
+        long requests = this.requests.get();
+        return new OperationStats(requests,
                                   responses,
                                   exceptions,
-                                  requests.get() - results,
-                                  this.responses == 0 ? 0 : totalLatencyMillis / this.responses,
-                                  minLatencyMillis,
-                                  maxLatencyMillis,
+                                  requests - results,
+                                  this.responses == 0 ? -1 : totalLatencyMillis / this.responses,
+                                  this.responses == 0 ? -1 : minLatencyMillis,
+                                  this.responses == 0 ? -1 : maxLatencyMillis,
                                   bytesSent,
                                   bytesReceived);
     }
