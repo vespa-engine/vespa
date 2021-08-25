@@ -15,12 +15,14 @@ func init() {
     statusCmd.AddCommand(statusConfigServerCmd)
 }
 
+// TODO: Use deploy, query and document instead of container and config-server
+
 var statusCmd = &cobra.Command{
     Use:   "status",
     Short: "Verifies that a vespa target is ready to use (container by default)",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status(getTarget(queryContext).query, "Container")
+        status(queryTarget(), "Container")
     },
 }
 
@@ -29,7 +31,7 @@ var statusContainerCmd = &cobra.Command{
     Short: "Verifies that your Vespa container endpoint is ready [Default]",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status(getTarget(queryContext).query, "Container")
+        status(queryTarget(), "Container")
     },
 }
 
@@ -38,7 +40,7 @@ var statusConfigServerCmd = &cobra.Command{
     Short: "Verifies that your Vespa config server endpoint is ready",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
-        status(getTarget(deployContext).deploy, "Config server")
+        status(deployTarget(), "Config server")
     },
 }
 

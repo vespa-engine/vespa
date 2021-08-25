@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// vespa deploy command
+// vespa prepare command
 // Author: bratseth
 
 package cmd
@@ -10,18 +10,20 @@ import (
 )
 
 func init() {
-    rootCmd.AddCommand(deployCmd)
+    rootCmd.AddCommand(prepareCmd)
 }
 
-var deployCmd = &cobra.Command{
-    Use:   "deploy",
-    Short: "Deploys (prepares and activates) an application package",
+// TODO: Implement and test
+
+var prepareCmd = &cobra.Command{
+    Use:   "prepare",
+    Short: "Prepares an application package for activation",
     Long:  `TODO`,
     Run: func(cmd *cobra.Command, args []string) {
         if len(args) == 0 {
-            vespa.Deploy(false, "", deployTarget())
+            vespa.Deploy(true, "", deployTarget())
         } else {
-            vespa.Deploy(false, args[0], deployTarget())
+            vespa.Deploy(true, args[0], deployTarget())
         }
     },
 }

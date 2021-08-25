@@ -87,7 +87,7 @@ func post(documentId string, jsonFile string) {
         }
     }
 
-    url, _ := url.Parse(getTarget(documentContext).document + "/document/v1/" + documentId)
+    url, _ := url.Parse(documentTarget() + "/document/v1/" + documentId)
 
     request := &http.Request{
         URL: url,
