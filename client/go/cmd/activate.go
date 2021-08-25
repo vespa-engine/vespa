@@ -5,21 +5,21 @@
 package cmd
 
 import (
-    "github.com/spf13/cobra"
-    "github.com/vespa-engine/vespa/vespa"
+	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/vespa"
 )
 
 func init() {
-    rootCmd.AddCommand(activateCmd)
+	rootCmd.AddCommand(activateCmd)
 }
 
 // TODO: Implement and test
 
 var activateCmd = &cobra.Command{
-    Use:   "activate",
-    Short: "Activates (deploys) the previously prepared application package",
-    Long:  `TODO`,
-    Run: func(cmd *cobra.Command, args []string) {
-        vespa.Deploy(true, "", deployTarget())
-    },
+	Use:   "activate",
+	Short: "Activates (deploys) the previously prepared application package",
+	Long:  `TODO`,
+	Run: func(cmd *cobra.Command, args []string) {
+		vespa.Deploy(true, "", deployTarget())
+	},
 }
