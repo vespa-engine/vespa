@@ -11,21 +11,21 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author bratseth
  */
-public class FileDistributorTestCase {
+public class FileReferencesRepositoryTestCase {
 
     @Test
     public void fileDistributor() {
         FileRegistry fileRegistry = new MockFileRegistry();
-        FileDistributor fileDistributor = new FileDistributor();
+        FileReferencesRepository fileReferencesRepository = new FileReferencesRepository();
 
         String file1 = "component/path1";
         String file2 = "component/path2";
         FileReference ref1 = fileRegistry.addFile(file1);
         FileReference ref2 = fileRegistry.addFile(file2);
-        fileDistributor.sendFileReference(ref1);
-        fileDistributor.sendFileReference(ref2);
-        fileDistributor.sendFileReference(ref1); // same file reference as above
-        fileDistributor.sendFileReference(ref2);
+        fileReferencesRepository.add(ref1);
+        fileReferencesRepository.add(ref2);
+        fileReferencesRepository.add(ref1); // same file reference as above
+        fileReferencesRepository.add(ref2);
 
         assertNotNull(ref1);
         assertNotNull(ref2);

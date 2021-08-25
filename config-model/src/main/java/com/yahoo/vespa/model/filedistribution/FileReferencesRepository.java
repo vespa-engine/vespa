@@ -10,20 +10,17 @@ import java.util.Set;
  * Keeps track of what files to send with file distribution
  *
  * @author Tony Vaagenes
+ * @author hmusum
  */
-public class FileDistributor {
+public class FileReferencesRepository {
 
-    /** A map from file reference to the hosts to which that file reference should be distributed */
+    /** A set of file references that should be distributed */
     private final Set<FileReference> fileReferences = new LinkedHashSet<>();
 
-    public FileDistributor() { }
+    public FileReferencesRepository() { }
 
-    public void sendFileReference(FileReference reference) {
-        fileReferences.add(reference);
-    }
+    public void add(FileReference reference) { fileReferences.add(reference); }
 
-    public Set<FileReference> allFilesToSend() {
-        return Set.copyOf(fileReferences);
-    }
+    public Set<FileReference> allFileReferences() { return Set.copyOf(fileReferences); }
 
 }
