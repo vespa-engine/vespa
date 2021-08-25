@@ -152,6 +152,7 @@ public class RankSetupValidator extends Validator {
             int index = config.size() / 2;
             config.add(String.format("file[%d].ref \"%s\"", index, model.getFileReference()));
             config.add(String.format("file[%d].path \"%s\"", index, modelPath));
+            log.log(Level.INFO, index + ": " + model.getPathType() + " -> " + model.getName() + " -> " + modelPath + " -> " + model.getFileReference());
         }
 
         for (RankExpressionBody expr : db.getDerivedConfiguration().getSearch().rankExpressionFiles().asMap().values()) {
@@ -161,7 +162,7 @@ public class RankSetupValidator extends Validator {
                     : getFileRepositoryPath(expr.getFilePath().getName(), expr.getFileReference());
             config.add(String.format("file[%d].ref \"%s\"", index, expr.getFileReference()));
             config.add(String.format("file[%d].path \"%s\"", index, modelPath));
-            log.log(Level.INFO, index + ": " + expr.getPathType() + " -> " + expr.getName() + " -> " + expr.getFileReference());
+            log.log(Level.INFO, index + ": " + expr.getPathType() + " -> " + expr.getName() + " -> " + modelPath + " -> " + expr.getFileReference());
         }
 
         String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
