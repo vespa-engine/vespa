@@ -12,6 +12,7 @@ vespa_define_module(
 
     TESTS
     src/tests/ann
+    src/tests/apps/eval_expr
     src/tests/eval/addr_to_symbol
     src/tests/eval/aggr
     src/tests/eval/array_array_map

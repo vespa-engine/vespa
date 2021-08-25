@@ -287,6 +287,9 @@ TensorSpec::to_slime(slime::Cursor &tensor) const
 vespalib::string
 TensorSpec::to_expr() const
 {
+    if (_type == "double") {
+        return make_string("%g", as_double());
+    }
     vespalib::string out = _type;
     out.append(":{");
     CommaTracker cell_list;
