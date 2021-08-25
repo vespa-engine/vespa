@@ -5,8 +5,9 @@
 package cmd
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStatusDeployCommand(t *testing.T) {
@@ -44,7 +45,7 @@ func TestStatusErrorResponse(t *testing.T) {
 func assertDeployStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mDeploy API at "+target+" is ready\n",
+		"\x1b[32mDeploy API at "+target+" is ready\x1b[0m\n",
 		executeCommand(t, client, []string{"status", "deploy"}, args),
 		"vespa status config-server")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
@@ -53,13 +54,13 @@ func assertDeployStatus(target string, args []string, t *testing.T) {
 func assertQueryStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mQuery API at "+target+" is ready\n",
+		"\x1b[32mQuery API at "+target+" is ready\x1b[0m\n",
 		executeCommand(t, client, []string{"status", "query"}, args),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
 
 	assert.Equal(t,
-		"\x1b[32mQuery API at "+target+" is ready\n",
+		"\x1b[32mQuery API at "+target+" is ready\x1b[0m\n",
 		executeCommand(t, client, []string{"status"}, args),
 		"vespa status (the default)")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
@@ -68,7 +69,7 @@ func assertQueryStatus(target string, args []string, t *testing.T) {
 func assertDocumentStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mDocument API at "+target+" is ready\n",
+		"\x1b[32mDocument API at "+target+" is ready\x1b[0m\n",
 		executeCommand(t, client, []string{"status", "document"}, args),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
@@ -77,7 +78,7 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 func assertQueryStatusError(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{nextStatus: 500}
 	assert.Equal(t,
-		"\x1b[31mQuery API at "+target+" is not ready\n\x1b[33mStatus 500\n",
+		"\x1b[31mQuery API at "+target+" is not ready\x1b[0m\n\x1b[33mStatus 500\x1b[0m\n",
 		executeCommand(t, client, []string{"status", "container"}, args),
 		"vespa status container")
 }
