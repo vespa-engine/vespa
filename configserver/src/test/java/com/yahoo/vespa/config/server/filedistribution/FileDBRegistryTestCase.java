@@ -25,8 +25,8 @@ public class FileDBRegistryTestCase {
     private static final String APP = "src/test/apps/zkapp";
     private static final String FOO_FILE = "files/foo.json";
     private static final String NO_FOO_FILE = "files/no_foo.json";
-    private static final String BLOB_NAME = "c5674b55c15c9c95";
-    private static final FileReference BLOB_REF = new FileReference("b3424b78130fc005");
+    private static final String BLOB_NAME = "myblob.name";
+    private static final FileReference BLOB_REF = new FileReference("12f292a25163dd9");
     private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
     @Test
     public void importAndExport() throws IOException {
@@ -41,7 +41,7 @@ public class FileDBRegistryTestCase {
         } catch (IllegalArgumentException e) {
             assertEquals("src/test/apps/zkapp/files/no_foo.json (No such file or directory)", e.getCause().getMessage());
         }
-        assertEquals(BLOB_REF, fileRegistry.addBlob(ByteBuffer.wrap(BLOB.getBytes(StandardCharsets.UTF_8))));
+        assertEquals(BLOB_REF, fileRegistry.addBlob(BLOB_NAME, ByteBuffer.wrap(BLOB.getBytes(StandardCharsets.UTF_8))));
         String serializedRegistry = FileDBRegistry.exportRegistry(fileRegistry);
 
         FileDBRegistry importedRegistry = FileDBRegistry.create(fileManager, new StringReader(serializedRegistry));

@@ -2,7 +2,6 @@
 
 #include "config-verify-ranksetup.h"
 #include <vespa/config-attributes.h>
-#include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config/config.h>
@@ -65,6 +64,7 @@ RankingExpressions make_expressions(const RankingExpressionsConfig &expressionsC
     RankingExpressions expressions;
     for (const auto &entry: expressionsCfg.expression) {
         if (auto file = get_file(entry.fileref, myCfg)) {
+            LOG(debug, "Add expression %s with ref=%s and path=%s", entry.name.c_str(), entry.fileref.c_str(), file.value().c_str());
             expressions.add(entry.name, file.value());
         } else {
             LOG(warning, "could not find file name for ranking expression '%s' (ref:'%s')",

@@ -16,12 +16,17 @@ public interface FileRegistry {
 
     FileReference addFile(String relativePath);
     FileReference addUri(String uri);
-    FileReference addBlob(ByteBuffer blob);
+    /**
+     * @deprecated Remove after 7.455
+     */
+    @Deprecated
+    default FileReference addBlob(ByteBuffer blob) { return null; }
+    FileReference addBlob(String name, ByteBuffer blob);
     default FileReference addApplicationPackage() { return addFile(""); }
 
     /**
      * Returns the name of the host which is the source of the files
-     * @deprecated Remove after 7.253
+     * @deprecated Remove after 7.453
      */
     @Deprecated
     default String fileSourceHost() { return HostName.getLocalhost(); }
@@ -38,6 +43,10 @@ public interface FileRegistry {
         }
     }
 
+    /**
+     * @deprecated Remove after 7.455
+     */
+    @Deprecated
     static String blobName(ByteBuffer blob) {
         blob.mark();
         long blobHash = XXHashFactory.fastestJavaInstance().hash64().hash(blob, 0);

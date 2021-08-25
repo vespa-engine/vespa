@@ -440,7 +440,8 @@
     "methods": [
       "public abstract com.yahoo.config.FileReference addFile(java.lang.String)",
       "public abstract com.yahoo.config.FileReference addUri(java.lang.String)",
-      "public abstract com.yahoo.config.FileReference addBlob(java.nio.ByteBuffer)",
+      "public com.yahoo.config.FileReference addBlob(java.nio.ByteBuffer)",
+      "public abstract com.yahoo.config.FileReference addBlob(java.lang.String, java.nio.ByteBuffer)",
       "public com.yahoo.config.FileReference addApplicationPackage()",
       "public java.lang.String fileSourceHost()",
       "public abstract java.util.List export()",
