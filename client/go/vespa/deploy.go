@@ -7,7 +7,7 @@ package vespa
 import (
 	"archive/zip"
 	"errors"
-	"github.com/vespa-engine/vespa/util"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,19 +16,56 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/vespa-engine/vespa/util"
 )
 
+type ApplicationPackage struct {
+	Path string
+}
+
+// Find application package relative given name, which is the path to a file or directory.
+func FindApplicationPackage(name string) (ApplicationPackage, error) {
+	if isZip(name) {
+		return ApplicationPackage{Path: name}, nil
+	}
+	candidates := []string{
+		filepath.Join(name, "target", "application.zip"),
+		filepath.Join(name, "src", "main", "application", "services.xml"),
+		filepath.Join(name, "services.xml"),
+	}
+	for _, path := range candidates {
+		if !util.PathExists(path) {
+			continue
+		}
+		if !isZip(path) {
+			path = filepath.Dir(path)
+		}
+		return ApplicationPackage{Path: path}, nil
+	}
+	return ApplicationPackage{}, fmt.Errorf("no application package found in %s", name)
+}
+
+func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
+
+func (ap *ApplicationPackage) HasCertificate() bool {
+	if ap.IsZip() {
+		return true // TODO: Consider looking inside zip to verify
+	}
+	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
+}
+
+func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
+
 func Deploy(prepare bool, application string, target string) {
-	source, noSourceError := determineSource(application)
+	pkg, noSourceError := FindApplicationPackage(application)
 	if noSourceError != nil {
 		util.Error(noSourceError.Error())
 		return
 	}
 
-	var zippedSource string
-	if filepath.Ext(source) == ".zip" {
-		zippedSource = source
-	} else { // create zip
+	zippedSource := pkg.Path
+	if !pkg.IsZip() { // create zip
 		tempZip, error := ioutil.TempFile("", "application.zip")
 		if error != nil {
 			util.Error("Could not create a temporary zip file for the application package")
@@ -36,7 +73,7 @@ func Deploy(prepare bool, application string, target string) {
 			return
 		}
 
-		error = zipDir(source, tempZip.Name())
+		error = zipDir(pkg.Path, tempZip.Name())
 		if error != nil {
 			util.Error(error.Error())
 			return
@@ -47,7 +84,7 @@ func Deploy(prepare bool, application string, target string) {
 
 	zipFileReader, zipFileError := os.Open(zippedSource)
 	if zipFileError != nil {
-		util.Error("Could not open application package at " + source)
+		util.Error("Could not open application package at " + pkg.Path)
 		util.Detail(zipFileError.Error())
 		return
 	}
@@ -85,28 +122,6 @@ func Deploy(prepare bool, application string, target string) {
 		util.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "("+response.Status+"):")
 		util.PrintReader(response.Body)
 	}
-}
-
-// Use heuristics to determine the source (directory or zip) of an application package deployment
-func determineSource(application string) (string, error) {
-	if filepath.Ext(application) == ".zip" {
-		return application, nil
-	}
-	if util.PathExists(filepath.Join(application, "target")) {
-		source := filepath.Join(application, "target", "application.zip")
-		if !util.PathExists(source) {
-			return "", errors.New("target/ exists but have no application.zip. Run mvn package first")
-		} else {
-			return source, nil
-		}
-	}
-	if util.PathExists(filepath.Join(application, "src", "main", "application")) {
-		return filepath.Join(application, "src", "main", "application"), nil
-	}
-	if util.PathExists(filepath.Join(application, "services.xml")) {
-		return application, nil
-	}
-	return "", errors.New("Could not find an application package source in '" + application + "'")
 }
 
 func zipDir(dir string, destination string) error {
