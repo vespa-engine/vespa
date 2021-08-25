@@ -71,8 +71,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH);
     private static final BindingPattern PROMETHEUS_V1_HANDLER_BINDING_2 = SystemBindingPattern.fromHttpPath(PrometheusV1Handler.V1_PATH + "/*");
 
-    public static final int heapSizePercentageOfTotalNodeMemory = 60;
-    public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 17;
+    public static final int heapSizePercentageOfTotalNodeMemory = 70;
+    public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 18;
 
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();

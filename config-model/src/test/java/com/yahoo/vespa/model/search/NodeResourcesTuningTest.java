@@ -21,7 +21,7 @@ import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
 public class NodeResourcesTuningTest {
 
     private static final double delta = 0.00001;
-    private static final double combinedFactor = 1 - 17.0/100;
+    private static final double combinedFactor = 1 - 18.0/100;
 
     @Test
     public void require_that_hwinfo_disk_size_is_set() {

@@ -215,7 +215,7 @@ public class ModelProvisioningTest {
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 1, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Nodes in cluster without ID", 2, model.getContentClusters().get("content").getRootGroup().getNodes().size());
-        assertEquals("Heap size for container", 60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals("Heap size for container", 70, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Type.content, model);
         assertProvisioned(1, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content"), ClusterSpec.Type.content, model);
@@ -269,9 +269,9 @@ public class ModelProvisioningTest {
             assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
             assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
             assertEquals("Heap size is lowered with combined clusters",
-                         17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+                         18, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertEquals("Memory for proton is lowered to account for the jvm heap",
-                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.17)), protonMemorySize(model.getContentClusters().get("content1")));
+                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.18)), protonMemorySize(model.getContentClusters().get("content1")));
             assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
             assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         }
@@ -305,7 +305,7 @@ public class ModelProvisioningTest {
             assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
             assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
             assertEquals("Heap size is normal",
-                         60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+                         70, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertEquals("Memory for proton is normal",
                          (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
         }
