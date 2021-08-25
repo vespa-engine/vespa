@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import org.w3c.dom.Document;
 
 import java.util.Collections;
@@ -58,8 +57,10 @@ public class ContentClusterUtils {
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) {
         Document doc = XML.getDocument(clusterXml);
-        Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), false,
-                                new FileDistributionConfigProducer(root),
+        Admin admin = new Admin(root,
+                                new DefaultMonitoring(),
+                                new Metrics(),
+                                false,
                                 root.getDeployState().isHosted());
         ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(),
                                                                null,null, root, null);

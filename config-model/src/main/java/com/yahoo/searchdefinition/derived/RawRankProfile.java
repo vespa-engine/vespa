@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.LargeRankExpressions;
@@ -324,7 +323,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         /** Derives the properties this produces */
-        public List<Pair<String, String>>  derive(LargeRankExpressions largeRankExpressions) {
+        public List<Pair<String, String>> derive(LargeRankExpressions largeRankExpressions) {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
                 if (RankingExpression.propertyName(RankProfile.FIRST_PHASE).equals(property.getName())) {

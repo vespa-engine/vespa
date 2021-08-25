@@ -86,14 +86,13 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
-                 FileDistributionConfigProducer fileDistributionConfigProducer,
                  boolean isHostedVespa) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.multitenant = multitenant;
-        this.fileDistribution = fileDistributionConfigProducer;
+        this.fileDistribution = new FileDistributionConfigProducer(parent);
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
