@@ -7,7 +7,7 @@ cache:
 jobs:
   build-vespa:
     requires: [~pr, ~commit]
-    image: vespaengine/vespa-build-centos7:current
+    image: vespaengine/vespa-build-centos7:latest
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
