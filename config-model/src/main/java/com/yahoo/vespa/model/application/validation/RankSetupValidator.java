@@ -161,6 +161,7 @@ public class RankSetupValidator extends Validator {
                     : getFileRepositoryPath(expr.getFilePath().getName(), expr.getFileReference());
             config.add(String.format("file[%d].ref \"%s\"", index, expr.getFileReference()));
             config.add(String.format("file[%d].path \"%s\"", index, modelPath));
+            log.log(Level.INFO, index + ": " + expr.getPathType() + " -> " + expr.getName() + " -> " + expr.getFileReference());
         }
 
         String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
