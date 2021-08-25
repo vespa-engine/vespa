@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -23,6 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author bjorncs
  */
 public class CliClient {
+
+    private static final JsonFactory factory = new JsonFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
 
     private final PrintStream systemOut;
     private final PrintStream systemError;
@@ -59,12 +62,16 @@ public class CliClient {
                  JsonFeeder feeder = createJsonFeeder(feedClient, cliArgs)) {
                 CountDownLatch latch = new CountDownLatch(1);
                 AtomicReference<FeedException> fatal = new AtomicReference<>();
+                AtomicLong successes = new AtomicLong();
+                AtomicLong failures = new AtomicLong();
                 long startNanos = System.nanoTime();
                 if (cliArgs.showProgress()) {
                     Thread progressPrinter = new Thread(() -> {
                         try {
                             while ( ! latch.await(10, TimeUnit.SECONDS)) {
-                                synchronized (printMonitor) { printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemError);}
+                                synchronized (printMonitor) {
+                                    printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), systemError);
+                                }
                             }
                         }
                         catch (InterruptedException | IOException ignored) { } // doesn't happen
@@ -74,14 +81,14 @@ public class CliClient {
                 }
 
                 feeder.feedMany(in, new ResultCallback() {
-                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, cliArgs); }
+                    @Override public void onNextResult(Result result, FeedException error) { handleResult(result, error, successes, failures, cliArgs); }
                     @Override public void onError(FeedException error) { fatal.set(error); latch.countDown(); }
                     @Override public void onComplete() { latch.countDown(); }
                 });
                 latch.await();
 
                 if (cliArgs.benchmarkModeEnabled()) {
-                    printBenchmarkResult(System.nanoTime() - startNanos, feedClient.stats(), systemOut);
+                    printBenchmarkResult(System.nanoTime() - startNanos, successes.get(), failures.get(), feedClient.stats(), systemOut);
                 }
                 if (fatal.get() != null) throw fatal.get();
             }
@@ -93,8 +100,9 @@ public class CliClient {
         }
     }
 
-    private void handleResult(Result result, FeedException error, CliArguments args) {
+    private void handleResult(Result result, FeedException error, AtomicLong successes, AtomicLong failures, CliArguments args) {
         if (error != null) {
+            failures.incrementAndGet();
             if (args.showErrors()) synchronized (printMonitor) {
                 systemError.println(error.getMessage());
                 if (error instanceof ResultException) ((ResultException) error).getTrace().ifPresent(systemError::println);
@@ -102,6 +110,7 @@ public class CliClient {
             }
         }
         else {
+            successes.incrementAndGet();
             if (args.showSuccesses()) synchronized (printMonitor) {
                 systemError.println(result.documentId() + ": " + result.type());
                 result.traceMessage().ifPresent(systemError::println);
@@ -151,30 +160,41 @@ public class CliClient {
         @Override public boolean verify(String hostname, SSLSession session) { return true; }
     }
 
-    static void printBenchmarkResult(long durationNanos, OperationStats stats, OutputStream systemOut) throws IOException {
-        JsonFactory factory = new JsonFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-        long okCount = stats.successes();
-        long errorCount = stats.requests() - okCount;
-        double throughput = okCount * 1e9 / Math.max(1, durationNanos);
+    static void printBenchmarkResult(long durationNanos, long successes, long failures,
+                                     OperationStats stats, OutputStream systemOut) throws IOException {
         try (JsonGenerator generator = factory.createGenerator(systemOut).useDefaultPrettyPrinter()) {
             generator.writeStartObject();
-            generator.writeNumberField("feeder.runtime", durationNanos / 1_000_000);
-            generator.writeNumberField("feeder.okcount", okCount);
-            generator.writeNumberField("feeder.errorcount", errorCount);
-            generator.writeNumberField("feeder.throughput", throughput);
-            generator.writeNumberField("feeder.minlatency", stats.minLatencyMillis());
-            generator.writeNumberField("feeder.avglatency", stats.averageLatencyMillis());
-            generator.writeNumberField("feeder.maxlatency", stats.maxLatencyMillis());
-            generator.writeNumberField("feeder.bytessent", stats.bytesSent());
-            generator.writeNumberField("feeder.bytesreceived", stats.bytesReceived());
 
-            generator.writeObjectFieldStart("feeder.responsecodes");
+            writeFloatField(generator, "feeder.seconds", durationNanos * 1e-9, 3);
+            generator.writeNumberField("feeder.ok.count", successes);
+            writeFloatField(generator, "feeder.ok.rate", successes * 1e9 / Math.max(1, durationNanos), 3);
+            generator.writeNumberField("feeder.error.count", failures);
+            generator.writeNumberField("feeder.inflight.count", stats.inflight());
+
+            generator.writeNumberField("http.request.count", stats.requests());
+            generator.writeNumberField("http.request.bytes", stats.bytesSent());
+
+            generator.writeNumberField("http.exception.count", stats.exceptions());
+
+            generator.writeNumberField("http.response.count", stats.responses());
+            generator.writeNumberField("http.response.bytes", stats.bytesReceived());
+            generator.writeNumberField("http.response.error.count", stats.responses() - stats.successes());
+            writeFloatField(generator, "http.response.latency.millis.min", stats.minLatencyMillis(), 3);
+            writeFloatField(generator, "http.response.latency.millis.avg", stats.averageLatencyMillis(), 3);
+            writeFloatField(generator, "http.response.latency.millis.max", stats.maxLatencyMillis(), 3);
+
+            generator.writeObjectFieldStart("http.response.code.counts");
             for (Map.Entry<Integer, Long> entry : stats.responsesByCode().entrySet())
                 generator.writeNumberField(Integer.toString(entry.getKey()), entry.getValue());
             generator.writeEndObject();
 
             generator.writeEndObject();
         }
+    }
+
+    private static void writeFloatField(JsonGenerator generator, String name, double value, int precision) throws IOException {
+        generator.writeFieldName(name);
+        generator.writeNumber(String.format("%." + precision + "f", value));
     }
 
 }
