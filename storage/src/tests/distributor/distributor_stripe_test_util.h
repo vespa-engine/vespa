@@ -204,6 +204,8 @@ public:
 
     void handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
+    void simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state);
+
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;

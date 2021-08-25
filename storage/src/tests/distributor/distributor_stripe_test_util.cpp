@@ -136,6 +136,16 @@ DistributorStripeTestUtil::handle_top_level_message(const std::shared_ptr<api::S
 }
 
 void
+DistributorStripeTestUtil::simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state)
+{
+    for (auto& space : _stripe->getBucketSpaceRepo()) {
+        const auto& new_cluster_state = pending_state.getDerivedClusterState(space.first);
+        _stripe->remove_superfluous_buckets(space.first, *new_cluster_state, false);
+    }
+    _stripe->set_pending_cluster_state_bundle(pending_state);
+}
+
+void
 DistributorStripeTestUtil::setTypeRepo(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
 {
     _node->getComponentRegister().setDocumentTypeRepo(repo);
