@@ -5,11 +5,12 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/util"
-	"os"
-	"path/filepath"
 )
 
 func init() {
@@ -25,6 +26,7 @@ var configCmd = &cobra.Command{
 }
 
 func readConfig() {
+	// TODO: Make ~/.vespa a directory so that we can put other files there as well
 	home, err := os.UserHomeDir()
 	configName := ".vespa"
 	configType := "yaml"

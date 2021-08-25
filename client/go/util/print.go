@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 // Set this to have output written somewhere else than os.Stdout
@@ -27,6 +28,14 @@ func Print(messages ...string) {
 // Prints in a color appropriate for errors
 func Error(messages ...string) {
 	print("\033[31m", messages)
+}
+
+// FatalIfError prints error and exists if given err is non-nill.
+func FatalIfErr(err error) {
+	if err != nil {
+		Error(err.Error())
+		os.Exit(1)
+	}
 }
 
 // Prints in a color appropriate for success messages
@@ -58,6 +67,12 @@ func print(prefix string, messages []string) {
 		if i < len(messages)-1 {
 			fmt.Fprint(Out, " ")
 		}
+	}
+	// TODO: Use "log" instead of this package and something like https://github.com/logrusorgru/aurora for colorization
+	//       Since automatic colorisation needs to support Windows, we probably need github.com/mattn/go-isatty to
+	//       detect TTY
+	if strings.HasPrefix(prefix, "\033") {
+		fmt.Fprint(Out, "\033[0m") // Terminate colors
 	}
 	fmt.Fprintln(Out, "")
 }
