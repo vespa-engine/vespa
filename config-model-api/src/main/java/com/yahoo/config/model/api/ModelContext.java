@@ -68,7 +68,7 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"jonmv"}) default Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.empty(); }
+        @ModelFeatureFlag(owners = {"jonmv"}, removeAfter = "7.457") default Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.empty(); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }

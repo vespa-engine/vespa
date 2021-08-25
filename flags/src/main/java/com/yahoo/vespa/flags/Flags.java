@@ -147,12 +147,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
-            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-08-25",
-            "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
-            "Takes effect immediately, for subsequent provisioning",
-            APPLICATION_ID);
-
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
             List.of("bjorncs", "tokle"), "2021-02-10", "2021-12-01",
