@@ -11,36 +11,44 @@ import (
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-	statusCmd.AddCommand(statusContainerCmd)
-	statusCmd.AddCommand(statusConfigServerCmd)
+	statusCmd.AddCommand(statusQueryCmd)
+	statusCmd.AddCommand(statusDocumentCmd)
+	statusCmd.AddCommand(statusDeployCmd)
 }
-
-// TODO: Use deploy, query and document instead of container and config-server
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Verifies that a vespa target is ready to use (container by default)",
+	Short: "Verifies that a vespa target is ready to use (query by default)",
 	Long:  `TODO`,
 	Run: func(cmd *cobra.Command, args []string) {
-		status(queryTarget(), "Container")
+		status(queryTarget(), "Query API")
 	},
 }
 
-var statusContainerCmd = &cobra.Command{
-	Use:   "container",
-	Short: "Verifies that your Vespa container endpoint is ready [Default]",
+var statusQueryCmd = &cobra.Command{
+	Use:   "query",
+	Short: "Verifies that your Vespa query API container endpoint is ready [Default]",
 	Long:  `TODO`,
 	Run: func(cmd *cobra.Command, args []string) {
-		status(queryTarget(), "Container")
+		status(queryTarget(), "Query API")
 	},
 }
 
-var statusConfigServerCmd = &cobra.Command{
-	Use:   "config-server",
-	Short: "Verifies that your Vespa config server endpoint is ready",
+var statusDocumentCmd = &cobra.Command{
+	Use:   "document",
+	Short: "Verifies that your Vespa document API container endpoint is ready [Default]",
 	Long:  `TODO`,
 	Run: func(cmd *cobra.Command, args []string) {
-		status(deployTarget(), "Config server")
+		status(documentTarget(), "Document API")
+	},
+}
+
+var statusDeployCmd = &cobra.Command{
+	Use:   "deploy",
+	Short: "Verifies that your Vespa deploy API config server endpoint is ready",
+	Long:  `TODO`,
+	Run: func(cmd *cobra.Command, args []string) {
+		status(deployTarget(), "Deploy API")
 	},
 }
 
