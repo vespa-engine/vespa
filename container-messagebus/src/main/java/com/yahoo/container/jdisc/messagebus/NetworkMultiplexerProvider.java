@@ -21,16 +21,16 @@ public class NetworkMultiplexerProvider {
     private final NetworkMultiplexer net;
 
     @Inject
-    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig) {
-        this(net, mbusConfig, slobroksConfig, System.getProperty("config.id")); //:
+    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig) {
+        this(net, mbusConfig, System.getProperty("config.id")); //:
     }
 
-    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig, String identity) {
-        this.net = net.get(asParameters(mbusConfig, slobroksConfig, identity));
+    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, String identity) {
+        this.net = net.get(asParameters(mbusConfig, identity));
     }
 
-    public static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig, String identity) {
-        return new RPCNetworkParams().setSlobroksConfig(slobroksConfig)
+    public static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, String identity) {
+        return new RPCNetworkParams().setSlobrokConfigId(identity)
                                      .setIdentity(new Identity(identity))
                                      .setListenPort(mbusConfig.port())
                                      .setNumTargetsPerSpec(mbusConfig.numconnectionspertarget())
