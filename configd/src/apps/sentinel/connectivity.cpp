@@ -75,8 +75,10 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
         LOG_ASSERT(cmIter != connectivityMap.end());
         OutwardCheckContext cornerContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
         ConnectivityMap cornerProbes;
+        int ping_timeout = 1000;
         for (const auto & hp : goodNeighborSpecs) {
-            cornerProbes.try_emplace(hp.first, spec(hp), cornerContext);
+            cornerProbes.try_emplace(hp.first, spec(hp), cornerContext, ping_timeout);
+            ping_timeout += 20;
         }
         cornerContext.latch.await();
         size_t numReportsUp = 0;
@@ -92,7 +94,7 @@ void classifyConnFails(ConnectivityMap &connectivityMap,
                                                myHostname,
                                                rpcServer.getPort(),
                                                rpcServer.orb());
-            OutwardCheck check(spec(toClassify), reverseContext);
+            OutwardCheck check(spec(toClassify), reverseContext, 1000);
             reverseContext.latch.await();
             auto secondResult = check.result();
             if (secondResult == CcResult::CONN_FAIL) {
@@ -152,8 +154,10 @@ Connectivity::checkConnectivity(RpcServer &rpcServer) {
                                      rpcServer.getPort(),
                                      rpcServer.orb());
     ConnectivityMap connectivityMap;
+    int ping_timeout = 1000;
     for (const auto &host_and_port : _checkSpecs) {
-        connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext);
+        connectivityMap.try_emplace(host_and_port.first, spec(host_and_port), checkContext, ping_timeout);
+        ping_timeout += 20;
     }
     checkContext.latch.await();
     classifyConnFails(connectivityMap, _checkSpecs, rpcServer);
