@@ -38,7 +38,7 @@ var certCmd = &cobra.Command{
 
 		pkg, err := vespa.FindApplicationPackage(path)
 		util.FatalIfErr(err)
-		if pkg.HasCertificate() {
+		if pkg.HasCertificate() && !overwriteCertificate {
 			util.Print("Certificate already exists")
 			return
 		}
