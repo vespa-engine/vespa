@@ -9,7 +9,7 @@ namespace config::sentinel {
 
 OutwardCheckContext::~OutwardCheckContext() = default;
 
-OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context)
+OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context, int ping_timeout)
   : _spec(spec),
     _context(context)
 {
@@ -18,8 +18,8 @@ OutwardCheck::OutwardCheck(const std::string &spec, OutwardCheckContext &context
     _req->SetMethodName("sentinel.check.connectivity");
     _req->GetParams()->AddString(context.targetHostname.c_str());
     _req->GetParams()->AddInt32(context.targetPortnum);
-    _req->GetParams()->AddInt32(500);
-    _target->InvokeAsync(_req, 1.500, this);
+    _req->GetParams()->AddInt32(ping_timeout);
+    _target->InvokeAsync(_req, 1.0 + ping_timeout*0.002, this);
 }
 
 OutwardCheck::~OutwardCheck() = default;
