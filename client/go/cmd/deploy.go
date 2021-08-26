@@ -29,7 +29,7 @@ func deploy(prepare bool, args []string) {
 	if len(args) > 0 {
 		application = args[0]
 	}
-	path, err := vespa.Deploy(false, application, deployTarget())
+	path, err := vespa.Deploy(prepare, application, deployTarget())
 	if err != nil {
 		log.Print(color.Red(err))
 	} else {
