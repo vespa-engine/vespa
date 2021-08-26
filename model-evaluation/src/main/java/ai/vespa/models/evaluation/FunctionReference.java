@@ -2,7 +2,6 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.tensor.TensorType;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -26,6 +25,8 @@ class FunctionReference {
 
     private static final Pattern referencePattern =
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.rankingScript)?");
+    private static final Pattern externalReferencePattern =
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.expressionName)?");
     private static final Pattern argumentTypePattern =
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.([a-zA-Z0-9_]+)\\.type?");
     private static final Pattern returnTypePattern =
@@ -73,6 +74,16 @@ class FunctionReference {
     /** Returns a function reference from the given serial form, or empty if the string is not a valid reference */
     static Optional<FunctionReference> fromSerial(String serialForm) {
         Matcher expressionMatcher = referencePattern.matcher(serialForm);
+        if ( ! expressionMatcher.matches()) return Optional.empty();
+
+        String name = expressionMatcher.group(1);
+        String instance = expressionMatcher.group(2);
+        return Optional.of(new FunctionReference(name, instance));
+    }
+
+    /** Returns a function reference from the given serial form, or empty if the string is not a valid reference */
+    static Optional<FunctionReference> fromExternalSerial(String serialForm) {
+        Matcher expressionMatcher = externalReferencePattern.matcher(serialForm);
         if ( ! expressionMatcher.matches()) return Optional.empty();
 
         String name = expressionMatcher.group(1);

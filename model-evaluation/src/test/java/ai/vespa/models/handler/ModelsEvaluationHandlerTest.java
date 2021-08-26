@@ -3,6 +3,7 @@ package ai.vespa.models.handler;
 
 import ai.vespa.models.evaluation.ModelTester;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import ai.vespa.models.evaluation.RankProfilesConfigImporterWithMockedConstants;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
@@ -203,10 +204,8 @@ public class ModelsEvaluationHandlerTest {
                 RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
                 OnnxModelsConfig.class).getConfig("");
-        ModelTester.RankProfilesConfigImporterWithMockedConstants importer =
-                new ModelTester.RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"),
-                                                                              MockFileAcquirer.returnFile(null));
-        return new ModelsEvaluator(importer.importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null)),
+                config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
     private String inputTensor() {

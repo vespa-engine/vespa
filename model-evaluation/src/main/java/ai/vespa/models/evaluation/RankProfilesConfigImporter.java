@@ -12,6 +12,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -82,6 +83,7 @@ public class RankProfilesConfigImporter {
 
         List<OnnxModel> onnxModels = readOnnxModelsConfig(onnxModelsConfig);
         List<Constant> constants = readLargeConstants(constantsConfig);
+        Map<String, RankingExpression> largeExpressions = readLargeExpressions(expressionsConfig);
 
         Map<FunctionReference, ExpressionFunction> functions = new LinkedHashMap<>();
         Map<FunctionReference, ExpressionFunction> referencedFunctions = new LinkedHashMap<>();
@@ -90,9 +92,21 @@ public class RankProfilesConfigImporter {
         ExpressionFunction secondPhase = null;
         for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
             Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
+            Optional<FunctionReference> externalReference = FunctionReference.fromExternalSerial(property.name());
             Optional<Pair<FunctionReference, String>> argumentType = FunctionReference.fromTypeArgumentSerial(property.name());
             Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
-            if (reference.isPresent()) {
+            if (externalReference.isPresent()) {
+                RankingExpression expression = largeExpressions.get(property.value());
+                ExpressionFunction function = new ExpressionFunction(externalReference.get().functionName(),
+                        Collections.emptyList(),
+                        expression);
+
+                if (externalReference.get().isFree()) // make available in model under configured name
+                    functions.put(externalReference.get(), function);
+                // Make all functions, bound or not, available under the name they are referenced by in expressions
+                referencedFunctions.put(externalReference.get(), function);
+            }
+            else if (reference.isPresent()) {
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
                 ExpressionFunction function = new ExpressionFunction(reference.get().functionName(),
                                                                      Collections.emptyList(),
@@ -182,6 +196,28 @@ public class RankProfilesConfigImporter {
                                                           constantConfig.fileref())));
         }
         return constants;
+    }
+
+    private Map<String, RankingExpression> readLargeExpressions(RankingExpressionsConfig expressionsConfig) throws ParseException {
+        Map<String, RankingExpression> expressions = new HashMap<>();
+
+        for (RankingExpressionsConfig.Expression expression : expressionsConfig.expression()) {
+            expressions.put(expression.name(), readExpressionFromFile(expression.name(), expression.fileref()));
+        }
+        return expressions;
+    }
+
+    protected RankingExpression readExpressionFromFile(String name, FileReference fileReference) throws ParseException {
+        try {
+            File file = fileAcquirer.waitFor(fileReference, 7, TimeUnit.DAYS);
+            return new RankingExpression(name, Utf8.toString(IOUtils.readFileBytes(file)));
+        }
+        catch (InterruptedException e) {
+            throw new IllegalStateException("Gave up waiting for expression " + name);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
