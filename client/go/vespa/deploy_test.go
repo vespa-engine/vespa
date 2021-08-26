@@ -18,7 +18,6 @@ func TestFindApplicationPackage(t *testing.T) {
 		{filepath.Join(dir, "foo"), "", true},
 		{filepath.Join(dir, "services.xml"), dir, false},
 		{filepath.Join(dir, "src", "main", "application", "services.xml"), filepath.Join(dir, "src", "main", "application"), false},
-		{filepath.Join(dir, "target", "application.zip"), filepath.Join(dir, "target", "application.zip"), false},
 	}
 
 	zipFile := filepath.Join(dir, "application.zip")

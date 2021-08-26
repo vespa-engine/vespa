@@ -62,7 +62,7 @@ func TestDeployApplicationDirectoryWithTarget(t *testing.T) {
 func TestDeployApplicationDirectoryWithEmptyTarget(t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[31mno application package found in testdata/applications/withEmptyTarget\x1b[0m\n",
+		"\x1b[31mpom.xml exists but no target/application.zip. Run mvn package first\x1b[0m\n",
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withEmptyTarget"}, []string{}))
 }
 
