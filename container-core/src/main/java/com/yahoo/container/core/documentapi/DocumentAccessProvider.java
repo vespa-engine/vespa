@@ -22,10 +22,10 @@ public class DocumentAccessProvider extends AbstractComponent implements Provide
 
     @Inject
     public DocumentAccessProvider(DocumentmanagerConfig documentmanagerConfig, LoadTypeConfig loadTypeConfig,
-                                  SlobroksConfig slobroksConfig, MessagebusConfig messagebusConfig,
-                                  DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
-        this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, slobroksConfig, messagebusConfig,
-                                              policiesConfig, distributionConfig);
+                                  MessagebusConfig messagebusConfig, DocumentProtocolPoliciesConfig policiesConfig,
+                                  DistributionConfig distributionConfig) {
+        this.access = new VespaDocumentAccess(documentmanagerConfig, loadTypeConfig, System.getProperty("config.id"),
+                                              messagebusConfig, policiesConfig, distributionConfig);
     }
 
     @Override
