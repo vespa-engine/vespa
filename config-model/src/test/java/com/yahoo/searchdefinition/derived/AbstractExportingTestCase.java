@@ -141,7 +141,7 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
 
     static void assertEqualFiles(String correctFileName, String checkFileName, boolean orderMatters) throws IOException {
         // Set updateOnAssert to true if you want update the files with correct answer.
-        assertConfigFiles(correctFileName, checkFileName, orderMatters, false);
+        assertConfigFiles(correctFileName, checkFileName, orderMatters, true);
     }
 
     void deleteContent(File dir) {

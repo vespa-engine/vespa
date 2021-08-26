@@ -35,14 +35,6 @@ public class ModelsEvaluator extends AbstractComponent {
                 .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
     }
 
-    public ModelsEvaluator(RankProfilesConfig config,
-                           RankingConstantsConfig constantsConfig,
-                           OnnxModelsConfig onnxModelsConfig,
-                           FileAcquirer fileAcquirer) {
-        this(new RankProfilesConfigImporter(fileAcquirer)
-                .importFrom(config, constantsConfig, new RankingExpressionsConfig.Builder().build(), onnxModelsConfig));
-    }
-
     public ModelsEvaluator(Map<String, Model> models) {
         this.models = ImmutableMap.copyOf(models);
     }
