@@ -103,7 +103,7 @@ func post(documentId string, jsonFile string) {
 
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		util.Success("Success") // TODO: Change to something including document id
+		util.Success(documentId)
 	} else if response.StatusCode/100 == 4 {
 		util.Error("Invalid document (" + response.Status + "):")
 		util.PrintReader(response.Body)

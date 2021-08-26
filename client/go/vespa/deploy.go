@@ -113,7 +113,7 @@ func Deploy(prepare bool, application string, target string) {
 
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		util.Success("Success")
+		util.Success("Deployed", pkg.Path)
 	} else if response.StatusCode/100 == 4 {
 		util.Error("Invalid application package", "("+response.Status+"):")
 		util.PrintReader(response.Body)

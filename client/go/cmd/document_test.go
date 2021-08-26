@@ -52,7 +52,7 @@ func TestDocumentPostServerError(t *testing.T) {
 func assertDocumentPost(arguments []string, documentId string, jsonFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
+		"\x1b[32m"+documentId+"\x1b[0m\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
 	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
