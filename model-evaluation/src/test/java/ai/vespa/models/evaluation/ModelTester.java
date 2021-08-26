@@ -10,9 +10,12 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -95,6 +98,14 @@ public class ModelTester {
             }
         }
 
+        @Override
+        protected RankingExpression readExpressionFromFile(String name, FileReference fileReference) throws ParseException {
+            try {
+                return new RankingExpression(name, Utf8.toString(IOUtils.readFileBytes(constantsPath.append(name).toFile())));
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Missing expression file '" + name + "'", e);
+            }
+        }
     }
 
 }
