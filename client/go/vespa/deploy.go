@@ -7,7 +7,6 @@ package vespa
 import (
 	"archive/zip"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -24,26 +23,26 @@ type ApplicationPackage struct {
 	Path string
 }
 
-// Find application package relative given name, which is the path to a file or directory.
-func FindApplicationPackage(name string) (ApplicationPackage, error) {
-	if isZip(name) {
-		return ApplicationPackage{Path: name}, nil
+// Find an application package zip or directory below an application path
+func FindApplicationPackage(application string) (ApplicationPackage, error) {
+	if isZip(application) {
+		return ApplicationPackage{Path: application}, nil
 	}
-	candidates := []string{
-		filepath.Join(name, "target", "application.zip"),
-		filepath.Join(name, "src", "main", "application", "services.xml"),
-		filepath.Join(name, "services.xml"),
-	}
-	for _, path := range candidates {
-		if !util.PathExists(path) {
-			continue
+	if util.PathExists(filepath.Join(application, "pom.xml")) {
+		zip := filepath.Join(application, "target", "application.zip")
+		if !util.PathExists(zip) {
+			return ApplicationPackage{}, errors.New("pom.xml exists but no target/application.zip. Run mvn package first")
+		} else {
+			return ApplicationPackage{Path: zip}, nil
 		}
-		if !isZip(path) {
-			path = filepath.Dir(path)
-		}
-		return ApplicationPackage{Path: path}, nil
 	}
-	return ApplicationPackage{}, fmt.Errorf("no application package found in %s", name)
+	if util.PathExists(filepath.Join(application, "src", "main", "application")) {
+		return ApplicationPackage{Path: filepath.Join(application, "src", "main", "application")}, nil
+	}
+	if util.PathExists(filepath.Join(application, "services.xml")) {
+		return ApplicationPackage{Path: application}, nil
+	}
+	return ApplicationPackage{}, errors.New("Could not find an application package source in '" + application + "'")
 }
 
 func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
