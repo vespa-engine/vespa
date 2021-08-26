@@ -4,6 +4,8 @@
 #include "rpc_server_map.h"
 #include "sbenv.h"
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.server.exchange_manager");
@@ -106,9 +108,42 @@ ExchangeManager::lookupPartner(const std::string & name) const {
 void
 ExchangeManager::healthCheck()
 {
+    auto newWorldList = env().consensusMap().currentConsensus();
+    auto oldWorldServices = env().rpcServerMap().allManaged();
+    if (newWorldList.size() != oldWorldServices.size()) {
+        LOG(warning, "healthCheck compare fails: old world sz=%zu, new world sz=%zu",
+            oldWorldServices.size(), newWorldList.size());
+        ServiceMappingList oldWorldList;
+        for (const auto *nsp : oldWorldServices) {
+            oldWorldList.emplace_back(nsp->getName(), nsp->getSpec());
+        }
+        std::sort(oldWorldList.begin(), oldWorldList.end());
+        auto visitor = vespalib::overload
+        {
+            [&](vespalib::visit_ranges_first, const auto &m) {
+                LOG(warning, "new world only: %s->%s", m.name.c_str(), m.spec.c_str());
+            },
+            [&](vespalib::visit_ranges_second, const auto &m) {
+                LOG(warning, "old world only: %s->%s", m.name.c_str(), m.spec.c_str());
+            },
+            [&](vespalib::visit_ranges_both, const auto &, const auto &) {}
+        };
+        vespalib::visit_ranges(visitor,
+                               newWorldList.begin(), newWorldList.end(),
+                               oldWorldList.begin(), oldWorldList.end());
+    }
     for (const auto & [ name, partner ] : _partners) {
         partner->maybeStartFetch();
         partner->maybePushMine();
+        auto remoteList = partner->remoteMap().allMappings();
+        // 0 is expected (when remote is down)
+        if (remoteList.size() != 0 &&
+            remoteList.size() != newWorldList.size())
+        {
+            LOG(warning, "peer slobrok at %s has %zu mappings (expected %zu)",
+                name.c_str(), remoteList.size(), newWorldList.size());
+            // consider doing the visit_ranges diff here also
+        }
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());
 }
