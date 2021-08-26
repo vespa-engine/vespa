@@ -37,7 +37,7 @@ func TestDocumentIdNotSpecified(t *testing.T) {
 	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[31mNo document id given neither as argument or an 'id' key in the json file\x1b[0m\n",
+		"No document id given neither as argument or an 'id' key in the json file\n",
 		executeCommand(t, client, arguments, []string{}))
 }
 
@@ -52,7 +52,7 @@ func TestDocumentPostServerError(t *testing.T) {
 func assertDocumentPost(arguments []string, documentId string, jsonFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32m"+documentId+"\x1b[0m\n",
+		documentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
 	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
@@ -66,7 +66,7 @@ func assertDocumentPost(arguments []string, documentId string, jsonFile string, 
 func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mSuccess\n",
+		"Success\n",
 		executeCommand(t, client, []string{"document", jsonFile}, []string{}))
 	target := getTarget(documentContext).document
 	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
@@ -75,7 +75,7 @@ func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.
 func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"\x1b[31mInvalid document (Status "+strconv.Itoa(status)+"):\x1b[0m\n"+errorMessage+"\n",
+		"Invalid document (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
 			"mynamespace/music/docid/1",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
@@ -84,7 +84,7 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"\x1b[31mError from container (document api) at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\x1b[0m\n"+errorMessage+"\n",
+		"Error from container (document api) at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
 			"mynamespace/music/docid/1",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))

@@ -64,7 +64,7 @@ func assertQueryNonJsonResult(t *testing.T, expectedQuery string, query ...strin
 func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"\x1b[31mInvalid query (Status "+strconv.Itoa(status)+"):\x1b[0m\n"+errorMessage+"\n",
+		"Invalid query (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
 		"error output")
 }
@@ -72,7 +72,7 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"\x1b[31mError from container at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\x1b[0m\n"+errorMessage+"\n",
+		"Error from container at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
 		"error output")
 }

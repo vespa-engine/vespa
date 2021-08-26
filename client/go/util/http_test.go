@@ -6,11 +6,12 @@ package util
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type mockHttpClient struct{}
@@ -37,9 +38,11 @@ func (c mockHttpClient) Do(request *http.Request, timeout time.Duration) (respon
 func TestHttpRequest(t *testing.T) {
 	ActiveHttpClient = mockHttpClient{}
 
-	response := HttpGet("http://host", "/okpath", "description")
+	response, err := HttpGet("http://host", "/okpath", "description")
+	assert.Nil(t, err)
 	assert.Equal(t, 200, response.StatusCode)
 
-	response = HttpGet("http://host", "/otherpath", "description")
+	response, err = HttpGet("http://host", "/otherpath", "description")
+	assert.Nil(t, err)
 	assert.Equal(t, 500, response.StatusCode)
 }

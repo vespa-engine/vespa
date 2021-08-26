@@ -7,6 +7,7 @@ package vespa
 import (
 	"archive/zip"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -56,26 +57,22 @@ func (ap *ApplicationPackage) HasCertificate() bool {
 
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
 
-func Deploy(prepare bool, application string, target string) {
+func Deploy(prepare bool, application string, target string) (string, error) {
 	pkg, noSourceError := FindApplicationPackage(application)
 	if noSourceError != nil {
-		util.Error(noSourceError.Error())
-		return
+		return "", noSourceError
 	}
 
 	zippedSource := pkg.Path
 	if !pkg.IsZip() { // create zip
 		tempZip, error := ioutil.TempFile("", "application.zip")
 		if error != nil {
-			util.Error("Could not create a temporary zip file for the application package")
-			util.Detail(error.Error())
-			return
+			return "", fmt.Errorf("Could not create a temporary zip file for the application package: %w", error)
 		}
 
 		error = zipDir(pkg.Path, tempZip.Name())
 		if error != nil {
-			util.Error(error.Error())
-			return
+			return "", error
 		}
 		defer os.Remove(tempZip.Name())
 		zippedSource = tempZip.Name()
@@ -83,9 +80,7 @@ func Deploy(prepare bool, application string, target string) {
 
 	zipFileReader, zipFileError := os.Open(zippedSource)
 	if zipFileError != nil {
-		util.Error("Could not open application package at " + pkg.Path)
-		util.Detail(zipFileError.Error())
-		return
+		return "", fmt.Errorf("Could not open application package at %s: %w", pkg.Path, zipFileError)
 	}
 
 	var deployUrl *url.URL
@@ -106,21 +101,18 @@ func Deploy(prepare bool, application string, target string) {
 		Body:   ioutil.NopCloser(zipFileReader),
 	}
 	serviceDescription := "Deploy service"
-	response := util.HttpDo(request, time.Minute*10, serviceDescription)
-	if response == nil {
-		return
+	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
+	if err != nil {
+		return "", err
 	}
-
 	defer response.Body.Close()
-	if response.StatusCode == 200 {
-		util.Success("Deployed", pkg.Path)
-	} else if response.StatusCode/100 == 4 {
-		util.Error("Invalid application package", "("+response.Status+"):")
-		util.PrintReader(response.Body)
-	} else {
-		util.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "("+response.Status+"):")
-		util.PrintReader(response.Body)
+
+	if response.StatusCode/100 == 4 {
+		return "", fmt.Errorf("Invalid application package (%s):\n%s", response.Status, util.ReaderToJSON(response.Body))
+	} else if response.StatusCode != 200 {
+		return "", fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	}
+	return pkg.Path, nil
 }
 
 func zipDir(dir string, destination string) error {

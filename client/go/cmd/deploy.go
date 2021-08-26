@@ -5,6 +5,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/vespa"
 )
@@ -18,10 +20,19 @@ var deployCmd = &cobra.Command{
 	Short: "Deploys (prepares and activates) an application package",
 	Long:  `TODO`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			vespa.Deploy(false, "", deployTarget())
-		} else {
-			vespa.Deploy(false, args[0], deployTarget())
-		}
+		deploy(false, args)
 	},
+}
+
+func deploy(prepare bool, args []string) {
+	var application string
+	if len(args) > 0 {
+		application = args[0]
+	}
+	path, err := vespa.Deploy(false, application, deployTarget())
+	if err != nil {
+		log.Print(color.Red(err))
+	} else {
+		log.Print("Deployed ", color.Green(path), " successfully")
+	}
 }

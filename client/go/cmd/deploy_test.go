@@ -22,7 +22,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mDeployed "+applicationPackage+"\x1b[0m\n",
+		"Deployed "+applicationPackage+" successfully\n",
 		executeCommand(t, client, arguments, []string{}))
 	assertDeployRequestMade("http://target:19071", client, t)
 }
@@ -50,7 +50,7 @@ func TestDeployApplicationDirectoryWithPomAndTarget(t *testing.T) {
 func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[31mpom.xml exists but no target/application.zip. Run mvn package first\x1b[0m\n",
+		"pom.xml exists but no target/application.zip. Run mvn package first\n",
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withEmptyTarget"}, []string{}))
 }
 
@@ -65,7 +65,7 @@ func TestDeployError(t *testing.T) {
 func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mDeployed "+applicationPackage+"\x1b[0m\n",
+		"Deployed "+applicationPackage+" successfully\n",
 		executeCommand(t, client, arguments, []string{}))
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
@@ -84,13 +84,13 @@ func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T
 func assertApplicationPackageError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"\x1b[31mInvalid application package (Status "+strconv.Itoa(status)+"):\x1b[0m\n"+errorMessage+"\n",
+		"Invalid application package (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))
 }
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"\x1b[31mError from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\x1b[0m\n"+errorMessage+"\n",
+		"Error from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))
 }

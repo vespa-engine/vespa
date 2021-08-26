@@ -7,14 +7,16 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/util"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/util"
 )
 
 func init() {
@@ -67,8 +69,7 @@ func post(documentId string, jsonFile string) {
 
 	fileReader, fileError := os.Open(jsonFile)
 	if fileError != nil {
-		util.Error("Could not open file at " + jsonFile)
-		util.Detail(fileError.Error())
+		log.Printf("Could not open file at %s: %s", color.Cyan(jsonFile), fileError)
 		return
 	}
 
@@ -82,7 +83,7 @@ func post(documentId string, jsonFile string) {
 		} else if doc["put"] != nil {
 			documentId = doc["put"].(string) // document feeder format
 		} else {
-			util.Error("No document id given neither as argument or an 'id' key in the json file")
+			log.Print("No document id given neither as argument or an 'id' key in the json file")
 			return
 		}
 	}
@@ -96,19 +97,19 @@ func post(documentId string, jsonFile string) {
 		Body:   ioutil.NopCloser(bytes.NewReader(documentData)),
 	}
 	serviceDescription := "Container (document API)"
-	response := util.HttpDo(request, time.Second*60, serviceDescription)
+	response, err := util.HttpDo(request, time.Second*60, serviceDescription)
 	if response == nil {
-		return
+		log.Print("Request failed: ", color.Red(err))
 	}
 
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		util.Success(documentId)
+		log.Print(color.Green(documentId))
 	} else if response.StatusCode/100 == 4 {
-		util.Error("Invalid document (" + response.Status + "):")
-		util.PrintReader(response.Body)
+		log.Printf("Invalid document (%s):", color.Red(response.Status))
+		log.Print(util.ReaderToJSON(response.Body))
 	} else {
-		util.Error("Error from", strings.ToLower(serviceDescription), "at", request.URL.Host, "("+response.Status+"):")
-		util.PrintReader(response.Body)
+		log.Printf("Error from %s at %s (%s):", color.Cyan(strings.ToLower(serviceDescription)), color.Cyan(request.URL.Host), color.Red(response.Status))
+		log.Print(util.ReaderToJSON(response.Body))
 	}
 }
