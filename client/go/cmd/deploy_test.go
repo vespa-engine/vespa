@@ -12,54 +12,42 @@ import (
 )
 
 func TestDeployZip(t *testing.T) {
-	client := &mockHttpClient{}
-	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))
-	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
+	assertDeploy("testdata/applications/withTarget/target/application.zip",
+		[]string{"deploy", "testdata/applications/withTarget/target/application.zip"}, t)
 }
 
 func TestDeployZipWithURLTargetArgument(t *testing.T) {
+	applicationPackage := "testdata/applications/withTarget/target/application.zip"
+	arguments := []string{"deploy", "testdata/applications/withTarget/target/application.zip", "-t", "http://target:19071"}
+
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip", "-t", "http://target:19071"}, []string{}))
+		"\x1b[32mDeployed "+applicationPackage+"\x1b[0m\n",
+		executeCommand(t, client, arguments, []string{}))
 	assertDeployRequestMade("http://target:19071", client, t)
 }
 
 func TestDeployZipWitLocalTargetArgument(t *testing.T) {
-	client := &mockHttpClient{}
-	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip", "-t", "local"}, []string{}))
-	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
+	assertDeploy("testdata/applications/withTarget/target/application.zip",
+		[]string{"deploy", "testdata/applications/withTarget/target/application.zip", "-t", "local"}, t)
 }
 
 func TestDeploySourceDirectory(t *testing.T) {
-	client := &mockHttpClient{}
-	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withSource/src/main/application"}, []string{}))
-	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
+	assertDeploy("testdata/applications/withSource/src/main/application",
+		[]string{"deploy", "testdata/applications/withSource/src/main/application"}, t)
 }
 
 func TestDeployApplicationDirectoryWithSource(t *testing.T) {
-	client := &mockHttpClient{}
-	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withSource"}, []string{}))
-	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
+	assertDeploy("testdata/applications/withSource/src/main/application",
+		[]string{"deploy", "testdata/applications/withSource"}, t)
 }
 
-func TestDeployApplicationDirectoryWithTarget(t *testing.T) {
-	client := &mockHttpClient{}
-	assert.Equal(t,
-		"\x1b[32mSuccess\x1b[0m\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget"}, []string{}))
-	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
+func TestDeployApplicationDirectoryWithPomAndTarget(t *testing.T) {
+	assertDeploy("testdata/applications/withTarget/target/application.zip",
+		[]string{"deploy", "testdata/applications/withTarget"}, t)
 }
 
-func TestDeployApplicationDirectoryWithEmptyTarget(t *testing.T) {
+func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
 		"\x1b[31mno application package found in testdata/applications/withEmptyTarget\x1b[0m\n",
@@ -74,7 +62,13 @@ func TestDeployError(t *testing.T) {
 	assertDeployServerError(t, 501, "Deploy service error")
 }
 
-// TODO: Test prepare and activate prepared
+func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
+	client := &mockHttpClient{}
+	assert.Equal(t,
+		"\x1b[32mDeployed "+applicationPackage+"\x1b[0m\n",
+		executeCommand(t, client, arguments, []string{}))
+	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
+}
 
 func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T) {
 	assert.Equal(t, target+"/application/v2/tenant/default/prepareandactivate", client.lastRequest.URL.String())
