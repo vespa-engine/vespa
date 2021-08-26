@@ -137,7 +137,8 @@ public class ModelsEvaluatorTest {
                                                                         RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
                                                                OnnxModelsConfig.class).getConfig("");
-        return new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, MockFileAcquirer.returnFile(null));
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null)),
+                config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
 }
