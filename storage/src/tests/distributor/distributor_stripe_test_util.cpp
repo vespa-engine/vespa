@@ -140,7 +140,9 @@ DistributorStripeTestUtil::simulate_set_pending_cluster_state(const lib::Cluster
 {
     for (auto& space : _stripe->getBucketSpaceRepo()) {
         const auto& new_cluster_state = pending_state.getDerivedClusterState(space.first);
+        _stripe->update_read_snapshot_before_db_pruning();
         _stripe->remove_superfluous_buckets(space.first, *new_cluster_state, false);
+        _stripe->update_read_snapshot_after_db_pruning(pending_state);
     }
     _stripe->set_pending_cluster_state_bundle(pending_state);
 }
