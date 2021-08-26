@@ -6,6 +6,7 @@ package util
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -26,14 +27,25 @@ func IsDirectory(path string) bool {
 
 // Returns the content of a reader as a string
 func ReaderToString(reader io.Reader) string {
-	buffer := new(strings.Builder)
-	io.Copy(buffer, reader)
+	var buffer strings.Builder
+	io.Copy(&buffer, reader)
 	return buffer.String()
 }
 
 // Returns the content of a reader as a byte array
 func ReaderToBytes(reader io.Reader) []byte {
-	buffer := new(bytes.Buffer)
+	var buffer bytes.Buffer
 	buffer.ReadFrom(reader)
 	return buffer.Bytes()
+}
+
+// Returns the contents of reader as indented JSON
+func ReaderToJSON(reader io.Reader) string {
+	bodyBytes := ReaderToBytes(reader)
+	var prettyJSON bytes.Buffer
+	parseError := json.Indent(&prettyJSON, bodyBytes, "", "    ")
+	if parseError != nil { // Not JSON: Print plainly
+		return string(bodyBytes)
+	}
+	return string(prettyJSON.Bytes())
 }

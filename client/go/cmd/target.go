@@ -5,7 +5,7 @@
 package cmd
 
 import (
-	"github.com/vespa-engine/vespa/util"
+	"log"
 	"strings"
 )
 
@@ -68,6 +68,6 @@ func getTarget(targetContext context) *target {
 		return nil // TODO
 	}
 
-	util.Error("Unknown target argument '" + targetArgument + ": Use 'local', 'cloud' or an URL")
+	log.Printf("Unknown target '%s': Use %s, %s or an URL", color.Red(targetArgument), color.Cyan("local"), color.Cyan("cloud"))
 	return nil
 }

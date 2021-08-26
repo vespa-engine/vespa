@@ -6,12 +6,14 @@ package cmd
 
 import (
 	"errors"
-	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/util"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/util"
 )
 
 func init() {
@@ -43,20 +45,21 @@ func query(arguments []string) {
 	}
 	url.RawQuery = urlQuery.Encode()
 
-	response := util.HttpDo(&http.Request{URL: url}, time.Second*10, "Container")
-	if response == nil {
+	response, err := util.HttpDo(&http.Request{URL: url}, time.Second*10, "Container")
+	if err != nil {
+		log.Print("Request failed: ", color.Red(err))
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		util.PrintReader(response.Body)
+		log.Print(util.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
-		util.Error("Invalid query (" + response.Status + "):")
-		util.PrintReader(response.Body)
+		log.Printf("Invalid query (%s):", color.Red(response.Status))
+		log.Print(util.ReaderToJSON(response.Body))
 	} else {
-		util.Error("Error from container at", url.Host, "("+response.Status+"):")
-		util.PrintReader(response.Body)
+		log.Printf("Error from container at %s (%s):", color.Cyan(url.Host), color.Red(response.Status))
+		log.Print(util.ReaderToJSON(response.Body))
 	}
 }
 

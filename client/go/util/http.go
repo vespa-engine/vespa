@@ -5,6 +5,7 @@
 package util
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,20 +37,18 @@ func CreateClient(timeout time.Duration) HttpClient {
 }
 
 // Convenience function for doing a HTTP GET
-func HttpGet(host string, path string, description string) *http.Response {
-	url, urlError := url.Parse(host + path)
-	if urlError != nil {
-		Error("Invalid target url '" + host + path + "'")
-		return nil
+func HttpGet(host string, path string, description string) (*http.Response, error) {
+	url, err := url.Parse(host + path)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid target URL: %s: %w", host+path, err)
 	}
 	return HttpDo(&http.Request{URL: url}, time.Second*10, description)
 }
 
-func HttpDo(request *http.Request, timeout time.Duration, description string) *http.Response {
-	response, error := ActiveHttpClient.Do(request, timeout)
-	if error != nil {
-		Error("Could not connect to", strings.ToLower(description), "at", request.URL.Host)
-		Detail(error.Error())
+func HttpDo(request *http.Request, timeout time.Duration, description string) (*http.Response, error) {
+	response, err := ActiveHttpClient.Do(request, timeout)
+	if err != nil {
+		return nil, fmt.Errorf("Could not connect to %s at %s: %w", strings.ToLower(description), request.URL.Host, err)
 	}
-	return response
+	return response, nil
 }

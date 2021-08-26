@@ -4,12 +4,11 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/util"
 	"github.com/vespa-engine/vespa/vespa"
 )
 
@@ -33,13 +32,13 @@ var certCmd = &cobra.Command{
 		} else {
 			var err error
 			path, err = os.Getwd()
-			util.FatalIfErr(err)
+			fatalIfErr(err)
 		}
 
 		pkg, err := vespa.FindApplicationPackage(path)
-		util.FatalIfErr(err)
-		if pkg.HasCertificate() {
-			util.Print("Certificate already exists")
+		fatalIfErr(err)
+		if pkg.HasCertificate() && !overwriteCertificate {
+			log.Print("Certificate already exists. Use -f option to recreate")
 			return
 		}
 
@@ -51,20 +50,26 @@ var certCmd = &cobra.Command{
 		pkgCertificateFile := filepath.Join(securityDir, "clients.pem")
 
 		keyPair, err := vespa.CreateKeyPair()
-		util.FatalIfErr(err)
+		fatalIfErr(err)
 
 		err = os.MkdirAll(securityDir, 0755)
-		util.FatalIfErr(err)
+		fatalIfErr(err)
 		err = keyPair.WriteCertificateFile(pkgCertificateFile, overwriteCertificate)
-		util.FatalIfErr(err)
+		fatalIfErr(err)
 		err = keyPair.WriteCertificateFile(certificateFile, overwriteCertificate)
-		util.FatalIfErr(err)
+		fatalIfErr(err)
 		err = keyPair.WritePrivateKeyFile(privateKeyFile, overwriteCertificate)
-		util.FatalIfErr(err)
+		fatalIfErr(err)
 
 		// TODO: Just use log package, which has Printf
-		util.Print(fmt.Sprintf("Certificate written to %s", pkgCertificateFile))
-		util.Print(fmt.Sprintf("Certificate written to %s", certificateFile))
-		util.Print(fmt.Sprintf("Private key written to %s", privateKeyFile))
+		log.Printf("Certificate written to %s", color.Green(pkgCertificateFile))
+		log.Printf("Certificate written to %s", color.Green(certificateFile))
+		log.Printf("Private key written to %s", color.Green(privateKeyFile))
 	},
+}
+
+func fatalIfErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

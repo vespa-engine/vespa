@@ -5,6 +5,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/util"
 )
@@ -54,16 +56,17 @@ var statusDeployCmd = &cobra.Command{
 
 func status(target string, description string) {
 	path := "/ApplicationStatus"
-	response := util.HttpGet(target, path, description)
-	if response == nil {
+	response, err := util.HttpGet(target, path, description)
+	if err != nil {
+		log.Print("Request failed: ", color.Red(err))
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
-		util.Error(description, "at", target, "is not ready")
-		util.Detail(response.Status)
+		log.Print(description, " at ", color.Cyan(target), " is ", color.Yellow("not ready"))
+		log.Print(response.Status)
 	} else {
-		util.Success(description, "at", target, "is ready")
+		log.Print(description, " at ", color.Cyan(target), " is ", color.Green("ready"))
 	}
 }

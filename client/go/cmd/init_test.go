@@ -21,7 +21,7 @@ func assertCreated(app string, sampleAppName string, t *testing.T) {
 	existingSampleAppsZip = "testdata/sample-apps-master.zip"
 	standardOut := executeCommand(t, &mockHttpClient{}, []string{"init", app, sampleAppName}, []string{})
 	defer os.RemoveAll(app)
-	assert.Equal(t, "\x1b[32mCreated "+app+"\x1b[0m\n", standardOut)
+	assert.Equal(t, "Created "+app+"\n", standardOut)
 	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))
 	assert.True(t, util.PathExists(filepath.Join(app, "src", "main", "application")))
 	assert.True(t, util.IsDirectory(filepath.Join(app, "src", "main", "application")))

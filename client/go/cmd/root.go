@@ -5,6 +5,12 @@
 package cmd
 
 import (
+	"log"
+	"os"
+
+	"github.com/logrusorgru/aurora"
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 )
 
@@ -20,15 +26,21 @@ var (
 		Long: `TO
 DO`,
 	}
+
+	color aurora.Aurora
 )
 
+func configureLogger() {
+	color = aurora.NewAurora(isatty.IsTerminal(os.Stdout.Fd()))
+	log.SetFlags(0) // No timestamps
+	log.SetOutput(colorable.NewColorableStdout())
+}
+
 func init() {
+	configureLogger()
 	cobra.OnInitialize(readConfig)
 	rootCmd.PersistentFlags().StringVarP(&targetArgument, "target", "t", "local", "The name or URL of the recipient of this command")
 }
 
 // Execute executes the root command.
-func Execute() error {
-	err := rootCmd.Execute()
-	return err
-}
+func Execute() error { return rootCmd.Execute() }

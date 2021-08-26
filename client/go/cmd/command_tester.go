@@ -6,25 +6,27 @@ package cmd
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
-	"github.com/vespa-engine/vespa/util"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/util"
 )
 
 func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
 	util.ActiveHttpClient = client
 
 	// Reset - persistent flags in Cobra persists over tests
-	util.Out = bytes.NewBufferString("")
+	log.SetOutput(bytes.NewBufferString(""))
 	rootCmd.SetArgs([]string{"status", "-t", ""})
 	rootCmd.Execute()
 
 	b := bytes.NewBufferString("")
-	util.Out = b
+	log.SetOutput(b)
 	rootCmd.SetArgs(append(args, moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(b)
