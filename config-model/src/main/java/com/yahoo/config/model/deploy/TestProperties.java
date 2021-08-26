@@ -52,14 +52,14 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
-    private boolean useExternalRankExpression = true;
+    private boolean useExternalRankExpression = false;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
     private int numDistributorStripes = 0;
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 1024;
-    private int largeRankExpressionLimit = 1024;
+    private int largeRankExpressionLimit = 0x10000;
     private boolean allowDisableMtls = true;
     private boolean dryRunOnnxOnSetup = false;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
