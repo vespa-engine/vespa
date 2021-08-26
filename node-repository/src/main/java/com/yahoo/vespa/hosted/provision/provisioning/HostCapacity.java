@@ -94,7 +94,7 @@ public class HostCapacity {
     /**
      * Calculate the unused capacity of given host.
      *
-     * Note that unlike {@link this#availableCapacityOf(Node)}, this only considers resources and returns any unused
+     * Note that unlike {@link #availableCapacityOf(Node)}, this only considers resources and returns any unused
      * capacity even if the host does not have available IP addresses.
      *
      * @param host the host to find free capacity of
