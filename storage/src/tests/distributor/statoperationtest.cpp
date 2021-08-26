@@ -1,13 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/stat.h>
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/operations/external/statbucketoperation.h>
-#include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
+#include <vespa/storage/distributor/operations/external/statbucketoperation.h>
+#include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -16,7 +15,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct StatOperationTest : Test, DistributorTestUtil {
+struct StatOperationTest : Test, DistributorStripeTestUtil {
     void SetUp() override {
         createLinks();
     };
@@ -27,7 +26,7 @@ struct StatOperationTest : Test, DistributorTestUtil {
 };
 
 TEST_F(StatOperationTest, bucket_info) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     addNodesToBucketDB(document::BucketId(16, 5), "0=4/2/100,1=4/2/100");
 
@@ -58,10 +57,12 @@ TEST_F(StatOperationTest, bucket_info) {
 }
 
 TEST_F(StatOperationTest, bucket_list) {
-    setupDistributor(2, 2, "distributor:1 storage:2");
+    setup_stripe(2, 2, "distributor:1 storage:2");
 
-    getConfig().setSplitCount(10);
-    getConfig().setSplitSize(100);
+    auto cfg = make_config();
+    cfg->setSplitCount(10);
+    cfg->setSplitSize(100);
+    configure_stripe(cfg);
 
     for (uint32_t i = 0; i < 2; ++i) {
         insertBucketInfo(document::BucketId(16, 5), i,

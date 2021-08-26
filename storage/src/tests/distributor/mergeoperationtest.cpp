@@ -1,17 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <tests/common/dummystoragelink.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
+#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
@@ -23,7 +23,7 @@ namespace {
 vespalib::string _g_storage("storage");
 }
 
-struct MergeOperationTest : Test, DistributorTestUtil {
+struct MergeOperationTest : Test, DistributorStripeTestUtil {
     OperationSequencer _operation_sequencer;
 
     void SetUp() override {
@@ -45,7 +45,7 @@ TEST_F(MergeOperationTest, simple) {
                        "1=20/1/1,"
                        "2=10/1/1/t");
 
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
@@ -73,7 +73,7 @@ TEST_F(MergeOperationTest, fail_if_source_only_copies_changed) {
                        "1=20/1/1,"
                        "2=10/1/1/t");
 
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
@@ -236,7 +236,7 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     document::BucketId bucket(16, 1);
 
     getClock().setAbsoluteTimeInSeconds(10);
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     addNodesToBucketDB(bucket,
                        "0=10/1/1/t,"
                        "1=20/1/1,"
@@ -300,7 +300,7 @@ TEST_F(MergeOperationTest, allow_deleting_active_source_only_replica) {
                        "1=20/1/1/u/a,"
                        "2=10/1/1/t");
 
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
                                      toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
@@ -398,7 +398,7 @@ TEST_F(MergeOperationTest, mark_post_merge_redundant_replicas_source_only) {
 TEST_F(MergeOperationTest, merge_operation_is_blocked_by_any_busy_target_node) {
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
@@ -423,7 +423,7 @@ TEST_F(MergeOperationTest, global_bucket_merges_are_not_blocked_by_busy_nodes) {
     getClock().setAbsoluteTimeInSeconds(10);
     document::BucketId bucket_id(16, 1);
     addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     document::Bucket global_bucket(document::FixedBucketSpaces::global_space(), bucket_id);
     MergeOperation op(BucketAndNodes(global_bucket, toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
@@ -436,7 +436,7 @@ TEST_F(MergeOperationTest, global_bucket_merges_are_not_blocked_by_busy_nodes) {
 TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
@@ -447,7 +447,7 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_locked_bucket) {
 }
 
 TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {
-    setupDistributor(Redundancy(4), NodeCount(4), "distributor:1 storage:4");
+    setup_stripe(Redundancy(4), NodeCount(4), "distributor:1 storage:4");
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "1=0/0/0/t,2=0/0/0/t,3=0/0/0/t");
     const uint16_t max_merge_size = 2;
@@ -466,7 +466,7 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_request_bucket_info_to_
     getClock().setAbsoluteTimeInSeconds(10);
     document::BucketId bucket_id(16, 1);
     addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
@@ -487,7 +487,7 @@ TEST_F(MergeOperationTest, merge_operation_is_not_blocked_by_request_bucket_info
     document::BucketId bucket_id(16, 1);
     document::BucketId other_bucket_id(16, 2);
     addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
     MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket_id), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 

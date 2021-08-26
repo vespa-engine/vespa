@@ -1,19 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <tests/distributor/distributortestutil.h>
+#include "dummy_cluster_context.h"
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
 
-struct JoinOperationTest : Test, DistributorTestUtil {
+struct JoinOperationTest : Test, DistributorStripeTestUtil {
     void checkSourceBucketsAndSendReply(
             JoinOperation& op,
             size_t msgIndex,
@@ -29,13 +29,15 @@ struct JoinOperationTest : Test, DistributorTestUtil {
 };
 
 TEST_F(JoinOperationTest, simple) {
-    getConfig().setJoinCount(100);
-    getConfig().setJoinSize(1000);
+    auto cfg = make_config();
+    cfg->setJoinCount(100);
+    cfg->setJoinSize(1000);
+    configure_stripe(cfg);
 
     addNodesToBucketDB(document::BucketId(33, 1), "0=250/50/300");
     addNodesToBucketDB(document::BucketId(33, 0x100000001), "0=300/40/200");
 
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     JoinOperation op(dummy_cluster_context,
                      BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),
@@ -84,13 +86,15 @@ JoinOperationTest::checkSourceBucketsAndSendReply(
  * the buckets.
  */
 TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets) {
-    getConfig().setJoinCount(100);
-    getConfig().setJoinSize(1000);
+    auto cfg = make_config();
+    cfg->setJoinCount(100);
+    cfg->setJoinSize(1000);
+    configure_stripe(cfg);
 
     addNodesToBucketDB(document::BucketId(33, 1), "0=250/50/300,1=250/50/300");
     addNodesToBucketDB(document::BucketId(33, 0x100000001), "0=300/40/200");
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     JoinOperation op(dummy_cluster_context,
                      BucketAndNodes(makeDocumentBucket(document::BucketId(32, 0)),

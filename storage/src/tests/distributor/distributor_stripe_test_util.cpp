@@ -91,6 +91,17 @@ DistributorStripeTestUtil::setup_stripe(int redundancy,
     _stripe->update_distribution_config(new_configs);
 }
 
+void
+DistributorStripeTestUtil::set_redundancy(uint32_t redundancy)
+{
+    auto distribution = std::make_shared<lib::Distribution>(
+            lib::Distribution::getDefaultDistributionConfig(redundancy, 100));
+    // Same rationale for not triggering a full distribution change as
+    // in setup_stripe() above
+    _node->getComponentRegister().setDistribution(distribution);
+    _stripe->propagateDefaultDistribution(std::move(distribution));
+}
+
 std::shared_ptr<DistributorConfiguration>
 DistributorStripeTestUtil::make_config() const
 {
@@ -122,6 +133,16 @@ void
 DistributorStripeTestUtil::handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg)
 {
     _stripe->handleMessage(msg);
+}
+
+void
+DistributorStripeTestUtil::simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state)
+{
+    for (auto& space : _stripe->getBucketSpaceRepo()) {
+        const auto& new_cluster_state = pending_state.getDerivedClusterState(space.first);
+        _stripe->remove_superfluous_buckets(space.first, *new_cluster_state, false);
+    }
+    _stripe->set_pending_cluster_state_bundle(pending_state);
 }
 
 void
@@ -396,6 +417,12 @@ DistributorStripeTestUtil::operation_context() {
 const DocumentSelectionParser&
 DistributorStripeTestUtil::doc_selection_parser() const {
     return _stripe->_component;
+}
+
+DistributorMetricSet&
+DistributorStripeTestUtil::metrics()
+{
+    return *_metrics;
 }
 
 bool
