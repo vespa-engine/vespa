@@ -203,6 +203,7 @@ private:
     friend class MultiThreadedStripeAccessGuard;
     friend struct DistributorStripeTest;
     friend struct LegacyDistributorTest;
+    friend struct TopLevelDistributorTest;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
     bool isMaintenanceReply(const api::StorageReply& reply) const;

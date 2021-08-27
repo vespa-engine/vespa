@@ -61,16 +61,18 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _comp_reg(compReg),
       _use_legacy_mode(num_distributor_stripes == 0),
       _metrics(std::make_shared<DistributorMetricSet>()),
-      _total_metrics(_use_legacy_mode ? std::shared_ptr<DistributorTotalMetrics>() :
-                     std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
-      _ideal_state_metrics(_use_legacy_mode ? std::make_shared<IdealStateMetricSet>() : std::shared_ptr<IdealStateMetricSet>()),
-      _ideal_state_total_metrics(_use_legacy_mode ? std::shared_ptr<IdealStateTotalMetrics>() :
-                                 std::make_shared<IdealStateTotalMetrics>(num_distributor_stripes)),
+      _total_metrics(_use_legacy_mode ? std::shared_ptr<DistributorTotalMetrics>()
+                                      : std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
+      _ideal_state_metrics(_use_legacy_mode ? std::make_shared<IdealStateMetricSet>()
+                                            : std::shared_ptr<IdealStateMetricSet>()),
+      _ideal_state_total_metrics(_use_legacy_mode ? std::shared_ptr<IdealStateTotalMetrics>()
+                                                  : std::make_shared<IdealStateTotalMetrics>(num_distributor_stripes)),
       _messageSender(messageSender),
       _n_stripe_bits(0),
       _stripe(std::make_unique<DistributorStripe>(compReg,
                                                   _use_legacy_mode ? *_metrics : _total_metrics->stripe(0),
-                                                  _use_legacy_mode ? *_ideal_state_metrics : _ideal_state_total_metrics->stripe(0),
+                                                  (_use_legacy_mode ? *_ideal_state_metrics
+                                                                    : _ideal_state_total_metrics->stripe(0)),
                                                   node_identity, threadPool,
                                                   doneInitHandler, *this, *this, _use_legacy_mode)),
       _stripe_pool(stripe_pool),
@@ -107,8 +109,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     if (!_use_legacy_mode) {
         assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
         _n_stripe_bits = calc_num_stripe_bits(num_distributor_stripes);
-        LOG(info, "Setting up distributor with %u stripes using %u stripe bits",
-            num_distributor_stripes, _n_stripe_bits); // TODO STRIPE remove once legacy gone
+        LOG(debug, "Setting up distributor with %u stripes using %u stripe bits",
+            num_distributor_stripes, _n_stripe_bits);
         _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
         _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
                                                                *this, *this,
@@ -270,13 +272,7 @@ Distributor::onOpen()
     if (_component.getDistributorConfig().startDistributorThread) {
         _threadPool.addThread(*this);
         _threadPool.start(_component.getThreadPool());
-        if (!_use_legacy_mode) {
-            std::vector<TickableStripe*> pool_stripes;
-            for (auto& stripe : _stripes) {
-                pool_stripes.push_back(stripe.get());
-            }
-            _stripe_pool.start(pool_stripes);
-        }
+        start_stripe_pool();
     } else {
         LOG(warning, "Not starting distributor thread as it's configured to "
                      "run. Unless you are just running a test tool, this is a "
@@ -302,6 +298,18 @@ void Distributor::onClose() {
         }
         assert(_bucket_db_updater);
         _bucket_db_updater->flush();
+    }
+}
+
+void
+Distributor::start_stripe_pool()
+{
+    if (!_use_legacy_mode) {
+        std::vector<TickableStripe*> pool_stripes;
+        for (auto& stripe : _stripes) {
+            pool_stripes.push_back(stripe.get());
+        }
+        _stripe_pool.start(pool_stripes); // If unit testing, this won't actually start any OS threads
     }
 }
 
@@ -412,7 +420,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
                    vespalib::make_string("Distributor::onDown(): Dispatch message to stripe %u", stripe_idx));
         bool handled = _stripes[stripe_idx]->handle_or_enqueue_message(msg);
         if (handled) {
-            _stripe_pool.stripe_thread(stripe_idx).notify_event_has_triggered();
+            _stripe_pool.notify_stripe_event_has_triggered(stripe_idx);
         }
         return handled;
     }
@@ -748,6 +756,12 @@ void
 Distributor::signal_work_was_done()
 {
     _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
+}
+
+bool
+Distributor::work_was_done() const noexcept
+{
+    return !_tickResult.waitWanted();
 }
 
 vespalib::string

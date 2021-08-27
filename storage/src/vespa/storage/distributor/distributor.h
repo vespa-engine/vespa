@@ -80,6 +80,8 @@ public:
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
 
+    void start_stripe_pool();
+
     DistributorMetricSet& getMetrics();
 
     // Implements DistributorInterface and DistributorMessageSender.
@@ -127,10 +129,12 @@ public:
 private:
     friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
+    friend class TopLevelDistributorTestUtil;
     friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend struct DistributorStripeTest;
     friend struct LegacyDistributorTest;
+    friend struct TopLevelDistributorTest;
 
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
@@ -180,6 +184,7 @@ private:
     void fetch_status_requests();
     void handle_status_requests();
     void signal_work_was_done();
+    [[nodiscard]] bool work_was_done() const noexcept;
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
 
@@ -205,7 +210,7 @@ private:
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
-    std::shared_ptr<IdealStateTotalMetrics>  _ideal_state_total_metrics;
+    std::shared_ptr<IdealStateTotalMetrics> _ideal_state_total_metrics;
     ChainedMessageSender*                 _messageSender;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     uint8_t                               _n_stripe_bits;

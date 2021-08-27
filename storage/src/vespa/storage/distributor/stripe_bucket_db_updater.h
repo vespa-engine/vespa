@@ -144,6 +144,7 @@ private:
 
     friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
+    friend class TopLevelDistributorTestUtil; // TODO STRIPE remove asap
     // TODO refactor and rewire to avoid needing this direct meddling
     friend class DistributorStripe;
 

@@ -10,6 +10,7 @@ namespace storage {
 namespace distributor {
     class DistributorStripeTestUtil;
     class DistributorTestUtil;
+    class TopLevelDistributorTestUtil;
 }
 
 enum class TrustedUpdate {
@@ -205,6 +206,7 @@ public:
 private:
     friend class distributor::DistributorStripeTestUtil;
     friend class distributor::DistributorTestUtil;
+    friend class distributor::TopLevelDistributorTestUtil;
 
     /**
      * Returns the bucket copy struct for the given node, null if nonexisting

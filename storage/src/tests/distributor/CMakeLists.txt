@@ -47,6 +47,8 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     statoperationtest.cpp
     statusreporterdelegatetest.cpp
     throttlingoperationstartertest.cpp
+    top_level_distributor_test.cpp
+    top_level_distributor_test_util.cpp
     twophaseupdateoperationtest.cpp
     updateoperationtest.cpp
     visitoroperationtest.cpp
