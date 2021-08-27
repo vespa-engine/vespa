@@ -982,6 +982,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.properties().setParentQuery(clone);
         assert (clone.properties().getParentQuery() == clone);
 
+        clone.setTimeout(getTimeout());
         clone.setTraceLevel(getTraceLevel());
         clone.setExplainLevel(getExplainLevel());
         clone.setHits(getHits());
