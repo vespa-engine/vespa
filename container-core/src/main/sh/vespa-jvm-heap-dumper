@@ -91,8 +91,8 @@ else
   echo "Found service: ${STATUS}"
 fi
 readonly JVM_PID=$(echo ${STATUS} | cut -d " "  -f 4 | cut -d "=" -f 2)
-if [ -z "${JVM_PID}" ]; then
-  echo "Could not find pid for '${SERVICE}'"
+if ! [[ "${JVM_PID}" =~ ^[0-9]+$ ]]; then
+  echo "Could not find valid pid for '${SERVICE}' (pid='${JVM_PID}')"
   exit 1
 else
   echo "Pid for '${SERVICE}' is '${JVM_PID}'"
