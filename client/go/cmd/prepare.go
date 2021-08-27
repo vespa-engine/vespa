@@ -10,6 +10,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(prepareCmd)
+	addTargetFlag(prepareCmd)
 }
 
 // TODO: Implement and test

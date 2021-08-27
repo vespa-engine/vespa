@@ -39,7 +39,10 @@ func configureLogger() {
 func init() {
 	configureLogger()
 	cobra.OnInitialize(readConfig)
-	rootCmd.PersistentFlags().StringVarP(&targetArgument, "target", "t", "local", "The name or URL of the recipient of this command")
+}
+
+func addTargetFlag(command *cobra.Command) {
+	command.PersistentFlags().StringVarP(&targetArgument, "target", "t", "local", "The name or URL of the recipient of this command")
 }
 
 // Execute executes the root command.
