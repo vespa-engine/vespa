@@ -699,6 +699,7 @@ fi
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/common-env.sh
 %{_prefix}/libexec/vespa/vespa-curl-wrapper
+%{_prefix}/libexec/vespa/vespa-jvm-heap-dumper
 
 %files base-libs
 %if %{_defattr_is_vespa_vespa}
