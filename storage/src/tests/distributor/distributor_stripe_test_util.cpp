@@ -102,6 +102,14 @@ DistributorStripeTestUtil::set_redundancy(uint32_t redundancy)
     _stripe->propagateDefaultDistribution(std::move(distribution));
 }
 
+void
+DistributorStripeTestUtil::trigger_distribution_change(lib::Distribution::SP distr)
+{
+    _node->getComponentRegister().setDistribution(distr);
+    auto new_config = BucketSpaceDistributionConfigs::from_default_distribution(distr);
+    _stripe->update_distribution_config(new_config);
+}
+
 std::shared_ptr<DistributorConfiguration>
 DistributorStripeTestUtil::make_config() const
 {

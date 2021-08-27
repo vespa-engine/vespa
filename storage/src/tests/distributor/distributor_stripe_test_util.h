@@ -171,6 +171,8 @@ public:
 
     void set_redundancy(uint32_t redundancy);
 
+    void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+
     using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 
     std::shared_ptr<DistributorConfiguration> make_config() const;
