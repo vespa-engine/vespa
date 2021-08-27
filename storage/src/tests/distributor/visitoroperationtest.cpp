@@ -557,8 +557,7 @@ TEST_F(VisitorOperationTest, wrong_distribution_in_pending_state) {
     setup_stripe(1, 100, "distributor:1 storage:2");
     // Trigger pending cluster state. Note: increase in storage node count
     // to force resending of bucket info requests.
-    simulate_set_pending_cluster_state(lib::ClusterStateBundle(
-            lib::ClusterState("distributor:100 storage:3")));
+    simulate_set_pending_cluster_state("distributor:100 storage:3");
 
     document::BucketId id(uint64_t(0x400000000000127b));
     ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "

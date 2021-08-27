@@ -102,6 +102,14 @@ DistributorStripeTestUtil::set_redundancy(uint32_t redundancy)
     _stripe->propagateDefaultDistribution(std::move(distribution));
 }
 
+void
+DistributorStripeTestUtil::trigger_distribution_change(lib::Distribution::SP distr)
+{
+    _node->getComponentRegister().setDistribution(distr);
+    auto new_config = BucketSpaceDistributionConfigs::from_default_distribution(distr);
+    _stripe->update_distribution_config(new_config);
+}
+
 std::shared_ptr<DistributorConfiguration>
 DistributorStripeTestUtil::make_config() const
 {
@@ -136,13 +144,23 @@ DistributorStripeTestUtil::handle_top_level_message(const std::shared_ptr<api::S
 }
 
 void
-DistributorStripeTestUtil::simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state)
+DistributorStripeTestUtil::simulate_set_pending_cluster_state(const vespalib::string& state_str)
 {
+    lib::ClusterState state(state_str);
+    lib::ClusterStateBundle pending_state(state);
     for (auto& space : _stripe->getBucketSpaceRepo()) {
         const auto& new_cluster_state = pending_state.getDerivedClusterState(space.first);
+        _stripe->update_read_snapshot_before_db_pruning();
         _stripe->remove_superfluous_buckets(space.first, *new_cluster_state, false);
+        _stripe->update_read_snapshot_after_db_pruning(pending_state);
     }
     _stripe->set_pending_cluster_state_bundle(pending_state);
+}
+
+void
+DistributorStripeTestUtil::clear_pending_cluster_state_bundle()
+{
+    _stripe->clear_pending_cluster_state_bundle();
 }
 
 void

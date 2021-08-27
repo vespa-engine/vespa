@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "distributortestutil.h"
+#include "distributor_stripe_test_util.h"
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -23,7 +23,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct StateCheckersTest : Test, DistributorTestUtil {
+struct StateCheckersTest : Test, DistributorStripeTestUtil {
     StateCheckersTest() = default;
 
     void SetUp() override {
@@ -155,8 +155,8 @@ struct StateCheckersTest : Test, DistributorTestUtil {
                          uint32_t joinSize,
                          uint32_t minSplitBits,
                          const document::BucketId& bid,
-                         const PendingMessage& blocker = PendingMessage(),
-                         bool includePriority = false);
+                         bool includePriority = false,
+                         bool enableJoinForSiblingLessBuckets = false);
 
     struct CheckerParams {
         std::string _bucketInfo;
@@ -230,14 +230,14 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         document::BucketId bid(17, 0);
         document::Bucket bucket(params._bucket_space, bid);
         addNodesToBucketDB(bucket, params._bucketInfo);
-        setRedundancy(params._redundancy);
-        enableDistributorClusterState(params._clusterState);
-        getConfig().set_merge_operations_disabled(params._merge_operations_disabled);
-        getConfig().set_prioritize_global_bucket_merges(params._prioritize_global_bucket_merges);
+        set_redundancy(params._redundancy);
+        enable_cluster_state(params._clusterState);
+        vespa::config::content::core::StorDistributormanagerConfigBuilder config;
+        config.mergeOperationsDisabled = params._merge_operations_disabled;
+        config.prioritizeGlobalBucketMerges = params._prioritize_global_bucket_merges;
+        configure_stripe(config);
         if (!params._pending_cluster_state.empty()) {
-            auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(params._pending_cluster_state));
-            _distributor->onDown(cmd);
-            tick(); // Trigger command processing and pending state setup.
+            simulate_set_pending_cluster_state(params._pending_cluster_state);
         }
         NodeMaintenanceStatsTracker statsTracker;
         StateChecker::Context c(node_context(),
@@ -290,19 +290,20 @@ std::string StateCheckersTest::testSplit(uint32_t splitCount,
     document::BucketId bid(17, 0);
 
     addNodesToBucketDB(bid, bucketInfo);
-
+    auto cfg = make_config();
+    cfg->setSplitSize(splitSize);
+    cfg->setSplitCount(splitCount);
+    cfg->setMinimalBucketSplit(minSplitBits);
+    configure_stripe(cfg);
     SplitBucketStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
-    getConfig().setSplitSize(splitSize);
-    getConfig().setSplitCount(splitCount);
-    getConfig().setMinimalBucketSplit(minSplitBits);
     return testStateChecker(checker, c, false, blocker, includePriority);
 }
 
 TEST_F(StateCheckersTest, split) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
+    setup_stripe(3, 10, "distributor:1 storage:2");
 
     EXPECT_EQ("[Splitting bucket because its maximum size (2000 b, 10 docs, 10 meta, 2000 b total) "
               "is higher than the configured limit of (1000, 4294967295)]",
@@ -386,7 +387,7 @@ StateCheckersTest::testInconsistentSplit(const document::BucketId& bid,
 }
 
 TEST_F(StateCheckersTest, inconsistent_split) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
+    setup_stripe(3, 10, "distributor:1 storage:2");
 
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
     EXPECT_EQ("NO OPERATIONS GENERATED",
@@ -416,7 +417,7 @@ TEST_F(StateCheckersTest, inconsistent_split) {
 }
 
 TEST_F(StateCheckersTest, split_can_be_scheduled_when_replicas_on_retired_nodes) {
-    setupDistributor(Redundancy(2), NodeCount(2),
+    setup_stripe(Redundancy(2), NodeCount(2),
                      "distributor:1 storage:2, .0.s:r .1.s:r");
     EXPECT_EQ("[Splitting bucket because its maximum size (2000 b, 10 docs, "
               "10 meta, 2000 b total) is higher than the configured limit of "
@@ -429,13 +430,19 @@ StateCheckersTest::testJoin(uint32_t joinCount,
                             uint32_t joinSize,
                             uint32_t minSplitBits,
                             const document::BucketId& bid,
-                            const PendingMessage& blocker,
-                            bool includePriority)
+                            bool includePriority,
+                            bool enableJoinForSiblingLessBuckets)
 {
+    PendingMessage blocker;
     JoinBucketsStateChecker checker;
-    getConfig().setJoinSize(joinSize);
-    getConfig().setJoinCount(joinCount);
-    getConfig().setMinimalBucketSplit(minSplitBits);
+    auto cfg = make_config();
+    vespa::config::content::core::StorDistributormanagerConfigBuilder builder;
+    builder.enableJoinForSiblingLessBuckets = enableJoinForSiblingLessBuckets;
+    cfg->configure(builder);
+    cfg->setJoinSize(joinSize);
+    cfg->setJoinCount(joinCount);
+    cfg->setMinimalBucketSplit(minSplitBits);
+    configure_stripe(cfg);
 
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
@@ -451,7 +458,7 @@ StateCheckersTest::insertJoinableBuckets()
 }
 
 TEST_F(StateCheckersTest, join) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
+    setup_stripe(3, 10, "distributor:1 storage:2");
 
     insertJoinableBuckets();
     EXPECT_EQ("BucketId(0x8000000000000001): "
@@ -468,7 +475,7 @@ TEST_F(StateCheckersTest, join) {
               "BucketId(0x8400000100000001) because their size "
               "(2 bytes, 2 docs) is less than the configured limit "
               "of (0, 3) (pri 155)",
-              testJoin(3, 0, 16, document::BucketId(33, 1), PendingMessage(), true));
+              testJoin(3, 0, 16, document::BucketId(33, 1), true));
 
     insertJoinableBuckets();
     // Should not generate joins for both pairs, just the primary
@@ -505,7 +512,7 @@ TEST_F(StateCheckersTest, join) {
  * bit increases a one-way street.
  */
 TEST_F(StateCheckersTest, do_not_join_below_cluster_state_bit_count) {
-    setupDistributor(2, 2, "bits:16 distributor:1 storage:2");
+    setup_stripe(2, 2, "bits:16 distributor:1 storage:2");
     // Insert sibling buckets at 16 bits that are small enough to be joined
     // unless there is special logic for dealing with distribution bits.
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
@@ -521,11 +528,11 @@ StateCheckersTest::enableInconsistentJoinInConfig(bool enabled)
 {
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableInconsistentJoin = enabled;
-    getConfig().configure(config);
+    configure_stripe(config);
 }
 
 TEST_F(StateCheckersTest, no_join_when_invalid_copy_exists) {
-    setupDistributor(3, 10, "distributor:1 storage:3");
+    setup_stripe(3, 10, "distributor:1 storage:3");
 
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
     // No join when there exists an invalid copy
@@ -536,7 +543,7 @@ TEST_F(StateCheckersTest, no_join_when_invalid_copy_exists) {
 }
 
 TEST_F(StateCheckersTest, no_join_on_different_nodes) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
+    setup_stripe(3, 10, "distributor:1 storage:2");
 
     insertBucketInfo(document::BucketId(33, 0x000000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
@@ -546,8 +553,8 @@ TEST_F(StateCheckersTest, no_join_on_different_nodes) {
 }
 
 TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_left_sibling) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
-    setRedundancy(1);
+    setup_stripe(3, 10, "distributor:1 storage:2");
+    set_redundancy(1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 0, 0x1, 1, 1);
@@ -556,8 +563,8 @@ TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_le
 }
 
 TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_right_sibling) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
-    setRedundancy(1);
+    setup_stripe(3, 10, "distributor:1 storage:2");
+    set_redundancy(1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 1, 0x1, 1, 1);
@@ -566,8 +573,8 @@ TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_ri
 }
 
 TEST_F(StateCheckersTest, no_join_when_copy_count_above_redundancy_levels_for_both_siblings) {
-    setupDistributor(3, 10, "distributor:1 storage:2");
-    setRedundancy(1);
+    setup_stripe(3, 10, "distributor:1 storage:2");
+    set_redundancy(1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 0, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x000000001), 1, 0x1, 1, 1);
     insertBucketInfo(document::BucketId(33, 0x100000001), 0, 0x1, 1, 1);
@@ -588,9 +595,9 @@ StateCheckersTest::testSynchronizeAndMove(const std::string& bucketInfo,
     addNodesToBucketDB(bid, bucketInfo);
 
     SynchronizeAndMoveStateChecker checker;
-    setRedundancy(redundancy);
+    set_redundancy(redundancy);
 
-    enableDistributorClusterState(clusterState);
+    enable_cluster_state(clusterState);
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
@@ -820,10 +827,10 @@ StateCheckersTest::testDeleteExtraCopies(
     document::BucketId bid(17, 0);
 
     addNodesToBucketDB(bid, bucketInfo);
-    setRedundancy(redundancy);
+    set_redundancy(redundancy);
 
     if (!clusterState.empty()) {
-        enableDistributorClusterState(clusterState);
+        enable_cluster_state(clusterState);
     }
     DeleteExtraCopiesStateChecker checker;
     NodeMaintenanceStatsTracker statsTracker;
@@ -834,7 +841,7 @@ StateCheckersTest::testDeleteExtraCopies(
 
 
 TEST_F(StateCheckersTest, delete_extra_copies) {
-    setupDistributor(2, 100, "distributor:1 storage:4");
+    setup_stripe(2, 100, "distributor:1 storage:4");
 
     {
         auto& distributorBucketSpace(getIdealStateManager().getBucketSpaceRepo().get(makeBucketSpace()));
@@ -911,7 +918,7 @@ TEST_F(StateCheckersTest, delete_extra_copies) {
 }
 
 TEST_F(StateCheckersTest, do_not_delete_active_extra_copies) {
-    setupDistributor(2, 100, "distributor:1 storage:4");
+    setup_stripe(2, 100, "distributor:1 storage:4");
 
     EXPECT_EQ("NO OPERATIONS GENERATED",
               testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t/a"))
@@ -919,7 +926,7 @@ TEST_F(StateCheckersTest, do_not_delete_active_extra_copies) {
 }
 
 TEST_F(StateCheckersTest, consistent_copies_on_retired_nodes_may_be_deleted) {
-    setupDistributor(2, 100, "distributor:1 storage:4 .1.s:r");
+    setup_stripe(2, 100, "distributor:1 storage:4 .1.s:r");
 
     EXPECT_EQ("[Removing redundant in-sync copy from node 1]",
               testDeleteExtraCopies("3=3/3/3/t,1=3/3/3/t,2=3/3/3/t"))
@@ -927,7 +934,7 @@ TEST_F(StateCheckersTest, consistent_copies_on_retired_nodes_may_be_deleted) {
 }
 
 TEST_F(StateCheckersTest, redundant_copy_deleted_even_when_all_nodes_retired) {
-    setupDistributor(2, 100, "distributor:1 storage:4 "
+    setup_stripe(2, 100, "distributor:1 storage:4 "
                      ".0.s:r .1.s:r .2.s:r .3.s:r");
 
     EXPECT_EQ("[Removing redundant in-sync copy from node 2]",
@@ -940,7 +947,7 @@ std::string StateCheckersTest::testBucketState(
         bool includePriority)
 {
     document::BucketId bid(17, 0);
-    setRedundancy(redundancy);
+    set_redundancy(redundancy);
     addNodesToBucketDB(bid, bucketInfo);
 
     BucketStateStateChecker checker;
@@ -952,7 +959,7 @@ std::string StateCheckersTest::testBucketState(
 }
 
 TEST_F(StateCheckersTest, bucket_state) {
-    setupDistributor(2, 100, "distributor:1 storage:4");
+    setup_stripe(2, 100, "distributor:1 storage:4");
 
     {
         // Set config explicitly so we can compare priorities for differing
@@ -960,7 +967,9 @@ TEST_F(StateCheckersTest, bucket_state) {
         DistributorConfiguration::MaintenancePriorities mp;
         mp.activateNoExistingActive = 90;
         mp.activateWithExistingActive = 120;
-        getConfig().setMaintenancePriorities(mp);
+        auto cfg = make_config();
+        cfg->setMaintenancePriorities(mp);
+        configure_stripe(cfg);
     }
 
     EXPECT_EQ("NO OPERATIONS GENERATED",
@@ -1046,7 +1055,7 @@ TEST_F(StateCheckersTest, bucket_state) {
  * details.
  */
 TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_maintenance) {
-    setupDistributor(2, 100, "distributor:1 storage:4 .1.s:m");
+    setup_stripe(2, 100, "distributor:1 storage:4 .1.s:m");
     // Ideal node 1 is in maintenance and no ready copy available.
     EXPECT_EQ("NO OPERATIONS GENERATED",
               testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
@@ -1060,7 +1069,7 @@ TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_ma
  * See bug 6395693 for a set of reasons why.
  */
 TEST_F(StateCheckersTest, do_not_change_active_state_for_inconsistently_split_buckets) {
-    setupDistributor(2, 100, "distributor:1 storage:4");
+    setup_stripe(2, 100, "distributor:1 storage:4");
     // Running state checker on a leaf:
     addNodesToBucketDB(document::BucketId(16, 0), "0=2");
     EXPECT_EQ("NO OPERATIONS GENERATED",
@@ -1086,7 +1095,7 @@ TEST_F(StateCheckersTest, do_not_change_active_state_for_inconsistently_split_bu
  * See bug 7278932.
  */
 TEST_F(StateCheckersTest, no_active_change_for_non_ideal_copies_when_otherwise_identical) {
-    setupDistributor(2, 100, "distributor:1 storage:50");
+    setup_stripe(2, 100, "distributor:1 storage:50");
     // 1 is more ideal than 3 in this state, but since they're both not part
     // of the #redundancy ideal set, activation should not change hands.
     EXPECT_EQ("NO OPERATIONS GENERATED",
@@ -1142,14 +1151,16 @@ std::shared_ptr<lib::Distribution> make_3x3_group_config() {
 }
 
 TEST_F(StateCheckersTest, bucket_state_per_group) {
-    setupDistributor(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
-    triggerDistributionChange(make_3x3_group_config());
+    setup_stripe(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    trigger_distribution_change(make_3x3_group_config());
 
     {
         DistributorConfiguration::MaintenancePriorities mp;
         mp.activateNoExistingActive = 90;
         mp.activateWithExistingActive = 120;
-        getConfig().setMaintenancePriorities(mp);
+        auto cfg = make_config();
+        cfg->setMaintenancePriorities(mp);
+        configure_stripe(cfg);
     }
 
     // Node 1 and 8 is is ideal state
@@ -1186,9 +1197,11 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
 TEST_F(StateCheckersTest, do_not_activate_replicas_that_are_out_of_sync_with_majority) {
     // TODO why this strange distribution...
     // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
-    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
-    triggerDistributionChange(make_3x3_group_config());
-    getConfig().set_max_activation_inhibited_out_of_sync_groups(3);
+    setup_stripe(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    trigger_distribution_change(make_3x3_group_config());
+    auto cfg = make_config();
+    cfg->set_max_activation_inhibited_out_of_sync_groups(3);
+    configure_stripe(cfg);
 
     // 5 is out of sync with 0 and 9 and will NOT be activated.
     EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
@@ -1221,9 +1234,11 @@ TEST_F(StateCheckersTest, do_not_activate_replicas_that_are_out_of_sync_with_maj
 
 TEST_F(StateCheckersTest, replica_activation_inhibition_can_be_limited_to_max_n_groups) {
     // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
-    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
-    triggerDistributionChange(make_3x3_group_config());
-    getConfig().set_max_activation_inhibited_out_of_sync_groups(1);
+    setup_stripe(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    trigger_distribution_change(make_3x3_group_config());
+    auto cfg = make_config();
+    cfg->set_max_activation_inhibited_out_of_sync_groups(1);
+    configure_stripe(cfg);
 
     // We count metadata majorities independent of groups. Let there be 3 in-sync replicas in
     // group 0, 1 out of sync in group 1 and 1 out of sync in group 2. Unless we have
@@ -1236,9 +1251,11 @@ TEST_F(StateCheckersTest, replica_activation_inhibition_can_be_limited_to_max_n_
 
 TEST_F(StateCheckersTest, activate_replicas_that_are_out_of_sync_with_majority_if_inhibition_config_disabled) {
     // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
-    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
-    triggerDistributionChange(make_3x3_group_config());
-    getConfig().set_max_activation_inhibited_out_of_sync_groups(0);
+    setup_stripe(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    trigger_distribution_change(make_3x3_group_config());
+    auto cfg = make_config();
+    cfg->set_max_activation_inhibited_out_of_sync_groups(0);
+    configure_stripe(cfg);
 
     // 5 is out of sync with 0 and 9 but will still be activated since the config is false.
     EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
@@ -1251,14 +1268,14 @@ TEST_F(StateCheckersTest, allow_activation_of_retired_nodes) {
     // All nodes in retired state implies that the ideal state is empty. But
     // we still want to be able to shuffle bucket activations around in order
     // to preserve coverage.
-    setupDistributor(2, 2, "distributor:1 storage:2 .0.s:r .1.s:r");
+    setup_stripe(2, 2, "distributor:1 storage:2 .0.s:r .1.s:r");
     EXPECT_EQ("[Setting node 1 as active: copy has 6 docs]"
               "[Setting node 0 as inactive]",
               testBucketState("0=2/3/4/u/a,1=5/6/7/t"));
 }
 
 TEST_F(StateCheckersTest, inhibit_bucket_activation_if_disabled_in_config) {
-    setupDistributor(2, 4, "distributor:1 storage:4");
+    setup_stripe(2, 4, "distributor:1 storage:4");
     disableBucketActivationInConfig(true);
 
     // Node 1 is in ideal state and only replica and should be activated in
@@ -1268,7 +1285,7 @@ TEST_F(StateCheckersTest, inhibit_bucket_activation_if_disabled_in_config) {
 }
 
 TEST_F(StateCheckersTest, inhibit_bucket_deactivation_if_disabled_in_config) {
-    setupDistributor(2, 4, "distributor:1 storage:4");
+    setup_stripe(2, 4, "distributor:1 storage:4");
     disableBucketActivationInConfig(true);
 
     // Multiple replicas which would have been deactivated. This test is mostly
@@ -1291,8 +1308,10 @@ std::string StateCheckersTest::testGarbageCollection(
     getBucketDatabase().update(e);
 
     GarbageCollectionStateChecker checker;
-    getConfig().setGarbageCollection("music", std::chrono::seconds(checkInterval));
-    getConfig().setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
+    auto cfg = make_config();
+    cfg->setGarbageCollection("music", std::chrono::seconds(checkInterval));
+    cfg->setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
+    configure_stripe(cfg);
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker,
@@ -1355,7 +1374,7 @@ TEST_F(StateCheckersTest, gc_ops_are_prioritized_with_low_priority_category) {
 TEST_F(StateCheckersTest, gc_inhibited_when_ideal_node_in_maintenance) {
     // Redundancy is 3, so with only 3 nodes, node 1 is guaranteed to be part of
     // the ideal state of any bucket in the system.
-    setupDistributor(3, 3, "distributor:1 storage:3 .1.s:m");
+    setup_stripe(3, 3, "distributor:1 storage:3 .1.s:m");
     document::BucketId bucket(17, 0);
     addNodesToBucketDB(bucket, "0=10/100/1/true,"
                                "1=10/100/1/true,"
@@ -1365,8 +1384,10 @@ TEST_F(StateCheckersTest, gc_inhibited_when_ideal_node_in_maintenance) {
     getBucketDatabase().update(e);
 
     GarbageCollectionStateChecker checker;
-    getConfig().setGarbageCollection("music", 3600s);
-    getConfig().setLastGarbageCollectionChangeTime(vespalib::steady_time(vespalib::duration::zero()));
+    auto cfg = make_config();
+    cfg->setGarbageCollection("music", 3600s);
+    cfg->setLastGarbageCollectionChangeTime(vespalib::steady_time(vespalib::duration::zero()));
+    configure_stripe(cfg);
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
                             getDistributorBucketSpace(), statsTracker,
@@ -1405,10 +1426,7 @@ TEST_F(StateCheckersTest, no_remove_when_ideal_node_in_maintenance) {
  * See bug 6768991 for context.
  */
 TEST_F(StateCheckersTest, stepwise_join_for_small_buckets_without_siblings) {
-    setupDistributor(3, 10, "distributor:1 storage:2 bits:1");
-    vespa::config::content::core::StorDistributormanagerConfigBuilder config;
-    config.enableJoinForSiblingLessBuckets = true;
-    getConfig().configure(config);
+    setup_stripe(3, 10, "distributor:1 storage:2 bits:1");
     // Buckets without siblings but that should be step-wise joined back
     // into bucket (2, 1).
     insertBucketInfo(document::BucketId(3, 1), 1, 0x1, 1, 1);
@@ -1418,7 +1436,7 @@ TEST_F(StateCheckersTest, stepwise_join_for_small_buckets_without_siblings) {
               "BucketId(0x0c00000000000001) because their size "
               "(1 bytes, 1 docs) is less than the configured limit "
               "of (100, 10)",
-              testJoin(10, 100, 2, document::BucketId(3, 1)));
+              testJoin(10, 100, 2, document::BucketId(3, 1), false, true));
 
     // Other bucket should be joined as well. Together the two join targets
     // will transform into a mighty sibling pair that can rule the galaxy
@@ -1430,14 +1448,14 @@ TEST_F(StateCheckersTest, stepwise_join_for_small_buckets_without_siblings) {
               "BucketId(0x0c00000000000003) because their size "
               "(1 bytes, 1 docs) is less than the configured limit "
               "of (100, 10)",
-              testJoin(10, 100, 2, document::BucketId(3, 0x3)));
+              testJoin(10, 100, 2, document::BucketId(3, 0x3), false, true));
 }
 
 TEST_F(StateCheckersTest, no_stepwise_join_when_disabled_through_config) {
-    setupDistributor(3, 10, "distributor:1 storage:2 bits:1");
+    setup_stripe(3, 10, "distributor:1 storage:2 bits:1");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = false;
-    getConfig().configure(config);
+    configure_stripe(config);
 
     // Buckets without siblings but that would have been step-wise joined back
     // into bucket 1 if it had been config-enabled.
@@ -1448,10 +1466,10 @@ TEST_F(StateCheckersTest, no_stepwise_join_when_disabled_through_config) {
 }
 
 TEST_F(StateCheckersTest, no_stepwise_join_when_single_sibling_too_large) {
-    setupDistributor(3, 10, "distributor:1 storage:2 bits:1");
+    setup_stripe(3, 10, "distributor:1 storage:2 bits:1");
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.enableJoinForSiblingLessBuckets = true;
-    getConfig().configure(config);
+    configure_stripe(config);
 
     // Bucket is exactly at the boundary where it's too big.
     insertBucketInfo(document::BucketId(3, 1), 1, 0x1, 10, 100);
@@ -1461,10 +1479,7 @@ TEST_F(StateCheckersTest, no_stepwise_join_when_single_sibling_too_large) {
 }
 
 TEST_F(StateCheckersTest, stepwise_join_may_skip_multiple_bits_when_consistent) {
-    setupDistributor(2, 10, "distributor:1 storage:2 bits:8");
-    vespa::config::content::core::StorDistributormanagerConfigBuilder config;
-    config.enableJoinForSiblingLessBuckets = true;
-    getConfig().configure(config);
+    setup_stripe(2, 10, "distributor:1 storage:2 bits:8");
 
     insertBucketInfo(document::BucketId(16, 1), 1, 0x1, 1, 1);
     // No buckets further up in the tree, can join up to the distribution bit
@@ -1474,14 +1489,11 @@ TEST_F(StateCheckersTest, stepwise_join_may_skip_multiple_bits_when_consistent) 
               "BucketId(0x4000000000000001) because their size "
               "(1 bytes, 1 docs) is less than the configured limit "
               "of (100, 10)",
-              testJoin(10, 100, 8, document::BucketId(16, 1)));
+              testJoin(10, 100, 8, document::BucketId(16, 1), false, true));
 }
 
 TEST_F(StateCheckersTest, stepwise_join_does_not_skip_beyond_level_with_sibling) {
-    setupDistributor(2, 10, "distributor:1 storage:2 bits:8");
-    vespa::config::content::core::StorDistributormanagerConfigBuilder config;
-    config.enableJoinForSiblingLessBuckets = true;
-    getConfig().configure(config);
+    setup_stripe(2, 10, "distributor:1 storage:2 bits:8");
 
     // All 0-branch children
     insertBucketInfo(document::BucketId(16, 0), 1, 0x1, 1, 1);
@@ -1494,11 +1506,11 @@ TEST_F(StateCheckersTest, stepwise_join_does_not_skip_beyond_level_with_sibling)
               "BucketId(0x4000000000000000) because their size "
               "(1 bytes, 1 docs) is less than the configured limit "
               "of (100, 10)",
-              testJoin(10, 100, 8, document::BucketId(16, 0)));
+              testJoin(10, 100, 8, document::BucketId(16, 0), false, true));
 }
 
 TEST_F(StateCheckersTest, join_can_be_scheduled_when_replicas_on_retired_nodes) {
-    setupDistributor(1, 1, "distributor:1 storage:1 .0.s.:r");
+    setup_stripe(1, 1, "distributor:1 storage:1 .0.s.:r");
     insertJoinableBuckets();
     EXPECT_EQ("BucketId(0x8000000000000001): "
               "[Joining buckets BucketId(0x8400000000000001) and "
@@ -1510,7 +1522,7 @@ TEST_F(StateCheckersTest, join_can_be_scheduled_when_replicas_on_retired_nodes) 
 
 TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     // 1 and 3 are ideal nodes for bucket {17, 0}
-    setupDistributor(2, 100, "distributor:1 storage:4");
+    setup_stripe(2, 100, "distributor:1 storage:4");
 
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(node_context(), operation_context(),
@@ -1543,7 +1555,7 @@ public:
     }
 
     StateCheckerRunner& redundancy(uint32_t red) {
-        _fixture.setRedundancy(red);
+        _fixture.set_redundancy(red);
         return *this;
     }
 

@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -8,8 +8,8 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
@@ -24,7 +24,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct ExternalOperationHandlerTest : Test, DistributorTestUtil {
+struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     document::TestDocMan _testDocMan;
 
     document::BucketId findNonOwnedUserBucketInState(vespalib::stringref state);
@@ -209,7 +209,7 @@ std::shared_ptr<api::RemoveCommand> ExternalOperationHandlerTest::makeRemoveComm
 TEST_F(ExternalOperationHandlerTest, mutating_operation_wdr_bounced_on_wrong_current_distribution) {
     createLinks();
     std::string state("version:1 distributor:2 storage:2");
-    setupDistributor(1, 2, state);
+    setup_stripe(1, 2, state);
 
     document::BucketId bucket(findNonOwnedUserBucketInState(state));
     auto cmd = makeUpdateCommandForUser(bucket.withoutCountBits());
@@ -226,7 +226,7 @@ TEST_F(ExternalOperationHandlerTest, mutating_operation_wdr_bounced_on_wrong_cur
 TEST_F(ExternalOperationHandlerTest, read_only_operation_wdr_bounced_on_wrong_current_distribution) {
     createLinks();
     std::string state("version:1 distributor:2 storage:2");
-    setupDistributor(1, 2, state);
+    setup_stripe(1, 2, state);
 
     document::BucketId bucket(findNonOwnedUserBucketInState(state));
     auto cmd = makeGetCommandForUser(bucket.withoutCountBits());
@@ -244,13 +244,12 @@ TEST_F(ExternalOperationHandlerTest, mutating_operation_busy_bounced_on_wrong_pe
     createLinks();
     std::string current("version:10 distributor:2 storage:2");
     std::string pending("version:11 distributor:3 storage:3");
-    setupDistributor(1, 3, current);
+    setup_stripe(1, 3, current);
 
     document::BucketId b(findOwned1stNotOwned2ndInStates(current, pending));
 
     // Trigger pending cluster state
-    auto stateCmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(pending));
-    getBucketDBUpdater().onSetSystemState(stateCmd);
+    simulate_set_pending_cluster_state(pending);
 
     auto cmd = makeUpdateCommandForUser(b.withoutCountBits());
 
@@ -267,7 +266,7 @@ ExternalOperationHandlerTest::verify_busy_bounced_due_to_no_active_state(std::sh
 {
     createLinks();
     std::string state{}; // No version --> not yet received
-    setupDistributor(1, 2, state);
+    setup_stripe(1, 2, state);
 
     Operation::SP genOp;
     ASSERT_TRUE(getExternalOperationHandler().handleMessage(cmd, genOp));
@@ -294,7 +293,7 @@ void ExternalOperationHandlerTest::assert_rejection_due_to_unsafe_time(
         std::shared_ptr<api::StorageCommand> cmd)
 {
     createLinks();
-    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
+    setup_stripe(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(9);
     getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
 
@@ -310,22 +309,22 @@ void ExternalOperationHandlerTest::assert_rejection_due_to_unsafe_time(
 
 TEST_F(ExternalOperationHandlerTest, reject_put_if_not_past_safe_time_point) {
     assert_rejection_due_to_unsafe_time(makePutCommand("foo", "id:foo:testdoctype1::bar"));
-    EXPECT_EQ(1, safe_time_not_reached_metric_count(getDistributor().getMetrics().puts));
+    EXPECT_EQ(1, safe_time_not_reached_metric_count(metrics().puts));
 }
 
 TEST_F(ExternalOperationHandlerTest, reject_remove_if_not_past_safe_time_point) {
     assert_rejection_due_to_unsafe_time(makeRemoveCommand("id:foo:testdoctype1::bar"));
-    EXPECT_EQ(1, safe_time_not_reached_metric_count(getDistributor().getMetrics().removes));
+    EXPECT_EQ(1, safe_time_not_reached_metric_count(metrics().removes));
 }
 
 TEST_F(ExternalOperationHandlerTest, reject_update_if_not_past_safe_time_point) {
     assert_rejection_due_to_unsafe_time(makeUpdateCommand());
-    EXPECT_EQ(1, safe_time_not_reached_metric_count(getDistributor().getMetrics().updates));
+    EXPECT_EQ(1, safe_time_not_reached_metric_count(metrics().updates));
 }
 
 TEST_F(ExternalOperationHandlerTest, get_not_rejected_by_unsafe_time_point) {
     createLinks();
-    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
+    setup_stripe(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(9);
     getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
 
@@ -334,12 +333,12 @@ TEST_F(ExternalOperationHandlerTest, get_not_rejected_by_unsafe_time_point) {
             makeGetCommandForUser(0), generated);
     ASSERT_NE(generated.get(), nullptr);
     ASSERT_EQ(0, _sender.replies().size());
-    EXPECT_EQ(0, safe_time_not_reached_metric_count(getDistributor().getMetrics().gets));
+    EXPECT_EQ(0, safe_time_not_reached_metric_count(metrics().gets));
 }
 
 TEST_F(ExternalOperationHandlerTest, mutation_not_rejected_when_safe_point_reached) {
     createLinks();
-    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
+    setup_stripe(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(10);
     getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
 
@@ -351,19 +350,19 @@ TEST_F(ExternalOperationHandlerTest, mutation_not_rejected_when_safe_point_reach
             generated);
     ASSERT_NE(generated.get(), nullptr);
     ASSERT_EQ(0, _sender.replies().size());
-    EXPECT_EQ(0, safe_time_not_reached_metric_count(getDistributor().getMetrics().removes));
+    EXPECT_EQ(0, safe_time_not_reached_metric_count(metrics().removes));
 }
 
 void ExternalOperationHandlerTest::set_up_distributor_for_sequencing_test() {
     createLinks();
-    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
+    setup_stripe(1, 2, "version:1 distributor:1 storage:1");
 }
 
 void ExternalOperationHandlerTest::set_up_distributor_with_feed_blocked_state() {
     createLinks();
-    setup_distributor(1, 2,
-                      lib::ClusterStateBundle(lib::ClusterState("version:1 distributor:1 storage:1"),
-                                              {}, {true, "full disk"}, false));
+    setup_stripe(1, 2,
+                 lib::ClusterStateBundle(lib::ClusterState("version:1 distributor:1 storage:1"),
+                                         {}, {true, "full disk"}, false));
 }
 
 void ExternalOperationHandlerTest::start_operation_verify_not_rejected(
@@ -419,41 +418,41 @@ TEST_F(ExternalOperationHandlerTest, reject_put_with_concurrent_mutation_to_same
     ASSERT_NO_FATAL_FAILURE(assert_second_command_rejected_due_to_concurrent_mutation(
             makePutCommand("testdoctype1", _dummy_id),
             makePutCommand("testdoctype1", _dummy_id), _dummy_id));
-    EXPECT_EQ(1, concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
+    EXPECT_EQ(1, concurrent_mutatations_metric_count(metrics().puts));
 }
 
 TEST_F(ExternalOperationHandlerTest, do_not_reject_put_operations_to_different_ids) {
     ASSERT_NO_FATAL_FAILURE(assert_second_command_not_rejected_due_to_concurrent_mutation(
             makePutCommand("testdoctype1", "id:foo:testdoctype1::baz"),
             makePutCommand("testdoctype1", "id:foo:testdoctype1::foo")));
-    EXPECT_EQ(0, concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
+    EXPECT_EQ(0, concurrent_mutatations_metric_count(metrics().puts));
 }
 
 TEST_F(ExternalOperationHandlerTest, reject_remove_with_concurrent_mutation_to_same_id) {
     ASSERT_NO_FATAL_FAILURE(assert_second_command_rejected_due_to_concurrent_mutation(
             makeRemoveCommand(_dummy_id), makeRemoveCommand(_dummy_id), _dummy_id));
-    EXPECT_EQ(1, concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
+    EXPECT_EQ(1, concurrent_mutatations_metric_count(metrics().removes));
 }
 
 TEST_F(ExternalOperationHandlerTest, do_not_reject_remove_operations_to_different_ids) {
     ASSERT_NO_FATAL_FAILURE(assert_second_command_not_rejected_due_to_concurrent_mutation(
             makeRemoveCommand("id:foo:testdoctype1::baz"),
             makeRemoveCommand("id:foo:testdoctype1::foo")));
-    EXPECT_EQ(0, concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
+    EXPECT_EQ(0, concurrent_mutatations_metric_count(metrics().removes));
 }
 
 TEST_F(ExternalOperationHandlerTest, reject_update_with_concurrent_mutation_to_same_id) {
     ASSERT_NO_FATAL_FAILURE(assert_second_command_rejected_due_to_concurrent_mutation(
             makeUpdateCommand("testdoctype1", _dummy_id),
             makeUpdateCommand("testdoctype1", _dummy_id), _dummy_id));
-    EXPECT_EQ(1, concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
+    EXPECT_EQ(1, concurrent_mutatations_metric_count(metrics().updates));
 }
 
 TEST_F(ExternalOperationHandlerTest, do_not_reject_update_operations_to_different_ids) {
     ASSERT_NO_FATAL_FAILURE(assert_second_command_not_rejected_due_to_concurrent_mutation(
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::baz"),
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo")));
-    EXPECT_EQ(0, concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
+    EXPECT_EQ(0, concurrent_mutatations_metric_count(metrics().updates));
 }
 
 TEST_F(ExternalOperationHandlerTest, operation_destruction_allows_new_mutations_for_id) {
@@ -490,7 +489,9 @@ TEST_F(ExternalOperationHandlerTest, sequencing_can_be_explicitly_config_disable
     set_up_distributor_for_sequencing_test();
 
     // Should be able to modify config after links have been created, i.e. this is a live config.
-    getConfig().setSequenceMutatingOperations(false);
+    auto cfg = make_config();
+    cfg->setSequenceMutatingOperations(false);
+    configure_stripe(cfg);
 
     Operation::SP generated1;
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id), generated1));
@@ -502,8 +503,10 @@ TEST_F(ExternalOperationHandlerTest, sequencing_can_be_explicitly_config_disable
 TEST_F(ExternalOperationHandlerTest, gets_are_started_with_mutable_db_outside_transition_period) {
     createLinks();
     std::string current = "version:1 distributor:1 storage:3";
-    setupDistributor(1, 3, current);
-    getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
+    setup_stripe(1, 3, current);
+    auto cfg = make_config();
+    cfg->setAllowStaleReadsDuringClusterStateTransitions(true);
+    configure_stripe(cfg);
 
     document::BucketId b(16, 1234); // Only 1 distributor (us), so doesn't matter
 
@@ -519,13 +522,14 @@ document::BucketId ExternalOperationHandlerTest::set_up_pending_cluster_state_tr
     createLinks();
     std::string current = "version:123 distributor:2 storage:2";
     std::string pending = "version:321 distributor:3 storage:3";
-    setupDistributor(1, 3, current);
+    setup_stripe(1, 3, current);
     getBucketDBUpdater().set_stale_reads_enabled(read_only_enabled);
-    getConfig().setAllowStaleReadsDuringClusterStateTransitions(read_only_enabled);
+    auto cfg = make_config();
+    cfg->setAllowStaleReadsDuringClusterStateTransitions(read_only_enabled);
+    configure_stripe(cfg);
 
     // Trigger pending cluster state
-    auto stateCmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(pending));
-    getBucketDBUpdater().onSetSystemState(stateCmd);
+    simulate_set_pending_cluster_state(pending);
     return findOwned1stNotOwned2ndInStates(current, pending);
 }
 
@@ -551,7 +555,7 @@ TEST_F(ExternalOperationHandlerTest, gets_are_busy_bounced_during_transition_per
 
 void ExternalOperationHandlerTest::do_test_get_weak_consistency_is_propagated(bool use_weak) {
     createLinks();
-    setupDistributor(1, 2, "version:1 distributor:1 storage:1");
+    setup_stripe(1, 2, "version:1 distributor:1 storage:1");
     // Explicitly only touch config in the case weak consistency is enabled to ensure the
     // default is strong.
     if (use_weak) {

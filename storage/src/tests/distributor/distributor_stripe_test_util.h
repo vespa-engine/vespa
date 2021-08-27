@@ -171,6 +171,8 @@ public:
 
     void set_redundancy(uint32_t redundancy);
 
+    void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+
     using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 
     std::shared_ptr<DistributorConfiguration> make_config() const;
@@ -204,7 +206,8 @@ public:
 
     void handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
-    void simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state);
+    void simulate_set_pending_cluster_state(const vespalib::string& state_str);
+    void clear_pending_cluster_state_bundle();
 
 protected:
     vdstestlib::DirConfig _config;

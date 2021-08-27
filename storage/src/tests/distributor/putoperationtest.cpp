@@ -561,8 +561,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
     // fetch here; if we just set a node down the cluster state would be immediately applied
     // and the distributor's "clear pending messages for downed nodes" logic would kick in
     // and hide the problem.
-    simulate_set_pending_cluster_state(lib::ClusterStateBundle(
-            lib::ClusterState("version:2 distributor:1 storage:4 .0.s:d .2.s:m")));
+    simulate_set_pending_cluster_state("version:2 distributor:1 storage:4 .0.s:d .2.s:m");
 
     sendReply(0, api::ReturnCode::OK, api::BucketInfo(5, 6, 7));
     sendReply(1, api::ReturnCode::OK, api::BucketInfo(6, 7, 8));
@@ -580,8 +579,7 @@ TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state
     auto doc = createDummyDocument("test", "test");
     auto bucket = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
-    simulate_set_pending_cluster_state(lib::ClusterStateBundle(
-            lib::ClusterState("version:2 distributor:1 storage:4 .0.s:d .2.s:m")));
+    simulate_set_pending_cluster_state("version:2 distributor:1 storage:4 .0.s:d .2.s:m");
     _sender.clear();
 
     sendPut(createPut(doc));
