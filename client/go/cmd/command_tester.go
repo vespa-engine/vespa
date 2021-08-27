@@ -9,20 +9,32 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/logrusorgru/aurora"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/util"
 )
 
 func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
-	util.ActiveHttpClient = client
+	if client != nil {
+		util.ActiveHttpClient = client
+	}
 
-	// Reset - persistent flags in Cobra persists over tests
+	// Never print colors in tests
+	color = aurora.NewAurora(false)
+
+	// Use a separate config dir for each test
+	os.Setenv("VESPA_CLI_HOME", t.TempDir())
+	viper.Reset() // Reset config in case tests manipulate it
+
+	// Reset to default target - persistent flags in Cobra persists over tests
 	log.SetOutput(bytes.NewBufferString(""))
-	rootCmd.SetArgs([]string{"status", "-t", ""})
+	rootCmd.SetArgs([]string{"status", "-t", "local"})
 	rootCmd.Execute()
 
 	b := bytes.NewBufferString("")

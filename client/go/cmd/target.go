@@ -7,7 +7,13 @@ package cmd
 import (
 	"log"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
+
+const flagName = "target"
+
+var targetArgument string
 
 type target struct {
 	deploy   string
@@ -23,6 +29,11 @@ const (
 	documentContext context = 2
 )
 
+func addTargetFlag(command *cobra.Command) {
+	command.PersistentFlags().StringVarP(&targetArgument, flagName, "t", "local", "The name or URL of the recipient of this command")
+	bindFlagToConfig(flagName, command)
+}
+
 func deployTarget() string {
 	return getTarget(deployContext).deploy
 }
@@ -36,27 +47,31 @@ func documentTarget() string {
 }
 
 func getTarget(targetContext context) *target {
-	if strings.HasPrefix(targetArgument, "http") {
+	targetValue, err := getOption(flagName)
+	if err != nil {
+		log.Fatalf("a valid target must be specified")
+	}
+	if strings.HasPrefix(targetValue, "http") {
 		// TODO: Add default ports if missing
 		switch targetContext {
 		case deployContext:
 			return &target{
-				deploy: targetArgument,
+				deploy: targetValue,
 			}
 		case queryContext:
 			return &target{
-				query: targetArgument,
+				query: targetValue,
 			}
 		case documentContext:
 			return &target{
-				document: targetArgument,
+				document: targetValue,
 			}
 		}
 	}
 
 	// Otherwise, target is a name
 
-	if targetArgument == "" || targetArgument == "local" {
+	if targetValue == "" || targetValue == "local" {
 		return &target{
 			deploy:   "http://127.0.0.1:19071",
 			query:    "http://127.0.0.1:8080",
@@ -64,10 +79,10 @@ func getTarget(targetContext context) *target {
 		}
 	}
 
-	if targetArgument == "cloud" {
-		return nil // TODO
+	if targetValue == "cloud" {
+		panic("cloud target is not implemented")
 	}
 
-	log.Printf("Unknown target '%s': Use %s, %s or an URL", color.Red(targetArgument), color.Cyan("local"), color.Cyan("cloud"))
+	log.Printf("Unknown target '%s': Use %s, %s or an URL", color.Red(targetValue), color.Cyan("local"), color.Cyan("cloud"))
 	return nil
 }
