@@ -204,7 +204,8 @@ public:
 
     void handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
-    void simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state);
+    void simulate_set_pending_cluster_state(const vespalib::string& state_str);
+    void clear_pending_cluster_state_bundle();
 
 protected:
     vdstestlib::DirConfig _config;

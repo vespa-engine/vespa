@@ -136,8 +136,10 @@ DistributorStripeTestUtil::handle_top_level_message(const std::shared_ptr<api::S
 }
 
 void
-DistributorStripeTestUtil::simulate_set_pending_cluster_state(const lib::ClusterStateBundle& pending_state)
+DistributorStripeTestUtil::simulate_set_pending_cluster_state(const vespalib::string& state_str)
 {
+    lib::ClusterState state(state_str);
+    lib::ClusterStateBundle pending_state(state);
     for (auto& space : _stripe->getBucketSpaceRepo()) {
         const auto& new_cluster_state = pending_state.getDerivedClusterState(space.first);
         _stripe->update_read_snapshot_before_db_pruning();
@@ -145,6 +147,12 @@ DistributorStripeTestUtil::simulate_set_pending_cluster_state(const lib::Cluster
         _stripe->update_read_snapshot_after_db_pruning(pending_state);
     }
     _stripe->set_pending_cluster_state_bundle(pending_state);
+}
+
+void
+DistributorStripeTestUtil::clear_pending_cluster_state_bundle()
+{
+    _stripe->clear_pending_cluster_state_bundle();
 }
 
 void

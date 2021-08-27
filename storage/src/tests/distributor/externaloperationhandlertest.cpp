@@ -249,7 +249,7 @@ TEST_F(ExternalOperationHandlerTest, mutating_operation_busy_bounced_on_wrong_pe
     document::BucketId b(findOwned1stNotOwned2ndInStates(current, pending));
 
     // Trigger pending cluster state
-    simulate_set_pending_cluster_state(lib::ClusterStateBundle(lib::ClusterState(pending)));
+    simulate_set_pending_cluster_state(pending);
 
     auto cmd = makeUpdateCommandForUser(b.withoutCountBits());
 
@@ -529,7 +529,7 @@ document::BucketId ExternalOperationHandlerTest::set_up_pending_cluster_state_tr
     configure_stripe(cfg);
 
     // Trigger pending cluster state
-    simulate_set_pending_cluster_state(lib::ClusterStateBundle(lib::ClusterState(pending)));
+    simulate_set_pending_cluster_state(pending);
     return findOwned1stNotOwned2ndInStates(current, pending);
 }
 
