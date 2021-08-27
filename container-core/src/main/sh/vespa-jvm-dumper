@@ -106,9 +106,26 @@ if ! [ -n $(ps -p ${JVM_PID} -o pid=) ]; then
   exit 1
 fi
 
+echo "Creating heap dump"
 readonly HEAP_DUMP_FILE=${OUTPUT_DIRECTORY}/heapdump.bin
 if test -f "${HEAP_DUMP_FILE}"; then
-    echo "Overwriting existing file ${HEAP_DUMP_FILE}"
     rm "${HEAP_DUMP_FILE}"
 fi
 jmap -dump:live,format=b,file=${HEAP_DUMP_FILE} ${JVM_PID}
+
+echo "Getting jmap information"
+jhsdb jmap  --heap --pid ${JVM_PID} > ${OUTPUT_DIRECTORY}/jmap-output
+
+echo "Getting jstat information"
+jstat -gcutil ${JVM_PID} > ${OUTPUT_DIRECTORY}/jstat-output
+
+echo "Getting jstack information"
+jstack ${JVM_PID} > ${OUTPUT_DIRECTORY}/jstack-output
+
+echo "Getting pmap information"
+pmap -x ${JVM_PID} | sort -nk3 | tail -10 > ${OUTPUT_DIRECTORY}/pmap-output
+
+echo "Copying vespa logs"
+cp ${VESPA_HOME}/logs/vespa/vespa.log ${OUTPUT_DIRECTORY}/vespa.log
+
+echo "Done!"
