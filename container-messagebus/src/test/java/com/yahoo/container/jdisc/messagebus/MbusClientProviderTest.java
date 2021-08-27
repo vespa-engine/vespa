@@ -36,7 +36,7 @@ public class MbusClientProviderTest {
     }
 
     private void testClient(SessionConfig config) {
-        SessionCache cache = new SessionCache(NetworkMultiplexer.dedicated(new NullNetwork()),
+        SessionCache cache = new SessionCache(() -> NetworkMultiplexer.dedicated(new NullNetwork()),
                                               new ContainerMbusConfig.Builder().build(),
                                               new DocumentmanagerConfig.Builder().build(),
                                               new LoadTypeConfig.Builder().build(),

@@ -65,7 +65,7 @@ public abstract class DocumentProcessingHandlerTestBase {
         RPCNetwork net = new RPCNetwork(NetworkMultiplexerProvider.asParameters(new ContainerMbusConfig.Builder().build(),
                                                                                 driver.client().slobroksConfig(),
                                                                                 "test"));
-        sessionCache = new SessionCache(NetworkMultiplexer.dedicated(net),
+        sessionCache = new SessionCache(() -> NetworkMultiplexer.dedicated(net),
                                         new ContainerMbusConfig.Builder().build(),
                                         new MessagebusConfig.Builder().build(),
                                         protocol);
