@@ -28,6 +28,10 @@ int main(int argc, char** argv)
     gid_t g = p->pw_gid;
     uid_t u = p->pw_uid;
 
+    gid_t grouplist[256];
+    int group_arr_sz = 256;
+    int ggl = getgrouplist(username, g, grouplist, &group_arr_sz);
+
     gid_t oldg = getgid();
     uid_t oldu = getuid();
 
@@ -36,7 +40,11 @@ int main(int argc, char** argv)
         return 1;
     }
     size_t listsize = 1;
-    gid_t grouplist[1] = { g };
+    if (ggl > 0) {
+        listsize = group_arr_sz;
+    } else {
+        grouplist[0] = g;
+    }
     if ((g != oldg || u != oldu) && setgroups(listsize, grouplist) != 0) {
         perror("FATAL error: could not setgroups");
         return 1;
