@@ -22,7 +22,7 @@ MessageSenderStub::getLastCommand(bool verbose) const
 }
 
 std::string
-MessageSenderStub::dumpMessage(const api::StorageMessage& msg, bool includeAddress, bool verbose) const
+MessageSenderStub::dumpMessage(const api::StorageMessage& msg, bool includeAddress, bool verbose)
 {
     std::ostringstream ost;
 

@@ -74,6 +74,7 @@ private:
 
     friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
+    friend class TopLevelDistributorTestUtil;
     // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
     // components agree on the currently active cluster state bundle.
     // Transitively invokes Distributor::enableClusterStateBundle

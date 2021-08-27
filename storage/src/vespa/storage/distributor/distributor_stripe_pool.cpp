@@ -7,7 +7,7 @@
 
 namespace storage::distributor {
 
-DistributorStripePool::DistributorStripePool()
+DistributorStripePool::DistributorStripePool(bool test_mode, PrivateCtorTag)
     : _thread_pool(512_Ki),
       _n_stripe_bits(0),
       _stripes(),
@@ -17,7 +17,12 @@ DistributorStripePool::DistributorStripePool()
       _parked_threads(0),
       _bootstrap_tick_wait_duration(1ms),
       _bootstrap_ticks_before_wait(10),
+      _single_threaded_test_mode(test_mode),
       _stopped(false)
+{}
+
+DistributorStripePool::DistributorStripePool()
+    : DistributorStripePool(false, PrivateCtorTag())
 {}
 
 DistributorStripePool::~DistributorStripePool() {
@@ -26,8 +31,16 @@ DistributorStripePool::~DistributorStripePool() {
     }
 }
 
+std::unique_ptr<DistributorStripePool>
+DistributorStripePool::make_non_threaded_pool_for_testing() {
+    return std::make_unique<DistributorStripePool>(true, PrivateCtorTag());
+}
+
 void DistributorStripePool::park_all_threads() noexcept {
     assert(!_stripes.empty());
+    if (_single_threaded_test_mode) {
+        return;
+    }
     // Thread pool is not dynamic and signal_wants_park() is thread safe.
     for (auto& s : _stripes) {
         s->signal_wants_park();
@@ -37,6 +50,9 @@ void DistributorStripePool::park_all_threads() noexcept {
 }
 
 void DistributorStripePool::unpark_all_threads() noexcept {
+    if (_single_threaded_test_mode) {
+        return;
+    }
     // Thread pool is not dynamic and unpark_thread() is thread safe.
     for (auto& s : _stripes) {
         s->unpark_thread();
@@ -58,7 +74,17 @@ TickableStripe& DistributorStripePool::stripe_of_key(uint64_t key) noexcept {
     return stripe_thread(stripe_of_bucket_key(key, _n_stripe_bits)).stripe();
 }
 
+void DistributorStripePool::notify_stripe_event_has_triggered(size_t stripe_idx) noexcept {
+    if (_single_threaded_test_mode) {
+        return;
+    }
+    stripe_thread(stripe_idx).notify_event_has_triggered();
+}
+
 void DistributorStripePool::park_thread_until_released(DistributorStripeThread& thread) noexcept {
+    if (_single_threaded_test_mode) {
+        return;
+    }
     std::unique_lock lock(_mutex);
     assert(_parked_threads < _threads.size());
     ++_parked_threads;
@@ -88,19 +114,25 @@ void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
         new_stripe->set_ticks_before_wait(_bootstrap_ticks_before_wait);
         _stripes.emplace_back(std::move(new_stripe));
     }
+    if (_single_threaded_test_mode) {
+        return; // We want all the control structures in place, but none of the actual OS threads.
+    }
     for (auto& s : _stripes) {
         _threads.emplace_back(_thread_pool.NewThread(s.get()));
     }
 }
 
 void DistributorStripePool::stop_and_join() {
+    _stopped = true;
+    if (_single_threaded_test_mode) {
+        return;
+    }
     for (auto& s : _stripes) {
         s->signal_should_stop();
     }
     for (auto* t : _threads) {
         t->Join();
     }
-    _stopped = true;
 }
 
 void DistributorStripePool::set_tick_wait_duration(vespalib::duration new_tick_wait_duration) noexcept {
