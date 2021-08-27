@@ -74,7 +74,7 @@ findhost
 
 # END environment bootstrap section
 
-set -e
+set -euo pipefail
 
 if [ $# -ne 2 ]; then
   echo "Usage: $0 <service> <output-file>"
@@ -101,8 +101,7 @@ if test -f "${OUTPUT_FILE}"; then
     echo "Overwriting existing file ${OUTPUT_FILE}"
     rm "${OUTPUT_FILE}"
 fi
-readonly PROCESS=$(ps -p ${JVM_PID} 2>&1)
-if [ -z "${PROCESS}" ]; then
+if ! [ -n $(ps -p ${JVM_PID} -o pid=) ]; then
   echo "Could not find process for '${JVM_PID}'"
   exit 1
 fi
