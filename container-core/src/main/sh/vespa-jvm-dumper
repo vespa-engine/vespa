@@ -77,12 +77,16 @@ findhost
 set -euo pipefail
 
 if [ $# -ne 2 ]; then
-  echo "Usage: $0 <service> <output-file>"
+  echo "Usage: $0 <service> <output-directory>"
   exit 1
 fi
 
 readonly SERVICE=$1
-readonly OUTPUT_FILE=$2
+readonly OUTPUT_DIRECTORY=$2
+if ! [ -d "${OUTPUT_DIRECTORY}" -a -w "${OUTPUT_DIRECTORY}" ]; then
+  echo "Directory '${OUTPUT_DIRECTORY}' is not writable"
+  exit 1
+fi
 readonly STATUS=$(vespa-sentinel-cmd list | grep "id=\"${SERVICE}\"")
 if [ -z "${STATUS}" ]; then
   echo "No service named '${SERVICE}'"
@@ -97,12 +101,14 @@ if ! [[ "${JVM_PID}" =~ ^[0-9]+$ ]]; then
 else
   echo "Pid for '${SERVICE}' is '${JVM_PID}'"
 fi
-if test -f "${OUTPUT_FILE}"; then
-    echo "Overwriting existing file ${OUTPUT_FILE}"
-    rm "${OUTPUT_FILE}"
-fi
 if ! [ -n $(ps -p ${JVM_PID} -o pid=) ]; then
   echo "Could not find process for '${JVM_PID}'"
   exit 1
 fi
-jmap -dump:live,format=b,file=${OUTPUT_FILE} ${JVM_PID}
+
+readonly HEAP_DUMP_FILE=${OUTPUT_DIRECTORY}/heapdump.bin
+if test -f "${HEAP_DUMP_FILE}"; then
+    echo "Overwriting existing file ${HEAP_DUMP_FILE}"
+    rm "${HEAP_DUMP_FILE}"
+fi
+jmap -dump:live,format=b,file=${HEAP_DUMP_FILE} ${JVM_PID}
