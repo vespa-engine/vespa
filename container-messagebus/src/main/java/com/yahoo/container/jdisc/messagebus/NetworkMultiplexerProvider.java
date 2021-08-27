@@ -8,6 +8,8 @@ import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
+import java.util.function.Supplier;
+
 /**
  * Injectable component which provides an {@link NetworkMultiplexer}, creating one if needed,
  * i.e., the first time this is created in a container--subsequent creations of this will reuse
@@ -18,19 +20,25 @@ import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
  */
 public class NetworkMultiplexerProvider {
 
-    private final NetworkMultiplexer net;
+    private final Object monitor = new Object();
+    private final Supplier<NetworkMultiplexer> nets;
+    private NetworkMultiplexer net;
 
     @Inject
-    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig) {
-        this(net, mbusConfig, slobroksConfig, System.getProperty("config.id")); //:
+    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig) {
+        this(net, mbusConfig, System.getProperty("config.id")); //:
     }
 
-    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig, String identity) {
-        this.net = net.get(asParameters(mbusConfig, slobroksConfig, identity));
+    public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, String identity) {
+        this.nets = () -> net.get(asParameters(mbusConfig, identity).setSlobrokConfigId(identity));
     }
 
     public static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig, String identity) {
-        return new RPCNetworkParams().setSlobroksConfig(slobroksConfig)
+        return asParameters(mbusConfig, identity).setSlobroksConfig(slobroksConfig);
+    }
+
+    private static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, String identity) {
+        return new RPCNetworkParams().setSlobrokConfigId(identity)
                                      .setIdentity(new Identity(identity))
                                      .setListenPort(mbusConfig.port())
                                      .setNumTargetsPerSpec(mbusConfig.numconnectionspertarget())
@@ -39,6 +47,10 @@ public class NetworkMultiplexerProvider {
                                      .setOptimization(RPCNetworkParams.Optimization.valueOf(mbusConfig.optimize_for().name()));
     }
 
-    public NetworkMultiplexer net() { return net; }
+    public NetworkMultiplexer net() {
+        synchronized (monitor) {
+            return net = net != null ? net : nets.get();
+        }
+    }
 
 }

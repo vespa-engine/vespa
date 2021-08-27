@@ -30,7 +30,9 @@ public class NetworkMultiplexerHolder extends AbstractComponent {
     }
 
     private Network newNetwork(RPCNetworkParams params) {
-        return params.getSlobroksConfig().slobrok().isEmpty() ? new NullNetwork() : new RPCNetwork(params);
+        return params.getSlobroksConfig() != null && params.getSlobroksConfig().slobrok().isEmpty()
+               ? new NullNetwork() // For LocalApplication, test setup.
+               : new RPCNetwork(params);
     }
 
     @Override

@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,7 +56,10 @@ public final class SessionCache extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(SessionCache.class.getName());
 
-    private final SharedMessageBus messageBus;
+    private final Object monitor = new Object();
+    private Supplier<SharedMessageBus> messageBuses;
+    private SharedMessageBus messageBus;
+
     private final Object intermediateLock = new Object();
     private final Map<String, SharedIntermediateSession> intermediates = new HashMap<>();
     private final IntermediateSessionCreator intermediatesCreator = new IntermediateSessionCreator();
@@ -70,12 +74,12 @@ public final class SessionCache extends AbstractComponent {
                         LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
                         DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig) {
-        this(nets.net(), containerMbusConfig, documentmanagerConfig,
+        this(nets::net, containerMbusConfig, documentmanagerConfig,
              loadTypeConfig, messagebusConfig, policiesConfig, distributionConfig);
 
     }
 
-    public SessionCache(NetworkMultiplexer net, ContainerMbusConfig containerMbusConfig,
+    public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         DocumentmanagerConfig documentmanagerConfig,
                         LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
                         DocumentProtocolPoliciesConfig policiesConfig,
@@ -89,13 +93,26 @@ public final class SessionCache extends AbstractComponent {
                                   distributionConfig));
     }
 
-    public SessionCache(NetworkMultiplexer net, ContainerMbusConfig containerMbusConfig,
+    public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         MessagebusConfig messagebusConfig, Protocol protocol) {
-        this.messageBus = createSharedMessageBus(net, containerMbusConfig, messagebusConfig, protocol);
+        this.messageBuses = () -> createSharedMessageBus(net.get(), containerMbusConfig, messagebusConfig, protocol);
     }
 
+    @Override
     public void deconstruct() {
-        messageBus.release();
+        synchronized (monitor) {
+            messageBuses = () -> { throw new IllegalStateException("Session cache already deconstructed"); };
+
+            if (messageBus != null)
+                messageBus.release();
+        }
+    }
+
+    // Lazily create shared message bus.
+    private SharedMessageBus bus() {
+        synchronized (monitor) {
+            return messageBus = messageBus != null ? messageBus : messageBuses.get();
+        }
     }
 
     private static SharedMessageBus createSharedMessageBus(NetworkMultiplexer net,
@@ -185,7 +202,7 @@ public final class SessionCache extends AbstractComponent {
         @Override
         SharedSourceSession create(SourceSessionParams p) {
             log.log(Level.FINE, "Creating new source session.");
-            return messageBus.newSourceSession(p);
+            return bus().newSourceSession(p);
         }
 
         @Override
@@ -205,7 +222,7 @@ public final class SessionCache extends AbstractComponent {
         @Override
         SharedIntermediateSession create(IntermediateSessionParams p) {
             log.log(Level.FINE, "Creating new intermediate session " + p.getName() + "");
-            return messageBus.newIntermediateSession(p);
+            return bus().newIntermediateSession(p);
         }
 
         @Override
