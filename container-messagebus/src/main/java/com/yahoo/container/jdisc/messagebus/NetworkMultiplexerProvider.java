@@ -26,10 +26,14 @@ public class NetworkMultiplexerProvider {
     }
 
     public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, String identity) {
-        this.net = net.get(asParameters(mbusConfig, identity));
+        this.net = net.get(asParameters(mbusConfig, identity).setSlobrokConfigId(identity));
     }
 
-    public static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, String identity) {
+    public static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig, String identity) {
+        return asParameters(mbusConfig, identity).setSlobroksConfig(slobroksConfig);
+    }
+
+    private static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, String identity) {
         return new RPCNetworkParams().setSlobrokConfigId(identity)
                                      .setIdentity(new Identity(identity))
                                      .setListenPort(mbusConfig.port())
