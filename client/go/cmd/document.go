@@ -23,6 +23,7 @@ func init() {
 	rootCmd.AddCommand(documentCmd)
 	documentCmd.AddCommand(documentPostCmd)
 	documentCmd.AddCommand(documentGetCmd)
+	addTargetFlag(documentCmd)
 }
 
 var documentCmd = &cobra.Command{

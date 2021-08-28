@@ -15,10 +15,9 @@ import (
 )
 
 var (
-	// flags
+	// global flags
 	// TODO: add timeout flag
 	// TODO: add flag to show http request made
-	targetArgument string
 
 	rootCmd = &cobra.Command{
 		Use:   "vespa",
@@ -39,7 +38,6 @@ func configureLogger() {
 func init() {
 	configureLogger()
 	cobra.OnInitialize(readConfig)
-	rootCmd.PersistentFlags().StringVarP(&targetArgument, "target", "t", "local", "The name or URL of the recipient of this command")
 }
 
 // Execute executes the root command.

@@ -16,6 +16,7 @@ func init() {
 	statusCmd.AddCommand(statusQueryCmd)
 	statusCmd.AddCommand(statusDocumentCmd)
 	statusCmd.AddCommand(statusDeployCmd)
+	addTargetFlag(statusCmd)
 }
 
 var statusCmd = &cobra.Command{

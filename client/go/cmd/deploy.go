@@ -13,6 +13,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
+	addTargetFlag(deployCmd)
 }
 
 var deployCmd = &cobra.Command{
