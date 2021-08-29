@@ -1,5 +1,5 @@
 {
-    "id": "mynamespace/music/docid/1",
+    "id": "id:mynamespace:music::head",
     "fields": {
         "album": "A Head Full of Dreams",
         "artist": "Coldplay",

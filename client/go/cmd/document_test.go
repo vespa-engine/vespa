@@ -11,26 +11,27 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/vespa"
 )
 
 func TestDocumentPostWithIdArg(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams.json"},
-		"mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams.json", t)
+	assertDocumentPost([]string{"document", "post", "id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams.json"},
+		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
 func TestDocumentPostWithIdInDocument(t *testing.T) {
 	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
-		"mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
 }
 
 func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
 	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
-		"mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
 }
 
 func TestDocumentPostWithIdAsPutInDocument(t *testing.T) {
 	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Put.json"},
-		"mynamespace/music/docid/1", "testdata/A-Head-Full-of-Dreams-With-Put.json", t)
+		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams-With-Put.json", t)
 }
 
 func TestDocumentIdNotSpecified(t *testing.T) {
@@ -55,7 +56,8 @@ func assertDocumentPost(arguments []string, documentId string, jsonFile string, 
 		documentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
-	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
+	expectedPath, _ := vespa.IdToUrlPath(documentId)
+	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
 	assert.Equal(t, "POST", client.lastRequest.Method)
 
@@ -77,7 +79,7 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	assert.Equal(t,
 		"Invalid document (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
-			"mynamespace/music/docid/1",
+			"id:mynamespace:music::head",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }
 
@@ -86,6 +88,6 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	assert.Equal(t,
 		"Error from container (document api) at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
-			"mynamespace/music/docid/1",
+			"id:mynamespace:music::head",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }
