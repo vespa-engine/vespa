@@ -10,8 +10,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.server.exchange_manager");
 
-using namespace vespalib;
-
 namespace slobrok {
 
 //-----------------------------------------------------------------------------
@@ -110,6 +108,7 @@ ExchangeManager::lookupPartner(const std::string & name) const {
 vespalib::string
 ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs)
 {
+    using namespace vespalib;
     vespalib::string result;
     auto visitor = overload
         {
