@@ -18,13 +18,13 @@ namespace slobrok {
 RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
                              ExchangeManager &manager)
     : _exchanger(manager),
-      _rpcsrvmanager(manager._rpcsrvmanager),
+      _rpcsrvmanager(manager.rpcServerManager()),
       _remote(nullptr),
       _serviceMapMirror(),
       _rpcserver(name, spec, *this),
       _reconnecter(getSupervisor()->GetScheduler(), *this),
       _failCnt(0),
-      _consensusSubscription(MapSubscription::subscribe(_serviceMapMirror, _exchanger._env.consensusMap())),
+      _consensusSubscription(MapSubscription::subscribe(_serviceMapMirror, _exchanger.env().consensusMap())),
       _remAddPeerReq(nullptr),
       _remListReq(nullptr),
       _remAddReq(nullptr),
@@ -80,19 +80,19 @@ RemoteSlobrok::doPending()
         std::unique_ptr<NamedService> todo = std::move(_pending.front());
         _pending.pop_front();
 
-        const NamedService *rpcsrv = _exchanger._rpcsrvmap.lookup(todo->getName());
+        const NamedService *rpcsrv = _exchanger.rpcServerMap().lookup(todo->getName());
 
         if (rpcsrv == nullptr) {
             _remRemReq = getSupervisor()->AllocRPCRequest();
             _remRemReq->SetMethodName("slobrok.internal.doRemove");
-            _remRemReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+            _remRemReq->GetParams()->AddString(_exchanger.env().mySpec().c_str());
             _remRemReq->GetParams()->AddString(todo->getName().c_str());
             _remRemReq->GetParams()->AddString(todo->getSpec().c_str());
             _remote->InvokeAsync(_remRemReq, 2.0, this);
         } else {
             _remAddReq = getSupervisor()->AllocRPCRequest();
             _remAddReq->SetMethodName("slobrok.internal.doAdd");
-            _remAddReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+            _remAddReq->GetParams()->AddString(_exchanger.env().mySpec().c_str());
             _remAddReq->GetParams()->AddString(todo->getName().c_str());
             _remAddReq->GetParams()->AddString(rpcsrv->getSpec().c_str());
             _remote->InvokeAsync(_remAddReq, 2.0, this);
@@ -174,7 +174,7 @@ void
 RemoteSlobrok::pushMine()
 {
     // all mine
-    std::vector<const NamedService *> mine = _exchanger._rpcsrvmap.allManaged();
+    std::vector<const NamedService *> mine = _exchanger.rpcServerMap().allManaged();
     while (mine.size() > 0) {
         const NamedService *now = mine.back();
         mine.pop_back();
@@ -365,8 +365,8 @@ RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv)
 
     _remAddPeerReq = getSupervisor()->AllocRPCRequest();
     _remAddPeerReq->SetMethodName("slobrok.admin.addPeer");
-    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
-    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+    _remAddPeerReq->GetParams()->AddString(_exchanger.env().mySpec().c_str());
+    _remAddPeerReq->GetParams()->AddString(_exchanger.env().mySpec().c_str());
     _remote->InvokeAsync(_remAddPeerReq, 3.0, this);
     // when _remAddPeerReq is returned, our managed list is added via doAdd()
 }
@@ -380,7 +380,7 @@ RemoteSlobrok::tryConnect()
 FRT_Supervisor *
 RemoteSlobrok::getSupervisor()
 {
-    return _exchanger._env.getSupervisor();
+    return _exchanger.env().getSupervisor();
 }
 
 //-----------------------------------------------------------------------------

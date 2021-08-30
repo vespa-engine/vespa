@@ -17,7 +17,7 @@ struct ServiceMapping {
         return name == other.name && spec == other.spec;
     }
 
-    bool operator< (const ServiceMapping &other) const {
+    bool operator< (const ServiceMapping &other) const noexcept {
         if (name < other.name) return true;
         if (other.name < name) return false;
         return spec < other.spec;

@@ -4,6 +4,8 @@
 #include "rpc_server_map.h"
 #include "sbenv.h"
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".slobrok.server.exchange_manager");
@@ -103,12 +105,52 @@ ExchangeManager::lookupPartner(const std::string & name) const {
     return (found == _partners.end()) ? nullptr : found->second.get();
 }
 
+vespalib::string
+ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs)
+{
+    using namespace vespalib;
+    vespalib::string result;
+    auto visitor = overload
+        {
+            [&result](visit_ranges_first, const auto &m) {
+                result.append("\nmissing: ").append(m.name).append("->").append(m.spec);
+            },
+            [&result](visit_ranges_second, const auto &m) {
+                result.append("\nextra: ").append(m.name).append("->").append(m.spec);
+            },
+            [](visit_ranges_both, const auto &, const auto &) {}
+        };
+    visit_ranges(visitor, lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    return result;
+}
+
 void
 ExchangeManager::healthCheck()
 {
+    auto oldWorldServices = env().rpcServerMap().allManaged();
+    ServiceMappingList oldWorldList;
+    for (const auto *nsp : oldWorldServices) {
+        oldWorldList.emplace_back(nsp->getName(), nsp->getSpec());
+    }
+    std::sort(oldWorldList.begin(), oldWorldList.end());
+    auto newWorldList = env().consensusMap().currentConsensus();
+    vespalib::string diff = diffLists(oldWorldList, newWorldList);
+    if (! diff.empty()) {
+        LOG(warning, "Diff from old world rpcServerMap to new world consensus map: %s",
+            diff.c_str());
+    }
     for (const auto & [ name, partner ] : _partners) {
         partner->maybeStartFetch();
         partner->maybePushMine();
+        auto remoteList = partner->remoteMap().allMappings();
+        // 0 is expected (when remote is down)
+        if (remoteList.size() != 0) {
+            diff = diffLists(newWorldList, remoteList);
+            if (! diff.empty()) {
+                LOG(warning, "Diff from consensus map to peer slobrok mirror: %s",
+                    diff.c_str());
+            }
+        }
     }
     LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());
 }

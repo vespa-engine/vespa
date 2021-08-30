@@ -34,6 +34,8 @@ public:
     UnionServiceMap();
     virtual ~UnionServiceMap();
 
+    ServiceMappingList currentConsensus() const;
+
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
     void update(const ServiceMapping &old_mapping,
