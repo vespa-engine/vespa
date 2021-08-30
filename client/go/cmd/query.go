@@ -48,7 +48,7 @@ func query(arguments []string) {
 
 	response, err := util.HttpDo(&http.Request{URL: url}, time.Second*10, "Container")
 	if err != nil {
-		log.Print("Request failed: ", color.Red(err))
+		log.Print(color.Red("Error: "), "Request failed: ", err)
 		return
 	}
 	defer response.Body.Close()
@@ -56,10 +56,10 @@ func query(arguments []string) {
 	if response.StatusCode == 200 {
 		log.Print(util.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
-		log.Printf("Invalid query (%s):", color.Red(response.Status))
+		log.Print(color.Red("Error: "), "Invalid query: ", response.Status)
 		log.Print(util.ReaderToJSON(response.Body))
 	} else {
-		log.Printf("Error from container at %s (%s):", color.Cyan(url.Host), color.Red(response.Status))
+		log.Print(color.Red("Error: "), response.Status, " from container at ", color.Cyan(url.Host))
 		log.Print(util.ReaderToJSON(response.Body))
 	}
 }
