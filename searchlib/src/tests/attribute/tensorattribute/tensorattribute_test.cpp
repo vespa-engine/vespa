@@ -995,40 +995,49 @@ TEST_F("Nearest neighbor index type is added to attribute file header", DenseTen
     EXPECT_EQUAL("hnsw", header.getTag("nearest_neighbor_index").asString());
 }
 
-class NearestNeighborBlueprintFixture : public DenseTensorAttributeMockIndex {
+template <typename ParentT>
+class NearestNeighborBlueprintFixtureBase : public ParentT {
 public:
-    NearestNeighborBlueprintFixture() {
-        set_tensor(1, vec_2d(1, 1));
-        set_tensor(2, vec_2d(2, 2));
-        set_tensor(3, vec_2d(3, 3));
-        set_tensor(4, vec_2d(4, 4));
-        set_tensor(5, vec_2d(5, 5));
-        set_tensor(6, vec_2d(6, 6));
-        set_tensor(7, vec_2d(7, 7));
-        set_tensor(8, vec_2d(8, 8));
-        set_tensor(9, vec_2d(9, 9));
-        set_tensor(10, vec_2d(0, 0));
+    NearestNeighborBlueprintFixtureBase() {
+        this->set_tensor(1, vec_2d(1, 1));
+        this->set_tensor(2, vec_2d(2, 2));
+        this->set_tensor(3, vec_2d(3, 3));
+        this->set_tensor(4, vec_2d(4, 4));
+        this->set_tensor(5, vec_2d(5, 5));
+        this->set_tensor(6, vec_2d(6, 6));
+        this->set_tensor(7, vec_2d(7, 7));
+        this->set_tensor(8, vec_2d(8, 8));
+        this->set_tensor(9, vec_2d(9, 9));
+        this->set_tensor(10, vec_2d(0, 0));
     }
 
     std::unique_ptr<Value> createDenseTensor(const TensorSpec &spec) {
         return SimpleValue::from_spec(spec);
     }
 
-    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(double brute_force_limit = 0.05) {
+    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(bool approximate = true, double brute_force_limit = 0.05) {
         search::queryeval::FieldSpec field("foo", 0, 0);
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
-            as_dense_tensor(),
+            this->as_dense_tensor(),
             createDenseTensor(vec_2d(17, 42)),
-            3, true, 5,
+            3, approximate, 5,
             100100.25,
             brute_force_limit);
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
-        EXPECT_TRUE(bp->may_approximate());
+        EXPECT_EQUAL(approximate, bp->may_approximate());
         EXPECT_EQUAL(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;
     }
 };
+
+class DenseTensorAttributeWithoutIndex : public Fixture {
+public:
+    DenseTensorAttributeWithoutIndex() : Fixture(vec_2d_spec, FixtureTraits().dense()) {}
+};
+
+using NearestNeighborBlueprintFixture = NearestNeighborBlueprintFixtureBase<DenseTensorAttributeMockIndex>;
+using NearestNeighborBlueprintWithoutIndexFixture = NearestNeighborBlueprintFixtureBase<DenseTensorAttributeWithoutIndex>;
 
 TEST_F("NN blueprint handles empty filter", NearestNeighborBlueprintFixture)
 {
@@ -1070,7 +1079,7 @@ TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)
 
 TEST_F("NN blueprint handles strong filter triggering brute force search", NearestNeighborBlueprintFixture)
 {
-    auto bp = f.make_blueprint(0.2);
+    auto bp = f.make_blueprint(true, 0.2);
     auto filter = search::BitVector::create(11);
     filter->setBit(3);
     filter->invalidateCachedCount();
@@ -1078,6 +1087,24 @@ TEST_F("NN blueprint handles strong filter triggering brute force search", Neare
     bp->set_global_filter(*strong_filter);
     EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
     EXPECT_FALSE(bp->may_approximate());
+}
+
+TEST_F("NN blueprint wants global filter when having index", NearestNeighborBlueprintFixture)
+{
+    auto bp = f.make_blueprint();
+    EXPECT_TRUE(bp->getState().want_global_filter());
+}
+
+TEST_F("NN blueprint do NOT want global filter when explicitly using brute force", NearestNeighborBlueprintFixture)
+{
+    auto bp = f.make_blueprint(false);
+    EXPECT_FALSE(bp->getState().want_global_filter());
+}
+
+TEST_F("NN blueprint do NOT want global filter when NOT having index (implicit brute force)", NearestNeighborBlueprintWithoutIndexFixture)
+{
+    auto bp = f.make_blueprint();
+    EXPECT_FALSE(bp->getState().want_global_filter());
 }
 
 TEST("Dense tensor attribute with paged flag uses mmap file allocator")
