@@ -83,6 +83,23 @@ func CreateKeyPair() (PemKeyPair, error) {
 	return PemKeyPair{Certificate: pemCertificate, PrivateKey: pemPrivateKey}, nil
 }
 
+// LoadKeyPair reads a key pair located in privateKeyFile and certificateFile.
+func LoadKeyPair(privateKeyFile, certificateFile string) (PemKeyPair, error) {
+	var (
+		kp  PemKeyPair
+		err error
+	)
+	kp.PrivateKey, err = os.ReadFile(privateKeyFile)
+	if err != nil {
+		return PemKeyPair{}, err
+	}
+	kp.Certificate, err = os.ReadFile(certificateFile)
+	if err != nil {
+		return PemKeyPair{}, err
+	}
+	return kp, err
+}
+
 func randomSerialNumber() (*big.Int, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	return rand.Int(rand.Reader, serialNumberLimit)

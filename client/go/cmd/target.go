@@ -11,9 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const flagName = "target"
+const (
+	targetFlag = "target"
+	cloudApi   = "https://api.vespa-external.aws.oath.cloud"
+)
 
-var targetArgument string
+var targetArg string
 
 type target struct {
 	deploy   string
@@ -30,8 +33,8 @@ const (
 )
 
 func addTargetFlag(command *cobra.Command) {
-	command.PersistentFlags().StringVarP(&targetArgument, flagName, "t", "local", "The name or URL of the recipient of this command")
-	bindFlagToConfig(flagName, command)
+	command.PersistentFlags().StringVarP(&targetArg, targetFlag, "t", "local", "The name or URL of the recipient of this command")
+	bindFlagToConfig(targetFlag, command)
 }
 
 func deployTarget() string {
@@ -47,7 +50,7 @@ func documentTarget() string {
 }
 
 func getTarget(targetContext context) *target {
-	targetValue, err := getOption(flagName)
+	targetValue, err := getOption(targetFlag)
 	if err != nil {
 		log.Fatalf("a valid target must be specified")
 	}
@@ -80,7 +83,7 @@ func getTarget(targetContext context) *target {
 	}
 
 	if targetValue == "cloud" {
-		panic("cloud target is not implemented")
+		return &target{deploy: cloudApi}
 	}
 
 	log.Printf("Unknown target '%s': Use %s, %s or an URL", color.Red(targetValue), color.Cyan("local"), color.Cyan("cloud"))
