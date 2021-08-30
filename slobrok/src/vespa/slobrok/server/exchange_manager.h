@@ -81,6 +81,8 @@ private:
     RpcServerManager  &_rpcsrvmanager;
     RpcServerMap      &_rpcsrvmap;
 
+    vespalib::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
+
 public:
     ExchangeManager(const ExchangeManager &) = delete;
     ExchangeManager &operator=(const ExchangeManager &) = delete;
