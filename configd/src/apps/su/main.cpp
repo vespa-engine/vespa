@@ -30,7 +30,16 @@ int main(int argc, char** argv)
 
     gid_t grouplist[256];
     int group_arr_sz = 256;
+#ifdef __APPLE__
+    int mac_gid = g;
+    int mac_groups[256];
+    int ggl = getgrouplist(username, mac_gid, mac_groups, &group_arr_sz);
+    for (int i = 0; i < group_arr_sz; ++i) {
+        grouplist[i] = (gid_t) mac_groups[i];
+    }
+#else
     int ggl = getgrouplist(username, g, grouplist, &group_arr_sz);
+#endif
 
     gid_t oldg = getgid();
     uid_t oldu = getuid();
@@ -40,7 +49,7 @@ int main(int argc, char** argv)
         return 1;
     }
     size_t listsize = 1;
-    if (ggl > 0) {
+    if (ggl >= 0) {
         listsize = group_arr_sz;
     } else {
         grouplist[0] = g;
