@@ -686,6 +686,7 @@ fi
 %endif
 %dir %{_prefix}
 %dir %{_prefix}/bin
+%{_prefix}/bin/vespa-jvm-dumper
 %{_prefix}/bin/vespa-logfmt
 %{_prefix}/bin/vespa-security-env
 %dir %{_prefix}/conf

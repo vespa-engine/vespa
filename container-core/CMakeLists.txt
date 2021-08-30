@@ -3,3 +3,4 @@ install_config_definitions()
 install_java_artifact_dependencies(container-core)
 
 vespa_install_script(src/main/sh/vespa-load-balancer-status libexec/vespa)
+vespa_install_script(src/main/sh/vespa-jvm-dumper bin)
