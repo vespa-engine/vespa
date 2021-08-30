@@ -47,7 +47,6 @@ public class SlimeClusterStateBundleCodec implements ClusterStateBundleCodec, En
             feedBlock.setString("description", stateBundle.getFeedBlock().get().getDescription());
         }
 
-        byte[] serialized = BinaryFormat.encode(slime);
         Compressor.Compression compression = BinaryFormat.encode_and_compress(slime, compressor);
         return EncodedClusterStateBundle.fromCompressionBuffer(compression);
     }
