@@ -38,7 +38,11 @@ public:
         } else if (distance < _priQ.front()) {
             _priQ.front() = distance;
             _priQ.adjust();
-            _distance_threshold.store(_priQ.front(), std::memory_order_relaxed);
+        }
+        if (_priQ.size() >= _size) {
+            if (_distance_threshold.load(std::memory_order_relaxed) > _priQ.front()) {
+                _distance_threshold.store(_priQ.front(), std::memory_order_relaxed);
+            }
         }
     }
 };
