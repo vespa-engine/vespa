@@ -13,13 +13,13 @@ import (
 	"github.com/vespa-engine/vespa/util"
 )
 
-func TestInit(t *testing.T) {
-	assertCreated("mytestapp", "album-recommendation-selfhosted", t)
+func TestClone(t *testing.T) {
+	assertCreated("album-recommendation-selfhosted", "mytestapp", t)
 }
 
-func assertCreated(app string, sampleAppName string, t *testing.T) {
+func assertCreated(sampleAppName string, app string, t *testing.T) {
 	existingSampleAppsZip = "testdata/sample-apps-master.zip"
-	standardOut := executeCommand(t, &mockHttpClient{}, []string{"init", app, sampleAppName}, []string{})
+	standardOut := executeCommand(t, &mockHttpClient{}, []string{"clone", sampleAppName, app}, []string{})
 	defer os.RemoveAll(app)
 	assert.Equal(t, "Created "+app+"\n", standardOut)
 	assert.True(t, util.PathExists(filepath.Join(app, "README.md")))

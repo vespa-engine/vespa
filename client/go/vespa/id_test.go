@@ -6,14 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIdToUrlPath(t *testing.T) {
-	assertIdToUrlPath("ns/type/docid/local", "id:ns:type::local", t)
-	assertIdToUrlPath("ns/type/number/123/docid/local", "id:ns:type:n=123:local", t)
-	assertIdToUrlPath("ns/type/group/mygroup/docid/local", "id:ns:type:g=mygroup:local", t)
+func TestIdToURLPath(t *testing.T) {
+	assertIdToURLPath("ns/type/docid/local", "id:ns:type::local", t)
+	assertIdToURLPath("ns/type/number/123/docid/local", "id:ns:type:n=123:local", t)
+	assertIdToURLPath("ns/type/group/mygroup/docid/local", "id:ns:type:g=mygroup:local", t)
 }
 
-func assertIdToUrlPath(expectedPath string, id string, t *testing.T) {
-	path, err := IdToUrlPath(id)
+func assertIdToURLPath(expectedPath string, id string, t *testing.T) {
+	path, err := IdToURLPath(id)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedPath, path)
 }
