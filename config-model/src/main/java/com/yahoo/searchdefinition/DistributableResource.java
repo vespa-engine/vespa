@@ -38,7 +38,7 @@ public class DistributableResource {
         Objects.requireNonNull(blob, "Blob cannot be null");
         this.name = name;
         this.blob = blob;
-        path = name;
+        path = name + ".lz4";
         pathType = PathType.BLOB;
     }
 

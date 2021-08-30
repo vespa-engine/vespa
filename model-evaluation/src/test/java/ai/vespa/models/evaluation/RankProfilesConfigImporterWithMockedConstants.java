@@ -10,7 +10,6 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
-import com.yahoo.text.Utf8;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -44,7 +43,7 @@ public class RankProfilesConfigImporterWithMockedConstants extends RankProfilesC
     @Override
     protected RankingExpression readExpressionFromFile(String name, FileReference fileReference) throws ParseException {
         try {
-            return new RankingExpression(name, Utf8.toString(IOUtils.readFileBytes(constantsPath.append(fileReference.value()).toFile())));
+            return new RankingExpression(name, readExpressionFromFile(constantsPath.append(fileReference.value()).toFile()));
         } catch (IOException e) {
             throw new IllegalArgumentException("Missing expression file '" + fileReference.value() + "' for expression '" + name + "'.", e);
         }

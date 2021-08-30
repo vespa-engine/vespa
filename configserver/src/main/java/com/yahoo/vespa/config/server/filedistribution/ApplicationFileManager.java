@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
+import net.jpountz.lz4.LZ4FrameOutputStream;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -70,7 +71,13 @@ public class ApplicationFileManager implements AddFileInterface {
             file = new File(path.toFile(), relativePath);
             Files.createDirectories(file.getParentFile().toPath());
             fos = new FileOutputStream(file);
-            fos.write(blob.array(), blob.arrayOffset(), blob.remaining());
+            if (relativePath.endsWith(".lz4")) {
+                LZ4FrameOutputStream lz4 = new LZ4FrameOutputStream(fos);
+                lz4.write(blob.array(), blob.arrayOffset(), blob.remaining());
+                lz4.close();
+            } else {
+                fos.write(blob.array(), blob.arrayOffset(), blob.remaining());
+            }
             return file;
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed creating temp file", e);
