@@ -56,7 +56,7 @@ func assertDocumentPost(arguments []string, documentId string, jsonFile string, 
 		documentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
-	expectedPath, _ := vespa.IdToUrlPath(documentId)
+	expectedPath, _ := vespa.IdToURLPath(documentId)
 	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
 	assert.Equal(t, "POST", client.lastRequest.Method)

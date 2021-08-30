@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func IdToUrlPath(documentId string) (string, error) {
+func IdToURLPath(documentId string) (string, error) {
 	parts := strings.Split(documentId, ":")
 	formatAdvice := "Id should be on the form id:<namespace>:<document-type>:<attribute>?:<local-id-string>"
 	if len(parts) < 5 {

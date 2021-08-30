@@ -90,7 +90,7 @@ func post(documentId string, jsonFile string) {
 		}
 	}
 
-	documentPath, documentPathError := vespa.IdToUrlPath(documentId)
+	documentPath, documentPathError := vespa.IdToURLPath(documentId)
 	if documentPathError != nil {
 		log.Print("Invalid document id '", color.Red(documentId), "': ", documentPathError)
 		return
