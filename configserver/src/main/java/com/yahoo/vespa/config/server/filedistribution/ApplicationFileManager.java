@@ -40,7 +40,7 @@ public class ApplicationFileManager implements AddFileInterface {
 
     @Override
     public FileReference addUri(String uri, String relativePath) {
-        File file = download(uri);
+        File file = download(uri, relativePath);
         try {
             return addFile(file);
         } catch (IOException e) {
@@ -52,7 +52,7 @@ public class ApplicationFileManager implements AddFileInterface {
 
     @Override
     public FileReference addBlob(ByteBuffer blob, String relativePath) {
-        File file = writeBlob(blob);
+        File file = writeBlob(blob, relativePath);
         try {
             return addFile(file);
         } catch (IOException e) {
@@ -62,12 +62,13 @@ public class ApplicationFileManager implements AddFileInterface {
         }
     }
 
-    private File writeBlob(ByteBuffer blob) {
+    private File writeBlob(ByteBuffer blob, String relativePath) {
         FileOutputStream fos = null;
         File file = null;
         try {
             Path path = Files.createTempDirectory("");
-            file = new File(path.toFile(), "blob");
+            file = new File(path.toFile(), relativePath);
+            Files.createDirectories(file.getParentFile().toPath());
             fos = new FileOutputStream(file);
             fos.write(blob.array(), blob.arrayOffset(), blob.remaining());
             return file;
@@ -84,13 +85,14 @@ public class ApplicationFileManager implements AddFileInterface {
         }
     }
 
-    private File download(String uri) {
+    private File download(String uri, String relativePath) {
         File file = null;
         FileOutputStream fos = null;
         ReadableByteChannel rbc = null;
         try {
             Path path = Files.createTempDirectory("");
-            file = new File(path.toFile(), "uri");
+            file = new File(path.toFile(), relativePath);
+            Files.createDirectories(file.getParentFile().toPath());
             URL website = new URL(uri);
             rbc = Channels.newChannel(website.openStream());
             fos = new FileOutputStream(file);
