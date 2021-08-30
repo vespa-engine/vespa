@@ -17,8 +17,10 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import net.jpountz.lz4.LZ4FrameInputStream;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
@@ -207,10 +209,16 @@ public class RankProfilesConfigImporter {
         return expressions;
     }
 
+    protected final String readExpressionFromFile(File file) throws IOException {
+        return (file.getName().endsWith(".lz4"))
+            ? Utf8.toString(IOUtils.readBytes(new LZ4FrameInputStream(new FileInputStream(file)), 65536))
+            : Utf8.toString(IOUtils.readFileBytes(file));
+    }
+
     protected RankingExpression readExpressionFromFile(String name, FileReference fileReference) throws ParseException {
         try {
             File file = fileAcquirer.waitFor(fileReference, 7, TimeUnit.DAYS);
-            return new RankingExpression(name, Utf8.toString(IOUtils.readFileBytes(file)));
+            return new RankingExpression(name, readExpressionFromFile(file));
         }
         catch (InterruptedException e) {
             throw new IllegalStateException("Gave up waiting for expression " + name);
@@ -245,8 +253,8 @@ public class RankProfilesConfigImporter {
         private static final Pattern valuePattern = Pattern.compile("constant\\(([a-zA-Z0-9_.]+)\\)\\.value");
         private static final Pattern  typePattern = Pattern.compile("constant\\(([a-zA-Z0-9_.]+)\\)\\.type");
 
-        private Map<String, TensorType> types = new HashMap<>();
-        private Map<String, String> values = new HashMap<>();
+        private final Map<String, TensorType> types = new HashMap<>();
+        private final Map<String, String> values = new HashMap<>();
 
         void addIfSmallConstantInfo(String key, String value) {
             tryValue(key, value);

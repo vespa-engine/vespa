@@ -33,16 +33,16 @@ final class BufferedOutput {
 
     public int position() { return pos; }
 
-    final void put(byte b) {
+    void put(byte b) {
         reserve(1);
         buf[pos++] = b;
     }
 
-    final void absolutePut(int position, byte b) {
+    void absolutePut(int position, byte b) {
         buf[position] = b;
     }
 
-    final void put(byte[] bytes) {
+    void put(byte[] bytes) {
         reserve(bytes.length);
         for (byte b : bytes) {
             buf[pos++] = b;

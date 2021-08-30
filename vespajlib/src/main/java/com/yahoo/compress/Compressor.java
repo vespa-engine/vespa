@@ -82,22 +82,25 @@ public class Compressor {
      * @throws IllegalArgumentException if the compression type is not supported
      */
     public Compression compress(CompressionType requestedCompression, byte[] data, Optional<Integer> uncompressedSize) {
+        return compress(requestedCompression, data, 0, uncompressedSize.orElse(data.length));
+    }
+    public Compression compress(CompressionType requestedCompression, byte[] data, int offset, int len) {
         switch (requestedCompression) {
             case NONE:
-                data = uncompressedSize.isPresent() ? Arrays.copyOf(data, uncompressedSize.get()) : data;
+                if ((offset != 0) || (len != data.length)) {
+                    data = Arrays.copyOfRange(data, offset, offset + len);
+                }
                 return new Compression(CompressionType.NONE, data.length, data);
             case LZ4:
-                int dataSize = uncompressedSize.isPresent() ? uncompressedSize.get() : data.length;
-                if (dataSize < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
-                byte[] compressedData = getCompressor().compress(data, 0, dataSize);
-                if (compressedData.length + 8 >= dataSize * compressionThresholdFactor)
-                    return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
-                return new Compression(CompressionType.LZ4, dataSize, compressedData);
+                if (len < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
+                byte[] compressedData = getCompressor().compress(data, offset, len);
+                if (compressedData.length + 8 >= len * compressionThresholdFactor)
+                    return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
+                return new Compression(CompressionType.LZ4, len, compressedData);
             case ZSTD:
-                int dataLength = uncompressedSize.orElse(data.length);
-                if (dataLength < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataLength, data);
-                byte[] compressed = zstdCompressor.compress(data, 0, dataLength);
-                return new Compression(CompressionType.ZSTD, dataLength, compressed);
+                if (len < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
+                byte[] compressed = zstdCompressor.compress(data, offset, len);
+                return new Compression(CompressionType.ZSTD, len, compressed);
             default:
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
