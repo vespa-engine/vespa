@@ -89,7 +89,9 @@ public class Compressor {
             case NONE:
                 return compact(CompressionType.NONE, data, offset, len);
             case LZ4:
-                if (len < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
+                if (len < compressMinSizeBytes) {
+                    return compact(CompressionType.INCOMPRESSIBLE, data, offset, len);
+                }
                 byte[] compressedData = getCompressor().compress(data, offset, len);
                 if (compressedData.length + 8 >= len * compressionThresholdFactor) {
                     return compact(CompressionType.INCOMPRESSIBLE, data, offset, len);
