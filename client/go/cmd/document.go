@@ -17,6 +17,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/vespa"
 )
 
 func init() {
@@ -89,7 +90,17 @@ func post(documentId string, jsonFile string) {
 		}
 	}
 
-	url, _ := url.Parse(documentTarget() + "/document/v1/" + documentId)
+	documentPath, documentPathError := vespa.IdToUrlPath(documentId)
+	if documentPathError != nil {
+		log.Print("Invalid document id '", color.Red(documentId), "': ", documentPathError)
+		return
+	}
+
+	url, urlParseError := url.Parse(documentTarget() + "/document/v1/" + documentPath)
+	if urlParseError != nil {
+		log.Print("Invalid request path: '", color.Red(documentTarget()+"/document/v1/"+documentPath), "': ", urlParseError)
+		return
+	}
 
 	request := &http.Request{
 		URL:    url,
@@ -101,6 +112,7 @@ func post(documentId string, jsonFile string) {
 	response, err := util.HttpDo(request, time.Second*60, serviceDescription)
 	if response == nil {
 		log.Print("Request failed: ", color.Red(err))
+		return
 	}
 
 	defer response.Body.Close()
