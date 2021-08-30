@@ -140,9 +140,14 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
     private String baseUrl(HttpRequest request) {
        URI uri = request.getUri();
        StringBuilder sb = new StringBuilder();
-       sb.append(uri.getScheme()).append("://").append(uri.getHost());
-       if (uri.getPort() >= 0) {
-           sb.append(":").append(uri.getPort());
+       sb.append(uri.getScheme()).append("://");
+       if (request.getHeader("Host") != null) {
+           sb.append(request.getHeader("Host"));
+       } else {
+           sb.append(uri.getHost());
+           if (uri.getPort() >= 0) {
+               sb.append(":").append(uri.getPort());
+           }
        }
        sb.append("/").append(API_ROOT).append("/").append(VERSION_V1).append("/");
        return sb.toString();
