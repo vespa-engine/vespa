@@ -1,9 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
 import java.util.logging.Level;
+
 import com.yahoo.text.Utf8;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
@@ -30,7 +31,7 @@ public class FileDirectory  {
         try {
             ensureRootExist();
         } catch (IllegalArgumentException e) {
-            log.log(Level.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.toString());
+            log.log(Level.WARNING, "Failed creating directory in constructor, will retry on demand : " + e.getMessage());
         }
     }
 
@@ -59,14 +60,14 @@ public class FileDirectory  {
         ensureRootExist();
         File dir = new File(getPath(reference));
         if (!dir.exists()) {
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + "' does not exist.");
+            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + "' does not exist.");
         }
         if (!dir.isDirectory()) {
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + "' is not a directory.");
+            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + "' is not a directory.");
         }
         File [] files = dir.listFiles(new Filter());
         if (files == null || files.length == 0) {
-            throw new IllegalArgumentException("File reference '" + reference.toString() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain any files");
+            throw new IllegalArgumentException("File reference '" + reference.value() + "' with absolute path '" + dir.getAbsolutePath() + " does not contain any files");
         }
         return files[0];
     }
