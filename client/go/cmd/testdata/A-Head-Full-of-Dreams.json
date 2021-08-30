@@ -1,4 +1,5 @@
 {
+    "put": "id:mynamespace:music::a-head-full-of-dreams",
     "fields": {
         "album": "A Head Full of Dreams",
         "artist": "Coldplay",

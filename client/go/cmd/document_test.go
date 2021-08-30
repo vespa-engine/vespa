@@ -15,30 +15,25 @@ import (
 )
 
 func TestDocumentPostWithIdArg(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams.json"},
-		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams.json", t)
+	assertDocumentPost([]string{"document", "post", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json", t)
 }
 
 func TestDocumentPostWithIdInDocument(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
-		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
 func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
-	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
-		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
-}
-
-func TestDocumentPostWithIdAsPutInDocument(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Put.json"},
-		"id:mynamespace:music::head", "testdata/A-Head-Full-of-Dreams-With-Put.json", t)
+	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
 func TestDocumentIdNotSpecified(t *testing.T) {
-	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"}
+	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"No document id given neither as argument or an 'id' key in the json file\n",
+		"No document id given neither as argument or as a 'put' key in the json file\n",
 		executeCommand(t, client, arguments, []string{}))
 }
 
@@ -79,7 +74,7 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	assert.Equal(t,
 		"Invalid document (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
-			"id:mynamespace:music::head",
+			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }
 
@@ -88,6 +83,6 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	assert.Equal(t,
 		"Error from container (document api) at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
-			"id:mynamespace:music::head",
+			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }

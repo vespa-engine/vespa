@@ -80,12 +80,10 @@ func post(documentId string, jsonFile string) {
 	if documentId == "" {
 		var doc map[string]interface{}
 		json.Unmarshal(documentData, &doc)
-		if doc["id"] != nil {
-			documentId = doc["id"].(string)
-		} else if doc["put"] != nil {
+		if doc["put"] != nil {
 			documentId = doc["put"].(string) // document feeder format
 		} else {
-			log.Print("No document id given neither as argument or an 'id' key in the json file")
+			log.Print("No document id given neither as argument or as a 'put' key in the json file")
 			return
 		}
 	}
