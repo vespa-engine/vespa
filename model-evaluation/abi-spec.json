@@ -86,6 +86,7 @@
       "public void <init>(com.yahoo.filedistribution.fileacquirer.FileAcquirer)",
       "public java.util.Map importFrom(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.RankingExpressionsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig)",
       "public java.util.Map importFrom(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig)",
+      "protected final java.lang.String readExpressionFromFile(java.io.File)",
       "protected com.yahoo.searchlib.rankingexpression.RankingExpression readExpressionFromFile(java.lang.String, com.yahoo.config.FileReference)",
       "protected com.yahoo.tensor.Tensor readTensorFromFile(java.lang.String, com.yahoo.tensor.TensorType, com.yahoo.config.FileReference)"
     ],
