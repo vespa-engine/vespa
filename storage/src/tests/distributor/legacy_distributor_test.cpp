@@ -1187,6 +1187,7 @@ void LegacyDistributorTest::set_up_and_start_get_op_with_stale_reads_enabled(boo
     _distributor->onDown(make_dummy_get_command_for_bucket_1());
 }
 
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, gets_are_started_outside_main_distributor_logic_if_stale_reads_enabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     ASSERT_THAT(_sender.commands(), SizeIs(1));
@@ -1199,6 +1200,7 @@ TEST_F(LegacyDistributorTest, gets_are_started_outside_main_distributor_logic_if
     EXPECT_THAT(_sender.replies(), SizeIs(1));
 }
 
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, gets_are_not_started_outside_main_distributor_logic_if_stale_reads_disabled) {
     set_up_and_start_get_op_with_stale_reads_enabled(false);
     // Get has been placed into distributor queue, so no external messages are produced.
@@ -1206,6 +1208,7 @@ TEST_F(LegacyDistributorTest, gets_are_not_started_outside_main_distributor_logi
     EXPECT_THAT(_sender.replies(), SizeIs(0));
 }
 
+// Migrated to DistributorStripeTest
 // There's no need or desire to track "lockfree" Gets in the main pending message tracker,
 // as we only have to track mutations to inhibit maintenance ops safely. Furthermore,
 // the message tracker is a multi-index and therefore has some runtime cost.
@@ -1216,6 +1219,7 @@ TEST_F(LegacyDistributorTest, gets_started_outside_main_thread_are_not_tracked_b
             0, bucket, api::MessageType::GET_ID));
 }
 
+// Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, closing_aborts_gets_started_outside_main_distributor_thread) {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     _distributor->close();

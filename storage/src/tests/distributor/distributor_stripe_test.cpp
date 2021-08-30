@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
@@ -181,6 +182,8 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     void configureMaxClusterClockSkew(int seconds);
     void configure_mutation_sequencing(bool enabled);
     void configure_merge_busy_inhibit_duration(int seconds);
+
+    void set_up_and_start_get_op_with_stale_reads_enabled(bool enabled);
 
 };
 
@@ -824,6 +827,68 @@ TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded)
     configure_stripe(builder);
 
     EXPECT_EQ(getConfig().getMinimalBucketSplit(), 8);
+}
+
+namespace {
+
+auto make_dummy_get_command_for_bucket_1() {
+    return std::make_shared<api::GetCommand>(
+            makeDocumentBucket(document::BucketId(0)),
+            document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+            document::AllFields::NAME);
+}
+
+}
+
+void
+DistributorStripeTest::set_up_and_start_get_op_with_stale_reads_enabled(bool enabled)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+    configure_stale_reads_enabled(enabled);
+
+    document::BucketId bucket(16, 1);
+    addNodesToBucketDB(bucket, "0=1/1/1/t");
+    _stripe->handle_or_enqueue_message(make_dummy_get_command_for_bucket_1());
+}
+
+TEST_F(DistributorStripeTest, gets_are_started_outside_main_distributor_logic_if_stale_reads_enabled)
+{
+    set_up_and_start_get_op_with_stale_reads_enabled(true);
+    ASSERT_THAT(_sender.commands(), SizeIs(1));
+    EXPECT_THAT(_sender.replies(), SizeIs(0));
+
+    // Reply is routed to the correct owner
+    auto reply = std::shared_ptr<api::StorageReply>(_sender.command(0)->makeReply());
+    _stripe->handle_or_enqueue_message(reply);
+    ASSERT_THAT(_sender.commands(), SizeIs(1));
+    EXPECT_THAT(_sender.replies(), SizeIs(1));
+}
+
+TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_distributor_logic_if_stale_reads_disabled)
+{
+    set_up_and_start_get_op_with_stale_reads_enabled(false);
+    // Get has been placed into distributor queue, so no external messages are produced.
+    EXPECT_THAT(_sender.commands(), SizeIs(0));
+    EXPECT_THAT(_sender.replies(), SizeIs(0));
+}
+
+// There's no need or desire to track "lockfree" Gets in the main pending message tracker,
+// as we only have to track mutations to inhibit maintenance ops safely. Furthermore,
+// the message tracker is a multi-index and therefore has some runtime cost.
+TEST_F(DistributorStripeTest, gets_started_outside_main_thread_are_not_tracked_by_main_pending_message_tracker)
+{
+    set_up_and_start_get_op_with_stale_reads_enabled(true);
+    Bucket bucket(FixedBucketSpaces::default_space(), BucketId(16, 1));
+    EXPECT_FALSE(pending_message_tracker().hasPendingMessage(
+            0, bucket, api::MessageType::GET_ID));
+}
+
+TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_main_distributor_thread)
+{
+    set_up_and_start_get_op_with_stale_reads_enabled(true);
+    _stripe->flush_and_close();
+    ASSERT_EQ(1, _sender.replies().size());
+    EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
 }
 
 }
