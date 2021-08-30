@@ -19,17 +19,17 @@ final class BufferedInput {
         position = end;
     }
 
-    public BufferedInput(byte[] bytes) {
+    BufferedInput(byte[] bytes) {
         this(bytes, 0, bytes.length);
     }
 
-    public BufferedInput(byte[] bytes, int offset, int length) {
+    BufferedInput(byte[] bytes, int offset, int length) {
         this.source = bytes;
         this.start = offset;
         position = offset;
         this.end = offset + length;
     }
-    public final byte getByte() {
+    byte getByte() {
         if (position == end) {
             fail("underflow");
             return 0;
@@ -37,31 +37,31 @@ final class BufferedInput {
         return source[position++];
     }
 
-    public boolean failed() {
+    boolean failed() {
         return failReason != null;
     }
 
-    public boolean eof() {
+    boolean eof() {
         return this.position == this.end;
     }
 
-    public String getErrorMessage() {
+    String getErrorMessage() {
         return failReason;
     }
 
-    public int getConsumedSize() {
+    int getConsumedSize() {
         return failed() ? 0 : position - start;
     }
 
-    public byte[] getOffending() {
+    byte[] getOffending() {
         byte[] ret = new byte[failPos-start];
         System.arraycopy(source, start, ret, 0, failPos-start);
         return ret;
     }
 
-    public final byte [] getBacking() { return source; }
-    public final int getPosition() { return position; }
-    public final void skip(int size) {
+    byte [] getBacking() { return source; }
+    int getPosition() { return position; }
+    void skip(int size) {
         if (position + size > end) {
             fail("underflow");
         }  else {
@@ -69,7 +69,7 @@ final class BufferedInput {
         }
     }
 
-    public final byte[] getBytes(int size) {
+    byte[] getBytes(int size) {
         if (position + size > end) {
             fail("underflow");
             return new byte[0];
