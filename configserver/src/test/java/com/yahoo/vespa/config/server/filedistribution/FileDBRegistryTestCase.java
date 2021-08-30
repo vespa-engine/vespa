@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -26,8 +26,9 @@ public class FileDBRegistryTestCase {
     private static final String FOO_FILE = "files/foo.json";
     private static final String NO_FOO_FILE = "files/no_foo.json";
     private static final String BLOB_NAME = "myblob.name";
-    private static final FileReference BLOB_REF = new FileReference("12f292a25163dd9");
+    private static final FileReference BLOB_REF = new FileReference("2e49b445ca461d35");
     private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
+
     @Test
     public void importAndExport() throws IOException {
         TemporaryFolder tmpDir = new TemporaryFolder();
