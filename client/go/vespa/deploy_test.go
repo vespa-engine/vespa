@@ -8,7 +8,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFindApplicationPackage(t *testing.T) {
+func TestApplicationFromString(t *testing.T) {
+	app, err := ApplicationFromString("t1.a1.i1")
+	assert.Nil(t, err)
+	assert.Equal(t, ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}, app)
+	_, err = ApplicationFromString("foo")
+	assert.NotNil(t, err)
+}
+
+func TestZoneFromString(t *testing.T) {
+	zone, err := ZoneFromString("dev.us-north-1")
+	assert.Nil(t, err)
+	assert.Equal(t, ZoneID{Environment: "dev", Region: "us-north-1"}, zone)
+	_, err = ZoneFromString("foo")
+	assert.NotNil(t, err)
+}
+
+func TestApplicationPackageFrom(t *testing.T) {
 	dir := t.TempDir()
 	var tests = []struct {
 		in   string
@@ -22,13 +38,13 @@ func TestFindApplicationPackage(t *testing.T) {
 
 	zipFile := filepath.Join(dir, "application.zip")
 	writeFile(t, zipFile)
-	pkg, err := FindApplicationPackage(zipFile)
+	pkg, err := ApplicationPackageFrom(zipFile)
 	assert.Nil(t, err)
 	assert.Equal(t, zipFile, pkg.Path)
 
 	for i, tt := range tests {
 		writeFile(t, tt.in)
-		pkg, err := FindApplicationPackage(dir)
+		pkg, err := ApplicationPackageFrom(dir)
 		if tt.fail {
 			assert.NotNil(t, err)
 		} else if pkg.Path != tt.out {

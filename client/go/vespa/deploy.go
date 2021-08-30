@@ -20,12 +20,72 @@ import (
 	"github.com/vespa-engine/vespa/util"
 )
 
+type ApplicationID struct {
+	Tenant      string
+	Application string
+	Instance    string
+}
+
+type ZoneID struct {
+	Environment string
+	Region      string
+}
+
+type Deployment struct {
+	ApplicationSource string
+	TargetType        string
+	TargetURL         string
+	Application       ApplicationID
+	Zone              ZoneID
+	KeyPair           PemKeyPair
+	APIKey            []byte
+}
+
 type ApplicationPackage struct {
 	Path string
 }
 
+func (a ApplicationID) String() string {
+	return fmt.Sprintf("%s.%s.%s", a.Tenant, a.Application, a.Instance)
+}
+
+func (d Deployment) String() string {
+	return fmt.Sprintf("deployment of %s to %s target", d.Application, d.TargetType)
+}
+
+func (d *Deployment) IsCloud() bool { return d.TargetType == "cloud" }
+
+func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
+
+func (ap *ApplicationPackage) HasCertificate() bool {
+	if ap.IsZip() {
+		return true // TODO: Consider looking inside zip to verify
+	}
+	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
+}
+
+func (ap *ApplicationPackage) zipReader() (io.ReadCloser, error) {
+	zipFile := ap.Path
+	if !ap.IsZip() {
+		tempZip, error := ioutil.TempFile("", "application.zip")
+		if error != nil {
+			return nil, fmt.Errorf("Could not create a temporary zip file for the application package: %w", error)
+		}
+		if err := zipDir(ap.Path, tempZip.Name()); err != nil {
+			return nil, err
+		}
+		defer os.Remove(tempZip.Name())
+		zipFile = tempZip.Name()
+	}
+	r, err := os.Open(zipFile)
+	if err != nil {
+		return nil, fmt.Errorf("Could not open application package at %s: %w", ap.Path, err)
+	}
+	return r, nil
+}
+
 // Find an application package zip or directory below an application path
-func FindApplicationPackage(application string) (ApplicationPackage, error) {
+func ApplicationPackageFrom(application string) (ApplicationPackage, error) {
 	if isZip(application) {
 		return ApplicationPackage{Path: application}, nil
 	}
@@ -46,74 +106,118 @@ func FindApplicationPackage(application string) (ApplicationPackage, error) {
 	return ApplicationPackage{}, errors.New("Could not find an application package source in '" + application + "'")
 }
 
-func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
-
-func (ap *ApplicationPackage) HasCertificate() bool {
-	if ap.IsZip() {
-		return true // TODO: Consider looking inside zip to verify
+func ApplicationFromString(s string) (ApplicationID, error) {
+	parts := strings.Split(s, ".")
+	if len(parts) != 3 {
+		return ApplicationID{}, fmt.Errorf("invalid application: %q", s)
 	}
-	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
+	return ApplicationID{Tenant: parts[0], Application: parts[1], Instance: parts[2]}, nil
 }
 
-func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
-
-func Deploy(prepare bool, application string, target string) (string, error) {
-	pkg, noSourceError := FindApplicationPackage(application)
-	if noSourceError != nil {
-		return "", noSourceError
+func ZoneFromString(s string) (ZoneID, error) {
+	parts := strings.Split(s, ".")
+	if len(parts) != 2 {
+		return ZoneID{}, fmt.Errorf("invalid zone: %q", s)
 	}
+	return ZoneID{Environment: parts[0], Region: parts[1]}, nil
+}
 
-	zippedSource := pkg.Path
-	if !pkg.IsZip() { // create zip
-		tempZip, error := ioutil.TempFile("", "application.zip")
-		if error != nil {
-			return "", fmt.Errorf("Could not create a temporary zip file for the application package: %w", error)
+func Prepare(deployment Deployment) (string, error) {
+	if deployment.IsCloud() {
+		return "", fmt.Errorf("%s: prepare is not supported", deployment)
+	}
+	// TODO: This doesn't work. A session ID must be explicitly created and then passed to the prepare call
+	// https://docs.vespa.ai/en/cloudconfig/deploy-rest-api-v2.html
+	u, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/prepare")
+	if err != nil {
+		return "", err
+	}
+	return deploy(u, deployment.ApplicationSource)
+}
+
+func Activate(deployment Deployment) (string, error) {
+	if deployment.IsCloud() {
+		return "", fmt.Errorf("%s: activate is not supported", deployment)
+	}
+	// TODO: This doesn't work. A session ID must be explicitly created and then passed to the activate call
+	// https://docs.vespa.ai/en/cloudconfig/deploy-rest-api-v2.html
+	u, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/activate")
+	if err != nil {
+		return "", err
+	}
+	return deploy(u, deployment.ApplicationSource)
+}
+
+func Deploy(deployment Deployment) (string, error) {
+	path := "/application/v2/tenant/default/prepareandactivate"
+	if deployment.IsCloud() {
+		if deployment.APIKey == nil {
+			return "", fmt.Errorf("%s: missing api key", deployment.String())
 		}
-
-		error = zipDir(pkg.Path, tempZip.Name())
-		if error != nil {
-			return "", error
+		if deployment.KeyPair.Certificate == nil {
+			return "", fmt.Errorf("%s: missing certificate", deployment)
 		}
-		defer os.Remove(tempZip.Name())
-		zippedSource = tempZip.Name()
+		if deployment.KeyPair.PrivateKey == nil {
+			return "", fmt.Errorf("%s: missing private key", deployment)
+		}
+		if deployment.Zone.Environment == "" || deployment.Zone.Region == "" {
+			return "", fmt.Errorf("%s: missing zone", deployment)
+		}
+		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
+			deployment.Application.Tenant,
+			deployment.Application.Application,
+			deployment.Application.Instance,
+			deployment.Zone.Environment,
+			deployment.Zone.Region)
+		return "", fmt.Errorf("cloud deployment is not implemented")
 	}
-
-	zipFileReader, zipFileError := os.Open(zippedSource)
-	if zipFileError != nil {
-		return "", fmt.Errorf("Could not open application package at %s: %w", pkg.Path, zipFileError)
+	u, err := url.Parse(deployment.TargetURL + path)
+	if err != nil {
+		return "", err
 	}
+	return deploy(u, deployment.ApplicationSource)
+}
 
-	var deployUrl *url.URL
-	if prepare {
-		deployUrl, _ = url.Parse(target + "/application/v2/tenant/default/prepare")
-	} else if application == "" {
-		deployUrl, _ = url.Parse(target + "/application/v2/tenant/default/activate")
-	} else {
-		deployUrl, _ = url.Parse(target + "/application/v2/tenant/default/prepareandactivate")
+func deploy(url *url.URL, applicationSource string) (string, error) {
+	pkg, err := ApplicationPackageFrom(applicationSource)
+	if err != nil {
+		return "", err
 	}
+	zipReader, err := pkg.zipReader()
+	if err != nil {
+		return "", err
+	}
+	if err := postApplicationPackage(url, zipReader); err != nil {
+		return "", err
+	}
+	return pkg.Path, nil
+}
 
+func postApplicationPackage(url *url.URL, zipReader io.Reader) error {
 	header := http.Header{}
 	header.Add("Content-Type", "application/zip")
 	request := &http.Request{
-		URL:    deployUrl,
+		URL:    url,
 		Method: "POST",
 		Header: header,
-		Body:   ioutil.NopCloser(zipFileReader),
+		Body:   io.NopCloser(zipReader),
 	}
 	serviceDescription := "Deploy service"
 	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode/100 == 4 {
-		return "", fmt.Errorf("Invalid application package (%s):\n%s", response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("Invalid application package (%s):\n%s", response.Status, util.ReaderToJSON(response.Body))
 	} else if response.StatusCode != 200 {
-		return "", fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	}
-	return pkg.Path, nil
+	return nil
 }
+
+func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
 
 func zipDir(dir string, destination string) error {
 	if filepath.IsAbs(dir) {
