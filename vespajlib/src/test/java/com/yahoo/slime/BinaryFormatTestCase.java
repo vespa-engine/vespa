@@ -1,42 +1,35 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-import com.yahoo.compress.CompressionType;
-import com.yahoo.compress.Compressor;
 import org.junit.Test;
 
-import static com.yahoo.slime.BinaryFormat.decode_double;
-import static com.yahoo.slime.BinaryFormat.decode_meta;
-import static com.yahoo.slime.BinaryFormat.decode_type;
-import static com.yahoo.slime.BinaryFormat.decode_zigzag;
-import static com.yahoo.slime.BinaryFormat.encode_double;
-import static com.yahoo.slime.BinaryFormat.encode_type_and_meta;
-import static com.yahoo.slime.BinaryFormat.encode_zigzag;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.*;
 
+import static com.yahoo.slime.BinaryFormat.*;
 
 public class BinaryFormatTestCase {
 
     static final int TYPE_LIMIT = 8;
     static final int META_LIMIT = 32;
+    static final int MAX_CMPR_SIZE = 10;
     static final int MAX_NUM_SIZE = 8;
 
-    static byte enc_t_and_sz(Type t, int size) {
+    static final byte enc_t_and_sz(Type t, int size) {
         assert size <= 30;
         return encode_type_and_meta(t.ID, size + 1);
     }
-    static byte enc_t_and_m(Type t, int meta) {
+    static final byte enc_t_and_m(Type t, int meta) {
         assert meta <= 31;
         return encode_type_and_meta(t.ID, meta);
     }
 
     void verify_cmpr_long(long value, byte[] expect) {
-        BufferedOutput output = new BufferedOutput();
-        BinaryEncoder bof = new BinaryEncoder(output);
+        BinaryEncoder bof = new BinaryEncoder();
         bof.encode_cmpr_long(value);
-        byte[] actual = output.toArray();
+        byte[] actual = bof.out.toArray();
         assertThat(actual, is(expect));
 
         BinaryDecoder bif = new BinaryDecoder();
@@ -48,10 +41,6 @@ public class BinaryFormatTestCase {
     // was verifyBasic
     void verifyEncoding(Slime slime, byte[] expect) {
         assertThat(BinaryFormat.encode(slime), is(expect));
-        Compressor compressor = new Compressor(CompressionType.LZ4, 3, 2, 0);
-        Compressor.Compression result = BinaryFormat.encode_and_compress(slime, compressor);
-        byte [] decompressed = compressor.decompress(result);
-        assertThat(decompressed, is(expect));
         verifyMultiEncode(expect);
     }
 
@@ -234,11 +223,13 @@ public class BinaryFormatTestCase {
                     expect.put(encode_type_and_meta((int)type, (int)(size +1)));
                 } else {
                     expect.put(type);
-                    BinaryEncoder encoder = new BinaryEncoder(expect);
+                    BinaryEncoder encoder = new BinaryEncoder();
+                    encoder.out = expect;
                     encoder.encode_cmpr_long(size);
                 }
                 {
-                    BinaryEncoder encoder = new BinaryEncoder(actual);
+                    BinaryEncoder encoder = new BinaryEncoder();
+                    encoder.out = actual;
                     encoder.write_type_and_size(type, size);
                 }
                 assertThat(actual.toArray(), is(expect.toArray()));
@@ -282,14 +273,14 @@ public class BinaryFormatTestCase {
                         byte[] expect = expbuf.toArray();
 
                         // test output:
-                        BufferedOutput output = new BufferedOutput();
-                        BinaryEncoder bof = new BinaryEncoder(output);
+                        BinaryEncoder bof = new BinaryEncoder();
+                        bof.out = new BufferedOutput();
                         if (hi != 0) {
                             bof.write_type_and_bytes_be(type, bits);
                         } else {
                             bof.write_type_and_bytes_le(type, bits);
                         }
-                        byte[] actual = output.toArray();
+                        byte[] actual = bof.out.toArray();
                         assertThat(actual, is(expect));
 
                         // test input:
@@ -539,8 +530,9 @@ public class BinaryFormatTestCase {
             2, enc_t_and_sz(Type.DATA, 4), // f
             'd', 'a', 't', 'a'
         };
+        Slime slime = new Slime();
         BinaryDecoder decoder = new BinaryDecoder();
-        Slime slime = decoder.decode(data);
+        slime = decoder.decode(data);
         int consumed = decoder.in.getConsumedSize();
         assertThat(consumed, is(data.length));
         Cursor c = slime.get();

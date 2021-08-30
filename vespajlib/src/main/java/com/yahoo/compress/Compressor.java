@@ -87,38 +87,31 @@ public class Compressor {
     public Compression compress(CompressionType requestedCompression, byte[] data, int offset, int len) {
         switch (requestedCompression) {
             case NONE:
-                return compact(CompressionType.NONE, data, offset, len);
+                if ((offset != 0) || (len != data.length)) {
+                    data = Arrays.copyOfRange(data, offset, offset + len);
+                }
+                return new Compression(CompressionType.NONE, data.length, data);
             case LZ4:
                 if (len < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
                 byte[] compressedData = getCompressor().compress(data, offset, len);
-                if (compressedData.length + 8 >= len * compressionThresholdFactor) {
-                    return compact(CompressionType.INCOMPRESSIBLE, data, offset, len);
-                }
+                if (compressedData.length + 8 >= len * compressionThresholdFactor)
+                    return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
                 return new Compression(CompressionType.LZ4, len, compressedData);
             case ZSTD:
-                if (len < compressMinSizeBytes) {
-                    return compact(CompressionType.INCOMPRESSIBLE, data, offset, len);
-                }
+                if (len < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, len, data);
                 byte[] compressed = zstdCompressor.compress(data, offset, len);
                 return new Compression(CompressionType.ZSTD, len, compressed);
             default:
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
     }
-
-    private Compression compact(CompressionType type, byte[] data, int offset, int len) {
-        if ((offset != 0) || (len != data.length)) {
-            data = Arrays.copyOfRange(data, offset, offset + len);
-        }
-        return new Compression(type, len, data);
-    }
     private LZ4Compressor getCompressor() {
         return level < 7 ? factory.fastCompressor() : factory.highCompressor();
     }
     /** Compresses some data using the requested compression type */
-    public Compression compress(CompressionType requestedCompression, byte[] data) { return compress(requestedCompression, data, 0, data.length); }
+    public Compression compress(CompressionType requestedCompression, byte[] data) { return compress(requestedCompression, data, Optional.empty()); }
     /** Compresses some data using the compression type of this compressor */
-    public Compression compress(byte[] data, int uncompressedSize) { return compress(type, data, 0, uncompressedSize); }
+    public Compression compress(byte[] data, int uncompressedSize) { return compress(type, data, Optional.of(uncompressedSize)); }
     /** Compresses some data using the compression type of this compressor */
     public Compression compress(byte[] data) { return compress(type, data, Optional.empty()); }
 

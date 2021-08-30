@@ -100,7 +100,8 @@ public class RPCSendV2 extends RPCSend {
         root.setLong(TRACELEVEL_F, traceLevel);
         root.setData(BLOB_F, payload);
 
-        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
+        byte[] serializedSlime = BinaryFormat.encode(slime);
+        Compressor.Compression compressionResult = compressor.compress(serializedSlime);
 
         v.add(new Int8Value(compressionResult.type().getCode()));
         v.add(new Int32Value(compressionResult.uncompressedSize()));
@@ -199,7 +200,8 @@ public class RPCSendV2 extends RPCSend {
             }
         }
 
-        Compressor.Compression compressionResult = BinaryFormat.encode_and_compress(slime, compressor);
+        byte[] serializedSlime = BinaryFormat.encode(slime);
+        Compressor.Compression compressionResult = compressor.compress(serializedSlime);
 
         ret.add(new Int8Value(compressionResult.type().getCode()));
         ret.add(new Int32Value(compressionResult.uncompressedSize()));
