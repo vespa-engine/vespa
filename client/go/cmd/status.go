@@ -59,14 +59,15 @@ func status(target string, description string) {
 	path := "/ApplicationStatus"
 	response, err := util.HttpGet(target, path, description)
 	if err != nil {
-		log.Print("Request failed: ", color.Red(err))
+		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
+		log.Print(color.Brown(err))
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
-		log.Print(description, " at ", color.Cyan(target), " is ", color.Yellow("not ready"))
-		log.Print(response.Status)
+		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
+		log.Print(color.Brown(response.Status))
 	} else {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Green("ready"))
 	}

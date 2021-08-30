@@ -63,9 +63,9 @@ var deployCmd = &cobra.Command{
 		}
 		resolvedSrc, err := vespa.Deploy(d)
 		if err == nil {
-			log.Printf("Deployed %s successfully", color.Cyan(resolvedSrc))
+			log.Print(color.Green("Success: "), "Deployed ", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(err)
+			log.Print(color.Red("Error:"), err)
 		}
 	},
 }
@@ -79,7 +79,7 @@ var prepareCmd = &cobra.Command{
 		if err == nil {
 			log.Printf("Prepared %s successfully", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(color.Red(err))
+			log.Print(color.Red("Error: "), err)
 		}
 	},
 }
@@ -91,9 +91,9 @@ var activateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
-			log.Printf("Activated %s successfully", color.Cyan(resolvedSrc))
+			log.Print(color.Green("Success: "), "activated ", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(color.Red(err))
+			log.Print(color.Red("Error: "), err)
 		}
 	},
 }

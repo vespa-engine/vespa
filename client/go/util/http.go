@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -48,7 +47,7 @@ func HttpGet(host string, path string, description string) (*http.Response, erro
 func HttpDo(request *http.Request, timeout time.Duration, description string) (*http.Response, error) {
 	response, err := ActiveHttpClient.Do(request, timeout)
 	if err != nil {
-		return nil, fmt.Errorf("Could not connect to %s at %s: %w", strings.ToLower(description), request.URL.Host, err)
+		return nil, err
 	}
 	return response, nil
 }
