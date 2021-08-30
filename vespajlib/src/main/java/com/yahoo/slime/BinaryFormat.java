@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import com.yahoo.compress.Compressor;
+
 /**
  * Class for serializing Slime data into binary format, or deserializing
  * the binary format into a Slime object.
@@ -40,8 +42,17 @@ public class BinaryFormat {
      * @return a new byte array with just the encoded slime.
      **/
     public static byte[] encode(Slime slime) {
-        BinaryEncoder encoder = new BinaryEncoder();
-        return encoder.encode(slime);
+        return new BinaryEncoder().encode(slime).toArray();
+    }
+
+    /**
+     * Take a Slime object and serialize it into binary format, and compresses it.
+     * @param slime the object which is to be serialized.
+     * @param  compressor the compressor to use.
+     * @return a new byte array with just the encoded and compressed slime.
+     **/
+    public static Compressor.Compression encode_and_compress(Slime slime, Compressor compressor) {
+        return new BinaryEncoder().encode(slime).compress(compressor);
     }
 
     /**
