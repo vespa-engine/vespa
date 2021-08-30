@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// vespa init command
+// vespa clone command
 // author: bratseth
 
 package cmd
@@ -26,26 +26,26 @@ var existingSampleAppsZip string
 
 func init() {
 	existingSampleAppsZip = ""
-	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(cloneCmd)
 }
 
-var initCmd = &cobra.Command{
+var cloneCmd = &cobra.Command{
 	// TODO: "application" and "list" subcommands?
-	Use:   "init",
+	Use:   "clone",
 	Short: "Creates the files and directory structure for a new Vespa application",
-	Long:  `TODO: vespa init applicationName source`,
+	Long:  `TODO: vespa clone source applicationName`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 2 {
-			return errors.New("vespa init requires a project name and source")
+			return errors.New("vespa clone requires an application source and name")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		initApplication(args[0], args[1])
+		cloneApplication(args[0], args[1])
 	},
 }
 
-func initApplication(name string, source string) {
+func cloneApplication(source string, name string) {
 	zipFile := getSampleAppsZip()
 	if zipFile == nil {
 		return
