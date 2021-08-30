@@ -34,7 +34,6 @@ public class DeploymentData {
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepo;
     private final Optional<AthenzDomain> athenzDomain;
-    private final Optional<TenantRoles> tenantRoles;
     private final Quota quota;
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
@@ -44,7 +43,6 @@ public class DeploymentData {
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
-                          Optional<TenantRoles> tenantRoles,
                           Quota quota,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates) {
@@ -56,7 +54,6 @@ public class DeploymentData {
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
-        this.tenantRoles = tenantRoles;
         this.quota = quota;
         this.tenantSecretStores = tenantSecretStores;
         this.operatorCertificates = operatorCertificates;
@@ -92,10 +89,6 @@ public class DeploymentData {
 
     public Optional<AthenzDomain> athenzDomain() {
         return athenzDomain;
-    }
-
-    public Optional<TenantRoles> tenantRoles() {
-        return tenantRoles;
     }
 
     public Quota quota() {

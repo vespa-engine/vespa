@@ -53,8 +53,6 @@ public final class PrepareParams {
     static final String ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME = "endpointCertificateMetadata";
     static final String DOCKER_IMAGE_REPOSITORY = "dockerImageRepository";
     static final String ATHENZ_DOMAIN = "athenzDomain";
-    static final String APPLICATION_HOST_ROLE = "applicationHostRole";
-    static final String APPLICATION_CONTAINER_ROLE = "applicationContainerRole";
     static final String QUOTA_PARAM_NAME = "quota";
     static final String TENANT_SECRET_STORES_PARAM_NAME = "tenantSecretStores";
     static final String FORCE_PARAM_NAME = "force";
@@ -74,7 +72,6 @@ public final class PrepareParams {
     private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
     private final Optional<DockerImage> dockerImageRepository;
     private final Optional<AthenzDomain> athenzDomain;
-    private final Optional<ApplicationRoles> applicationRoles;
     private final Optional<Quota> quota;
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
@@ -84,7 +81,7 @@ public final class PrepareParams {
                           List<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, List<TenantSecretStore> tenantSecretStores,
+                          Optional<Quota> quota, List<TenantSecretStore> tenantSecretStores,
                           boolean force, boolean waitForResourcesInPrepare, List<X509Certificate> operatorCertificates) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
@@ -97,7 +94,6 @@ public final class PrepareParams {
         this.endpointCertificateMetadata = endpointCertificateMetadata;
         this.dockerImageRepository = dockerImageRepository;
         this.athenzDomain = athenzDomain;
-        this.applicationRoles = applicationRoles;
         this.quota = quota;
         this.tenantSecretStores = tenantSecretStores;
         this.force = force;
@@ -265,7 +261,7 @@ public final class PrepareParams {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints,
                                      endpointCertificateMetadata, dockerImageRepository, athenzDomain,
-                                     applicationRoles, quota, tenantSecretStores, force, waitForResourcesInPrepare,
+                                     quota, tenantSecretStores, force, waitForResourcesInPrepare,
                                      operatorCertificates);
         }
     }
@@ -281,7 +277,6 @@ public final class PrepareParams {
                             .endpointCertificateMetadata(request.getProperty(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME))
                             .dockerImageRepository(request.getProperty(DOCKER_IMAGE_REPOSITORY))
                             .athenzDomain(request.getProperty(ATHENZ_DOMAIN))
-                            .applicationRoles(ApplicationRoles.fromString(request.getProperty(APPLICATION_HOST_ROLE), request.getProperty(APPLICATION_CONTAINER_ROLE)))
                             .quota(request.getProperty(QUOTA_PARAM_NAME))
                             .tenantSecretStores(request.getProperty(TENANT_SECRET_STORES_PARAM_NAME))
                             .force(request.getBooleanProperty(FORCE_PARAM_NAME))
@@ -304,7 +299,6 @@ public final class PrepareParams {
                 .endpointCertificateMetadata(deserialize(params.field(ENDPOINT_CERTIFICATE_METADATA_PARAM_NAME), EndpointCertificateMetadataSerializer::fromSlime))
                 .dockerImageRepository(SlimeUtils.optionalString(params.field(DOCKER_IMAGE_REPOSITORY)).orElse(null))
                 .athenzDomain(SlimeUtils.optionalString(params.field(ATHENZ_DOMAIN)).orElse(null))
-                .applicationRoles(ApplicationRoles.fromString(SlimeUtils.optionalString(params.field(APPLICATION_HOST_ROLE)).orElse(null), SlimeUtils.optionalString(params.field(APPLICATION_CONTAINER_ROLE)).orElse(null)))
                 .quota(deserialize(params.field(QUOTA_PARAM_NAME), Quota::fromSlime))
                 .tenantSecretStores(deserialize(params.field(TENANT_SECRET_STORES_PARAM_NAME), TenantSecretStoreSerializer::listFromSlime, List.of()))
                 .force(booleanValue(params, FORCE_PARAM_NAME))
@@ -413,10 +407,6 @@ public final class PrepareParams {
     }
 
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
-
-    public Optional<ApplicationRoles> applicationRoles() {
-        return applicationRoles;
-    }
 
     public Optional<Quota> quota() {
         return quota;

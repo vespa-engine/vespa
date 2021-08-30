@@ -7,7 +7,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
@@ -513,27 +512,6 @@ public class ApplicationRepositoryTest {
         expected.set("deployment.prepareMillis", 0L, expected.createContext(context));
         expected.set("deployment.activateMillis", 0L, expected.createContext(context));
         assertEquals(expected.values, actual.values);
-    }
-
-    @Test
-    public void deletesApplicationRoles() {
-        var tenant = applicationRepository.getTenant(applicationId());
-        var applicationId = applicationId(tenant1);
-        var prepareParams = new PrepareParams.Builder().applicationId(applicationId)
-                .applicationRoles(ApplicationRoles.fromString("hostRole","containerRole")).build();
-        deployApp(testApp, prepareParams);
-        var approlesStore = new ApplicationRolesStore(tenantRepository.getCurator(), tenant.getPath());
-        var appRoles = approlesStore.readApplicationRoles(applicationId);
-
-        // App roles present after deploy
-        assertTrue(appRoles.isPresent());
-        assertEquals("hostRole", appRoles.get().applicationHostRole());
-        assertEquals("containerRole", appRoles.get().applicationContainerRole());
-
-        assertTrue(applicationRepository.delete(applicationId));
-
-        // App roles deleted on application delete
-        assertTrue(approlesStore.readApplicationRoles(applicationId).isEmpty());
     }
 
     @Test

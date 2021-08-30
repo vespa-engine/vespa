@@ -132,7 +132,6 @@ public class SessionPreparer {
                 preparation.writeStateZK();
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
-                preparation.writeApplicationRoles();
             }
             log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() + " : " + applicationId);
             return preparation.result();
@@ -161,8 +160,6 @@ public class SessionPreparer {
         private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
         private final Optional<AthenzDomain> athenzDomain;
-        private final ApplicationRolesStore applicationRolesStore;
-        private final Optional<ApplicationRoles> applicationRoles;
         private final ApplicationPackage applicationPackage;
         private final SessionZooKeeperClient sessionZooKeeperClient;
 
@@ -193,9 +190,6 @@ public class SessionPreparer {
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
             this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
-            this.applicationRolesStore = new ApplicationRolesStore(curator, tenantPath);
-            this.applicationRoles = params.applicationRoles()
-                    .or(() -> applicationRolesStore.readApplicationRoles(applicationId));
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig,
                                                               zone,
@@ -205,7 +199,6 @@ public class SessionPreparer {
                                                               flagSource,
                                                               endpointCertificateSecrets,
                                                               athenzDomain,
-                                                              applicationRoles,
                                                               params.quota(),
                                                               params.tenantSecretStores(),
                                                               secretStore,
@@ -296,11 +289,6 @@ public class SessionPreparer {
         void writeContainerEndpointsZK() {
             containerEndpointsCache.write(applicationId, containerEndpoints);
             checkTimeout("write container endpoints to zookeeper");
-        }
-
-        void writeApplicationRoles() {
-            applicationRoles.ifPresent(roles -> applicationRolesStore.writeApplicationRoles(applicationId, roles));
-            checkTimeout("write application roles to zookeeper");
         }
 
         PrepareResult result() {
