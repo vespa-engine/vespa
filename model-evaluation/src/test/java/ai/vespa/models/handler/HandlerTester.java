@@ -32,9 +32,21 @@ class HandlerTester {
         assertResponse(url, Collections.emptyMap(), expectedCode, expectedResult);
     }
 
+    void assertResponse(String url, int expectedCode, String expectedResult, Map<String, String> headers) {
+        assertResponse(url, Collections.emptyMap(), expectedCode, expectedResult, headers);
+    }
+
     void assertResponse(String url, Map<String, String> properties, int expectedCode, String expectedResult) {
+        assertResponse(url, properties, expectedCode, expectedResult, Collections.emptyMap());
+    }
+
+    void assertResponse(String url, Map<String, String> properties, int expectedCode, String expectedResult, Map<String, String> headers) {
         HttpRequest getRequest = HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET, null, properties);
         HttpRequest postRequest = HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.POST, null, properties);
+        if (headers.size() > 0) {
+            headers.forEach((k,v) -> getRequest.getJDiscRequest().headers().add(k, v));
+            headers.forEach((k,v) -> postRequest.getJDiscRequest().headers().add(k, v));
+        }
         assertResponse(getRequest, expectedCode, expectedResult);
         assertResponse(postRequest, expectedCode, expectedResult);
     }

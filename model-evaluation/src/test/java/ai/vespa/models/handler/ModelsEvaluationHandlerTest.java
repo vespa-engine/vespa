@@ -53,6 +53,15 @@ public class ModelsEvaluationHandlerTest {
     }
 
     @Test
+    public void testListModelsWithDifferentHost() {
+        String url = "http://localhost/model-evaluation/v1";
+        String expected =
+                "{\"mnist_softmax\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost:8088/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost:8088/model-evaluation/v1/lightgbm_regression\"}";
+        handler.assertResponse(url, 200, expected, Map.of("Host", "localhost:8088"));
+    }
+
+
+    @Test
     public void testXgBoostEvaluationWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";  // only has a single function
         String expected = "{\"cells\":[{\"address\":{},\"value\":-4.376589999999999}]}";
