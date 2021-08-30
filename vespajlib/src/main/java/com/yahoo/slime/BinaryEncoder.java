@@ -1,29 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
-import static com.yahoo.slime.BinaryFormat.encode_double;
-import static com.yahoo.slime.BinaryFormat.encode_type_and_meta;
-import static com.yahoo.slime.BinaryFormat.encode_zigzag;
+import static com.yahoo.slime.BinaryFormat.*;
 
 final class BinaryEncoder implements
 ArrayTraverser, ObjectSymbolTraverser
 {
-    private final BufferedOutput out;
+    BufferedOutput out;
 
-    BinaryEncoder() {
-        this(new BufferedOutput());
-    }
-    BinaryEncoder(BufferedOutput output) {
-        out = output;
+    public BinaryEncoder(int capacity) {
+        out = new BufferedOutput(capacity);
     }
 
-    BufferedOutput encode(Slime slime) {
+    public BinaryEncoder() {
+        out = new BufferedOutput();
+    }
+
+    public byte[] encode(Slime slime) {
         out.reset();
         encodeSymbolTable(slime);
         encodeValue(slime.get());
-        return out;
+        return out.toArray();
     }
-
 
     void encode_cmpr_long(long value) {
         byte next = (byte)(value & 0x7f);
