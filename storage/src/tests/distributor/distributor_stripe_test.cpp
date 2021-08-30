@@ -136,6 +136,48 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         return _stripe->handleMessage(msg);
     }
 
+    void configure_stale_reads_enabled(bool enabled) {
+        ConfigBuilder builder;
+        builder.allowStaleReadsDuringClusterStateTransitions = enabled;
+        configure_stripe(builder);
+    }
+
+    void configure_update_fast_path_restart_enabled(bool enabled) {
+        ConfigBuilder builder;
+        builder.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent = enabled;
+        configure_stripe(builder);
+    }
+
+    void configure_merge_operations_disabled(bool disabled) {
+        ConfigBuilder builder;
+        builder.mergeOperationsDisabled = disabled;
+        configure_stripe(builder);
+    }
+
+    void configure_use_weak_internal_read_consistency(bool use_weak) {
+        ConfigBuilder builder;
+        builder.useWeakInternalReadConsistencyForClientGets = use_weak;
+        configure_stripe(builder);
+    }
+
+    void configure_metadata_update_phase_enabled(bool enabled) {
+        ConfigBuilder builder;
+        builder.enableMetadataOnlyFetchPhaseForInconsistentUpdates = enabled;
+        configure_stripe(builder);
+    }
+
+    void configure_prioritize_global_bucket_merges(bool enabled) {
+        ConfigBuilder builder;
+        builder.prioritizeGlobalBucketMerges = enabled;
+        configure_stripe(builder);
+    }
+
+    void configure_max_activation_inhibited_out_of_sync_groups(uint32_t n_groups) {
+        ConfigBuilder builder;
+        builder.maxActivationInhibitedOutOfSyncGroups = n_groups;
+        configure_stripe(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void configure_mutation_sequencing(bool enabled);
     void configure_merge_busy_inhibit_duration(int seconds);
@@ -692,6 +734,96 @@ TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
 
     assert_invalid_stats_for_all_spaces(stats, 0);
     assert_invalid_stats_for_all_spaces(stats, 2);
+}
+
+TEST_F(DistributorStripeTest, stale_reads_config_is_propagated_to_external_operation_handler)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_stale_reads_enabled(true);
+    EXPECT_TRUE(getExternalOperationHandler().concurrent_gets_enabled());
+
+    configure_stale_reads_enabled(false);
+    EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
+}
+
+TEST_F(DistributorStripeTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_update_fast_path_restart_enabled(true);
+    EXPECT_TRUE(getConfig().update_fast_path_restart_enabled());
+
+    configure_update_fast_path_restart_enabled(false);
+    EXPECT_FALSE(getConfig().update_fast_path_restart_enabled());
+}
+
+TEST_F(DistributorStripeTest, merge_disabling_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_merge_operations_disabled(true);
+    EXPECT_TRUE(getConfig().merge_operations_disabled());
+
+    configure_merge_operations_disabled(false);
+    EXPECT_FALSE(getConfig().merge_operations_disabled());
+}
+
+TEST_F(DistributorStripeTest, metadata_update_phase_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_metadata_update_phase_enabled(true);
+    EXPECT_TRUE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
+
+    configure_metadata_update_phase_enabled(false);
+    EXPECT_FALSE(getConfig().enable_metadata_only_fetch_phase_for_inconsistent_updates());
+}
+
+TEST_F(DistributorStripeTest, weak_internal_read_consistency_config_is_propagated_to_internal_configs)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_use_weak_internal_read_consistency(true);
+    EXPECT_TRUE(getConfig().use_weak_internal_read_consistency_for_client_gets());
+    EXPECT_TRUE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
+
+    configure_use_weak_internal_read_consistency(false);
+    EXPECT_FALSE(getConfig().use_weak_internal_read_consistency_for_client_gets());
+    EXPECT_FALSE(getExternalOperationHandler().use_weak_internal_read_consistency_for_gets());
+}
+
+TEST_F(DistributorStripeTest, prioritize_global_bucket_merges_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_prioritize_global_bucket_merges(true);
+    EXPECT_TRUE(getConfig().prioritize_global_bucket_merges());
+
+    configure_prioritize_global_bucket_merges(false);
+    EXPECT_FALSE(getConfig().prioritize_global_bucket_merges());
+}
+
+TEST_F(DistributorStripeTest, max_activation_inhibited_out_of_sync_groups_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_max_activation_inhibited_out_of_sync_groups(3);
+    EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 3);
+
+    configure_max_activation_inhibited_out_of_sync_groups(0);
+    EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 0);
+}
+
+TEST_F(DistributorStripeTest, wanted_split_bit_count_is_lower_bounded)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    ConfigBuilder builder;
+    builder.minsplitcount = 7;
+    configure_stripe(builder);
+
+    EXPECT_EQ(getConfig().getMinimalBucketSplit(), 8);
 }
 
 }
