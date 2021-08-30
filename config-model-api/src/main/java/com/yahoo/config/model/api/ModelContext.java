@@ -118,7 +118,8 @@ public interface ModelContext {
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
-        Optional<ApplicationRoles> applicationRoles();
+        // applicationRoles is no longer in use and should be removed. Replaced by AwsEnvironment. Remove after 7.458
+        default Optional<ApplicationRoles> applicationRoles() { return Optional.empty(); }
 
         default Quota quota() { return Quota.unlimited(); }
 

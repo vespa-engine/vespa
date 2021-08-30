@@ -294,7 +294,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isFirstTimeDeployment;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final Optional<AthenzDomain> athenzDomain;
-        private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
@@ -312,7 +311,6 @@ public class ModelContextImpl implements ModelContext {
                           FlagSource flagSource,
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
@@ -331,7 +329,6 @@ public class ModelContextImpl implements ModelContext {
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             this.athenzDomain = athenzDomain;
-            this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
@@ -388,11 +385,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
-
-        @Override
-        public Optional<ApplicationRoles> applicationRoles() {
-            return applicationRoles;
-        }
 
         @Override public Quota quota() { return quota; }
 
