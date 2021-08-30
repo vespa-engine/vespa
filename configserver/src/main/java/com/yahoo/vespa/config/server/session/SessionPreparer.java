@@ -34,7 +34,6 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -103,10 +102,6 @@ public class SessionPreparer {
         this.flagSource = flagSource;
     }
 
-    public FileDistributionFactory getFileDistributionFactory() {
-        return fileDistributionFactory;
-    }
-
     /**
      * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
      *
@@ -170,7 +165,7 @@ public class SessionPreparer {
         private PrepareResult prepareResult;
 
         private final PreparedModelsBuilder preparedModelsBuilder;
-        private final FileDistributionProvider fileDistributionProvider;
+        private final FileRegistry fileRegistry;
 
         Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
@@ -209,11 +204,11 @@ public class SessionPreparer {
                                                               params.tenantSecretStores(),
                                                               secretStore,
                                                               params.operatorCertificates());
-            this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
+            this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
-                                                                   fileDistributionProvider.getFileRegistry(),
+                                                                   fileRegistry,
                                                                    hostProvisionerProvider,
                                                                    curator,
                                                                    hostValidator,
@@ -234,9 +229,8 @@ public class SessionPreparer {
         }
 
         Optional<FileReference> distributedApplicationPackage() {
-            FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
-            FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
+            FileDistribution fileDistribution = fileDistributionFactory.createFileDistribution();
             log.log(Level.FINE, () -> "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
             properties.configServerSpecs().stream()
                     .filter(spec -> ! spec.getHostName().equals(HostName.getLocalhost()))

@@ -784,9 +784,12 @@ public class SessionRepository {
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        String serverId = configserverConfig.serverId();
-        return new SessionZooKeeperClient(curator, tenantName, sessionId, serverId,
-                fileDistributionFactory.createProvider(getSessionAppDir(sessionId)), maxNodeSize);
+        return new SessionZooKeeperClient(curator,
+                                          tenantName,
+                                          sessionId,
+                                          configserverConfig.serverId(),
+                                          fileDistributionFactory.createFileManager(getSessionAppDir(sessionId)),
+                                          maxNodeSize);
     }
 
     private File getAndValidateExistingSessionAppDir(long sessionId) {

@@ -8,8 +8,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
-import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
@@ -19,7 +17,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.File;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +35,6 @@ public class SessionZooKeeperClientTest {
     private static final TenantName tenantName = TenantName.defaultName();
 
     private Curator curator;
-    private FileDistributionProvider fileDistributionProvider;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -47,7 +43,6 @@ public class SessionZooKeeperClientTest {
     public void setup() {
         curator = new MockCurator();
         curator.create(sessionsPath());
-        fileDistributionProvider = new MockFileDistributionProvider(new File("appdir"), new File("refdir"));
     }
 
     @Test
@@ -176,7 +171,6 @@ public class SessionZooKeeperClientTest {
         SessionZooKeeperClient zkc = new SessionZooKeeperClient(curator,
                                                                 tenantName,
                                                                 sessionId,
-                                                                fileDistributionProvider,
                                                                 ConfigUtils.getCanonicalHostName());
         zkc.createNewSession(Instant.now());
         return zkc;

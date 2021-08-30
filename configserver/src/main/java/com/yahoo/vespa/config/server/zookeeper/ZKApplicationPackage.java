@@ -19,7 +19,8 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
+import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
+import com.yahoo.vespa.config.server.filedistribution.FileDBRegistry;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 
@@ -54,17 +55,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public static final String allocatedHostsNode = "allocatedHosts";
     private final ApplicationMetaData metaData;
 
-    public ZKApplicationPackage(FileDistributionProvider fileDistributionProvider, Curator curator, Path sessionPath, int maxNodeSize) {
+    public ZKApplicationPackage(AddFileInterface fileManager, Curator curator, Path sessionPath, int maxNodeSize) {
         verifyAppPath(curator, sessionPath);
         zkApplication = new ZKApplication(curator, sessionPath, maxNodeSize);
         metaData = readMetaDataFromLiveApp(zkApplication);
-        importFileRegistries(fileDistributionProvider);
+        importFileRegistries(fileManager);
         allocatedHosts = importAllocatedHosts();
     }
 
     // For testing
-    ZKApplicationPackage(FileDistributionProvider fileDistributionProvider, Curator curator, Path sessionPath) {
-        this(fileDistributionProvider, curator, sessionPath, 10 * 1024 * 1024);
+    ZKApplicationPackage(AddFileInterface fileManager, Curator curator, Path sessionPath) {
+        this(fileManager, curator, sessionPath, 10 * 1024 * 1024);
     }
 
     private Optional<AllocatedHosts> importAllocatedHosts() {
@@ -85,17 +86,16 @@ public class ZKApplicationPackage implements ApplicationPackage {
         }
     }
 
-    private void importFileRegistries(FileDistributionProvider fileDistributionProvider) {
+    private void importFileRegistries(AddFileInterface fileManager) {
         List<String> perVersionFileRegistryNodes = zkApplication.getChildren(Path.fromString(fileRegistryNode));
         perVersionFileRegistryNodes
-                .forEach(version ->
-                                 fileRegistryMap.put(Version.fromString(version),
-                                                     importFileRegistry(fileDistributionProvider, Joiner.on("/").join(fileRegistryNode, version))));
+                .forEach(version -> fileRegistryMap.put(Version.fromString(version),
+                                                        importFileRegistry(fileManager, Joiner.on("/").join(fileRegistryNode, version))));
     }
 
-    private FileRegistry importFileRegistry(FileDistributionProvider fileDistributionProvider, String fileRegistryNode) {
+    private FileRegistry importFileRegistry(AddFileInterface fileManager, String fileRegistryNode) {
         try {
-            return fileDistributionProvider.createPregeneratedFileRegistry(zkApplication.getDataReader(Path.fromString(fileRegistryNode)));
+            return FileDBRegistry.create(fileManager, zkApplication.getDataReader(Path.fromString(fileRegistryNode)));
         } catch (Exception e) {
             throw new RuntimeException("Could not determine which files to distribute", e);
         }
