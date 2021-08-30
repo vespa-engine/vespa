@@ -117,28 +117,6 @@ public class PrepareParamsTest {
     }
 
     @Test
-    public void testCorrectParsingWithApplicationRoles() throws IOException {
-        String req = request + "&" +
-                     PrepareParams.APPLICATION_HOST_ROLE + "=hostRole&" +
-                     PrepareParams.APPLICATION_CONTAINER_ROLE + "=containerRole";
-        var prepareParams = createParams(req, TenantName.from("foo"));
-
-        Optional<ApplicationRoles> applicationRoles = prepareParams.applicationRoles();
-        assertTrue(applicationRoles.isPresent());
-        assertEquals("hostRole", applicationRoles.get().applicationHostRole());
-        assertEquals("containerRole", applicationRoles.get().applicationContainerRole());
-
-        // Verify using json object
-        var slime = SlimeUtils.jsonToSlime(json);
-        var cursor = slime.get();
-        cursor.setString(PrepareParams.APPLICATION_HOST_ROLE, "hostRole");
-        cursor.setString(PrepareParams.APPLICATION_CONTAINER_ROLE, "containerRole");
-
-        PrepareParams prepareParamsJson = PrepareParams.fromJson(SlimeUtils.toJsonBytes(slime), TenantName.from("foo"), Duration.ofSeconds(60));
-        assertPrepareParamsEqual(prepareParams, prepareParamsJson);
-    }
-
-    @Test
     public void testQuotaParsing() throws IOException {
         var quotaParam = "{\"clusterSize\": 23, \"budget\": 23232323}";
         var quotaEncoded = URLEncoder.encode(quotaParam, StandardCharsets.UTF_8);
@@ -239,7 +217,6 @@ public class PrepareParamsTest {
         assertEquals(urlParams.endpointCertificateMetadata(), jsonParams.endpointCertificateMetadata());
         assertEquals(urlParams.dockerImageRepository(), jsonParams.dockerImageRepository());
         assertEquals(urlParams.athenzDomain(), jsonParams.athenzDomain());
-        assertEquals(urlParams.applicationRoles(), jsonParams.applicationRoles());
         assertEquals(urlParams.quota(), jsonParams.quota());
         assertEquals(urlParams.tenantSecretStores(), jsonParams.tenantSecretStores());
     }
