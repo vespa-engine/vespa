@@ -37,7 +37,6 @@ import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
-import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -214,7 +213,7 @@ public class SessionPreparer {
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
-                                                                   fileDistributionProvider,
+                                                                   fileDistributionProvider.getFileRegistry(),
                                                                    hostProvisionerProvider,
                                                                    curator,
                                                                    hostValidator,
@@ -367,7 +366,7 @@ public class SessionPreparer {
         public Map<Version, FileRegistry> getFileRegistries() {
             return results.stream()
                     .collect(Collectors.toMap((prepareResult -> prepareResult.version),
-                            (prepareResult -> prepareResult.fileDistributionProvider.getFileRegistry())));
+                            (prepareResult -> prepareResult.fileRegistry)));
         }
 
         /**
