@@ -92,7 +92,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     }
     uint32_t est_hits = _attr_tensor.get_num_docs();
     setEstimate(HitEstimate(est_hits, false));
-    set_want_global_filter(true);
+    set_want_global_filter(nns_index && _approximate);
 }
 
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
