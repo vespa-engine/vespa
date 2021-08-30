@@ -15,22 +15,22 @@ import (
 )
 
 func TestDocumentPostWithIdArg(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
+	assertDocumentPost([]string{"document", "post", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json", t)
 }
 
 func TestDocumentPostWithIdInDocument(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
 func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
-	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams-With-Id.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-With-Id.json", t)
+	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
 func TestDocumentIdNotSpecified(t *testing.T) {
-	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"}
+	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
 		"No document id given neither as argument or as a 'put' key in the json file\n",
