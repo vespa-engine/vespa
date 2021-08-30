@@ -8,6 +8,7 @@
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summarymap.h>
@@ -281,6 +282,10 @@ vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::T
         }
     }
     LOG(info, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
+    if (filePath == "") {
+        throw config::ConfigTimeoutException(fmt("could not get file path from file acquirer for %s (ref=%s)",
+                                                 desc.c_str(), fileref.c_str()));
+    }
     return filePath;
 }
 
