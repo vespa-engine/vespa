@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -86,7 +87,8 @@ public class ContainerTester implements AutoCloseable {
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
                 storageMaintainer, flagSource,
-                Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1));
+                Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1),
+                VespaServiceDumper.DUMMY_INSTANCE);
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 new NodeAgentContextImpl.Builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
