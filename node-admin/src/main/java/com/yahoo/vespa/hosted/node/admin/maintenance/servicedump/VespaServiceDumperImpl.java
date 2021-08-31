@@ -47,7 +47,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         NodeSpec nodeSpec = context.node();
         ServiceDumpReport request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
                 .orElse(null);
-        if (request == null || isNullTimestamp(request.failedAt()) || isNullTimestamp(request.completedAt())) {
+        if (request == null || !isNullTimestamp(request.failedAt()) || !isNullTimestamp(request.completedAt())) {
             context.log(log, Level.FINE, "No service dump requested or dump already completed/failed");
             return;
         }
