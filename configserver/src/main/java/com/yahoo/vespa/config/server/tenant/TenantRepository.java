@@ -115,7 +115,6 @@ public class TenantRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final ReloadListener reloadListener;
-    private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
     private final Curator.DirectoryCache directoryCache;
@@ -181,8 +180,6 @@ public class TenantRepository {
                             ZookeeperServerConfig zookeeperServerConfig) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
-        this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                              new DaemonThreadFactory("bootstrap-tenant-"));
         this.curator = curator;
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
@@ -271,6 +268,8 @@ public class TenantRepository {
     }
 
     private void bootstrapTenants() {
+        ExecutorService bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
+                new DaemonThreadFactory("bootstrap-tenant-"));
         // Keep track of tenants created
         Map<TenantName, Future<?>> futures = new HashMap<>();
         readTenantsFromZooKeeper(curator).forEach(t -> futures.put(t, bootstrapExecutor.submit(() -> bootstrapTenant(t))));
