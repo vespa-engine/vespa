@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_tensor OBJECT
     SOURCES
     angular_distance.cpp
+    bitvector_visited_tracker.cpp
     default_nearest_neighbor_index_factory.cpp
     dense_tensor_attribute.cpp
     dense_tensor_attribute_saver.cpp
@@ -13,6 +14,7 @@ vespa_add_library(searchlib_tensor OBJECT
     euclidean_distance.cpp
     geo_degrees_distance.cpp
     hamming_distance.cpp
+    hash_set_visited_tracker.cpp
     hnsw_graph.cpp
     hnsw_index.cpp
     hnsw_index_loader.cpp
@@ -29,5 +31,6 @@ vespa_add_library(searchlib_tensor OBJECT
     tensor_attribute.cpp
     tensor_deserialize.cpp
     tensor_store.cpp
+    reusable_set_visited_tracker.cpp
     DEPENDS
 )

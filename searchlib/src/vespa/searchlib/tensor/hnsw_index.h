@@ -119,11 +119,17 @@ protected:
 
     double calc_distance(uint32_t lhs_docid, uint32_t rhs_docid) const;
     double calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const;
+    uint32_t estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const search::BitVector* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const;
+    template <class VisitedTracker>
+    void search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
+                             uint32_t level, const search::BitVector *filter,
+                             uint32_t doc_id_limit,
+                             uint32_t estimated_visited_nodes) const;
     void search_layer(const TypedCells& input, uint32_t neighbors_to_find, FurthestPriQ& found_neighbors,
                       uint32_t level, const search::BitVector *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(uint32_t k, TypedCells vector,
@@ -197,6 +203,7 @@ public:
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
     HnswGraph& get_graph() { return _graph; }
+    vespalib::ReusableSetPool& get_visited_set_pool() const noexcept { return _visited_set_pool; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_node_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_store_config();
