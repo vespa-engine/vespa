@@ -38,14 +38,6 @@ public interface Model {
     /** Returns all the config ids available for this model. */
     Set<String> allConfigIds();
 
-    /**
-     * Asks the {@link Model} instance to distribute files using provided filedistribution instance.
-     *
-     * @param fileDistribution instance that can be called to distribute files
-     */
-    // TODO: Remove when Vespa < 7.453 is gone from production
-    default void distributeFiles(FileDistribution fileDistribution) {};
-
     /** The set of files that should be distributed to the hosts in this model. */
     Set<FileReference> fileReferences();
 
