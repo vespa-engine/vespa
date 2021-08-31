@@ -533,6 +533,7 @@ public class TenantRepository {
 
     public void close() {
         directoryCache.close();
+        fileDistributionFactory.close();
         try {
             zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();

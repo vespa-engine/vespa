@@ -17,7 +17,7 @@ import java.io.File;
  * @author Ulf Lilleengen
  */
 @SuppressWarnings("WeakerAccess")
-public class FileDistributionFactory {
+public class FileDistributionFactory implements AutoCloseable {
 
     protected final ConfigserverConfig configserverConfig;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
@@ -41,6 +41,10 @@ public class FileDistributionFactory {
 
     protected File getFileReferencesDir() {
         return new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
+    }
+
+    public void close() {
+        supervisor.transport().shutdown().join();
     }
 
 }
