@@ -31,16 +31,15 @@ public class ModelsEvaluator extends AbstractComponent {
                            RankingExpressionsConfig expressionsConfig,
                            OnnxModelsConfig onnxModelsConfig,
                            FileAcquirer fileAcquirer) {
-        this(new RankProfilesConfigImporter(fileAcquirer)
-                .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
+        this(new RankProfilesConfigImporter(fileAcquirer), config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
-    public ModelsEvaluator(RankProfilesConfig config,
+    public ModelsEvaluator(RankProfilesConfigImporter importer,
+                           RankProfilesConfig config,
                            RankingConstantsConfig constantsConfig,
-                           OnnxModelsConfig onnxModelsConfig,
-                           FileAcquirer fileAcquirer) {
-        this(new RankProfilesConfigImporter(fileAcquirer)
-                .importFrom(config, constantsConfig, new RankingExpressionsConfig.Builder().build(), onnxModelsConfig));
+                           RankingExpressionsConfig expressionsConfig,
+                           OnnxModelsConfig onnxModelsConfig) {
+        this(importer.importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
     }
 
     public ModelsEvaluator(Map<String, Model> models) {

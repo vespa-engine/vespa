@@ -41,17 +41,17 @@ namespace lib {
     class IdealNodeCalculator;
 }
 
-typedef vespa::config::content::core::internal::InternalStorDistributormanagerType DistributorConfig;
-typedef vespa::config::content::core::internal::InternalStorVisitordispatcherType VisitorConfig;
+using DistributorConfig = vespa::config::content::core::internal::InternalStorDistributormanagerType;
+using VisitorConfig = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
 
 struct UniqueTimeCalculator {
-    virtual ~UniqueTimeCalculator() {}
+    virtual ~UniqueTimeCalculator() = default;
     [[nodiscard]] virtual api::Timestamp generate_unique_timestamp() = 0;
 };
 
 struct DistributorManagedComponent
 {
-    virtual ~DistributorManagedComponent() {}
+    virtual ~DistributorManagedComponent() = default;
 
     virtual void setTimeCalculator(UniqueTimeCalculator&) = 0;
     virtual void setDistributorConfig(const DistributorConfig&)= 0;

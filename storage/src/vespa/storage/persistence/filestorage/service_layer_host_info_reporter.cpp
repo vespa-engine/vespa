@@ -18,8 +18,7 @@ namespace {
 
 const vespalib::string memory_label("memory");
 const vespalib::string disk_label("disk");
-const vespalib::string attribute_enum_store_label("attribute-enum-store");
-const vespalib::string attribute_multi_value_label("attribute-multi-value");
+const vespalib::string attribute_address_space_label("attribute-address-space");
 
 void write_usage(vespalib::JsonStream& output, const vespalib::string &label, double value)
 {
@@ -40,18 +39,13 @@ bool want_immediate_report(const spi::ResourceUsage& old_usage, const spi::Resou
 {
     auto disk_usage_diff = fabs(new_usage.get_disk_usage() - old_usage.get_disk_usage());
     auto memory_usage_diff = fabs(new_usage.get_memory_usage() - old_usage.get_memory_usage());
-    auto enum_store_diff = fabs(new_usage.get_attribute_enum_store_usage().get_usage() - old_usage.get_attribute_enum_store_usage().get_usage());
-    auto multivalue_diff = fabs(new_usage.get_attribute_multivalue_usage().get_usage() - old_usage.get_attribute_multivalue_usage().get_usage());
-    bool enum_store_got_valid = !old_usage.get_attribute_enum_store_usage().valid() &&
-            new_usage.get_attribute_enum_store_usage().valid();
-    bool multivalue_got_valid = !old_usage.get_attribute_multivalue_usage().valid() &&
-            new_usage.get_attribute_multivalue_usage().valid();
+    auto address_space_diff = fabs(new_usage.get_attribute_address_space_usage().get_usage() - old_usage.get_attribute_address_space_usage().get_usage());
+    bool address_space_got_valid = !old_usage.get_attribute_address_space_usage().valid() &&
+            new_usage.get_attribute_address_space_usage().valid();
     return ((disk_usage_diff > noise_level) ||
             (memory_usage_diff > noise_level) ||
-            (enum_store_diff > noise_level) ||
-            (multivalue_diff > noise_level) ||
-            enum_store_got_valid ||
-            multivalue_got_valid);
+            (address_space_diff > noise_level) ||
+            address_space_got_valid);
 }
 
 }
@@ -121,8 +115,7 @@ ServiceLayerHostInfoReporter::report(vespalib::JsonStream& output)
         LOG(debug, "report(): usage=%s", to_string(usage).c_str());
         write_usage(output, memory_label, usage.get_memory_usage());
         write_usage(output, disk_label, usage.get_disk_usage());
-        write_attribute_usage(output, attribute_enum_store_label, usage.get_attribute_enum_store_usage());
-        write_attribute_usage(output, attribute_multi_value_label, usage.get_attribute_multivalue_usage());
+        write_attribute_usage(output, attribute_address_space_label, usage.get_attribute_address_space_usage());
     }
     output << End();
     output << End();

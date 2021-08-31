@@ -189,8 +189,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         } else if (pass_params == PassParams::ARRAY) {
             assert(params.size() == 1);
             llvm::Value *param_array = params[0];
-            llvm::Value *addr = builder.CreateGEP(param_array, builder.getInt64(idx));
-            return builder.CreateLoad(addr);
+            llvm::Value *addr = builder.CreateGEP(param_array->getType()->getScalarType()->getPointerElementType(), param_array, builder.getInt64(idx));
+            return builder.CreateLoad(addr->getType()->getPointerElementType(), addr);
         }
         assert(pass_params == PassParams::LAZY);
         assert(params.size() == 2);

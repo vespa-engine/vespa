@@ -42,7 +42,7 @@ public class ServerTestDriver {
         }
 
         MessageBusParams mbusParams = new MessageBusParams().addProtocol(protocol);
-        RPCNetworkParams netParams = new RPCNetworkParams().setSlobrokConfigId(client.slobrokId());
+        RPCNetworkParams netParams = new RPCNetworkParams().setSlobroksConfig(client.slobroksConfig());
         SharedMessageBus mbus = SharedMessageBus.newInstance(mbusParams, netParams);
         ServerSession session = mbus.newDestinationSession(new DestinationSessionParams());
         server = new MbusServer(driver, session);
@@ -128,13 +128,6 @@ public class ServerTestDriver {
     {
         return new ServerTestDriver(RemoteClient.newInstanceWithInternSlobrok(network), true, requestHandler, protocol,
                                     guiceModules);
-    }
-
-    public static ServerTestDriver newInstanceWithExternSlobrok(String slobrokId, RequestHandler requestHandler,
-                                                                boolean network, Module... guiceModules)
-    {
-        return new ServerTestDriver(RemoteClient.newInstanceWithExternSlobrok(slobrokId, network),
-                                    true, requestHandler, new SimpleProtocol(), guiceModules);
     }
 
     public static ServerTestDriver newInactiveInstance(boolean network, Module... guiceModules) {

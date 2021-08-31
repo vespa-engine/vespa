@@ -9,6 +9,7 @@
 #include "compile_tensor_function.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
+#include <vespa/eval/eval/llvm/addr_to_symbol.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <set>
 
@@ -60,18 +61,27 @@ InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
 {
 }
 
+vespalib::string
+InterpretedFunction::Instruction::resolve_symbol() const
+{
+    if (function == nullptr) {
+        return "<inject_param>";
+    }
+    return addr_to_symbol((const void *)function);
+}
+
 InterpretedFunction::Instruction
 InterpretedFunction::Instruction::nop()
 {
     return Instruction(my_nop);
 }
 
-InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)
+InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta)
     : _program(),
       _stash(),
       _factory(factory)
 {
-    _program = compile_tensor_function(factory, function, _stash);
+    _program = compile_tensor_function(factory, function, _stash, meta);
 }
 
 InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types)
@@ -81,7 +91,7 @@ InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, con
 {
     const TensorFunction &plain_fun = make_tensor_function(factory, root, types, _stash);
     const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, _stash);
-    _program = compile_tensor_function(factory, optimized, _stash);
+    _program = compile_tensor_function(factory, optimized, _stash, nullptr);
 }
 
 InterpretedFunction::~InterpretedFunction() = default;

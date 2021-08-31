@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributortestutil.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -12,7 +12,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct BucketStateOperationTest : Test, DistributorTestUtil {
+struct BucketStateOperationTest : Test, DistributorStripeTestUtil {
     void SetUp() override {
         createLinks();
     }

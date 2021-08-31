@@ -3,10 +3,12 @@
 #include "tensor_attribute.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -15,11 +17,12 @@
 using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
+using search::AddressSpaceComponents;
+using search::StateExplorerUtils;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using search::StateExplorerUtils;
 
 namespace search::tensor {
 
@@ -51,6 +54,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(tensorStore),
+      _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0),
       _cached_tensor_store_memory_usage()
@@ -187,6 +191,17 @@ TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
                                               object.setObject("ref_vector").setObject("memory_usage"));
     StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
                                               object.setObject("tensor_store").setObject("memory_usage"));
+}
+
+void
+TensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
+{
+    usage.set(AddressSpaceComponents::tensor_store, _tensorStore.get_address_space_usage());
+    if (!_is_dense) {
+        auto stats = vespalib::SharedStringRepo::stats();
+        usage.set(AddressSpaceComponents::shared_string_repo,
+                  vespalib::AddressSpace(stats.max_part_usage, 0, stats.part_limit()));
+    }
 }
 
 vespalib::eval::Value::UP

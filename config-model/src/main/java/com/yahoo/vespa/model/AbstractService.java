@@ -459,10 +459,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * @param reference file reference (hash)
      */
     public void send(FileReference reference) {
-        Host host = null;
-        if (getHost() != null) // false when running application tests without hosts
-            host = getHost().getHost();
-        getRoot().getFileDistributor().sendFileReference(reference, host);
+        getRoot().fileReferencesRepository().add(reference);
     }
 
     /** The service HTTP port for health status */

@@ -1,5 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
@@ -20,7 +21,7 @@ using namespace search::tensor;
 using namespace vespalib::slime;
 using vespalib::Slime;
 using search::BitVector;
-
+using search::CompactionStrategy;
 
 template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
@@ -42,6 +43,8 @@ public:
         ArrayRef ref(_vectors[docid]);
         return vespalib::eval::TypedCells(ref);
     }
+
+    void clear() { _vectors.clear(); }
 };
 
 struct LevelGenerator : public RandomLevelGenerator {
@@ -111,6 +114,10 @@ public:
     MemoryUsage memory_usage() const {
         return index->memory_usage();
     }
+    MemoryUsage commit_and_update_stat() {
+        commit();
+        return index->update_stat();
+    }
     void expect_entry_point(uint32_t exp_docid, uint32_t exp_level) {
         EXPECT_EQ(exp_docid, index->get_entry_docid());
         EXPECT_EQ(exp_level, index->get_entry_level());
@@ -166,6 +173,8 @@ public:
                 docid, hit.docid, hit.distance, thr);
         }
     }
+
+    FloatVectors& get_vectors() { return vectors; }
 };
 
 
@@ -531,6 +540,113 @@ TEST_F(HnswIndexTest, shrink_called_heuristic)
     index->set_node(9, nb1);
     expect_level_0(1, {2,3,4,8,9});
     EXPECT_TRUE(index->check_link_symmetry());
+}
+
+namespace {
+
+template <class ResultGraph>
+ResultGraph
+make_graph_helper(HnswIndex& index)
+{
+    using LevelArrayRef = HnswGraph::LevelArrayRef;
+    using LinkArrayRef = HnswGraph::LinkArrayRef;
+    auto& graph = index.get_graph();
+    ResultGraph result(graph.size());
+    assert(!graph.get_node_ref(0).valid());
+    for (uint32_t doc_id = 1; doc_id < graph.size(); ++doc_id) {
+        auto& node = result[doc_id];
+        auto node_ref = graph.get_node_ref(doc_id);
+        if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, uint32_t>) {
+            node = node_ref.ref();
+        } else {
+            LevelArrayRef level_array(graph.get_level_array(node_ref));
+            for (uint32_t level = 0; level < level_array.size(); ++level) {
+                if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, std::vector<uint32_t>>) {
+                    node.emplace_back(level_array[level].load_relaxed().ref());
+                } else {
+                    LinkArrayRef link_array(graph.get_link_array(level_array, level));
+                    node.emplace_back(std::vector<uint32_t>(link_array.begin(), link_array.end()));
+                }
+            }
+        }
+    }
+    return result;
+}
+
+using LinkGraph = std::vector<std::vector<std::vector<uint32_t>>>;
+
+LinkGraph
+make_link_graph(HnswIndex& index)
+{
+    return make_graph_helper<LinkGraph>(index);
+}
+
+using LinkArrayRefGraph = std::vector<std::vector<uint32_t>>;
+
+LinkArrayRefGraph
+make_link_array_refs(HnswIndex& index)
+{
+    return make_graph_helper<LinkArrayRefGraph>(index);
+}
+
+using LevelArrayRefGraph = std::vector<uint32_t>;
+
+LevelArrayRefGraph
+make_level_array_refs(HnswIndex& index)
+{
+    return make_graph_helper<LevelArrayRefGraph>(index);
+}
+
+}
+
+TEST_F(HnswIndexTest, hnsw_graph_is_compacted)
+{
+    init(true);
+    get_vectors().clear();
+    uint32_t doc_id = 1;
+    for (uint32_t x = 0; x < 100; ++x) {
+        for (uint32_t y = 0; y < 50; ++y) {
+            get_vectors().set(doc_id, { float(x), float(y) });
+            ++doc_id;
+        }
+    }
+    uint32_t doc_id_end = doc_id;
+    for (doc_id = 1; doc_id < doc_id_end; ++doc_id) {
+        add_document(doc_id);
+    }
+    for (doc_id = 10; doc_id < doc_id_end; ++doc_id) {
+        remove_document(doc_id);
+    }
+    auto mem_1 = commit_and_update_stat();
+    auto link_graph_1 = make_link_graph(*index);
+    auto link_array_refs_1 = make_link_array_refs(*index);
+    auto level_array_refs_1 = make_level_array_refs(*index);
+    // Normal compaction
+    EXPECT_TRUE(index->consider_compact(CompactionStrategy()));
+    auto mem_2 = commit_and_update_stat();
+    EXPECT_LT(mem_2.usedBytes(), mem_1.usedBytes());
+    for (uint32_t i = 0; i < 10; ++i) {
+        mem_1 = mem_2;
+        // Forced compaction to move things around
+        index->compact_link_arrays(true, false);
+        index->compact_level_arrays(true, false);
+        commit();
+        index->update_stat();
+        mem_2 = commit_and_update_stat();
+        EXPECT_LE(mem_2.usedBytes(), mem_1.usedBytes());
+        if (mem_2.usedBytes() == mem_1.usedBytes()) {
+            break;
+        }
+    }
+    auto link_graph_2 = make_link_graph(*index);
+    auto link_array_refs_2 = make_link_array_refs(*index);
+    auto level_array_refs_2 = make_level_array_refs(*index);
+    EXPECT_EQ(link_graph_1, link_graph_2);
+    EXPECT_NE(link_array_refs_1, link_array_refs_2);
+    EXPECT_NE(level_array_refs_1, level_array_refs_2);
+    index->shrink_lid_space(10);
+    auto mem_3 = commit_and_update_stat();
+    EXPECT_LT(mem_3.usedBytes(), mem_2.usedBytes());
 }
 
 TEST(LevelGeneratorTest, gives_various_levels)

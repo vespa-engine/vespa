@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Simon Thoresen Hult
  */
-public final class IntermediateSession implements MessageHandler, ReplyHandler {
+public final class IntermediateSession implements MessageHandler, ReplyHandler, Connectable {
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final String name;
@@ -112,6 +112,11 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler {
         } else {
             replyHandler.handleReply(reply);
         }
+    }
+
+    @Override
+    public void connect() {
+        mbus.connect(name, broadcastName);
     }
 
 }

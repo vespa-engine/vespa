@@ -1,20 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/externaloperationhandler.h>
+#include <vespa/storage/distributor/operationtargetresolverimpl.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/storage/distributor/distributor_bucket_space_repo.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storage/distributor/operationtargetresolverimpl.h>
-#include <vespa/storage/distributor/externaloperationhandler.h>
-#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::BucketId;
@@ -24,7 +24,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct OperationTargetResolverTest : Test, DistributorTestUtil {
+struct OperationTargetResolverTest : Test, DistributorStripeTestUtil {
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const document::DocumentType* _html_type;
     std::unique_ptr<Operation> op;
@@ -135,7 +135,7 @@ OperationTargetResolverTest::getInstances(const BucketId& id,
  * Test basic case with no inconsistencies
  */
 TEST_F(OperationTargetResolverTest, simple) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+    setup_stripe(2, 2, "storage:2 distributor:1");
     addNodesToBucketDB(BucketId(16, 0), "0=0,1=0");
 
     MY_ASSERT_THAT(BucketId(32, 0)).sendsTo(BucketId(16, 0), 1)
@@ -143,7 +143,7 @@ TEST_F(OperationTargetResolverTest, simple) {
 }
 
 TEST_F(OperationTargetResolverTest, multiple_nodes) {
-    setupDistributor(1, 2, "storage:2 distributor:1");
+    setup_stripe(1, 2, "storage:2 distributor:1");
 
     auto &bucketSpaceRepo(operation_context().bucket_space_repo());
     auto &distributorBucketSpace(bucketSpaceRepo.get(makeBucketSpace()));
@@ -161,14 +161,14 @@ TEST_F(OperationTargetResolverTest, multiple_nodes) {
 }
 
 TEST_F(OperationTargetResolverTest, choose_ideal_state_when_many_copies) {
-    setupDistributor(2, 4, "storage:4 distributor:1");
+    setup_stripe(2, 4, "storage:4 distributor:1");
     addNodesToBucketDB(BucketId(16, 0), "0=0,1=0,2=0,3=0"); // ideal nodes: 1, 3
     MY_ASSERT_THAT(BucketId(32, 0)).sendsTo(BucketId(16, 0), 1)
                                    .sendsTo(BucketId(16, 0), 3);
 }
 
 TEST_F(OperationTargetResolverTest, trusted_over_ideal_state) {
-    setupDistributor(2, 4, "storage:4 distributor:1");
+    setup_stripe(2, 4, "storage:4 distributor:1");
     addNodesToBucketDB(BucketId(16, 0), "0=0/0/0/t,1=0,2=0/0/0/t,3=0");
     // ideal nodes: 1, 3
     MY_ASSERT_THAT(BucketId(32, 0)).sendsTo(BucketId(16, 0), 0)
@@ -176,7 +176,7 @@ TEST_F(OperationTargetResolverTest, trusted_over_ideal_state) {
 }
 
 TEST_F(OperationTargetResolverTest, choose_highest_split_bucket) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+    setup_stripe(2, 2, "storage:2 distributor:1");
     // 0, 1 are both in ideal state for both buckets.
     addNodesToBucketDB(BucketId(16, 0), "0=0,1=0");
     addNodesToBucketDB(BucketId(17, 0), "0=0,1=0");
@@ -185,7 +185,7 @@ TEST_F(OperationTargetResolverTest, choose_highest_split_bucket) {
 }
 
 TEST_F(OperationTargetResolverTest, choose_highest_split_bucket_per_node) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+    setup_stripe(2, 2, "storage:2 distributor:1");
     addNodesToBucketDB(BucketId(16, 0), "1=0");
     addNodesToBucketDB(BucketId(17, 0), "0=0");
     MY_ASSERT_THAT(BucketId(32, 0)).sendsTo(BucketId(17, 0), 0)
@@ -193,7 +193,7 @@ TEST_F(OperationTargetResolverTest, choose_highest_split_bucket_per_node) {
 }
 
 TEST_F(OperationTargetResolverTest, choose_highest_split_bucket_with_trusted) {
-    setupDistributor(2, 2, "storage:2 distributor:1");
+    setup_stripe(2, 2, "storage:2 distributor:1");
     // Unfinished split scenario: split done on 0, not on 1.
     // Copy on 1 is only remaining for (16, 0), so always trusted.
     addNodesToBucketDB(BucketId(16, 0), "1=1/2/3/t");
@@ -204,7 +204,7 @@ TEST_F(OperationTargetResolverTest, choose_highest_split_bucket_with_trusted) {
 }
 
 TEST_F(OperationTargetResolverTest, inconsistent_buckets_are_not_explicitly_created) {
-    setupDistributor(2, 2, "bits:8 storage:2 distributor:1");
+    setup_stripe(2, 2, "bits:8 storage:2 distributor:1");
     addNodesToBucketDB(BucketId(15, 0), "1=9/9/9/t");
     addNodesToBucketDB(BucketId(16, 1 << 15), "0=9/9/9/t");
     // (32, 0) belongs in (16, 0) subtree, but it does not exist. We cannot
@@ -218,7 +218,7 @@ TEST_F(OperationTargetResolverTest, inconsistent_buckets_are_not_explicitly_crea
 }
 
 TEST_F(OperationTargetResolverTest, no_trusted_or_ideal_state_copy_available) {
-    setupDistributor(2, 4, "storage:4 distributor:1");
+    setup_stripe(2, 4, "storage:4 distributor:1");
     addNodesToBucketDB(BucketId(16, 0), "0=0,2=0");
     addNodesToBucketDB(BucketId(18, 0), "0=0"); // ideal nodes: 1, 3
     MY_ASSERT_THAT(BucketId(32, 0)).sendsTo(BucketId(18, 0), 0)
@@ -226,7 +226,7 @@ TEST_F(OperationTargetResolverTest, no_trusted_or_ideal_state_copy_available) {
 }
 
 TEST_F(OperationTargetResolverTest, create_missing_copies) {
-    setupDistributor(4, 10, "storage:10 distributor:1");
+    setup_stripe(4, 10, "storage:10 distributor:1");
     addNodesToBucketDB(BucketId(16, 0), "6=0");
     addNodesToBucketDB(BucketId(18, 0), "4=0"); // ideal nodes: 6, 8, 7, 1
 
@@ -237,21 +237,21 @@ TEST_F(OperationTargetResolverTest, create_missing_copies) {
 }
 
 TEST_F(OperationTargetResolverTest, no_existing_copies) {
-    setupDistributor(2, 5, "storage:5 distributor:1");
+    setup_stripe(2, 5, "storage:5 distributor:1");
 
     MY_ASSERT_THAT(BucketId(32, 0)).createsAt(BucketId(16, 0), 1)
                                    .createsAt(BucketId(16, 0), 3);
 }
 
 TEST_F(OperationTargetResolverTest, count_maintenance_nodes_as_down) {
-    setupDistributor(2, 5, "storage:5 .1.s:m distributor:1");
+    setup_stripe(2, 5, "storage:5 .1.s:m distributor:1");
 
     MY_ASSERT_THAT(BucketId(32, 0)).createsAt(BucketId(16, 0), 3)
                                    .createsAt(BucketId(16, 0), 2);
 }
 
 TEST_F(OperationTargetResolverTest, resolving_does_not_mutate_database) {
-    setupDistributor(2, 5, "storage:5 distributor:1");
+    setup_stripe(2, 5, "storage:5 distributor:1");
 
     MY_ASSERT_THAT(BucketId(32, 0)).createsAt(BucketId(16, 0), 1)
                                    .createsAt(BucketId(16, 0), 3);

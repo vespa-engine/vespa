@@ -1,18 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/storageapi/message/bucket.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/storage/common/reindexing_constants.h>
+#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/operations/external/visitoroperation.h>
+#include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/storage/distributor/operations/external/visitoroperation.h>
-#include <vespa/storage/distributor/operations/external/visitororder.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/distributor_stripe.h>
-#include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
@@ -23,7 +22,7 @@ using document::test::makeBucketSpace;
 
 namespace storage::distributor {
 
-struct VisitorOperationTest : Test, DistributorTestUtil {
+struct VisitorOperationTest : Test, DistributorStripeTestUtil {
     VisitorOperationTest()
         : defaultConfig(100, 100)
     {}
@@ -96,7 +95,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
     }
 
     VisitorMetricSet& defaultVisitorMetrics() {
-        return getDistributor().getMetrics().visits;
+        return metrics().visits;
     }
 
     std::unique_ptr<VisitorOperation> createOpWithConfig(
@@ -109,7 +108,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
                 getDistributorBucketSpace(),
                 msg,
                 config,
-                getDistributor().getMetrics().visits);
+                metrics().visits);
     }
 
     std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(api::CreateVisitorCommand::SP msg)
@@ -150,7 +149,7 @@ TEST_F(VisitorOperationTest, parameter_forwarding) {
 void
 VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 {
-    enableDistributorClusterState(clusterState);
+    enable_cluster_state(clusterState);
 
     // Create bucket in bucketdb
     document::BucketId id(uint64_t(0x400000000000007b));
@@ -212,7 +211,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 }
 
 TEST_F(VisitorOperationTest, shutdown) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Create bucket in bucketdb
     document::BucketId id(uint64_t(0x400000000000007b));
@@ -241,7 +240,7 @@ TEST_F(VisitorOperationTest, shutdown) {
 }
 
 TEST_F(VisitorOperationTest, no_bucket) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Send create visitor
     auto msg = std::make_shared<api::CreateVisitorCommand>(
@@ -254,7 +253,7 @@ TEST_F(VisitorOperationTest, no_bucket) {
 }
 
 TEST_F(VisitorOperationTest, only_super_bucket_and_progress_allowed) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Send create visitor
     api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
@@ -277,7 +276,7 @@ TEST_F(VisitorOperationTest, retired_storage_node) {
 TEST_F(VisitorOperationTest, no_resend_after_timeout_passed) {
     document::BucketId id(uint64_t(0x400000000000007b));
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
@@ -297,7 +296,7 @@ TEST_F(VisitorOperationTest, no_resend_after_timeout_passed) {
 }
 
 TEST_F(VisitorOperationTest, distributor_not_ready) {
-    enableDistributorClusterState("distributor:0 storage:0");
+    enable_cluster_state("distributor:0 storage:0");
     document::BucketId id(uint64_t(0x400000000000007b));
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(NODE_NOT_READY, No distributors available when "
@@ -307,7 +306,7 @@ TEST_F(VisitorOperationTest, distributor_not_ready) {
 
 TEST_F(VisitorOperationTest, non_existing_bucket) {
     document::BucketId id(uint64_t(0x400000000000007b));
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
     auto res = runEmptyVisitor(
             createVisitorCommand("nonExistingBucket", id, nullId));
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
@@ -317,7 +316,7 @@ TEST_F(VisitorOperationTest, non_existing_bucket) {
 TEST_F(VisitorOperationTest, user_single_bucket) {
     document::BucketId id(uint64_t(0x400000000000007b));
     document::BucketId userid(uint64_t(0x800000000000007b));
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     addNodesToBucketDB(id, "0=1/1/1/t");
 
@@ -371,7 +370,7 @@ VisitorOperationTest::runVisitor(document::BucketId id,
 }
 
 TEST_F(VisitorOperationTest, user_inconsistently_split_bucket) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Not containing (19, 0x40001)
     addNodesToBucketDB(document::BucketId(17, 0x0), "0=1/1/1/t");
@@ -414,7 +413,7 @@ TEST_F(VisitorOperationTest, user_inconsistently_split_bucket) {
 }
 
 TEST_F(VisitorOperationTest, bucket_removed_while_visitor_pending) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Create bucket in bucketdb
     document::BucketId id(uint64_t(0x400000000000007b));
@@ -439,7 +438,7 @@ TEST_F(VisitorOperationTest, bucket_removed_while_visitor_pending) {
 }
 
 TEST_F(VisitorOperationTest, empty_buckets_visited_when_visiting_removes) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
     document::BucketId id(uint64_t(0x400000000000007b));
     addNodesToBucketDB(id, "0=0/0/0/1/2/t");
 
@@ -453,7 +452,7 @@ TEST_F(VisitorOperationTest, empty_buckets_visited_when_visiting_removes) {
 }
 
 TEST_F(VisitorOperationTest, resend_to_other_storage_node_on_failure) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
     document::BucketId id(uint64_t(0x400000000000007b));
 
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
@@ -477,7 +476,7 @@ TEST_F(VisitorOperationTest, resend_to_other_storage_node_on_failure) {
 // client reply and that this won't cause things to hang for indeterminate
 // amounts of time.
 TEST_F(VisitorOperationTest, timeout_only_after_reply_from_all_storage_nodes) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     // Contained in (16, 0x1)
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
@@ -515,7 +514,7 @@ TEST_F(VisitorOperationTest, timeout_only_after_reply_from_all_storage_nodes) {
 }
 
 TEST_F(VisitorOperationTest, timeout_does_not_override_critical_error) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
 
@@ -544,7 +543,7 @@ TEST_F(VisitorOperationTest, timeout_does_not_override_critical_error) {
 }
 
 TEST_F(VisitorOperationTest, wrong_distribution) {
-    setupDistributor(1, 100, "distributor:100 storage:2");
+    setup_stripe(1, 100, "distributor:100 storage:2");
 
     document::BucketId id(uint64_t(0x400000000000127b));
     ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -555,12 +554,10 @@ TEST_F(VisitorOperationTest, wrong_distribution) {
 
 TEST_F(VisitorOperationTest, wrong_distribution_in_pending_state) {
     // Force bucket to belong to this distributor in currently enabled state.
-    setupDistributor(1, 100, "distributor:1 storage:2");
+    setup_stripe(1, 100, "distributor:1 storage:2");
     // Trigger pending cluster state. Note: increase in storage node count
     // to force resending of bucket info requests.
-    auto stateCmd = std::make_shared<api::SetSystemStateCommand>(
-            lib::ClusterState("distributor:100 storage:3"));
-    getBucketDBUpdater().onSetSystemState(stateCmd);
+    simulate_set_pending_cluster_state("distributor:100 storage:3");
 
     document::BucketId id(uint64_t(0x400000000000127b));
     ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -574,7 +571,7 @@ TEST_F(VisitorOperationTest, wrong_distribution_in_pending_state) {
 // higher version number.
 // See ticket 6353382 for details.
 TEST_F(VisitorOperationTest, visitor_aborted_if_node_is_marked_as_down) {
-    setupDistributor(1, 10, "distributor:10 .0.s:s storage:10");
+    setup_stripe(1, 10, "distributor:10 .0.s:s storage:10");
 
     document::BucketId id(uint64_t(0x400000000000127b));
     ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -583,7 +580,7 @@ TEST_F(VisitorOperationTest, visitor_aborted_if_node_is_marked_as_down) {
 }
 
 TEST_F(VisitorOperationTest, bucket_high_bit_count) {
-    enableDistributorClusterState("distributor:1 storage:1 bits:16");
+    enable_cluster_state("distributor:1 storage:1 bits:16");
 
     document::BucketId id(18, 0x0);
     addNodesToBucketDB(id, "0=1/1/1/t");
@@ -609,7 +606,7 @@ TEST_F(VisitorOperationTest, bucket_high_bit_count) {
 }
 
 TEST_F(VisitorOperationTest, bucket_low_bit_count) {
-    enableDistributorClusterState("distributor:1 storage:1 bits:16");
+    enable_cluster_state("distributor:1 storage:1 bits:16");
 
     document::BucketId id(1, 0x0);
     addNodesToBucketDB(id, "0=1/1/1/t");
@@ -636,7 +633,7 @@ TEST_F(VisitorOperationTest, bucket_low_bit_count) {
 }
 
 TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++) {
@@ -709,7 +706,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
 }
 
 TEST_F(VisitorOperationTest, parallel_visitors_resend_only_failing) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++) {
@@ -750,7 +747,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_resend_only_failing) {
 }
 
 TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node_one_super_bucket) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     // Create buckets in bucketdb
     for (int i=0; i<8; i++) {
@@ -783,7 +780,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node_one_super_buc
 }
 
 TEST_F(VisitorOperationTest, visit_when_one_bucket_copy_is_invalid) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
@@ -795,7 +792,7 @@ TEST_F(VisitorOperationTest, visit_when_one_bucket_copy_is_invalid) {
 }
 
 TEST_F(VisitorOperationTest, visiting_when_all_buckets_are_invalid) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
@@ -807,7 +804,7 @@ TEST_F(VisitorOperationTest, visiting_when_all_buckets_are_invalid) {
 }
 
 TEST_F(VisitorOperationTest, inconsistency_handling) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
@@ -835,7 +832,7 @@ TEST_F(VisitorOperationTest, inconsistency_handling) {
 
 TEST_F(VisitorOperationTest, visit_ideal_node) {
     ClusterState state("distributor:1 storage:3");
-    enable_distributor_cluster_state(lib::ClusterStateBundle(state));
+    enable_cluster_state(lib::ClusterStateBundle(state));
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {
@@ -866,7 +863,7 @@ TEST_F(VisitorOperationTest, visit_ideal_node) {
 }
 
 TEST_F(VisitorOperationTest, no_resending_on_critical_failure) {
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {
@@ -890,7 +887,7 @@ TEST_F(VisitorOperationTest, no_resending_on_critical_failure) {
 }
 
 TEST_F(VisitorOperationTest, failure_on_all_nodes) {
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {
@@ -921,7 +918,7 @@ TEST_F(VisitorOperationTest, failure_on_all_nodes) {
 }
 
 TEST_F(VisitorOperationTest, visit_in_chunks) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     for (int i = 0; i < 9; ++i) {
         addNodesToBucketDB(document::BucketId(30, i << 16), "0=1/1/1/t");
@@ -966,7 +963,7 @@ TEST_F(VisitorOperationTest, visit_in_chunks) {
 std::unique_ptr<VisitorOperation>
 VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
 {
-    enableDistributorClusterState("distributor:1 storage:3");
+    enable_cluster_state("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(17, 1), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 1ULL << 16 | 1), "1=1/1/1/t");
@@ -1026,7 +1023,7 @@ TEST_F(VisitorOperationTest, skip_failed_sub_buckets_when_visiting_inconsistent)
 // having it hard-coded to 2000 ms as was the case earlier.
 TEST_F(VisitorOperationTest, queue_timeout_is_factor_of_total_timeout) {
     document::BucketId id(uint64_t(0x400000000000007b));
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
@@ -1044,7 +1041,7 @@ VisitorOperationTest::do_visitor_roundtrip_with_statistics(
         const api::ReturnCode& result)
 {
     document::BucketId id(0x400000000000007bULL);
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
     addNodesToBucketDB(id, "0=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
@@ -1073,7 +1070,7 @@ TEST_F(VisitorOperationTest, metrics_are_updated_with_visitor_statistics_upon_re
 }
 
 TEST_F(VisitorOperationTest, statistical_metrics_not_updated_on_wrong_distribution) {
-    setupDistributor(1, 100, "distributor:100 storage:2");
+    setup_stripe(1, 100, "distributor:100 storage:2");
 
     document::BucketId id(uint64_t(0x400000000000127b));
     ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -1092,7 +1089,7 @@ TEST_F(VisitorOperationTest, statistical_metrics_not_updated_on_wrong_distributi
 
 TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visitor_parameter) {
     document::BucketId id(0x400000000000007bULL);
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
     addNodesToBucketDB(id, "0=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(createVisitorCommand("metricstats", id, nullId));

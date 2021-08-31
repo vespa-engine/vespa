@@ -35,19 +35,25 @@ public class OnnxEvaluator {
     }
 
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
+        Map<String, OnnxTensor> onnxInputs = null;
         try {
-            Map<String, OnnxTensor> onnxInputs = TensorConverter.toOnnxTensors(inputs, environment, session);
+            onnxInputs = TensorConverter.toOnnxTensors(inputs, environment, session);
             try (OrtSession.Result result = session.run(onnxInputs, Collections.singleton(output))) {
                 return TensorConverter.toVespaTensor(result.get(0));
             }
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
+        } finally {
+            if (onnxInputs != null) {
+                onnxInputs.values().forEach(OnnxTensor::close);
+            }
         }
     }
 
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+        Map<String, OnnxTensor> onnxInputs = null;
         try {
-            Map<String, OnnxTensor> onnxInputs = TensorConverter.toOnnxTensors(inputs, environment, session);
+            onnxInputs = TensorConverter.toOnnxTensors(inputs, environment, session);
             Map<String, Tensor> outputs = new HashMap<>();
             try (OrtSession.Result result = session.run(onnxInputs)) {
                 for (Map.Entry<String, OnnxValue> output : result) {
@@ -57,6 +63,10 @@ public class OnnxEvaluator {
             }
         } catch (OrtException e) {
             throw new RuntimeException("ONNX Runtime exception", e);
+        } finally {
+            if (onnxInputs != null) {
+                onnxInputs.values().forEach(OnnxTensor::close);
+            }
         }
     }
 

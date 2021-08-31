@@ -115,10 +115,9 @@ public class TenantRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final ReloadListener reloadListener;
-    private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
-    private final Optional<Curator.DirectoryCache> directoryCache;
+    private final Curator.DirectoryCache directoryCache;
     private final ZookeeperServerConfig zookeeperServerConfig;
 
     /**
@@ -181,8 +180,6 @@ public class TenantRepository {
                             ZookeeperServerConfig zookeeperServerConfig) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
-        this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                              new DaemonThreadFactory("bootstrap-tenant-"));
         this.curator = curator;
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
@@ -207,9 +204,9 @@ public class TenantRepository {
         createPaths();
         createSystemTenants(configserverConfig);
 
-        this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
-        this.directoryCache.get().addListener(this::childEvent);
-        this.directoryCache.get().start();
+        this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor);
+        this.directoryCache.addListener(this::childEvent);
+        this.directoryCache.start();
         bootstrapTenants();
         notifyTenantsLoaded();
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
@@ -271,6 +268,8 @@ public class TenantRepository {
     }
 
     private void bootstrapTenants() {
+        ExecutorService bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
+                new DaemonThreadFactory("bootstrap-tenant-"));
         // Keep track of tenants created
         Map<TenantName, Future<?>> futures = new HashMap<>();
         readTenantsFromZooKeeper(curator).forEach(t -> futures.put(t, bootstrapExecutor.submit(() -> bootstrapTenant(t))));
@@ -350,6 +349,7 @@ public class TenantRepository {
                                                                     curator,
                                                                     metrics,
                                                                     zkSessionWatcherExecutor,
+                                                                    fileDistributionFactory,
                                                                     permanentApplicationPackage,
                                                                     flagSource,
                                                                     zkCacheExecutor,
@@ -532,7 +532,7 @@ public class TenantRepository {
     }
 
     public void close() {
-        directoryCache.ifPresent(com.yahoo.vespa.curator.Curator.DirectoryCache::close);
+        directoryCache.close();
         try {
             zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();

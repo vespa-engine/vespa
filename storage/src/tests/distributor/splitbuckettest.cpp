@@ -1,4 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "dummy_cluster_context.h"
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
@@ -7,11 +9,8 @@
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/common/dummystoragelink.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include "dummy_cluster_context.h"
+#include <vespa/vespalib/util/size_literals.h>
 
 using document::test::makeDocumentBucket;
 using namespace document;
@@ -19,7 +18,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct SplitOperationTest : Test, DistributorTestUtil {
+struct SplitOperationTest : Test, DistributorStripeTestUtil {
     uint32_t splitByteSize;
     uint32_t tooLargeBucketSize;
     uint32_t splitCount;
@@ -29,9 +28,10 @@ struct SplitOperationTest : Test, DistributorTestUtil {
 
     void SetUp() override {
         createLinks();
-        getConfig().setSplitCount(splitCount);
-        getConfig().setSplitSize(splitByteSize);
-
+        auto cfg = make_config();
+        cfg->setSplitCount(splitCount);
+        cfg->setSplitSize(splitByteSize);
+        configure_stripe(cfg);
     }
 
     void TearDown() override {
@@ -52,7 +52,7 @@ namespace {
 }
 
 TEST_F(SplitOperationTest, simple) {
-    enableDistributorClusterState("distributor:1 storage:1");
+    enable_cluster_state("distributor:1 storage:1");
 
     insertBucketInfo(document::BucketId(16, 1), 0, 0xabc, 1000,
                      tooLargeBucketSize, 250);
@@ -124,7 +124,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
         getBucketDatabase().update(entry);
     }
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     SplitOperation op(dummy_cluster_context,
                       BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
@@ -198,7 +198,7 @@ TEST_F(SplitOperationTest, multi_node_failure) {
 }
 
 TEST_F(SplitOperationTest, copy_trusted_status_not_carried_over_after_split) {
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId sourceBucket(16, 1);
     /*
@@ -263,7 +263,7 @@ TEST_F(SplitOperationTest, operation_blocked_by_pending_join) {
     clock.setAbsoluteTimeInSeconds(1);
     OperationSequencer op_seq;
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId joinTarget(2, 1);
     std::vector<document::BucketId> joinSources = {
@@ -304,7 +304,7 @@ TEST_F(SplitOperationTest, split_is_blocked_by_locked_bucket) {
     clock.setAbsoluteTimeInSeconds(1);
     OperationSequencer op_seq;
 
-    enableDistributorClusterState("distributor:1 storage:2");
+    enable_cluster_state("distributor:1 storage:2");
 
     document::BucketId source_bucket(16, 1);
     insertBucketInfo(source_bucket, 0, 0xabc, 1000, tooLargeBucketSize, 250);

@@ -46,14 +46,19 @@ class DistributorStripePool {
     size_t                  _parked_threads; // Must be protected by _park_mutex
     vespalib::duration      _bootstrap_tick_wait_duration;
     uint32_t                _bootstrap_ticks_before_wait;
+    bool                    _single_threaded_test_mode;
     bool                    _stopped;
 
     friend class DistributorStripeThread;
+    struct PrivateCtorTag{};
 public:
     using const_iterator = StripeVector::const_iterator;
 
+    DistributorStripePool(bool test_mode, PrivateCtorTag);
     DistributorStripePool();
     ~DistributorStripePool();
+
+    static std::unique_ptr<DistributorStripePool> make_non_threaded_pool_for_testing();
 
     // Set up the stripe pool with a 1-1 relationship between the provided
     // stripes and running threads. Can only be called once per pool.
@@ -78,6 +83,7 @@ public:
     [[nodiscard]] DistributorStripeThread& stripe_thread(size_t idx) noexcept {
         return *_stripes[idx];
     }
+    void notify_stripe_event_has_triggered(size_t stripe_idx) noexcept;
     [[nodiscard]] const TickableStripe& stripe_of_key(uint64_t key) const noexcept;
     [[nodiscard]] TickableStripe& stripe_of_key(uint64_t key) noexcept;
     [[nodiscard]] size_t stripe_count() const noexcept { return _stripes.size(); }

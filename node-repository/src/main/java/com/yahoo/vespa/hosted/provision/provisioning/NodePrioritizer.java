@@ -94,8 +94,10 @@ public class NodePrioritizer {
     /** Returns the list of nodes sorted by {@link NodeCandidate#compareTo(NodeCandidate)} */
     private List<NodeCandidate> prioritize() {
         // Group candidates by their switch hostname
-        Map<Optional<String>, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream()
-                .collect(Collectors.groupingBy(candidate -> candidate.parent.orElseGet(candidate::toNode).switchHostname()));
+        Map<String, List<NodeCandidate>> candidatesBySwitch = this.nodes.stream()
+                .collect(Collectors.groupingBy(candidate -> candidate.parent.orElseGet(candidate::toNode)
+                                                                            .switchHostname()
+                                                                            .orElse("")));
         // Mark lower priority nodes on shared switch as non-exclusive
         List<NodeCandidate> nodes = new ArrayList<>(this.nodes.size());
         for (var clusterSwitch : candidatesBySwitch.keySet()) {
@@ -142,7 +144,7 @@ public class NodePrioritizer {
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
             nodes.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
-                                                   capacity.freeCapacityOf(host, false),
+                                                   capacity.availableCapacityOf(host),
                                                    host,
                                                    spareHosts.contains(host),
                                                    allNodes,
@@ -179,14 +181,14 @@ public class NodePrioritizer {
         Optional<Node> parent = allNodes.parentOf(node);
         if (parent.isPresent()) {
             return NodeCandidate.createChild(node,
-                                             capacity.freeCapacityOf(parent.get(), false),
+                                             capacity.availableCapacityOf(parent.get()),
                                              parent.get(),
                                              spareHosts.contains(parent.get()),
                                              isSurplus,
                                              false,
                                              parent.get().exclusiveToApplicationId().isEmpty()
                                              && requestedNodes.canResize(node.resources(),
-                                                                         capacity.freeCapacityOf(parent.get(), false),
+                                                                         capacity.availableCapacityOf(parent.get()),
                                                                          topologyChange,
                                                                          currentClusterSize));
         }

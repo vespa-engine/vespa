@@ -9,14 +9,13 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,15 +39,27 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
     }
 
     @Override
-    protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        Map<ApplicationId, NodeList> nodesByApplication = nodeRepository().nodes().list()
-                                                                          .nodeType(NodeType.tenant, NodeType.proxy)
-                                                                          .matching(node -> node.allocation().isPresent())
-                                                                          .groupingBy(node -> node.allocation().get().owner());
-        return nodesByApplication.entrySet().stream()
-                                 .filter(entry -> hasNodesWithChanges(entry.getKey(), entry.getValue()))
-                                 .map(Map.Entry::getKey)
-                                 .collect(Collectors.toCollection(LinkedHashSet::new));
+    protected Map<ApplicationId, String> applicationsNeedingMaintenance() {
+        var applications = new HashMap<ApplicationId, String>();
+
+        nodeRepository().nodes()
+                        .list()
+                        .nodeType(NodeType.tenant, NodeType.proxy)
+                        .matching(node -> node.allocation().isPresent())
+                        .groupingBy(node -> node.allocation().get().owner())
+                        .forEach((applicationId, nodes) -> {
+                            hasNodesWithChanges(applicationId, nodes)
+                                    .ifPresent(reason -> applications.put(applicationId, reason));
+                        });
+
+        // A ready proxy node should trigger a redeployment as it will activate the node.
+        if (!nodeRepository().nodes().list(Node.State.ready, Node.State.reserved).nodeType(NodeType.proxy).isEmpty()) {
+            applications.merge(ApplicationId.from("hosted-vespa", "routing", "default"),
+                               "nodes being ready",
+                               (oldValue, newValue) -> oldValue + ", " + newValue);
+        }
+
+        return applications;
     }
 
     /**
@@ -56,22 +67,29 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
      * longer to deploy than the (short) maintenance interval of this
      */
     @Override
-    protected void deploy(ApplicationId application) {
-        boolean deployed = deployWithLock(application);
-        if (deployed)
-            log.info("Redeployed application " + application.toShortString() +
-                     " as an expedited change was made to its nodes");
+    protected void deploy(ApplicationId application, String reason) {
+        deployWithLock(application, reason);
     }
 
-    private boolean hasNodesWithChanges(ApplicationId applicationId, NodeList nodes) {
+    /** Returns the reason for doing an expedited deploy. */
+    private Optional<String> hasNodesWithChanges(ApplicationId applicationId, NodeList nodes) {
         Optional<Instant> lastDeployTime = deployer().lastDeployTime(applicationId);
-        if (lastDeployTime.isEmpty()) return false;
+        if (lastDeployTime.isEmpty()) return Optional.empty();
 
-        return nodes.stream()
-                    .flatMap(node -> node.history().events().stream())
-                    .filter(event -> expediteChangeBy(event.agent()))
-                    .map(History.Event::at)
-                    .anyMatch(e -> lastDeployTime.get().isBefore(e));
+        List<String> reasons = nodes.stream()
+                                    .flatMap(node -> node.history()
+                                                            .events()
+                                                            .stream()
+                                                            .filter(event -> expediteChangeBy(event.agent()))
+                                                            .filter(event -> lastDeployTime.get().isBefore(event.at()))
+                                                            .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
+                                    .sorted()
+                                    .distinct()
+                                    .collect(Collectors.toList());
+
+        return reasons.isEmpty() ?
+                Optional.empty() :
+                Optional.of("recent node events: [" + String.join(", ", reasons) + "]");
     }
 
     @Override

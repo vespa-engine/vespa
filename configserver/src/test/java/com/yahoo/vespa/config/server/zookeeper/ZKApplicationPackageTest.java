@@ -14,6 +14,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
@@ -34,10 +35,8 @@ import java.util.regex.Pattern;
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class ZKApplicationPackageTest {
@@ -75,7 +74,7 @@ public class ZKApplicationPackageTest {
     @Test
     public void testBasicZKFeed() throws IOException {
         feed(curator, new File(APP));
-        ZKApplicationPackage zkApp = new ZKApplicationPackage(curator, Path.fromString("/0"));
+        ZKApplicationPackage zkApp = new ZKApplicationPackage(new MockFileManager(), curator, Path.fromString("/0"));
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getServices())).matches());
         assertTrue(Pattern.compile(".*<alias>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getHosts())).matches());
         assertTrue(Pattern.compile(".*<slobroks>.*",Pattern.MULTILINE+Pattern.DOTALL).matcher(IOUtils.readAll(zkApp.getFile(Path.fromString("services.xml")).createReader())).matches());
@@ -96,7 +95,6 @@ public class ZKApplicationPackageTest {
         Version goodVersion = new Version(3, 0, 0);
         assertTrue(zkApp.getFileRegistries().containsKey(goodVersion));
         assertFalse(zkApp.getFileRegistries().containsKey(new Version(0, 0, 0)));
-        assertThat(zkApp.getFileRegistries().get(goodVersion).fileSourceHost(), is("dummyfiles"));
         AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
         assertEquals(Utf8.toString(toJson(ALLOCATED_HOSTS)), Utf8.toString(toJson(readInfo)));
         assertEquals(TEST_FLAVOR.get().resources(), readInfo.getHosts().iterator().next().advertisedResources());

@@ -2,8 +2,25 @@
 package com.yahoo.io;
 
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.List;
@@ -19,7 +36,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class IOUtils {
 
-    static private final Charset utf8Charset = Charset.forName("utf-8");
+    static private final Charset utf8Charset = StandardCharsets.UTF_8;
 
     /** Closes a writer, or does nothing if the writer is null */
     public static void closeWriter(Writer writer) {
@@ -341,7 +358,7 @@ public abstract class IOUtils {
     public static String readFile(File file) throws IOException {
         try {
             if (file == null) return null;
-            return new String(Files.readAllBytes(file.toPath()), "utf-8");
+            return Files.readString(file.toPath(), utf8Charset);
         }
         catch (NoSuchFileException e) {
             throw new NoSuchFileException("Could not find file '" + file.getAbsolutePath() + "'");
@@ -370,9 +387,7 @@ public abstract class IOUtils {
         if (lengthL>Integer.MAX_VALUE)
             throw new IllegalArgumentException("File too big for byte array: "+file.getCanonicalPath());
 
-        InputStream in = null;
-        try {
-            in = new FileInputStream(file);
+        try (InputStream in = new FileInputStream(file)) {
             int length = (int)lengthL;
             byte[] array = new byte[length];
             int offset = 0;
@@ -380,10 +395,6 @@ public abstract class IOUtils {
             while (offset < length && (count = in.read(array, offset, (length - offset)))>=0)
                 offset += count;
             return array;
-        }
-        finally {
-            if (in != null)
-                in.close();
         }
     }
 

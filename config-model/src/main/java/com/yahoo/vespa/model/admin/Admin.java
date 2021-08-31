@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.api.ModelContext;
@@ -26,7 +26,6 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
-import com.yahoo.vespa.model.filedistribution.FileDistributor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -63,7 +62,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private LogForwarder.Config logForwarderConfig = null;
     private boolean logForwarderIncludeAdmin = false;
 
-    private ApplicationType applicationType = ApplicationType.DEFAULT;
+    private final ApplicationType applicationType;
 
     public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
@@ -87,14 +86,15 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
-                 FileDistributionConfigProducer fileDistributionConfigProducer,
-                 boolean isHostedVespa) {
+                 boolean isHostedVespa,
+                 ApplicationType applicationType) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.multitenant = multitenant;
-        this.fileDistribution = fileDistributionConfigProducer;
+        this.fileDistribution = new FileDistributionConfigProducer(parent);
+        this.applicationType = applicationType;
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -290,17 +290,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addFileDistribution(HostResource host) {
-        FileDistributor fileDistributor = fileDistribution.getFileDistributor();
-        HostResource hostResource = hostSystem().getHostByHostname(fileDistributor.fileSourceHost());
-        if (hostResource == null && ! multitenant)
-            throw new IllegalArgumentException("Could not find " + fileDistributor.fileSourceHost() +
-                                               " in the application's " + hostSystem());
-
-        FileDistributionConfigProvider configProvider =
-                new FileDistributionConfigProvider(fileDistribution,
-                                                   fileDistributor,
-                                                   host == hostResource,
-                                                   host.getHost());
+        FileDistributionConfigProvider configProvider = new FileDistributionConfigProvider(fileDistribution, host.getHost());
         fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
     }
 
@@ -334,10 +324,6 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
 
     public boolean multitenant() {
         return multitenant;
-    }
-
-    public void setApplicationType(ApplicationType applicationType) {
-        this.applicationType = applicationType;
     }
 
     public ApplicationType getApplicationType() { return applicationType; }

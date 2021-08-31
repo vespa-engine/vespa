@@ -20,6 +20,12 @@ private:
     struct CountedSpec {
         vespalib::string spec;
         size_t count;
+        CountedSpec(const vespalib::string &spec_in,
+                    size_t count_in) noexcept
+            : spec(spec_in),
+              count(count_in)
+        {
+        }
     };
     using Mappings = std::vector<CountedSpec>;
     std::map<vespalib::string, Mappings> _mappings;
@@ -27,6 +33,8 @@ private:
 public:
     UnionServiceMap();
     virtual ~UnionServiceMap();
+
+    ServiceMappingList currentConsensus() const;
 
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;

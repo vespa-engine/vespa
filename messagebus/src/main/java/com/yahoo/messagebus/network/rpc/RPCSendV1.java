@@ -33,8 +33,11 @@ public class RPCSendV1 extends RPCSend {
     private final String METHOD_PARAMS = "sssbilsxi";
     private final String METHOD_RETURN = "sdISSsxs";
 
+    protected RPCSendV1(RPCNetwork net) { super(net); }
+
     @Override
     protected String getReturnSpec() { return METHOD_RETURN; }
+
     @Override
     protected Method buildMethod() {
 

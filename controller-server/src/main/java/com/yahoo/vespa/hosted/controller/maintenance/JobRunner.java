@@ -113,8 +113,10 @@ public class JobRunner extends ControllerMaintainer {
             jobs.locked(id.application(), id.type(), step, lockedStep -> {
                 jobs.locked(id, run -> run); // Memory visibility.
                 jobs.active(id).ifPresent(run -> { // The run may have become inactive, so we bail out.
-                    if ( ! run.readySteps().contains(step))
+                    if ( ! run.readySteps().contains(step)) {
+                        changed.set(true);
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
+                    }
 
                     StepInfo stepInfo = run.stepInfo(lockedStep.get()).orElseThrow();
                     if (stepInfo.startTime().isEmpty()) {

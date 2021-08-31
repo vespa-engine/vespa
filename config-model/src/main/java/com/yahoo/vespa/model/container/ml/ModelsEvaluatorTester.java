@@ -19,6 +19,7 @@ import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.xml.sax.SAXException;
 
@@ -69,10 +70,11 @@ public class ModelsEvaluatorTester {
 
             RankProfilesConfig rankProfilesConfig = getRankProfilesConfig(rankProfileList);
             RankingConstantsConfig rankingConstantsConfig = getRankingConstantConfig(rankProfileList);
+            RankingExpressionsConfig rankingExpressionsConfig = getRankingExpressionsConfig(rankProfileList);
             OnnxModelsConfig onnxModelsConfig = getOnnxModelsConfig(rankProfileList);
             FileAcquirer files = createFileAcquirer(rankingConstantsConfig, onnxModelsConfig, temporaryApplicationDir);
 
-            return new ModelsEvaluator(rankProfilesConfig, rankingConstantsConfig, onnxModelsConfig, files);
+            return new ModelsEvaluator(rankProfilesConfig, rankingConstantsConfig, rankingExpressionsConfig, onnxModelsConfig, files);
 
         } catch (IOException | SAXException e) {
             throw new RuntimeException(e);
@@ -104,19 +106,25 @@ public class ModelsEvaluatorTester {
     private static RankProfilesConfig getRankProfilesConfig(RankProfileList rankProfileList) {
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         rankProfileList.getConfig(builder);
-        return new RankProfilesConfig(builder);
+        return builder.build();
     }
 
     private static RankingConstantsConfig getRankingConstantConfig(RankProfileList rankProfileList) {
         RankingConstantsConfig.Builder builder = new RankingConstantsConfig.Builder();
         rankProfileList.getConfig(builder);
-        return new RankingConstantsConfig(builder);
+        return builder.build();
+    }
+
+    private static RankingExpressionsConfig getRankingExpressionsConfig(RankProfileList rankProfileList) {
+        RankingExpressionsConfig.Builder builder = new RankingExpressionsConfig.Builder();
+        rankProfileList.getConfig(builder);
+        return builder.build();
     }
 
     private static OnnxModelsConfig getOnnxModelsConfig(RankProfileList rankProfileList) {
         OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
         rankProfileList.getConfig(builder);
-        return new OnnxModelsConfig(builder);
+        return builder.build();
     }
 
     private static FileAcquirer createFileAcquirer(RankingConstantsConfig constantsConfig, OnnxModelsConfig onnxModelsConfig, File appDir) {

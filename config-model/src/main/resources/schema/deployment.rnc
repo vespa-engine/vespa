@@ -51,7 +51,8 @@ ParallelInstances = element parallel {
 }
 
 Upgrade = element upgrade {
-    attribute policy { xsd:string }
+    attribute policy { xsd:string }? &
+    attribute rollout { xsd:string }?
 }
 
 BlockChange = element block-change {

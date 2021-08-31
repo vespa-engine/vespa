@@ -55,7 +55,7 @@ ScriptCommand::makeRegRpcSrvCmd(SBEnv &env,
 }
 
 ScriptCommand
-ScriptCommand::makeRemRemCmd(SBEnv &env, const std::string & name, const std::string &spec)
+ScriptCommand::makeIgnoreCmd(SBEnv &env, const std::string & name, const std::string &spec)
 {
     auto data = std::make_unique<ScriptData>(env, name, spec, nullptr);
     data->_state = ScriptData::XCH_IGNORE;
@@ -72,7 +72,7 @@ ScriptCommand::doRequest()
 
 void cleanupReservation(ScriptData & data)
 {
-    RpcServerMap &map = data.env._rpcsrvmap;
+    RpcServerMap &map = data.env.rpcServerMap();
     const ReservedName *rsvp = map.getReservation(data.name.c_str());
     if (rsvp != nullptr && rsvp->isLocal) {
         map.removeReservation(data.name.c_str());
@@ -88,13 +88,14 @@ ScriptCommand::doneHandler(OkState result)
     ScriptData & data = *dataUP;
     const char *name_p = data.name.c_str();
     const char *spec_p = data.spec.c_str();
-    ExchangeManager &xch = data.env._exchanger;
-    RpcServerManager &rsm = data.env._rpcsrvmanager;
+    ExchangeManager &xch = data.env.exchangeManager();
+    RpcServerManager &rsm = data.env.rpcServerManager();
 
     if (result.failed()) {
-        LOG(warning, "failed [%s->%s] in state %d: %s",
-            name_p, spec_p, data._state, result.errorMsg.c_str());
-        cleanupReservation(data);
+        LOG(warning, "failed [%s->%s] in state %d: %s", name_p, spec_p, data._state, result.errorMsg.c_str());
+        if (data._state != ScriptData::XCH_IGNORE) {
+            cleanupReservation(data);
+        }
         // XXX should handle different state errors differently?
         if (data.registerRequest != nullptr) {
             data.registerRequest->SetError(FRTE_RPC_METHOD_FAILED, result.errorMsg.c_str());
@@ -124,14 +125,13 @@ ScriptCommand::doneHandler(OkState result)
         data._state = ScriptData::RDC_INVAL;
         // all OK
         data.registerRequest->Return();
-        goto alldone;
+        cleanupReservation(data);
+        return;
     } else if (data._state == ScriptData::XCH_IGNORE) {
-        goto alldone;
+        return;
     }
     // no other state should be possible
     LOG_ABORT("should not be reached");
- alldone:
-    cleanupReservation(data);
 }
 
 //-----------------------------------------------------------------------------

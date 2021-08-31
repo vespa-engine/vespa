@@ -34,7 +34,10 @@ public class HostCapacityTest {
     private final HostResourcesCalculator hostResourcesCalculator = mock(HostResourcesCalculator.class);
     private HostCapacity capacity;
     private List<Node> nodes;
-    private Node host1, host2, host3;
+    private Node host1;
+    private Node host2;
+    private Node host3;
+    private Node host4;
     private final NodeResources resources0 = new NodeResources(1, 30, 20, 1.5);
     private final NodeResources resources1 = new NodeResources(2, 40, 40, 0.5);
 
@@ -45,10 +48,11 @@ public class HostCapacityTest {
         // Create flavors
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
 
-        // Create three hosts
+        // Create hosts
         host1 = Node.create("host1", IP.Config.of(Set.of("::1"), createIps(2, 4), List.of()), "host1", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
         host2 = Node.create("host2", IP.Config.of(Set.of("::11"), createIps(12, 3), List.of()), "host2", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        host3 = Node.create("host3", IP.Config.of(Set.of("::21"), createIps(22, 1), List.of()), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host3 = Node.create("host3", IP.Config.of(Set.of("::21"), createIps(22, 2), List.of()), "host3", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
+        host4 = Node.create("host3", IP.Config.of(Set.of("::21"), createIps(50, 0), List.of()), "host4", nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
 
         // Add two containers to host1
         var nodeA = Node.reserve(Set.of("::2"), "nodeA", "host1", resources0, NodeType.tenant).build();
@@ -72,8 +76,10 @@ public class HostCapacityTest {
         assertTrue(capacity.hasCapacity(host1, resources1));
         assertTrue(capacity.hasCapacity(host2, resources0));
         assertTrue(capacity.hasCapacity(host2, resources1));
-        assertFalse(capacity.hasCapacity(host3, resources0));  // No ip available
-        assertFalse(capacity.hasCapacity(host3, resources1)); // No ip available
+        assertTrue(capacity.hasCapacity(host3, resources0));
+        assertTrue(capacity.hasCapacity(host3, resources1));
+        assertFalse(capacity.hasCapacity(host4, resources0));  // No IPs available
+        assertFalse(capacity.hasCapacity(host4, resources1)); // No IPs available
 
         // Add a new node to host1 to deplete the memory resource
         Node nodeF = Node.reserve(Set.of("::6"), "nodeF", "host1", resources0, NodeType.tenant).build();
@@ -87,15 +93,18 @@ public class HostCapacityTest {
     public void freeIPs() {
         assertEquals(2, capacity.freeIps(host1));
         assertEquals(1, capacity.freeIps(host2));
-        assertEquals(0, capacity.freeIps(host3));
+        assertEquals(1, capacity.freeIps(host3));
+        assertEquals(0, capacity.freeIps(host4));
     }
 
     @Test
-    public void freeCapacityOf() {
+    public void unusedCapacityOf() {
         assertEquals(new NodeResources(5, 40, 80, 2, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
-                     capacity.freeCapacityOf(host1, false));
+                     capacity.unusedCapacityOf(host1));
         assertEquals(new NodeResources(5, 60, 80, 4.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
-                     capacity.freeCapacityOf(host3, false));
+                     capacity.unusedCapacityOf(host3));
+        assertEquals(new NodeResources(7, 100, 120, 5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+                     capacity.unusedCapacityOf(host4));
 
         doAnswer(invocation -> {
             NodeResources totalHostResources = ((Flavor) invocation.getArguments()[0]).resources();
@@ -103,9 +112,19 @@ public class HostCapacityTest {
         }).when(hostResourcesCalculator).advertisedResourcesOf(any());
 
         assertEquals(new NodeResources(4, 38, 77, 1.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
-                     capacity.freeCapacityOf(host1, false));
+                     capacity.unusedCapacityOf(host1));
         assertEquals(new NodeResources(4, 58, 77, 4, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
-                     capacity.freeCapacityOf(host3, false));
+                     capacity.unusedCapacityOf(host3));
+    }
+
+    @Test
+    public void availableCapacityOf() {
+        assertEquals(new NodeResources(5, 40, 80, 2, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+                     capacity.availableCapacityOf(host1));
+        assertEquals(new NodeResources(5, 60, 80, 4.5, NodeResources.DiskSpeed.fast, NodeResources.StorageType.remote),
+                     capacity.availableCapacityOf(host3));
+        assertEquals(NodeResources.zero(),
+                     capacity.availableCapacityOf(host4));
     }
 
     @Test

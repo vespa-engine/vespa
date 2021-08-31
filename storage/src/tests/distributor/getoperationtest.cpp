@@ -1,20 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
-#include <tests/distributor/distributortestutil.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iomanip>
 
@@ -28,7 +28,7 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct GetOperationTest : Test, DistributorTestUtil {
+struct GetOperationTest : Test, DistributorStripeTestUtil {
 
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     document::DocumentId docId;
@@ -59,7 +59,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
         op = std::make_unique<GetOperation>(
                 node_context(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
-                msg, getDistributor().getMetrics().gets,
+                msg, metrics().gets,
                 consistency);
         op->start(_sender, framework::MilliSecTime(0));
     }
@@ -143,7 +143,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
     }
 
     void setClusterState(const std::string& clusterState) {
-        enableDistributorClusterState(clusterState);
+        enable_cluster_state(clusterState);
     }
 
     void do_test_read_consistency_is_propagated(api::InternalReadConsistency consistency);
@@ -415,7 +415,7 @@ TEST_F(GetOperationTest, not_found) {
               "timestamp 0) ReturnCode(NONE)",
               _sender.getLastReply());
 
-    EXPECT_EQ(1, getDistributor().getMetrics().gets.failures.notfound.getValue());
+    EXPECT_EQ(1, metrics().gets.failures.notfound.getValue());
     EXPECT_FALSE(op->any_replicas_failed()); // "Not found" is not a failure.
     EXPECT_TRUE(last_reply_had_consistent_replicas());
     EXPECT_TRUE(op->newest_replica().has_value());

@@ -124,7 +124,7 @@ public class ModelEvaluationTest {
             fileMap.put(onnxModel.fileref().value(), appDir.append(onnxModel.fileref().value()).toFile());
         }
         FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
-        ModelsEvaluator evaluator = new ModelsEvaluator(config, constantsConfig, onnxModelsConfig, fileAcquirer);
+        ModelsEvaluator evaluator = new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer);
 
         assertEquals(5, evaluator.models().size());
 

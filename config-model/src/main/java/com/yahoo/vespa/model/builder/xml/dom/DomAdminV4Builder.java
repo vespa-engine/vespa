@@ -13,7 +13,6 @@ import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.LogserverContainerCluster;
 import com.yahoo.vespa.model.admin.Slobrok;
-import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
@@ -37,8 +36,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     public DomAdminV4Builder(ConfigModelContext context, boolean multitenant, List<ConfigServerSpec> configServerSpecs,
                              Collection<ContainerModel> containerModels) {
-        super(context.getApplicationType(), context.getDeployState().getFileRegistry(), multitenant,
-              configServerSpecs);
+        super(context.getApplicationType(), multitenant, configServerSpecs);
         this.containerModels = containerModels;
         this.context = context;
     }

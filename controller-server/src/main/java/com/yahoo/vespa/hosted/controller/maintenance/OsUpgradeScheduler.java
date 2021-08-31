@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -141,18 +140,6 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         @Override
         public Version version(OsVersionTarget currentTarget, Instant now) {
             Instant scheduledAt = currentTarget.scheduledAt();
-            if (currentTarget.scheduledAt().equals(Instant.EPOCH)) {
-                // TODO(mpolden): Remove this block after 2021-09-01. If we haven't written scheduledAt at least once,
-                //                we need to deduce the scheduled instant from the version.
-                Version version = currentTarget.osVersion().version();
-                String qualifier = version.getQualifier();
-                if (!qualifier.matches("^\\d{8,}")) throw new IllegalArgumentException("Could not parse instant from version " + version);
-
-                String dateString = qualifier.substring(0, 8);
-                scheduledAt = LocalDate.parse(dateString, CALENDAR_VERSION_PATTERN)
-                                       .atStartOfDay(ZoneOffset.UTC)
-                                       .toInstant();
-            }
             Version currentVersion = currentTarget.osVersion().version();
             if (scheduledAt.isBefore(now.minus(SCHEDULING_INTERVAL))) {
                 String calendarVersion = now.minus(AVAILABILITY_INTERVAL)

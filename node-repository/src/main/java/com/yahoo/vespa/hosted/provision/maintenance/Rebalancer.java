@@ -69,20 +69,20 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
         int hostCount = 0;
         for (Node host : allNodes.nodeType(NodeType.host).state(Node.State.active)) {
             hostCount++;
-            totalSkew += Node.skew(host.flavor().resources(), capacity.freeCapacityOf(host));
+            totalSkew += Node.skew(host.flavor().resources(), capacity.unusedCapacityOf(host));
         }
         metric.set("hostedVespa.docker.skew", totalSkew/hostCount, null);
     }
 
     private double skewReductionByRemoving(Node node, Node fromHost, HostCapacity capacity) {
-        NodeResources freeHostCapacity = capacity.freeCapacityOf(fromHost);
+        NodeResources freeHostCapacity = capacity.unusedCapacityOf(fromHost);
         double skewBefore = Node.skew(fromHost.flavor().resources(), freeHostCapacity);
         double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().justNumbers()));
         return skewBefore - skewAfter;
     }
 
     private double skewReductionByAdding(Node node, Node toHost, HostCapacity capacity) {
-        NodeResources freeHostCapacity = capacity.freeCapacityOf(toHost);
+        NodeResources freeHostCapacity = capacity.unusedCapacityOf(toHost);
         double skewBefore = Node.skew(toHost.flavor().resources(), freeHostCapacity);
         double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.resources().justNumbers()));
         return skewBefore - skewAfter;

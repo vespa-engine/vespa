@@ -25,6 +25,7 @@ private:
     void consider_remove_from_index(DocId docid);
     vespalib::MemoryUsage update_stat() override;
     vespalib::MemoryUsage memory_usage() const override;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     class ThreadedLoader;
     class ForegroundLoader;
 public:
@@ -43,9 +44,11 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     void compactWorst() override;
     uint32_t getVersion() const override;
+    void onCommit() override;
     void onGenerationChange(generation_t next_gen) override;
     void removeOldGenerations(generation_t first_used_gen) override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;
+    void onShrinkLidSpace() override;
 
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid) const override;

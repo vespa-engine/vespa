@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -62,28 +62,28 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
      * The default implementation deploys asynchronously to make sure we do all applications timely
      * even when deployments are slow.
      */
-    protected void deploy(ApplicationId application) {
+    protected void deploy(ApplicationId application, String reason) {
         if (pendingDeployments.addIfAbsent(application)) { // Avoid queuing multiple deployments for same application
-            deploymentExecutor.execute(() -> deployWithLock(application));
+            deploymentExecutor.execute(() -> deployWithLock(application, reason));
         }
     }
 
     protected Deployer deployer() { return deployer; }
 
     /** Returns the applications that should be maintained by this now. */
-    protected abstract Set<ApplicationId> applicationsNeedingMaintenance();
+    protected abstract Map<ApplicationId, String> applicationsNeedingMaintenance();
 
     /**
      * Redeploy this application. A lock will be taken for the duration of the deployment activation
-     *
-     * @return whether it was successfully deployed
      */
-    protected final boolean deployWithLock(ApplicationId application) {
+    protected final void deployWithLock(ApplicationId application, String reason) {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return false; // this will be done at another config server
-            if ( ! canDeployNow(application)) return false; // redeployment is no longer needed
-            log.log(Level.INFO, application + " will be deployed, last deploy time " + getLastDeployTime(application));
-            return deployment.activate().isPresent();
+            if ( ! deployment.isValid()) return; // this will be done at another config server
+            if ( ! canDeployNow(application)) return; // redeployment is no longer needed
+            log.log(Level.INFO, () -> application + " will be redeployed" +
+                                      (reason == null || reason.isBlank() ? "" : " due to " + reason) +
+                                      ", last deploy time " + getLastDeployTime(application));
+            deployment.activate();
         } finally {
             pendingDeployments.remove(application);
         }

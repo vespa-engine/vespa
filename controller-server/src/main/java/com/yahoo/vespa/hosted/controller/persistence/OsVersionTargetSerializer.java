@@ -45,10 +45,8 @@ public class OsVersionTargetSerializer {
         Set<OsVersionTarget> osVersionTargets = new TreeSet<>();
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
-            Duration upgradeBudget = Duration.ofMillis(inspector.field(upgradeBudgetField).asLong());
-            // TODO(mpolden): Require after 2021-09-01
-            Instant scheduledAt = SlimeUtils.optionalInstant(inspector.field(scheduledAtField))
-                                            .orElse(Instant.EPOCH);
+            Duration upgradeBudget = SlimeUtils.duration(inspector.field(upgradeBudgetField));
+            Instant scheduledAt = SlimeUtils.instant(inspector.field(scheduledAtField));
             osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget, scheduledAt));
         });
         return Collections.unmodifiableSet(osVersionTargets);

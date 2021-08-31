@@ -157,6 +157,20 @@ public:
             }
         }
     }
+    void compact(vespalib::ArrayRef<AtomicEntryRef> refs) override {
+        if (!_bufferIdsToCompact.empty()) {
+            for (auto &ref : refs) {
+                if (ref.load_relaxed().valid()) {
+                    RefT internalRef(ref.load_relaxed());
+                    if (compactingBuffer(internalRef.bufferId())) {
+                        EntryRef newRef = _store.add(_store.get(ref.load_relaxed()));
+                        std::atomic_thread_fence(std::memory_order_release);
+                        ref.store_release(newRef);
+                    }
+                }
+            }
+        }
+    }
 };
 
 }

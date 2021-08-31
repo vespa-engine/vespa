@@ -46,7 +46,7 @@ RankingExpressions::loadExpression(const vespalib::string &name) const
     auto path = pos->second;
     vespalib::MappedFileInput file(path);
     if (!file.valid()) {
-        LOG(warning, "could not read file: %s", path.c_str());
+        LOG(warning, "rankexpression: %s -> could not read file: %s", name.c_str(), path.c_str());
         return {};
     }
     if (ends_with(path, ".lz4")) {

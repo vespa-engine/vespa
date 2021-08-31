@@ -1,26 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include "dummy_cluster_context.h"
+#include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
 
-struct GarbageCollectionOperationTest : Test, DistributorTestUtil {
+struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
     void SetUp() override {
         createLinks();
-        enableDistributorClusterState("distributor:1 storage:2");
+        enable_cluster_state("distributor:1 storage:2");
         addNodesToBucketDB(document::BucketId(16, 1), "0=250/50/300,1=250/50/300");
-        getConfig().setGarbageCollection("music.date < 34", 3600s);
+        auto cfg = make_config();
+        cfg->setGarbageCollection("music.date < 34", 3600s);
+        configure_stripe(cfg);
         getClock().setAbsoluteTimeInSeconds(34);
     };
 

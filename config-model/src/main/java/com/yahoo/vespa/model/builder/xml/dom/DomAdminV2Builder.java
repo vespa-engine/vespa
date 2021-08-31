@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -33,10 +32,9 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     private static final String ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK = "standalone-zookeeper";
 
     public DomAdminV2Builder(ConfigModelContext.ApplicationType applicationType,
-                             FileRegistry fileRegistry,
                              boolean multitenant,
                              List<ConfigServerSpec> configServerSpecs) {
-        super(applicationType, fileRegistry, multitenant, configServerSpecs);
+        super(applicationType, multitenant, configServerSpecs);
     }
 
     @Override

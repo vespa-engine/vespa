@@ -124,6 +124,7 @@ public:
     const storage::distributor::DistributorNodeContext& node_context() const;
     storage::distributor::DistributorStripeOperationContext& operation_context();
     const DocumentSelectionParser& doc_selection_parser() const;
+    DistributorMetricSet& metrics();
 
     bool tick();
 
@@ -168,6 +169,10 @@ public:
                       uint32_t early_return = false,
                       bool require_primary_to_be_written = true);
 
+    void set_redundancy(uint32_t redundancy);
+
+    void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+
     using ConfigBuilder = vespa::config::content::core::StorDistributormanagerConfigBuilder;
 
     std::shared_ptr<DistributorConfiguration> make_config() const;
@@ -200,6 +205,9 @@ public:
     void receive_set_system_state_command(const vespalib::string& state_str);
 
     void handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
+
+    void simulate_set_pending_cluster_state(const vespalib::string& state_str);
+    void clear_pending_cluster_state_bundle();
 
 protected:
     vdstestlib::DirConfig _config;

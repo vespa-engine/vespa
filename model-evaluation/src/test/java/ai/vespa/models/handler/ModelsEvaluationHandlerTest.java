@@ -3,6 +3,7 @@ package ai.vespa.models.handler;
 
 import ai.vespa.models.evaluation.ModelTester;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import ai.vespa.models.evaluation.RankProfilesConfigImporterWithMockedConstants;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
@@ -50,6 +51,15 @@ public class ModelsEvaluationHandlerTest {
                 "{\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
         handler.assertResponse(url, 200, expected);
     }
+
+    @Test
+    public void testListModelsWithDifferentHost() {
+        String url = "http://localhost/model-evaluation/v1";
+        String expected =
+                "{\"mnist_softmax\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost:8088/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost:8088/model-evaluation/v1/lightgbm_regression\"}";
+        handler.assertResponse(url, 200, expected, Map.of("Host", "localhost:8088"));
+    }
+
 
     @Test
     public void testXgBoostEvaluationWithoutBindings() {
@@ -203,10 +213,8 @@ public class ModelsEvaluationHandlerTest {
                 RankingExpressionsConfig.class).getConfig("");
         OnnxModelsConfig onnxModelsConfig = new ConfigGetter<>(new FileSource(configDir.append("onnx-models.cfg").toFile()),
                 OnnxModelsConfig.class).getConfig("");
-        ModelTester.RankProfilesConfigImporterWithMockedConstants importer =
-                new ModelTester.RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"),
-                                                                              MockFileAcquirer.returnFile(null));
-        return new ModelsEvaluator(importer.importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
+        return new ModelsEvaluator(new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null)),
+                config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
     private String inputTensor() {

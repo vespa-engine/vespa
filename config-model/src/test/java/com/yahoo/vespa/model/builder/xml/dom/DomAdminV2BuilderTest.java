@@ -9,7 +9,9 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
+import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import org.junit.Before;
 import org.junit.Test;
@@ -208,9 +210,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     private Admin buildAdmin(Element xml, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
         DeployState deployState = DeployState.createTestState();
         final DomAdminV2Builder domAdminBuilder =
-                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT,
-                                      deployState.getFileRegistry(), multitenant,
-                                      configServerSpecs);
+                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, multitenant, configServerSpecs);
         Admin admin = domAdminBuilder.build(deployState, root, xml);
         admin.addPerHostServices(root.hostSystem().getHosts(), deployState);
         return admin;

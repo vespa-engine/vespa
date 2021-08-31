@@ -1,20 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <tests/common/dummystoragelink.h>
-#include <vespa/storageapi/message/persistence.h>
+#include "dummy_cluster_context.h"
+#include <tests/distributor/distributor_stripe_test_util.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
-#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
+#include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
+#include <vespa/storageapi/message/bucketsplitting.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <vespa/storageapi/message/bucketsplitting.h>
-#include <tests/distributor/distributortestutil.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include "dummy_cluster_context.h"
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
@@ -23,10 +22,10 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-struct IdealStateManagerTest : Test, DistributorTestUtil {
+struct IdealStateManagerTest : Test, DistributorStripeTestUtil {
     IdealStateManagerTest()
         : Test(),
-          DistributorTestUtil(),
+          DistributorStripeTestUtil(),
           _bucketSpaces()
     {}
     void SetUp() override {
@@ -80,7 +79,7 @@ TEST_F(IdealStateManagerTest, status_page) {
     getDirConfig().getConfig("stor-distributormanager").set("joinsize", "0");
     getDirConfig().getConfig("stor-distributormanager").set("joincount", "0");
     createLinks();
-    setupDistributor(1, 1, "distributor:1 storage:1");
+    setup_stripe(1, 1, "distributor:1 storage:1");
 
     insertBucketInfo(document::BucketId(16, 5), 0, 0xff, 100, 200, true, true);
     insertBucketInfo(document::BucketId(16, 2), 0, 0xff, 10, 10, true, true);
@@ -96,11 +95,13 @@ TEST_F(IdealStateManagerTest, status_page) {
 }
 
 TEST_F(IdealStateManagerTest, disabled_state_checker) {
-    setupDistributor(1, 1, "distributor:1 storage:1");
+    setup_stripe(1, 1, "distributor:1 storage:1");
 
-    getConfig().setSplitSize(100);
-    getConfig().setSplitCount(1000000);
-    getConfig().disableStateChecker("SplitBucket");
+    auto cfg = make_config();
+    cfg->setSplitSize(100);
+    cfg->setSplitCount(1000000);
+    cfg->disableStateChecker("SplitBucket");
+    configure_stripe(cfg);
 
     insertBucketInfo(document::BucketId(16, 5), 0, 0xff, 100, 200, true, true);
     insertBucketInfo(document::BucketId(16, 2), 0, 0xff, 10, 10, true, true);
@@ -184,10 +185,10 @@ TEST_F(IdealStateManagerTest, recheck_when_active) {
  */
 TEST_F(IdealStateManagerTest, block_ideal_state_ops_when_pending_cluster_state_is_present) {
 
-    setupDistributor(2, 10, "version:1 distributor:1 storage:1 .0.s:d");
+    setup_stripe(2, 10, "version:1 distributor:1 storage:1 .0.s:d");
 
     // Trigger a pending cluster state with bucket info requests towards 1 node
-    receive_set_system_state_command("version:2 distributor:1 storage:1");
+    simulate_set_pending_cluster_state("version:2 distributor:1 storage:1");
 
     OperationSequencer op_seq;
     document::BucketId bid(16, 1234);
@@ -198,12 +199,7 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_when_pending_cluster_state_i
         EXPECT_TRUE(op.isBlocked(operation_context(), op_seq));
     }
 
-    // Clear pending by replying with zero buckets for all bucket spaces
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
-    for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
-        auto& bucket_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.command(i));
-        handle_top_level_message(bucket_req.makeReply());
-    }
+    clear_pending_cluster_state_bundle();
 
     {
         RemoveBucketOperation op(dummy_cluster_context,
@@ -213,7 +209,7 @@ TEST_F(IdealStateManagerTest, block_ideal_state_ops_when_pending_cluster_state_i
 }
 
 TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket) {
-    setupDistributor(2, 10, "distributor:1 storage:2");
+    setup_stripe(2, 10, "distributor:1 storage:2");
     framework::defaultimplementation::FakeClock clock;
     OperationSequencer op_seq;
     document::BucketId bid(16, 1234);
@@ -234,7 +230,7 @@ TEST_F(IdealStateManagerTest, block_check_for_all_operations_to_specific_bucket)
 }
 
 TEST_F(IdealStateManagerTest, block_operations_with_locked_buckets) {
-    setupDistributor(2, 10, "distributor:1 storage:2");
+    setup_stripe(2, 10, "distributor:1 storage:2");
     framework::defaultimplementation::FakeClock clock;
     OperationSequencer op_seq;
     const auto bucket = makeDocumentBucket(document::BucketId(16, 1234));

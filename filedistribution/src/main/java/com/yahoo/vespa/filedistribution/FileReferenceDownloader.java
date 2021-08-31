@@ -96,9 +96,10 @@ public class FileReferenceDownloader {
         String fileReference = fileReferenceDownload.fileReference().value();
         request.parameters().add(new StringValue(fileReference));
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
-
-        connection.invokeSync(request, (double) rpcTimeout.getSeconds());
-        Level logLevel = (retryCount > 50 ? Level.INFO : Level.FINE);
+        double timeoutSecs = (double) rpcTimeout.getSeconds();
+        timeoutSecs += retryCount * 10.0;
+        connection.invokeSync(request, timeoutSecs);
+        Level logLevel = (retryCount > 5 ? Level.INFO : Level.FINE);
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {

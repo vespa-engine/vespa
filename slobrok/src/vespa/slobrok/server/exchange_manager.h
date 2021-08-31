@@ -77,15 +77,21 @@ private:
         ~WorkPackage();
     };
 
+    SBEnv             &_env;
+    RpcServerManager  &_rpcsrvmanager;
+    RpcServerMap      &_rpcsrvmap;
+
+    vespalib::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
+
 public:
     ExchangeManager(const ExchangeManager &) = delete;
     ExchangeManager &operator=(const ExchangeManager &) = delete;
     ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap);
     ~ExchangeManager();
 
-    SBEnv             &_env;
-    RpcServerManager  &_rpcsrvmanager;
-    RpcServerMap      &_rpcsrvmap;
+    SBEnv             &env() { return _env; }
+    RpcServerManager  &rpcServerManager() { return _rpcsrvmanager; }
+    RpcServerMap      &rpcServerMap() { return _rpcsrvmap; }
 
     OkState addPartner(const std::string & name, const std::string & spec);
     void removePartner(const std::string & name);

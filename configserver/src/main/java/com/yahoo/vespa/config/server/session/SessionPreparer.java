@@ -25,6 +25,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
+import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -33,7 +34,6 @@ import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -126,7 +126,6 @@ public class SessionPreparer {
                 preparation.writeStateZK();
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
-                preparation.writeApplicationRoles();
             }
             log.log(Level.FINE, () -> "time used " + params.getTimeoutBudget().timesUsed() + " : " + applicationId);
             return preparation.result();
@@ -155,8 +154,6 @@ public class SessionPreparer {
         private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
         private final Optional<AthenzDomain> athenzDomain;
-        private final ApplicationRolesStore applicationRolesStore;
-        private final Optional<ApplicationRoles> applicationRoles;
         private final ApplicationPackage applicationPackage;
         private final SessionZooKeeperClient sessionZooKeeperClient;
 
@@ -165,7 +162,7 @@ public class SessionPreparer {
         private PrepareResult prepareResult;
 
         private final PreparedModelsBuilder preparedModelsBuilder;
-        private final FileDistributionProvider fileDistributionProvider;
+        private final FileRegistry fileRegistry;
 
         Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
@@ -187,9 +184,6 @@ public class SessionPreparer {
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
             this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
-            this.applicationRolesStore = new ApplicationRolesStore(curator, tenantPath);
-            this.applicationRoles = params.applicationRoles()
-                    .or(() -> applicationRolesStore.readApplicationRoles(applicationId));
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
                                                               configserverConfig,
                                                               zone,
@@ -199,16 +193,15 @@ public class SessionPreparer {
                                                               flagSource,
                                                               endpointCertificateSecrets,
                                                               athenzDomain,
-                                                              applicationRoles,
                                                               params.quota(),
                                                               params.tenantSecretStores(),
                                                               secretStore,
                                                               params.operatorCertificates());
-            this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
+            this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
-                                                                   fileDistributionProvider,
+                                                                   fileRegistry,
                                                                    hostProvisionerProvider,
                                                                    curator,
                                                                    hostValidator,
@@ -229,12 +222,11 @@ public class SessionPreparer {
         }
 
         Optional<FileReference> distributedApplicationPackage() {
-            FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
-            FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
+            FileDistribution fileDistribution = fileDistributionFactory.createFileDistribution();
             log.log(Level.FINE, () -> "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
             properties.configServerSpecs().stream()
-                    .filter(spec -> ! spec.getHostName().equals(fileRegistry.fileSourceHost()))
+                    .filter(spec -> ! spec.getHostName().equals(HostName.getLocalhost()))
                     .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
             checkTimeout("distributeApplicationPackage");
@@ -290,11 +282,6 @@ public class SessionPreparer {
         void writeContainerEndpointsZK() {
             containerEndpointsCache.write(applicationId, containerEndpoints);
             checkTimeout("write container endpoints to zookeeper");
-        }
-
-        void writeApplicationRoles() {
-            applicationRoles.ifPresent(roles -> applicationRolesStore.writeApplicationRoles(applicationId, roles));
-            checkTimeout("write application roles to zookeeper");
         }
 
         PrepareResult result() {
@@ -361,7 +348,7 @@ public class SessionPreparer {
         public Map<Version, FileRegistry> getFileRegistries() {
             return results.stream()
                     .collect(Collectors.toMap((prepareResult -> prepareResult.version),
-                            (prepareResult -> prepareResult.fileDistributionProvider.getFileRegistry())));
+                            (prepareResult -> prepareResult.fileRegistry)));
         }
 
         /**

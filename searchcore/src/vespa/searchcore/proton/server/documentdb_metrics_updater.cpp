@@ -302,12 +302,14 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
 void
 DocumentDBMetricsUpdater::updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
 {
-    AttributeUsageStats attributeUsageStats = _writeFilter.getAttributeUsageStats();
+    AttributeUsageStats stats = _writeFilter.getAttributeUsageStats();
     bool feedBlocked = !_writeFilter.acceptWriteOperation();
-    double enumStoreUsed = attributeUsageStats.enumStoreUsage().getUsage().usage();
-    double multiValueUsed = attributeUsageStats.multiValueUsage().getUsage().usage();
+    double enumStoreUsed = stats.enumStoreUsage().getUsage().usage();
+    double multiValueUsed = stats.multiValueUsage().getUsage().usage();
+    double address_space_used = stats.max_address_space_usage().getUsage().usage();
     metrics.resourceUsage.enumStore.set(enumStoreUsed);
     metrics.resourceUsage.multiValue.set(multiValueUsed);
+    metrics.resourceUsage.address_space.set(address_space_used);
     metrics.resourceUsage.feedingBlocked.set(feedBlocked ? 1 : 0);
 }
 

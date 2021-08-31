@@ -2,7 +2,7 @@
 
 #include "service_map_mirror.h"
 #include <vespa/log/log.h>
-LOG_SETUP(".slobrok.service_map_mirror");
+LOG_SETUP(".slobrok.server.service_map_mirror");
 
 namespace slobrok {
 

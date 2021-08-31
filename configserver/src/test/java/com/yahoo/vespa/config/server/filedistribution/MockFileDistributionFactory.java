@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.application.api.FileRegistry;
 
 import java.io.File;
 
@@ -15,8 +16,13 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
     }
 
     @Override
-    public com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider createProvider(File applicationFile) {
-        return new MockFileDistributionProvider(applicationFile, new File(configserverConfig.fileReferencesDir()));
+    public FileRegistry createFileRegistry(File applicationPackage) {
+        return new MockFileRegistry(applicationPackage, getFileReferencesDir().toPath());
+    }
+
+    @Override
+    public AddFileInterface createFileManager(File applicationDir) {
+        return new MockFileManager();
     }
 
 }

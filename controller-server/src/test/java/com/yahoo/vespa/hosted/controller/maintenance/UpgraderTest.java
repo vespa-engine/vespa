@@ -167,7 +167,7 @@ public class UpgraderTest {
         // --- Failing application is repaired by changing the application, causing confidence to move above 'high' threshold
         // Deploy application change
         default0.submit(applicationPackage("default"));
-        default0.jobAborted(stagingTest);
+        default0.triggerJobs().jobAborted(stagingTest);
         default0.deploy();
 
         tester.controllerTester().computeVersionStatus();
@@ -232,7 +232,7 @@ public class UpgraderTest {
         // State: Default applications started upgrading to version5
         tester.clock().advance(Duration.ofHours(1));
         tester.upgrader().maintain();
-        default3.failDeployment(stagingTest);
+        default3.triggerJobs().jobAborted(stagingTest);
         default0.runJob(systemTest)
                 .failDeployment(stagingTest);
         default1.runJob(systemTest)

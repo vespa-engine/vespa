@@ -110,13 +110,17 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
-      _localRpcMonitorMap(*_supervisor),
+      _localRpcMonitorMap(*_supervisor,
+                          [this] (MappingMonitorOwner &owner) {
+                              return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
+                          }),
       _rpcsrvmanager(*this),
       _exchanger(*this, _rpcsrvmap),
       _rpcsrvmap()
 {
     srandom(time(nullptr) ^ getpid());
-    _localMonitorSubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _localRpcMonitorMap);
+    // note: feedback loop between these two:
+    _localMonitorSubscription = MapSubscription::subscribe(_consensusMap, _localRpcMonitorMap);
     _consensusSubscription = MapSubscription::subscribe(_localRpcMonitorMap.dispatcher(), _consensusMap);
     // TODO: use consensus as source here:
     _globalHistorySubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _globalVisibleHistory);
@@ -124,10 +128,7 @@ SBEnv::SBEnv(const ConfigShim &shim)
 }
 
 
-SBEnv::~SBEnv()
-{
-    getTransport()->WaitFinished();
-}
+SBEnv::~SBEnv() = default;
 
 FNET_Scheduler *
 SBEnv::getScheduler() {

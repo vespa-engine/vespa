@@ -295,6 +295,14 @@ public class QueryTestCase {
     }
 
     @Test
+    public void testCloneTimeout() {
+        Query q = new Query(httpEncode("/search?timeout=300ms"));
+        assertEquals(300, q.getTimeout());
+        Query clonedQ = q.clone();
+        assertEquals(300, clonedQ.getTimeout());
+    }
+
+    @Test
     public void testQueryProfileSubstitution1() {
         QueryProfile profile = new QueryProfile("myProfile");
         profile.set("myField", "Profile: %{queryProfile}", null);

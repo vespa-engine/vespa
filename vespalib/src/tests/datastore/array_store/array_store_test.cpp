@@ -18,7 +18,14 @@ using generation_t = vespalib::GenerationHandler::generation_t;
 using MemStats = vespalib::datastore::test::MemStats;
 using BufferStats = vespalib::datastore::test::BufferStats;
 
+namespace {
+
 constexpr float ALLOC_GROW_FACTOR = 0.2;
+
+EntryRef as_entry_ref(const EntryRef& ref) noexcept { return ref; }
+EntryRef as_entry_ref(const AtomicEntryRef& ref) noexcept { return ref.load_relaxed(); }
+
+}
 
 template <typename EntryT, typename RefT = EntryRefT<19> >
 struct Fixture
@@ -115,19 +122,20 @@ struct Fixture
         store.transferHoldLists(generation++);
         store.trimHoldLists(generation);
     }
+    template <typename TestedRefType>
     void compactWorst(bool compactMemory, bool compactAddressSpace) {
         ICompactionContext::UP ctx = store.compactWorst(compactMemory, compactAddressSpace);
-        std::vector<EntryRef> refs;
+        std::vector<TestedRefType> refs;
         for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
-            refs.push_back(itr->first);
+            refs.emplace_back(itr->first);
         }
-        std::vector<EntryRef> compactedRefs = refs;
-        ctx->compact(ArrayRef<EntryRef>(compactedRefs));
+        std::vector<TestedRefType> compactedRefs = refs;
+        ctx->compact(ArrayRef<TestedRefType>(compactedRefs));
         ReferenceStore compactedRefStore;
         for (size_t i = 0; i < refs.size(); ++i) {
-            ASSERT_EQUAL(0u, compactedRefStore.count(compactedRefs[i]));
-            ASSERT_EQUAL(1u, refStore.count(refs[i]));
-            compactedRefStore.insert(std::make_pair(compactedRefs[i], refStore[refs[i]]));
+            ASSERT_EQUAL(0u, compactedRefStore.count(as_entry_ref(compactedRefs[i])));
+            ASSERT_EQUAL(1u, refStore.count(as_entry_ref(refs[i])));
+            compactedRefStore.insert(std::make_pair(as_entry_ref(compactedRefs[i]), refStore[as_entry_ref(refs[i])]));
         }
         refStore = compactedRefStore;
     }
@@ -252,7 +260,11 @@ TEST_F("require that new underlying buffer is allocated when current is full", S
     TEST_DO(f.assertStoreContent());
 }
 
-TEST_F("require that the buffer with most dead space is compacted", NumberFixture(2))
+namespace {
+
+template <typename TestedRefType>
+void
+test_compaction(NumberFixture &f)
 {
     EntryRef size1Ref = f.add({1});
     EntryRef size2Ref = f.add({2,2});
@@ -267,7 +279,7 @@ TEST_F("require that the buffer with most dead space is compacted", NumberFixtur
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
     EXPECT_EQUAL(3u, f.refStore.size());
-    f.compactWorst(true, false);
+    f.compactWorst<TestedRefType>(true, false);
     EXPECT_EQUAL(3u, f.refStore.size());
     f.assertStoreContent();
 
@@ -279,6 +291,18 @@ TEST_F("require that the buffer with most dead space is compacted", NumberFixtur
     EXPECT_TRUE(f.store.bufferState(size2Ref).isOnHold());
     f.trimHoldLists();
     EXPECT_TRUE(f.store.bufferState(size2Ref).isFree());
+}
+
+}
+
+TEST_F("require that the buffer with most dead space is compacted (EntryRef vector)", NumberFixture(2))
+{
+    test_compaction<EntryRef>(f);
+}
+
+TEST_F("require that the buffer with most dead space is compacted (AtomicEntryRef vector)", NumberFixture(2))
+{
+    test_compaction<AtomicEntryRef>(f);
 }
 
 namespace {
@@ -300,7 +324,7 @@ void testCompaction(NumberFixture &f, bool compactMemory, bool compactAddressSpa
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
     EXPECT_EQUAL(3u, f.refStore.size());
-    f.compactWorst(compactMemory, compactAddressSpace);
+    f.compactWorst<EntryRef>(compactMemory, compactAddressSpace);
     EXPECT_EQUAL(3u, f.refStore.size());
     f.assertStoreContent();
 

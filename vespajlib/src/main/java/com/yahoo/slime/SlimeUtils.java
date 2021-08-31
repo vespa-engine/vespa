@@ -133,6 +133,10 @@ public class SlimeUtils {
         return Instant.ofEpochMilli(field.asLong());
     }
 
+    public static Duration duration(Inspector field) {
+        return Duration.ofMillis(field.asLong());
+    }
+
     public static Optional<String> optionalString(Inspector inspector) {
         return Optional.of(inspector.asString()).filter(s -> !s.isEmpty());
     }

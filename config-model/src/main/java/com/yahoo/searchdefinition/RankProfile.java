@@ -120,6 +120,9 @@ public class RankProfile implements Cloneable {
 
     private List<ImmutableSDField> allFieldsList;
 
+    /** Global onnx models not tied to a search definition */
+    private final OnnxModels onnxModels;
+
     /**
      * Creates a new rank profile for a particular search definition
      *
@@ -132,6 +135,7 @@ public class RankProfile implements Cloneable {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = Objects.requireNonNull(search, "search cannot be null");
         this.model = null;
+        this.onnxModels = null;
         this.rankProfileRegistry = rankProfileRegistry;
     }
 
@@ -141,11 +145,12 @@ public class RankProfile implements Cloneable {
      * @param name  the name of the new profile
      * @param model the model owning this profile
      */
-    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry) {
+    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
         this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
+        this.onnxModels = onnxModels;
     }
 
     public String getName() { return name; }
@@ -164,7 +169,7 @@ public class RankProfile implements Cloneable {
     }
 
     public Map<String, OnnxModel> onnxModels() {
-        return search != null ? search.onnxModels().asMap() : model.onnxModels().asMap();
+        return search != null ? search.onnxModels().asMap() : onnxModels.asMap();
     }
 
     private Stream<ImmutableSDField> allFields() {

@@ -35,8 +35,8 @@ public class SharedIntermediateSession extends AbstractResource
             throw new IllegalArgumentException("Reply handler must be null.");
         }
         this.msgHandler.set(params.getMessageHandler());
-        this.session = mbus.messageBus().createIntermediateSession(params.setReplyHandler(this)
-                                                                         .setMessageHandler(this));
+        this.session = mbus.messageBus().createDetachedIntermediateSession(params.setReplyHandler(this)
+                                                                                 .setMessageHandler(this));
         this.mbusReference = mbus.refer();
     }
 
@@ -93,6 +93,11 @@ public class SharedIntermediateSession extends AbstractResource
     @Override
     public String name() {
         return session.getName();
+    }
+
+    @Override
+    public void connect() {
+        session.connect();
     }
 
     @Override

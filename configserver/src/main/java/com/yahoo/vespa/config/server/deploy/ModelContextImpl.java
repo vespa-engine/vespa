@@ -157,7 +157,6 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
-        private final NodeResources dedicatedClusterControllerFlavor;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
@@ -186,7 +185,6 @@ public class ModelContextImpl implements ModelContext {
         private final double minNodeRatioPerGroup;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
-            this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
             this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
@@ -215,7 +213,6 @@ public class ModelContextImpl implements ModelContext {
             this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
         }
 
-        @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }
@@ -297,7 +294,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isFirstTimeDeployment;
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final Optional<AthenzDomain> athenzDomain;
-        private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
@@ -315,7 +311,6 @@ public class ModelContextImpl implements ModelContext {
                           FlagSource flagSource,
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
@@ -334,7 +329,6 @@ public class ModelContextImpl implements ModelContext {
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             this.athenzDomain = athenzDomain;
-            this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
@@ -392,11 +386,6 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
-        @Override
-        public Optional<ApplicationRoles> applicationRoles() {
-            return applicationRoles;
-        }
-
         @Override public Quota quota() { return quota; }
 
         @Override
@@ -426,19 +415,6 @@ public class ModelContextImpl implements ModelContext {
                               .value();
         }
 
-    }
-
-    private static NodeResources parseDedicatedClusterControllerFlavor(String flagValue) {
-        String[] parts = flagValue.split("-");
-        if (parts.length != 3)
-            return null;
-
-        return new NodeResources(Double.parseDouble(parts[0]),
-                                 Double.parseDouble(parts[1]),
-                                 Double.parseDouble(parts[2]),
-                                 0.1,
-                                 NodeResources.DiskSpeed.any,
-                                 NodeResources.StorageType.any);
     }
 
 }

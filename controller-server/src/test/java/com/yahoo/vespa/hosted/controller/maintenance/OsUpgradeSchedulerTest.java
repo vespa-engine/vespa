@@ -7,14 +7,12 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.StableOsVersion;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -65,35 +63,6 @@ public class OsUpgradeSchedulerTest {
         tester.clock().advance(Duration.ofDays(2));
         scheduler.maintain();
         assertEquals(version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
-    }
-
-    @Test // TODO(mpolden): Remove this after 2021-09-01
-    public void schedule_calendar_versioned_without_scheduled_time() {
-        ControllerTester tester = new ControllerTester();
-        OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
-        Instant t0 = Instant.parse("2021-01-23T07:00:00.00Z"); // Inside trigger period
-        tester.clock().setInstant(t0);
-
-        CloudName cloud = CloudName.from("cloud");
-        ZoneApi zone = zone("prod.us-west-1", cloud);
-        tester.zoneRegistry().setZones(zone).reprovisionToUpgradeOsIn(zone);
-
-        // Initial run does nothing as the cloud does not have a target
-        scheduler.maintain();
-        assertTrue("No target set", tester.controller().osVersionTarget(cloud).isEmpty());
-
-        // Target is set
-        Version version0 = Version.fromString("7.0.0.20210123190005");
-        // Simulate setting target without scheduledAt, to force parsing scheduled time from version number
-        tester.curator().writeOsVersionTargets(Set.of(new OsVersionTarget(new OsVersion(version0, cloud),
-                                                                          Duration.ofDays(1), Instant.EPOCH)));
-
-        // Just over 45 days pass, and a new target replaces the expired one
-        Version version1 = Version.fromString("7.0.0.20210302");
-        tester.clock().advance(Duration.ofDays(45).plus(Duration.ofSeconds(1)));
-        scheduler.maintain();
-        assertEquals("New target set", version1,
-                     tester.controller().osVersionTarget(cloud).get().osVersion().version());
     }
 
     @Test

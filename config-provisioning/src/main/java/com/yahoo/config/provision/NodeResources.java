@@ -16,7 +16,7 @@ public class NodeResources {
     private static final double memoryUnitCost = 0.009;
     private static final double diskUnitCost =   0.0003;
 
-    private static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
+    private static final NodeResources zero = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
 
@@ -276,9 +276,9 @@ public class NodeResources {
         return true;
     }
 
-    public static NodeResources unspecified() { return unspecified; }
+    public static NodeResources unspecified() { return zero; }
 
-    public boolean isUnspecified() { return this.equals(unspecified); }
+    public boolean isUnspecified() { return this.equals(zero); }
 
     // Returns squared euclidean distance of the relevant numerical values of two node resources
     public double distanceTo(NodeResources other) {
@@ -327,6 +327,6 @@ public class NodeResources {
         return value;
     }
 
-    public static NodeResources zero() { return new NodeResources(0, 0, 0, 0); }
+    public static NodeResources zero() { return zero; }
 
 }

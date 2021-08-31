@@ -21,8 +21,7 @@ std::ostream& operator<<(std::ostream& out, const ResourceUsage& resource_usage)
 {
     out << "{disk_usage=" << resource_usage.get_disk_usage() <<
         ", memory_usage=" << resource_usage.get_memory_usage() <<
-        ", attribute_enum_store_usage=" << resource_usage.get_attribute_enum_store_usage() <<
-        ", attribute_multivalue_usage=" << resource_usage.get_attribute_multivalue_usage() << "}";
+        ", attribute_address_space_usage=" << resource_usage.get_attribute_address_space_usage() << "}";
     return out;
 }
 

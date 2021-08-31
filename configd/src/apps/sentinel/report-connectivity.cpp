@@ -24,6 +24,7 @@ ReportConnectivity::ReportConnectivity(FRT_RPCRequest *req, int timeout_ms, FRT_
         _remaining = map.size();
         for (const auto & [ hostname, port ] : map) {
             _checks.emplace_back(std::make_unique<PeerCheck>(*this, hostname, port, orb, timeout_ms));
+            timeout_ms += 20;
         }
     } else {
         _parentRequest->SetError(FRTE_RPC_METHOD_FAILED, "failed getting model config");

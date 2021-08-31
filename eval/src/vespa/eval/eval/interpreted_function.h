@@ -13,6 +13,7 @@ namespace vespalib::eval {
 namespace nodes { struct Node; }
 struct TensorFunction;
 class TensorSpec;
+struct CTFMetaData;
 
 /**
  * A Function that has been prepared for execution. This will
@@ -72,6 +73,7 @@ public:
             : function(function_in), param(0) {}
         Instruction(op_function function_in, uint64_t param_in) noexcept
             : function(function_in), param(param_in) {}
+        vespalib::string resolve_symbol() const;
         void perform(State &state) const {
             if (function == nullptr) {
                 state.stack.push_back(state.params->resolve(param, state.stash));
@@ -93,7 +95,9 @@ private:
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
     // for testing; use with care; the tensor function must be kept alive
-    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function);
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function, CTFMetaData *meta);
+    InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)
+      : InterpretedFunction(factory, function, nullptr) {}
     InterpretedFunction(const ValueBuilderFactory &factory, const nodes::Node &root, const NodeTypes &types);
     InterpretedFunction(const ValueBuilderFactory &factory, const Function &function, const NodeTypes &types)
         : InterpretedFunction(factory, function.root(), types) {}

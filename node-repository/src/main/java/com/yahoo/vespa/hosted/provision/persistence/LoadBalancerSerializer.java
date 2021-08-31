@@ -51,8 +51,7 @@ public class LoadBalancerSerializer {
         Cursor root = slime.setObject();
 
         root.setString(idField, loadBalancer.id().serializedForm());
-        // TODO(mpolden): Stop writing this field for empty instance after 2021-06-01
-        root.setString(hostnameField, loadBalancer.instance().map(instance -> instance.hostname().value()).orElse(""));
+        loadBalancer.instance().ifPresent(instance -> root.setString(hostnameField, instance.hostname().value()));
         root.setString(stateField, asString(loadBalancer.state()));
         root.setLong(changedAtField, loadBalancer.changedAt().toEpochMilli());
         loadBalancer.instance().flatMap(LoadBalancerInstance::dnsZone).ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));

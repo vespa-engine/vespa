@@ -43,6 +43,9 @@ assertDefaultAttribute(const AttributesConfig::Attribute &attribute,
     if (!EXPECT_FALSE(attribute.huge)) {
         return false;
     }
+    if (!EXPECT_FALSE(attribute.paged)) {
+        return false;
+    }
     if (!EXPECT_FALSE(attribute.enablebitvectors)) {
         return false;
     }
@@ -66,6 +69,9 @@ assertFastSearchAttribute(const AttributesConfig::Attribute &attribute,
     if (!EXPECT_FALSE(attribute.huge)) {
         return false;
     }
+    if (!EXPECT_FALSE(attribute.paged)) {
+        return false;
+    }
     if (!EXPECT_FALSE(attribute.enablebitvectors)) {
         return false;
     }
@@ -87,6 +93,9 @@ assertFastSearchAndMoreAttribute(const AttributesConfig::Attribute &attribute,
         return false;
     }
     if (!EXPECT_TRUE(attribute.huge)) {
+        return false;
+    }
+    if (!EXPECT_TRUE(attribute.paged)) {
         return false;
     }
     if (!EXPECT_TRUE(attribute.enablebitvectors)) {
@@ -233,6 +242,7 @@ setupFastSearchAndMoreAttribute(const vespalib::string name)
     attribute.name = name;
     attribute.fastsearch = true;
     attribute.huge = true;
+    attribute.paged = true;
     attribute.enablebitvectors = true;
     attribute.enableonlybitvector = true;
     return attribute;

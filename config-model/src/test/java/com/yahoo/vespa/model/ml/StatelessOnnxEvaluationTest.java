@@ -14,6 +14,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.Test;
@@ -36,6 +37,26 @@ import static org.junit.Assert.assertTrue;
  * @author lesters
  */
 public class StatelessOnnxEvaluationTest {
+
+    @Test
+    public void testStatelessOnnxModelNameCollision() throws IOException {
+        Path appDir = Path.fromString("src/test/cfg/application/onnx_name_collision");
+        try {
+            ImportedModelTester tester = new ImportedModelTester("onnx", appDir);
+            VespaModel model = tester.createVespaModel();
+            ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
+            RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
+            cluster.getConfig(b);
+            RankProfilesConfig config = new RankProfilesConfig(b);
+            assertEquals(2, config.rankprofile().size());
+
+            Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
+            assertTrue(modelNames.contains("foobar"));
+            assertTrue(modelNames.contains("barfoo"));
+        } finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        }
+    }
 
     @Test
     public void testStatelessOnnxModelEvaluation() throws IOException {
@@ -73,6 +94,10 @@ public class StatelessOnnxEvaluationTest {
         cluster.getConfig(cb);
         RankingConstantsConfig constantsConfig = new RankingConstantsConfig(cb);
 
+        RankingExpressionsConfig.Builder ce = new RankingExpressionsConfig.Builder();
+        cluster.getConfig(ce);
+        RankingExpressionsConfig expressionsConfig = ce.build();
+
         OnnxModelsConfig.Builder ob = new OnnxModelsConfig.Builder();
         cluster.getConfig(ob);
         OnnxModelsConfig onnxModelsConfig = new OnnxModelsConfig(ob);
@@ -87,7 +112,7 @@ public class StatelessOnnxEvaluationTest {
             fileMap.put(onnxModel.fileref().value(), appDir.append(onnxModel.fileref().value()).toFile());
         }
         FileAcquirer fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
-        ModelsEvaluator modelsEvaluator = new ModelsEvaluator(config, constantsConfig, onnxModelsConfig, fileAcquirer);
+        ModelsEvaluator modelsEvaluator = new ModelsEvaluator(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer);
         assertEquals(1, modelsEvaluator.models().size());
 
         Model mul = modelsEvaluator.models().get("mul");

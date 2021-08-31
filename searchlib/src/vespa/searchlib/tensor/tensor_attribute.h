@@ -24,6 +24,7 @@ protected:
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
+    bool _is_dense;
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
     uint64_t    _compactGeneration; // Generation when last compact occurred
     vespalib::MemoryUsage _cached_tensor_store_memory_usage;
@@ -35,6 +36,7 @@ protected:
     virtual vespalib::MemoryUsage update_stat();
     virtual vespalib::MemoryUsage memory_usage() const;
     void populate_state(vespalib::slime::Cursor& object) const;
+    void populate_address_space_usage(AddressSpaceUsage& usage) const override;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);

@@ -374,7 +374,10 @@ public class SessionPreparerTest {
     }
 
     private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
-        return new SessionZooKeeperClient(curator, applicationId().tenant(), sessionId, ConfigUtils.getCanonicalHostName());
+        return new SessionZooKeeperClient(curator,
+                                          applicationId().tenant(),
+                                          sessionId,
+                                          ConfigUtils.getCanonicalHostName());
     }
 
     private Path sessionPath(long sessionId) {

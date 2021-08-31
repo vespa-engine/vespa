@@ -4,7 +4,7 @@
 
 namespace proton {
 
-/*
+/**
  * Struct representing config for when to filter write operations
  * due to attribute resource usage (e.g. enum store and multivalue mapping).
  * If resource limit is reached then further writes are denied in
@@ -14,23 +14,18 @@ namespace proton {
  */
 struct AttributeUsageFilterConfig
 {
-    double _enumStoreLimit;
-    double _multiValueLimit;
+    double _address_space_limit;
 
     AttributeUsageFilterConfig() noexcept
-        : _enumStoreLimit(1.0),
-          _multiValueLimit(1.0)
-    { }
+        : _address_space_limit(1.0)
+    {}
 
-    AttributeUsageFilterConfig(double enumStoreLimit_in,
-                               double multiValueLimit_in) noexcept
-        : _enumStoreLimit(enumStoreLimit_in),
-          _multiValueLimit(multiValueLimit_in)
-    { }
+    AttributeUsageFilterConfig(double address_space_limit) noexcept
+        : _address_space_limit(address_space_limit)
+    {}
 
     bool operator==(const AttributeUsageFilterConfig &rhs) const noexcept {
-        return ((_enumStoreLimit == rhs._enumStoreLimit) &&
-                (_multiValueLimit == rhs._multiValueLimit));
+        return (_address_space_limit == rhs._address_space_limit);
     }
 };
 

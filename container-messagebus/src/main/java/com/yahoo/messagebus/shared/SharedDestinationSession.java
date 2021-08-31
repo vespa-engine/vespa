@@ -28,7 +28,7 @@ public class SharedDestinationSession extends AbstractResource implements Messag
 
     SharedDestinationSession(SharedMessageBus mbus, DestinationSessionParams params) {
         this.msgHandler.set(params.getMessageHandler());
-        this.session = mbus.messageBus().createDestinationSession(params.setMessageHandler(this));
+        this.session = mbus.messageBus().createDetachedDestinationSession(params.setMessageHandler(this));
         this.mbusReference = mbus.refer();
     }
 
@@ -74,6 +74,11 @@ public class SharedDestinationSession extends AbstractResource implements Messag
     @Override
     public String name() {
         return session.getName();
+    }
+
+    @Override
+    public void connect() {
+        session.connect();
     }
 
     @Override

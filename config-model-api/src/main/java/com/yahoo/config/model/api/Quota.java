@@ -24,11 +24,11 @@ public class Quota {
     /** The max budget in dollars per hour */
     private final Optional<BigDecimal> budget;
 
-    // TODO: Remove constructor once Vespa < 7.300 is gone from production
     public Quota(Optional<Integer> maxClusterSize, Optional<Integer> budget) {
         this(maxClusterSize, budget.map(BigDecimal::new), true);
     }
 
+    // TODO: Remove unused argument
     private Quota(Optional<Integer> maxClusterSize, Optional<BigDecimal> budget, boolean isDecimal) {
         this.maxClusterSize = Objects.requireNonNull(maxClusterSize);
         this.budget = Objects.requireNonNull(budget);
@@ -64,8 +64,6 @@ public class Quota {
 
     public Optional<BigDecimal> budgetAsDecimal() { return budget; }
 
-    // TODO: Remove once Vespa < 7.300 is gone from production
-    public static Quota empty() { return unlimited(); }
     public Optional<Integer> budget() { return budget.map(BigDecimal::intValue); }
 
     @Override

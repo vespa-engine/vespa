@@ -10,14 +10,24 @@ namespace slobrok {
 UnionServiceMap::UnionServiceMap() = default;
 UnionServiceMap::~UnionServiceMap() = default;
 
+ServiceMappingList UnionServiceMap::currentConsensus() const {
+    ServiceMappingList result;
+    for (const auto & [ name, list ] : _mappings) {
+        if (list.size() == 1u) {
+            result.emplace_back(name, list[0].spec);
+        }
+    }
+    return result;
+}
+
 void UnionServiceMap::add(const ServiceMapping &mapping)
 {
     const vespalib::string &key = mapping.name;
     auto iter = _mappings.find(key);
     if (iter == _mappings.end()) {
         _mappings[key].emplace_back(mapping.spec, 1u);
-        ProxyMapSource::add(mapping);
         LOG(debug, "add new %s->%s", mapping.name.c_str(), mapping.spec.c_str());
+        ProxyMapSource::add(mapping);
     } else {
         Mappings &values = iter->second;
         for (CountedSpec &old : values) {
@@ -27,11 +37,13 @@ void UnionServiceMap::add(const ServiceMapping &mapping)
                 return;
             }
         }
-        if (values.size() == 1u) {
-            LOG(warning, "Multiple specs seen for name '%s', un-publishing", key.c_str());
-            ProxyMapSource::remove(ServiceMapping{key, values[0].spec});
-        }
         values.emplace_back(mapping.spec, 1u);
+        if (values.size() == 2u) {
+            ServiceMapping toRemove{key, values[0].spec};
+            LOG(warning, "Multiple specs seen for name '%s', un-publishing %s",
+                toRemove.name.c_str(), toRemove.spec.c_str());
+            ProxyMapSource::remove(toRemove);
+        }
     }
 }
 
@@ -61,16 +73,16 @@ void UnionServiceMap::remove(const ServiceMapping &mapping)
     std::erase_if(values, [] (const CountedSpec &v) { return v.count == 0; });
     if (values.size() == 1u) {
         LOG_ASSERT(old_size == 2u);
+        ServiceMapping toAdd{key, values[0].spec};
         LOG(info, "Had multiple mappings for %s, but now only %s remains",
-            key.c_str(), values[0].spec.c_str());
-        ProxyMapSource::add(ServiceMapping{key, values[0].spec});
-    }
-    if (values.size() == 0u) {
+            toAdd.name.c_str(), toAdd.spec.c_str());
+        ProxyMapSource::add(toAdd);
+    } else if (values.size() == 0u) {
         LOG_ASSERT(old_size == 1u);
         LOG(debug, "Last reference for %s -> %s removed",
             key.c_str(), mapping.spec.c_str());
-        ProxyMapSource::remove(mapping);
         _mappings.erase(iter);
+        ProxyMapSource::remove(mapping);
     }
 }
 
@@ -83,4 +95,3 @@ void UnionServiceMap::update(const ServiceMapping &old_mapping,
 }
 
 } // namespace slobrok
-
