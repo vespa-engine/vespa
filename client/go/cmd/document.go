@@ -70,7 +70,8 @@ func post(documentId string, jsonFile string) {
 
 	fileReader, fileError := os.Open(jsonFile)
 	if fileError != nil {
-		log.Printf("Could not open file at %s: %s", color.Cyan(jsonFile), fileError)
+		log.Print(color.Red("Error: "), "Could not open file '", color.Cyan(jsonFile), "'")
+		log.Print(color.Brown(fileError))
 		return
 	}
 
