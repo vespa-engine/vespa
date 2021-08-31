@@ -19,7 +19,6 @@ var overwriteCertificate bool
 func init() {
 	rootCmd.AddCommand(certCmd)
 	certCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	addApplicationFlag(certCmd)
 	certCmd.MarkPersistentFlagRequired(applicationFlag)
 }
 

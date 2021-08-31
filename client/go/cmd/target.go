@@ -7,19 +7,10 @@ package cmd
 import (
 	"log"
 	"strings"
-
-	"github.com/spf13/cobra"
 )
 
 const (
-	applicationFlag = "application"
-	targetFlag      = "target"
-	cloudApi        = "https://api.vespa-external.aws.oath.cloud:4443"
-)
-
-var (
-	targetArg      string
-	applicationArg string
+	cloudApi = "https://api.vespa-external.aws.oath.cloud:4443"
 )
 
 type target struct {
@@ -35,16 +26,6 @@ const (
 	queryContext    context = 1
 	documentContext context = 2
 )
-
-func addTargetFlag(command *cobra.Command) {
-	command.PersistentFlags().StringVarP(&targetArg, targetFlag, "t", "local", "The name or URL of the recipient of this command")
-	bindFlagToConfig(targetFlag, command)
-}
-
-func addApplicationFlag(command *cobra.Command) {
-	command.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application name to use for deployment")
-	bindFlagToConfig(applicationFlag, command)
-}
 
 func deployTarget() string {
 	return getTarget(deployContext).deploy

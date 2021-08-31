@@ -17,7 +17,6 @@ import (
 
 func init() {
 	rootCmd.AddCommand(queryCmd)
-	addTargetFlag(queryCmd)
 }
 
 var queryCmd = &cobra.Command{
