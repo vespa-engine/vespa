@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/vespa"
 )
 
 const (
@@ -21,13 +22,12 @@ const (
 	configType = "yaml"
 )
 
-var flagToConfigBindings map[string][]*cobra.Command
+var flagToConfigBindings map[string][]*cobra.Command = make(map[string][]*cobra.Command)
 
 func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(setConfigCmd)
 	configCmd.AddCommand(getConfigCmd)
-	flagToConfigBindings = make(map[string][]*cobra.Command)
 }
 
 var configCmd = &cobra.Command{
@@ -122,19 +122,25 @@ func getOption(option string) (string, error) {
 }
 
 func setOption(option, value string) error {
-	if option != "target" {
-		return fmt.Errorf("invalid option: %q", option)
-	}
-	switch value {
-	case "local", "cloud":
+	switch option {
+	case targetFlag:
+		switch value {
+		case "local", "cloud":
+			viper.Set(option, value)
+			return nil
+		}
+		if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+			viper.Set(option, value)
+			return nil
+		}
+	case applicationFlag:
+		if _, err := vespa.ApplicationFromString(value); err != nil {
+			return err
+		}
 		viper.Set(option, value)
 		return nil
 	}
-	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
-		viper.Set(option, value)
-		return nil
-	}
-	return fmt.Errorf("invalid value for option %q: %q", option, value)
+	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }
 
 func writeConfig() {

@@ -12,11 +12,15 @@ import (
 )
 
 const (
-	targetFlag = "target"
-	cloudApi   = "https://api.vespa-external.aws.oath.cloud:4443"
+	applicationFlag = "application"
+	targetFlag      = "target"
+	cloudApi        = "https://api.vespa-external.aws.oath.cloud:4443"
 )
 
-var targetArg string
+var (
+	targetArg      string
+	applicationArg string
+)
 
 type target struct {
 	deploy   string
@@ -37,6 +41,11 @@ func addTargetFlag(command *cobra.Command) {
 	bindFlagToConfig(targetFlag, command)
 }
 
+func addApplicationFlag(command *cobra.Command) {
+	command.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application name to use for deployment")
+	bindFlagToConfig(applicationFlag, command)
+}
+
 func deployTarget() string {
 	return getTarget(deployContext).deploy
 }
@@ -49,11 +58,24 @@ func documentTarget() string {
 	return getTarget(documentContext).document
 }
 
-func getTarget(targetContext context) *target {
-	targetValue, err := getOption(targetFlag)
+func getApplication() string {
+	app, err := getOption(applicationFlag)
+	if err != nil {
+		log.Fatalf("a valid application must be specified")
+	}
+	return app
+}
+
+func getTargetType() string {
+	target, err := getOption(targetFlag)
 	if err != nil {
 		log.Fatalf("a valid target must be specified")
 	}
+	return target
+}
+
+func getTarget(targetContext context) *target {
+	targetValue := getTargetType()
 	if strings.HasPrefix(targetValue, "http") {
 		// TODO: Add default ports if missing
 		switch targetContext {
