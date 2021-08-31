@@ -150,6 +150,53 @@ public class TensorParserTestCase {
                      Tensor.from("tensor(key{},y[2],x[3]):{key1:[[1,2,3],[4,5,6]], key2:[[7,8,9],[10,11,12]]}"));
     }
 
+    @Test
+    public void testUnboundShortFormParsing() {
+        assertEquals(Tensor.from("tensor(x[]):[1.0, 2.0]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[])")).cell(1.0, 0).cell(2.0, 1).build());
+        assertEquals(Tensor.from("tensor<float>(x[]):[1.0, 2.0]"),
+                Tensor.Builder.of(TensorType.fromSpec("tensor<float>(x[])")).cell(1.0, 0).cell(2.0, 1).build());
+        assertEquals(Tensor.from("tensor<int8>(x[]):[1.0, 2.0]"),
+                Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x[])")).cell(1.0, 0).cell(2.0, 1).build());
+        assertEquals(Tensor.from("tensor<bfloat16>(x[]):[1.0, 2.0]"),
+                Tensor.Builder.of(TensorType.fromSpec("tensor<bfloat16>(x[])")).cell(1.0, 0).cell(2.0, 1).build());
+
+        assertEquals(Tensor.from("tensor(x[],y[]):[[1,2,3,4]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[])"))
+                        .cell(1.0, 0, 0).cell(2.0, 0, 1).cell(3.0, 0, 2).cell(4.0, 0, 3).build());
+        assertEquals(Tensor.from("tensor(x[],y[]):[[1,2],[3,4]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[])"))
+                         .cell(1.0, 0, 0).cell(2.0, 0, 1).cell(3.0, 1, 0).cell(4.0, 1, 1).build());
+        assertEquals(Tensor.from("tensor(x[],y[]):[[1],[2],[3],[4]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[])"))
+                        .cell(1.0, 0, 0).cell(2.0, 1, 0).cell(3.0, 2, 0).cell(4.0, 3, 0).build());
+        assertEquals(Tensor.from("tensor(x[],y[],z[]):[[[1,2],[3,4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 0, 0, 1).cell(3.0, 0, 1, 0).cell(4.0, 0, 1, 1).build());
+        assertEquals(Tensor.from("tensor(x[],y[],z[]):[[[1],[2],[3],[4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 0, 1, 0).cell(3.0, 0, 2, 0).cell(4.0, 0, 3, 0).build());
+        assertEquals(Tensor.from("tensor(x[],y[],z[]):[[[1,2,3,4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 0, 0, 1).cell(3.0, 0, 0, 2).cell(4.0, 0, 0, 3).build());
+        assertEquals(Tensor.from("tensor(x[],y[],z[]):[[[1]],[[2]],[[3]],[[4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 1, 0, 0).cell(3.0, 2, 0, 0).cell(4.0, 3, 0, 0).build());
+        assertEquals(Tensor.from("tensor(x[],y[],z[]):[[[1, 2]],[[3, 4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 0, 0, 1).cell(3.0, 1, 0, 0).cell(4.0, 1, 0, 1).build());
+
+        assertEquals(Tensor.from("tensor(x[],y[],z[4]):[[[1,2,3,4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 0, 0, 1).cell(3.0, 0, 0, 2).cell(4.0, 0, 0, 3).build());
+        assertEquals(Tensor.from("tensor(x[2],y[],z[2]):[[[1, 2]],[[3, 4]]]"),
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[],y[],z[])"))
+                        .cell(1.0, 0, 0, 0).cell(2.0, 0, 0, 1).cell(3.0, 1, 0, 0).cell(4.0, 1, 0, 1).build());
+
+        assertIllegal("Unexpected size 2 for dimension y for type tensor(x[],y[3])",
+                "tensor(x[],y[3]):[[1,2],[3,4]]");
+    }
+
     private void assertDense(Tensor expectedTensor, String denseFormat) {
         assertEquals(denseFormat, expectedTensor, Tensor.from(denseFormat));
         assertEquals(denseFormat, expectedTensor.toString());
