@@ -21,10 +21,13 @@ const (
 	configType = "yaml"
 )
 
+var flagToConfigBindings map[string][]*cobra.Command
+
 func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(setConfigCmd)
 	configCmd.AddCommand(getConfigCmd)
+	flagToConfigBindings = make(map[string][]*cobra.Command)
 }
 
 var configCmd = &cobra.Command{
@@ -81,24 +84,33 @@ func configDir(application string) (string, error) {
 }
 
 func bindFlagToConfig(option string, command *cobra.Command) {
-	viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+	flagToConfigBindings[option] = append(flagToConfigBindings[option], command)
 }
 
 func readConfig() {
 	configDir, err := configDir("")
-	cobra.CheckErr(err)
-
+	if err != nil {
+		log.Print(color.Red("Error:"), "Could not determine configuration directory")
+		log.Print(color.Brown(err))
+		return
+	}
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
 	viper.AddConfigPath(configDir)
 	viper.AutomaticEnv()
-	viper.BindPFlag("target", deployCmd.PersistentFlags().Lookup("target"))
-
+	for option, commands := range flagToConfigBindings {
+		for _, command := range commands {
+			viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+		}
+	}
 	err = viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		return // Fine
 	}
-	cobra.CheckErr(err)
+	if err != nil {
+		log.Print(color.Red("Error:"), "Could read configuration")
+		log.Print(color.Brown(err))
+	}
 }
 
 func getOption(option string) (string, error) {
