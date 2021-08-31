@@ -34,8 +34,12 @@ int main(int argc, char** argv)
     int mac_gid = g;
     int mac_groups[256];
     int ggl = getgrouplist(username, mac_gid, mac_groups, &group_arr_sz);
-    for (int i = 0; i < group_arr_sz; ++i) {
-        grouplist[i] = (gid_t) mac_groups[i];
+    if (ggl < 0) {
+        group_arr_sz = 0;
+    } else {
+        for (int i = 0; i < group_arr_sz; ++i) {
+            grouplist[i] = (gid_t) mac_groups[i];
+        }
     }
 #else
     int ggl = getgrouplist(username, g, grouplist, &group_arr_sz);
@@ -49,7 +53,7 @@ int main(int argc, char** argv)
         return 1;
     }
     size_t listsize = 1;
-    if (ggl >= 0) {
+    if (ggl >= 0 && group_arr_sz > 0) {
         listsize = group_arr_sz;
     } else {
         grouplist[0] = g;
