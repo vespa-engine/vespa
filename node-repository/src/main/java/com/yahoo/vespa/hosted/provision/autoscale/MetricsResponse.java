@@ -126,12 +126,12 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("content.proton.resource_usage.memory.average", "mem.util");
+                return List.of("content.proton.resource_usage.memory_utilization.average", "mem.util");
             }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                var valueList = values.get("content.proton.resource_usage.memory.average"); // prefer over mem.util
+                var valueList = values.get("content.proton.resource_usage.memory_utilization.average"); // prefer over mem.util
                 if ( ! valueList.isEmpty()) return valueList.get(0);
 
                 valueList = values.get("mem.util");
@@ -145,12 +145,12 @@ public class MetricsResponse {
 
             @Override
             public List<String> metricResponseNames() {
-                return List.of("content.proton.resource_usage.disk.average", "disk.util");
+                return List.of("content.proton.resource_usage.disk_utilization.average", "disk.util");
             }
 
             @Override
             double computeFinal(ListMap<String, Double> values) {
-                var valueList = values.get("content.proton.resource_usage.disk.average"); // prefer over mem.util
+                var valueList = values.get("content.proton.resource_usage.disk_utilization.average"); // prefer over mem.util
                 if ( ! valueList.isEmpty()) return valueList.get(0);
 
                 valueList = values.get("disk.util");

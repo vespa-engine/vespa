@@ -161,8 +161,8 @@ public class MetricsV2MetricsFetcherTest {
             "            },\n" +
             "            {\n" +
             "              \"values\": {\n" +
-            "                \"content.proton.resource_usage.memory.average\": 0.35,\n" +
-            "                \"content.proton.resource_usage.disk.average\": 0.45\n" +
+            "                \"content.proton.resource_usage.memory_utilization.average\": 0.35,\n" +
+            "                \"content.proton.resource_usage.disk_utilization.average\": 0.45\n" +
             "              },\n" +
             "              \"dimensions\": {\n" +
             "              }\n" +
