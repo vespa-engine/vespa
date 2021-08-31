@@ -48,7 +48,7 @@ func TestDocumentPostServerError(t *testing.T) {
 func assertDocumentPost(arguments []string, documentId string, jsonFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		documentId+"\n",
+		"Success: Wrote "+documentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
 	expectedPath, _ := vespa.IdToURLPath(documentId)
