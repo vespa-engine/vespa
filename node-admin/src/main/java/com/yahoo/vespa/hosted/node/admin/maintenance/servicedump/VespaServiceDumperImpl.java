@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     private static final Logger log = Logger.getLogger(VespaServiceDumperImpl.class.getName());
-    private static final String DIRECTORY_IN_NODE = "/opt/vespa/tmp/vespa-service-dump";
 
     private final ContainerOperations container;
     private final SyncClient syncClient;
@@ -69,11 +68,13 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             context.log(log, Level.FINE,
                     "Creating dump for " + configId + " requested at " + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
             storeReport(context, createStartedReport(request, startedAt));
-            Path directoryOnHost = context.pathOnHostFromPathInNode(DIRECTORY_IN_NODE);
+            Path directoryInNode = context.pathInNodeUnderVespaHome("tmp/vespa-service-dump");
+            Path directoryOnHost = context.pathOnHostFromPathInNode(directoryInNode);
             Files.deleteIfExists(directoryOnHost);
             Files.createDirectory(directoryOnHost);
+            Path vespaJvmDumper = context.pathInNodeUnderVespaHome("bin/vespa-jvm-dumper");
             CommandResult result = container.executeCommandInContainerAsRoot(
-                    context, "/opt/vespa/bin/vespa-jvm-dumper", configId, DIRECTORY_IN_NODE);
+                    context, vespaJvmDumper.toString(), configId, directoryInNode.toString());
             context.log(log, Level.FINE, "vespa-jvm-dumper exit code: " + result.getExitCode());
             context.log(log, Level.FINE, "vespa-jvm-dumper output: " + result.getOutput());
             if (result.getExitCode() > 0) {
