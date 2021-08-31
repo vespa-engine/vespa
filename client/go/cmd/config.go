@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/vespa"
 )
 
 const (
@@ -21,13 +22,12 @@ const (
 	configType = "yaml"
 )
 
-var flagToConfigBindings map[string][]*cobra.Command
+var flagToConfigBindings map[string][]*cobra.Command = make(map[string][]*cobra.Command)
 
 func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(setConfigCmd)
 	configCmd.AddCommand(getConfigCmd)
-	flagToConfigBindings = make(map[string][]*cobra.Command)
 }
 
 var configCmd = &cobra.Command{
@@ -58,17 +58,25 @@ var getConfigCmd = &cobra.Command{
 	Use:     "get option",
 	Short:   "Get a configuration option",
 	Example: "$ vespa config get target",
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		option := args[0]
-		value, err := getOption(option)
-		if err != nil {
-			value = color.Faint("<unset>").String()
+		if len(args) == 0 { // Print all values
+			printOption(targetFlag)
+			printOption(applicationFlag)
 		} else {
-			value = color.Cyan(value).String()
+			printOption(args[0])
 		}
-		log.Printf("%s = %s", option, value)
 	},
+}
+
+func printOption(option string) {
+	value, err := getOption(option)
+	if err != nil {
+		value = color.Faint("<unset>").String()
+	} else {
+		value = color.Cyan(value).String()
+	}
+	log.Printf("%s = %s", option, value)
 }
 
 func configDir(application string) (string, error) {
@@ -122,19 +130,25 @@ func getOption(option string) (string, error) {
 }
 
 func setOption(option, value string) error {
-	if option != "target" {
-		return fmt.Errorf("invalid option: %q", option)
-	}
-	switch value {
-	case "local", "cloud":
+	switch option {
+	case targetFlag:
+		switch value {
+		case "local", "cloud":
+			viper.Set(option, value)
+			return nil
+		}
+		if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+			viper.Set(option, value)
+			return nil
+		}
+	case applicationFlag:
+		if _, err := vespa.ApplicationFromString(value); err != nil {
+			return err
+		}
 		viper.Set(option, value)
 		return nil
 	}
-	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
-		viper.Set(option, value)
-		return nil
-	}
-	return fmt.Errorf("invalid value for option %q: %q", option, value)
+	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }
 
 func writeConfig() {

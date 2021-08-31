@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -49,7 +48,6 @@ func TestSignRequest(t *testing.T) {
 	key := req.Header.Get("X-Key")
 	assert.NotEmpty(t, key)
 	_, err = base64.StdEncoding.DecodeString(key)
-	fmt.Println(err)
 	assert.Nil(t, err)
 	auth := req.Header.Get("X-Authorization")
 	assert.NotEmpty(t, auth)

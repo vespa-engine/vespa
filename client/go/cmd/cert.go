@@ -19,7 +19,7 @@ var overwriteCertificate bool
 func init() {
 	rootCmd.AddCommand(certCmd)
 	certCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	certCmd.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application owning this certificate")
+	addApplicationFlag(certCmd)
 	certCmd.MarkPersistentFlagRequired(applicationFlag)
 }
 
@@ -38,11 +38,10 @@ var certCmd = &cobra.Command{
 			fatalIfErr(err)
 		}
 
-		app, err := vespa.ApplicationFromString(applicationArg)
-		fatalIfErr(err)
+		app := getApplication()
 		pkg, err := vespa.ApplicationPackageFrom(path)
 		fatalIfErr(err)
-		configDir, err := configDir(app.String())
+		configDir, err := configDir(app)
 		fatalIfErr(err)
 
 		securityDir := filepath.Join(pkg.Path, "security")
