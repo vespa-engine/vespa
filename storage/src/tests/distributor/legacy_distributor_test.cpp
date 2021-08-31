@@ -280,7 +280,7 @@ TEST_F(LegacyDistributorTest, operations_generated_and_started_without_duplicate
 
 
 // Migrated to DistributorStripeTest
-// TODO STRIPE also need to impl/test cross-stripe cluster state changes
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, recovery_mode_on_cluster_state_change) {
     setupDistributor(Redundancy(1), NodeCount(2),
                      "storage:1 .0.s:d distributor:1");
@@ -334,7 +334,7 @@ TEST_F(LegacyDistributorTest, handle_unknown_maintenance_reply) {
     }
 }
 
-// TODO STRIPE -> generic, non distr/stripe test
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, contains_time_statement) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -416,8 +416,7 @@ public:
 
 }
 
-// TODO STRIPE -> stripe test
-// TODO STRIPE need to impl/test cross-stripe status requests
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, tick_processes_status_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -446,8 +445,7 @@ TEST_F(LegacyDistributorTest, tick_processes_status_requests) {
     EXPECT_THAT(thread.getResult(), HasSubstr("BucketId(0x4000000000000001)"));
 }
 
-// TODO STRIPE -> distributor test since it owns metric hook
-// TODO STRIPE need to impl/test cross-stripe metrics aggregation
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, metric_update_hook_updates_pending_maintenance_metrics) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // To ensure we count all operations, not just those fitting within the
@@ -494,7 +492,7 @@ TEST_F(LegacyDistributorTest, metric_update_hook_updates_pending_maintenance_met
     }
 }
 
-// TODO STRIPE -> distributor test since it uses the distributor metric update hook
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {
     getClock().setAbsoluteTimeInSeconds(1000);
 
@@ -569,8 +567,8 @@ TEST_F(LegacyDistributorTest, priority_config_is_propagated_to_distributor_confi
     EXPECT_EQ(12, static_cast<int>(mp.mergeGlobalBuckets));
 }
 
-// TODO STRIPE -> stripe test (that sets pending cluster state directly)
-// TODO STRIPE -> distributor test (that uses top-level BucketDBUpdater::onSetSystemState)
+// Migrated to DistributorStripeTest
+// Explicit cluster state edge test added in TopLevelDistributorTest::cluster_state_lifecycle_is_propagated_to_stripes
 TEST_F(LegacyDistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     lib::ClusterState newState("storage:10 distributor:10");
@@ -1262,7 +1260,7 @@ TEST_F(LegacyDistributorTest, wanted_split_bit_count_is_lower_bounded) {
     EXPECT_EQ(getConfig().getMinimalBucketSplit(), 8);
 }
 
-// TODO: migrate to TopLevelDistributorTest
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, host_info_sent_immediately_once_all_stripes_first_reported) {
     set_num_distributor_stripes(4);
     createLinks();
@@ -1291,7 +1289,7 @@ TEST_F(LegacyDistributorTest, host_info_sent_immediately_once_all_stripes_first_
     EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
 }
 
-// TODO: migrate to TopLevelDistributorTest
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, non_bootstrap_host_info_send_request_delays_sending) {
     set_num_distributor_stripes(4);
     createLinks();
