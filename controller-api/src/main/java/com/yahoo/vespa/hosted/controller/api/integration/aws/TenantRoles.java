@@ -6,12 +6,12 @@ package com.yahoo.vespa.hosted.controller.api.integration.aws;
  */
 public class TenantRoles {
     private final String hostRole;
-    private final String hostServiceRole;
+    private final String tenantHostServiceRole;
     private final String containerRole;
 
-    public TenantRoles(String hostRole, String hostServiceRole, String containerRole) {
+    public TenantRoles(String hostRole, String tenantHostServiceRole, String containerRole) {
         this.hostRole = hostRole;
-        this.hostServiceRole = hostServiceRole;
+        this.tenantHostServiceRole = tenantHostServiceRole;
         this.containerRole = containerRole;
     }
 
@@ -20,7 +20,7 @@ public class TenantRoles {
     }
 
     public String hostServiceRole() {
-        return hostServiceRole;
+        return tenantHostServiceRole;
     }
 
     public String containerRole() {
