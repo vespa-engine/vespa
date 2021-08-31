@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
-import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
 import java.io.IOException;

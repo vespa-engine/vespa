@@ -472,7 +472,6 @@ public class ApplicationRepositoryTest {
                                                       new SessionZooKeeperClient(curator,
                                                                                  tenantName,
                                                                                  sessionId,
-                                                                                 tenantRepository.getFileDistributionFactory().createProvider(testApp),
                                                                                  ConfigUtils.getCanonicalHostName()));
         sessionRepository.addLocalSession(localSession2);
         assertEquals(2, sessionRepository.getLocalSessions().size());

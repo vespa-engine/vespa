@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,6 +35,7 @@ public class FileDBRegistry implements FileRegistry {
         silenceNonExistingFiles = false;
         this.manager = manager;
     }
+
     public static FileDBRegistry create(AddFileInterface manager, Reader persistedState) {
         try (BufferedReader reader = new BufferedReader(persistedState)) {
             String ignoredFileSourceHost = reader.readLine();

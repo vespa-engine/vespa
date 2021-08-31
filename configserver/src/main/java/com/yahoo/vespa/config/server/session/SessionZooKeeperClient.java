@@ -21,7 +21,8 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.UserConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
-import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
+import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
+import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
@@ -69,20 +70,21 @@ public class SessionZooKeeperClient {
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
     private final int maxNodeSize;
-    private final FileDistributionProvider fileDistributionProvider;
+    private final AddFileInterface fileManager;
 
-    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId, FileDistributionProvider fileDistributionProvider, int maxNodeSize) {
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId, AddFileInterface fileManager, int maxNodeSize) {
         this.curator = curator;
         this.tenantName = tenantName;
         this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
         this.sessionStatusPath = sessionPath.append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
         this.maxNodeSize = maxNodeSize;
-        this.fileDistributionProvider = fileDistributionProvider;
+        this.fileManager = fileManager;
     }
 
-    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, FileDistributionProvider fileDistributionProvider, String serverId) {
-        this(curator, tenantName, sessionId, serverId, fileDistributionProvider, 10 * 1024 * 1024);
+    // For testing only
+    public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId) {
+        this(curator, tenantName, sessionId, serverId, new MockFileManager(), 10 * 1024 * 1024);
     }
 
     public void writeStatus(Session.Status sessionStatus) {
@@ -141,7 +143,7 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationPackage loadApplicationPackage() {
-        return new ZKApplicationPackage(fileDistributionProvider, curator, sessionPath, maxNodeSize);
+        return new ZKApplicationPackage(fileManager, curator, sessionPath, maxNodeSize);
     }
 
     public ConfigDefinitionRepo getUserConfigDefinitions() {
