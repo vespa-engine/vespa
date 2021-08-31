@@ -13,7 +13,7 @@ import (
 
 const (
 	targetFlag = "target"
-	cloudApi   = "https://api.vespa-external.aws.oath.cloud"
+	cloudApi   = "https://api.vespa-external.aws.oath.cloud:4443"
 )
 
 var targetArg string

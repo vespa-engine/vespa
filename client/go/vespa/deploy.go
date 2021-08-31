@@ -39,7 +39,6 @@ type Deployment struct {
 	TargetURL         string
 	Application       ApplicationID
 	Zone              ZoneID
-	KeyPair           PemKeyPair
 	APIKey            []byte
 }
 
@@ -51,6 +50,10 @@ func (a ApplicationID) String() string {
 	return fmt.Sprintf("%s.%s.%s", a.Tenant, a.Application, a.Instance)
 }
 
+func (a ApplicationID) SerializedForm() string {
+	return fmt.Sprintf("%s:%s:%s", a.Tenant, a.Application, a.Instance)
+}
+
 func (d Deployment) String() string {
 	return fmt.Sprintf("deployment of %s to %s target", d.Application, d.TargetType)
 }
@@ -58,13 +61,6 @@ func (d Deployment) String() string {
 func (d *Deployment) IsCloud() bool { return d.TargetType == "cloud" }
 
 func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
-
-func (ap *ApplicationPackage) HasCertificate() bool {
-	if ap.IsZip() {
-		return true // TODO: Consider looking inside zip to verify
-	}
-	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
-}
 
 func (ap *ApplicationPackage) zipReader() (io.ReadCloser, error) {
 	zipFile := ap.Path
@@ -134,7 +130,7 @@ func Prepare(deployment Deployment) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return deploy(u, deployment.ApplicationSource)
+	return deploy(u, deployment)
 }
 
 func Activate(deployment Deployment) (string, error) {
@@ -147,7 +143,7 @@ func Activate(deployment Deployment) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return deploy(u, deployment.ApplicationSource)
+	return deploy(u, deployment)
 }
 
 func Deploy(deployment Deployment) (string, error) {
@@ -155,12 +151,6 @@ func Deploy(deployment Deployment) (string, error) {
 	if deployment.IsCloud() {
 		if deployment.APIKey == nil {
 			return "", fmt.Errorf("%s: missing api key", deployment.String())
-		}
-		if deployment.KeyPair.Certificate == nil {
-			return "", fmt.Errorf("%s: missing certificate", deployment)
-		}
-		if deployment.KeyPair.PrivateKey == nil {
-			return "", fmt.Errorf("%s: missing private key", deployment)
 		}
 		if deployment.Zone.Environment == "" || deployment.Zone.Region == "" {
 			return "", fmt.Errorf("%s: missing zone", deployment)
@@ -171,17 +161,16 @@ func Deploy(deployment Deployment) (string, error) {
 			deployment.Application.Instance,
 			deployment.Zone.Environment,
 			deployment.Zone.Region)
-		return "", fmt.Errorf("cloud deployment is not implemented")
 	}
 	u, err := url.Parse(deployment.TargetURL + path)
 	if err != nil {
 		return "", err
 	}
-	return deploy(u, deployment.ApplicationSource)
+	return deploy(u, deployment)
 }
 
-func deploy(url *url.URL, applicationSource string) (string, error) {
-	pkg, err := ApplicationPackageFrom(applicationSource)
+func deploy(url *url.URL, deployment Deployment) (string, error) {
+	pkg, err := ApplicationPackageFrom(deployment.ApplicationSource)
 	if err != nil {
 		return "", err
 	}
@@ -189,13 +178,13 @@ func deploy(url *url.URL, applicationSource string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := postApplicationPackage(url, zipReader); err != nil {
+	if err := postApplicationPackage(url, zipReader, deployment); err != nil {
 		return "", err
 	}
 	return pkg.Path, nil
 }
 
-func postApplicationPackage(url *url.URL, zipReader io.Reader) error {
+func postApplicationPackage(url *url.URL, zipReader io.Reader, deployment Deployment) error {
 	header := http.Header{}
 	header.Add("Content-Type", "application/zip")
 	request := &http.Request{
@@ -203,6 +192,12 @@ func postApplicationPackage(url *url.URL, zipReader io.Reader) error {
 		Method: "POST",
 		Header: header,
 		Body:   io.NopCloser(zipReader),
+	}
+	if deployment.APIKey != nil {
+		signer := NewRequestSigner(deployment.Application.SerializedForm(), deployment.APIKey)
+		if err := signer.SignRequest(request); err != nil {
+			return err
+		}
 	}
 	serviceDescription := "Deploy service"
 	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
