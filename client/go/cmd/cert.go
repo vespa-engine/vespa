@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -28,21 +27,13 @@ var certCmd = &cobra.Command{
 	Example: "$ vespa cert -a my-tenant.my-app.my-instance",
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var path string
-		if len(args) > 0 {
-			path = args[0]
-		} else {
-			var err error
-			path, err = os.Getwd()
-			fatalIfErr(err)
-		}
-
 		app := getApplication()
-		pkg, err := vespa.ApplicationPackageFrom(path)
-		fatalIfErr(err)
-		configDir, err := configDir(app)
-		fatalIfErr(err)
-
+		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		if err != nil {
+			printErr(err)
+			return
+		}
+		configDir := configDir(app)
 		securityDir := filepath.Join(pkg.Path, "security")
 		pkgCertificateFile := filepath.Join(securityDir, "clients.pem")
 		privateKeyFile := filepath.Join(configDir, "data-plane-private-key.pem")
@@ -50,33 +41,35 @@ var certCmd = &cobra.Command{
 		if !overwriteCertificate {
 			for _, file := range []string{pkgCertificateFile, privateKeyFile, certificateFile} {
 				if util.PathExists(file) {
-					errorWithHint(fmt.Errorf("Certificate or private key %s already exists", color.Cyan(file)), "Use -f flag to force overwriting")
+					printErrHint(fmt.Errorf("Certificate or private key %s already exists", color.Cyan(file)), "Use -f flag to force overwriting")
 					return
 				}
 			}
 		}
 
 		keyPair, err := vespa.CreateKeyPair()
-		fatalIfErr(err)
-		err = os.MkdirAll(configDir, 0755)
-		fatalIfErr(err)
-		err = os.MkdirAll(securityDir, 0755)
-		fatalIfErr(err)
-		err = keyPair.WriteCertificateFile(pkgCertificateFile, overwriteCertificate)
-		fatalIfErr(err)
-		err = keyPair.WriteCertificateFile(certificateFile, overwriteCertificate)
-		fatalIfErr(err)
-		err = keyPair.WritePrivateKeyFile(privateKeyFile, overwriteCertificate)
-		fatalIfErr(err)
-
-		log.Printf("Certificate written to %s", color.Cyan(pkgCertificateFile))
-		log.Printf("Certificate written to %s", color.Cyan(certificateFile))
-		log.Printf("Private key written to %s", color.Cyan(privateKeyFile))
+		if err != nil {
+			printErr(err, "Could not create key pair")
+			return
+		}
+		if err := os.MkdirAll(securityDir, 0755); err != nil {
+			printErr(err, "Could not create security directory")
+			return
+		}
+		if err := keyPair.WriteCertificateFile(pkgCertificateFile, overwriteCertificate); err != nil {
+			printErr(err, "Could not write certificate")
+			return
+		}
+		if err := keyPair.WriteCertificateFile(certificateFile, overwriteCertificate); err != nil {
+			printErr(err, "Could not write certificate")
+			return
+		}
+		if err := keyPair.WritePrivateKeyFile(privateKeyFile, overwriteCertificate); err != nil {
+			printErr(err, "Could not write private key")
+			return
+		}
+		printSuccess("Certificate written to ", color.Cyan(pkgCertificateFile))
+		printSuccess("Certificate written to ", color.Cyan(certificateFile))
+		printSuccess("Private key written to ", color.Cyan(privateKeyFile))
 	},
-}
-
-func fatalIfErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
 }

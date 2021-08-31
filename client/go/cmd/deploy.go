@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -42,25 +41,29 @@ var deployCmd = &cobra.Command{
 			var err error
 			d.Zone, err = vespa.ZoneFromString(zoneArg)
 			if err != nil {
-				errorWithHint(err, "Zones have the format <env>.<region>.")
+				printErrHint(err, "Zones have the format <env>.<region>.")
 				return
 			}
 			d.Application, err = vespa.ApplicationFromString(getApplication())
 			if err != nil {
-				errorWithHint(err, "Applications have the format <tenant>.<application-name>.<instance-name>")
+				printErrHint(err, "Applications have the format <tenant>.<application-name>.<instance-name>")
 				return
 			}
-			d.APIKey, err = loadApiKey(getApplication())
-			if err != nil {
-				errorWithHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+			configDir := configDir(d.Application.String())
+			if configDir == "" {
+				return
+			}
+			d.APIKey = loadApiKey(configDir, getApplication())
+			if d.APIKey == nil {
+				printErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 				return
 			}
 		}
 		resolvedSrc, err := vespa.Deploy(d)
 		if err == nil {
-			log.Print(color.Green("Success: "), "Deployed ", color.Cyan(resolvedSrc))
+			printSuccess("Deployed ", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(color.Red("Error:"), err)
+			printErr(nil, err.Error())
 		}
 	},
 }
@@ -72,9 +75,9 @@ var prepareCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
-			log.Print(color.Green("Success: "), "Prepared ", color.Cyan(resolvedSrc))
+			printSuccess("Prepared ", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(color.Red("Error:"), err)
+			printErr(nil, err.Error())
 		}
 	},
 }
@@ -86,20 +89,21 @@ var activateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
-			log.Print(color.Green("Success: "), "Activated ", color.Cyan(resolvedSrc))
+			printSuccess("Activated ", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(color.Red("Error: "), err)
+			printErr(nil, err.Error())
 		}
 	},
 }
 
-func loadApiKey(application string) ([]byte, error) {
-	configDir, err := configDir(application)
-	if err != nil {
-		return nil, err
-	}
+func loadApiKey(configDir, application string) []byte {
 	apiKeyPath := filepath.Join(configDir, "api-key.pem")
-	return os.ReadFile(apiKeyPath)
+	key, err := os.ReadFile(apiKeyPath)
+	if err != nil {
+		printErr(err, "Could not read API key from ", color.Cyan(apiKeyPath))
+		return nil
+	}
+	return key
 }
 
 func applicationSource(args []string) string {
@@ -107,11 +111,4 @@ func applicationSource(args []string) string {
 		return args[0]
 	}
 	return "."
-}
-
-func errorWithHint(err error, hints ...string) {
-	log.Print(color.Red("Error:"), err)
-	for _, hint := range hints {
-		log.Print(color.Cyan("Hint: "), hint)
-	}
 }
