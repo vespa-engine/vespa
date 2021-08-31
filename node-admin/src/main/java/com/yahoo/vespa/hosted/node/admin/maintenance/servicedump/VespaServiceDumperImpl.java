@@ -51,6 +51,10 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             context.log(log, Level.FINE, "No service dump requested or dump already completed/failed");
             return;
         }
+        if (isNullTimestamp(request.getCreatedMillisOrNull())) {
+            handleFailure(context, request, startedAt, null, "'createdMillis' is missing or null");
+            return;
+        }
         String configId = request.configId();
         if (configId == null) {
             handleFailure(context, request, startedAt, null, "Service config id is missing from request");
@@ -63,7 +67,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         }
         try {
             context.log(log, Level.FINE,
-                    "Creating dump for " + configId + " requested at " + Instant.ofEpochMilli(request.requestedAt()));
+                    "Creating dump for " + configId + " requested at " + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
             storeReport(context, createStartedReport(request, startedAt));
             Path directoryOnHost = context.pathOnHostFromPathInNode(DIRECTORY_IN_NODE);
             Files.deleteIfExists(directoryOnHost);
@@ -131,19 +135,19 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     private static ServiceDumpReport createStartedReport(ServiceDumpReport request, Instant startedAt) {
         return new ServiceDumpReport(
-                request.requestedAt(), startedAt.toEpochMilli(), null, null, null, request.configId(),
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, null, null, request.configId(),
                 request.expireAt(), null);
     }
 
     private static ServiceDumpReport createSuccessReport(ServiceDumpReport request, Instant startedAt, URI location) {
         return new ServiceDumpReport(
-                request.requestedAt(), startedAt.toEpochMilli(), Instant.now().toEpochMilli(), null,
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), Instant.now().toEpochMilli(), null,
                 location.toString(), request.configId(), request.expireAt(), null);
     }
 
     private static ServiceDumpReport createErrorReport(ServiceDumpReport request, Instant startedAt, String message) {
         return new ServiceDumpReport(
-                request.requestedAt(), startedAt.toEpochMilli(), null, Instant.now().toEpochMilli(), null,
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, Instant.now().toEpochMilli(), null,
                 request.configId(), request.expireAt(), message);
     }
 
@@ -151,7 +155,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         String sanitizedConfigId = report.configId()
                 .replace('/', '-')
                 .replace('@', '-');
-        return sanitizedConfigId + "-" + report.requestedAt().toString();
+        return sanitizedConfigId + "-" + report.getCreatedMillisOrNull().toString();
     }
 
     private static URI serviceDumpDestination(NodeSpec spec, String dumpId) {

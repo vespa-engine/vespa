@@ -19,7 +19,6 @@ class ServiceDumpReport extends BaseReport {
 
     public static final String REPORT_ID = "serviceDump";
 
-    private static final String REQUESTED_AT_FIELD = "requestedAt";
     private static final String STARTED_AT_FIELD = "startedAt";
     private static final String COMPLETED_AT_FIELD = "completedAt";
     private static final String FAILED_AT_FIELD = "failedAt";
@@ -28,7 +27,6 @@ class ServiceDumpReport extends BaseReport {
     private static final String EXPIRE_AT_FIELD = "expireAt";
     private static final String ERROR_FIELD = "error";
 
-    private final Long requestedAt;
     private final Long startedAt;
     private final Long completedAt;
     private final Long failedAt;
@@ -38,7 +36,7 @@ class ServiceDumpReport extends BaseReport {
     private final String error;
 
     @JsonCreator
-    public ServiceDumpReport(@JsonProperty(REQUESTED_AT_FIELD) Long requestedAt,
+    public ServiceDumpReport(@JsonProperty(CREATED_FIELD) Long createdAt,
                              @JsonProperty(STARTED_AT_FIELD) Long startedAt,
                              @JsonProperty(COMPLETED_AT_FIELD) Long completedAt,
                              @JsonProperty(FAILED_AT_FIELD) Long failedAt,
@@ -46,8 +44,7 @@ class ServiceDumpReport extends BaseReport {
                              @JsonProperty(CONFIG_ID_FIELD) String configId,
                              @JsonProperty(EXPIRE_AT_FIELD) Long expireAt,
                              @JsonProperty(ERROR_FIELD) String error) {
-        super(null, null);
-        this.requestedAt = requestedAt;
+        super(createdAt, null);
         this.startedAt = startedAt;
         this.completedAt = completedAt;
         this.failedAt = failedAt;
@@ -57,7 +54,6 @@ class ServiceDumpReport extends BaseReport {
         this.error = error;
     }
 
-    @JsonGetter(REQUESTED_AT_FIELD) public Long requestedAt() { return requestedAt; }
     @JsonGetter(STARTED_AT_FIELD) public Long startedAt() { return startedAt; }
     @JsonGetter(COMPLETED_AT_FIELD) public Long completedAt() { return completedAt; }
     @JsonGetter(FAILED_AT_FIELD) public Long failedAt() { return failedAt; }
