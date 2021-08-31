@@ -58,17 +58,25 @@ var getConfigCmd = &cobra.Command{
 	Use:     "get option",
 	Short:   "Get a configuration option",
 	Example: "$ vespa config get target",
-	Args:    cobra.ExactArgs(1),
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		option := args[0]
-		value, err := getOption(option)
-		if err != nil {
-			value = color.Faint("<unset>").String()
+		if len(args) == 0 { // Print all values
+			printOption(targetFlag)
+			printOption(applicationFlag)
 		} else {
-			value = color.Cyan(value).String()
+			printOption(args[0])
 		}
-		log.Printf("%s = %s", option, value)
 	},
+}
+
+func printOption(option string) {
+	value, err := getOption(option)
+	if err != nil {
+		value = color.Faint("<unset>").String()
+	} else {
+		value = color.Cyan(value).String()
+	}
+	log.Printf("%s = %s", option, value)
 }
 
 func configDir(application string) (string, error) {

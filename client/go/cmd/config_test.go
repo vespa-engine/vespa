@@ -20,4 +20,6 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, "application = <unset>\n", executeCommand(t, nil, []string{"config", "get", "application"}, nil))
 	assert.Equal(t, "", executeCommand(t, nil, []string{"config", "set", "application", "t1.a1.i1"}, nil))
 	assert.Equal(t, "application = t1.a1.i1\n", executeCommand(t, nil, []string{"config", "get", "application"}, nil))
+
+	assert.Equal(t, "target = https://127.0.0.1\napplication = t1.a1.i1\n", executeCommand(t, nil, []string{"config", "get"}, nil))
 }
