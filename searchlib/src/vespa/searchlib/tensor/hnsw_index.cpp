@@ -317,7 +317,7 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
     }
     uint32_t estimated_visited_nodes = estimate_visited_nodes(level, doc_id_limit, neighbors_to_find, filter);
 #if ! USE_OLD_VISITED_TRACKER
-    if (estimated_visited_nodes >= doc_id_limit / 64) {
+    if (estimated_visited_nodes >= doc_id_limit / 128) {
         search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
     } else {
         search_layer_helper<HashSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
