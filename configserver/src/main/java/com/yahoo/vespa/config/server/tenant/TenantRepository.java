@@ -565,10 +565,6 @@ public class TenantRepository {
         return ImmutableSet.copyOf(tenants.values());
     }
 
-    public FileDistributionFactory getFileDistributionFactory() {
-        return fileDistributionFactory;
-    }
-
     /**
      * Gets zookeeper path for tenant data
      *
