@@ -22,7 +22,7 @@ const (
 	configType = "yaml"
 )
 
-var flagToConfigBindings map[string][]*cobra.Command = make(map[string][]*cobra.Command)
+var flagToConfigBindings map[string]*cobra.Command = make(map[string]*cobra.Command)
 
 func init() {
 	rootCmd.AddCommand(configCmd)
@@ -92,7 +92,7 @@ func configDir(application string) (string, error) {
 }
 
 func bindFlagToConfig(option string, command *cobra.Command) {
-	flagToConfigBindings[option] = append(flagToConfigBindings[option], command)
+	flagToConfigBindings[option] = command
 }
 
 func readConfig() {
@@ -106,10 +106,8 @@ func readConfig() {
 	viper.SetConfigType(configType)
 	viper.AddConfigPath(configDir)
 	viper.AutomaticEnv()
-	for option, commands := range flagToConfigBindings {
-		for _, command := range commands {
-			viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
-		}
+	for option, command := range flagToConfigBindings {
+		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
 	}
 	err = viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {

@@ -22,7 +22,14 @@ var (
 		Use:   "vespa",
 		Short: "A command-line tool for working with Vespa instances",
 	}
-	color aurora.Aurora
+	color          aurora.Aurora
+	targetArg      string
+	applicationArg string
+)
+
+const (
+	applicationFlag = "application"
+	targetFlag      = "target"
 )
 
 func configureLogger() {
@@ -34,6 +41,10 @@ func configureLogger() {
 func init() {
 	configureLogger()
 	cobra.OnInitialize(readConfig)
+	rootCmd.PersistentFlags().StringVarP(&targetArg, targetFlag, "t", "local", "The name or URL of the recipient of this command")
+	rootCmd.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application to manage")
+	bindFlagToConfig(targetFlag, rootCmd)
+	bindFlagToConfig(applicationFlag, rootCmd)
 }
 
 // Execute executes the root command.
