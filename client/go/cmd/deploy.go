@@ -49,16 +49,18 @@ var deployCmd = &cobra.Command{
 			var err error
 			d.Zone, err = vespa.ZoneFromString(zoneArg)
 			if err != nil {
-				log.Fatal(err)
+				errorWithHint(err, "Zones have the format <env>.<region>.")
+				return
 			}
 			d.Application, err = vespa.ApplicationFromString(applicationArg)
 			if err != nil {
-				log.Fatal(err)
+				errorWithHint(err, "Applications have the format <tenant>.<application-name>.<instance-name>")
+				return
 			}
-
-			d.KeyPair, err = loadApplicationKeyPair(applicationArg)
+			d.APIKey, err = loadApiKey(applicationArg)
 			if err != nil {
-				log.Fatal(err)
+				errorWithHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+				return
 			}
 		}
 		resolvedSrc, err := vespa.Deploy(d)
@@ -98,23 +100,25 @@ var activateCmd = &cobra.Command{
 	},
 }
 
-func loadApplicationKeyPair(application string) (vespa.PemKeyPair, error) {
+func loadApiKey(application string) ([]byte, error) {
 	configDir, err := configDir(application)
 	if err != nil {
-		return vespa.PemKeyPair{}, err
+		return nil, err
 	}
-	certificateFile := filepath.Join(configDir, "data-plane-public-cert.pem")
-	privateKeyFile := filepath.Join(configDir, "data-plane-private-key.pem")
-	return vespa.LoadKeyPair(privateKeyFile, certificateFile)
+	apiKeyPath := filepath.Join(configDir, "api-key.pem")
+	return os.ReadFile(apiKeyPath)
 }
 
 func applicationSource(args []string) string {
 	if len(args) > 0 {
 		return args[0]
 	}
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Could not determine working directory: %s", err)
+	return "."
+}
+
+func errorWithHint(err error, hints ...string) {
+	log.Print(color.Red("Error:"), err)
+	for _, hint := range hints {
+		log.Print(color.Cyan("Hint: "), hint)
 	}
-	return wd
 }
