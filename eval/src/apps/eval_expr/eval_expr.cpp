@@ -27,7 +27,6 @@ using vespalib::slime::JsonFormat;
 using vespalib::slime::Inspector;
 using vespalib::slime::Cursor;
 
-
 const auto &factory = FastValueBuilderFactory::get();
 
 int usage(const char *self) {
@@ -39,7 +38,8 @@ int usage(const char *self) {
     fprintf(stderr, "  using single letter symbols ('a' through 'z'). Quote expressions to\n");
     fprintf(stderr, "  make sure they become separate parameters. The --verbose option may\n");
     fprintf(stderr, "  be specified to get more detailed informaion about how the various\n");
-    fprintf(stderr, "  expressions are optimized.\n\n");
+    fprintf(stderr, "  expressions are optimized.\n");
+    fprintf(stderr, "\n");
     fprintf(stderr, "example: %s \"2+2\" \"a+2\" \"a+b\"\n", self);
     fprintf(stderr, "  (a=4, b=6, c=10)\n");
     fprintf(stderr, "\n");
@@ -62,11 +62,12 @@ int usage(const char *self) {
     fprintf(stderr, "      relevant command and will result in the 'steps' field being populated in\n");
     fprintf(stderr, "      the response.\n");
     fprintf(stderr, "  if any command fails, the response will be { error:string }\n");
+    fprintf(stderr, "  commands may be batched using json arrays:\n");
+    fprintf(stderr, "    [cmd1,cmd2,cmd3] -> [res1,res2,res3]\n");
     fprintf(stderr, "\n");
     //               -------------------------------------------------------------------------------
     return 1;
 }
-
 
 int overflow(int cnt, int max) {
     fprintf(stderr, "error: too many expressions: %d (max is %d)\n", cnt, max);
@@ -221,7 +222,7 @@ int interactive_mode(Context &ctx) {
         if (is_only_whitespace(line)) {
             continue;
         }
-        if (line.find(exit_cmd) == 0) {
+        if (line == exit_cmd) {
             return 0;
         }
         if (line.find(verbose_cmd) == 0) {

@@ -17,7 +17,7 @@ using vespalib::slime::Inspector;
 
 vespalib::string module_build_path("../../../../");
 vespalib::string binary = module_build_path + "src/apps/eval_expr/vespa-eval-expr";
-vespalib::string server_cmd = binary + " --verbose json-repl";
+vespalib::string server_cmd = binary + " json-repl";
 
 //-----------------------------------------------------------------------------
 
@@ -32,13 +32,12 @@ void read_until_eof(Input &input) {
 // It seems that linking with the eval library contaminates the
 // process proxy in such a way that valgrind will fail. The working
 // theory is that some static state gets initialized before the proxy
-// is forked. This state conflicts with itself when the eval library
-// is loaded again when doing exec on vespa-eval-expr. This test
-// bypasses the issue by linking with vespalib instead. A more robust
-// solution would be to reverse the roles of the process proxy and the
-// program; letting the proxy start the program. This could also be
-// combined with the ability to send open file descriptors on unix
-// domain sockets to avoid indirection for stdin/stdout streams.
+// is forked. This test bypasses the issue by linking with vespalib
+// instead. A more robust solution would be to reverse the roles of
+// the process proxy and the program; letting the proxy start the
+// program. This could also be combined with the ability to send open
+// file descriptors on unix domain sockets to avoid indirection for
+// stdin/stdout streams.
 
 void write_compact(const Slime &slime, Output &out) {
     JsonFormat::encode(slime, out, true);
@@ -251,13 +250,17 @@ TEST_F("require that empty operation batch works", Server()) {
 //-----------------------------------------------------------------------------
 
 TEST_F("require that empty expression produces error", Server()) {
-    auto res = f1.eval("");
-    TEST_DO(res.verify_error("missing expression"));
+    TEST_DO(f1.eval("").verify_error("missing expression"));
 }
 
 TEST_F("require that parse error produces error", Server()) {
-    auto res = f1.eval("this does not parse");
-    TEST_DO(res.verify_error("expression parsing failed"));
+    TEST_DO(f1.eval("this does not parse").verify_error("expression parsing failed"));
+}
+
+TEST_F("require that type issues produces error", Server()) {
+    TEST_DO(f1.eval("tensor(x[3]):[1,2,3]", "a").verify_result("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}"));
+    TEST_DO(f1.eval("tensor(x[2]):[4,5]", "b").verify_result("tensor(x[2]):{{x:0}:4,{x:1}:5}"));
+    TEST_DO(f1.eval("a+b").verify_error("type resolving failed"));
 }
 
 //-----------------------------------------------------------------------------
