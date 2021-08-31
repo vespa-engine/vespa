@@ -795,8 +795,11 @@ Distributor::reportStatus(std::ostream& out,
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);
         if (!path.hasAttribute("page")) {
-            out << "<a href=\"?page=pending\">Count of pending messages to storage nodes</a><br>\n"
-                << "<a href=\"?page=buckets\">List all buckets, highlight non-ideal state</a><br>\n";
+            out << "<p>Distributor stripes: " << _stripes.size() << "</p>\n"
+                << "<p>\n"
+                << "<a href=\"?page=pending\">Count of pending messages to storage nodes</a><br>\n"
+                << "<a href=\"?page=buckets\">List all buckets, highlight non-ideal state</a><br>\n"
+                << "</p>\n";
         } else {
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             const auto& op_ctx = _component;
