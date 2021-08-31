@@ -24,12 +24,10 @@ func init() {
 }
 
 var certCmd = &cobra.Command{
-	Use:   "cert",
-	Short: "Creates a new private key and self-signed certificate",
-	Long: "Applications in Vespa Cloud are required to secure their data plane with mutual TLS.\n\n" +
-		"This command creates a self-signed certificate suitable for development purposes.\n" +
-		"See https://cloud.vespa.ai/en/security-model for more information on the Vespa\n" +
-		"Cloud security model.",
+	Use:     "cert",
+	Short:   "Create a new private key and self-signed certificate for a cloud deployment",
+	Example: "$ vespa cert -a my-tenant.my-app.my-instance",
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var path string
 		if len(args) > 0 {

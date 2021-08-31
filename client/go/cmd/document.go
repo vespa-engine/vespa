@@ -29,8 +29,9 @@ func init() {
 var documentCmd = &cobra.Command{
 	Use:   "document",
 	Short: "Issue document operations",
-	Long:  `TODO: Example vespa document mynamespace/mydocumenttype/myid document.json`,
-	// TODO: Check args
+	Example: `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json
+# (short-hand for vespa document post)`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		post("", args[0])
 	},
@@ -39,8 +40,9 @@ var documentCmd = &cobra.Command{
 var documentPostCmd = &cobra.Command{
 	Use:   "post",
 	Short: "Posts the document in the given file",
-	Long:  `TODO`,
-	// TODO: Check args
+	Args:  cobra.RangeArgs(1, 2),
+	Example: `$ vespa document post src/test/resources/A-Head-Full-of-Dreams.json
+$ vespa document post id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
 			post("", args[0])
@@ -53,8 +55,7 @@ var documentPostCmd = &cobra.Command{
 var documentGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Gets a document",
-	Long:  `TODO`,
-	// TODO: Check args
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		get(args[0])
 	},

@@ -29,8 +29,7 @@ func init() {
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Configure the Vespa command",
-	Long:  "Get and set options for Vespa commands. This is an alternative to always specifying flags",
+	Short: "Configure default values for flags",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
 		cmd.Help()
@@ -41,7 +40,7 @@ var configCmd = &cobra.Command{
 var setConfigCmd = &cobra.Command{
 	Use:     "set option value",
 	Short:   "Set a configuration option.",
-	Example: "vespa config set target cloud",
+	Example: "$ vespa config set target cloud",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := setOption(args[0], args[1]); err != nil {
@@ -55,7 +54,7 @@ var setConfigCmd = &cobra.Command{
 var getConfigCmd = &cobra.Command{
 	Use:     "get option",
 	Short:   "Get a configuration option",
-	Example: "vespa config get target",
+	Example: "$ vespa config get target",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		option := args[0]

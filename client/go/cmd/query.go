@@ -5,7 +5,6 @@
 package cmd
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -26,12 +25,7 @@ var queryCmd = &cobra.Command{
 	Short: "Issue a query to Vespa",
 	Long:  `TODO, example  \"yql=select from sources * where title contains 'foo'\" hits=5`,
 	// TODO: Support referencing a query json file
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("vespa query requires at least one argument containing the query string")
-		}
-		return nil
-	},
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		query(args)
 	},

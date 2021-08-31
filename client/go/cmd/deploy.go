@@ -37,8 +37,8 @@ func init() {
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "Deploys (prepares and activates) an application package",
-	Long:  `TODO`,
+	Short: "Deploy (prepare and activate) an application package",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := vespa.Deployment{
 			ApplicationSource: applicationSource(args),
@@ -74,8 +74,8 @@ var deployCmd = &cobra.Command{
 
 var prepareCmd = &cobra.Command{
 	Use:   "prepare",
-	Short: "Prepares an application package for activation",
-	Long:  `TODO`,
+	Short: "Prepare an application package for activation",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
@@ -88,8 +88,8 @@ var prepareCmd = &cobra.Command{
 
 var activateCmd = &cobra.Command{
 	Use:   "activate",
-	Short: "Activates (deploys) the previously prepared application package",
-	Long:  `TODO`,
+	Short: "Activate (deploy) a previously prepared application package",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
