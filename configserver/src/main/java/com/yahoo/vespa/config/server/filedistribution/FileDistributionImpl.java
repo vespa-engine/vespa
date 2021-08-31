@@ -9,7 +9,6 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 
 import java.io.File;
 import java.util.Set;
@@ -24,11 +23,12 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
     private final static Logger log = Logger.getLogger(FileDistributionImpl.class.getName());
     private final static double rpcTimeout = 1.0;
 
-    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
+    private final Supervisor supervisor;
     private final File fileReferencesDir;
 
-    public FileDistributionImpl(File fileReferencesDir) {
+    public FileDistributionImpl(File fileReferencesDir, Supervisor supervisor) {
         this.fileReferencesDir = fileReferencesDir;
+        this.supervisor = supervisor;
     }
 
     @Override

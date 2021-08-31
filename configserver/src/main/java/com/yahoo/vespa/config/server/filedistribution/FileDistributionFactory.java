@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
@@ -18,6 +20,7 @@ import java.io.File;
 public class FileDistributionFactory {
 
     protected final ConfigserverConfig configserverConfig;
+    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
 
     @Inject
     public FileDistributionFactory(ConfigserverConfig configserverConfig) {
@@ -29,7 +32,7 @@ public class FileDistributionFactory {
     }
 
     public FileDistribution createFileDistribution() {
-        return new FileDistributionImpl(getFileReferencesDir());
+        return new FileDistributionImpl(getFileReferencesDir(), supervisor);
     }
 
     public AddFileInterface createFileManager(File applicationDir) {
