@@ -6,7 +6,6 @@ package cmd
 
 import (
 	"archive/zip"
-	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -31,15 +30,10 @@ func init() {
 
 var cloneCmd = &cobra.Command{
 	// TODO: "application" and "list" subcommands?
-	Use:   "clone",
-	Short: "Creates the files and directory structure for a new Vespa application",
-	Long:  `TODO: vespa clone source applicationName`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 2 {
-			return errors.New("vespa clone requires an application source and name")
-		}
-		return nil
-	},
+	Use:     "clone",
+	Short:   "Create files and directory structure for a new Vespa application from a template",
+	Example: "$ vespa clone vespa-cloud/album-recommendation my-app",
+	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		cloneApplication(args[0], args[1])
 	},

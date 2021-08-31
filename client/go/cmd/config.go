@@ -21,16 +21,18 @@ const (
 	configType = "yaml"
 )
 
+var flagToConfigBindings map[string][]*cobra.Command
+
 func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(setConfigCmd)
 	configCmd.AddCommand(getConfigCmd)
+	flagToConfigBindings = make(map[string][]*cobra.Command)
 }
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Configure the Vespa command",
-	Long:  "Get and set options for Vespa commands. This is an alternative to always specifying flags",
+	Short: "Configure default values for flags",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
 		cmd.Help()
@@ -41,7 +43,7 @@ var configCmd = &cobra.Command{
 var setConfigCmd = &cobra.Command{
 	Use:     "set option value",
 	Short:   "Set a configuration option.",
-	Example: "vespa config set target cloud",
+	Example: "$ vespa config set target cloud",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := setOption(args[0], args[1]); err != nil {
@@ -55,7 +57,7 @@ var setConfigCmd = &cobra.Command{
 var getConfigCmd = &cobra.Command{
 	Use:     "get option",
 	Short:   "Get a configuration option",
-	Example: "vespa config get target",
+	Example: "$ vespa config get target",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		option := args[0]
@@ -82,24 +84,33 @@ func configDir(application string) (string, error) {
 }
 
 func bindFlagToConfig(option string, command *cobra.Command) {
-	viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+	flagToConfigBindings[option] = append(flagToConfigBindings[option], command)
 }
 
 func readConfig() {
 	configDir, err := configDir("")
-	cobra.CheckErr(err)
-
+	if err != nil {
+		log.Print(color.Red("Error:"), "Could not determine configuration directory")
+		log.Print(color.Brown(err))
+		return
+	}
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
 	viper.AddConfigPath(configDir)
 	viper.AutomaticEnv()
-	viper.BindPFlag("target", deployCmd.PersistentFlags().Lookup("target"))
-
+	for option, commands := range flagToConfigBindings {
+		for _, command := range commands {
+			viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+		}
+	}
 	err = viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		return // Fine
 	}
-	cobra.CheckErr(err)
+	if err != nil {
+		log.Print(color.Red("Error:"), "Could read configuration")
+		log.Print(color.Brown(err))
+	}
 }
 
 func getOption(option string) (string, error) {

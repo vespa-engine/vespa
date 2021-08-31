@@ -18,14 +18,10 @@ var (
 	// global flags
 	// TODO: add timeout flag
 	// TODO: add flag to show http request made
-
 	rootCmd = &cobra.Command{
 		Use:   "vespa",
 		Short: "A command-line tool for working with Vespa instances",
-		Long: `TO
-DO`,
 	}
-
 	color aurora.Aurora
 )
 
