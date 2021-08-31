@@ -28,7 +28,7 @@ public class FileDistributionFactory {
     }
 
     public FileRegistry createFileRegistry(File applicationPackage) {
-        return new FileDBRegistry(new ApplicationFileManager(applicationPackage, new FileDirectory(getFileReferencesDir())));
+        return new FileDBRegistry(createFileManager(applicationPackage));
     }
 
     public FileDistribution createFileDistribution() {
