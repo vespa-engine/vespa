@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
+import com.yahoo.text.Lowercase;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -154,11 +155,9 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 request.configId(), request.expireAt(), message);
     }
 
-    private static String createDumpId(ServiceDumpReport report) {
-        String sanitizedConfigId = report.configId()
-                .replace('/', '-')
-                .replace('@', '-');
-        return sanitizedConfigId + "-" + report.getCreatedMillisOrNull().toString();
+    static String createDumpId(ServiceDumpReport request) {
+        String sanitizedConfigId = Lowercase.toLowerCase(request.configId()).replaceAll("[^a-z_0-9]", "-");
+        return sanitizedConfigId + "-" + request.getCreatedMillisOrNull().toString();
     }
 
     private static URI serviceDumpDestination(NodeSpec spec, String dumpId) {
