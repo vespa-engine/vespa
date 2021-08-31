@@ -23,7 +23,7 @@
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
 
-#define USE_OLD_VISITED_TRACKER 1
+#define USE_OLD_VISITED_TRACKER 0
 
 namespace search::tensor {
 
