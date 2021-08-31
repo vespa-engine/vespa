@@ -25,7 +25,7 @@ class ServiceDumpReport extends BaseReport {
     private static final String FAILED_AT_FIELD = "failedAt";
     private static final String LOCATION_FIELD = "location";
     private static final String CONFIG_ID_FIELD = "configId";
-    private static final String EXPIRY_FIELD = "expiry";
+    private static final String EXPIRE_AT_FIELD = "expireAt";
     private static final String ERROR_FIELD = "error";
 
     private final Long requestedAt;
@@ -34,7 +34,7 @@ class ServiceDumpReport extends BaseReport {
     private final Long failedAt;
     private final String location;
     private final String configId;
-    private final Long expiry;
+    private final Long expireAt;
     private final String error;
 
     @JsonCreator
@@ -44,7 +44,7 @@ class ServiceDumpReport extends BaseReport {
                              @JsonProperty(FAILED_AT_FIELD) Long failedAt,
                              @JsonProperty(LOCATION_FIELD) String location,
                              @JsonProperty(CONFIG_ID_FIELD) String configId,
-                             @JsonProperty(EXPIRY_FIELD) Long expiry,
+                             @JsonProperty(EXPIRE_AT_FIELD) Long expireAt,
                              @JsonProperty(ERROR_FIELD) String error) {
         super(null, null);
         this.requestedAt = requestedAt;
@@ -53,7 +53,7 @@ class ServiceDumpReport extends BaseReport {
         this.failedAt = failedAt;
         this.location = location;
         this.configId = configId;
-        this.expiry = expiry;
+        this.expireAt = expireAt;
         this.error = error;
     }
 
@@ -63,6 +63,6 @@ class ServiceDumpReport extends BaseReport {
     @JsonGetter(FAILED_AT_FIELD) public Long failedAt() { return failedAt; }
     @JsonGetter(LOCATION_FIELD) public String location() { return location; }
     @JsonGetter(CONFIG_ID_FIELD) public String configId() { return configId; }
-    @JsonGetter(EXPIRY_FIELD) public Long expiry() { return expiry; }
+    @JsonGetter(EXPIRE_AT_FIELD) public Long expireAt() { return expireAt; }
     @JsonGetter(ERROR_FIELD) public String error() { return error; }
 }

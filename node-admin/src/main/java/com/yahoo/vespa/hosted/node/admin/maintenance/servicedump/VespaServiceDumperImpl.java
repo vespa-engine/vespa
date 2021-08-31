@@ -56,7 +56,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, null, "Service config id is missing from request");
             return;
         }
-        Instant expiry = expiry(startedAt, request);
+        Instant expiry = expireAt(startedAt, request);
         if (expiry.isBefore(startedAt)) {
             handleFailure(context, request, startedAt, null, "Request already expired");
             return;
@@ -106,9 +106,9 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         }
     }
 
-    private static Instant expiry(Instant startedAt, ServiceDumpReport request) {
-        return request.expiry() != null
-                ? Instant.ofEpochMilli(request.expiry())
+    private static Instant expireAt(Instant startedAt, ServiceDumpReport request) {
+        return request.expireAt() != null
+                ? Instant.ofEpochMilli(request.expireAt())
                 : startedAt.plus(7, ChronoUnit.DAYS);
     }
 
@@ -132,19 +132,19 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private static ServiceDumpReport createStartedReport(ServiceDumpReport request, Instant startedAt) {
         return new ServiceDumpReport(
                 request.requestedAt(), startedAt.toEpochMilli(), null, null, null, request.configId(),
-                request.expiry(), null);
+                request.expireAt(), null);
     }
 
     private static ServiceDumpReport createSuccessReport(ServiceDumpReport request, Instant startedAt, URI location) {
         return new ServiceDumpReport(
                 request.requestedAt(), startedAt.toEpochMilli(), Instant.now().toEpochMilli(), null,
-                location.toString(), request.configId(), request.expiry(), null);
+                location.toString(), request.configId(), request.expireAt(), null);
     }
 
     private static ServiceDumpReport createErrorReport(ServiceDumpReport request, Instant startedAt, String message) {
         return new ServiceDumpReport(
                 request.requestedAt(), startedAt.toEpochMilli(), null, Instant.now().toEpochMilli(), null,
-                request.configId(), request.expiry(), message);
+                request.configId(), request.expireAt(), message);
     }
 
     private static String createDumpId(ServiceDumpReport report) {
