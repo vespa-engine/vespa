@@ -118,7 +118,7 @@ public class TenantRepository {
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
-    private final Optional<Curator.DirectoryCache> directoryCache;
+    private final Curator.DirectoryCache directoryCache;
     private final ZookeeperServerConfig zookeeperServerConfig;
 
     /**
@@ -207,9 +207,9 @@ public class TenantRepository {
         createPaths();
         createSystemTenants(configserverConfig);
 
-        this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
-        this.directoryCache.get().addListener(this::childEvent);
-        this.directoryCache.get().start();
+        this.directoryCache = curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor);
+        this.directoryCache.addListener(this::childEvent);
+        this.directoryCache.start();
         bootstrapTenants();
         notifyTenantsLoaded();
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
@@ -533,7 +533,7 @@ public class TenantRepository {
     }
 
     public void close() {
-        directoryCache.ifPresent(com.yahoo.vespa.curator.Curator.DirectoryCache::close);
+        directoryCache.close();
         try {
             zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();
