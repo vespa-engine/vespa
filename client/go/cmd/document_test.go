@@ -33,7 +33,7 @@ func TestDocumentIdNotSpecified(t *testing.T) {
 	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"No document id given neither as argument or as a 'put' key in the json file\n",
+		"Error: No document id given neither as argument or as a 'put' key in the json file\n",
 		executeCommand(t, client, arguments, []string{}))
 }
 
@@ -72,7 +72,7 @@ func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.
 func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"Invalid document (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: Invalid document: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
 			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
@@ -81,7 +81,7 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"Error from container (document api) at 127.0.0.1:8080 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: Container (document API) at 127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "post",
 			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))

@@ -56,10 +56,10 @@ func query(arguments []string) {
 	if response.StatusCode == 200 {
 		log.Print(util.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
-		log.Print(color.Red("Error: "), "Invalid query: ", response.Status)
+		log.Print(color.Red("Error: "), "Invalid query: ", response.Status, "\n")
 		log.Print(util.ReaderToJSON(response.Body))
 	} else {
-		log.Print(color.Red("Error: "), response.Status, " from container at ", color.Cyan(url.Host))
+		log.Print(color.Red("Error: "), response.Status, " from container at ", color.Cyan(url.Host), "\n")
 		log.Print(util.ReaderToJSON(response.Body))
 	}
 }
