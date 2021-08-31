@@ -8,6 +8,9 @@ namespace search::tensor {
 
 class HnswIndex;
 
+/*
+ * Tracker for visited nodes based on vespalib::ReusableSet.
+ */
 class ReusableSetVisitedTracker
 {
     vespalib::ReusableSetHandle _visited;
