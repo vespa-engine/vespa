@@ -1,15 +1,20 @@
 package vespa
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net/http"
 	"os"
 	"time"
 )
@@ -83,21 +88,86 @@ func CreateKeyPair() (PemKeyPair, error) {
 	return PemKeyPair{Certificate: pemCertificate, PrivateKey: pemPrivateKey}, nil
 }
 
-// LoadKeyPair reads a key pair located in privateKeyFile and certificateFile.
-func LoadKeyPair(privateKeyFile, certificateFile string) (PemKeyPair, error) {
-	var (
-		kp  PemKeyPair
-		err error
-	)
-	kp.PrivateKey, err = os.ReadFile(privateKeyFile)
-	if err != nil {
-		return PemKeyPair{}, err
+type RequestSigner struct {
+	now           func() time.Time
+	rnd           io.Reader
+	KeyID         string
+	PemPrivateKey []byte
+}
+
+// NewRequestSigner creates a new signer using the EC pemPrivateKey. keyID names the key used to sign requests.
+func NewRequestSigner(keyID string, pemPrivateKey []byte) *RequestSigner {
+	return &RequestSigner{
+		now:           time.Now,
+		rnd:           rand.Reader,
+		KeyID:         keyID,
+		PemPrivateKey: pemPrivateKey,
 	}
-	kp.Certificate, err = os.ReadFile(certificateFile)
+}
+
+// SignRequest signs the given HTTP request using the private key in rs
+func (rs *RequestSigner) SignRequest(request *http.Request) error {
+	timestamp := rs.now().UTC().Format(time.RFC3339)
+	contentHash, body, err := contentHash(request.Body)
 	if err != nil {
-		return PemKeyPair{}, err
+		return err
 	}
-	return kp, err
+	privateKey, err := ecPrivateKeyFrom(rs.PemPrivateKey)
+	if err != nil {
+		return err
+	}
+	pemPublicKey, err := pemPublicKeyFrom(privateKey)
+	if err != nil {
+		return err
+	}
+	base64PemPublicKey := base64.StdEncoding.EncodeToString(pemPublicKey)
+	signature, err := rs.hashAndSign(privateKey, request, timestamp, contentHash)
+	if err != nil {
+		return err
+	}
+	base64Signature := base64.StdEncoding.EncodeToString(signature)
+	request.Body = io.NopCloser(body)
+	request.Header.Set("X-Timestamp", timestamp)
+	request.Header.Set("X-Content-Hash", contentHash)
+	request.Header.Set("X-Key-Id", rs.KeyID)
+	request.Header.Set("X-Key", base64PemPublicKey)
+	request.Header.Set("X-Authorization", base64Signature)
+	return nil
+}
+
+func (rs *RequestSigner) hashAndSign(privateKey *ecdsa.PrivateKey, request *http.Request, timestamp, contentHash string) ([]byte, error) {
+	msg := []byte(request.Method + "\n" + request.URL.String() + "\n" + timestamp + "\n" + contentHash)
+	hasher := sha256.New()
+	hasher.Write(msg)
+	hash := hasher.Sum(nil)
+	return ecdsa.SignASN1(rs.rnd, privateKey, hash)
+}
+
+func ecPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
+	privateKeyBlock, _ := pem.Decode(pemPrivateKey)
+	if privateKeyBlock == nil {
+		return nil, fmt.Errorf("invalid pem private key")
+	}
+	return x509.ParseECPrivateKey(privateKeyBlock.Bytes)
+}
+
+func pemPublicKeyFrom(privateKey *ecdsa.PrivateKey) ([]byte, error) {
+	publicKeyDER, err := x509.MarshalPKIXPublicKey(privateKey.Public())
+	if err != nil {
+		return nil, err
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: publicKeyDER}), nil
+}
+
+func contentHash(r io.Reader) (string, io.Reader, error) {
+	var copy bytes.Buffer
+	teeReader := io.TeeReader(r, &copy) // Copy reader contents while we hash it
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, teeReader); err != nil {
+		return "", nil, err
+	}
+	hashSum := hasher.Sum(nil)
+	return base64.StdEncoding.EncodeToString(hashSum), &copy, nil
 }
 
 func randomSerialNumber() (*big.Int, error) {
