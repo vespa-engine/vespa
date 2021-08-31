@@ -21,6 +21,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.ServiceDumpReport.isNullTimestamp;
+
 /**
  * Generates dumps for Vespa services and uploads resulting files to S3.
  *
@@ -46,7 +48,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         NodeSpec nodeSpec = context.node();
         ServiceDumpReport request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
                 .orElse(null);
-        if (request == null || !isNullTimestamp(request.failedAt()) || !isNullTimestamp(request.completedAt())) {
+        if (request == null || request.isCompletedOrFailed()) {
             context.log(log, Level.FINE, "No service dump requested or dump already completed/failed");
             return;
         }
@@ -165,8 +167,5 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         return archiveUri.resolve(targetDirectory);
     }
 
-    private static boolean isNullTimestamp(Long timestamp) {
-        return timestamp == null || timestamp == 0;
-    }
 
 }

@@ -61,4 +61,9 @@ class ServiceDumpReport extends BaseReport {
     @JsonGetter(CONFIG_ID_FIELD) public String configId() { return configId; }
     @JsonGetter(EXPIRE_AT_FIELD) public Long expireAt() { return expireAt; }
     @JsonGetter(ERROR_FIELD) public String error() { return error; }
+
+    public boolean isCompletedOrFailed() { return !isNullTimestamp(failedAt) || !isNullTimestamp(completedAt);  }
+
+    public static boolean isNullTimestamp(Long timestamp) { return timestamp == null || timestamp == 0; }
+
 }
