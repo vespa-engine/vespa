@@ -6,6 +6,8 @@ package vespa
 
 import (
 	"archive/zip"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -126,7 +128,7 @@ func Prepare(deployment Deployment) (string, error) {
 	if deployment.IsCloud() {
 		return "", fmt.Errorf("%s: prepare is not supported", deployment)
 	}
-	// TODO: This doesn't work. A session ID must be explicitly created and then passed to the prepare call
+	// TODO: Save session id in .vespa
 	// https://docs.vespa.ai/en/cloudconfig/deploy-rest-api-v2.html
 	u, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/prepare")
 	if err != nil {
@@ -139,7 +141,7 @@ func Activate(deployment Deployment) (string, error) {
 	if deployment.IsCloud() {
 		return "", fmt.Errorf("%s: activate is not supported", deployment)
 	}
-	// TODO: This doesn't work. A session ID must be explicitly created and then passed to the activate call
+	// TODO: Look up session id in .vespa
 	// https://docs.vespa.ai/en/cloudconfig/deploy-rest-api-v2.html
 	u, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/activate")
 	if err != nil {
@@ -210,7 +212,7 @@ func postApplicationPackage(url *url.URL, zipReader io.Reader) error {
 	defer response.Body.Close()
 
 	if response.StatusCode/100 == 4 {
-		return fmt.Errorf("Invalid application package (%s):\n%s", response.Status, util.ReaderToJSON(response.Body))
+		return fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
 	} else if response.StatusCode != 200 {
 		return fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	}
@@ -269,4 +271,21 @@ func zipDir(dir string, destination string) error {
 		return nil
 	}
 	return filepath.Walk(dir, walker)
+}
+
+// Returns the error message in the given JSON, or the entire content if it could not be extracted
+func extractError(reader io.Reader) string {
+	responseData := util.ReaderToBytes(reader)
+	var response map[string]interface{}
+	json.Unmarshal(responseData, &response)
+	if response["error-code"] == "INVALID_APPLICATION_PACKAGE" {
+		return strings.ReplaceAll(response["message"].(string), ": ", ":\n")
+	} else {
+		var prettyJSON bytes.Buffer
+		parseError := json.Indent(&prettyJSON, responseData, "", "    ")
+		if parseError != nil { // Not JSON: Print plainly
+			return string(responseData)
+		}
+		return string(prettyJSON.Bytes())
+	}
 }

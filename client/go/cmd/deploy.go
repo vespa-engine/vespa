@@ -77,9 +77,9 @@ var prepareCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
-			log.Printf("Prepared %s successfully", color.Cyan(resolvedSrc))
+			log.Print(color.Green("Success: "), "Prepared ", color.Cyan(resolvedSrc))
 		} else {
-			log.Print(color.Red("Error: "), err)
+			log.Print(color.Red("Error:"), err)
 		}
 	},
 }
@@ -91,7 +91,7 @@ var activateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
-			log.Print(color.Green("Success: "), "activated ", color.Cyan(resolvedSrc))
+			log.Print(color.Green("Success: "), "Activated ", color.Cyan(resolvedSrc))
 		} else {
 			log.Print(color.Red("Error: "), err)
 		}

@@ -54,8 +54,27 @@ func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withEmptyTarget"}, []string{}))
 }
 
-func TestDeployApplicationPackageError(t *testing.T) {
-	assertApplicationPackageError(t, 401, "Application package error")
+func TestDeployApplicationPackageErrorWithUnexpectedNonJson(t *testing.T) {
+	assertApplicationPackageError(t, 401,
+		"Raw text error",
+		"Raw text error")
+}
+
+func TestDeployApplicationPackageErrorWithUnexpectedJson(t *testing.T) {
+	assertApplicationPackageError(t, 401,
+		`{
+    "some-unexpected-json": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
+}`,
+		`{"some-unexpected-json": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"}`)
+}
+
+func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
+	assertApplicationPackageError(t, 400,
+		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
+		`{
+         "error-code": "INVALID_APPLICATION_PACKAGE",
+         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here\n"
+     }`)
 }
 
 func TestDeployError(t *testing.T) {
@@ -81,10 +100,10 @@ func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T
 	assert.Equal(t, "PK\x03\x04\x14\x00\b", string(buf))
 }
 
-func assertApplicationPackageError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
+func assertApplicationPackageError(t *testing.T, status int, expectedMessage string, returnBody string) {
+	client := &mockHttpClient{nextStatus: status, nextBody: returnBody}
 	assert.Equal(t,
-		"Error: Invalid application package (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
+		"Error: Invalid application package (Status "+strconv.Itoa(status)+")\n\n"+expectedMessage+"\n",
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))
 }
 
