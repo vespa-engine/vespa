@@ -47,7 +47,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         NodeSpec nodeSpec = context.node();
         ServiceDumpReport request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
                 .orElse(null);
-        if (request == null || request.failedAt() != null || request.completedAt() != null) {
+        if (request == null || isNullTimestamp(request.failedAt()) || isNullTimestamp(request.completedAt())) {
             context.log(log, Level.FINE, "No service dump requested or dump already completed/failed");
             return;
         }
@@ -107,9 +107,9 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     }
 
     private static Instant expireAt(Instant startedAt, ServiceDumpReport request) {
-        return request.expireAt() != null
-                ? Instant.ofEpochMilli(request.expireAt())
-                : startedAt.plus(7, ChronoUnit.DAYS);
+        return isNullTimestamp(request.expireAt())
+                ? startedAt.plus(7, ChronoUnit.DAYS)
+                : Instant.ofEpochMilli(request.expireAt());
     }
 
     private void handleFailure(NodeAgentContext context, ServiceDumpReport request, Instant startedAt,
@@ -158,6 +158,10 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         URI archiveUri = spec.archiveUri().get();
         String targetDirectory = "service-dump/" + dumpId;
         return archiveUri.resolve(targetDirectory);
+    }
+
+    private static boolean isNullTimestamp(Long timestamp) {
+        return timestamp == null || timestamp == 0;
     }
 
 }
