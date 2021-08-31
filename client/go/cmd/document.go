@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/util"
 	"github.com/vespa-engine/vespa/vespa"
 )
 
@@ -24,7 +25,7 @@ var documentCmd = &cobra.Command{
 	Long:  `TODO: Example vespa document mynamespace/mydocumenttype/myid document.json`,
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
-		post("", args[0])
+		printResult(vespa.Post("", args[0], documentTarget()))
 	},
 }
 
@@ -35,9 +36,9 @@ var documentPostCmd = &cobra.Command{
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
-			post("", args[0])
+			printResult(vespa.Post("", args[0], documentTarget()))
 		} else {
-			post(args[0], args[1])
+			printResult(vespa.Post(args[0], args[1], documentTarget()))
 		}
 	},
 }
@@ -48,16 +49,11 @@ var documentGetCmd = &cobra.Command{
 	Long:  `TODO`,
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
-		get(args[0])
+		printResult(vespa.Get(args[0], documentTarget()))
 	},
 }
 
-func get(documentId string) {
-}
-
-func post(documentId string, jsonFile string) {
-	result := vespa.Post(documentId, jsonFile, documentTarget())
-
+func printResult(result *util.OperationResult) {
 	if result.Success {
 		log.Print(color.Green("Success: "), result.Message)
 	} else {
@@ -72,5 +68,4 @@ func post(documentId string, jsonFile string) {
 		log.Println("")
 		log.Print(result.Payload)
 	}
-
 }

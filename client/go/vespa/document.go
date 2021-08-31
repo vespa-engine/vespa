@@ -16,6 +16,10 @@ import (
 	"github.com/vespa-engine/vespa/util"
 )
 
+func Get(documentId string, target string) *util.OperationResult {
+	return util.Failure("U forgot to implement it")
+}
+
 func Post(documentId string, jsonFile string, target string) *util.OperationResult {
 	header := http.Header{}
 	header.Add("Content-Type", "application/json")
