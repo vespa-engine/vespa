@@ -16,19 +16,21 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolConfig.Producer {
 
     private final ContainerCluster<?> cluster;
+    private final int metricsproxyNumThreads;
 
-    DefaultThreadpoolProvider(ContainerCluster<?> cluster) {
+    DefaultThreadpoolProvider(ContainerCluster<?> cluster, int metricsproxyNumThreads) {
         super(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(
                         "default-threadpool",
                         ThreadPoolProvider.class.getName(),
                         null)));
         this.cluster = cluster;
+        this.metricsproxyNumThreads = metricsproxyNumThreads;
     }
 
     private int defaultThreadsByClusterType() {
         if (cluster instanceof MetricsProxyContainerCluster) {
-            return 2;
+            return metricsproxyNumThreads;
         }
         return 10;
     }
