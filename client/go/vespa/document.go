@@ -17,11 +17,11 @@ import (
 )
 
 // Sends the operation given in the file
-func Send(jsonFile string, target string) *util.OperationResult {
+func Send(jsonFile string, target string) util.OperationResult {
 	return util.Failure("Not implemented")
 }
 
-func Get(documentId string, target string) *util.OperationResult {
+func Get(documentId string, target string) util.OperationResult {
 	documentPath, documentPathError := IdToURLPath(documentId)
 	if documentPathError != nil {
 		return util.Failure("Invalid document id '" + documentId + "': " + documentPathError.Error())
@@ -52,7 +52,7 @@ func Get(documentId string, target string) *util.OperationResult {
 	}
 }
 
-func Put(documentId string, jsonFile string, target string) *util.OperationResult {
+func Put(documentId string, jsonFile string, target string) util.OperationResult {
 	header := http.Header{}
 	header.Add("Content-Type", "application/json")
 

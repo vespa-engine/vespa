@@ -53,7 +53,7 @@ var documentGetCmd = &cobra.Command{
 	},
 }
 
-func printResult(result *util.OperationResult, payloadOnlyOnSuccess bool) {
+func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
 	if !result.Success {
 		log.Print(color.Red("Error: "), result.Message)
 	} else if !(payloadOnlyOnSuccess && result.Payload != "") {
