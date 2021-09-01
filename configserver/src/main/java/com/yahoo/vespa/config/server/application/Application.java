@@ -111,15 +111,12 @@ public class Application implements ModelResult {
 
         ConfigResponse config;
         if (useCache(req)) {
-            config = cache.get(cacheKey);
-            if (config != null) {
-                log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Found config " + cacheKey + " in cache"));
-            } else {
-                config = createConfigResponse(configKey, req, responseFactory);
-                cache.put(cacheKey, config, config.getConfigMd5());
+            config = cache.computeIfAbsent(cacheKey, (ConfigCacheKey key) -> {
+                var response = createConfigResponse(configKey, req, responseFactory);
                 metricUpdater.setCacheConfigElems(cache.configElems());
                 metricUpdater.setCacheChecksumElems(cache.checkSumElems());
-            }
+                return response;
+            });
         } else {
             config = createConfigResponse(configKey, req, responseFactory);
         }
