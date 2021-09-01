@@ -66,7 +66,7 @@ public class SyncFileInfo {
 
     public static Optional<SyncFileInfo> forServiceDump(URI directory, Path file, Instant expiry) {
         String filename = file.getFileName().toString();
-        Compression compression = filename.endsWith(".bin") ? Compression.ZSTD : Compression.NONE;
+        Compression compression = filename.endsWith(".bin") || filename.endsWith(".hprof") ? Compression.ZSTD : Compression.NONE;
         if (filename.startsWith(".")) return Optional.empty();
         URI location = directory.resolve(filename + compression.extension);
         return Optional.of(new SyncFileInfo(file, location, compression, expiry));
