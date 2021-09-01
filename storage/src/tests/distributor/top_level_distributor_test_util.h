@@ -18,6 +18,7 @@ namespace framework { struct TickingThreadPool; }
 namespace distributor {
 
 class Distributor;
+class DistributorMetricSet;
 class DistributorNodeContext;
 class DistributorStripe;
 class DistributorStripeComponent;
@@ -53,15 +54,20 @@ public:
 
     BucketDBUpdater& bucket_db_updater();
     const IdealStateMetricSet& total_ideal_state_metrics() const;
+    const DistributorMetricSet& total_distributor_metrics() const;
     const storage::distributor::DistributorNodeContext& node_context() const;
     storage::distributor::DistributorStripeOperationContext& operation_context();
 
     std::vector<DistributorStripe*> distributor_stripes() const;
 
-    bool tick();
+    bool tick(bool only_tick_top_level = false);
 
     const DistributorConfig& current_distributor_config() const;
     void reconfigure(const DistributorConfig&);
+
+    framework::defaultimplementation::FakeClock& fake_clock() noexcept {
+        return _node->getClock();
+    }
 
     BucketDatabase& stripe_bucket_database(uint16_t stripe_idx); // Implicit default space only
     BucketDatabase& stripe_bucket_database(uint16_t stripe_idx, document::BucketSpace space);

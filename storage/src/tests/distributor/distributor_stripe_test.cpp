@@ -371,6 +371,25 @@ TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_confi
     EXPECT_EQ(12, static_cast<int>(mp.mergeGlobalBuckets));
 }
 
+TEST_F(DistributorStripeTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
+    setup_stripe(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
+    // Force new state into being the pending state. According to the initial
+    // state we own the bucket, but according to the pending state, we do
+    // not. This must be handled correctly by the database update code.
+    simulate_set_pending_cluster_state("storage:10 distributor:10");
+
+    document::BucketId nonOwnedBucket(16, 3);
+    EXPECT_FALSE(getDistributorBucketSpace().get_bucket_ownership_flags(nonOwnedBucket).owned_in_pending_state());
+    EXPECT_FALSE(getDistributorBucketSpace().check_ownership_in_pending_and_current_state(nonOwnedBucket).isOwned());
+
+    std::vector<BucketCopy> copies;
+    copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));
+    operation_context().update_bucket_database(makeDocumentBucket(nonOwnedBucket), copies,
+                                               DatabaseUpdate::CREATE_IF_NONEXISTING);
+
+    EXPECT_EQ("NONEXISTING", dumpBucket(nonOwnedBucket));
+}
+
 TEST_F(DistributorStripeTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time)
 {
     setup_stripe(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
