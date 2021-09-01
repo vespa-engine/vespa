@@ -14,26 +14,64 @@ import (
 	"github.com/vespa-engine/vespa/vespa"
 )
 
-func TestDocumentWrite(t *testing.T) {
-	assertDocumentPut([]string{"document", "testdata/A-Head-Full-of-Dreams.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
+func TestDocumentSendPut(t *testing.T) {
+	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Put.json"},
+		"POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
+}
+
+func TestDocumentSendUpdate(t *testing.T) {
+	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Update.json"},
+		"PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Update.json", t)
+}
+
+func TestDocumentSendRemove(t *testing.T) {
+	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Remove.json"},
+		"DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
 }
 
 func TestDocumentPutWithIdArg(t *testing.T) {
-	assertDocumentPut([]string{"document", "put", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json", t)
+	assertDocumentSend([]string{"document", "put", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"},
+		"POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json", t)
 }
 
-func TestDocumentPutWithIdInDocument(t *testing.T) {
-	assertDocumentPut([]string{"document", "put", "testdata/A-Head-Full-of-Dreams.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
+func TestDocumentPutWithoutIdArg(t *testing.T) {
+	assertDocumentSend([]string{"document", "put", "testdata/A-Head-Full-of-Dreams-Put.json"},
+		"POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
 }
 
-func TestDocumentPutIdNotSpecified(t *testing.T) {
-	arguments := []string{"document", "put", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
+func TestDocumentUpdateWithIdArg(t *testing.T) {
+	assertDocumentSend([]string{"document", "update", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"},
+		"PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json", t)
+}
+
+func TestDocumentUpdateWithoutIdArg(t *testing.T) {
+	assertDocumentSend([]string{"document", "update", "testdata/A-Head-Full-of-Dreams-Update.json"},
+		"PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Update.json", t)
+}
+
+func TestDocumentRemoveWithIdArg(t *testing.T) {
+	assertDocumentSend([]string{"document", "remove", "id:mynamespace:music::a-head-full-of-dreams"},
+		"DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+}
+
+func TestDocumentRemoveWithoutIdArg(t *testing.T) {
+	assertDocumentSend([]string{"document", "remove", "testdata/A-Head-Full-of-Dreams-Remove.json"},
+		"DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+}
+
+func TestDocumentSendMissingId(t *testing.T) {
+	arguments := []string{"document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
 		"Error: No document id given neither as argument or as a 'put' key in the json file\n",
+		executeCommand(t, client, arguments, []string{}))
+}
+
+func TestDocumentSendWithDisagreeingOperations(t *testing.T) {
+	arguments := []string{"document", "update", "testdata/A-Head-Full-of-Dreams-Put.json"}
+	client := &mockHttpClient{}
+	assert.Equal(t,
+		"Error: Wanted document operation is update but the JSON file specifies put\n",
 		executeCommand(t, client, arguments, []string{}))
 }
 
@@ -50,28 +88,19 @@ func TestDocumentGet(t *testing.T) {
 		"id:mynamespace:music::a-head-full-of-dreams", t)
 }
 
-func assertDocumentPut(arguments []string, documentId string, jsonFile string, t *testing.T) {
+func assertDocumentSend(arguments []string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"Success: Sent "+documentId+"\n",
+		"Success: Sent "+expectedDocumentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
-	expectedPath, _ := vespa.IdToURLPath(documentId)
+	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)
 	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
-	assert.Equal(t, "POST", client.lastRequest.Method)
+	assert.Equal(t, expectedMethod, client.lastRequest.Method)
 
-	fileContent, _ := ioutil.ReadFile(jsonFile)
-	assert.Equal(t, string(fileContent), util.ReaderToString(client.lastRequest.Body))
-}
-
-func assertDocumentPutShortForm(documentId string, jsonFile string, t *testing.T) {
-	client := &mockHttpClient{}
-	assert.Equal(t,
-		"Success\n",
-		executeCommand(t, client, []string{"document", jsonFile}, []string{}))
-	target := getTarget(documentContext).document
-	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
+	expectedPayload, _ := ioutil.ReadFile(expectedPayloadFile)
+	assert.Equal(t, string(expectedPayload), util.ReaderToString(client.lastRequest.Body))
 }
 
 func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
@@ -98,7 +127,7 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 		"Error: Invalid document operation: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "put",
 			"id:mynamespace:music::a-head-full-of-dreams",
-			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
+			"testdata/A-Head-Full-of-Dreams-Put.json"}, []string{}))
 }
 
 func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
@@ -107,5 +136,5 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 		"Error: Container (document API) at 127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "put",
 			"id:mynamespace:music::a-head-full-of-dreams",
-			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
+			"testdata/A-Head-Full-of-Dreams-Put.json"}, []string{}))
 }
