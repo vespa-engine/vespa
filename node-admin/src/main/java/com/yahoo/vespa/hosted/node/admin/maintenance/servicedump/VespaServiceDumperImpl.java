@@ -174,7 +174,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     private static URI serviceDumpDestination(NodeSpec spec, String dumpId) {
         URI archiveUri = spec.archiveUri().get();
-        String targetDirectory = "service-dump/" + dumpId;
+        String targetDirectory = "service-dump/" + dumpId + "/";
         return archiveUri.resolve(targetDirectory);
     }
 

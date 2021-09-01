@@ -77,12 +77,15 @@ class VespaServiceDumperImplTest {
         // Verify
         String expectedJson =
                 "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
-                        "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000\"," +
+                        "\"location\":\"s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/\"," +
                         "\"configId\":\"default/container.1\"}";
         assertReportEquals(nodeRepository, expectedJson);
         verify(operations).executeCommandInContainerAsRoot(
                 context, "/opt/vespa/bin/vespa-jvm-dumper", "default/container.1", "/opt/vespa/tmp/vespa-service-dump");
-        assertSyncedFiles(context, syncClient, List.of("heap.bin", "jstack"));
+        List<URI> expectedUris = List.of(
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/heap.bin.zst"),
+                URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/jstack"));
+        assertSyncedFiles(context, syncClient, expectedUris);
 
     }
 
@@ -94,15 +97,15 @@ class VespaServiceDumperImplTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static void assertSyncedFiles(NodeAgentContextImpl context, SyncClient client, List<String> expectedFilenames) {
+    private static void assertSyncedFiles(NodeAgentContextImpl context, SyncClient client, List<URI> expectedDestinations) {
         ArgumentCaptor<List<SyncFileInfo>> filesCaptor = ArgumentCaptor.forClass(List.class);
         verify(client).sync(eq(context), filesCaptor.capture(), eq(Integer.MAX_VALUE));
         List<SyncFileInfo> actualFiles = filesCaptor.getValue();
-        List<String> actualFilenames = actualFiles.stream()
-                .map(f -> f.source().getFileName().toString())
+        List<URI> actualFilenames = actualFiles.stream()
+                .map(SyncFileInfo::destination)
                 .sorted()
                 .collect(Collectors.toList());
-        assertEquals(expectedFilenames, actualFilenames);
+        assertEquals(expectedDestinations, actualFilenames);
     }
 
     private static ContainerOperations createContainerMock(Path tmpDirectory) {
