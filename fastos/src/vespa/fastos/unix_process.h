@@ -156,22 +156,6 @@ private:
     FastOS_UNIX_ProcessStarter(const FastOS_UNIX_ProcessStarter&);
     FastOS_UNIX_ProcessStarter& operator=(const FastOS_UNIX_ProcessStarter&);
 
-public:
-
-    enum Constants
-    {
-        CODE_EXIT,
-        CODE_NEWPROCESS,
-        CODE_WAIT,
-
-        CODE_SUCCESS,
-        CODE_FAILURE,
-
-        MAX_PROCESSES_PER_WAIT = 50,
-
-        CONSTEND
-    };
-
 protected:
     FastOS_ApplicationInterface *_app;
 
