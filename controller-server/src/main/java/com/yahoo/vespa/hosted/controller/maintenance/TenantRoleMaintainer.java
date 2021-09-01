@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 
 public class TenantRoleMaintainer extends ControllerMaintainer {
 
-    // TODO andreer: also maintain tenant specific athenz host service (and create on tenant creation)
-
     public TenantRoleMaintainer(Controller controller, Duration tenantRoleMaintainer) {
         super(controller, tenantRoleMaintainer);
     }
