@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -16,6 +18,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -88,6 +91,19 @@ func CreateKeyPair() (PemKeyPair, error) {
 	return PemKeyPair{Certificate: pemCertificate, PrivateKey: pemPrivateKey}, nil
 }
 
+// CreateAPIKey creates a EC private key encoded as PEM
+func CreateAPIKey() ([]byte, error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %w", err)
+	}
+	privateKeyDER, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyDER}), nil
+}
+
 type RequestSigner struct {
 	now           func() time.Time
 	rnd           io.Reader
@@ -112,11 +128,11 @@ func (rs *RequestSigner) SignRequest(request *http.Request) error {
 	if err != nil {
 		return err
 	}
-	privateKey, err := ecPrivateKeyFrom(rs.PemPrivateKey)
+	privateKey, err := ECPrivateKeyFrom(rs.PemPrivateKey)
 	if err != nil {
 		return err
 	}
-	pemPublicKey, err := pemPublicKeyFrom(privateKey)
+	pemPublicKey, err := PEMPublicKeyFrom(privateKey)
 	if err != nil {
 		return err
 	}
@@ -143,7 +159,8 @@ func (rs *RequestSigner) hashAndSign(privateKey *ecdsa.PrivateKey, request *http
 	return ecdsa.SignASN1(rs.rnd, privateKey, hash)
 }
 
-func ecPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
+// ECPrivateKeyFrom reads an EC private key from the PEM-encoded pemPrivateKey.
+func ECPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
 	privateKeyBlock, _ := pem.Decode(pemPrivateKey)
 	if privateKeyBlock == nil {
 		return nil, fmt.Errorf("invalid pem private key")
@@ -151,12 +168,28 @@ func ecPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
 	return x509.ParseECPrivateKey(privateKeyBlock.Bytes)
 }
 
-func pemPublicKeyFrom(privateKey *ecdsa.PrivateKey) ([]byte, error) {
+// PEMPublicKeyFrom extracts the public key from privateKey encoded as PEM.
+func PEMPublicKeyFrom(privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	publicKeyDER, err := x509.MarshalPKIXPublicKey(privateKey.Public())
 	if err != nil {
 		return nil, err
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: publicKeyDER}), nil
+}
+
+// FingerprintMD5 returns a MD5 fingerprint of publicKey.
+func FingerprintMD5(pemPublicKey []byte) (string, error) {
+	publicKeyDER, _ := pem.Decode(pemPublicKey)
+	if publicKeyDER == nil {
+		return "", fmt.Errorf("invalid pem data")
+	}
+	md5sum := md5.Sum(publicKeyDER.Bytes)
+	hexDigits := make([]string, len(md5sum))
+	for i, c := range md5sum {
+		hexDigits[i] = hex.EncodeToString([]byte{c})
+	}
+	return strings.Join(hexDigits, ":"), nil
+
 }
 
 func contentHash(r io.Reader) (string, io.Reader, error) {

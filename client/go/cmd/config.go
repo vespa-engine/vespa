@@ -79,16 +79,22 @@ func printOption(option string) {
 	log.Printf("%s = %s", option, value)
 }
 
-func configDir(application string) (string, error) {
+func configDir(application string) string {
 	home := os.Getenv("VESPA_CLI_HOME")
 	if home == "" {
 		var err error
 		home, err = os.UserHomeDir()
 		if err != nil {
-			return "", err
+			printErr(err, "Could not determine configuration directory")
+			return ""
 		}
 	}
-	return filepath.Join(home, ".vespa", application), nil
+	configDir := filepath.Join(home, ".vespa", application)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		printErr(err, "Could not create config directory")
+		return ""
+	}
+	return configDir
 }
 
 func bindFlagToConfig(option string, command *cobra.Command) {
@@ -96,10 +102,8 @@ func bindFlagToConfig(option string, command *cobra.Command) {
 }
 
 func readConfig() {
-	configDir, err := configDir("")
-	if err != nil {
-		log.Print(color.Red("Error:"), "Could not determine configuration directory")
-		log.Print(color.Brown(err))
+	configDir := configDir("")
+	if configDir == "" {
 		return
 	}
 	viper.SetConfigName(configName)
@@ -109,13 +113,12 @@ func readConfig() {
 	for option, command := range flagToConfigBindings {
 		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
 	}
-	err = viper.ReadInConfig()
+	err := viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		return // Fine
 	}
 	if err != nil {
-		log.Print(color.Red("Error:"), "Could read configuration")
-		log.Print(color.Brown(err))
+		printErr(err, "Could not read configuration")
 	}
 }
 
@@ -150,25 +153,28 @@ func setOption(option, value string) error {
 }
 
 func writeConfig() {
-	configDir, err := configDir("")
-	if err != nil {
-		log.Fatalf("Could not decide config directory: %s", color.Red(err))
+	configDir := configDir("")
+	if configDir == "" {
+		return
 	}
 
 	if !util.PathExists(configDir) {
 		if err := os.MkdirAll(configDir, 0700); err != nil {
-			log.Fatalf("Could not create %s: %s", color.Cyan(configDir), color.Red(err))
+			printErr(err, "Could not create ", color.Cyan(configDir))
+			return
 		}
 	}
 
 	configFile := filepath.Join(configDir, configName+"."+configType)
 	if !util.PathExists(configFile) {
 		if _, err := os.Create(configFile); err != nil {
-			log.Fatalf("Could not create %s: %s", color.Cyan(configFile), color.Red(err))
+			printErr(err, "Could not create ", color.Cyan(configFile))
+			return
 		}
 	}
 
 	if err := viper.WriteConfig(); err != nil {
-		log.Printf("Could not write config: %s", color.Red(err))
+		printErr(err, "Could not write config")
+		return
 	}
 }

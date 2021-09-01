@@ -34,12 +34,12 @@ type ZoneID struct {
 }
 
 type Deployment struct {
-	ApplicationSource string
-	TargetType        string
-	TargetURL         string
-	Application       ApplicationID
-	Zone              ZoneID
-	APIKey            []byte
+	ApplicationPackage ApplicationPackage
+	TargetType         string
+	TargetURL          string
+	Application        ApplicationID
+	Zone               ZoneID
+	APIKey             []byte
 }
 
 type ApplicationPackage struct {
@@ -59,6 +59,13 @@ func (d Deployment) String() string {
 }
 
 func (d *Deployment) IsCloud() bool { return d.TargetType == "cloud" }
+
+func (ap *ApplicationPackage) HasCertificate() bool {
+	if ap.IsZip() {
+		return true // TODO: Consider looking inside zip to verify
+	}
+	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
+}
 
 func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
 
@@ -149,6 +156,9 @@ func Activate(deployment Deployment) (string, error) {
 func Deploy(deployment Deployment) (string, error) {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if deployment.IsCloud() {
+		if !deployment.ApplicationPackage.HasCertificate() {
+			return "", fmt.Errorf("%s: missing certificate in package", deployment)
+		}
 		if deployment.APIKey == nil {
 			return "", fmt.Errorf("%s: missing api key", deployment.String())
 		}
@@ -170,18 +180,14 @@ func Deploy(deployment Deployment) (string, error) {
 }
 
 func deploy(url *url.URL, deployment Deployment) (string, error) {
-	pkg, err := ApplicationPackageFrom(deployment.ApplicationSource)
-	if err != nil {
-		return "", err
-	}
-	zipReader, err := pkg.zipReader()
+	zipReader, err := deployment.ApplicationPackage.zipReader()
 	if err != nil {
 		return "", err
 	}
 	if err := postApplicationPackage(url, zipReader, deployment); err != nil {
 		return "", err
 	}
-	return pkg.Path, nil
+	return deployment.ApplicationPackage.Path, nil
 }
 
 func postApplicationPackage(url *url.URL, zipReader io.Reader, deployment Deployment) error {

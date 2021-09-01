@@ -1,12 +1,7 @@
 package vespa
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/pem"
-	"io"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -26,7 +21,10 @@ func TestCreateKeyPair(t *testing.T) {
 func TestSignRequest(t *testing.T) {
 	fixedTime := time.Unix(0, 0)
 	rnd := rand.New(rand.NewSource(0)) // Fixed seed for testing purposes
-	privateKey := pemECPrivateKey(t, rnd)
+	privateKey, err := CreateAPIKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	rs := RequestSigner{
 		now:           func() time.Time { return fixedTime },
 		rnd:           rnd,
@@ -55,14 +53,14 @@ func TestSignRequest(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func pemECPrivateKey(t *testing.T, rnd io.Reader) []byte {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rnd)
+func TestFingerprintMD5(t *testing.T) {
+	pemData := []byte(`-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEObBhkEO6w1YwLXU441keCDGKe+f8
+lu+CDhkxu4ZwLbwQtKBlNF5F7TXuTapUwcTErVgqrHqogrQUzthqrhbNfg==
+-----END PUBLIC KEY-----`)
+	fp, err := FingerprintMD5(pemData)
 	if err != nil {
 		t.Fatal(err)
 	}
-	der, err := x509.MarshalECPrivateKey(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
+	assert.Equal(t, "c5:26:6a:11:e2:b5:74:f3:73:66:9d:80:2e:fd:b7:96", fp)
 }
