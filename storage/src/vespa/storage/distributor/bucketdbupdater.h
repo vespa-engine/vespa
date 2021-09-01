@@ -78,7 +78,8 @@ private:
     // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
     // components agree on the currently active cluster state bundle.
     // Transitively invokes Distributor::enableClusterStateBundle
-    void simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state);
+    void simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state,
+                                                  bool has_bucket_ownership_transfer = false);
 
     bool should_defer_state_enabling() const noexcept;
     bool has_pending_cluster_state() const;

@@ -701,7 +701,7 @@ TEST_F(LegacyDistributorTest, stats_generated_for_preempted_operations) {
     }
 }
 
-// TODO STRIPE -> distributor test
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -830,10 +830,7 @@ void LegacyDistributorTest::assertNoMessageBounced() {
     ASSERT_EQ(0, _sender.replies().size());
 }
 
-// TODO refactor this to set proper highest timestamp as part of bucket info
-// reply once we have the "highest timestamp across all owned buckets" feature
-// in place.
-// TODO STRIPE where does this truly belong?
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "bits:1 storage:1 distributor:2");
@@ -1021,8 +1018,7 @@ void assert_invalid_stats_for_all_spaces(
 }
 
 // Migrated to DistributorStripeTest
-// TODO STRIPE must impl/test cross-stripe bucket space stats
-// TODO STRIPE cross-stripe recovery mode handling how?
+// Cross-stripe bucket stats test added in TopLevelDistributorTest::entering_recovery_mode_resets_bucket_space_stats_across_all_stripes
 TEST_F(LegacyDistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
@@ -1044,7 +1040,7 @@ TEST_F(LegacyDistributorTest, entering_recovery_mode_resets_bucket_space_stats) 
     assert_invalid_stats_for_all_spaces(stats, 2);
 }
 
-// TODO: migrate to TopLevelDistributorTest
+// Migrated to TopLevelDistributorTest
 TEST_F(LegacyDistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     // Should not send explicit replies during init stage

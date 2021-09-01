@@ -51,9 +51,11 @@ void MultiThreadedStripeAccessGuard::clear_pending_cluster_state_bundle() {
     });
 }
 
-void MultiThreadedStripeAccessGuard::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) {
+void MultiThreadedStripeAccessGuard::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                                                 bool has_bucket_ownership_change)
+{
     for_each_stripe([&](TickableStripe& stripe) {
-        stripe.enable_cluster_state_bundle(new_state);
+        stripe.enable_cluster_state_bundle(new_state, has_bucket_ownership_change);
     });
 }
 

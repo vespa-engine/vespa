@@ -13,7 +13,7 @@ struct MockTickableStripe : TickableStripe {
     void update_distribution_config(const BucketSpaceDistributionConfigs&) override { abort(); }
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle&) override { abort(); }
     void clear_pending_cluster_state_bundle() override { abort(); }
-    void enable_cluster_state_bundle(const lib::ClusterStateBundle&) override { abort(); }
+    void enable_cluster_state_bundle(const lib::ClusterStateBundle&, bool) override { abort(); }
     void notify_distribution_change_enabled() override { abort(); }
     PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace, const lib::ClusterState&, bool) override {
         abort();
