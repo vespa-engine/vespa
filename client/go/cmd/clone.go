@@ -30,9 +30,10 @@ func init() {
 
 var cloneCmd = &cobra.Command{
 	// TODO: "application" and "list" subcommands?
-	Use:     "clone",
-	Short:   "Create files and directory structure for a new Vespa application from a template",
+	Use:     "clone <sample-application-path> <target-directory>",
+	Short:   "Create files and directory structure for a new Vespa application from a sample application",
 	Example: "$ vespa clone vespa-cloud/album-recommendation my-app",
+	Long:    "Creates an application package file structure by copying a sample application\nfrom https://github.com/vespa-engine/sample-apps",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		cloneApplication(args[0], args[1])
