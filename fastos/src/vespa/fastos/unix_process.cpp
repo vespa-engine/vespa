@@ -1374,11 +1374,6 @@ bool FastOS_UNIX_ProcessStarter::Start ()
 
 void FastOS_UNIX_ProcessStarter::Stop ()
 {
-    // Ignore failure (if it already died of SIGINT, etc..)
-    WriteInt(_mainSocket, CODE_EXIT, true);
-
-    int result = -1;
-    waitpid(_pid, &result, 0);
 }
 
 char ** FastOS_UNIX_ProcessStarter::ReceiveEnvironmentVariables ()
