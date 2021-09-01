@@ -48,9 +48,9 @@ public class ServerCacheTest {
 
         cache = new ServerCache(new TestConfigDefinitionRepo(), userConfigDefinitionRepo);
 
-        cache.put(fooBarCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5), configMd5);
-        cache.put(bazQuuxCacheKey, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5), configMd5);
-        cache.put(fooBarCacheKeyDifferentMd5, SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5_2), configMd5_2);
+        cache.computeIfAbsent(fooBarCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5));
+        cache.computeIfAbsent(bazQuuxCacheKey, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5));
+        cache.computeIfAbsent(fooBarCacheKeyDifferentMd5, (ConfigCacheKey key) -> SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false, configMd5_2));
     }
 
     @Test
