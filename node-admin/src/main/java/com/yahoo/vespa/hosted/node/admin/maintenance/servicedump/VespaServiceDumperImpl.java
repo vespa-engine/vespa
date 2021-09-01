@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -36,16 +37,24 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private final ContainerOperations container;
     private final SyncClient syncClient;
     private final NodeRepository nodeRepository;
+    private final Clock clock;
 
     public VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository) {
+        this(container, syncClient, nodeRepository, Clock.systemUTC());
+    }
+
+    // For unit testing
+    VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository,
+                           Clock clock) {
         this.container = container;
         this.syncClient = syncClient;
         this.nodeRepository = nodeRepository;
+        this.clock = clock;
     }
 
     @Override
     public void processServiceDumpRequest(NodeAgentContext context) {
-        Instant startedAt = Instant.now();
+        Instant startedAt = clock.instant();
         NodeSpec nodeSpec = context.node();
         ServiceDumpReport request = nodeSpec.reports().getReport(ServiceDumpReport.REPORT_ID, ServiceDumpReport.class)
                 .orElse(null);
@@ -93,7 +102,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 return;
             }
             context.log(log, Level.INFO, "Upload complete");
-            storeReport(context, createSuccessReport(request, startedAt, destination));
+            storeReport(context, createSuccessReport(clock, request, startedAt, destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e, e.getMessage());
         }
@@ -118,7 +127,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         } else {
             context.log(log, Level.WARNING, message);
         }
-        ServiceDumpReport report = createErrorReport(request, startedAt, message);
+        ServiceDumpReport report = createErrorReport(clock, request, startedAt, message);
         storeReport(context, report);
     }
 
@@ -134,15 +143,17 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 request.expireAt(), null);
     }
 
-    private static ServiceDumpReport createSuccessReport(ServiceDumpReport request, Instant startedAt, URI location) {
+    private static ServiceDumpReport createSuccessReport(
+            Clock clock, ServiceDumpReport request, Instant startedAt, URI location) {
         return new ServiceDumpReport(
-                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), Instant.now().toEpochMilli(), null,
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), clock.instant().toEpochMilli(), null,
                 location.toString(), request.configId(), request.expireAt(), null);
     }
 
-    private static ServiceDumpReport createErrorReport(ServiceDumpReport request, Instant startedAt, String message) {
+    private static ServiceDumpReport createErrorReport(
+            Clock clock, ServiceDumpReport request, Instant startedAt, String message) {
         return new ServiceDumpReport(
-                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, Instant.now().toEpochMilli(), null,
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, clock.instant().toEpochMilli(), null,
                 request.configId(), request.expireAt(), message);
     }
 
