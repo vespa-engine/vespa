@@ -263,6 +263,13 @@ public class Flags {
             "Takes effect on redeploy",
             TENANT_ID);
 
+    public static final UnboundIntFlag METRICSPROXY_NUM_THREADS = defineIntFlag(
+            "metricsproxy-num-threads", 2,
+            List.of("balder"), "2021-09-01", "2021-10-01",
+            "Number of threads for metrics proxy",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
