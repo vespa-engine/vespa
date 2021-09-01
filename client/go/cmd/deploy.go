@@ -14,35 +14,28 @@ import (
 )
 
 const (
-	zoneFlag        = "zone"
-	applicationFlag = "application"
+	zoneFlag = "zone"
 )
 
 var (
-	zoneArg        string
-	applicationArg string
+	zoneArg string
 )
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(prepareCmd)
 	rootCmd.AddCommand(activateCmd)
-	addTargetFlag(deployCmd)
-	addTargetFlag(prepareCmd)
-	addTargetFlag(activateCmd)
-
 	deployCmd.PersistentFlags().StringVarP(&zoneArg, zoneFlag, "z", "dev.aws-us-east-1c", "The zone to use for deployment")
-	deployCmd.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application name to use for deployment")
 }
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "Deploys (prepares and activates) an application package",
-	Long:  `TODO`,
+	Short: "Deploy (prepare and activate) an application package",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := vespa.Deployment{
 			ApplicationSource: applicationSource(args),
-			TargetType:        targetArg,
+			TargetType:        getTargetType(),
 			TargetURL:         deployTarget(),
 		}
 		if d.IsCloud() {
@@ -52,12 +45,12 @@ var deployCmd = &cobra.Command{
 				errorWithHint(err, "Zones have the format <env>.<region>.")
 				return
 			}
-			d.Application, err = vespa.ApplicationFromString(applicationArg)
+			d.Application, err = vespa.ApplicationFromString(getApplication())
 			if err != nil {
 				errorWithHint(err, "Applications have the format <tenant>.<application-name>.<instance-name>")
 				return
 			}
-			d.APIKey, err = loadApiKey(applicationArg)
+			d.APIKey, err = loadApiKey(getApplication())
 			if err != nil {
 				errorWithHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 				return
@@ -74,8 +67,8 @@ var deployCmd = &cobra.Command{
 
 var prepareCmd = &cobra.Command{
 	Use:   "prepare",
-	Short: "Prepares an application package for activation",
-	Long:  `TODO`,
+	Short: "Prepare an application package for activation",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {
@@ -88,8 +81,8 @@ var prepareCmd = &cobra.Command{
 
 var activateCmd = &cobra.Command{
 	Use:   "activate",
-	Short: "Activates (deploys) the previously prepared application package",
-	Long:  `TODO`,
+	Short: "Activate (deploy) a previously prepared application package",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationSource: applicationSource(args)})
 		if err == nil {

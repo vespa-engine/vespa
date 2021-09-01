@@ -5,6 +5,9 @@
 #include "hnsw_index_loader.h"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
+#include "bitvector_visited_tracker.h"
+#include "hash_set_visited_tracker.h"
+#include "reusable_set_visited_tracker.h"
 #include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
@@ -19,6 +22,8 @@
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
+
+#define USE_OLD_VISITED_TRACKER 0
 
 namespace search::tensor {
 
@@ -206,6 +211,29 @@ HnswIndex::calc_distance(const TypedCells& lhs, uint32_t rhs_docid) const
     return _distance_func->calc(lhs, rhs);
 }
 
+uint32_t
+HnswIndex::estimate_visited_nodes(uint32_t level, uint32_t doc_id_limit, uint32_t neighbors_to_find, const search::BitVector* filter) const
+{
+    uint32_t m_for_level = max_links_for_level(level);
+    uint64_t base_estimate = uint64_t(m_for_level) * neighbors_to_find + 100;
+    if (base_estimate >= doc_id_limit) {
+        return doc_id_limit;
+    }
+    if (!filter) {
+        return base_estimate;
+    }
+    uint32_t true_bits = filter->countTrueBits();
+    if (true_bits == 0) {
+        return doc_id_limit;
+    }
+    double scaler = double(filter->size()) / true_bits;
+    double scaled_estimate = scaler * base_estimate;
+    if (scaled_estimate >= doc_id_limit) {
+        return doc_id_limit;
+    }
+    return scaled_estimate;
+}
+
 HnswCandidate
 HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& entry_point, uint32_t level) const
 {
@@ -227,16 +255,14 @@ HnswIndex::find_nearest_in_layer(const TypedCells& input, const HnswCandidate& e
     return nearest;
 }
 
+template <class VisitedTracker>
 void
-HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
-                        FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter) const
+HnswIndex::search_layer_helper(const TypedCells& input, uint32_t neighbors_to_find,
+                               FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter,
+                               uint32_t doc_id_limit, uint32_t estimated_visited_nodes) const
 {
     NearestPriQ candidates;
-    uint32_t doc_id_limit = _graph.node_refs_size.load(std::memory_order_acquire);
-    if (filter) {
-        doc_id_limit = std::min(filter->size(), doc_id_limit);
-    }
-    auto visited = _visited_set_pool.get(doc_id_limit);
+    VisitedTracker visited(*this, doc_id_limit, estimated_visited_nodes);
     for (const auto &entry : best_neighbors.peek()) {
         if (entry.docid >= doc_id_limit) {
             continue;
@@ -262,11 +288,10 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
             }
             auto neighbor_ref = _graph.get_node_ref(neighbor_docid);
             if ((! neighbor_ref.valid())
-                || visited.is_marked(neighbor_docid))
+                || ! visited.try_mark(neighbor_docid))
             {
                 continue;
             }
-            visited.mark(neighbor_docid);
             double dist_to_input = calc_distance(input, neighbor_docid);
             if (dist_to_input < limit_dist) {
                 candidates.emplace(neighbor_docid, neighbor_ref, dist_to_input);
@@ -280,6 +305,26 @@ HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
             }
         }
     }
+}
+
+void
+HnswIndex::search_layer(const TypedCells& input, uint32_t neighbors_to_find,
+                        FurthestPriQ& best_neighbors, uint32_t level, const search::BitVector *filter) const
+{
+    uint32_t doc_id_limit = _graph.node_refs_size.load(std::memory_order_acquire);
+    if (filter) {
+        doc_id_limit = std::min(filter->size(), doc_id_limit);
+    }
+    uint32_t estimated_visited_nodes = estimate_visited_nodes(level, doc_id_limit, neighbors_to_find, filter);
+#if ! USE_OLD_VISITED_TRACKER
+    if (estimated_visited_nodes >= doc_id_limit / 128) {
+        search_layer_helper<BitVectorVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
+    } else {
+        search_layer_helper<HashSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
+    }
+#else
+    search_layer_helper<ReusableSetVisitedTracker>(input, neighbors_to_find, best_neighbors, level, filter, doc_id_limit, estimated_visited_nodes);
+#endif
 }
 
 HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distance_func,

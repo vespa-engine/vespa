@@ -3,14 +3,14 @@ package com.yahoo.slime;
 
 import com.yahoo.compress.Compressor;
 
-class BufferedOutput {
+final class BufferedOutput {
 
     private byte[] buf;
     private int capacity;
     private int pos;
 
     BufferedOutput(int cap) {
-        capacity = (cap < 64) ? 64 : cap;
+        capacity = Math.max(cap, 64);
         buf = new byte[capacity];
     }
 

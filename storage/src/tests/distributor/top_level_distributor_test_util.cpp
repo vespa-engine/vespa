@@ -9,6 +9,7 @@
 #include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/storage/distributor/distributor_stripe_thread.h>
+#include <vespa/storage/distributor/distributor_total_metrics.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
@@ -210,6 +211,13 @@ TopLevelDistributorTestUtil::total_ideal_state_metrics() const
     return *_distributor->_ideal_state_total_metrics;
 }
 
+const DistributorMetricSet&
+TopLevelDistributorTestUtil::total_distributor_metrics() const
+{
+    assert(_distributor->_total_metrics);
+    return *_distributor->_total_metrics;
+}
+
 const storage::distributor::DistributorNodeContext&
 TopLevelDistributorTestUtil::node_context() const {
     return _distributor->distributor_component();
@@ -221,7 +229,7 @@ TopLevelDistributorTestUtil::operation_context() {
 }
 
 bool
-TopLevelDistributorTestUtil::tick() {
+TopLevelDistributorTestUtil::tick(bool only_tick_top_level) {
     framework::ThreadWaitInfo res(
             framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN);
     {
@@ -230,8 +238,10 @@ TopLevelDistributorTestUtil::tick() {
     }
     res.merge(_distributor->doNonCriticalTick(0));
     bool did_work = !res.waitWanted();
-    for (auto& s : *_stripe_pool) {
-        did_work |= s->stripe().tick();
+    if (!only_tick_top_level) {
+        for (auto& s : *_stripe_pool) {
+            did_work |= s->stripe().tick();
+        }
     }
     return did_work;
 }

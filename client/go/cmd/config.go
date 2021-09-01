@@ -14,12 +14,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/vespa"
 )
 
 const (
 	configName = "config"
 	configType = "yaml"
 )
+
+var flagToConfigBindings map[string]*cobra.Command = make(map[string]*cobra.Command)
 
 func init() {
 	rootCmd.AddCommand(configCmd)
@@ -29,8 +32,7 @@ func init() {
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Configure the Vespa command",
-	Long:  "Get and set options for Vespa commands. This is an alternative to always specifying flags",
+	Short: "Configure default values for flags",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
 		cmd.Help()
@@ -41,7 +43,7 @@ var configCmd = &cobra.Command{
 var setConfigCmd = &cobra.Command{
 	Use:     "set option value",
 	Short:   "Set a configuration option.",
-	Example: "vespa config set target cloud",
+	Example: "$ vespa config set target cloud",
 	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := setOption(args[0], args[1]); err != nil {
@@ -55,18 +57,26 @@ var setConfigCmd = &cobra.Command{
 var getConfigCmd = &cobra.Command{
 	Use:     "get option",
 	Short:   "Get a configuration option",
-	Example: "vespa config get target",
-	Args:    cobra.ExactArgs(1),
+	Example: "$ vespa config get target",
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		option := args[0]
-		value, err := getOption(option)
-		if err != nil {
-			value = color.Faint("<unset>").String()
+		if len(args) == 0 { // Print all values
+			printOption(targetFlag)
+			printOption(applicationFlag)
 		} else {
-			value = color.Cyan(value).String()
+			printOption(args[0])
 		}
-		log.Printf("%s = %s", option, value)
 	},
+}
+
+func printOption(option string) {
+	value, err := getOption(option)
+	if err != nil {
+		value = color.Faint("<unset>").String()
+	} else {
+		value = color.Cyan(value).String()
+	}
+	log.Printf("%s = %s", option, value)
 }
 
 func configDir(application string) (string, error) {
@@ -82,24 +92,31 @@ func configDir(application string) (string, error) {
 }
 
 func bindFlagToConfig(option string, command *cobra.Command) {
-	viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+	flagToConfigBindings[option] = command
 }
 
 func readConfig() {
 	configDir, err := configDir("")
-	cobra.CheckErr(err)
-
+	if err != nil {
+		log.Print(color.Red("Error:"), "Could not determine configuration directory")
+		log.Print(color.Brown(err))
+		return
+	}
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
 	viper.AddConfigPath(configDir)
 	viper.AutomaticEnv()
-	viper.BindPFlag("target", deployCmd.PersistentFlags().Lookup("target"))
-
+	for option, command := range flagToConfigBindings {
+		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
+	}
 	err = viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		return // Fine
 	}
-	cobra.CheckErr(err)
+	if err != nil {
+		log.Print(color.Red("Error:"), "Could read configuration")
+		log.Print(color.Brown(err))
+	}
 }
 
 func getOption(option string) (string, error) {
@@ -111,19 +128,25 @@ func getOption(option string) (string, error) {
 }
 
 func setOption(option, value string) error {
-	if option != "target" {
-		return fmt.Errorf("invalid option: %q", option)
-	}
-	switch value {
-	case "local", "cloud":
+	switch option {
+	case targetFlag:
+		switch value {
+		case "local", "cloud":
+			viper.Set(option, value)
+			return nil
+		}
+		if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
+			viper.Set(option, value)
+			return nil
+		}
+	case applicationFlag:
+		if _, err := vespa.ApplicationFromString(value); err != nil {
+			return err
+		}
 		viper.Set(option, value)
 		return nil
 	}
-	if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
-		viper.Set(option, value)
-		return nil
-	}
-	return fmt.Errorf("invalid value for option %q: %q", option, value)
+	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }
 
 func writeConfig() {

@@ -20,7 +20,7 @@ import (
 	"github.com/vespa-engine/vespa/util"
 )
 
-func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) (standardout string) {
+func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) string {
 	if client != nil {
 		util.ActiveHttpClient = client
 	}
@@ -30,13 +30,16 @@ func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArg
 
 	// Use a separate config dir for each test
 	os.Setenv("VESPA_CLI_HOME", t.TempDir())
-	viper.Reset() // Reset config in case tests manipulate it
+	if len(args) > 0 && args[0] != "config" {
+		viper.Reset() // Reset config unless we're testing the config sub-command
+	}
 
 	// Reset to default target - persistent flags in Cobra persists over tests
 	log.SetOutput(bytes.NewBufferString(""))
 	rootCmd.SetArgs([]string{"status", "-t", "local"})
 	rootCmd.Execute()
 
+	// Capture stdout and execute command
 	b := bytes.NewBufferString("")
 	log.SetOutput(b)
 	rootCmd.SetArgs(append(args, moreArgs...))

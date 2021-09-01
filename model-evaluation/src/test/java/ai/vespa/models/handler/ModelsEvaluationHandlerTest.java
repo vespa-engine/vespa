@@ -174,6 +174,15 @@ public class ModelsEvaluationHandlerTest {
     }
 
     @Test
+    public void testMnistSoftmaxEvaluateSpecificFunctionWithBindingsShortForm() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("Placeholder", inputTensorShortForm());
+        String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
+        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
+        handler.assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
     public void testMnistSavedDetails() {
         String url = "http://localhost:8080/model-evaluation/v1/mnist_saved";
         String expected = "{\"model\":\"mnist_saved\",\"functions\":[{\"function\":\"serving_default.y\",\"info\":\"http://localhost:8080/model-evaluation/v1/mnist_saved/serving_default.y\",\"eval\":\"http://localhost:8080/model-evaluation/v1/mnist_saved/serving_default.y/eval\",\"arguments\":[{\"name\":\"input\",\"type\":\"tensor(d0[],d1[784])\"}]}]}";
@@ -222,6 +231,19 @@ public class ModelsEvaluationHandlerTest {
         for (int i = 0; i < 784; i++)
             b.cell(0.0, 0, i);
         return b.build().toString();
+    }
+
+    private String inputTensorShortForm() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[[");
+        for (int i = 0; i < 784; i++) {
+            sb.append("0.0");
+            if (i < 783) {
+                sb.append(",");
+            }
+        }
+        sb.append("]]");
+        return sb.toString();
     }
 
 }
