@@ -88,6 +88,19 @@ func CreateKeyPair() (PemKeyPair, error) {
 	return PemKeyPair{Certificate: pemCertificate, PrivateKey: pemPrivateKey}, nil
 }
 
+// CreateAPIKey creates a EC private key encoded as PEM
+func CreateAPIKey() ([]byte, error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %w", err)
+	}
+	privateKeyDER, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privateKeyDER}), nil
+}
+
 type RequestSigner struct {
 	now           func() time.Time
 	rnd           io.Reader

@@ -1,12 +1,7 @@
 package vespa
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/x509"
 	"encoding/base64"
-	"encoding/pem"
-	"io"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -26,7 +21,10 @@ func TestCreateKeyPair(t *testing.T) {
 func TestSignRequest(t *testing.T) {
 	fixedTime := time.Unix(0, 0)
 	rnd := rand.New(rand.NewSource(0)) // Fixed seed for testing purposes
-	privateKey := pemECPrivateKey(t, rnd)
+	privateKey, err := CreateAPIKey()
+	if err != nil {
+		t.Fatal(err)
+	}
 	rs := RequestSigner{
 		now:           func() time.Time { return fixedTime },
 		rnd:           rnd,
@@ -53,16 +51,4 @@ func TestSignRequest(t *testing.T) {
 	assert.NotEmpty(t, auth)
 	_, err = base64.StdEncoding.DecodeString(auth)
 	assert.Nil(t, err)
-}
-
-func pemECPrivateKey(t *testing.T, rnd io.Reader) []byte {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rnd)
-	if err != nil {
-		t.Fatal(err)
-	}
-	der, err := x509.MarshalECPrivateKey(key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: der})
 }

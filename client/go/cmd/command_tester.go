@@ -15,12 +15,19 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/util"
 )
 
-func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) string {
+type command struct {
+	configDir string
+	args      []string
+	moreArgs  []string
+}
+
+func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 	if client != nil {
 		util.ActiveHttpClient = client
 	}
@@ -28,25 +35,38 @@ func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArg
 	// Never print colors in tests
 	color = aurora.NewAurora(false)
 
-	// Use a separate config dir for each test
-	os.Setenv("VESPA_CLI_HOME", t.TempDir())
-	if len(args) > 0 && args[0] != "config" {
-		viper.Reset() // Reset config unless we're testing the config sub-command
+	// Set config dir. Use a separate one per test if none is specified
+	if cmd.configDir == "" {
+		cmd.configDir = t.TempDir()
+		viper.Reset()
 	}
+	os.Setenv("VESPA_CLI_HOME", cmd.configDir)
 
-	// Reset to default target - persistent flags in Cobra persists over tests
-	log.SetOutput(bytes.NewBufferString(""))
-	rootCmd.SetArgs([]string{"status", "-t", "local"})
-	rootCmd.Execute()
+	// Reset flags to their default value - persistent flags in Cobra persists over tests
+	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
+		switch v := f.Value.(type) {
+		case pflag.SliceValue:
+			_ = v.Replace([]string{})
+		default:
+			switch v.Type() {
+			case "bool", "string", "int":
+				_ = v.Set(f.DefValue)
+			}
+		}
+	})
 
 	// Capture stdout and execute command
-	b := bytes.NewBufferString("")
-	log.SetOutput(b)
-	rootCmd.SetArgs(append(args, moreArgs...))
+	var b bytes.Buffer
+	log.SetOutput(&b)
+	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
 	rootCmd.Execute()
-	out, err := ioutil.ReadAll(b)
+	out, err := ioutil.ReadAll(&b)
 	assert.Empty(t, err, "No error")
 	return string(out)
+}
+
+func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) string {
+	return execute(command{args: args, moreArgs: moreArgs}, t, client)
 }
 
 type mockHttpClient struct {
