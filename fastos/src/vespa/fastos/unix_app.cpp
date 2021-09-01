@@ -75,10 +75,6 @@ bool FastOS_UNIX_Application::PreThreadInit ()
 
         if (useProcessStarter()) {
             _processStarter = new FastOS_UNIX_ProcessStarter(this);
-            if (!_processStarter->Start()) {
-                rc = false;
-                fprintf(stderr, "could not start FastOS_UNIX_ProcessStarter\n");
-            }
         }
     } else {
         rc = false;
@@ -143,7 +139,6 @@ void FastOS_UNIX_Application::Cleanup ()
             if (_processListMutex) {
                 guard = getProcessGuard();
             }
-            _processStarter->Stop();
         }
         delete _processStarter;
         _processStarter = nullptr;

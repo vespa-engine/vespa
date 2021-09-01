@@ -174,38 +174,16 @@ public:
 
 protected:
     FastOS_ApplicationInterface *_app;
-    static void ReadBytes(int fd, void *buffer, int bytes);
-    static void WriteBytes(int fd, const void *buffer,
-                           int bytes, bool ignoreFailure = false);
-    static int ReadInt (int fd);
-    static void WriteInt (int fd, int integer, bool ignoreFailure = false);
 
     FastOS_UNIX_RealProcess *_processList;
 
     pid_t _pid;
-    int _starterSocket;
-    int _mainSocket;
-    int _starterSocketDescr;
-    int _mainSocketDescr;
-    bool _hasProxiedChildren;
     bool _closedProxyProcessFiles;
-    bool _hasDetachedProcess;
     bool _hasDirectChildren;
-
-    void StarterDoWait ();
-    void StarterDoCreateProcess ();
-
-    bool SendFileDescriptor (int fd);
-
-    char **ReceiveEnvironmentVariables ();
-
-    bool CreateSocketPairs ();
-    void Run ();
 
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);
 
-    void PollReapProxiedChildren();
     char **CopyEnvironmentVariables();
     static void FreeEnvironmentVariables(char **env);
     void PollReapDirectChildren();
@@ -214,8 +192,6 @@ public:
     FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app);
     ~FastOS_UNIX_ProcessStarter ();
 
-    bool Start ();
-    void Stop ();
     void CloseProxiedChildDescs();
     void CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
                          int ipcDes, int handshakeDes0, int handshakeDes1);
