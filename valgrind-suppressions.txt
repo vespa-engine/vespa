@@ -307,6 +307,16 @@
    ...
 }
 {
+   Needed to avoid leak errors on static wchar strings when using the fastos process proxy
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSbIwSt11char_traitsIwESaIwEE4_Rep9_S_createEmmRKS1_
+   ...
+   fun:__static_initialization_and_destruction_0
+   ...
+}
+{
    Apparent memory leak on Fedora 28.
    Memcheck:Leak
    match-leak-kinds: possible

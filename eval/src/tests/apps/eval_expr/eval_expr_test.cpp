@@ -9,8 +9,10 @@
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/eval/eval/test/test_io.h>
 
 using namespace vespalib;
+using namespace vespalib::eval::test;
 using vespalib::make_string_short::fmt;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::Inspector;
@@ -25,24 +27,6 @@ void read_until_eof(Input &input) {
     for (auto mem = input.obtain(); mem.size > 0; mem = input.obtain()) {
         input.evict(mem.size);
     }
-}
-
-// copied from vespalib::eval::test
-//
-// It seems that linking with the eval library contaminates the
-// process proxy in such a way that valgrind will fail. The working
-// theory is that some static state gets initialized before the proxy
-// is forked. This test bypasses the issue by linking with vespalib
-// instead. A more robust solution would be to reverse the roles of
-// the process proxy and the program; letting the proxy start the
-// program. This could also be combined with the ability to send open
-// file descriptors on unix domain sockets to avoid indirection for
-// stdin/stdout streams.
-
-void write_compact(const Slime &slime, Output &out) {
-    JsonFormat::encode(slime, out, true);
-    out.reserve(1).data[0] = '\n';
-    out.commit(1);
 }
 
 // Output adapter used to write to stdin of a child process
