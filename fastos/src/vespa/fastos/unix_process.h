@@ -178,15 +178,9 @@ protected:
     FastOS_UNIX_RealProcess *_processList;
 
     pid_t _pid;
-    int _starterSocket;
-    int _mainSocket;
-    int _starterSocketDescr;
-    int _mainSocketDescr;
     bool _closedProxyProcessFiles;
     bool _hasDetachedProcess;
     bool _hasDirectChildren;
-
-    bool CreateSocketPairs ();
 
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);

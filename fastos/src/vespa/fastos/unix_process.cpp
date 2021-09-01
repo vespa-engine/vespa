@@ -946,41 +946,10 @@ RemoveChildProcess (FastOS_UNIX_RealProcess *node)
 }
 
 
-bool FastOS_UNIX_ProcessStarter::CreateSocketPairs ()
-{
-    bool rc = false;
-    int fileDescriptors[2];
-    if (socketpair(AF_LOCAL, SOCK_STREAM, 0, fileDescriptors) == 0) {
-        _starterSocket = fileDescriptors[0];
-        _mainSocket = fileDescriptors[1];
-
-        // We want to use a separate pair of sockets for passing
-        // file descriptors, as errors sending file descriptors
-        // shouldn't intefere with handshaking of the main <-> starter
-        // process protocol.
-        if (socketpair(AF_LOCAL, SOCK_STREAM, 0, fileDescriptors) == 0) {
-            _starterSocketDescr = fileDescriptors[0];
-            _mainSocketDescr = fileDescriptors[1];
-            rc = true;
-        } else {
-            std::error_code ec(errno, std::system_category());
-            fprintf(stderr, "socketpair() failed: %s\n", ec.message().c_str());
-        }
-    } else {
-        std::error_code ec(errno, std::system_category());
-        fprintf(stderr, "socketpair() failed: %s\n", ec.message().c_str());
-    }
-    return rc;
-}
-
 FastOS_UNIX_ProcessStarter::FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app)
     : _app(app),
       _processList(nullptr),
       _pid(-1),
-      _starterSocket(-1),
-      _mainSocket(-1),
-      _starterSocketDescr(-1),
-      _mainSocketDescr(-1),
       _closedProxyProcessFiles(false),
       _hasDetachedProcess(false),
       _hasDirectChildren(false)
@@ -989,18 +958,12 @@ FastOS_UNIX_ProcessStarter::FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterf
 
 FastOS_UNIX_ProcessStarter::~FastOS_UNIX_ProcessStarter ()
 {
-    if(_starterSocket != -1)
-        close(_starterSocket);
-    if(_mainSocket != -1)
-        close(_mainSocket);
 }
 
 
 void
 FastOS_UNIX_ProcessStarter::CloseProxiedChildDescs()
 {
-    if (_starterSocket >= 0)      close(_starterSocket);
-    if (_starterSocketDescr >= 0) close(_starterSocketDescr);
 }
 
 
@@ -1019,9 +982,7 @@ FastOS_UNIX_ProcessStarter::CloseProxyDescs(int stdinPipedDes, int stdoutPipedDe
             fd != stderrPipedDes &&
             fd != ipcDes &&
             fd != handshakeDes0 &&
-            fd != handshakeDes1 &&
-            fd != _starterSocket &&
-            fd != _starterSocketDescr)
+            fd != handshakeDes1)
             close(fd);
     }
     _closedProxyProcessFiles = true;
