@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -32,10 +33,15 @@ var deployCmd = &cobra.Command{
 	Short: "Deploy (prepare and activate) an application package",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		if err != nil {
+			printErr(nil, err.Error())
+			return
+		}
 		d := vespa.Deployment{
-			ApplicationSource: applicationSource(args),
-			TargetType:        getTargetType(),
-			TargetURL:         deployTarget(),
+			ApplicationPackage: pkg,
+			TargetType:         getTargetType(),
+			TargetURL:          deployTarget(),
 		}
 		if d.IsCloud() {
 			var err error
@@ -47,6 +53,10 @@ var deployCmd = &cobra.Command{
 			d.Application, err = vespa.ApplicationFromString(getApplication())
 			if err != nil {
 				printErrHint(err, "Applications have the format <tenant>.<application-name>.<instance-name>")
+				return
+			}
+			if !d.ApplicationPackage.HasCertificate() {
+				printErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
 				return
 			}
 			configDir := configDir(d.Application.String())
@@ -73,7 +83,12 @@ var prepareCmd = &cobra.Command{
 	Short: "Prepare an application package for activation",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationSource: applicationSource(args)})
+		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		if err != nil {
+			printErr(err, "Could not find application package")
+			return
+		}
+		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationPackage: pkg})
 		if err == nil {
 			printSuccess("Prepared ", color.Cyan(resolvedSrc))
 		} else {
@@ -87,7 +102,12 @@ var activateCmd = &cobra.Command{
 	Short: "Activate (deploy) a previously prepared application package",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationSource: applicationSource(args)})
+		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		if err != nil {
+			printErr(err, "Could not find application package")
+			return
+		}
+		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationPackage: pkg})
 		if err == nil {
 			printSuccess("Activated ", color.Cyan(resolvedSrc))
 		} else {
