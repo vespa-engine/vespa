@@ -462,7 +462,6 @@ ForkAndExec(const char *command,
         processStarter->CloseProxyDescs(IsStdinPiped() ? _stdinDes[0] : -1,
                                         IsStdoutPiped() ? _stdoutDes[1] : -1,
                                         IsStderrPiped() ? _stderrDes[1] : -1,
-                                        -1,
                                         _handshakeDes[0],
                                         _handshakeDes[1]);
     }
@@ -929,7 +928,7 @@ FastOS_UNIX_ProcessStarter::CloseProxiedChildDescs()
 
 void
 FastOS_UNIX_ProcessStarter::CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
-                                            int ipcDes, int handshakeDes0, int handshakeDes1)
+                                            int handshakeDes0, int handshakeDes1)
 {
     return;
     if (_closedProxyProcessFiles)
@@ -940,7 +939,6 @@ FastOS_UNIX_ProcessStarter::CloseProxyDescs(int stdinPipedDes, int stdoutPipedDe
         if (fd != stdinPipedDes &&
             fd != stdoutPipedDes &&
             fd != stderrPipedDes &&
-            fd != ipcDes &&
             fd != handshakeDes0 &&
             fd != handshakeDes1)
             close(fd);

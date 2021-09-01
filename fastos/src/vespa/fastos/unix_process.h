@@ -175,7 +175,7 @@ public:
 
     void CloseProxiedChildDescs();
     void CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
-                         int ipcDes, int handshakeDes0, int handshakeDes1);
+                         int handshakeDes0, int handshakeDes1);
 
     bool CreateProcess (FastOS_UNIX_Process *process, bool useShell,
                         bool pipeStdin, bool pipeStdout, bool pipeStderr);
