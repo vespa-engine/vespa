@@ -199,7 +199,6 @@ protected:
     char **ReceiveEnvironmentVariables ();
 
     bool CreateSocketPairs ();
-    void Run ();
 
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);

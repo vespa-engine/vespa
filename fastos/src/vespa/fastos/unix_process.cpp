@@ -1274,22 +1274,6 @@ void FastOS_UNIX_ProcessStarter::StarterDoCreateProcess ()
     delete [] environmentVariables;
 }
 
-void FastOS_UNIX_ProcessStarter::Run ()
-{
-    for(;;)
-    {
-        // Receive commands from main process
-        int command = ReadInt(_starterSocket);
-
-        switch(command)
-        {
-        case CODE_WAIT:       StarterDoWait();           break;
-        case CODE_NEWPROCESS: StarterDoCreateProcess();  break;
-        case CODE_EXIT:       _exit(2);
-        }
-    }
-}
-
 bool FastOS_UNIX_ProcessStarter::CreateSocketPairs ()
 {
     bool rc = false;
