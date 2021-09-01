@@ -47,7 +47,7 @@ has started but may not have completed.`,
 			printErr(nil, err.Error())
 			return
 		}
-		d := vespa.Deployment{
+		d := vespa.DeploymentOpts{
 			ApplicationPackage: pkg,
 			TargetType:         getTargetType(),
 			TargetURL:          deployTarget(),
@@ -103,7 +103,7 @@ var prepareCmd = &cobra.Command{
 		if configDir == "" {
 			return
 		}
-		sessionID, err := vespa.Prepare(vespa.Deployment{
+		sessionID, err := vespa.Prepare(vespa.DeploymentOpts{
 			ApplicationPackage: pkg,
 			TargetType:         getTargetType(),
 			TargetURL:          deployTarget(),
@@ -139,7 +139,7 @@ var activateCmd = &cobra.Command{
 			printErr(err, "Could not read session ID")
 			return
 		}
-		err = vespa.Activate(sessionID, vespa.Deployment{
+		err = vespa.Activate(sessionID, vespa.DeploymentOpts{
 			ApplicationPackage: pkg,
 			TargetType:         getTargetType(),
 			TargetURL:          deployTarget(),

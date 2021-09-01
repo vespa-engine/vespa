@@ -34,7 +34,7 @@ type ZoneID struct {
 	Region      string
 }
 
-type Deployment struct {
+type DeploymentOpts struct {
 	ApplicationPackage ApplicationPackage
 	TargetType         string
 	TargetURL          string
@@ -55,11 +55,11 @@ func (a ApplicationID) SerializedForm() string {
 	return fmt.Sprintf("%s:%s:%s", a.Tenant, a.Application, a.Instance)
 }
 
-func (d Deployment) String() string {
+func (d DeploymentOpts) String() string {
 	return fmt.Sprintf("deployment of %s to %s target", d.Application, d.TargetType)
 }
 
-func (d *Deployment) IsCloud() bool { return d.TargetType == "cloud" }
+func (d *DeploymentOpts) IsCloud() bool { return d.TargetType == "cloud" }
 
 func (ap *ApplicationPackage) HasCertificate() bool {
 	if ap.IsZip() {
@@ -129,7 +129,7 @@ func ZoneFromString(s string) (ZoneID, error) {
 }
 
 // Prepare deployment and return the session ID
-func Prepare(deployment Deployment) (int64, error) {
+func Prepare(deployment DeploymentOpts) (int64, error) {
 	if deployment.IsCloud() {
 		return 0, fmt.Errorf("%s: prepare is not supported", deployment)
 	}
@@ -159,7 +159,7 @@ func Prepare(deployment Deployment) (int64, error) {
 }
 
 // Activate deployment with sessionID from a past prepare
-func Activate(sessionID int64, deployment Deployment) error {
+func Activate(sessionID int64, deployment DeploymentOpts) error {
 	if deployment.IsCloud() {
 		return fmt.Errorf("%s: activate is not supported", deployment)
 	}
@@ -180,7 +180,7 @@ func Activate(sessionID int64, deployment Deployment) error {
 	return nil
 }
 
-func Deploy(deployment Deployment) error {
+func Deploy(deployment DeploymentOpts) error {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if deployment.IsCloud() {
 		if !deployment.ApplicationPackage.HasCertificate() {
@@ -207,7 +207,7 @@ func Deploy(deployment Deployment) error {
 	return err
 }
 
-func uploadApplicationPackage(url *url.URL, deployment Deployment) (int64, error) {
+func uploadApplicationPackage(url *url.URL, deployment DeploymentOpts) (int64, error) {
 	zipReader, err := deployment.ApplicationPackage.zipReader()
 	if err != nil {
 		return 0, err
