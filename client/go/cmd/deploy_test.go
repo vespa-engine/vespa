@@ -5,11 +5,22 @@
 package cmd
 
 import (
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestPrepareZip(t *testing.T) {
+	assertPrepare("testdata/applications/withTarget/target/application.zip",
+		[]string{"prepare", "testdata/applications/withTarget/target/application.zip"}, t)
+}
+
+func TestActivateZip(t *testing.T) {
+	assertActivate("testdata/applications/withTarget/target/application.zip",
+		[]string{"activate", "testdata/applications/withTarget/target/application.zip"}, t)
+}
 
 func TestDeployZip(t *testing.T) {
 	assertDeploy("testdata/applications/withTarget/target/application.zip",
@@ -89,15 +100,51 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
 
-func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T) {
-	assert.Equal(t, target+"/application/v2/tenant/default/prepareandactivate", client.lastRequest.URL.String())
-	assert.Equal(t, "application/zip", client.lastRequest.Header.Get("Content-Type"))
-	assert.Equal(t, "POST", client.lastRequest.Method)
-	var body = client.lastRequest.Body
+func assertPrepare(applicationPackage string, arguments []string, t *testing.T) {
+	client := &mockHttpClient{}
+	client.nextBody = `{"session-id":"42"}`
+	assert.Equal(t,
+		"Success: Prepared "+applicationPackage+" with session 42\n",
+		executeCommand(t, client, arguments, []string{}))
+
+	assertPackageUpload(0, "http://127.0.0.1:19071/application/v2/tenant/default/session", client, t)
+	sessionURL := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/prepared"
+	assert.Equal(t, sessionURL, client.requests[1].URL.String())
+	assert.Equal(t, "PUT", client.requests[1].Method)
+}
+
+func assertActivate(applicationPackage string, arguments []string, t *testing.T) {
+	client := &mockHttpClient{}
+	configDir := t.TempDir()
+	appConfigDir := filepath.Join(configDir, ".vespa", "default")
+	if err := writeSessionID(appConfigDir, 42); err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t,
+		"Success: Activated "+applicationPackage+" with session 42\n",
+		execute(command{args: arguments, configDir: configDir}, t, client))
+	url := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/active"
+	assert.Equal(t, url, client.lastRequest.URL.String())
+	assert.Equal(t, "PUT", client.lastRequest.Method)
+}
+
+func assertPackageUpload(requestNumber int, url string, client *mockHttpClient, t *testing.T) {
+	req := client.lastRequest
+	if requestNumber >= 0 {
+		req = client.requests[requestNumber]
+	}
+	assert.Equal(t, url, req.URL.String())
+	assert.Equal(t, "application/zip", req.Header.Get("Content-Type"))
+	assert.Equal(t, "POST", req.Method)
+	var body = req.Body
 	assert.NotNil(t, body)
 	buf := make([]byte, 7) // Just check the first few bytes
 	body.Read(buf)
 	assert.Equal(t, "PK\x03\x04\x14\x00\b", string(buf))
+}
+
+func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T) {
+	assertPackageUpload(-1, target+"/application/v2/tenant/default/prepareandactivate", client, t)
 }
 
 func assertApplicationPackageError(t *testing.T, status int, expectedMessage string, returnBody string) {

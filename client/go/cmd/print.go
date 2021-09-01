@@ -19,7 +19,7 @@ func printErr(err error, msg ...interface{}) {
 		log.Print(color.Red("Error: "), fmt.Sprint(msg...))
 	}
 	if err != nil {
-		log.Print(color.Brown(err))
+		log.Print(color.Yellow(err))
 	}
 }
 

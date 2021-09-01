@@ -29,7 +29,7 @@ var statusCmd = &cobra.Command{
 
 var statusQueryCmd = &cobra.Command{
 	Use:   "query",
-	Short: "Verify that your Vespa query API container endpoint is ready [Default]",
+	Short: "Verify that your Vespa query API container endpoint is ready (default)",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(queryTarget(), "Query API")
@@ -38,7 +38,7 @@ var statusQueryCmd = &cobra.Command{
 
 var statusDocumentCmd = &cobra.Command{
 	Use:   "document",
-	Short: "Verify that your Vespa document API container endpoint is ready [Default]",
+	Short: "Verify that your Vespa document API container endpoint is ready",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(documentTarget(), "Document API")
@@ -59,14 +59,14 @@ func status(target string, description string) {
 	response, err := util.HttpGet(target, path, description)
 	if err != nil {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
-		log.Print(color.Brown(err))
+		log.Print(color.Yellow(err))
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
-		log.Print(color.Brown(response.Status))
+		log.Print(color.Yellow(response.Status))
 	} else {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Green("ready"))
 	}
