@@ -14,31 +14,31 @@ import (
 
 func init() {
 	rootCmd.AddCommand(documentCmd)
-	documentCmd.AddCommand(documentPostCmd)
+	documentCmd.AddCommand(documentPutCmd)
 	documentCmd.AddCommand(documentGetCmd)
 	addTargetFlag(documentCmd)
 }
 
 var documentCmd = &cobra.Command{
 	Use:   "document",
-	Short: "Issue document operations",
+	Short: "Issues the document operation in the given file to Vespa",
 	Long:  `TODO: Example vespa document mynamespace/mydocumenttype/myid document.json`,
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Post("", args[0], documentTarget()), false)
+		printResult(vespa.Put("", args[0], documentTarget()), false) // TODO: Use Send
 	},
 }
 
-var documentPostCmd = &cobra.Command{
-	Use:   "post",
-	Short: "Posts the document in the given file",
+var documentPutCmd = &cobra.Command{
+	Use:   "put",
+	Short: "Writes the document in the given file to Vespa",
 	Long:  `TODO`,
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
-			printResult(vespa.Post("", args[0], documentTarget()), false)
+			printResult(vespa.Put("", args[0], documentTarget()), false)
 		} else {
-			printResult(vespa.Post(args[0], args[1], documentTarget()), false)
+			printResult(vespa.Put(args[0], args[1], documentTarget()), false)
 		}
 	},
 }

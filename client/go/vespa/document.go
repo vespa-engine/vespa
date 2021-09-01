@@ -16,6 +16,11 @@ import (
 	"github.com/vespa-engine/vespa/util"
 )
 
+// Sends the operation given in the file
+func Send(jsonFile string, target string) *util.OperationResult {
+	return util.Failure("Not implemented")
+}
+
 func Get(documentId string, target string) *util.OperationResult {
 	documentPath, documentPathError := IdToURLPath(documentId)
 	if documentPathError != nil {
@@ -41,13 +46,13 @@ func Get(documentId string, target string) *util.OperationResult {
 	if response.StatusCode == 200 {
 		return util.SuccessWithPayload("Read "+documentId, util.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
-		return util.FailureWithPayload("Invalid document: "+response.Status, util.ReaderToJSON(response.Body))
+		return util.FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
 	} else {
 		return util.FailureWithPayload(serviceDescription+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
 }
 
-func Post(documentId string, jsonFile string, target string) *util.OperationResult {
+func Put(documentId string, jsonFile string, target string) *util.OperationResult {
 	header := http.Header{}
 	header.Add("Content-Type", "application/json")
 
@@ -92,9 +97,9 @@ func Post(documentId string, jsonFile string, target string) *util.OperationResu
 
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		return util.Success("Wrote " + documentId)
+		return util.Success("Sent " + documentId)
 	} else if response.StatusCode/100 == 4 {
-		return util.FailureWithPayload("Invalid document: "+response.Status, util.ReaderToJSON(response.Body))
+		return util.FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
 	} else {
 		return util.FailureWithPayload(serviceDescription+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
