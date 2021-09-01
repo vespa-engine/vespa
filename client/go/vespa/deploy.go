@@ -316,6 +316,6 @@ func extractError(reader io.Reader) string {
 		if parseError != nil { // Not JSON: Print plainly
 			return string(responseData)
 		}
-		return string(prettyJSON.Bytes())
+		return prettyJSON.String()
 	}
 }

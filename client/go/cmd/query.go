@@ -62,6 +62,6 @@ func splitArg(argument string) (string, string) {
 	if equalsIndex < 1 {
 		return "yql", argument
 	} else {
-		return argument[0:equalsIndex], argument[equalsIndex+1 : len(argument)]
+		return argument[0:equalsIndex], argument[equalsIndex+1:]
 	}
 }

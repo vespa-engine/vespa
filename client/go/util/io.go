@@ -47,5 +47,5 @@ func ReaderToJSON(reader io.Reader) string {
 	if parseError != nil { // Not JSON: Print plainly
 		return string(bodyBytes)
 	}
-	return string(prettyJSON.Bytes())
+	return prettyJSON.String()
 }
