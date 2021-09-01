@@ -14,41 +14,46 @@ import (
 	"github.com/vespa-engine/vespa/vespa"
 )
 
-func TestDocumentPostWithIdArg(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json"},
+func TestDocumentWrite(t *testing.T) {
+	assertDocumentPut([]string{"document", "testdata/A-Head-Full-of-Dreams.json"},
+		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
+}
+
+func TestDocumentPutWithIdArg(t *testing.T) {
+	assertDocumentPut([]string{"document", "put", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json"},
 		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Id.json", t)
 }
 
-func TestDocumentPostWithIdInDocument(t *testing.T) {
-	assertDocumentPost([]string{"document", "post", "testdata/A-Head-Full-of-Dreams.json"},
+func TestDocumentPutWithIdInDocument(t *testing.T) {
+	assertDocumentPut([]string{"document", "put", "testdata/A-Head-Full-of-Dreams.json"},
 		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
-func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
-	assertDocumentPost([]string{"document", "testdata/A-Head-Full-of-Dreams.json"},
-		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
-}
-
-func TestDocumentIdNotSpecified(t *testing.T) {
-	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
+func TestDocumentPutIdNotSpecified(t *testing.T) {
+	arguments := []string{"document", "put", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
 		"Error: No document id given neither as argument or as a 'put' key in the json file\n",
 		executeCommand(t, client, arguments, []string{}))
 }
 
-func TestDocumentPostDocumentError(t *testing.T) {
+func TestDocumentPutDocumentError(t *testing.T) {
 	assertDocumentError(t, 401, "Document error")
 }
 
-func TestDocumentPostServerError(t *testing.T) {
+func TestDocumentPutServerError(t *testing.T) {
 	assertDocumentServerError(t, 501, "Server error")
 }
 
-func assertDocumentPost(arguments []string, documentId string, jsonFile string, t *testing.T) {
+func TestDocumentGet(t *testing.T) {
+	assertDocumentGet([]string{"document", "get", "id:mynamespace:music::a-head-full-of-dreams"},
+		"id:mynamespace:music::a-head-full-of-dreams", t)
+}
+
+func assertDocumentPut(arguments []string, documentId string, jsonFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		documentId+"\n",
+		"Success: Sent "+documentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getTarget(documentContext).document
 	expectedPath, _ := vespa.IdToURLPath(documentId)
@@ -60,7 +65,7 @@ func assertDocumentPost(arguments []string, documentId string, jsonFile string, 
 	assert.Equal(t, string(fileContent), util.ReaderToString(client.lastRequest.Body))
 }
 
-func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.T) {
+func assertDocumentPutShortForm(documentId string, jsonFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
 		"Success\n",
@@ -69,11 +74,29 @@ func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.
 	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
 }
 
+func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
+	client := &mockHttpClient{
+		nextBody: "{\"fields\":{\"foo\":\"bar\"}}",
+	}
+	assert.Equal(t,
+		`{
+    "fields": {
+        "foo": "bar"
+    }
+}
+`,
+		executeCommand(t, client, arguments, []string{}))
+	target := getTarget(documentContext).document
+	expectedPath, _ := vespa.IdToURLPath(documentId)
+	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
+	assert.Equal(t, "GET", client.lastRequest.Method)
+}
+
 func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
-		"Error: Invalid document: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
-		executeCommand(t, client, []string{"document", "post",
+		"Error: Invalid document operation: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
+		executeCommand(t, client, []string{"document", "put",
 			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }
@@ -82,7 +105,7 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
 	assert.Equal(t,
 		"Error: Container (document API) at 127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
-		executeCommand(t, client, []string{"document", "post",
+		executeCommand(t, client, []string{"document", "put",
 			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams.json"}, []string{}))
 }
