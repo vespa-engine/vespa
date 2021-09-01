@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * @author gjoranv
  */
-public class DimensionId {
+public final class DimensionId {
 
     public final String id;
     private DimensionId(String id) { this.id = id; }

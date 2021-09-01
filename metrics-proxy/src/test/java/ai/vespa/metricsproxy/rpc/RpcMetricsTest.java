@@ -103,7 +103,7 @@ public class RpcMetricsTest {
             assertThat("#Services should be 1 for config id " + SERVICE_1_CONFIG_ID, services.size(), is(1));
 
             VespaService qrserver = services.get(0);
-            assertThat(qrserver.getMonitoringName(), is(MONITORING_SYSTEM + VespaService.SEPARATOR + "qrserver"));
+            assertThat(qrserver.getMonitoringName().id, is(MONITORING_SYSTEM + VespaService.SEPARATOR + "qrserver"));
 
             Metrics metrics = qrserver.getMetrics();
             assertThat("Fetched number of metrics is not correct", metrics.size(), is(2));
@@ -134,7 +134,7 @@ public class RpcMetricsTest {
     }
 
     private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws IOException {
-        String jsonResponse = getMetricsForYamas(service.getMonitoringName(), client).trim();
+        String jsonResponse = getMetricsForYamas(service.getMonitoringName().id, client).trim();
         ArrayNode metrics = (ArrayNode) jsonMapper.readTree(jsonResponse).get("metrics");
         assertThat("Expected 3 metric messages", metrics.size(), is(3));
         for (int i = 0; i < metrics.size() - 1; i++) { // The last "metric message" contains only status code/message
@@ -193,7 +193,7 @@ public class RpcMetricsTest {
             assertNotNull("Did not find expected metric with name 'bar'", m2);
 
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
-                String response = getAllMetricNamesForService(services.get(0).getMonitoringName(), vespaMetricsConsumerId, rpcClient);
+                String response = getAllMetricNamesForService(services.get(0).getMonitoringName().id, vespaMetricsConsumerId, rpcClient);
                 assertThat(response, is("foo.count=ON;output-name=foo_count,bar.count=OFF,"));
             }
         }

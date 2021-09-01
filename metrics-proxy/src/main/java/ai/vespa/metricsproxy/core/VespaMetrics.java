@@ -8,6 +8,7 @@ import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.MetricsFormatter;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
+import ai.vespa.metricsproxy.metric.model.Dimension;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaService;
@@ -26,7 +27,6 @@ import java.util.stream.Collectors;
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
-import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
@@ -51,7 +51,7 @@ public class VespaMetrics {
         List<MetricsPacket> result = new ArrayList<>();
         for (VespaService s : services) {
             HealthMetric h = s.getHealth();
-            MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId(s.getMonitoringName()))
+            MetricsPacket.Builder builder = new MetricsPacket.Builder(s.getMonitoringName())
                     .statusCode(h.isOk() ? 0 : 1)
                     .statusMessage(h.getMessage())
                     .putDimension(METRIC_TYPE_DIMENSION_ID, "health")
@@ -70,7 +70,7 @@ public class VespaMetrics {
     public List<MetricsPacket.Builder> getMetrics(List<VespaService> services) {
         List<MetricsPacket.Builder> metricsPackets = new ArrayList<>();
 
-        Map<ConsumersConfig.Consumer.Metric, List<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric();
+        Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric();
 
         for (VespaService service : services) {
             // One metrics packet for system metrics
@@ -87,7 +87,7 @@ public class VespaMetrics {
                 Map<AggregationKey, List<Metric>> aggregatedMetrics = aggregateMetrics(service.getDimensions(), serviceMetrics);
 
                 aggregatedMetrics.forEach((aggregationKey, metrics) -> {
-                    MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId(service.getMonitoringName()))
+                    MetricsPacket.Builder builder = new MetricsPacket.Builder(service.getMonitoringName())
                             .putMetrics(metrics)
                             .putDimension(METRIC_TYPE_DIMENSION_ID, "standard")
                             .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName())
@@ -107,7 +107,7 @@ public class VespaMetrics {
 
     private MetricsPacket.Builder getHealth(VespaService service) {
         HealthMetric health = service.getHealth();
-        return new MetricsPacket.Builder(toServiceId(service.getMonitoringName()))
+        return new MetricsPacket.Builder(service.getMonitoringName())
                 .timestamp(System.currentTimeMillis() / 1000)
                 .statusCode(health.getStatus().ordinal())  // TODO: MetricsPacket should use StatusCode instead of int
                 .statusMessage(health.getMessage())
@@ -121,7 +121,7 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private Metrics getServiceMetrics(Metrics allServiceMetrics, Map<ConsumersConfig.Consumer.Metric, List<ConsumerId>> consumersByMetric) {
+    private Metrics getServiceMetrics(Metrics allServiceMetrics, Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric) {
         Metrics configuredServiceMetrics = new Metrics();
         configuredServiceMetrics.setTimeStamp(getMostRecentTimestamp(allServiceMetrics));
         for (Metric candidate : allServiceMetrics.getMetrics()) {
@@ -132,10 +132,10 @@ public class VespaMetrics {
         return configuredServiceMetrics;
     }
 
-    private Map<DimensionId, String> extractDimensions(Map<DimensionId, String> dimensions, List<ConsumersConfig.Consumer.Metric.Dimension> configuredDimensions) {
+    private Map<DimensionId, String> extractDimensions(Map<DimensionId, String> dimensions, List<Dimension> configuredDimensions) {
         if ( ! configuredDimensions.isEmpty()) {
             Map<DimensionId, String> dims = new HashMap<>(dimensions);
-            configuredDimensions.forEach(d -> dims.put(toDimensionId(d.key()), d.value()));
+            configuredDimensions.forEach(d -> dims.put(d.key(), d.value()));
             dimensions = Collections.unmodifiableMap(dims);
         }
         return dimensions;
@@ -155,8 +155,8 @@ public class VespaMetrics {
     }
 
     private Metric metricWithConfigProperties(Metric candidate,
-                                              ConsumersConfig.Consumer.Metric configuredMetric,
-                                              Map<ConsumersConfig.Consumer.Metric, List<ConsumerId>> consumersByMetric) {
+                                              ConfiguredMetric configuredMetric,
+                                              Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric) {
         Metric metric = candidate.clone();
         metric.setDimensions(extractDimensions(candidate.getDimensions(), configuredMetric.dimension()));
         metric.setConsumers(extractConsumers(consumersByMetric.get(configuredMetric)));
@@ -169,10 +169,9 @@ public class VespaMetrics {
     /**
      * Returns all configured metrics (for any consumer) that have the given id as 'name'.
      */
-    private static Set<ConsumersConfig.Consumer.Metric> getConfiguredMetrics(String id,
-                                                                             Set<ConsumersConfig.Consumer.Metric> configuredMetrics) {
+    private static Set<ConfiguredMetric> getConfiguredMetrics(String id, Set<ConfiguredMetric> configuredMetrics) {
         return configuredMetrics.stream()
-                .filter(m -> m.name().equals(id))
+                .filter(m -> m.id().id.equals(id))
                 .collect(Collectors.toSet());
     }
 
@@ -180,7 +179,7 @@ public class VespaMetrics {
         Metrics systemMetrics = service.getSystemMetrics();
         if (systemMetrics.size() == 0) return Optional.empty();
 
-        MetricsPacket.Builder builder = new MetricsPacket.Builder(toServiceId(service.getMonitoringName()));
+        MetricsPacket.Builder builder = new MetricsPacket.Builder(service.getMonitoringName());
         setMetaInfo(builder, systemMetrics.getTimeStamp());
 
         builder.putDimension(METRIC_TYPE_DIMENSION_ID, "system")
@@ -223,10 +222,10 @@ public class VespaMetrics {
         return aggregatedMetrics;
     }
 
-    private List<ConsumersConfig.Consumer.Metric> getMetricDefinitions(ConsumerId consumer) {
+    private List<ConfiguredMetric> getMetricDefinitions(ConsumerId consumer) {
         if (metricsConsumers == null) return Collections.emptyList();
 
-        List<ConsumersConfig.Consumer.Metric> definitions = metricsConsumers.getMetricDefinitions(consumer);
+        List<ConfiguredMetric> definitions = metricsConsumers.getMetricDefinitions(consumer);
         return definitions == null ? Collections.emptyList() : definitions;
     }
 
@@ -248,8 +247,8 @@ public class VespaMetrics {
                 String alias = key;
 
                 boolean isForwarded = false;
-                for (ConsumersConfig.Consumer.Metric metricConsumer : getMetricDefinitions(vespaMetricsConsumerId)) {
-                    if (metricConsumer.name().equals(key)) {
+                for (ConfiguredMetric metricConsumer : getMetricDefinitions(vespaMetricsConsumerId)) {
+                    if (metricConsumer.id().id.equals(key)) {
                         alias = metricConsumer.outputname();
                         isForwarded = true;
                     }
@@ -277,8 +276,8 @@ public class VespaMetrics {
                 String alias = "";
                 boolean isForwarded = false;
 
-                for (ConsumersConfig.Consumer.Metric metric : getMetricDefinitions(consumer)) {
-                    if (metric.name().equals(m.getName())) {
+                for (ConfiguredMetric metric : getMetricDefinitions(consumer)) {
+                    if (metric.id().id.equals(m.getName())) {
                         alias = metric.outputname();
                         isForwarded = true;
                         if (description.isEmpty()) {

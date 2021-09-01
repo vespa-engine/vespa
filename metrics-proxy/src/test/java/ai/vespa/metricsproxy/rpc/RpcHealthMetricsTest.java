@@ -53,7 +53,7 @@ public class RpcHealthMetricsTest {
             assertThat("Status should be failed" + h.getMessage(), h.isOk(), is(false));
             assertThat(h.getMessage(), is("SOMETHING FAILED"));
 
-            String jsonRPCMessage = getHealthMetrics(tester, qrserver.getMonitoringName());
+            String jsonRPCMessage = getHealthMetrics(tester, qrserver.getMonitoringName().id);
             assertThat(jsonRPCMessage, is(WANTED_RPC_RESPONSE));
         }
     }

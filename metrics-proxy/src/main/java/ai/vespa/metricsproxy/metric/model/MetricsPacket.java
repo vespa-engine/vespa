@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.Metric;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -90,7 +91,7 @@ public class MetricsPacket {
         private long timestamp = 0L;
         private Map<MetricId, Number> metrics = new LinkedHashMap<>();
         private final Map<DimensionId, String> dimensions = new LinkedHashMap<>();
-        private final Set<ConsumerId> consumers = new LinkedHashSet<>();
+        private Set<ConsumerId> consumers = Collections.emptySet();
 
         public Builder(ServiceId service) {
             Objects.requireNonNull(service, "Service cannot be null.");
@@ -177,7 +178,20 @@ public class MetricsPacket {
         }
 
         public Builder addConsumers(Set<ConsumerId> extraConsumers) {
-            if (extraConsumers != null) consumers.addAll(extraConsumers);
+            if ((extraConsumers != null) && !extraConsumers.isEmpty()) {
+                if (consumers.isEmpty()) {
+                    if (extraConsumers.size() == 1) {
+                        consumers = Collections.singleton(extraConsumers.iterator().next());
+                        return this;
+                    }
+                    consumers = new LinkedHashSet<>(extraConsumers.size());
+                } else if (consumers.size() == 1) {
+                    var copy = new LinkedHashSet<ConsumerId>(extraConsumers.size() + 1);
+                    copy.addAll(consumers);
+                    consumers = copy;
+                }
+                consumers.addAll(extraConsumers);
+            }
             return this;
         }
 
