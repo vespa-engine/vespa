@@ -1325,7 +1325,6 @@ FastOS_UNIX_ProcessStarter::FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterf
       _mainSocket(-1),
       _starterSocketDescr(-1),
       _mainSocketDescr(-1),
-      _hasProxiedChildren(false),
       _closedProxyProcessFiles(false),
       _hasDetachedProcess(false),
       _hasDirectChildren(false)
@@ -1557,37 +1556,6 @@ FastOS_UNIX_ProcessStarter::PollReapDirectChildren()
 }
 
 
-void
-FastOS_UNIX_ProcessStarter::PollReapProxiedChildren()
-{
-    // Ask our process starter to report dead processes
-    WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_WAIT);
-
-    int numDeadProcesses;
-    ReadBytes(_mainSocket, &numDeadProcesses, sizeof(int));
-
-    for(int i=0; i<numDeadProcesses; i++)
-    {
-        pid_t deadProcess;
-        int returnCode;
-
-        ReadBytes(_mainSocket, &deadProcess, sizeof(pid_t));
-        ReadBytes(_mainSocket, &returnCode, sizeof(int));
-
-        FastOS_ProcessInterface *node;
-        for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
-        {
-            FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
-
-            if (xproc->GetProcessId() == static_cast<unsigned int>(deadProcess))
-            {
-                xproc->DeathNotification(returnCode);
-            }
-        }
-    }
-}
-
-
 bool
 FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
                                  int timeOutSeconds,
@@ -1607,8 +1575,6 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
             auto guard = process->_app->getProcessGuard();
 
             if (_hasDirectChildren)  PollReapDirectChildren();
-
-            if (_hasProxiedChildren) PollReapProxiedChildren();
         }
 
         if (process->GetDeathFlag()) {

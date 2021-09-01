@@ -187,7 +187,6 @@ protected:
     int _mainSocket;
     int _starterSocketDescr;
     int _mainSocketDescr;
-    bool _hasProxiedChildren;
     bool _closedProxyProcessFiles;
     bool _hasDetachedProcess;
     bool _hasDirectChildren;
@@ -205,7 +204,6 @@ protected:
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);
 
-    void PollReapProxiedChildren();
     char **CopyEnvironmentVariables();
     static void FreeEnvironmentVariables(char **env);
     void PollReapDirectChildren();
