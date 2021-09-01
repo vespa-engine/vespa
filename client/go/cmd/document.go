@@ -22,8 +22,15 @@ func init() {
 }
 
 var documentCmd = &cobra.Command{
-	Use:     "document",
-	Short:   "Issues the document operation in the given file to Vespa",
+	Use:   "document <json-file>",
+	Short: "Issue a document operation to Vespa",
+	Long: `Issues the document operation in a file to Vespa.
+The operation must be on the format documented in
+https://docs.vespa.ai/en/reference/document-json-format.html#document-operations
+When this returns Success, the document is guaranteed to be visible in any
+subsequent get or query operation.
+To feed with high throughput, https://docs.vespa.ai/en/vespa-feed-client.html
+should be used instead of this.`,
 	Example: `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -32,8 +39,11 @@ var documentCmd = &cobra.Command{
 }
 
 var documentPutCmd = &cobra.Command{
-	Use:   "put",
-	Short: "Writes the document in the given file to Vespa",
+	Use:   "put [<id>] <json-file>",
+	Short: "Writes a document to Vespa",
+	Long:  `Writes the document in the given file to Vespa.
+If the document already exists, all its values will be replaced by this document.
+If the document id is specified both as an argument and in the file the argument takes precedence.`,
 	Args:  cobra.RangeArgs(1, 2),
 	Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
@@ -47,8 +57,10 @@ $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resour
 }
 
 var documentUpdateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Modifies some fields of an existing document as specified in the given file",
+	Use:   "update [<id>] <json-file>",
+	Short: "Modifies some fields of an existing document",
+	Long:  `Updates the values of the fields given in a json file as specified in the file.
+If the document id is specified both as an argument and in the file the argument takes precedence.`,
 	Args:  cobra.RangeArgs(1, 2),
 	Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
 $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
@@ -62,8 +74,10 @@ $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/res
 }
 
 var documentRemoveCmd = &cobra.Command{
-	Use:   "remove",
+	Use:   "remove <id or json.file>",
 	Short: "Removes a document from Vespa",
+	Long:  `Removes the document specified either as a document id or given in the json file.
+If the document id is specified both as an argument and in the file the argument takes precedence.`,
 	Args:  cobra.ExactArgs(1),
 	Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
 $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
@@ -77,7 +91,7 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 }
 
 var documentGetCmd = &cobra.Command{
-	Use:   "get",
+	Use:   "get <id>",
 	Short: "Gets a document",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

@@ -30,7 +30,7 @@ func init() {
 }
 
 var deployCmd = &cobra.Command{
-	Use:   "deploy",
+	Use:   "deploy <application-directory>",
 	Short: "Deploy (prepare and activate) an application package",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -83,7 +83,7 @@ var deployCmd = &cobra.Command{
 }
 
 var prepareCmd = &cobra.Command{
-	Use:   "prepare",
+	Use:   "prepare <application-directory>",
 	Short: "Prepare an application package for activation",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

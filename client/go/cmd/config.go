@@ -41,7 +41,7 @@ var configCmd = &cobra.Command{
 }
 
 var setConfigCmd = &cobra.Command{
-	Use:     "set option value",
+	Use:     "set <option> <value>",
 	Short:   "Set a configuration option.",
 	Example: "$ vespa config set target cloud",
 	Args:    cobra.ExactArgs(2),
@@ -55,7 +55,7 @@ var setConfigCmd = &cobra.Command{
 }
 
 var getConfigCmd = &cobra.Command{
-	Use:     "get option",
+	Use:     "get [<option>]",
 	Short:   "Get a configuration option",
 	Example: "$ vespa config get target",
 	Args:    cobra.MaximumNArgs(1),
