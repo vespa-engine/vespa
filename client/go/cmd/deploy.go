@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -72,6 +73,9 @@ var deployCmd = &cobra.Command{
 		resolvedSrc, err := vespa.Deploy(d)
 		if err == nil {
 			printSuccess("Deployed ", color.Cyan(resolvedSrc))
+			if d.IsCloud() {
+				log.Print("See ", color.Cyan(fmt.Sprintf("https://console.vespa.oath.cloud/tenant/%s/application/%s/dev/instance/%s", d.Application.Tenant, d.Application.Application, d.Application.Instance)), " for deployment status")
+			}
 		} else {
 			printErr(nil, err.Error())
 		}
