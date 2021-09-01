@@ -110,7 +110,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
-    @Override public int metrixproxyNumThreads() { return 1; }
+    @Override public int metricsproxyNumThreads() { return 1; }
 
     public TestProperties setDryRunOnnxOnSetup(boolean value) {
         dryRunOnnxOnSetup = value;

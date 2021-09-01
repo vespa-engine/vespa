@@ -243,7 +243,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
-        @Override public int metrixproxyNumThreads() { return metricsproxyNumThreads; }
+        @Override public int metricsproxyNumThreads() { return metricsproxyNumThreads; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
