@@ -430,15 +430,6 @@ ForkAndExec(const char *command,
             FastOS_UNIX_ProcessStarter *processStarter)
 {
     bool rc = false;
-
-    pid_t starterPid = getpid();
-    pid_t starterPPid = getppid();
-
-    sprintf(environmentVariables[0], "%s=%d,%d,%d",
-            "FASTOS_IPC_PARENT",
-            int(starterPid), int(starterPPid), -1);
-
-
     int numArguments = 0;
     char **execArgs = nullptr;
 
@@ -957,44 +948,6 @@ FastOS_UNIX_ProcessStarter::CloseProxyDescs(int stdinPipedDes, int stdoutPipedDe
     _closedProxyProcessFiles = true;
 }
 
-char **
-FastOS_UNIX_ProcessStarter::CopyEnvironmentVariables()
-{
-    char **env = environ;
-    while (*env != nullptr)
-        env++;
-    int numEnvVars = env - environ;
-    char **newEnv = new char *[numEnvVars + 2];
-    newEnv[0] = new char[1024];
-
-    int fillIdx = 1;
-    env = environ;
-    while (*env != nullptr) {
-        size_t len = strlen(*env);
-        if (len > 0 &&
-            strncmp(*env, "FASTOS_IPC_PARENT=", 18) != 0) {
-            newEnv[fillIdx] = new char[len + 1];
-            memcpy(newEnv[fillIdx], *env, len + 1);
-            fillIdx++;
-        }
-        env++;
-    }
-    newEnv[fillIdx] = nullptr;
-    return newEnv;
-}
-
-
-void
-FastOS_UNIX_ProcessStarter::FreeEnvironmentVariables(char **env)
-{
-    char **p = env;
-    while (*p != nullptr) {
-        delete [] *p;
-        p++;
-    }
-    delete [] env;
-}
-
 
 bool
 FastOS_UNIX_ProcessStarter::
@@ -1024,7 +977,6 @@ CreateProcess (FastOS_UNIX_Process *process,
     if (stderrRedirName != nullptr) {
         rprocess->SetStderrRedirName(stderrRedirName);
     }
-    char **env = CopyEnvironmentVariables();
     rprocess->SetTerse();
     rprocess->Setup();
     if (pipeStdin)
@@ -1034,7 +986,7 @@ CreateProcess (FastOS_UNIX_Process *process,
     if (pipeStderr)
         process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDERR, rprocess->HandoverStderrDescriptor());
     pid_t processId = -1;
-    if (rprocess->ForkAndExec(cmdLine, env, process, this)) {
+    if (rprocess->ForkAndExec(cmdLine, environ, process, this)) {
         processId = rprocess->GetProcessID();
     }
     if (processId != -1) {
@@ -1047,7 +999,6 @@ CreateProcess (FastOS_UNIX_Process *process,
     }
     guard.unlock();
     delete rprocess;
-    FreeEnvironmentVariables(env);
     return rc;
 }
 

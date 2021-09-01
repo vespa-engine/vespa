@@ -167,8 +167,6 @@ protected:
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);
 
-    char **CopyEnvironmentVariables();
-    static void FreeEnvironmentVariables(char **env);
     void PollReapDirectChildren();
 
 public:
