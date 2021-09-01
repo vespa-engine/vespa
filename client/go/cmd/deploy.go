@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/vespa"
@@ -64,15 +66,14 @@ var deployCmd = &cobra.Command{
 			if configDir == "" {
 				return
 			}
-			d.APIKey = loadApiKey(configDir, d.Application.Tenant)
+			d.APIKey = readAPIKey(configDir, d.Application.Tenant)
 			if d.APIKey == nil {
 				printErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 				return
 			}
 		}
-		resolvedSrc, err := vespa.Deploy(d)
-		if err == nil {
-			printSuccess("Deployed ", color.Cyan(resolvedSrc))
+		if err := vespa.Deploy(d); err == nil {
+			printSuccess("Deployed ", color.Cyan(pkg.Path))
 			if d.IsCloud() {
 				log.Print("See ", color.Cyan(fmt.Sprintf("https://console.vespa.oath.cloud/tenant/%s/application/%s/dev/instance/%s", d.Application.Tenant, d.Application.Application, d.Application.Instance)), " for deployment status")
 			}
@@ -92,9 +93,21 @@ var prepareCmd = &cobra.Command{
 			printErr(err, "Could not find application package")
 			return
 		}
-		resolvedSrc, err := vespa.Prepare(vespa.Deployment{ApplicationPackage: pkg})
+		configDir := configDir("default")
+		if configDir == "" {
+			return
+		}
+		sessionID, err := vespa.Prepare(vespa.Deployment{
+			ApplicationPackage: pkg,
+			TargetType:         getTargetType(),
+			TargetURL:          deployTarget(),
+		})
 		if err == nil {
-			printSuccess("Prepared ", color.Cyan(resolvedSrc))
+			if err := writeSessionID(configDir, sessionID); err != nil {
+				printErr(err, "Could not write session ID")
+				return
+			}
+			printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", sessionID)
 		} else {
 			printErr(nil, err.Error())
 		}
@@ -111,16 +124,46 @@ var activateCmd = &cobra.Command{
 			printErr(err, "Could not find application package")
 			return
 		}
-		resolvedSrc, err := vespa.Activate(vespa.Deployment{ApplicationPackage: pkg})
+		configDir := configDir("default")
+		if configDir == "" {
+			return
+		}
+		sessionID, err := readSessionID(configDir)
+		if err != nil {
+			printErr(err, "Could not read session ID")
+			return
+		}
+		err = vespa.Activate(sessionID, vespa.Deployment{
+			ApplicationPackage: pkg,
+			TargetType:         getTargetType(),
+			TargetURL:          deployTarget(),
+		})
 		if err == nil {
-			printSuccess("Activated ", color.Cyan(resolvedSrc))
+			printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
 		} else {
 			printErr(nil, err.Error())
 		}
 	},
 }
 
-func loadApiKey(configDir, tenant string) []byte {
+func writeSessionID(appConfigDir string, sessionID int64) error {
+	if err := os.MkdirAll(appConfigDir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(sessionIDFile(appConfigDir), []byte(fmt.Sprintf("%d\n", sessionID)), 0600)
+}
+
+func readSessionID(appConfigDir string) (int64, error) {
+	b, err := os.ReadFile(sessionIDFile(appConfigDir))
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
+}
+
+func sessionIDFile(appConfigDir string) string { return filepath.Join(appConfigDir, "session_id") }
+
+func readAPIKey(configDir, tenant string) []byte {
 	apiKeyPath := filepath.Join(configDir, tenant+".api-key.pem")
 	key, err := os.ReadFile(apiKeyPath)
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -127,43 +128,69 @@ func ZoneFromString(s string) (ZoneID, error) {
 	return ZoneID{Environment: parts[0], Region: parts[1]}, nil
 }
 
-func Prepare(deployment Deployment) (string, error) {
+// Prepare deployment and return the session ID
+func Prepare(deployment Deployment) (int64, error) {
 	if deployment.IsCloud() {
-		return "", fmt.Errorf("%s: prepare is not supported", deployment)
+		return 0, fmt.Errorf("%s: prepare is not supported", deployment)
 	}
-	// TODO: Save session id in .vespa
-	// https://docs.vespa.ai/en/cloudconfig/deploy-rest-api-v2.html
-	u, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/prepare")
+	sessionURL, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/session")
 	if err != nil {
-		return "", err
+		return 0, err
 	}
-	return deploy(u, deployment)
+	sessionID, err := uploadApplicationPackage(sessionURL, deployment)
+	if err != nil {
+		return 0, err
+	}
+	prepareURL, err := url.Parse(fmt.Sprintf("%s/application/v2/tenant/default/session/%d/prepared", deployment.TargetURL, sessionID))
+	if err != nil {
+		return 0, err
+	}
+	req, err := http.NewRequest("PUT", prepareURL.String(), nil)
+	if err != nil {
+		return 0, err
+	}
+	serviceDescription := "Deploy service"
+	response, err := util.HttpDo(req, time.Second*30, serviceDescription)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+	return sessionID, nil
 }
 
-func Activate(deployment Deployment) (string, error) {
+// Activate deployment with sessionID from a past prepare
+func Activate(sessionID int64, deployment Deployment) error {
 	if deployment.IsCloud() {
-		return "", fmt.Errorf("%s: activate is not supported", deployment)
+		return fmt.Errorf("%s: activate is not supported", deployment)
 	}
-	// TODO: Look up session id in .vespa
-	// https://docs.vespa.ai/en/cloudconfig/deploy-rest-api-v2.html
-	u, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/activate")
+	u, err := url.Parse(fmt.Sprintf("%s/application/v2/tenant/default/session/%d/active", deployment.TargetURL, sessionID))
 	if err != nil {
-		return "", err
+		return err
 	}
-	return deploy(u, deployment)
+	req, err := http.NewRequest("PUT", u.String(), nil)
+	if err != nil {
+		return err
+	}
+	serviceDescription := "Deploy service"
+	response, err := util.HttpDo(req, time.Second*30, serviceDescription)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	return nil
 }
 
-func Deploy(deployment Deployment) (string, error) {
+func Deploy(deployment Deployment) error {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if deployment.IsCloud() {
 		if !deployment.ApplicationPackage.HasCertificate() {
-			return "", fmt.Errorf("%s: missing certificate in package", deployment)
+			return fmt.Errorf("%s: missing certificate in package", deployment)
 		}
 		if deployment.APIKey == nil {
-			return "", fmt.Errorf("%s: missing api key", deployment.String())
+			return fmt.Errorf("%s: missing api key", deployment.String())
 		}
 		if deployment.Zone.Environment == "" || deployment.Zone.Region == "" {
-			return "", fmt.Errorf("%s: missing zone", deployment)
+			return fmt.Errorf("%s: missing zone", deployment)
 		}
 		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
 			deployment.Application.Tenant,
@@ -174,23 +201,17 @@ func Deploy(deployment Deployment) (string, error) {
 	}
 	u, err := url.Parse(deployment.TargetURL + path)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return deploy(u, deployment)
+	_, err = uploadApplicationPackage(u, deployment)
+	return err
 }
 
-func deploy(url *url.URL, deployment Deployment) (string, error) {
+func uploadApplicationPackage(url *url.URL, deployment Deployment) (int64, error) {
 	zipReader, err := deployment.ApplicationPackage.zipReader()
 	if err != nil {
-		return "", err
+		return 0, err
 	}
-	if err := postApplicationPackage(url, zipReader, deployment); err != nil {
-		return "", err
-	}
-	return deployment.ApplicationPackage.Path, nil
-}
-
-func postApplicationPackage(url *url.URL, zipReader io.Reader, deployment Deployment) error {
 	header := http.Header{}
 	header.Add("Content-Type", "application/zip")
 	request := &http.Request{
@@ -202,22 +223,30 @@ func postApplicationPackage(url *url.URL, zipReader io.Reader, deployment Deploy
 	if deployment.APIKey != nil {
 		signer := NewRequestSigner(deployment.Application.SerializedForm(), deployment.APIKey)
 		if err := signer.SignRequest(request); err != nil {
-			return err
+			return 0, err
 		}
 	}
 	serviceDescription := "Deploy service"
 	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode/100 == 4 {
-		return fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
-	} else if response.StatusCode != 200 {
-		return fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+	var sessionResponse struct {
+		SessionID string `json:"session-id"`
 	}
-	return nil
+	if response.StatusCode/100 == 4 {
+		return 0, fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
+	} else if response.StatusCode != 200 {
+		return 0, fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+	} else {
+		jsonDec := json.NewDecoder(response.Body)
+		if err := jsonDec.Decode(&sessionResponse); err != nil {
+			sessionResponse.SessionID = "0" // No JSON in response
+		}
+	}
+	return strconv.ParseInt(sessionResponse.SessionID, 10, 64)
 }
 
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }

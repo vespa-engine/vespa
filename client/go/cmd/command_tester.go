@@ -78,6 +78,9 @@ type mockHttpClient struct {
 
 	// A recording of the last HTTP request made through this
 	lastRequest *http.Request
+
+	// All requests made through this
+	requests []*http.Request
 }
 
 func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
@@ -85,6 +88,7 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (respo
 		c.nextStatus = 200
 	}
 	c.lastRequest = request
+	c.requests = append(c.requests, request)
 	return &http.Response{
 			Status:     "Status " + strconv.Itoa(c.nextStatus),
 			StatusCode: c.nextStatus,
