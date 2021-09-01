@@ -72,7 +72,6 @@ jobs:
           df -h
 
   verify-opensource-release-7days:
-    requires: [~pr, ~commit]
     image: vespaengine/vespa-pipeline
     environment:
       USER_SHELL_BIN: bash
