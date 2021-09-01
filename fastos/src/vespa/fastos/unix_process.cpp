@@ -1339,42 +1339,6 @@ FastOS_UNIX_ProcessStarter::~FastOS_UNIX_ProcessStarter ()
         close(_mainSocket);
 }
 
-bool FastOS_UNIX_ProcessStarter::Start ()
-{
-    bool rc = false;
-
-    if (CreateSocketPairs()) {
-        pid_t pid = safe_fork();
-        if (pid != -1) {
-            if (pid == 0) {  // Child
-                close(_mainSocket);       // Close unused end of pipes
-                close(_mainSocketDescr);
-                _mainSocket = -1;
-                _mainSocketDescr = -1;
-                Run(); // Never returns
-            } else {          // Parent
-                _pid = pid;
-                close(_starterSocket);    // Close unused end of pipes
-                close(_starterSocketDescr);
-                _starterSocket = -1;
-                _starterSocketDescr = -1;
-                rc = true;
-            }
-        } else {
-            std::error_code ec(errno, std::system_category());
-            fprintf(stderr, "could not fork(): %s\n", ec.message().c_str());
-        }
-    } else {
-        std::error_code ec(errno, std::system_category());
-        fprintf(stderr, "could not CreateSocketPairs: %s\n", ec.message().c_str());
-    }
-    return rc;
-}
-
-void FastOS_UNIX_ProcessStarter::Stop ()
-{
-}
-
 char ** FastOS_UNIX_ProcessStarter::ReceiveEnvironmentVariables ()
 {
     int numEnvVars = ReadInt(_starterSocket);

@@ -212,8 +212,6 @@ public:
     FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app);
     ~FastOS_UNIX_ProcessStarter ();
 
-    bool Start ();
-    void Stop ();
     void CloseProxiedChildDescs();
     void CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
                          int ipcDes, int handshakeDes0, int handshakeDes1);

@@ -139,7 +139,6 @@ void FastOS_UNIX_Application::Cleanup ()
             if (_processListMutex) {
                 guard = getProcessGuard();
             }
-            _processStarter->Stop();
         }
         delete _processStarter;
         _processStarter = nullptr;
