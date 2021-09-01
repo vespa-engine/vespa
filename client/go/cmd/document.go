@@ -19,16 +19,16 @@ func init() {
 }
 
 var documentCmd = &cobra.Command{
-	Use:   "document",
-	Short: "Issues the document operation in the given file to Vespa",
+	Use:     "document",
+	Short:   "Issues the document operation in the given file to Vespa",
 	Example: `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
-	Args: cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		printResult(vespa.Put("", args[0], documentTarget()), false) // TODO: Use Send
 	},
 }
 
-var documentPostCmd = &cobra.Command{
+var documentPutCmd = &cobra.Command{
 	Use:   "put",
 	Short: "Writes the document in the given file to Vespa",
 	Args:  cobra.RangeArgs(1, 2),
