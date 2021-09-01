@@ -17,7 +17,34 @@ import (
 )
 
 func Get(documentId string, target string) *util.OperationResult {
-	return util.Failure("U forgot to implement it")
+	documentPath, documentPathError := IdToURLPath(documentId)
+	if documentPathError != nil {
+		return util.Failure("Invalid document id '" + documentId + "': " + documentPathError.Error())
+	}
+
+	url, urlParseError := url.Parse(target + "/document/v1/" + documentPath)
+	if urlParseError != nil {
+		return util.Failure("Invalid request path: '" + target + "/document/v1/" + documentPath + "': " + urlParseError.Error())
+	}
+
+	request := &http.Request{
+		URL:    url,
+		Method: "GET",
+	}
+	serviceDescription := "Container (document API)"
+	response, err := util.HttpDo(request, time.Second*60, serviceDescription)
+	if response == nil {
+		return util.Failure("Request failed: " + err.Error())
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode == 200 {
+		return util.SuccessWithPayload("Read "+documentId, util.ReaderToJSON(response.Body))
+	} else if response.StatusCode/100 == 4 {
+		return util.FailureWithPayload("Invalid document: "+response.Status, util.ReaderToJSON(response.Body))
+	} else {
+		return util.FailureWithPayload(serviceDescription+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+	}
 }
 
 func Post(documentId string, jsonFile string, target string) *util.OperationResult {

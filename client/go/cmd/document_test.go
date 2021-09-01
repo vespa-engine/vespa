@@ -29,7 +29,7 @@ func TestDocumentPostWithIdInDocumentShortForm(t *testing.T) {
 		"id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams.json", t)
 }
 
-func TestDocumentIdNotSpecified(t *testing.T) {
+func TestDocumentPostIdNotSpecified(t *testing.T) {
 	arguments := []string{"document", "post", "testdata/A-Head-Full-of-Dreams-Without-Id.json"}
 	client := &mockHttpClient{}
 	assert.Equal(t,
@@ -43,6 +43,11 @@ func TestDocumentPostDocumentError(t *testing.T) {
 
 func TestDocumentPostServerError(t *testing.T) {
 	assertDocumentServerError(t, 501, "Server error")
+}
+
+func TestDocumentGet(t *testing.T) {
+	assertDocumentGet([]string{"document", "get", "id:mynamespace:music::a-head-full-of-dreams"},
+		"id:mynamespace:music::a-head-full-of-dreams", t)
 }
 
 func assertDocumentPost(arguments []string, documentId string, jsonFile string, t *testing.T) {
@@ -67,6 +72,24 @@ func assertDocumentPostShortForm(documentId string, jsonFile string, t *testing.
 		executeCommand(t, client, []string{"document", jsonFile}, []string{}))
 	target := getTarget(documentContext).document
 	assert.Equal(t, target+"/document/v1/"+documentId, client.lastRequest.URL.String())
+}
+
+func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
+	client := &mockHttpClient{
+		nextBody: "{\"fields\":{\"foo\":\"bar\"}}",
+	}
+	assert.Equal(t,
+		`{
+    "fields": {
+        "foo": "bar"
+    }
+}
+`,
+		executeCommand(t, client, arguments, []string{}))
+	target := getTarget(documentContext).document
+	expectedPath, _ := vespa.IdToURLPath(documentId)
+	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
+	assert.Equal(t, "GET", client.lastRequest.Method)
 }
 
 func assertDocumentError(t *testing.T, status int, errorMessage string) {

@@ -25,7 +25,7 @@ var documentCmd = &cobra.Command{
 	Long:  `TODO: Example vespa document mynamespace/mydocumenttype/myid document.json`,
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Post("", args[0], documentTarget()))
+		printResult(vespa.Post("", args[0], documentTarget()), false)
 	},
 }
 
@@ -36,9 +36,9 @@ var documentPostCmd = &cobra.Command{
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
-			printResult(vespa.Post("", args[0], documentTarget()))
+			printResult(vespa.Post("", args[0], documentTarget()), false)
 		} else {
-			printResult(vespa.Post(args[0], args[1], documentTarget()))
+			printResult(vespa.Post(args[0], args[1], documentTarget()), false)
 		}
 	},
 }
@@ -49,15 +49,15 @@ var documentGetCmd = &cobra.Command{
 	Long:  `TODO`,
 	// TODO: Check args
 	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Get(args[0], documentTarget()))
+		printResult(vespa.Get(args[0], documentTarget()), true)
 	},
 }
 
-func printResult(result *util.OperationResult) {
-	if result.Success {
-		log.Print(color.Green("Success: "), result.Message)
-	} else {
+func printResult(result *util.OperationResult, payloadOnlyOnSuccess bool) {
+	if !result.Success {
 		log.Print(color.Red("Error: "), result.Message)
+	} else if !(payloadOnlyOnSuccess && result.Payload != "") {
+		log.Print(color.Green("Success: "), result.Message)
 	}
 
 	if result.Detail != "" {
@@ -65,7 +65,9 @@ func printResult(result *util.OperationResult) {
 	}
 
 	if result.Payload != "" {
-		log.Println("")
+		if !payloadOnlyOnSuccess {
+			log.Println("")
+		}
 		log.Print(result.Payload)
 	}
 }
