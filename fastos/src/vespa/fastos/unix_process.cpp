@@ -14,10 +14,6 @@
 #endif
 #include <thread>
 
-#ifndef AF_LOCAL
-#define AF_LOCAL        AF_UNIX
-#endif
-
 
 extern "C"
 {
@@ -74,7 +70,6 @@ private:
     int _stdinDes[2];
     int _stdoutDes[2];
     int _stderrDes[2];
-    int _ipcSockPair[2];
     int _handshakeDes[2];
     std::string _runDir;
     std::string _stdoutRedirName;
@@ -88,15 +83,10 @@ private:
 
 public:
     void SetRunDir(const char * runDir) { _runDir = runDir; }
-    int GetIPCDescriptor() const { return _ipcSockPair[0]; }
+
     int GetStdinDescriptor() const { return _stdinDes[1]; }
     int GetStdoutDescriptor() const { return _stdoutDes[0]; }
     int GetStderrDescriptor() const { return _stderrDes[0]; }
-    int HandoverIPCDescriptor() {
-        int ret = _ipcSockPair[0];
-        _ipcSockPair[0] = -1;
-        return ret;
-    }
 
     int HandoverStdinDescriptor() {
         int ret = _stdinDes[1];
@@ -116,7 +106,6 @@ public:
         return ret;
     }
 
-    void CloseIPCDescriptor();
     void CloseStdinDescriptor();
     void CloseStdoutDescriptor();
     void CloseStderrDescriptor();
@@ -212,17 +201,8 @@ FastOS_UNIX_RealProcess::CloseDescriptors()
     CloseAndResetDescriptor(&_stdoutDes[1]);
     CloseAndResetDescriptor(&_stderrDes[0]);
     CloseAndResetDescriptor(&_stderrDes[1]);
-    CloseAndResetDescriptor(&_ipcSockPair[0]);
-    CloseAndResetDescriptor(&_ipcSockPair[1]);
     CloseAndResetDescriptor(&_handshakeDes[0]);
     CloseAndResetDescriptor(&_handshakeDes[1]);
-}
-
-
-void
-FastOS_UNIX_RealProcess::CloseIPCDescriptor()
-{
-    CloseAndResetDescriptor(&_ipcSockPair[0]);
 }
 
 
@@ -263,7 +243,6 @@ FastOS_UNIX_RealProcess::FastOS_UNIX_RealProcess(int streamMask)
     _stdinDes[0] = _stdinDes[1] = -1;
     _stdoutDes[0] = _stdoutDes[1] = -1;
     _stderrDes[0] = _stderrDes[1] = -1;
-    _ipcSockPair[0] = _ipcSockPair[1] = -1;
     _handshakeDes[0] = _handshakeDes[1] = -1;
 }
 
@@ -457,7 +436,7 @@ ForkAndExec(const char *command,
 
     sprintf(environmentVariables[0], "%s=%d,%d,%d",
             "FASTOS_IPC_PARENT",
-            int(starterPid), int(starterPPid), _ipcSockPair[1]);
+            int(starterPid), int(starterPPid), -1);
 
 
     int numArguments = 0;
@@ -492,7 +471,7 @@ ForkAndExec(const char *command,
         processStarter->CloseProxyDescs(IsStdinPiped() ? _stdinDes[0] : -1,
                                         IsStdoutPiped() ? _stdoutDes[1] : -1,
                                         IsStderrPiped() ? _stderrDes[1] : -1,
-                                        _ipcSockPair[1],
+                                        -1,
                                         _handshakeDes[0],
                                         _handshakeDes[1]);
     }
@@ -539,8 +518,7 @@ ForkAndExec(const char *command,
             //         printf("fdlimit = %d\n", fdlimit);
             for(int fd = STDERR_FILENO + 1; fd < fdlimit; fd++)
             {
-                if (fd != _ipcSockPair[1] &&
-                    fd != _handshakeDes[1])
+                if (fd != _handshakeDes[1])
                     CloseDescriptor(fd);
             }
         } else {
@@ -608,8 +586,6 @@ ForkAndExec(const char *command,
         if (IsStderrPiped()) {
             CloseAndResetDescriptor(&_stderrDes[1]);
         }
-
-        CloseAndResetDescriptor(&_ipcSockPair[1]);
 
         CloseAndResetDescriptor(&_handshakeDes[1]);
 
@@ -756,8 +732,6 @@ FastOS_UNIX_RealProcess::Setup()
     if (IsStdinPiped())  rc = rc && (pipe(_stdinDes) == 0);
     if (IsStdoutPiped()) rc = rc && (pipe(_stdoutDes) == 0);
     if (IsStderrPiped()) rc = rc && (pipe(_stderrDes) == 0);
-    if (!IsUsingShell()) rc = rc && (socketpair(AF_LOCAL, SOCK_STREAM,
-                                                0, _ipcSockPair) == 0);
     rc = rc && (pipe(_handshakeDes) == 0);
     return rc;
 }
@@ -780,9 +754,6 @@ FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin,
     _killed(false),
     _closing(nullptr)
 {
-    _descriptor[TYPE_IPC]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
-    _descriptor[TYPE_IPC]._writeBuffer.reset(new FastOS_RingBuffer(bufferSize));
-
     if (stdoutListener != nullptr)
         _descriptor[TYPE_STDOUT]._readBuffer.reset(new FastOS_RingBuffer(bufferSize));
     if (stderrListener != nullptr)
@@ -800,8 +771,7 @@ FastOS_UNIX_Process::~FastOS_UNIX_Process ()
 {
     Kill();             // Kill if not dead or detached.
 
-    if ((GetDescriptorHandle(TYPE_IPC)._fd    != -1) ||
-        (GetDescriptorHandle(TYPE_STDOUT)._fd != -1) ||
+    if ((GetDescriptorHandle(TYPE_STDOUT)._fd != -1) ||
         (GetDescriptorHandle(TYPE_STDERR)._fd != -1))
     {
         // Let the IPC helper flush write queues and remove us from the
@@ -1057,8 +1027,6 @@ CreateProcess (FastOS_UNIX_Process *process,
     char **env = CopyEnvironmentVariables();
     rprocess->SetTerse();
     rprocess->Setup();
-    if (!useShell)
-        process->SetDescriptor(FastOS_UNIX_Process::TYPE_IPC, rprocess->HandoverIPCDescriptor());
     if (pipeStdin)
         process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDIN, rprocess->HandoverStdinDescriptor());
     if (pipeStdout)

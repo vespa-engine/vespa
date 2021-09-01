@@ -64,7 +64,6 @@ public:
     {
         TYPE_STDOUT,
         TYPE_STDERR,
-        TYPE_IPC,
         TYPE_STDIN,
         TYPE_COUNT
     };
