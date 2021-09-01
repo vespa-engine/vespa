@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -62,7 +63,7 @@ class ServiceDumpReport extends BaseReport {
     @JsonGetter(EXPIRE_AT_FIELD) public Long expireAt() { return expireAt; }
     @JsonGetter(ERROR_FIELD) public String error() { return error; }
 
-    public boolean isCompletedOrFailed() { return !isNullTimestamp(failedAt) || !isNullTimestamp(completedAt);  }
+    @JsonIgnore public boolean isCompletedOrFailed() { return !isNullTimestamp(failedAt) || !isNullTimestamp(completedAt);  }
 
     public static boolean isNullTimestamp(Long timestamp) { return timestamp == null || timestamp == 0; }
 
