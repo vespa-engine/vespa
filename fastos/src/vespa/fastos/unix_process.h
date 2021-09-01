@@ -174,11 +174,6 @@ public:
 
 protected:
     FastOS_ApplicationInterface *_app;
-    static void ReadBytes(int fd, void *buffer, int bytes);
-    static void WriteBytes(int fd, const void *buffer,
-                           int bytes, bool ignoreFailure = false);
-    static int ReadInt (int fd);
-    static void WriteInt (int fd, int integer, bool ignoreFailure = false);
 
     FastOS_UNIX_RealProcess *_processList;
 
