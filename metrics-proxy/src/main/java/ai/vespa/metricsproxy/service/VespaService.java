@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.HealthMetric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 
 import java.util.Collections;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class VespaService implements Comparable<VespaService> {
     private final String instanceName;
     private final String configId;
     private final String serviceName;
-    private final String monitoringPrefix;
+    private final ServiceId serviceId;
     private final Map<DimensionId, String> dimensions;
 
     private volatile int pid = -1;
@@ -67,7 +68,7 @@ public class VespaService implements Comparable<VespaService> {
                          Map<DimensionId, String> dimensions) {
         this.serviceName = serviceName;
         this.instanceName = instanceName;
-        this.monitoringPrefix = monitoringPrefix;
+        serviceId = ServiceId.toServiceId(monitoringPrefix + SEPARATOR + serviceName);
         this.configId = configId;
         this.statePort = statePort;
         this.dimensions = dimensions;
@@ -81,8 +82,8 @@ public class VespaService implements Comparable<VespaService> {
      * The name used for this service in the monitoring system:
      * monitoring-system-name.serviceName
      */
-    public String getMonitoringName() {
-        return monitoringPrefix + SEPARATOR + serviceName;
+    public ServiceId getMonitoringName() {
+        return serviceId;
     }
 
     @Override

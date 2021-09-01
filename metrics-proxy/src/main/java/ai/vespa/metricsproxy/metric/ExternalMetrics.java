@@ -1,8 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric;
 
+import ai.vespa.metricsproxy.core.ConfiguredMetric;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -19,7 +19,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
-import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toCollection;
@@ -66,7 +65,7 @@ public class ExternalMetrics {
 
     private Set<MetricId> metricsToRetain() {
         return consumers.getConsumersByMetric().keySet().stream()
-                .map(configuredMetric -> toMetricId(configuredMetric.name()))
+                .map(configuredMetric -> configuredMetric.id())
                 .collect(toCollection(LinkedHashSet::new));
     }
 
@@ -76,9 +75,8 @@ public class ExternalMetrics {
      */
     private Map<MetricId, List<String>> outputNamesById() {
         Map<MetricId, List<String>> outputNamesById = new LinkedHashMap<>();
-        for (Consumer.Metric metric : consumers.getConsumersByMetric().keySet()) {
-            MetricId id = toMetricId(metric.name());
-            outputNamesById.computeIfAbsent(id, unused -> new ArrayList<>())
+        for (ConfiguredMetric metric : consumers.getConsumersByMetric().keySet()) {
+            outputNamesById.computeIfAbsent(metric.id(), unused -> new ArrayList<>())
                     .add(metric.outputname());
         }
         return outputNamesById;

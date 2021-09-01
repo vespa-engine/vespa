@@ -105,7 +105,7 @@ public class VespaServices {
         List<VespaService> myServices = new ArrayList<>();
         for (VespaService s : services) {
             log.log(FINE, () -> "getMonitoringServices. service=" + service + ", checking against " + s + ", which has monitoring name " + s.getMonitoringName());
-            if (s.getMonitoringName().equalsIgnoreCase(service)) {
+            if (s.getMonitoringName().id.equalsIgnoreCase(service)) {
                 myServices.add(s);
             }
         }

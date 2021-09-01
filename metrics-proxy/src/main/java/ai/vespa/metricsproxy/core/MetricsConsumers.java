@@ -28,14 +28,14 @@ import static java.util.stream.Collectors.collectingAndThen;
 public class MetricsConsumers {
 
     // All metrics for each consumer.
-    private final Map<ConsumerId, List<Consumer.Metric>> consumerMetrics;
+    private final Map<ConsumerId, List<ConfiguredMetric>> consumerMetrics;
 
     // All consumers for each metric (more useful than the opposite map).
-    private final Map<Consumer.Metric, List<ConsumerId>> consumersByMetric;
+    private final Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric;
 
     public MetricsConsumers(ConsumersConfig config) {
         consumerMetrics = config.consumer().stream().collect(
-                toUnmodifiableLinkedMap(consumer -> toConsumerId(consumer.name()), Consumer::metric));
+                toUnmodifiableLinkedMap(consumer -> toConsumerId(consumer.name()), consumer -> convert(consumer.metric())));
 
         consumersByMetric = createConsumersByMetric(consumerMetrics);
     }
@@ -44,11 +44,11 @@ public class MetricsConsumers {
      * @param consumer The consumer
      * @return The metrics for the given consumer.
      */
-    public List<Consumer.Metric> getMetricDefinitions(ConsumerId consumer) {
+    public List<ConfiguredMetric> getMetricDefinitions(ConsumerId consumer) {
         return consumerMetrics.get(consumer);
     }
 
-    public Map<Consumer.Metric, List<ConsumerId>> getConsumersByMetric() {
+    public Map<ConfiguredMetric, List<ConsumerId>> getConsumersByMetric() {
         return consumersByMetric;
     }
 
@@ -60,9 +60,9 @@ public class MetricsConsumers {
      * Helper function to create mapping from metric to consumers.
      * TODO: consider reversing the mapping in metrics-consumers.def instead: metric{}.consumer[]
      */
-    private static Map<Consumer.Metric, List<ConsumerId>>
-    createConsumersByMetric(Map<ConsumerId, List<Consumer.Metric>> metricsByConsumer) {
-        Map<Consumer.Metric, List<ConsumerId>> consumersByMetric = new LinkedHashMap<>();
+    private static Map<ConfiguredMetric, List<ConsumerId>>
+    createConsumersByMetric(Map<ConsumerId, List<ConfiguredMetric>> metricsByConsumer) {
+        Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric = new LinkedHashMap<>();
         metricsByConsumer.forEach(
                 (consumer, metrics) -> metrics.forEach(
                         metric -> consumersByMetric.computeIfAbsent(metric, unused -> new ArrayList<>())
@@ -73,6 +73,12 @@ public class MetricsConsumers {
     public static <T, K, U> Collector<T, ?, Map<K, U>> toUnmodifiableLinkedMap(Function<? super T, ? extends K> keyMapper,
                                                                                 Function<? super T, ? extends U> valueMapper) {
         return collectingAndThen(toLinkedMap(keyMapper, valueMapper), Collections::unmodifiableMap);
+    }
+
+    private List<ConfiguredMetric> convert(List<Consumer.Metric> configMetrics) {
+        List<ConfiguredMetric> metrics = new ArrayList<>(configMetrics.size());
+        configMetrics.forEach(m -> metrics.add(new ConfiguredMetric(m)));
+        return metrics;
     }
 
 }

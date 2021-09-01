@@ -4,7 +4,6 @@ package ai.vespa.metricsproxy.node;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.VespaServices;
 
 import java.time.Instant;
@@ -21,7 +20,7 @@ public class ServiceHealthGatherer {
         return vespaServices.getVespaServices()
                 .stream()
                 .map(service ->
-                     new MetricsPacket.Builder(ServiceId.toServiceId(service.getMonitoringName()))
+                     new MetricsPacket.Builder(service.getMonitoringName())
                             .timestamp(Instant.now().getEpochSecond())
                             .statusMessage(service.getHealth().getStatus().status)
                             .statusCode(service.getHealth().getStatus().code)
