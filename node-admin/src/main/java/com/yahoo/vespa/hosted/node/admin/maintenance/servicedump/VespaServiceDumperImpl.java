@@ -68,14 +68,16 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             return;
         }
         try {
-            context.log(log, Level.FINE,
+            context.log(log, Level.INFO,
                     "Creating dump for " + configId + " requested at " + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
             storeReport(context, createStartedReport(request, startedAt));
             Path directoryInNode = context.pathInNodeUnderVespaHome("tmp/vespa-service-dump");
             Path directoryOnHost = context.pathOnHostFromPathInNode(directoryInNode);
+            context.log(log, Level.INFO, "Clearing directory on host: " + directoryOnHost);
             Files.deleteIfExists(directoryOnHost);
             Files.createDirectory(directoryOnHost);
             Path vespaJvmDumper = context.pathInNodeUnderVespaHome("bin/vespa-jvm-dumper");
+            context.log(log, Level.INFO, "Executing '" + vespaJvmDumper + "' with arguments '" + configId + "' and '" + directoryInNode + "'");
             CommandResult result = container.executeCommandInContainerAsRoot(
                     context, vespaJvmDumper.toString(), configId, directoryInNode.toString());
             context.log(log, Level.FINE, "vespa-jvm-dumper exit code: " + result.getExitCode() + ", output: " + result.getOutput());
@@ -84,14 +86,13 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 return;
             }
             URI destination = serviceDumpDestination(nodeSpec, createDumpId(request));
-            context.log(log, Level.FINE, "Uploading files with destination " + destination + " and expiry " + expiry);
+            context.log(log, Level.INFO, "Uploading files with destination " + destination + " and expiry " + expiry);
             List<SyncFileInfo> files = dumpFiles(directoryOnHost, destination, expiry);
-            logFilesToUpload(context, files);
             if (!syncClient.sync(context, files, Integer.MAX_VALUE)) {
                 handleFailure(context, request, startedAt, null, "Unable to upload all files");
                 return;
             }
-            context.log(log, Level.FINE, "Upload complete");
+            context.log(log, Level.INFO, "Upload complete");
             storeReport(context, createSuccessReport(request, startedAt, destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e, e.getMessage());
@@ -102,15 +103,6 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         return FileFinder.files(directoryOnHost).stream()
                 .flatMap(file -> SyncFileInfo.forServiceDump(destination, file.path(), expiry).stream())
                 .collect(Collectors.toList());
-    }
-
-    private void logFilesToUpload(NodeAgentContext context, List<SyncFileInfo> files) {
-        if (log.isLoggable(Level.FINE)) {
-            String message = files.stream()
-                    .map(file -> file.source().toString())
-                    .collect(Collectors.joining());
-            context.log(log, Level.FINE, message);
-        }
     }
 
     private static Instant expireAt(Instant startedAt, ServiceDumpReport request) {
