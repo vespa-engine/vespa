@@ -186,6 +186,8 @@ BuildRequires: git
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
+BuildRequires: libedit-devel
+Requires: libedit
 Requires: which
 Requires: initscripts
 Requires: libcgroup-tools
