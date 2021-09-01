@@ -59,11 +59,11 @@ var deployCmd = &cobra.Command{
 				printErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
 				return
 			}
-			configDir := configDir(d.Application.String())
+			configDir := configDir("")
 			if configDir == "" {
 				return
 			}
-			d.APIKey = loadApiKey(configDir, getApplication())
+			d.APIKey = loadApiKey(configDir, d.Application.Tenant)
 			if d.APIKey == nil {
 				printErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 				return
@@ -116,8 +116,8 @@ var activateCmd = &cobra.Command{
 	},
 }
 
-func loadApiKey(configDir, application string) []byte {
-	apiKeyPath := filepath.Join(configDir, "api-key.pem")
+func loadApiKey(configDir, tenant string) []byte {
+	apiKeyPath := filepath.Join(configDir, tenant+".api-key.pem")
 	key, err := os.ReadFile(apiKeyPath)
 	if err != nil {
 		printErr(err, "Could not read API key from ", color.Cyan(apiKeyPath))
