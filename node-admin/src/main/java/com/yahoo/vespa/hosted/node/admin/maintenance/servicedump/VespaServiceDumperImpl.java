@@ -89,7 +89,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             context.log(log, Level.INFO, "Executing '" + vespaJvmDumper + "' with arguments '" + configId + "' and '" + directoryInNode + "'");
             CommandResult result = container.executeCommandInContainerAsRoot(
                     context, vespaJvmDumper.toString(), configId, directoryInNode.toString());
-            context.log(log, Level.FINE, "vespa-jvm-dumper exit code: " + result.getExitCode() + ", output: " + result.getOutput());
+            context.log(log, Level.INFO, "vespa-jvm-dumper exited with code '" + result.getExitCode() + "' and output:\n" + result.getOutput());
             if (result.getExitCode() > 0) {
                 handleFailure(context, request, startedAt, "Failed to create dump: " + result.getOutput());
                 return;
