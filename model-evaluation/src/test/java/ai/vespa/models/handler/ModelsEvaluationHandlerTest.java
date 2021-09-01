@@ -183,6 +183,16 @@ public class ModelsEvaluationHandlerTest {
     }
 
     @Test
+    public void testMnistSoftmaxEvaluateSpecificFunctionWithShortOutput() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("Placeholder", inputTensorShortForm());
+        properties.put("format", "short");
+        String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
+        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"value\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
+        handler.assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
     public void testMnistSavedDetails() {
         String url = "http://localhost:8080/model-evaluation/v1/mnist_saved";
         String expected = "{\"model\":\"mnist_saved\",\"functions\":[{\"function\":\"serving_default.y\",\"info\":\"http://localhost:8080/model-evaluation/v1/mnist_saved/serving_default.y\",\"eval\":\"http://localhost:8080/model-evaluation/v1/mnist_saved/serving_default.y/eval\",\"arguments\":[{\"name\":\"input\",\"type\":\"tensor(d0[],d1[784])\"}]}]}";
