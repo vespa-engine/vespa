@@ -29,7 +29,7 @@ var statusCmd = &cobra.Command{
 
 var statusQueryCmd = &cobra.Command{
 	Use:   "query",
-	Short: "Verify that your Vespa query API container endpoint is ready [Default]",
+	Short: "Verify that your Vespa query API container endpoint is ready (default)",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(queryTarget(), "Query API")
@@ -38,7 +38,7 @@ var statusQueryCmd = &cobra.Command{
 
 var statusDocumentCmd = &cobra.Command{
 	Use:   "document",
-	Short: "Verify that your Vespa document API container endpoint is ready [Default]",
+	Short: "Verify that your Vespa document API container endpoint is ready",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(documentTarget(), "Document API")
