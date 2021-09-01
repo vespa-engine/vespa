@@ -109,7 +109,7 @@ if ! [ -n $(ps -p ${JVM_PID} -o pid=) ]; then
 fi
 
 echo "Creating heap dump"
-readonly HEAP_DUMP_FILE=${OUTPUT_DIRECTORY}/heapdump.bin
+readonly HEAP_DUMP_FILE=${OUTPUT_DIRECTORY}/jvm-heap-dump.hprof
 if test -f "${HEAP_DUMP_FILE}"; then
     rm "${HEAP_DUMP_FILE}"
 fi
