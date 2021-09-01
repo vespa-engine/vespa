@@ -109,25 +109,25 @@ public class Application implements ModelResult {
         ConfigCacheKey cacheKey = new ConfigCacheKey(configKey, defMd5);
         log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Resolving config " + cacheKey));
 
+        ConfigResponse config;
         if (useCache(req)) {
-            ConfigResponse config = cache.get(cacheKey);
+            config = cache.get(cacheKey);
             if (config != null) {
                 log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Found config " + cacheKey + " in cache"));
-                metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
-                return config;
+            } else {
+                config = createConfigResponse(configKey, req, responseFactory);
+                cache.put(cacheKey, config, config.getConfigMd5());
+                metricUpdater.setCacheConfigElems(cache.configElems());
+                metricUpdater.setCacheChecksumElems(cache.checkSumElems());
             }
-            config = createConfigResponse(configKey, req, responseFactory);
-            cache.put(cacheKey, config, config.getConfigMd5());
-            metricUpdater.setCacheConfigElems(cache.configElems());
-            metricUpdater.setCacheChecksumElems(cache.checkSumElems());
-            return config;
         } else {
-            return createConfigResponse(configKey, req, responseFactory);
+            config = createConfigResponse(configKey, req, responseFactory);
         }
+        metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
+        return config;
     }
 
     private ConfigResponse createConfigResponse(ConfigKey<?> configKey, GetConfigRequest req, ConfigResponseFactory responseFactory) {
-        long start = System.currentTimeMillis();
         ConfigDefinition def = getTargetDef(req);
         if (def == null) {
             metricUpdater.incrementFailedRequests();
@@ -137,7 +137,7 @@ public class Application implements ModelResult {
 
         var payload = createPayload(configKey, def);
         var response = responseFactory.createResponse(payload.getFirst(), applicationGeneration, payload.getSecond());
-        metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
+
         return response;
     }
 
