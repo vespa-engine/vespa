@@ -10,10 +10,10 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncClient;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -76,16 +76,20 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, "Request already expired");
             return;
         }
+        UnixPath directoryInNode = new UnixPath(context.pathInNodeUnderVespaHome("tmp/vespa-service-dump"));
+        UnixPath directoryOnHost = new UnixPath(context.pathOnHostFromPathInNode(directoryInNode.toPath()));
         try {
             context.log(log, Level.INFO,
                     "Creating dump for " + configId + " requested at " + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
             storeReport(context, createStartedReport(request, startedAt));
-            Path directoryInNode = context.pathInNodeUnderVespaHome("tmp/vespa-service-dump");
-            Path directoryOnHost = context.pathOnHostFromPathInNode(directoryInNode);
-            context.log(log, Level.INFO, "Clearing directory on host: " + directoryOnHost);
-            Files.deleteIfExists(directoryOnHost);
-            Files.createDirectory(directoryOnHost);
-            Path vespaJvmDumper = context.pathInNodeUnderVespaHome("bin/vespa-jvm-dumper");
+            if (directoryOnHost.exists()) {
+                context.log(log, Level.INFO, "Removing existing directory '" + directoryOnHost +"'.");
+                directoryOnHost.deleteRecursively();
+            }
+            context.log(log, Level.INFO, "Creating '" + directoryOnHost +"'.");
+            directoryOnHost.createDirectory();
+            directoryOnHost.setPermissions("rwxrwxrwx");
+            UnixPath vespaJvmDumper = new UnixPath(context.pathInNodeUnderVespaHome("bin/vespa-jvm-dumper"));
             context.log(log, Level.INFO, "Executing '" + vespaJvmDumper + "' with arguments '" + configId + "' and '" + directoryInNode + "'");
             CommandResult result = container.executeCommandInContainerAsRoot(
                     context, vespaJvmDumper.toString(), configId, directoryInNode.toString());
@@ -96,7 +100,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             }
             URI destination = serviceDumpDestination(nodeSpec, createDumpId(request));
             context.log(log, Level.INFO, "Uploading files with destination " + destination + " and expiry " + expiry);
-            List<SyncFileInfo> files = dumpFiles(directoryOnHost, destination, expiry);
+            List<SyncFileInfo> files = dumpFiles(directoryOnHost.toPath(), destination, expiry);
             if (!syncClient.sync(context, files, Integer.MAX_VALUE)) {
                 handleFailure(context, request, startedAt, "Unable to upload all files");
                 return;
@@ -105,6 +109,11 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             storeReport(context, createSuccessReport(clock, request, startedAt, destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e);
+        } finally {
+            if (directoryOnHost.exists()) {
+                context.log(log, Level.INFO, "Deleting directory '" + directoryOnHost +"'.");
+                directoryOnHost.deleteRecursively();
+            }
         }
     }
 
