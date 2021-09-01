@@ -179,7 +179,6 @@ protected:
 
     pid_t _pid;
     bool _closedProxyProcessFiles;
-    bool _hasDetachedProcess;
     bool _hasDirectChildren;
 
     void AddChildProcess (FastOS_UNIX_RealProcess *node);

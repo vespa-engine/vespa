@@ -951,7 +951,6 @@ FastOS_UNIX_ProcessStarter::FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterf
       _processList(nullptr),
       _pid(-1),
       _closedProxyProcessFiles(false),
-      _hasDetachedProcess(false),
       _hasDirectChildren(false)
 {
 }
