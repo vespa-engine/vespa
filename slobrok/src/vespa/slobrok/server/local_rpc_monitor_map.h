@@ -103,7 +103,7 @@ private:
 
     PerService & lookup(const ServiceMapping &mapping);
 
-    void addToMap(const ServiceMapping &mapping, PerService psd);
+    void addToMap(const ServiceMapping &mapping, PerService psd, bool hurry);
 
     struct RemovedData {
         ServiceMapping mapping;

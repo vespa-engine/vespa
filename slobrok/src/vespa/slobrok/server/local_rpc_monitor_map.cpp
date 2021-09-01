@@ -56,11 +56,11 @@ LocalRpcMonitorMap::lookup(const ServiceMapping &mapping) {
     return psd;
 }
 
-void LocalRpcMonitorMap::addToMap(const ServiceMapping &mapping, PerService psd) {
+void LocalRpcMonitorMap::addToMap(const ServiceMapping &mapping, PerService psd, bool hurry) {
     auto [ iter, was_inserted ] =
         _map.try_emplace(mapping.name, std::move(psd));
     LOG_ASSERT(was_inserted);
-    _mappingMonitor->start(mapping);
+    _mappingMonitor->start(mapping, hurry);
 }
 
 LocalRpcMonitorMap::RemovedData
@@ -102,7 +102,7 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         inflight->doneHandler(OkState(FRTE_RPC_METHOD_FAILED, "conflict"));
         return;
     }
-    addToMap(mapping, localService(mapping, std::move(inflight)));
+    addToMap(mapping, localService(mapping, std::move(inflight)), true);
 }
 
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
@@ -137,7 +137,7 @@ void LocalRpcMonitorMap::doAdd(const ServiceMapping &mapping) {
             _dispatcher.remove(removed.mapping);
         }
     }
-    addToMap(mapping, globalService(mapping));
+    addToMap(mapping, globalService(mapping), false);
 }
 
 void LocalRpcMonitorMap::doRemove(const ServiceMapping &mapping) {

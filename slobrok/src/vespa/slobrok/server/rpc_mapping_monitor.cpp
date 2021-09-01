@@ -21,11 +21,15 @@ RpcMappingMonitor::RpcMappingMonitor(FRT_Supervisor &orb, MappingMonitorOwner &o
 
 RpcMappingMonitor::~RpcMappingMonitor() = default;
 
-void RpcMappingMonitor::start(const ServiceMapping& mapping) {
+void RpcMappingMonitor::start(const ServiceMapping& mapping, bool hurry) {
     LOG(spam, "start %s->%s", mapping.name.c_str(), mapping.spec.c_str());
     LOG_ASSERT(_map.find(mapping) == _map.end());
-    _map.emplace(mapping,
-                 std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this));
+    auto up = std::make_unique<ManagedRpcServer>(mapping.name, mapping.spec, *this);
+    auto & managed = *up;
+    _map.emplace(mapping, std::move(up));
+    if (hurry) {
+        managed.healthCheck();
+    }
 }
 
 void RpcMappingMonitor::stop(const ServiceMapping& mapping) {
