@@ -9,6 +9,7 @@ import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Type;
+import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
@@ -44,6 +45,16 @@ public class JsonFormat {
         return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
     }
 
+    /** Serializes the given tensor type and value into a short-form JSON format */
+    public static byte[] encodeShortForm(IndexedTensor tensor) {
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("type", tensor.type().toString());
+        Cursor value = root.setArray("value");
+        encodeList(tensor, value, new long[tensor.dimensionSizes().dimensions()], 0);
+        return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
+    }
+
     private static void encodeCells(Tensor tensor, Cursor rootObject) {
         Cursor cellsArray = rootObject.setArray("cells");
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
@@ -57,6 +68,17 @@ public class JsonFormat {
     private static void encodeAddress(TensorType type, TensorAddress address, Cursor addressObject) {
         for (int i = 0; i < address.size(); i++)
             addressObject.setString(type.dimensions().get(i).name(), address.label(i));
+    }
+
+    private static void encodeList(IndexedTensor tensor, Cursor cursor, long[] indexes, int dimension) {
+        DimensionSizes sizes = tensor.dimensionSizes();
+        for (indexes[dimension] = 0; indexes[dimension] < sizes.size(dimension); ++indexes[dimension]) {
+            if (dimension < (sizes.dimensions() - 1)) {
+                encodeList(tensor, cursor.addArray(), indexes, dimension + 1);
+            } else {
+                cursor.addDouble(tensor.get(indexes));
+            }
+        }
     }
 
     /** Deserializes the given tensor from JSON format */
