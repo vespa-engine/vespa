@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"log"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/util"
@@ -15,6 +16,8 @@ import (
 func init() {
 	rootCmd.AddCommand(documentCmd)
 	documentCmd.AddCommand(documentPutCmd)
+	documentCmd.AddCommand(documentUpdateCmd)
+	documentCmd.AddCommand(documentRemoveCmd)
 	documentCmd.AddCommand(documentGetCmd)
 }
 
@@ -24,7 +27,7 @@ var documentCmd = &cobra.Command{
 	Example: `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Put("", args[0], documentTarget()), false) // TODO: Use Send
+		printResult(vespa.Send(args[0], documentTarget()), false)
 	},
 }
 
@@ -39,6 +42,36 @@ $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resour
 			printResult(vespa.Put("", args[0], documentTarget()), false)
 		} else {
 			printResult(vespa.Put(args[0], args[1], documentTarget()), false)
+		}
+	},
+}
+
+var documentUpdateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Modifies some fields of an existing document as specified in the given file",
+	Args:  cobra.RangeArgs(1, 2),
+	Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
+$ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 1 {
+			printResult(vespa.Update("", args[0], documentTarget()), false)
+		} else {
+			printResult(vespa.Update(args[0], args[1], documentTarget()), false)
+		}
+	},
+}
+
+var documentRemoveCmd = &cobra.Command{
+	Use:   "remove",
+	Short: "Removes a document from Vespa",
+	Args:  cobra.ExactArgs(1),
+	Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
+$ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if strings.HasPrefix(args[0], "id:") {
+			printResult(vespa.RemoveId(args[0], documentTarget()), false)
+		} else {
+			printResult(vespa.RemoveOperation(args[0], documentTarget()), false)
 		}
 	},
 }
