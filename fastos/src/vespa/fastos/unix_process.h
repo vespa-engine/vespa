@@ -191,13 +191,6 @@ protected:
     bool _hasDetachedProcess;
     bool _hasDirectChildren;
 
-    void StarterDoWait ();
-    void StarterDoCreateProcess ();
-
-    bool SendFileDescriptor (int fd);
-
-    char **ReceiveEnvironmentVariables ();
-
     bool CreateSocketPairs ();
 
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
