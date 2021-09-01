@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -39,6 +40,7 @@ var apiKeyCmd = &cobra.Command{
 		apiKeyFile := filepath.Join(configDir, app.Tenant+".api-key.pem")
 		if util.PathExists(apiKeyFile) && !overwriteKey {
 			printErrHint(fmt.Errorf("File %s already exists", apiKeyFile), "Use -f to overwrite it")
+			printPublicKey(apiKeyFile, app.Tenant)
 			return
 		}
 		apiKey, err := vespa.CreateAPIKey()
@@ -47,10 +49,31 @@ var apiKeyCmd = &cobra.Command{
 			return
 		}
 		if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
-			printSuccess("API key written to ", apiKeyFile)
+			printSuccess("API private key written to ", apiKeyFile)
+			printPublicKey(apiKeyFile, app.Tenant)
 		} else {
 			printErr(err, "Failed to write ", apiKeyFile)
-
 		}
 	},
+}
+
+func printPublicKey(apiKeyFile, tenant string) {
+	pemKeyData, err := os.ReadFile(apiKeyFile)
+	if err != nil {
+		printErr(err, "Failed to read ", apiKeyFile)
+		return
+	}
+	key, err := vespa.ECPrivateKeyFrom(pemKeyData)
+	if err != nil {
+		printErr(err, "Failed to load key")
+		return
+	}
+	pemPublicKey, err := vespa.PEMPublicKeyFrom(key)
+	if err != nil {
+		printErr(err, "Failed to extract public key")
+		return
+	}
+	log.Printf("\nThis is your public key:\n\n%s", color.Green(pemPublicKey))
+	log.Print("To use this key in Vespa Cloud it must be added to your tenant here:")
+	log.Printf(color.Cyan("https://console.vespa.oath.cloud/tenant/%s/keys").String(), tenant)
 }
