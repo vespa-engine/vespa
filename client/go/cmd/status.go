@@ -59,14 +59,14 @@ func status(target string, description string) {
 	response, err := util.HttpGet(target, path, description)
 	if err != nil {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
-		log.Print(color.Brown(err))
+		log.Print(color.Yellow(err))
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
-		log.Print(color.Brown(response.Status))
+		log.Print(color.Yellow(response.Status))
 	} else {
 		log.Print(description, " at ", color.Cyan(target), " is ", color.Green("ready"))
 	}

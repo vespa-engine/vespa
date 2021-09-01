@@ -60,7 +60,7 @@ func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
 	}
 
 	if result.Detail != "" {
-		log.Print(color.Brown(result.Detail))
+		log.Print(color.Yellow(result.Detail))
 	}
 
 	if result.Payload != "" {
