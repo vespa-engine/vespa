@@ -52,3 +52,15 @@ func TestSignRequest(t *testing.T) {
 	_, err = base64.StdEncoding.DecodeString(auth)
 	assert.Nil(t, err)
 }
+
+func TestFingerprintMD5(t *testing.T) {
+	pemData := []byte(`-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEObBhkEO6w1YwLXU441keCDGKe+f8
+lu+CDhkxu4ZwLbwQtKBlNF5F7TXuTapUwcTErVgqrHqogrQUzthqrhbNfg==
+-----END PUBLIC KEY-----`)
+	fp, err := FingerprintMD5(pemData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "c5:26:6a:11:e2:b5:74:f3:73:66:9d:80:2e:fd:b7:96", fp)
+}

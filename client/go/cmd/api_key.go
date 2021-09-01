@@ -73,7 +73,12 @@ func printPublicKey(apiKeyFile, tenant string) {
 		printErr(err, "Failed to extract public key")
 		return
 	}
-	log.Printf("\nThis is your public key:\n\n%s", color.Green(pemPublicKey))
-	log.Print("To use this key in Vespa Cloud it must be added to your tenant here:")
+	fingerprint, err := vespa.FingerprintMD5(pemPublicKey)
+	if err != nil {
+		printErr(err, "Failed to extract fingerprint")
+	}
+	log.Printf("\nThis is your public key:\n%s", color.Green(pemPublicKey))
+	log.Printf("Its fingerprint is:\n%s\n", color.Cyan(fingerprint))
+	log.Print("\nTo use this key in Vespa Cloud it must be added to your tenant here:")
 	log.Printf(color.Cyan("https://console.vespa.oath.cloud/tenant/%s/keys").String(), tenant)
 }

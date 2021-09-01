@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -16,6 +18,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -172,6 +175,21 @@ func PEMPublicKeyFrom(privateKey *ecdsa.PrivateKey) ([]byte, error) {
 		return nil, err
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: publicKeyDER}), nil
+}
+
+// FingerprintMD5 returns a MD5 fingerprint of publicKey.
+func FingerprintMD5(pemPublicKey []byte) (string, error) {
+	publicKeyDER, _ := pem.Decode(pemPublicKey)
+	if publicKeyDER == nil {
+		return "", fmt.Errorf("invalid pem data")
+	}
+	md5sum := md5.Sum(publicKeyDER.Bytes)
+	hexDigits := make([]string, len(md5sum))
+	for i, c := range md5sum {
+		hexDigits[i] = hex.EncodeToString([]byte{c})
+	}
+	return strings.Join(hexDigits, ":"), nil
+
 }
 
 func contentHash(r io.Reader) (string, io.Reader, error) {
