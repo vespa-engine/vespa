@@ -60,6 +60,7 @@ func Put(documentId string, jsonFile string, target string) util.OperationResult
 	if fileError != nil {
 		return util.FailureWithDetail("Could not open file '"+jsonFile+"'", fileError.Error())
 	}
+	defer fileReader.Close()
 
 	documentData := util.ReaderToBytes(fileReader)
 
