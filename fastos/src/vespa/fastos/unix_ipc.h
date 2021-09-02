@@ -17,8 +17,6 @@ protected:
     volatile bool _exitFlag;
     FastOS_ApplicationInterface *_app;
 
-    FastOS_UNIX_Process::DescriptorHandle _appParentIPCDescriptor;
-
     int _wakeupPipe[2];
 
     bool DoWrite (FastOS_UNIX_Process::DescriptorHandle &desc);
@@ -28,7 +26,6 @@ protected:
     void BuildPollArray(pollfd **fds, unsigned int *nfds, unsigned int *allocnfds);
     bool SavePollArray(pollfd *fds, unsigned int nfds);
     void PerformAsyncIO ();
-    void PerformAsyncIPCIO ();
     void BuildPollChecks();
     void PipeData (FastOS_UNIX_Process *process, FastOS_UNIX_Process::DescriptorType type);
     void RemoveClosingProcesses();

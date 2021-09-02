@@ -64,7 +64,6 @@ public:
     {
         TYPE_STDOUT,
         TYPE_STDERR,
-        TYPE_IPC,
         TYPE_STDIN,
         TYPE_COUNT
     };
@@ -156,22 +155,6 @@ private:
     FastOS_UNIX_ProcessStarter(const FastOS_UNIX_ProcessStarter&);
     FastOS_UNIX_ProcessStarter& operator=(const FastOS_UNIX_ProcessStarter&);
 
-public:
-
-    enum Constants
-    {
-        CODE_EXIT,
-        CODE_NEWPROCESS,
-        CODE_WAIT,
-
-        CODE_SUCCESS,
-        CODE_FAILURE,
-
-        MAX_PROCESSES_PER_WAIT = 50,
-
-        CONSTEND
-    };
-
 protected:
     FastOS_ApplicationInterface *_app;
 
@@ -184,8 +167,6 @@ protected:
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);
 
-    char **CopyEnvironmentVariables();
-    static void FreeEnvironmentVariables(char **env);
     void PollReapDirectChildren();
 
 public:
@@ -194,7 +175,7 @@ public:
 
     void CloseProxiedChildDescs();
     void CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
-                         int ipcDes, int handshakeDes0, int handshakeDes1);
+                         int handshakeDes0, int handshakeDes1);
 
     bool CreateProcess (FastOS_UNIX_Process *process, bool useShell,
                         bool pipeStdin, bool pipeStdout, bool pipeStderr);
