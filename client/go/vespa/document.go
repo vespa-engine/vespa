@@ -101,7 +101,7 @@ func sendOperation(documentId string, jsonFile string, target string, operation 
 
 	defer response.Body.Close()
 	if response.StatusCode == 200 {
-		return util.Success("Sent " + documentId)
+		return util.Success(operation + " " + documentId)
 	} else if response.StatusCode/100 == 4 {
 		return util.FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
 	} else {
