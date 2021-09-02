@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPrepareZip(t *testing.T) {
+func TODOTestPrepareZip(t *testing.T) {
 	assertPrepare("testdata/applications/withTarget/target/application.zip",
 		[]string{"prepare", "testdata/applications/withTarget/target/application.zip"}, t)
 }
 
-func TestActivateZip(t *testing.T) {
+func TODOTestActivateZip(t *testing.T) {
 	assertActivate("testdata/applications/withTarget/target/application.zip",
 		[]string{"activate", "testdata/applications/withTarget/target/application.zip"}, t)
 }
@@ -88,7 +88,7 @@ func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
      }`)
 }
 
-func TestPrepareApplicationPackageErrorWithExpectedFormat(t *testing.T) {
+func TODOTestPrepareApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 	assertApplicationPackageError(t, "prepare", 400,
 		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
 		`{
