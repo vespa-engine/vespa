@@ -153,6 +153,10 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/reindex",
                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/reindexing"),
 
+    serviceDump(Matcher.tenant,
+                Matcher.application,
+                "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/{environment}/region/{region}/node/{node}/service-dump"),
+
     /** Paths used for development deployments. */
     developmentDeployment(Matcher.tenant,
                           Matcher.application,
