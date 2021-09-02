@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/tls"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -100,3 +101,5 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (respo
 		},
 		nil
 }
+
+func (c *mockHttpClient) UseCertificate(certificate tls.Certificate) {}
