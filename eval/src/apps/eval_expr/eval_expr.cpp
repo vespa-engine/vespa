@@ -48,6 +48,8 @@ int usage(const char *self) {
     fprintf(stderr, "advanced usage: %s interactive\n", self);
     fprintf(stderr, "  This runs the progam in interactive mode. possible commands (line based):\n");
     fprintf(stderr, "      'exit' -> exit the program\n");
+    fprintf(stderr, "      'help' -> print available commands\n");
+    fprintf(stderr, "      'list' -> list named values\n");
     fprintf(stderr, "      'verbose (true|false)' -> enable or disable verbose output\n");
     fprintf(stderr, "      'def <name> <expr>' -> evaluate expression, bind result to a name\n");
     fprintf(stderr, "      '<expr>' -> evaluate expression\n");
@@ -98,6 +100,10 @@ public:
 
     void verbose(bool value) { _verbose = value; }
     bool verbose() const { return _verbose; }
+
+    size_t size() const { return _param_names.size(); }
+    const vespalib::string &name(size_t idx) const { return _param_names[idx]; }
+    const ValueType &type(size_t idx) const { return _param_types[idx]; }
 
     Value::UP eval(const vespalib::string &expr) {
         clear_state();
@@ -254,6 +260,8 @@ EditLineWrapper::~EditLineWrapper()
 vespalib::string EditLineWrapper::prompt("> ");
 
 const vespalib::string exit_cmd("exit");
+const vespalib::string help_cmd("help");
+const vespalib::string list_cmd("list");
 const vespalib::string verbose_cmd("verbose ");
 const vespalib::string def_cmd("def ");
 
@@ -263,6 +271,21 @@ int interactive_mode(Context &ctx) {
     while (input.read_line(line)) {
         if (line == exit_cmd) {
             return 0;
+        }
+        if (line == help_cmd) {
+            fprintf(stdout, "  'exit' -> exit the program\n");
+            fprintf(stdout, "  'help' -> print available commands\n");
+            fprintf(stdout, "  'list' -> list named values\n");
+            fprintf(stdout, "  'verbose (true|false)' -> enable or disable verbose output\n");
+            fprintf(stdout, "  'def <name> <expr>' -> evaluate expression, bind result to a name\n");
+            fprintf(stdout, "  '<expr>' -> evaluate expression\n");
+            continue;
+        }
+        if (line == list_cmd) {
+            for (size_t i = 0; i < ctx.size(); ++i) {
+                fprintf(stdout, "  %s: %s\n", ctx.name(i).c_str(), ctx.type(i).to_spec().c_str());
+            }
+            continue;
         }
         if (line.find(verbose_cmd) == 0) {
             auto flag_str = line.substr(verbose_cmd.size());
