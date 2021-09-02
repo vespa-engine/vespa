@@ -6,8 +6,10 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,18 @@ public class UserManagementMaintainer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
+        findLeftoverRoles().forEach(role -> {
+            /*
+                Log discrepancy now
+                TODO: userManagement.deleteRole(role);
+             */
+            logger.warning(String.format("Found unexpected role %s - Please investigate", role.toString()));
+        });
+        return 1.0;
+    }
+
+    // protected for testing
+    protected List<Role> findLeftoverRoles() {
         var tenantRoles = controller().tenants().asList()
                 .stream()
                 .flatMap(tenant -> Roles.tenantRoles(tenant.name()).stream())
@@ -42,19 +56,9 @@ public class UserManagementMaintainer extends ControllerMaintainer {
                 .flatMap(applicationId -> Roles.applicationRoles(applicationId.tenant(), applicationId.application()).stream())
                 .collect(Collectors.toList());
 
-        var roles = userManagement.listRoles();
-
-        roles.forEach(role -> {
-            if (!tenantRoles.contains(role) && !applicationRoles.contains(role)) {
-                /*
-                Log discrepancy now
-                TODO: userManagement.deleteRole(role);
-                 */
-                logger.warning(String.format("Found unexpected role %s - Please investigate", role.toString()));
-            }
-
-        });
-        return 1.0;
+        return userManagement.listRoles().stream()
+                .filter(role -> !tenantRoles.contains(role) && !applicationRoles.contains(role))
+                .collect(Collectors.toList());
     }
 
 }

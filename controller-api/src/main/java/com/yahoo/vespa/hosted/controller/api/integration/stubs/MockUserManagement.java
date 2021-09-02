@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,6 +83,6 @@ public class MockUserManagement implements UserManagement {
 
     @Override
     public List<Role> listRoles() {
-        return List.of();
+        return new ArrayList<>(memberships.keySet());
     }
 }
