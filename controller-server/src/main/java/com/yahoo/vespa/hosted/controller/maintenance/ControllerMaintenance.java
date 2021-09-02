@@ -8,6 +8,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
@@ -35,7 +36,7 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(Controller controller, Metric metric) {
+    public ControllerMaintenance(Controller controller, Metric metric, UserManagement userManagement) {
         Intervals intervals = new Intervals(controller.system());
         upgrader = new Upgrader(controller, intervals.defaultInterval);
         maintainers.add(upgrader);
@@ -73,6 +74,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new VcmrMaintainer(controller, intervals.vcmrMaintainer));
         maintainers.add(new CloudTrialExpirer(controller, intervals.defaultInterval));
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
+        maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, userManagement));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -129,6 +131,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration changeRequestMaintainer;
         private final Duration vcmrMaintainer;
         private final Duration retriggerMaintainer;
+        private final Duration userManagementMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -162,6 +165,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.changeRequestMaintainer = duration(1, HOURS);
             this.vcmrMaintainer = duration(1, HOURS);
             this.retriggerMaintainer = duration(1, MINUTES);
+            this.userManagementMaintainer = duration(12, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {
