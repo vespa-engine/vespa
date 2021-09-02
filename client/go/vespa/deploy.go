@@ -170,6 +170,9 @@ func Prepare(deployment DeploymentOpts) (int64, error) {
 		return 0, err
 	}
 	defer response.Body.Close()
+	if err := checkResponse(req, response, serviceDescription); err != nil {
+		return 0, err
+	}
 	return sessionID, nil
 }
 
@@ -192,7 +195,7 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 		return err
 	}
 	defer response.Body.Close()
-	return nil
+	return checkResponse(req, response, serviceDescription)
 }
 
 func Deploy(opts DeploymentOpts) error {
@@ -252,15 +255,21 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 		SessionID string `json:"session-id"`
 	}
 	sessionResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
-	if response.StatusCode/100 == 4 {
-		return 0, fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
-	} else if response.StatusCode != 200 {
-		return 0, fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
-	} else {
-		jsonDec := json.NewDecoder(response.Body)
-		jsonDec.Decode(&sessionResponse) // Ignore error in case this is a non-JSON response
+	if err := checkResponse(request, response, serviceDescription); err != nil {
+		return 0, err
 	}
+	jsonDec := json.NewDecoder(response.Body)
+	jsonDec.Decode(&sessionResponse) // Ignore error in case this is a non-JSON response
 	return strconv.ParseInt(sessionResponse.SessionID, 10, 64)
+}
+
+func checkResponse(req *http.Request, response *http.Response, serviceDescription string) error {
+	if response.StatusCode/100 == 4 {
+		return fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
+	} else if response.StatusCode != 200 {
+		return fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), req.URL.Host, response.Status, util.ReaderToJSON(response.Body))
+	}
+	return nil
 }
 
 func isZip(filename string) bool { return filepath.Ext(filename) == ".zip" }
