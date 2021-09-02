@@ -34,12 +34,15 @@ type ZoneID struct {
 	Region      string
 }
 
+type Deployment struct {
+	Application ApplicationID
+	Zone        ZoneID
+}
+
 type DeploymentOpts struct {
 	ApplicationPackage ApplicationPackage
-	TargetType         string
-	TargetURL          string
-	Application        ApplicationID
-	Zone               ZoneID
+	Target             Target
+	Deployment         Deployment
 	APIKey             []byte
 }
 
@@ -55,11 +58,23 @@ func (a ApplicationID) SerializedForm() string {
 	return fmt.Sprintf("%s:%s:%s", a.Tenant, a.Application, a.Instance)
 }
 
-func (d DeploymentOpts) String() string {
-	return fmt.Sprintf("deployment of %s to %s target", d.Application, d.TargetType)
+func (d Deployment) String() string {
+	return fmt.Sprintf("deployment of %s in %s", d.Application, d.Zone)
 }
 
-func (d *DeploymentOpts) IsCloud() bool { return d.TargetType == "cloud" }
+func (d DeploymentOpts) String() string {
+	return fmt.Sprintf("%s to %s", d.Deployment, d.Target.Type())
+}
+
+func (d *DeploymentOpts) IsCloud() bool { return d.Target.Type() == cloudTargetType }
+
+func (d *DeploymentOpts) url(path string) (*url.URL, error) {
+	service, err := d.Target.Service("deploy")
+	if err != nil {
+		return nil, err
+	}
+	return url.Parse(service.BaseURL + path)
+}
 
 func (ap *ApplicationPackage) HasCertificate() bool {
 	if ap.IsZip() {
@@ -133,7 +148,7 @@ func Prepare(deployment DeploymentOpts) (int64, error) {
 	if deployment.IsCloud() {
 		return 0, fmt.Errorf("%s: prepare is not supported", deployment)
 	}
-	sessionURL, err := url.Parse(deployment.TargetURL + "/application/v2/tenant/default/session")
+	sessionURL, err := deployment.url("/application/v2/tenant/default/session")
 	if err != nil {
 		return 0, err
 	}
@@ -141,7 +156,7 @@ func Prepare(deployment DeploymentOpts) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	prepareURL, err := url.Parse(fmt.Sprintf("%s/application/v2/tenant/default/session/%d/prepared", deployment.TargetURL, sessionID))
+	prepareURL, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/prepared", sessionID))
 	if err != nil {
 		return 0, err
 	}
@@ -163,7 +178,7 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 	if deployment.IsCloud() {
 		return fmt.Errorf("%s: activate is not supported", deployment)
 	}
-	u, err := url.Parse(fmt.Sprintf("%s/application/v2/tenant/default/session/%d/active", deployment.TargetURL, sessionID))
+	u, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/active", sessionID))
 	if err != nil {
 		return err
 	}
@@ -180,35 +195,35 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 	return nil
 }
 
-func Deploy(deployment DeploymentOpts) error {
+func Deploy(opts DeploymentOpts) error {
 	path := "/application/v2/tenant/default/prepareandactivate"
-	if deployment.IsCloud() {
-		if !deployment.ApplicationPackage.HasCertificate() {
-			return fmt.Errorf("%s: missing certificate in package", deployment)
+	if opts.IsCloud() {
+		if !opts.ApplicationPackage.HasCertificate() {
+			return fmt.Errorf("%s: missing certificate in package", opts)
 		}
-		if deployment.APIKey == nil {
-			return fmt.Errorf("%s: missing api key", deployment.String())
+		if opts.APIKey == nil {
+			return fmt.Errorf("%s: missing api key", opts.String())
 		}
-		if deployment.Zone.Environment == "" || deployment.Zone.Region == "" {
-			return fmt.Errorf("%s: missing zone", deployment)
+		if opts.Deployment.Zone.Environment == "" || opts.Deployment.Zone.Region == "" {
+			return fmt.Errorf("%s: missing zone", opts)
 		}
 		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
-			deployment.Application.Tenant,
-			deployment.Application.Application,
-			deployment.Application.Instance,
-			deployment.Zone.Environment,
-			deployment.Zone.Region)
+			opts.Deployment.Application.Tenant,
+			opts.Deployment.Application.Application,
+			opts.Deployment.Application.Instance,
+			opts.Deployment.Zone.Environment,
+			opts.Deployment.Zone.Region)
 	}
-	u, err := url.Parse(deployment.TargetURL + path)
+	u, err := opts.url(path)
 	if err != nil {
 		return err
 	}
-	_, err = uploadApplicationPackage(u, deployment)
+	_, err = uploadApplicationPackage(u, opts)
 	return err
 }
 
-func uploadApplicationPackage(url *url.URL, deployment DeploymentOpts) (int64, error) {
-	zipReader, err := deployment.ApplicationPackage.zipReader()
+func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) {
+	zipReader, err := opts.ApplicationPackage.zipReader()
 	if err != nil {
 		return 0, err
 	}
@@ -220,8 +235,8 @@ func uploadApplicationPackage(url *url.URL, deployment DeploymentOpts) (int64, e
 		Header: header,
 		Body:   io.NopCloser(zipReader),
 	}
-	if deployment.APIKey != nil {
-		signer := NewRequestSigner(deployment.Application.SerializedForm(), deployment.APIKey)
+	if opts.APIKey != nil {
+		signer := NewRequestSigner(opts.Deployment.Application.SerializedForm(), opts.APIKey)
 		if err := signer.SignRequest(request); err != nil {
 			return 0, err
 		}
@@ -236,15 +251,14 @@ func uploadApplicationPackage(url *url.URL, deployment DeploymentOpts) (int64, e
 	var sessionResponse struct {
 		SessionID string `json:"session-id"`
 	}
+	sessionResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
 	if response.StatusCode/100 == 4 {
 		return 0, fmt.Errorf("Invalid application package (%s)\n\n%s", response.Status, extractError(response.Body))
 	} else if response.StatusCode != 200 {
 		return 0, fmt.Errorf("Error from %s at %s (%s):\n%s", strings.ToLower(serviceDescription), request.URL.Host, response.Status, util.ReaderToJSON(response.Body))
 	} else {
 		jsonDec := json.NewDecoder(response.Body)
-		if err := jsonDec.Decode(&sessionResponse); err != nil {
-			sessionResponse.SessionID = "0" // No JSON in response
-		}
+		jsonDec.Decode(&sessionResponse) // Ignore error in case this is a non-JSON response
 	}
 	return strconv.ParseInt(sessionResponse.SessionID, 10, 64)
 }

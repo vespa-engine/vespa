@@ -69,3 +69,7 @@ func splitArg(argument string) (string, string) {
 		return argument[0:equalsIndex], argument[equalsIndex+1:]
 	}
 }
+
+func queryTarget() string {
+	return getService("query").BaseURL
+}
