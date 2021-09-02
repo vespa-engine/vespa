@@ -21,11 +21,14 @@ public class LargeRankExpressions {
         expression.register(fileRegistry);
         String name = expression.getName();
         if (expressions.containsKey(name)) {
-            throw new IllegalArgumentException("Rank expression '" + name +
-                    "' defined twice. Previous blob with " + expressions.get(name).getBlob().remaining() +
-                    " bytes, while current has " + expression.getBlob().remaining() + " bytes");
+            if ( ! expressions.get(name).getBlob().equals(expression.getBlob())) {
+                throw new IllegalArgumentException("Rank expression '" + name +
+                        "' defined twice. Previous blob with " + expressions.get(name).getBlob().remaining() +
+                        " bytes, while current has " + expression.getBlob().remaining() + " bytes");
+            }
+        } else {
+            expressions.put(name, expression);
         }
-        expressions.put(name, expression);
     }
 
     /** Returns the ranking constant with the given name, or null if not present */
