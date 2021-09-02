@@ -193,6 +193,9 @@ func FingerprintMD5(pemPublicKey []byte) (string, error) {
 }
 
 func contentHash(r io.Reader) (string, io.Reader, error) {
+	if r == nil {
+		r = strings.NewReader("") // Request without body
+	}
 	var copy bytes.Buffer
 	teeReader := io.TeeReader(r, &copy) // Copy reader contents while we hash it
 	hasher := sha256.New()
