@@ -43,7 +43,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final boolean hasIndexedDocumentType;
     private final boolean useThreePhaseUpdates;
     private final int maxActivationInhibitedOutOfSyncGroups;
-    private final int numDistributorStripes;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
@@ -106,20 +105,18 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             final boolean hasIndexedDocumentType = clusterContainsIndexedDocumentType(documentsNode);
             boolean useThreePhaseUpdates = deployState.getProperties().featureFlags().useThreePhaseUpdates();
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
-            int numDistributorStripes = deployState.getProperties().featureFlags().numDistributorStripes();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType, useThreePhaseUpdates,
-                    maxInhibitedGroups, numDistributorStripes);
+                    maxInhibitedGroups);
         }
     }
 
     private DistributorCluster(ContentCluster parent, BucketSplitting bucketSplitting,
                                GcOptions gc, boolean hasIndexedDocumentType,
                                boolean useThreePhaseUpdates,
-                               int maxActivationInhibitedOutOfSyncGroups,
-                               int numDistributorStripes)
+                               int maxActivationInhibitedOutOfSyncGroups)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -128,7 +125,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.useThreePhaseUpdates = useThreePhaseUpdates;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
-        this.numDistributorStripes = numDistributorStripes;
     }
 
     @Override
@@ -142,7 +138,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.disable_bucket_activation(hasIndexedDocumentType == false);
         builder.enable_metadata_only_fetch_phase_for_inconsistent_updates(useThreePhaseUpdates);
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
-        builder.num_distributor_stripes(numDistributorStripes);
 
         bucketSplitting.getConfig(builder);
     }

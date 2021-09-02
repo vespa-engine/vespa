@@ -35,7 +35,7 @@ public class ContentClusterUtils {
         return createMockRoot(provisioner, schemas, new DeployState.Builder());
     }
 
-    private static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
+    public static MockRoot createMockRoot(HostProvisioner provisioner, List<String> schemas, DeployState.Builder deployStateBuilder) {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withSchemas(schemas).build();
         DeployState deployState = deployStateBuilder.applicationPackage(applicationPackage)
                           .modelHostProvisioner(provisioner)
