@@ -6,6 +6,7 @@ package util
 
 import (
 	"bytes"
+	"crypto/tls"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -34,6 +35,8 @@ func (c mockHttpClient) Do(request *http.Request, timeout time.Duration) (respon
 		},
 		nil
 }
+
+func (c mockHttpClient) UseCertificate(certificate tls.Certificate) {}
 
 func TestHttpRequest(t *testing.T) {
 	ActiveHttpClient = mockHttpClient{}

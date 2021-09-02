@@ -48,7 +48,7 @@ func assertDeployStatus(target string, args []string, t *testing.T) {
 		"Deploy API at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "deploy"}, args),
 		"vespa status config-server")
-	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
+	assert.Equal(t, target+"/status.html", client.lastRequest.URL.String())
 }
 
 func assertQueryStatus(target string, args []string, t *testing.T) {

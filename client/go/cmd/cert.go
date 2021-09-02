@@ -34,6 +34,9 @@ var certCmd = &cobra.Command{
 			return
 		}
 		configDir := configDir(app)
+		if configDir == "" {
+			return
+		}
 		securityDir := filepath.Join(pkg.Path, "security")
 		pkgCertificateFile := filepath.Join(securityDir, "clients.pem")
 		privateKeyFile := filepath.Join(configDir, "data-plane-private-key.pem")

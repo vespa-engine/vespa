@@ -49,7 +49,7 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 		"{\n    \"query\": \"result\"\n}\n",
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
-	assert.Equal(t, getTarget(queryContext).query+"/search/"+expectedQuery, client.lastRequest.URL.String())
+	assert.Equal(t, getService("query").BaseURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 
 func assertQueryNonJsonResult(t *testing.T, expectedQuery string, query ...string) {
@@ -58,7 +58,7 @@ func assertQueryNonJsonResult(t *testing.T, expectedQuery string, query ...strin
 		"query result\n",
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
-	assert.Equal(t, getTarget(queryContext).query+"/search/"+expectedQuery, client.lastRequest.URL.String())
+	assert.Equal(t, getService("query").BaseURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 
 func assertQueryError(t *testing.T, status int, errorMessage string) {

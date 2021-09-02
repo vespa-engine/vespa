@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/tls"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -55,13 +56,16 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 		}
 	})
 
+	// Do not exit in tests
+	exitFunc = func(code int) {}
+
 	// Capture stdout and execute command
 	var b bytes.Buffer
 	log.SetOutput(&b)
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(&b)
-	assert.Empty(t, err, "No error")
+	assert.Nil(t, err, "No error")
 	return string(out)
 }
 
@@ -97,3 +101,5 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (respo
 		},
 		nil
 }
+
+func (c *mockHttpClient) UseCertificate(certificate tls.Certificate) {}

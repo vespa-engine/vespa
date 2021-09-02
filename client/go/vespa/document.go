@@ -149,6 +149,7 @@ func Get(documentId string, target string) util.OperationResult {
 		Method: "GET",
 	}
 	serviceDescription := "Container (document API)"
+	// TODO: Make this work for Vespa Cloud (pass certificate)
 	response, err := util.HttpDo(request, time.Second*60, serviceDescription)
 	if response == nil {
 		return util.Failure("Request failed: " + err.Error())

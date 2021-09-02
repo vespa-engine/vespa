@@ -5,10 +5,11 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/util"
 )
 
 func init() {
@@ -24,7 +25,7 @@ var statusCmd = &cobra.Command{
 	Example: `$ vespa status query`,
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		status(queryTarget(), "Query API")
+		status("query", "Query API")
 	},
 }
 
@@ -34,7 +35,7 @@ var statusQueryCmd = &cobra.Command{
 	Example: `$ vespa status query`,
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		status(queryTarget(), "Query API")
+		status("query", "Query API")
 	},
 }
 
@@ -44,7 +45,7 @@ var statusDocumentCmd = &cobra.Command{
 	Example: `$ vespa status document`,
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		status(documentTarget(), "Document API")
+		status("document", "Document API")
 	},
 }
 
@@ -54,24 +55,25 @@ var statusDeployCmd = &cobra.Command{
 	Example: `$ vespa status deploy`,
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		status(deployTarget(), "Deploy API")
+		status("deploy", "Deploy API")
 	},
 }
 
-func status(target string, description string) {
-	path := "/ApplicationStatus"
-	response, err := util.HttpGet(target, path, description)
-	if err != nil {
-		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
-		log.Print(color.Yellow(err))
-		return
+func status(service string, description string) {
+	s := getService(service)
+	timeout := time.Duration(waitSecsArg) * time.Second
+	if timeout > 0 {
+		log.Printf("Waiting %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		log.Print(description, " at ", color.Cyan(target), " is ", color.Red("not ready"))
-		log.Print(color.Yellow(response.Status))
+	status, err := s.Wait(timeout)
+	if status/100 == 2 {
+		log.Print(description, " at ", color.Cyan(s.BaseURL), " is ", color.Green("ready"))
 	} else {
-		log.Print(description, " at ", color.Cyan(target), " is ", color.Green("ready"))
+		log.Print(description, " at ", color.Cyan(s.BaseURL), " is ", color.Red("not ready"))
+		if err == nil {
+			log.Print(color.Yellow(fmt.Sprintf("Status %d", status)))
+		} else {
+			log.Print(color.Yellow(err))
+		}
 	}
 }

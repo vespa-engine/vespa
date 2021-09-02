@@ -117,9 +117,7 @@ func assertActivate(applicationPackage string, arguments []string, t *testing.T)
 	client := &mockHttpClient{}
 	configDir := t.TempDir()
 	appConfigDir := filepath.Join(configDir, ".vespa", "default")
-	if err := writeSessionID(appConfigDir, 42); err != nil {
-		t.Fatal(err)
-	}
+	writeSessionID(appConfigDir, 42)
 	assert.Equal(t,
 		"Success: Activated "+applicationPackage+" with session 42\n",
 		execute(command{args: arguments, configDir: configDir}, t, client))

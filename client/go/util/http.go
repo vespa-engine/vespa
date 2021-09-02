@@ -5,6 +5,7 @@
 package util
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,6 +17,7 @@ var ActiveHttpClient = CreateClient(time.Second * 10)
 
 type HttpClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
+	UseCertificate(certificate tls.Certificate)
 }
 
 type defaultHttpClient struct {
@@ -27,6 +29,12 @@ func (c *defaultHttpClient) Do(request *http.Request, timeout time.Duration) (re
 		c.client = &http.Client{Timeout: timeout}
 	}
 	return c.client.Do(request)
+}
+
+func (c *defaultHttpClient) UseCertificate(certificate tls.Certificate) {
+	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
+		Certificates: []tls.Certificate{certificate},
+	}}
 }
 
 func CreateClient(timeout time.Duration) HttpClient {

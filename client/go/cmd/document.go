@@ -44,8 +44,7 @@ should be used instead of this.`,
 var documentPutCmd = &cobra.Command{
 	Use:   "put [<id>] <json-file>",
 	Short: "Writes a document to Vespa",
-	Long: `Writes a document to Vespa.
-
+	Long: `Writes the document in the given file to Vespa.
 If the document already exists, all its values will be replaced by this document.
 If the document id is specified both as an argument and in the file the argument takes precedence.`,
 	Args: cobra.RangeArgs(1, 2),
@@ -64,7 +63,6 @@ var documentUpdateCmd = &cobra.Command{
 	Use:   "update [<id>] <json-file>",
 	Short: "Modifies some fields of an existing document",
 	Long: `Updates the values of the fields given in a json file as specified in the file.
-
 If the document id is specified both as an argument and in the file the argument takes precedence.`,
 	Args: cobra.RangeArgs(1, 2),
 	Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
@@ -82,7 +80,6 @@ var documentRemoveCmd = &cobra.Command{
 	Use:   "remove <id or json.file>",
 	Short: "Removes a document from Vespa",
 	Long: `Removes the document specified either as a document id or given in the json file.
-
 If the document id is specified both as an argument and in the file the argument takes precedence.`,
 	Args: cobra.ExactArgs(1),
 	Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
@@ -103,6 +100,10 @@ var documentGetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		printResult(vespa.Get(args[0], documentTarget()), true)
 	},
+}
+
+func documentTarget() string {
+	return getService("document").BaseURL
 }
 
 func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
