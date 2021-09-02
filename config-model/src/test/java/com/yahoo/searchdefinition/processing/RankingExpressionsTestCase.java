@@ -22,10 +22,12 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RankingExpressionsTestCase extends SchemaTestCase {
 
@@ -78,4 +80,51 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
         new DerivedConfiguration(search, new BaseDeployLogger(), new TestProperties(), registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
     }
 
+    private void verifyProfile(RankProfile profile, List<String> expectedFunctions, List<Pair<String, String>> rankProperties,
+                               LargeRankExpressions largeExpressions, QueryProfileRegistry queryProfiles, ImportedMlModels models,
+                               AttributeFields attributes, ModelContext.Properties properties) {
+        var functions = profile.getFunctions();
+        assertEquals(expectedFunctions.size(), functions.size());
+        for (String func : expectedFunctions) {
+            assertTrue(functions.containsKey(func));
+        }
+
+        RawRankProfile raw = new RawRankProfile(profile, largeExpressions, queryProfiles, models, attributes, properties);
+        assertEquals(rankProperties.size(), raw.configProperties().size());
+        for (int i = 0; i < rankProperties.size(); i++) {
+            assertEquals(rankProperties.get(i).getFirst(), raw.configProperties().get(i).getFirst());
+            assertEquals(rankProperties.get(i).getSecond(), raw.configProperties().get(i).getSecond());
+        }
+    }
+
+    private void verifySearch(Search search, RankProfileRegistry rankProfileRegistry, LargeRankExpressions largeExpressions,
+                              QueryProfileRegistry queryProfiles, ImportedMlModels models, ModelContext.Properties properties)
+    {
+        ;
+        AttributeFields attributes = new AttributeFields(search);
+
+        verifyProfile(rankProfileRegistry.get(search, "base"), Arrays.asList("large_f", "large_m"),
+                Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", "base.large_f"), new Pair<>("rankingExpression(large_m).expressionName", "base.large_m")),
+                largeExpressions, queryProfiles, models, attributes, properties);
+        for (String child : Arrays.asList("child_a", "child_b")) {
+            verifyProfile(rankProfileRegistry.get(search, child), Arrays.asList("large_f", "large_m", "large_local_f", "large_local_m"),
+                    Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", child + ".large_f"), new Pair<>("rankingExpression(large_m).expressionName", child + ".large_m"),
+                            new Pair<>("rankingExpression(large_local_f).expressionName", child + ".large_local_f"), new Pair<>("rankingExpression(large_local_m).expressionName", child + ".large_local_m"),
+                            new Pair<>("vespa.rank.firstphase", "rankingExpression(firstphase)"), new Pair<>("rankingExpression(firstphase).expressionName", child + ".firstphase")),
+                    largeExpressions, queryProfiles, models, attributes, properties);
+        }
+    }
+
+    @Test
+    public void testLargeInheritedFunctions() throws IOException, ParseException {
+        ModelContext.Properties properties = new TestProperties().useExternalRankExpression(true).largeRankExpressionLimit(50);
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry());
+        QueryProfileRegistry queryProfiles = new QueryProfileRegistry();
+        ImportedMlModels models = new ImportedMlModels();
+        Search search = createSearch("src/test/examples/largerankingexpressions", properties, rankProfileRegistry);
+        verifySearch(search, rankProfileRegistry, largeExpressions, queryProfiles, models, properties);
+        // Need to verify that second derivation works as that will happen if same sd is used in multiple content clusters
+        verifySearch(search, rankProfileRegistry, largeExpressions, queryProfiles, models, properties);
+    }
 }
