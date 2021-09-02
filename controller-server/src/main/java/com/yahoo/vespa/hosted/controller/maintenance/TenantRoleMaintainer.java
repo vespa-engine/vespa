@@ -25,6 +25,14 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
     protected double maintain() {
         var roleService = controller().serviceRegistry().roleService();
         var tenants = controller().tenants().asList();
+
+        // Create separate athenz service for all tenants
+        tenants.stream()
+                .map(Tenant::name)
+                .forEach(roleService::createTenantRole);
+
+        // Until we have moved to separate athenz service per tenant, make sure we update the shared policy
+        // to allow ssh logins for hosts in prod/perf with a separate tenant iam role.
         var tenantsWithRoles = tenants.stream()
                 .map(Tenant::name)
                 .filter(tenant -> hasProductionDeployment(tenant) || hasPerfDeployment(tenant))
