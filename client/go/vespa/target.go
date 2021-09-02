@@ -114,13 +114,6 @@ func (t *cloudTarget) Type() string { return t.targetType }
 func (t *cloudTarget) Service(name string) (*Service, error) {
 	switch name {
 	case deployService:
-		// url := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
-		// 	t.cloudAPI,
-		// 	t.deployment.Application.Tenant,
-		// 	t.deployment.Application.Application,
-		// 	t.deployment.Application.Instance,
-		// 	t.deployment.Zone.Environment,
-		// 	t.deployment.Zone.Region)
 		return &Service{Name: name, BaseURL: t.cloudAPI}, nil
 	case queryService:
 		if t.queryURL == "" {
