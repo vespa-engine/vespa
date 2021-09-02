@@ -49,7 +49,7 @@ public:
     RpcMappingMonitor(FRT_Supervisor &orb, MappingMonitorOwner &owner);
     ~RpcMappingMonitor();
 
-    void start(const ServiceMapping& mapping) override;
+    void start(const ServiceMapping& mapping, bool hurry) override;
     void stop(const ServiceMapping& mapping) override;
 
     void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;

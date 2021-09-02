@@ -17,7 +17,7 @@ protected:
 
 struct MappingMonitor {
     using UP = std::unique_ptr<MappingMonitor>;
-    virtual void start(const ServiceMapping& mapping) = 0;
+    virtual void start(const ServiceMapping& mapping, bool hurry) = 0;
     virtual void stop(const ServiceMapping& mapping) = 0;
     virtual ~MappingMonitor() = default;
 };
