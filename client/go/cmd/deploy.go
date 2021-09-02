@@ -26,8 +26,8 @@ var (
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
-	rootCmd.AddCommand(prepareCmd)
-	rootCmd.AddCommand(activateCmd)
+	//rootCmd.AddCommand(prepareCmd)
+	//rootCmd.AddCommand(activateCmd)
 	deployCmd.PersistentFlags().StringVarP(&zoneArg, zoneFlag, "z", "dev.aws-us-east-1c", "The zone to use for deployment")
 }
 
