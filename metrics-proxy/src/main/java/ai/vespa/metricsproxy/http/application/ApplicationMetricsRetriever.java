@@ -82,6 +82,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
             return metricsByNode;
 
         } catch (Exception e) {
+            forkJoinTask.cancel(true);
             // Since the task is a ForkJoinTask, we don't need special handling of InterruptedException
             throw new ApplicationMetricsException("Failed retrieving metrics.", e);
         }
