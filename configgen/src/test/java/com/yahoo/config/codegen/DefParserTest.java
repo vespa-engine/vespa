@@ -86,15 +86,16 @@ public class DefParserTest {
         assertLineFails(line, "Could not create sting a");
     }
 
+    // Note: Version is not used anymore, so will always be empty
     @Test
     public void testValidVersions() {
         try {
-            testExpectedVersion("version=8", "8");
-            testExpectedVersion("version=8-1", "8-1");
-            testExpectedVersion("version =8", "8");
-            testExpectedVersion("version = 8", "8");
-            testExpectedVersion("version = 8 ", "8");
-            testExpectedVersion("version =\t8", "8");
+            testExpectedVersion("version=8", "");
+            testExpectedVersion("version=8-1", "");
+            testExpectedVersion("version =8", "");
+            testExpectedVersion("version = 8", "");
+            testExpectedVersion("version = 8 ", "");
+            testExpectedVersion("version =\t8", "");
         } catch (Exception e) {
             e.printStackTrace();
             fail();

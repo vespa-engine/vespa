@@ -149,7 +149,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
             dir = ((DirSource)source).getDir().toString();
         }
         if (!dir.endsWith(File.separator)) dir = dir + File.separator;
-        String name = getConfigFilenameNoVersion(key);
+        String name = getConfigFilename(key);
         File file = new File(dir + name);
         if (!file.exists()) {
             throw new IllegalArgumentException("Could not find a config file for '" + key.getName() + "' in '" + dir + "'");
@@ -300,15 +300,13 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     /**
-     * Returns the file name corresponding to the given key's defName and version.
+     * Returns the file name corresponding to the given key's defName.
      *
      * @param key a {@link ConfigKey}
-     * @return file name with version number.
+     * @return file name
      */
-    static <T extends ConfigInstance> String getConfigFilenameNoVersion(ConfigKey<T> key) {
-        StringBuilder filename = new StringBuilder(key.getName());
-        filename.append(".cfg");
-        return filename.toString();
+    static <T extends ConfigInstance> String getConfigFilename(ConfigKey<T> key) {
+        return key.getName() + ".cfg";
     }
 
     /**

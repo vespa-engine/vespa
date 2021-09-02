@@ -24,7 +24,6 @@ public class ConfigDefinition {
 
     public static Logger log = Logger.getLogger(ConfigDefinition.class.getName());
     private final String name;
-    private final String version;
     private final String namespace;
     ConfigDefinition parent = null;
 
@@ -54,9 +53,15 @@ public class ConfigDefinition {
     private static final Double DOUBLE_MIN = -1e308d;
     private static final Double DOUBLE_MAX = 1e308d;
 
+    // TODO: Remove in Vespa 8
+    @Deprecated
     public ConfigDefinition(String name, String version, String namespace) {
         this.name = name;
-        this.version = version;
+        this.namespace = namespace;
+    }
+
+    public ConfigDefinition(String name, String namespace) {
+        this.name = name;
         this.namespace = namespace;
     }
 
@@ -338,8 +343,8 @@ public class ConfigDefinition {
      * of as an inner array with only one element.
      */
     public static class StructDef extends ConfigDefinition {
-        StructDef(String name, String version, ConfigDefinition parent) {
-            super(name, version, parent.getNamespace());
+        StructDef(String name, ConfigDefinition parent) {
+            super(name, parent.getNamespace());
             this.parent = parent;
         }
     }
@@ -350,8 +355,8 @@ public class ConfigDefinition {
      *
      */
     public static class InnerArrayDef extends ConfigDefinition {
-        InnerArrayDef(String name, String version, ConfigDefinition parent) {
-            super(name, version, parent.getNamespace());
+        InnerArrayDef(String name, ConfigDefinition parent) {
+            super(name, parent.getNamespace());
             this.parent = parent;
         }
     }
@@ -363,8 +368,8 @@ public class ConfigDefinition {
      */
     public static class ArrayDef extends ConfigDefinition {
         private TypeSpec typeSpec;
-        ArrayDef(String name, String version, ConfigDefinition parent) {
-            super(name, version, parent.getNamespace());
+        ArrayDef(String name, ConfigDefinition parent) {
+            super(name, parent.getNamespace());
             this.parent = parent;
         }
         public TypeSpec getTypeSpec() {
@@ -389,8 +394,8 @@ public class ConfigDefinition {
      */
     public static class LeafMapDef extends ConfigDefinition {
 	private TypeSpec typeSpec;
-	LeafMapDef(String name, String version, ConfigDefinition parent) {
-            super(name, version, parent.getNamespace());
+	LeafMapDef(String name, ConfigDefinition parent) {
+            super(name, parent.getNamespace());
             this.parent = parent;
         }
 	public TypeSpec getTypeSpec() {
@@ -407,8 +412,8 @@ public class ConfigDefinition {
      *
      */
     public static class StructMapDef extends ConfigDefinition {
-	StructMapDef(String name, String version, ConfigDefinition parent) {
-            super(name, version, parent.getNamespace());
+	StructMapDef(String name, ConfigDefinition parent) {
+            super(name, parent.getNamespace());
             this.parent = parent;
         }
     }
@@ -598,11 +603,11 @@ public class ConfigDefinition {
     }
 
     public void addInnerArrayDef(String id) {
-        innerArrayDefs.put(id, new InnerArrayDef(id, version, this));
+        innerArrayDefs.put(id, new InnerArrayDef(id, this));
     }
 
     public void addLeafMapDef(String id) {
-	leafMapDefs.put(id, new LeafMapDef(id, version, this));
+	leafMapDefs.put(id, new LeafMapDef(id, this));
     }
 
     public void addEnumDef(String id, List<String> vals, String defVal) {
@@ -751,7 +756,7 @@ public class ConfigDefinition {
         if (ret!=null) {
             return ret;
         }
-        ret = new InnerArrayDef(name, version, this);
+        ret = new InnerArrayDef(name, this);
         innerArrayDefs.put(name, ret);
         return ret;
     }
@@ -765,7 +770,7 @@ public class ConfigDefinition {
         if (ret!=null) {
             return ret;
         }
-        ret = new StructDef(name, version, this);
+        ret = new StructDef(name, this);
         structDefs.put(name, ret);
         return ret;
     }
@@ -779,7 +784,7 @@ public class ConfigDefinition {
         if (ret!=null) {
             return ret;
         }
-        ret = new ArrayDef(name, version, this);
+        ret = new ArrayDef(name, this);
         arrayDefs.put(name, ret);
         return ret;
     }
@@ -793,7 +798,7 @@ public class ConfigDefinition {
 	if (ret!=null) {
 		return ret;
 	}
-	ret = new StructMapDef(name, version, this);
+	ret = new StructMapDef(name, this);
 	structMapDefs.put(name, ret);
 	return ret;
     }
@@ -803,7 +808,7 @@ public class ConfigDefinition {
 	if (ret!=null) {
 		return ret;
 	}
-	ret = new LeafMapDef(name, version, this);
+	ret = new LeafMapDef(name, this);
 	leafMapDefs.put(name, ret);
 	return ret;
     }

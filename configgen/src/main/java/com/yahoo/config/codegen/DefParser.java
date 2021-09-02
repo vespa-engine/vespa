@@ -2,8 +2,8 @@
 package com.yahoo.config.codegen;
 
 import java.io.*;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,6 +18,7 @@ public class DefParser {
     public static final String DEFAULT_PACKAGE_PREFIX = "com.yahoo.";
 
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");
+    // TODO: Version is not used anymore, remove in Vespa 8
     public static final Pattern versionPattern = Pattern.compile("^(version\\s*=\\s*)([0-9][0-9-]*)$");
     // Namespace/package must start with a letter, since Java (Java language Spec, section  3.8) and C++ identifiers cannot start with a digit
     public static final Pattern namespacePattern = getNamespacePattern("namespace");
@@ -38,7 +39,7 @@ public class DefParser {
     /**
      * Creates a new parser for a .def file with the given name and that can be accessed by the given reader.
      *
-     * @param name  The name of the .def file (not including version number and the '.def' suffix).
+     * @param name  The name of the .def file (not including the '.def' suffix).
      * @param defReader  A reader to the .def file.
      */
     public DefParser(String name, Reader defReader) {
@@ -126,7 +127,7 @@ public class DefParser {
         }
         Matcher versionMatch = versionPattern.matcher(line);
         if (versionMatch.matches()) {
-            parseVersionLine(versionMatch);
+            // Do nothing, versions are not used
             return;
         }
         Matcher namespaceMatcher = namespacePattern.matcher(line);
@@ -141,7 +142,7 @@ public class DefParser {
             nd.addNormalizedLine(line);
             return;
         }
-        // Only add lines that are not version, namespace or comment lines
+        // Only add lines that are not namespace or comment lines
         nd.addNormalizedLine(line);
         DefLine defLine = new DefLine(line);
         root.setLeaf(root.getName() + "." + defLine.getName(), defLine, comment);
@@ -153,12 +154,6 @@ public class DefParser {
         String addition = commentMatch.group(1);
         if (addition.isEmpty()) addition = " ";
         comment += addition;
-    }
-
-    private void parseVersionLine(Matcher matcher) {
-        root.setVersion(matcher.group(2));
-        root.setComment(comment);
-        comment = "";
     }
 
     private void parseNamespaceLine(String namespace) {
