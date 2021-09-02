@@ -19,36 +19,40 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "Verify that a Vespa target is ready to use (query by default)",
-	Args:  cobra.MaximumNArgs(1),
+	Use:     "status",
+	Short:   "Verify that a service is ready to use (query by default)",
+	Example: `$ vespa status query`,
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(queryTarget(), "Query API")
 	},
 }
 
 var statusQueryCmd = &cobra.Command{
-	Use:   "query",
-	Short: "Verify that your Vespa query API container endpoint is ready (default)",
-	Args:  cobra.ExactArgs(0),
+	Use:     "query",
+	Short:   "Verify that the query service is ready to use (default)",
+	Example: `$ vespa status query`,
+	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(queryTarget(), "Query API")
 	},
 }
 
 var statusDocumentCmd = &cobra.Command{
-	Use:   "document",
-	Short: "Verify that your Vespa document API container endpoint is ready",
-	Args:  cobra.ExactArgs(0),
+	Use:     "document",
+	Short:   "Verify that the document service is ready to use",
+	Example: `$ vespa status document`,
+	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(documentTarget(), "Document API")
 	},
 }
 
 var statusDeployCmd = &cobra.Command{
-	Use:   "deploy",
-	Short: "Verify that your Vespa deploy API config server endpoint is ready",
-	Args:  cobra.ExactArgs(0),
+	Use:     "deploy",
+	Short:   "Verify that the deploy service is ready to use",
+	Example: `$ vespa status deploy`,
+	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		status(deployTarget(), "Deploy API")
 	},

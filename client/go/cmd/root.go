@@ -19,7 +19,13 @@ var (
 	// TODO: add flag to show http request made
 	rootCmd = &cobra.Command{
 		Use:   "vespa <command>",
-		Short: "The command-line tool for Vespa",
+		Short: "The command-line tool for Vespa.ai",
+		Long: `The command-line tool for Vespa.ai.
+
+Use it on Vespa instances running locally, remotely or in the cloud.
+Prefer web service API's to this in production.
+
+Vespa documentation: https://docs.vespa.ai`,
 	}
 	color          aurora.Aurora
 	targetArg      string
