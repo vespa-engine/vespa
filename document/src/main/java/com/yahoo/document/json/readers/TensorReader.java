@@ -94,6 +94,8 @@ public class TensorReader {
         IndexedTensor.BoundBuilder indexedBuilder = (IndexedTensor.BoundBuilder)builder;
         if (buffer.currentToken() == JsonToken.VALUE_STRING) {
             double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
+            if (decoded.length == 0)
+                throw new IllegalArgumentException("The 'values' string does not contain any values");
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -104,6 +106,8 @@ public class TensorReader {
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             indexedBuilder.cellByDirectIndex(index++, readDouble(buffer));
         }
+        if (index == 0)
+            throw new IllegalArgumentException("The 'values' array does not contain any values");
         expectCompositeEnd(buffer.currentToken());
     }
 

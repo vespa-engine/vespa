@@ -1282,6 +1282,22 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testDisallowedDenseTensorShortFormWithoutValues() {
+        assertCreatePutFails(inputJson("{ 'values': [] }"), "dense_tensor",
+                "The 'values' array does not contain any values");
+        assertCreatePutFails(inputJson("{ 'values': '' }"), "dense_tensor",
+                "The 'values' string does not contain any values");
+    }
+
+    @Test
+    public void testDisallowedMixedTensorShortFormWithoutValues() {
+        assertCreatePutFails(inputJson("{\"blocks\":{ \"a\": [] } }"),
+                "mixed_tensor", "Expected 3 values, but got 0");
+        assertCreatePutFails(inputJson("{\"blocks\":[ {\"address\":{\"x\":\"a\"}, \"values\": [] } ] }"),
+                "mixed_tensor", "Expected 3 values, but got 0");
+    }
+
+    @Test
     public void testParsingOfSparseTensorWithCells() {
         Tensor tensor = assertSparseTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
                                 createPutWithSparseTensor(inputJson("{",
@@ -2027,6 +2043,15 @@ public class JsonReaderTestCase {
         exception.expectMessage(expectedError);
         String jsonData = inputJson(json);
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+    }
+
+    private void assertCreatePutFails(String tensor, String name, String msg) {
+        try {
+            createPutWithTensor(inputJson(tensor), name);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains(msg));
+        }
     }
 
 }
