@@ -4,12 +4,15 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.metrics.MetricsmanagerConfig;
@@ -798,13 +801,25 @@ public class ContentClusterTest extends ContentBaseTest {
         assertPrepareRestartCommand(createClusterWithFlushOnShutdownOverride(true, true));
     }
 
-    private static ContentCluster createOneNodeCluster(boolean isHostedVespa) throws Exception {
-        return createOneNodeCluster("<content version=\"1.0\" id=\"mockcluster\">" +
+    private static String oneNodeClusterXml() {
+        return "<content version=\"1.0\" id=\"mockcluster\">" +
                 "  <documents/>" +
                 "  <group>" +
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
-                "</content>", isHostedVespa);
+                "</content>";
+    }
+
+    private static ContentCluster createOneNodeCluster(boolean isHostedVespa) throws Exception {
+        return createOneNodeCluster(oneNodeClusterXml(), new TestProperties().setHostedVespa(isHostedVespa));
+    }
+
+    private static ContentCluster createOneNodeCluster(TestProperties props) throws Exception {
+        return createOneNodeCluster(oneNodeClusterXml(), props);
+    }
+
+    private static ContentCluster createOneNodeCluster(TestProperties props, Optional<Flavor> flavor) throws Exception {
+        return createOneNodeCluster(oneNodeClusterXml(), props, flavor);
     }
 
     private static ContentCluster createClusterWithFlushOnShutdownOverride(boolean flushOnShutdown, boolean isHostedVespa) throws Exception {
@@ -818,13 +833,20 @@ public class ContentClusterTest extends ContentBaseTest {
                 "  <group>" +
                 "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
                 "  </group>" +
-                "</content>", isHostedVespa);
+                "</content>", new TestProperties().setHostedVespa(isHostedVespa));
     }
 
-    private static ContentCluster createOneNodeCluster(String clusterXml, boolean isHostedVespa) throws Exception {
+    private static ContentCluster createOneNodeCluster(String clusterXml, TestProperties props) throws Exception {
+        return createOneNodeCluster(clusterXml, props, Optional.empty());
+    }
+
+    private static ContentCluster createOneNodeCluster(String clusterXml, TestProperties props, Optional<Flavor> flavor) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(isHostedVespa));
-        MockRoot root = ContentClusterUtils.createMockRoot(Collections.emptyList(), deployStateBuilder);
+                .properties(props);
+        MockRoot root = flavor.isPresent() ?
+                ContentClusterUtils.createMockRoot(new SingleNodeProvisioner(flavor.get()),
+                        Collections.emptyList(), deployStateBuilder) :
+                ContentClusterUtils.createMockRoot(Collections.emptyList(), deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
@@ -1015,41 +1037,58 @@ public class ContentClusterTest extends ContentBaseTest {
         }
     }
 
-    private StorDistributormanagerConfig resolveStorDistributormanagerConfig(TestProperties props) {
-        VespaModel model = createEnd2EndOneNode(props);
+    private StorDistributormanagerConfig resolveStorDistributormanagerConfig(TestProperties props) throws Exception {
+        var cc = createOneNodeCluster(props);
 
-        ContentCluster cc = model.getContentClusters().get("storage");
         var builder = new StorDistributormanagerConfig.Builder();
         cc.getDistributorNodes().getConfig(builder);
 
         return (new StorDistributormanagerConfig(builder));
     }
 
-    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
+    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) throws Exception {
         var cfg = resolveStorDistributormanagerConfig(new TestProperties().maxActivationInhibitedOutOfSyncGroups(maxGroups));
         return cfg.max_activation_inhibited_out_of_sync_groups();
     }
 
     @Test
-    public void default_distributor_max_inhibited_group_activation_config_controlled_by_properties() {
+    public void default_distributor_max_inhibited_group_activation_config_controlled_by_properties() throws Exception {
         assertEquals(0, resolveMaxInhibitedGroupsConfigWithFeatureFlag(0));
         assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
     }
 
-    private int resolveNumDistributorStripesConfigWithFeatureFlag(TestProperties props) {
-        var cfg = resolveStorDistributormanagerConfig(props);
-        return cfg.num_distributor_stripes();
+    private int resolveNumDistributorStripesConfigWithFeatureFlag(TestProperties props, Optional<Flavor> flavor) throws Exception {
+        var cc = createOneNodeCluster(props, flavor);
+        var builder = new StorDistributormanagerConfig.Builder();
+        cc.getDistributorNodes().getChildren().get("0").getConfig(builder);
+        return (new StorDistributormanagerConfig(builder)).num_distributor_stripes();
     }
 
-    private int resolveNumDistributorStripesConfigWithFeatureFlag(int numStripes) {
-        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(numStripes));
+    private int resolveNumDistributorStripesConfigWithFeatureFlag(int numStripes) throws Exception {
+        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(numStripes), Optional.empty());
+    }
+
+    private int resolveTunedNumDistributorStripesConfig(int numCpuCores) throws Exception {
+        var flavor = new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().name("test").minCpuCores(numCpuCores)));
+        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(-1),
+                Optional.of(flavor));
     }
 
     @Test
-    public void num_distributor_stripes_config_controlled_by_properties() {
-        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties()));
+    public void num_distributor_stripes_config_controlled_by_properties() throws Exception {
+        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties(), Optional.empty()));
         assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(0));
         assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(1));
+        assertEquals(4, resolveNumDistributorStripesConfigWithFeatureFlag(4));
+    }
+
+    @Test
+    public void num_distributor_stripes_config_tuned_by_flavor() throws Exception {
+        assertEquals(1, resolveTunedNumDistributorStripesConfig(1));
+        assertEquals(1, resolveTunedNumDistributorStripesConfig(16));
+        assertEquals(2, resolveTunedNumDistributorStripesConfig(17));
+        assertEquals(2, resolveTunedNumDistributorStripesConfig(64));
+        assertEquals(4, resolveTunedNumDistributorStripesConfig(65));
     }
 
     @Test
