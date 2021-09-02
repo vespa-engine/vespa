@@ -43,6 +43,7 @@ func query(arguments []string) {
 	}
 	url.RawQuery = urlQuery.Encode()
 
+	// TODO: Make this work for Vespa Cloud (pass certificate)
 	response, err := util.HttpDo(&http.Request{URL: url}, time.Second*10, "Container")
 	if err != nil {
 		log.Print(color.Red("Error: "), "Request failed: ", err)
