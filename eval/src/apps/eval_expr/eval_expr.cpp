@@ -215,17 +215,17 @@ bool is_only_whitespace(const vespalib::string &str) {
 struct EditLineWrapper {
     EditLine *my_el;
     History *my_hist;
+    HistEvent ignore;
     static vespalib::string prompt;
     static char *prompt_fun(EditLine *) { return &prompt[0]; }
     EditLineWrapper()
       : my_el(el_init("vespa-eval-expr", stdin, stdout, stderr)),
         my_hist(history_init())
     {
+        memset(&ignore, 0, sizeof(ignore));
         el_set(my_el, EL_EDITOR, "emacs");
         el_set(my_el, EL_PROMPT, prompt_fun);
-        HistEvent evt;
-        memset(&evt, 0, sizeof(evt));
-        history(my_hist, &evt, H_SETSIZE, 1024);
+        history(my_hist, &ignore, H_SETSIZE, 1024);
         el_set(my_el, EL_HIST, history, my_hist);
     }
     ~EditLineWrapper();
@@ -241,9 +241,7 @@ struct EditLineWrapper {
                 line_out.pop_back();
             }
         } while (is_only_whitespace(line_out));
-        HistEvent evt;
-        memset(&evt, 0, sizeof(evt));
-        history(my_hist, &evt, H_ENTER, line_out.c_str());
+        history(my_hist, &ignore, H_ENTER, line_out.c_str());
         return true;
     }
 };
