@@ -16,47 +16,47 @@ import (
 
 func TestDocumentSendPut(t *testing.T) {
 	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Put.json"},
-		"POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
+		"put", "POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
 }
 
 func TestDocumentSendUpdate(t *testing.T) {
 	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Update.json"},
-		"PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Update.json", t)
+		"update", "PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Update.json", t)
 }
 
 func TestDocumentSendRemove(t *testing.T) {
 	assertDocumentSend([]string{"document", "testdata/A-Head-Full-of-Dreams-Remove.json"},
-		"DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
 }
 
 func TestDocumentPutWithIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "put", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"},
-		"POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json", t)
+		"put", "POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json", t)
 }
 
 func TestDocumentPutWithoutIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "put", "testdata/A-Head-Full-of-Dreams-Put.json"},
-		"POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
+		"put", "POST", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Put.json", t)
 }
 
 func TestDocumentUpdateWithIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "update", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"},
-		"PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json", t)
+		"update", "PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Without-Operation.json", t)
 }
 
 func TestDocumentUpdateWithoutIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "update", "testdata/A-Head-Full-of-Dreams-Update.json"},
-		"PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Update.json", t)
+		"update", "PUT", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Update.json", t)
 }
 
 func TestDocumentRemoveWithIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "remove", "id:mynamespace:music::a-head-full-of-dreams"},
-		"DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
 }
 
 func TestDocumentRemoveWithoutIdArg(t *testing.T) {
 	assertDocumentSend([]string{"document", "remove", "testdata/A-Head-Full-of-Dreams-Remove.json"},
-		"DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
+		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "testdata/A-Head-Full-of-Dreams-Remove.json", t)
 }
 
 func TestDocumentSendMissingId(t *testing.T) {
@@ -88,10 +88,10 @@ func TestDocumentGet(t *testing.T) {
 		"id:mynamespace:music::a-head-full-of-dreams", t)
 }
 
-func assertDocumentSend(arguments []string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
+func assertDocumentSend(arguments []string, expectedOperation string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"Success: Sent "+expectedDocumentId+"\n",
+		"Success: "+expectedOperation+" "+expectedDocumentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
 	target := getService("document").BaseURL
 	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)

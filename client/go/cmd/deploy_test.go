@@ -66,13 +66,13 @@ func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedNonJson(t *testing.T) {
-	assertApplicationPackageError(t, 401,
+	assertApplicationPackageError(t, "deploy", 401,
 		"Raw text error",
 		"Raw text error")
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedJson(t *testing.T) {
-	assertApplicationPackageError(t, 401,
+	assertApplicationPackageError(t, "deploy", 401,
 		`{
     "some-unexpected-json": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
 }`,
@@ -80,7 +80,16 @@ func TestDeployApplicationPackageErrorWithUnexpectedJson(t *testing.T) {
 }
 
 func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
-	assertApplicationPackageError(t, 400,
+	assertApplicationPackageError(t, "deploy", 400,
+		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
+		`{
+         "error-code": "INVALID_APPLICATION_PACKAGE",
+         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here\n"
+     }`)
+}
+
+func TestPrepareApplicationPackageErrorWithExpectedFormat(t *testing.T) {
+	assertApplicationPackageError(t, "prepare", 400,
 		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
@@ -145,11 +154,11 @@ func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T
 	assertPackageUpload(-1, target+"/application/v2/tenant/default/prepareandactivate", client, t)
 }
 
-func assertApplicationPackageError(t *testing.T, status int, expectedMessage string, returnBody string) {
+func assertApplicationPackageError(t *testing.T, command string, status int, expectedMessage string, returnBody string) {
 	client := &mockHttpClient{nextStatus: status, nextBody: returnBody}
 	assert.Equal(t,
 		"Error: Invalid application package (Status "+strconv.Itoa(status)+")\n\n"+expectedMessage+"\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))
+		executeCommand(t, client, []string{command, "testdata/applications/withTarget/target/application.zip"}, []string{}))
 }
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
