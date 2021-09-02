@@ -20,9 +20,13 @@ func init() {
 }
 
 var queryCmd = &cobra.Command{
-	Use:   "query",
-	Short: "Issue a query to Vespa",
-	Long:  `TODO, example  \"yql=select from sources * where title contains 'foo'\" hits=5`,
+	Use:     "query <query-parameters>",
+	Short:   "Issue a query to Vespa",
+	Example: `$ vespa query "yql=select from sources * where title contains 'foo';" hits=5`,
+	Long: `Issue a query to Vespa.
+
+Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
+can be set by the syntax [parameter-name]=[value].`,
 	// TODO: Support referencing a query json file
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

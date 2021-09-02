@@ -34,7 +34,13 @@ func init() {
 var deployCmd = &cobra.Command{
 	Use:   "deploy <application-directory>",
 	Short: "Deploy (prepare and activate) an application package",
-	Args:  cobra.MaximumNArgs(1),
+	Long: `Deploy (prepare and activate) an application package.
+
+When this returns successfully the application package has been validated
+and activated on config servers. The process of applying it on individual nodes
+has started but may not have completed.`,
+	Example: "$ vespa deploy .",
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
