@@ -55,13 +55,16 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 		}
 	})
 
+	// Do not exit in tests
+	exitFunc = func(code int) {}
+
 	// Capture stdout and execute command
 	var b bytes.Buffer
 	log.SetOutput(&b)
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(&b)
-	assert.Empty(t, err, "No error")
+	assert.Nil(t, err, "No error")
 	return string(out)
 }
 

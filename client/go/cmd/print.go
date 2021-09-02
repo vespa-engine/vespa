@@ -5,13 +5,17 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 )
+
+var exitFunc = os.Exit // To allow overriding Exit in tests
 
 func printErrHint(err error, hints ...string) {
 	printErr(nil, err.Error())
 	for _, hint := range hints {
 		log.Print(color.Cyan("Hint: "), hint)
 	}
+	exitFunc(1)
 }
 
 func printErr(err error, msg ...interface{}) {
@@ -21,6 +25,7 @@ func printErr(err error, msg ...interface{}) {
 	if err != nil {
 		log.Print(color.Yellow(err))
 	}
+	exitFunc(1)
 }
 
 func printSuccess(msg ...interface{}) {
