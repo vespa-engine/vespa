@@ -2110,7 +2110,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         ApplicationId app = ApplicationId.from(tenant, application, instance);
         ApplicationId owner = node.owner().orElseThrow(() -> new IllegalArgumentException("Node has no owner"));
         if (!app.equals(owner)) {
-            throw new IllegalArgumentException("Node is owned by " + owner.toFullString());
+            throw new IllegalArgumentException("Node is not owned by " + app.toFullString());
         }
         String json = node.reports().get("serviceDump");
         if (json == null) return Optional.empty();
