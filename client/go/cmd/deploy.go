@@ -144,32 +144,3 @@ func readSessionID(appConfigDir string) int64 {
 }
 
 func sessionIDFile(appConfigDir string) string { return filepath.Join(appConfigDir, "session_id") }
-
-func readAPIKey(tenant string) []byte {
-	configDir := configDir("")
-	apiKeyPath := filepath.Join(configDir, tenant+".api-key.pem")
-	key, err := os.ReadFile(apiKeyPath)
-	if err != nil {
-		printErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
-	}
-	return key
-}
-
-func deploymentFromArgs() vespa.Deployment {
-	zone, err := vespa.ZoneFromString(zoneArg)
-	if err != nil {
-		printErrHint(err, "Zone format is <env>.<region>")
-	}
-	app, err := vespa.ApplicationFromString(getApplication())
-	if err != nil {
-		printErrHint(err, "Application format is <tenant>.<app>.<instance>")
-	}
-	return vespa.Deployment{Application: app, Zone: zone}
-}
-
-func applicationSource(args []string) string {
-	if len(args) > 0 {
-		return args[0]
-	}
-	return "."
-}
