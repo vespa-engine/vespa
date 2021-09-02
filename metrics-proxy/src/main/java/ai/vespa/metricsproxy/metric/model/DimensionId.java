@@ -28,8 +28,6 @@ public final class DimensionId {
 
     @Override
     public String toString() {
-        return "DimensionId{" +
-                "id='" + id + '\'' +
-                '}';
+        return id;
     }
 }

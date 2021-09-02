@@ -10,13 +10,13 @@ import ai.vespa.metricsproxy.metric.MetricsFormatter;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.Dimension;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaService;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,16 +25,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
-import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  * @author gjoranv
  */
 public class VespaMetrics {
 
-    public static final ConsumerId vespaMetricsConsumerId = toConsumerId("Vespa");
+    public static final ConsumerId vespaMetricsConsumerId = ConsumerId.toConsumerId("Vespa");
 
     public static final DimensionId METRIC_TYPE_DIMENSION_ID = toDimensionId("metrictype");
     public static final DimensionId INSTANCE_DIMENSION_ID = toDimensionId(INTERNAL_SERVICE_ID);
@@ -147,8 +145,7 @@ public class VespaMetrics {
             if ( configuredConsumers.size() == 1) {
                 consumers = Collections.singleton(configuredConsumers.get(0));
             } else if (configuredConsumers.size() > 1){
-                consumers = new HashSet<>(configuredConsumers);
-                consumers = Collections.unmodifiableSet(consumers);
+                consumers = Set.copyOf(configuredConsumers);
             }
         }
         return consumers;
@@ -161,7 +158,7 @@ public class VespaMetrics {
         metric.setDimensions(extractDimensions(candidate.getDimensions(), configuredMetric.dimension()));
         metric.setConsumers(extractConsumers(consumersByMetric.get(configuredMetric)));
 
-        if (!isNullOrEmpty(configuredMetric.outputname()))
+        if (configuredMetric.outputname() != null && !configuredMetric.outputname().id.isEmpty())
             metric.setName(configuredMetric.outputname());
         return metric;
     }
@@ -169,9 +166,9 @@ public class VespaMetrics {
     /**
      * Returns all configured metrics (for any consumer) that have the given id as 'name'.
      */
-    private static Set<ConfiguredMetric> getConfiguredMetrics(String id, Set<ConfiguredMetric> configuredMetrics) {
+    private static Set<ConfiguredMetric> getConfiguredMetrics(MetricId id, Set<ConfiguredMetric> configuredMetrics) {
         return configuredMetrics.stream()
-                .filter(m -> m.id().id.equals(id))
+                .filter(m -> m.id().equals(id))
                 .collect(Collectors.toSet());
     }
 
@@ -243,18 +240,18 @@ public class VespaMetrics {
         StringBuilder b = new StringBuilder();
         for (VespaService s : services) {
             for (Metric metric : s.getMetrics().getMetrics()) {
-                String key = metric.getName();
-                String alias = key;
+                MetricId key = metric.getName();
+                MetricId alias = key;
 
                 boolean isForwarded = false;
                 for (ConfiguredMetric metricConsumer : getMetricDefinitions(vespaMetricsConsumerId)) {
-                    if (metricConsumer.id().id.equals(key)) {
+                    if (metricConsumer.id().equals(key)) {
                         alias = metricConsumer.outputname();
                         isForwarded = true;
                     }
                 }
                 if (isForwarded) {
-                    b.append(formatter.format(s, alias, metric.getValue())).append(" ");
+                    b.append(formatter.format(s, alias.id, metric.getValue())).append(" ");
                 }
             }
         }
@@ -273,11 +270,11 @@ public class VespaMetrics {
 
             for (Metric m : s.getMetrics().getMetrics()) {
                 String description = m.getDescription();
-                String alias = "";
+                MetricId alias = MetricId.empty;
                 boolean isForwarded = false;
 
                 for (ConfiguredMetric metric : getMetricDefinitions(consumer)) {
-                    if (metric.id().id.equals(m.getName())) {
+                    if (metric.id().equals(m.getName())) {
                         alias = metric.outputname();
                         isForwarded = true;
                         if (description.isEmpty()) {
@@ -296,7 +293,7 @@ public class VespaMetrics {
                 if (!description.isEmpty()) {
                     buffer.append(";description=").append(description);
                 }
-                if (!alias.isEmpty()) {
+                if (!alias.id.isEmpty()) {
                     buffer.append(";output-name=").append(alias);
                 }
                 buffer.append(',');

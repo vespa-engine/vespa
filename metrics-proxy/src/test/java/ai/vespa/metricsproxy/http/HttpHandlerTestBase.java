@@ -11,6 +11,7 @@ import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.DownService;
 import ai.vespa.metricsproxy.service.DummyService;
@@ -57,7 +58,7 @@ public class HttpHandlerTestBase {
         metricsManager.setExtraMetrics(ImmutableList.of(
                 new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                         .timestamp(Instant.now().getEpochSecond())
-                        .putMetrics(ImmutableList.of(new Metric(CPU_METRIC, 12.345)))));
+                        .putMetrics(ImmutableList.of(new Metric(MetricId.toMetricId(CPU_METRIC), 12.345)))));
         return metricsManager;
     }
 

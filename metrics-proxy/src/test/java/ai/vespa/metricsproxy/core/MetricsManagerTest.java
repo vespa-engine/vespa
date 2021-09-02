@@ -11,6 +11,7 @@ import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.DownService;
@@ -54,7 +55,7 @@ public class MetricsManagerTest {
             new DummyService(0, SERVICE_0_ID),
             new DummyService(1, SERVICE_1_ID));
 
-    private static final String WHITELISTED_METRIC_ID = "whitelisted";
+    private static final MetricId WHITELISTED_METRIC_ID = toMetricId("whitelisted");
 
     @Before
     public void setupMetricsManager() {
@@ -127,7 +128,7 @@ public class MetricsManagerTest {
         VespaService service0 = testServices.get(0);
         Metrics oldSystemMetrics = service0.getSystemMetrics();
 
-        service0.getSystemMetrics().add(new Metric("cpu", 1));
+        service0.getSystemMetrics().add(new Metric(toMetricId("cpu"), 1));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertEquals(3, packets.size());
@@ -154,7 +155,7 @@ public class MetricsManagerTest {
     public void extra_metrics_packets_without_whitelisted_metrics_are_not_added() {
         metricsManager.setExtraMetrics(ImmutableList.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
-                        .putMetrics(ImmutableList.of(new Metric("not-whitelisted", 0)))));
+                        .putMetrics(ImmutableList.of(new Metric(toMetricId("not-whitelisted"), 0)))));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertThat(packets.size(), is(2));
@@ -243,8 +244,8 @@ public class MetricsManagerTest {
                                             .consumer(new Consumer.Builder()
                                                               .name(vespaMetricsConsumerId.id)
                                                               .metric(new Consumer.Metric.Builder()
-                                                                              .name(WHITELISTED_METRIC_ID)
-                                                                              .outputname(WHITELISTED_METRIC_ID))
+                                                                              .name(WHITELISTED_METRIC_ID.id)
+                                                                              .outputname(WHITELISTED_METRIC_ID.id))
                                                               .metric(new Consumer.Metric.Builder()
                                                                               .name(DummyService.METRIC_1)
                                                                               .outputname(DummyService.METRIC_1)

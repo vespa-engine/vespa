@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
-import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -35,7 +34,7 @@ public class MetricsConsumers {
 
     public MetricsConsumers(ConsumersConfig config) {
         consumerMetrics = config.consumer().stream().collect(
-                toUnmodifiableLinkedMap(consumer -> toConsumerId(consumer.name()), consumer -> convert(consumer.metric())));
+                toUnmodifiableLinkedMap(consumer -> ConsumerId.toConsumerId(consumer.name()), consumer -> convert(consumer.metric())));
 
         consumersByMetric = createConsumersByMetric(consumerMetrics);
     }

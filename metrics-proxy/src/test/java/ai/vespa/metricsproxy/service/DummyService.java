@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 
 /**
  * @author Unknown
@@ -24,8 +25,8 @@ public class DummyService extends VespaService {
         Metrics m = new Metrics();
 
         long timestamp = System.currentTimeMillis() / 1000;
-        m.add(new Metric(METRIC_1, 5 * num + 1, timestamp));
-        m.add(new Metric(METRIC_2, 1.3 * num + 1.05, timestamp));
+        m.add(new Metric(MetricId.toMetricId(METRIC_1), 5 * num + 1, timestamp));
+        m.add(new Metric(MetricId.toMetricId(METRIC_2), 1.3 * num + 1.05, timestamp));
 
         return m;
     }
