@@ -2094,8 +2094,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                         String region, String hostname, HttpRequest request) {
         NodeRepository nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         ZoneId zone = requireZone(environment, region);
-        Slime report = getReport(nodeRepository, zone, tenant, application, instance, hostname).orElse(null);
-        if (report == null) throw new NotExistsException("No service dump for node " + hostname);
+        Slime report = getReport(nodeRepository, zone, tenant, application, instance, hostname)
+            .orElseThrow(() -> new NotExistsException("No service dump for node " + hostname));
         return new SlimeJsonResponse(report);
     }
 
