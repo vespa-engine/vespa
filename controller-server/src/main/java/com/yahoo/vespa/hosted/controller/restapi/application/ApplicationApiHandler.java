@@ -1350,12 +1350,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
               .ifPresent(version -> toSlime(version, object.setObject("revision")));
     }
 
-    private void toSlime(Endpoint endpoint, Cursor object) {
+    private void toSlime(Endpoint endpoint, Optional<EndpointStatus> endpointStatus, Cursor object) {
         object.setString("cluster", endpoint.cluster().value());
         object.setBool("tls", endpoint.tls());
         object.setString("url", endpoint.url().toString());
         object.setString("scope", endpointScopeString(endpoint.scope()));
         object.setString("routingMethod", routingMethodString(endpoint.routingMethod()));
+        endpointStatus.ifPresent(status -> object.setString("status", status.getStatus().name()));
         object.setBool("legacy", endpoint.legacy());
     }
 
@@ -1376,16 +1377,18 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             zoneEndpoints = zoneEndpoints.not().legacy();
         }
         for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
-            toSlime(endpoint, endpointArray.addObject());
+            toSlime(endpoint, Optional.empty(), endpointArray.addObject());
         }
         // Add global endpoints
         EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
                                                  .targets(deploymentId.zoneId());
+        Map<Endpoint, EndpointStatus> globalEndpointsStatus = controller.routing().globalRotationStatus(deploymentId);
         if (!legacyEndpoints) {
             globalEndpoints = globalEndpoints.not().legacy();
         }
         for (var endpoint : controller.routing().directEndpoints(globalEndpoints, deploymentId.applicationId())) {
-            toSlime(endpoint, endpointArray.addObject());
+            var status = globalEndpointsStatus.get(endpoint);
+            toSlime(endpoint, Optional.ofNullable(status), endpointArray.addObject());
         }
 
         response.setString("clusters", withPath(toPath(deploymentId) + "/clusters", request.getUri()).toString());
