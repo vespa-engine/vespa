@@ -364,16 +364,16 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
 
     /**
-     * Checks whether or not this field is of type 'path', in which
+     * Checks if this field is of type 'path', in which
      * case some special handling might be needed. Caches the result.
      */
-    private Set<String> pathFieldSet = new HashSet<>();
+    private final Set<String> pathFieldSet = new HashSet<>();
     private boolean isPathField(Object builder, String methodName) {
         // Paths are stored as FileReference in Builder.
         return isFieldType(pathFieldSet, builder, methodName, FileReference.class);
     }
 
-    private Set<String> urlFieldSet = new HashSet<>();
+    private final Set<String> urlFieldSet = new HashSet<>();
     private boolean isUrlField(Object builder, String methodName) {
         // Urls are stored as UrlReference in Builder.
         return isFieldType(urlFieldSet, builder, methodName, UrlReference.class);
@@ -440,7 +440,6 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Could not create class '" + "'" + structBuilderClass.getName() + "'");
         }
-
     }
 
     /**

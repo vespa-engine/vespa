@@ -5,7 +5,6 @@ import com.yahoo.config.FileNode;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
@@ -29,7 +28,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class FileSenderTest {
 
@@ -75,7 +73,7 @@ public class FileSenderTest {
         serviceList = new ArrayList<>();
         serviceList.add(service);
         ConfigDefinitionKey key = new ConfigDefinitionKey("myname", "mynamespace");
-        def = new ConfigDefinition("myname", "1", "mynamespace");
+        def = new ConfigDefinition("myname", "mynamespace");
         builder = new ConfigPayloadBuilder(def);
         Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new HashMap<>();
         builderMap.put(key, builder);

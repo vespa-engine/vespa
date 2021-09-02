@@ -81,16 +81,15 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     /**
-     * Returns the entry corresponding to the ConfigInstance's defName/Version in the given directory in
-     * the given JarFile.
-     * If the file with correct version number does not exist, returns the filename without version number.
+     * Returns the entry corresponding to the ConfigInstance's defName in the given directory in
+     * the given jar file.
      * The file's existence is checked elsewhere.
      */
     private ZipEntry getEntry(JarFile jarFile, String dir) {
         if (!dir.endsWith("/")) {
             dir = dir + '/';
         }
-        return jarFile.getEntry(dir + getConfigFilenameNoVersion(key));
+        return jarFile.getEntry(dir + getConfigFilename(key));
     }
 
     @Override

@@ -31,7 +31,7 @@ public class ConfigPayloadBuilderTest {
 
     @Before
     public void setupBuilder() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1", "bar");
+        ConfigDefinition def = new ConfigDefinition("foo","bar");
         def.addBoolDef("boolval");
         ConfigDefinition mystruct = def.structDef("mystruct");
         mystruct.addIntDef("foofield");
