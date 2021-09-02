@@ -28,9 +28,7 @@ public class ServiceId {
 
     @Override
     public String toString() {
-        return "ServiceId{" +
-                "id='" + id + '\'' +
-                '}';
+        return id;
     }
 
 }

@@ -2,6 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metrics;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +54,7 @@ public class VespaServiceTest {
     public void testMetricsFetching() {
         VespaService service = VespaService.create("service1", "id", httpServer.port());
         Metrics metrics = service.getMetrics();
-        assertThat(metrics.getMetric("queries.count").getValue().intValue(), is(28));
+        assertThat(metrics.getMetric(MetricId.toMetricId("queries.count")).getValue().intValue(), is(28));
 
         // Shutdown server and check that no metrics are returned (should use empty metrics
         // when unable to fetch new metrics)

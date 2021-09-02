@@ -28,9 +28,7 @@ public class ConsumerId {
 
     @Override
     public String toString() {
-        return "ConsumerId{" +
-                "id='" + id + '\'' +
-                '}';
+        return id;
     }
 
 }

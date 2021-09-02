@@ -14,8 +14,8 @@ import java.util.Set;
  */
 public final class AggregationKey {
 
-    private Map<DimensionId, String> dimensions;
-    private Set<ConsumerId> consumers;
+    private final Map<DimensionId, String> dimensions;
+    private final Set<ConsumerId> consumers;
 
     public AggregationKey(Map<DimensionId, String> dimensions, Set<ConsumerId> consumers) {
         this.dimensions = dimensions;

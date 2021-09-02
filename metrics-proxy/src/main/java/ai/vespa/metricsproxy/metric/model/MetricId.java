@@ -8,6 +8,7 @@ import java.util.Objects;
  */
 public class MetricId {
 
+    public static final MetricId empty = toMetricId("");
     public final String id;
     private MetricId(String id) { this.id = id; }
 
@@ -28,9 +29,7 @@ public class MetricId {
 
     @Override
     public String toString() {
-        return "MetricId{" +
-                "id='" + id + '\'' +
-                '}';
+        return id;
     }
 
 }

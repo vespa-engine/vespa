@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -66,8 +65,8 @@ public class MetricsPacketTest {
     public void builder_can_retain_subset_of_metrics() {
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .putMetrics(ImmutableList.of(
-                        new Metric("remove", 1),
-                        new Metric("keep", 2)))
+                        new Metric(toMetricId("remove"), 1),
+                        new Metric(toMetricId("keep"), 2)))
                 .retainMetrics(ImmutableSet.of(toMetricId("keep"), toMetricId("non-existent")))
                 .build();
 
@@ -87,17 +86,17 @@ public class MetricsPacketTest {
         MetricId THREE_ID        = toMetricId(THREE);
         MetricId NON_EXISTENT_ID = toMetricId(NON_EXISTENT);
 
-        Map<MetricId, List<String>> outputNamesById = ImmutableMap.of(
-                toMetricId(ONE),          ImmutableList.of(ONE),
-                toMetricId(TWO),          ImmutableList.of(TWO, "dos"),
-                toMetricId(THREE),        ImmutableList.of("3"),
-                toMetricId(NON_EXISTENT), ImmutableList.of(NON_EXISTENT));
+        Map<MetricId, List<MetricId>> outputNamesById = ImmutableMap.of(
+                ONE_ID,          ImmutableList.of(ONE_ID),
+                TWO_ID,          ImmutableList.of(TWO_ID, toMetricId("dos")),
+                THREE_ID,        ImmutableList.of(toMetricId("3")),
+                NON_EXISTENT_ID, ImmutableList.of(NON_EXISTENT_ID));
 
         MetricsPacket packet = new MetricsPacket.Builder(toServiceId("foo"))
                 .putMetrics(ImmutableList.of(
-                        new Metric(ONE, 1),
-                        new Metric(TWO, 2),
-                        new Metric(THREE, 3)))
+                        new Metric(ONE_ID, 1),
+                        new Metric(TWO_ID, 2),
+                        new Metric(THREE_ID, 3)))
                 .applyOutputNames(outputNamesById)
                 .build();
 

@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,9 +31,7 @@ public class MetricsParser {
     static Metrics parse(String data) throws IOException {
         return parse(jsonMapper.createParser(data));
     }
-    static Metrics parse(byte [] data) throws IOException {
-        return parse(jsonMapper.createParser(data));
-    }
+
     static Metrics parse(InputStream data) throws IOException {
         return parse(jsonMapper.createParser(data));
     }
@@ -155,8 +154,8 @@ public class MetricsParser {
             if (value == null) {
                 throw new IllegalArgumentException("Value for aggregator '" + aggregator + "' is not a number");
             }
-            StringBuilder metricName = (new StringBuilder()).append(name).append(".").append(aggregator);
-            metrics.add(new Metric(metricName.toString(), value, timestamp, dim, description));
+            String metricName = new StringBuilder().append(name).append(".").append(aggregator).toString();
+            metrics.add(new Metric(MetricId.toMetricId(metricName), value, timestamp, dim, description));
         }
     }
 }

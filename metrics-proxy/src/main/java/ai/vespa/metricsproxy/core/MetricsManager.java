@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractConfigserverDimensions;
-import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toList;
 
@@ -35,7 +34,7 @@ public class MetricsManager {
 
     private static final Logger log = Logger.getLogger(MetricsManager.class.getName());
 
-    static final DimensionId VESPA_VERSION = toDimensionId("vespaVersion");
+    static final DimensionId VESPA_VERSION = DimensionId.toDimensionId("vespaVersion");
 
     private final VespaServices vespaServices;
     private final VespaMetrics vespaMetrics;
@@ -106,8 +105,9 @@ public class MetricsManager {
 
         result.addAll(externalPackets);
 
+        Map<DimensionId, String> globalDims = getGlobalDimensions();
         return result.stream()
-                .map(builder -> builder.putDimensionsIfAbsent(getGlobalDimensions()))
+                .map(builder -> builder.putDimensionsIfAbsent(globalDims))
                 .map(builder -> builder.putDimensionsIfAbsent(extraDimensions))
                 .map(builder -> adjustTimestamp(builder, startTime))
                 .collect(Collectors.toList());

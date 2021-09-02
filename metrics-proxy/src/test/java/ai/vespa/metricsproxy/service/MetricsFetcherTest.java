@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metrics;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -20,8 +21,8 @@ public class MetricsFetcherTest {
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         Metrics metrics = fetcher.createMetrics(jsonData, 0);
         assertThat(metrics.size(), is(10));
-        assertThat(metrics.getMetric("query_hits.count").getValue().intValue(), is(28));
-        assertThat(metrics.getMetric("queries.rate").getValue().doubleValue(), is(0.4667));
+        assertThat(metrics.getMetric(MetricId.toMetricId("query_hits.count")).getValue().intValue(), is(28));
+        assertThat(metrics.getMetric(MetricId.toMetricId("queries.rate")).getValue().doubleValue(), is(0.4667));
         assertThat(metrics.getTimeStamp(), is(1334134700L));
     }
 

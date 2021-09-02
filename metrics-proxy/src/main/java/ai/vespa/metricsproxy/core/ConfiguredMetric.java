@@ -12,17 +12,17 @@ import java.util.Objects;
 public class ConfiguredMetric {
     private final MetricId name;
     private final String description;
-    private final String outputname;
+    private final MetricId outputname;
     private final List<Dimension> dimension;
     public ConfiguredMetric(ConsumersConfig.Consumer.Metric m) {
         name = MetricId.toMetricId(m.name());
-        outputname = m.outputname();
+        outputname = MetricId.toMetricId(m.outputname());
         description = m.description();
         dimension = new ArrayList<>(m.dimension().size());
         m.dimension().forEach(d -> dimension.add(new Dimension(DimensionId.toDimensionId(d.key()), d.value())));
     }
     public MetricId id() { return name; }
-    public String outputname() { return outputname; }
+    public MetricId outputname() { return outputname; }
     public String description() { return description; }
     public List<Dimension> dimension() { return dimension; }
 
