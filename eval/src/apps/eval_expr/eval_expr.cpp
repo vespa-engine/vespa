@@ -17,6 +17,8 @@
 #include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <histedit.h>
+
 using vespalib::make_string_short::fmt;
 
 using namespace vespalib::eval;
@@ -201,10 +203,6 @@ void handle_message(Context &ctx, const Inspector &req, Cursor &reply) {
     }
 }
 
-const vespalib::string exit_cmd("exit");
-const vespalib::string verbose_cmd("verbose ");
-const vespalib::string def_cmd("def ");
-
 bool is_only_whitespace(const vespalib::string &str) {
     for (auto c: str) {
         if (!isspace(c)) {
@@ -214,14 +212,57 @@ bool is_only_whitespace(const vespalib::string &str) {
     return true;
 }
 
+struct EditLineWrapper {
+    EditLine *my_el;
+    History *my_hist;
+    static vespalib::string prompt;
+    static char *prompt_fun(EditLine *) { return &prompt[0]; }
+    EditLineWrapper()
+      : my_el(el_init("vespa-eval-expr", stdin, stdout, stderr)),
+        my_hist(history_init())
+    {
+        el_set(my_el, EL_EDITOR, "emacs");
+        el_set(my_el, EL_PROMPT, prompt_fun);
+        HistEvent evt;
+        memset(&evt, 0, sizeof(evt));
+        history(my_hist, &evt, H_SETSIZE, 1024);
+        el_set(my_el, EL_HIST, history, my_hist);
+    }
+    ~EditLineWrapper();
+    bool read_line(vespalib::string &line_out) {
+        do {
+            int line_len = 0;
+            const char *line = el_gets(my_el, &line_len);
+            if (line == nullptr) {
+                return false;
+            }
+            line_out.assign(line, line_len);
+            if ((line_out.size() > 0) && (line_out[line_out.size() - 1] == '\n')) {
+                line_out.pop_back();
+            }
+        } while (is_only_whitespace(line_out));
+        HistEvent evt;
+        memset(&evt, 0, sizeof(evt));
+        history(my_hist, &evt, H_ENTER, line_out.c_str());
+        return true;
+    }
+};
+EditLineWrapper::~EditLineWrapper()
+{
+    el_set(my_el, EL_HIST, history, nullptr);
+    history_end(my_hist);
+    el_end(my_el);
+}
+vespalib::string EditLineWrapper::prompt("> ");
+
+const vespalib::string exit_cmd("exit");
+const vespalib::string verbose_cmd("verbose ");
+const vespalib::string def_cmd("def ");
+
 int interactive_mode(Context &ctx) {
-    StdIn std_in;
-    LineReader input(std_in);
+    EditLineWrapper input;
     vespalib::string line;
     while (input.read_line(line)) {
-        if (is_only_whitespace(line)) {
-            continue;
-        }
         if (line == exit_cmd) {
             return 0;
         }
