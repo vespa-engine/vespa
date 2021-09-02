@@ -79,4 +79,9 @@ public class MockUserManagement implements UserManagement {
     public List<Role> listRoles(UserId userId) {
         return List.of();
     }
+
+    @Override
+    public List<Role> listRoles() {
+        return List.of();
+    }
 }
