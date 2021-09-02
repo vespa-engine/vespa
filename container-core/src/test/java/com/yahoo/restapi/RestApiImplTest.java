@@ -2,7 +2,7 @@ package com.yahoo.restapi;// Copyright Verizon Media. Licensed under the terms o
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.container.jdisc.AclMapping;
-import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.RequestView;
@@ -113,6 +113,7 @@ class RestApiImplTest {
                 .addRoute(route("/test").get(ctx -> new MessageResponse(ctx.uriBuilder().toString())))
                 .build();
         verifyJsonResponse(restApi, Method.GET, "/test", null, 200, "{\"message\":\"http://localhost\"}");
+        verifyJsonResponse(restApi, Method.GET, "/test", null, 200, "{\"message\":\"http://mydomain:81\"}", Map.of("Host", "mydomain:81"));
     }
 
     @Test
@@ -134,18 +135,22 @@ class RestApiImplTest {
         assertRequestHandlerSpecAclMapping(spec, AclMapping.Action.WRITE, Method.POST, "/api2");
     }
 
-    private static void verifyJsonResponse(RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode, String expectedJson) {
-        HttpRequest testRequest;
-        String uri = "http://localhost" + path;
+    private static void verifyJsonResponse(
+            RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode,
+            String expectedJson) {
+        verifyJsonResponse(restApi, method, path, requestContent, expectedStatusCode, expectedJson, Map.of());
+    }
+
+    private static void verifyJsonResponse(
+            RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode,
+            String expectedJson, Map<String, String> additionalHeaders) {
+        HttpRequestBuilder builder = HttpRequestBuilder.create(method, path);
+        additionalHeaders.forEach(builder::withHeader);
         if (requestContent != null) {
-            testRequest = HttpRequest.createTestRequest(
-                    uri, method,
-                    new ByteArrayInputStream(requestContent.getBytes(StandardCharsets.UTF_8)),
-                    Map.of("Content-Type", "application/json"));
-        } else {
-            testRequest = HttpRequest.createTestRequest(uri, method);
+            builder.withHeader("Content-Type", "application/json");
+            builder.withRequestContent(new ByteArrayInputStream(requestContent.getBytes(StandardCharsets.UTF_8)));
         }
-        HttpResponse response = restApi.handleRequest(testRequest);
+        HttpResponse response = restApi.handleRequest(builder.build());
         assertEquals(expectedStatusCode, response.getStatus());
         if (expectedJson != null) {
             assertEquals("application/json", response.getContentType());
