@@ -527,5 +527,7 @@ public class SearchBuilder {
     public QueryProfileRegistry getQueryProfileRegistry() {
         return queryProfileRegistry;
     }
+    public ModelContext.Properties getProperties() { return properties; }
+    public DeployLogger getDeployLogger() { return deployLogger; }
 
 }
