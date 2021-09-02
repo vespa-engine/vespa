@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentialsProvider;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 
 import java.nio.file.Path;
@@ -68,6 +69,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Clock clock;
     private final Duration warmUpDuration;
     private final DoubleFlag containerCpuCap;
+    private final VespaServiceDumper serviceDumper;
 
     private Thread loopThread;
     private ContainerState containerState = UNKNOWN;
@@ -103,10 +105,11 @@ public class NodeAgentImpl implements NodeAgent {
                          Orchestrator orchestrator, ContainerOperations containerOperations,
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
-                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
+                         Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
+                         VespaServiceDumper serviceDumper) {
         this(contextSupplier, nodeRepository, orchestrator, containerOperations, registryCredentialsProvider,
              storageMaintainer, flagSource, credentialsMaintainers, aclMaintainer, healthChecker, clock,
-             DEFAULT_WARM_UP_DURATION);
+             DEFAULT_WARM_UP_DURATION, serviceDumper);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
@@ -114,7 +117,7 @@ public class NodeAgentImpl implements NodeAgent {
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
                          FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
-                         Duration warmUpDuration) {
+                         Duration warmUpDuration, VespaServiceDumper serviceDumper) {
         this.contextSupplier = contextSupplier;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -127,6 +130,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.clock = clock;
         this.warmUpDuration = warmUpDuration;
         this.containerCpuCap = PermanentFlags.CONTAINER_CPU_CAP.bindTo(flagSource);
+        this.serviceDumper = serviceDumper;
     }
 
     @Override
@@ -484,6 +488,7 @@ public class NodeAgentImpl implements NodeAgent {
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
                 }
+                serviceDumper.processServiceDumpRequest(context);
 
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes

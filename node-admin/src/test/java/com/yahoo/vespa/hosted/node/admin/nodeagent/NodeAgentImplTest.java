@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.node.admin.container.RegistryCredentials;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Before;
 import org.junit.Test;
@@ -748,7 +749,7 @@ public class NodeAgentImplTest {
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
                                  List.of(credentialsMaintainer), Optional.of(aclMaintainer),
-                                 Optional.of(healthChecker), clock, warmUpDuration);
+                                 Optional.of(healthChecker), clock, warmUpDuration, VespaServiceDumper.DUMMY_INSTANCE);
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {

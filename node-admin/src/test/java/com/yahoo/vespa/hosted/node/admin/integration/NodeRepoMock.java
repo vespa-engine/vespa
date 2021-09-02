@@ -66,7 +66,7 @@ public class NodeRepoMock implements NodeRepository {
         }
     }
 
-    void updateNodeRepositoryNode(NodeSpec nodeSpec) {
+    public void updateNodeRepositoryNode(NodeSpec nodeSpec) {
         synchronized (monitor) {
             nodeRepositoryNodesByHostname.put(nodeSpec.hostname(), nodeSpec);
         }
