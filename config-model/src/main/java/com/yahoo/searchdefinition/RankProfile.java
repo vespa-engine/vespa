@@ -623,6 +623,12 @@ public class RankProfile implements Cloneable {
         return Collections.unmodifiableMap(allFunctions);
     }
 
+    private int getNumFunctions() {
+        if (getInherited() != null)
+            return functions.size() + getInherited().getNumFunctions();
+        return functions.size();
+    }
+
     public int getKeepRankCount() {
         if (keepRankCount >= 0) return keepRankCount;
         if (getInherited() != null) return getInherited().getKeepRankCount();
@@ -776,11 +782,17 @@ public class RankProfile implements Cloneable {
         // Compile all functions. Why iterate in such a complicated way?
         // Because some functions (imported models adding generated macros) may add other functions during compiling.
         // A straightforward iteration will either miss those functions, or may cause a ConcurrentModificationException
-        while (null != (entry = findUncompiledFunction(functions.get(), compiledFunctions.keySet()))) {
+        Map<String, RankingExpressionFunction> currentFunctions = functions.get();
+        int currentCountOfAllFunctions = getNumFunctions();
+        while (null != (entry = findUncompiledFunction(currentFunctions, compiledFunctions.keySet()))) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
             RankingExpressionFunction compiled = compile(rankingExpressionFunction, queryProfiles, featureTypes,
                                                  importedModels, getConstants(), inlineFunctions, expressionTransforms);
             compiledFunctions.put(entry.getKey(), compiled);
+            if (getNumFunctions() > currentCountOfAllFunctions) {
+                currentCountOfAllFunctions = getNumFunctions();
+                currentFunctions = functions.get();
+            }
         }
         return compiledFunctions;
     }
