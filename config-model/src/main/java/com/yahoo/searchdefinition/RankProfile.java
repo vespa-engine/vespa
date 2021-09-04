@@ -64,7 +64,7 @@ public class RankProfile implements Cloneable {
     private final VespaModel model;
 
     /** The name of the rank profile inherited by this */
-    private String inheritedName = null;
+    private RankProfile inherited = null;
 
     /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
@@ -191,14 +191,18 @@ public class RankProfile implements Cloneable {
      * definition
      */
     public void setInherited(String inheritedName) {
-        this.inheritedName = inheritedName;
+        inherited = resolveInherited(inheritedName);
     }
 
     /** Returns the name of the profile this one inherits, or null if none is inherited */
-    public String getInheritedName() { return inheritedName; }
+    public String getInheritedName() { return inherited != null ? inherited.getName() : null; }
 
     /** Returns the inherited rank profile, or null if there is none */
     public RankProfile getInherited() {
+        return inherited;
+    }
+
+    private RankProfile resolveInherited(String inheritedName) {
         if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
 
         RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
@@ -450,9 +454,9 @@ public class RankProfile implements Cloneable {
      *
      */
     public void setInheritedSummaryFeatures(String parentProfile) {
-        if ( ! parentProfile.equals(inheritedName))
+        if ( ! parentProfile.equals(getInheritedName()))
             throw new IllegalArgumentException("This can only inherit the summary features of its parent, '" +
-                                               inheritedName + ", but attemtping to inherit '" + parentProfile);
+                                               getInheritedName() + ", but attemtping to inherit '" + parentProfile);
         this.inheritedSummaryFeatures = parentProfile;
     }
 
