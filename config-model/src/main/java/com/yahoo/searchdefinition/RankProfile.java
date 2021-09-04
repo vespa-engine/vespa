@@ -64,6 +64,7 @@ public class RankProfile implements Cloneable {
     private final VespaModel model;
 
     /** The name of the rank profile inherited by this */
+    private String inheritedName = null;
     private RankProfile inherited = null;
 
     /** The match settings of this profile */
@@ -191,14 +192,19 @@ public class RankProfile implements Cloneable {
      * definition
      */
     public void setInherited(String inheritedName) {
+        this.inheritedName = inheritedName;
         inherited = resolveInherited(inheritedName);
     }
 
     /** Returns the name of the profile this one inherits, or null if none is inherited */
-    public String getInheritedName() { return inherited != null ? inherited.getName() : null; }
+    public String getInheritedName() { return inheritedName; }
 
     /** Returns the inherited rank profile, or null if there is none */
     public RankProfile getInherited() {
+        if (inherited != null) return inherited;
+        if (inheritedName != null) {
+            inherited = resolveInherited(inheritedName);
+        }
         return inherited;
     }
 
