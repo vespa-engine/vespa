@@ -104,6 +104,8 @@ public class RankProfile implements Cloneable {
     private Boolean ignoreDefaultRankFeatures = null;
 
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
+    // This cache must be invalidated every time modifications are done to 'functions'.
+    private Map<String, RankingExpressionFunction> allFunctionsCached = null;
 
     private Map<Reference, TensorType> inputFeatures = new LinkedHashMap<>();
 
@@ -585,6 +587,7 @@ public class RankProfile implements Cloneable {
     public RankingExpressionFunction addFunction(ExpressionFunction function, boolean inline) {
         RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
         functions.put(function.getName(), rankingExpressionFunction);
+        allFunctionsCached = null;
         return rankingExpressionFunction;
     }
 
@@ -613,6 +616,12 @@ public class RankProfile implements Cloneable {
     }
     /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
+        if (needToUpdateFunctionCache()) {
+            allFunctionsCached = gatherAllFunctions();
+        }
+        return allFunctionsCached;
+    }
+    private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
         if (functions.isEmpty()) return getInherited().getFunctions();
         if (getInherited() == null) return Collections.unmodifiableMap(new LinkedHashMap<>(functions));
@@ -623,10 +632,10 @@ public class RankProfile implements Cloneable {
         return Collections.unmodifiableMap(allFunctions);
     }
 
-    private int getNumFunctions() {
+    private boolean needToUpdateFunctionCache() {
         if (getInherited() != null)
-            return functions.size() + getInherited().getNumFunctions();
-        return functions.size();
+            return (allFunctionsCached == null) || getInherited().needToUpdateFunctionCache();
+        return allFunctionsCached == null;
     }
 
     public int getKeepRankCount() {
@@ -717,6 +726,7 @@ public class RankProfile implements Cloneable {
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
             clone.inputFeatures = new LinkedHashMap<>(this.inputFeatures);
             clone.functions = new LinkedHashMap<>(this.functions);
+            clone.allFunctionsCached = null;
             clone.filterFields = new HashSet<>(this.filterFields);
             clone.constants = new HashMap<>(this.constants);
             return clone;
@@ -756,6 +766,7 @@ public class RankProfile implements Cloneable {
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
         // TODO This merges all functions from inherited profiles too and erases inheritance information. Not good.
         functions = compileFunctions(this::getFunctions, queryProfiles, featureTypes, importedModels, inlineFunctions, expressionTransforms);
+        allFunctionsCached = null;
     }
 
     private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Value> constants) {
@@ -782,17 +793,11 @@ public class RankProfile implements Cloneable {
         // Compile all functions. Why iterate in such a complicated way?
         // Because some functions (imported models adding generated macros) may add other functions during compiling.
         // A straightforward iteration will either miss those functions, or may cause a ConcurrentModificationException
-        Map<String, RankingExpressionFunction> currentFunctions = functions.get();
-        int currentCountOfAllFunctions = getNumFunctions();
-        while (null != (entry = findUncompiledFunction(currentFunctions, compiledFunctions.keySet()))) {
+        while (null != (entry = findUncompiledFunction(functions.get(), compiledFunctions.keySet()))) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
             RankingExpressionFunction compiled = compile(rankingExpressionFunction, queryProfiles, featureTypes,
                                                  importedModels, getConstants(), inlineFunctions, expressionTransforms);
             compiledFunctions.put(entry.getKey(), compiled);
-            if (getNumFunctions() > currentCountOfAllFunctions) {
-                currentCountOfAllFunctions = getNumFunctions();
-                currentFunctions = functions.get();
-            }
         }
         return compiledFunctions;
     }
