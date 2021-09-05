@@ -73,7 +73,7 @@ public class FeatureNames {
     }
     private static boolean isValidAny(char c) {
         // [A-Za-z0-9_-]*
-        return (c == '_') || (c == '-') || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9'));
+        return c == '-' || isValidFirst(c);
     }
 
 }
