@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.searchlib.rankingexpression.Reference;
 
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * Utility methods for query, document and constant rank feature names
@@ -12,9 +11,6 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class FeatureNames {
-
-    private static final Pattern identifierRegexp = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_-]*");
-
     public static Reference asConstantFeature(String constantName) {
         return Reference.simple("constant", quoteIfNecessary(constantName));
     }
@@ -46,7 +42,7 @@ public class FeatureNames {
      */
     public static Optional<String> argumentOf(String feature) {
         Optional<Reference> reference = Reference.simple(feature);
-        if ( ! reference.isPresent()) return Optional.empty();
+        if ( reference.isEmpty()) return Optional.empty();
         if ( ! ( reference.get().name().equals("attribute") ||
                  reference.get().name().equals("constant") ||
                  reference.get().name().equals("query")))
@@ -56,10 +52,28 @@ public class FeatureNames {
     }
 
     private static String quoteIfNecessary(String s) {
-        if (identifierRegexp.matcher(s).matches())
+        if (notNeedQuotes(s))
             return s;
         else
             return "\"" + s + "\"";
+    }
+
+    static boolean notNeedQuotes(String s) {
+        // Faster version of the regexp [A-Za-z0-9_][A-Za-z0-9_-]*
+        if (s.isEmpty()) return false;
+        if ( ! isValidFirst(s.charAt(0))) return false;
+        for (int i = 1; i < s.length(); i++) {
+            if (!isValidAny(s.charAt(i))) return false;
+        }
+        return true;
+    }
+    private static boolean isValidFirst(char c) {
+        // [A-Za-z0-9_]
+        return (c == '_') || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9'));
+    }
+    private static boolean isValidAny(char c) {
+        // [A-Za-z0-9_-]*
+        return c == '-' || isValidFirst(c);
     }
 
 }
