@@ -424,12 +424,14 @@ BucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_stripes(
     LOG(debug, "BucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
 
-    guard.enable_cluster_state_bundle(state);
+    guard.enable_cluster_state_bundle(state, _pending_cluster_state->hasBucketOwnershipTransfer());
 }
 
-void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state) {
+void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state,
+                                                               bool has_bucket_ownership_transfer)
+{
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
-    guard->enable_cluster_state_bundle(activated_state);
+    guard->enable_cluster_state_bundle(activated_state, has_bucket_ownership_transfer);
 
     _active_state_bundle = activated_state;
     propagate_active_state_bundle_internally();

@@ -294,4 +294,12 @@ TEST_F(SimpleMaintenanceScannerTest, merge_pending_maintenance_stats) {
     EXPECT_EQ(exp.perNodeStats, result.perNodeStats);
 }
 
+TEST_F(SimpleMaintenanceScannerTest, empty_bucket_db_is_immediately_done_by_default) {
+    auto res = _scanner->scanNext();
+    EXPECT_TRUE(res.isDone());
+    _scanner->reset();
+    res = _scanner->scanNext();
+    EXPECT_TRUE(res.isDone());
+}
+
 }

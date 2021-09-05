@@ -305,10 +305,12 @@ TopLevelDistributorTestUtil::all_distributor_stripes_are_in_recovery_mode() cons
 }
 
 void
-TopLevelDistributorTestUtil::enable_distributor_cluster_state(vespalib::stringref state)
+TopLevelDistributorTestUtil::enable_distributor_cluster_state(vespalib::stringref state,
+                                                              bool has_bucket_ownership_transfer)
 {
     bucket_db_updater().simulate_cluster_state_bundle_activation(
-            lib::ClusterStateBundle(lib::ClusterState(state)));
+            lib::ClusterStateBundle(lib::ClusterState(state)),
+            has_bucket_ownership_transfer);
 }
 
 void

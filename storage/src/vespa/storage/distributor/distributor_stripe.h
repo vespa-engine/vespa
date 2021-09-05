@@ -273,7 +273,8 @@ private:
     void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) override;
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) override;
     void clear_pending_cluster_state_bundle() override;
-    void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) override;
+    void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                     bool has_bucket_ownership_change) override;
     void notify_distribution_change_enabled() override;
     PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
                                                        const lib::ClusterState& new_state,

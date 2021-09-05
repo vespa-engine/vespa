@@ -320,7 +320,8 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
         }
     }
 
-    if (_bucketDBUpdater.bucketOwnershipHasChanged()) {
+    // TODO STRIPE remove when legacy is gone; the stripe bucket DB updater does not have this info!
+    if (_use_legacy_mode && _bucketDBUpdater.bucketOwnershipHasChanged()) {
         using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
         // Note: this assumes that std::chrono::system_clock and the framework
         // system clock have the same epoch, which should be a reasonable
@@ -981,10 +982,19 @@ DistributorStripe::clear_pending_cluster_state_bundle()
 }
 
 void
-DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state)
+DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                               bool has_bucket_ownership_change)
 {
     // TODO STRIPE replace legacy func
     enableClusterStateBundle(new_state);
+    if (has_bucket_ownership_change) {
+        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
+        // Note: this assumes that std::chrono::system_clock and the framework
+        // system clock have the same epoch, which should be a reasonable
+        // assumption.
+        const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
+        _externalOperationHandler.rejectFeedBeforeTimeReached(_ownershipSafeTimeCalc->safeTimePoint(now));
+    }
 }
 
 void
