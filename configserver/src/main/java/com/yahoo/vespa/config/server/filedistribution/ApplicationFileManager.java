@@ -15,6 +15,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * @author baldersheim
@@ -47,7 +48,7 @@ public class ApplicationFileManager implements AddFileInterface {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         } finally {
-            IOUtils.recursiveDeleteDir(file);
+            cleanup(file, relativePath);
         }
     }
 
@@ -59,7 +60,7 @@ public class ApplicationFileManager implements AddFileInterface {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         } finally {
-            IOUtils.recursiveDeleteDir(file.getParentFile());
+            cleanup(file, relativePath);
         }
     }
 
@@ -122,5 +123,14 @@ public class ApplicationFileManager implements AddFileInterface {
             }
         }
     }
+
+    private void cleanup(File file, String relativePath) {
+        Path pathToDelete = file.toPath();
+        // Remove as many components as there are in relative path to find temp path to delete
+        for (int i = 0; i < Paths.get(relativePath).getNameCount(); i++)
+            pathToDelete = pathToDelete.resolveSibling("");
+        IOUtils.recursiveDeleteDir(pathToDelete.toFile());
+    }
+
 
 }
