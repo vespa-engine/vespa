@@ -16,7 +16,7 @@ namespace storage { class PersistenceOperationMetricSet; }
 namespace storage::distributor {
 
 class DistributorMetricSet;
-class Distributor;
+class TopLevelDistributor;
 class MaintenanceOperationGenerator;
 class DirectDispatchSender;
 class SequencingHandle;

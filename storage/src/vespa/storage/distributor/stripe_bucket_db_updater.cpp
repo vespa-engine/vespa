@@ -3,7 +3,7 @@
 #include "stripe_bucket_db_updater.h"
 #include "bucket_db_prune_elision.h"
 #include "bucket_space_distribution_context.h"
-#include "distributor.h"
+#include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "pending_bucket_space_db_transition.h"
@@ -102,7 +102,7 @@ void
 StripeBucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
-    out << "BucketDBUpdater";
+    out << "StripeBucketDBUpdater";
 }
 
 bool
@@ -870,7 +870,7 @@ StripeBucketDBUpdater::enableCurrentClusterStateBundleInDistributor()
             _pendingClusterState->getNewClusterStateBundle());
 
     LOG(debug,
-        "BucketDBUpdater finished processing state %s",
+        "StripeBucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
 
     _distributor_interface.enableClusterStateBundle(state);
@@ -927,7 +927,7 @@ StripeBucketDBUpdater::reportStatus(std::ostream& out,
     using namespace vespalib::xml;
     XmlOutputStream xos(out);
     // FIXME(vekterli): have to do this manually since we cannot inherit
-    // directly from XmlStatusReporter due to data races when BucketDBUpdater
+    // directly from XmlStatusReporter due to data races when StripeBucketDBUpdater
     // gets status requests directly.
     xos << XmlTag("status")
         << XmlAttribute("id", BUCKETDB)

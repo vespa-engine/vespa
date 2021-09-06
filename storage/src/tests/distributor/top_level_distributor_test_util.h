@@ -17,7 +17,7 @@ namespace framework { struct TickingThreadPool; }
 
 namespace distributor {
 
-class Distributor;
+class TopLevelDistributor;
 class DistributorMetricSet;
 class DistributorNodeContext;
 class DistributorStripe;
@@ -26,7 +26,7 @@ class DistributorStripeOperationContext;
 class DistributorStripePool;
 class IdealStateMetricSet;
 class Operation;
-class BucketDBUpdater;
+class TopLevelBucketDBUpdater;
 
 class TopLevelDistributorTestUtil : private DoneInitializeHandler
 {
@@ -52,7 +52,7 @@ public:
     // As the above, but always inserts into default bucket space
     void add_nodes_to_stripe_bucket_db(const document::BucketId& id, const std::string& nodeStr);
 
-    BucketDBUpdater& bucket_db_updater();
+    TopLevelBucketDBUpdater& bucket_db_updater();
     const IdealStateMetricSet& total_ideal_state_metrics() const;
     const DistributorMetricSet& total_distributor_metrics() const;
     const storage::distributor::DistributorNodeContext& node_context() const;
@@ -106,7 +106,7 @@ protected:
     std::unique_ptr<TestDistributorApp> _node;
     std::unique_ptr<framework::TickingThreadPool> _thread_pool;
     std::unique_ptr<DistributorStripePool> _stripe_pool;
-    std::unique_ptr<Distributor> _distributor;
+    std::unique_ptr<TopLevelDistributor> _distributor;
     std::unique_ptr<storage::DistributorComponent> _component;
     DistributorMessageSenderStub _sender;
     DistributorMessageSenderStub _sender_down;

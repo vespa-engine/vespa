@@ -3,7 +3,7 @@
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>

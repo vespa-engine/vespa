@@ -3,7 +3,7 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_stripe_component.h>
@@ -34,7 +34,7 @@ TopLevelDistributorTestUtil::create_links()
     _node.reset(new TestDistributorApp(_config.getConfigId()));
     _thread_pool = framework::TickingThreadPool::createDefault("distributor");
     _stripe_pool = DistributorStripePool::make_non_threaded_pool_for_testing();
-    _distributor.reset(new Distributor(
+    _distributor.reset(new TopLevelDistributor(
             _node->getComponentRegister(),
             _node->node_identity(),
             *_thread_pool,
@@ -199,7 +199,7 @@ TopLevelDistributorTestUtil::get_bucket(const document::BucketId& bId) const
     return stripe_bucket_database(stripe_of_bucket(bId)).get(bId);
 }
 
-BucketDBUpdater&
+TopLevelBucketDBUpdater&
 TopLevelDistributorTestUtil::bucket_db_updater() {
     return *_distributor->_bucket_db_updater;
 }

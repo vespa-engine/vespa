@@ -3,7 +3,7 @@
 #include "visitoroperation.h"
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/bucketownership.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>

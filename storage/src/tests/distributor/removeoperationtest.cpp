@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
 #include <vespa/storageapi/message/persistence.h>

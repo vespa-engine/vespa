@@ -2,7 +2,7 @@
 
 #include "pendingclusterstate.h"
 #include "pending_bucket_space_db_transition.h"
-#include "bucketdbupdater.h"
+#include "top_level_bucket_db_updater.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>

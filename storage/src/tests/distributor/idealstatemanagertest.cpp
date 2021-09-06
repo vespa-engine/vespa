@@ -4,8 +4,8 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_bucket_db_updater.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>

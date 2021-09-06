@@ -2,7 +2,7 @@
 
 #include "removebucketoperation.h"
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
 #include <vespa/log/log.h>

@@ -2,8 +2,8 @@
 //
 #include "blockingoperationstarter.h"
 #include "bucket_space_distribution_configs.h"
-#include "bucketdbupdater.h"
-#include "distributor.h"
+#include "top_level_bucket_db_updater.h"
+#include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributor_status.h"
 #include "distributor_stripe.h"
@@ -48,14 +48,14 @@ namespace storage::distributor {
  *      - these are already thread safe
  *  - status aggregation
  */
-Distributor::Distributor(DistributorComponentRegister& compReg,
-                         const NodeIdentity& node_identity,
-                         framework::TickingThreadPool& threadPool,
-                         DistributorStripePool& stripe_pool,
-                         DoneInitializeHandler& doneInitHandler,
-                         uint32_t num_distributor_stripes,
-                         HostInfo& hostInfoReporterRegistrar,
-                         ChainedMessageSender* messageSender)
+TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
+                                         const NodeIdentity& node_identity,
+                                         framework::TickingThreadPool& threadPool,
+                                         DistributorStripePool& stripe_pool,
+                                         DoneInitializeHandler& doneInitHandler,
+                                         uint32_t num_distributor_stripes,
+                                         HostInfo& hostInfoReporterRegistrar,
+                                         ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
       framework::StatusReporter("distributor", "Distributor"),
       _comp_reg(compReg),
@@ -112,10 +112,10 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
         LOG(debug, "Setting up distributor with %u stripes using %u stripe bits",
             num_distributor_stripes, _n_stripe_bits);
         _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
-        _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
-                                                               *this, *this,
-                                                               _component.getDistribution(),
-                                                               *_stripe_accessor);
+        _bucket_db_updater = std::make_unique<TopLevelBucketDBUpdater>(_component, _component,
+                                                                       *this, *this,
+                                                                       _component.getDistribution(),
+                                                                       *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
         for (size_t i = 1; i < num_distributor_stripes; ++i) {
             _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg,
@@ -134,14 +134,14 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     propagateDefaultDistribution(_component.getDistribution());
 };
 
-Distributor::~Distributor()
+TopLevelDistributor::~TopLevelDistributor()
 {
     // XXX: why is there no _component.unregisterMetricUpdateHook()?
     closeNextLink();
 }
 
 DistributorMetricSet&
-Distributor::getMetrics()
+TopLevelDistributor::getMetrics()
 {
     return _use_legacy_mode ? *_metrics : _total_metrics->bucket_db_updater_metrics();
 }
@@ -150,49 +150,49 @@ Distributor::getMetrics()
 //   All functions below that assert on _use_legacy_mode are only currently used by tests
 
 bool
-Distributor::isInRecoveryMode() const noexcept {
+TopLevelDistributor::isInRecoveryMode() const noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->isInRecoveryMode();
 }
 
 const PendingMessageTracker&
-Distributor::getPendingMessageTracker() const {
+TopLevelDistributor::getPendingMessageTracker() const {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getPendingMessageTracker();
 }
 
 PendingMessageTracker&
-Distributor::getPendingMessageTracker() {
+TopLevelDistributor::getPendingMessageTracker() {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getPendingMessageTracker();
 }
 
 DistributorBucketSpaceRepo&
-Distributor::getBucketSpaceRepo() noexcept {
+TopLevelDistributor::getBucketSpaceRepo() noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getBucketSpaceRepo();
 }
 
 const DistributorBucketSpaceRepo&
-Distributor::getBucketSpaceRepo() const noexcept {
+TopLevelDistributor::getBucketSpaceRepo() const noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getBucketSpaceRepo();
 }
 
 DistributorBucketSpaceRepo&
-Distributor::getReadOnlyBucketSpaceRepo() noexcept {
+TopLevelDistributor::getReadOnlyBucketSpaceRepo() noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getReadOnlyBucketSpaceRepo();
 }
 
 const DistributorBucketSpaceRepo&
-Distributor::getReadyOnlyBucketSpaceRepo() const noexcept {
+TopLevelDistributor::getReadyOnlyBucketSpaceRepo() const noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getReadOnlyBucketSpaceRepo();;
 }
 
 storage::distributor::DistributorStripeComponent&
-Distributor::distributor_component() noexcept {
+TopLevelDistributor::distributor_component() noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     // TODO STRIPE We need to grab the stripe's component since tests like to access
     //             these things uncomfortably directly.
@@ -200,61 +200,61 @@ Distributor::distributor_component() noexcept {
 }
 
 StripeBucketDBUpdater&
-Distributor::bucket_db_updater() {
+TopLevelDistributor::bucket_db_updater() {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->bucket_db_updater();
 }
 
 const StripeBucketDBUpdater&
-Distributor::bucket_db_updater() const {
+TopLevelDistributor::bucket_db_updater() const {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->bucket_db_updater();
 }
 
 IdealStateManager&
-Distributor::ideal_state_manager() {
+TopLevelDistributor::ideal_state_manager() {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->ideal_state_manager();
 }
 
 const IdealStateManager&
-Distributor::ideal_state_manager() const {
+TopLevelDistributor::ideal_state_manager() const {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->ideal_state_manager();
 }
 
 ExternalOperationHandler&
-Distributor::external_operation_handler() {
+TopLevelDistributor::external_operation_handler() {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->external_operation_handler();
 }
 
 const ExternalOperationHandler&
-Distributor::external_operation_handler() const {
+TopLevelDistributor::external_operation_handler() const {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->external_operation_handler();
 }
 
 BucketDBMetricUpdater&
-Distributor::bucket_db_metric_updater() const noexcept {
+TopLevelDistributor::bucket_db_metric_updater() const noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->_bucketDBMetricUpdater;
 }
 
 const DistributorConfiguration&
-Distributor::getConfig() const {
+TopLevelDistributor::getConfig() const {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getConfig();
 }
 
 std::chrono::steady_clock::duration
-Distributor::db_memory_sample_interval() const noexcept {
+TopLevelDistributor::db_memory_sample_interval() const noexcept {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->db_memory_sample_interval();
 }
 
 void
-Distributor::setNodeStateUp()
+TopLevelDistributor::setNodeStateUp()
 {
     NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
@@ -263,7 +263,7 @@ Distributor::setNodeStateUp()
 }
 
 void
-Distributor::onOpen()
+TopLevelDistributor::onOpen()
 {
     LOG(debug, "Distributor::onOpen invoked");
     setNodeStateUp();
@@ -280,7 +280,7 @@ Distributor::onOpen()
     }
 }
 
-void Distributor::onClose() {
+void TopLevelDistributor::onClose() {
     // Note: In a running system this function is called by the main thread in StorageApp as part of shutdown.
     // The distributor and stripe thread pools are already stopped at this point.
     LOG(debug, "Distributor::onClose invoked");
@@ -302,7 +302,7 @@ void Distributor::onClose() {
 }
 
 void
-Distributor::start_stripe_pool()
+TopLevelDistributor::start_stripe_pool()
 {
     if (!_use_legacy_mode) {
         std::vector<TickableStripe*> pool_stripes;
@@ -314,7 +314,7 @@ Distributor::start_stripe_pool()
 }
 
 void
-Distributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
+TopLevelDistributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (_messageSender) {
         _messageSender->sendUp(msg);
@@ -324,7 +324,7 @@ Distributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 }
 
 void
-Distributor::sendDown(const std::shared_ptr<api::StorageMessage>& msg)
+TopLevelDistributor::sendDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (_messageSender) {
         _messageSender->sendDown(msg);
@@ -378,14 +378,14 @@ get_bucket_id_for_striping(const api::StorageMessage& msg, const DistributorNode
 }
 
 uint32_t
-Distributor::random_stripe_idx()
+TopLevelDistributor::random_stripe_idx()
 {
     std::lock_guard lock(_random_stripe_gen_mutex);
     return _random_stripe_gen.nextUint32() % _stripes.size();
 }
 
 uint32_t
-Distributor::stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg)
+TopLevelDistributor::stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg)
 {
     if (!bucket_id.isSet()) {
         LOG(error, "Message (%s) has a bucket id (%s) that is not set. Cannot route to stripe",
@@ -403,7 +403,7 @@ Distributor::stripe_of_bucket_id(const document::BucketId& bucket_id, const api:
 }
 
 bool
-Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
+TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
     // TODO STRIPE can we route both requests and responses that are BucketCommand|Reply based on their bucket alone?
     //   that covers most operations already...
@@ -427,41 +427,41 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 }
 
 bool
-Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
+TopLevelDistributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    // TODO STRIPE this is used by tests. Do we need to invoke top-level BucketDBUpdater for any of them?
+    // TODO STRIPE this is used by tests. Do we need to invoke TopLevelBucketDBUpdater for any of them?
     assert(_use_legacy_mode);
     return _stripe->handleReply(reply);
 }
 
 // TODO STRIPE we need to reintroduce the top-level message queue...
 bool
-Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
+TopLevelDistributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
 {
     assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->handleMessage(msg);
 }
 
 const DistributorConfiguration&
-Distributor::config() const
+TopLevelDistributor::config() const
 {
     return *_total_config;
 }
 
 void
-Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
+TopLevelDistributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
 {
     sendUp(cmd);
 }
 
 void
-Distributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
+TopLevelDistributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 {
     sendUp(reply);
 }
 
 const lib::ClusterStateBundle&
-Distributor::getClusterStateBundle() const
+TopLevelDistributor::getClusterStateBundle() const
 {
     assert(_use_legacy_mode); // TODO STRIPE
     // TODO STRIPE must offer a single unifying state across stripes
@@ -469,7 +469,7 @@ Distributor::getClusterStateBundle() const
 }
 
 void
-Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
+TopLevelDistributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
 {
     assert(_use_legacy_mode); // TODO STRIPE
     // TODO STRIPE make test injection/force-function
@@ -477,7 +477,7 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
 }
 
 void
-Distributor::storageDistributionChanged()
+TopLevelDistributor::storageDistributionChanged()
 {
     if (!_use_legacy_mode) {
         if (!_distribution || (*_component.getDistribution() != *_distribution)) {
@@ -496,7 +496,7 @@ Distributor::storageDistributionChanged()
 }
 
 void
-Distributor::enableNextDistribution()
+TopLevelDistributor::enableNextDistribution()
 {
     if (!_use_legacy_mode) {
         if (_next_distribution) {
@@ -513,7 +513,7 @@ Distributor::enableNextDistribution()
 // TODO STRIPE only used by tests to directly inject new distribution config
 //   - actually, also by ctor
 void
-Distributor::propagateDefaultDistribution(
+TopLevelDistributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
     // TODO STRIPE cannot directly access stripe when not in legacy mode!
@@ -530,7 +530,7 @@ Distributor::propagateDefaultDistribution(
 }
 
 std::unordered_map<uint16_t, uint32_t>
-Distributor::getMinReplica() const
+TopLevelDistributor::getMinReplica() const
 {
     if (_use_legacy_mode) {
         return _stripe->getMinReplica();
@@ -544,7 +544,7 @@ Distributor::getMinReplica() const
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats
-Distributor::getBucketSpacesStats() const
+TopLevelDistributor::getBucketSpacesStats() const
 {
     if (_use_legacy_mode) {
         return _stripe->getBucketSpacesStats();
@@ -558,7 +558,7 @@ Distributor::getBucketSpacesStats() const
 }
 
 SimpleMaintenanceScanner::PendingMaintenanceStats
-Distributor::pending_maintenance_stats() const {
+TopLevelDistributor::pending_maintenance_stats() const {
     if (_use_legacy_mode) {
         return _stripe->pending_maintenance_stats();
     } else {
@@ -571,7 +571,7 @@ Distributor::pending_maintenance_stats() const {
 }
 
 void
-Distributor::propagateInternalScanMetricsToExternal()
+TopLevelDistributor::propagateInternalScanMetricsToExternal()
 {
     if (_use_legacy_mode) {
         _stripe->propagateInternalScanMetricsToExternal();
@@ -585,14 +585,14 @@ Distributor::propagateInternalScanMetricsToExternal()
 }
 
 void
-Distributor::scanAllBuckets()
+TopLevelDistributor::scanAllBuckets()
 {
     assert(_use_legacy_mode); // TODO STRIPE
     _stripe->scanAllBuckets();
 }
 
 void
-Distributor::dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg)
+TopLevelDistributor::dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg)
 {
     MBUS_TRACE(msg->getTrace(), 9, "Distributor: Added to main thread message queue");
     framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
@@ -601,7 +601,7 @@ Distributor::dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api
 }
 
 void
-Distributor::fetch_external_messages()
+TopLevelDistributor::fetch_external_messages()
 {
     assert(!_use_legacy_mode);
     assert(_fetched_messages.empty());
@@ -609,7 +609,7 @@ Distributor::fetch_external_messages()
 }
 
 void
-Distributor::process_fetched_external_messages()
+TopLevelDistributor::process_fetched_external_messages()
 {
     assert(!_use_legacy_mode);
     for (auto& msg : _fetched_messages) {
@@ -626,7 +626,7 @@ Distributor::process_fetched_external_messages()
 }
 
 framework::ThreadWaitInfo
-Distributor::doCriticalTick(framework::ThreadIndex idx)
+TopLevelDistributor::doCriticalTick(framework::ThreadIndex idx)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     if (!_use_legacy_mode) {
@@ -644,7 +644,7 @@ Distributor::doCriticalTick(framework::ThreadIndex idx)
 }
 
 framework::ThreadWaitInfo
-Distributor::doNonCriticalTick(framework::ThreadIndex idx)
+TopLevelDistributor::doNonCriticalTick(framework::ThreadIndex idx)
 {
     if (_use_legacy_mode) {
         _stripe->doNonCriticalTick(idx);
@@ -660,7 +660,7 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 }
 
 void
-Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_changed()?
+TopLevelDistributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_changed()?
 {
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {
@@ -683,7 +683,7 @@ Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_c
 
 
 void
-Distributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
+TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
 {
     LOG(debug, "Stripe %u has signalled an intent to send host info out-of-band", stripe_index);
     std::lock_guard lock(_stripe_scan_notify_mutex);
@@ -697,7 +697,7 @@ Distributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
 }
 
 bool
-Distributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] std::lock_guard<std::mutex>& held_lock) noexcept
+TopLevelDistributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] std::lock_guard<std::mutex>& held_lock) noexcept
 {
     bool any_stripe_wants_to_send = false;
     for (const auto& stats : _stripe_scan_stats) {
@@ -714,7 +714,7 @@ Distributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] std::lock_
 }
 
 void
-Distributor::send_host_info_if_appropriate()
+TopLevelDistributor::send_host_info_if_appropriate()
 {
     const auto now = _component.getClock().getMonotonicTime();
     std::lock_guard lock(_stripe_scan_notify_mutex);
@@ -732,7 +732,7 @@ Distributor::send_host_info_if_appropriate()
 }
 
 void
-Distributor::fetch_status_requests()
+TopLevelDistributor::fetch_status_requests()
 {
     if (_fetched_status_requests.empty()) {
         _fetched_status_requests.swap(_status_to_do);
@@ -740,7 +740,7 @@ Distributor::fetch_status_requests()
 }
 
 void
-Distributor::handle_status_requests()
+TopLevelDistributor::handle_status_requests()
 {
     for (auto& s : _fetched_status_requests) {
         s->getReporter().reportStatus(s->getStream(), s->getPath());
@@ -753,19 +753,19 @@ Distributor::handle_status_requests()
 }
 
 void
-Distributor::signal_work_was_done()
+TopLevelDistributor::signal_work_was_done()
 {
     _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
 }
 
 bool
-Distributor::work_was_done() const noexcept
+TopLevelDistributor::work_was_done() const noexcept
 {
     return !_tickResult.waitWanted();
 }
 
 vespalib::string
-Distributor::getReportContentType(const framework::HttpUrlPath& path) const
+TopLevelDistributor::getReportContentType(const framework::HttpUrlPath& path) const
 {
     assert(!_use_legacy_mode);
     if (path.hasAttribute("page")) {
@@ -780,15 +780,15 @@ Distributor::getReportContentType(const framework::HttpUrlPath& path) const
 }
 
 std::string
-Distributor::getActiveIdealStateOperations() const
+TopLevelDistributor::getActiveIdealStateOperations() const
 {
     assert(_use_legacy_mode);
     return _stripe->getActiveIdealStateOperations();
 }
 
 bool
-Distributor::reportStatus(std::ostream& out,
-                          const framework::HttpUrlPath& path) const
+TopLevelDistributor::reportStatus(std::ostream& out,
+                                  const framework::HttpUrlPath& path) const
 {
     assert(!_use_legacy_mode);
     if (!path.hasAttribute("page") || path.getAttribute("page") == "buckets") {
@@ -827,7 +827,7 @@ Distributor::reportStatus(std::ostream& out,
 }
 
 bool
-Distributor::handleStatusRequest(const DelegatedStatusRequest& request) const
+TopLevelDistributor::handleStatusRequest(const DelegatedStatusRequest& request) const
 {
     assert(!_use_legacy_mode);
     auto wrappedRequest = std::make_shared<DistributorStatus>(request);

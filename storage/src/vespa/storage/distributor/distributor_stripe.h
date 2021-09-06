@@ -195,7 +195,7 @@ public:
 
 private:
     // TODO STRIPE: reduce number of friends. DistributorStripe too popular for its own good.
-    friend class Distributor;
+    friend class TopLevelDistributor;
     friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
     friend class LegacyBucketDBUpdaterTest;

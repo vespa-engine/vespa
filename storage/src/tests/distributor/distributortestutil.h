@@ -17,7 +17,7 @@ namespace framework { struct TickingThreadPool; }
 
 namespace distributor {
 
-class Distributor;
+class TopLevelDistributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
 class DistributorNodeContext;
@@ -122,8 +122,8 @@ public:
     storage::distributor::DistributorStripeOperationContext& operation_context();
     const DocumentSelectionParser& doc_selection_parser() const;
 
-    Distributor& getDistributor() noexcept { return *_distributor; }
-    const Distributor& getDistributor() const noexcept { return *_distributor; }
+    TopLevelDistributor& getDistributor() noexcept { return *_distributor; }
+    const TopLevelDistributor& getDistributor() const noexcept { return *_distributor; }
 
     bool tick();
 
@@ -217,7 +217,7 @@ protected:
     std::unique_ptr<TestDistributorApp> _node;
     std::unique_ptr<framework::TickingThreadPool> _threadPool;
     std::unique_ptr<DistributorStripePool> _stripe_pool;
-    std::unique_ptr<Distributor> _distributor;
+    std::unique_ptr<TopLevelDistributor> _distributor;
     std::unique_ptr<storage::DistributorComponent> _component;
     DistributorMessageSenderStub _sender;
     DistributorMessageSenderStub _senderDown;

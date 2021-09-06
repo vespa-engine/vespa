@@ -3,7 +3,7 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_stripe_component.h>
@@ -30,7 +30,7 @@ DistributorTestUtil::createLinks()
     _node.reset(new TestDistributorApp(_config.getConfigId()));
     _threadPool = framework::TickingThreadPool::createDefault("distributor");
     _stripe_pool = std::make_unique<DistributorStripePool>();
-    _distributor.reset(new Distributor(
+    _distributor.reset(new TopLevelDistributor(
             _node->getComponentRegister(),
             _node->node_identity(),
             *_threadPool,

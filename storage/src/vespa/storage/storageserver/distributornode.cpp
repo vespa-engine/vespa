@@ -7,7 +7,7 @@
 #include "statemanager.h"
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -103,7 +103,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // Distributor instance registers a host info reporter with the state
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.
-    builder.add(std::make_unique<storage::distributor::Distributor>
+    builder.add(std::make_unique<storage::distributor::TopLevelDistributor>
                 (dcr, *_node_identity, *_threadPool, *_stripe_pool, getDoneInitializeHandler(),
                  _num_distributor_stripes,
                  stateManager->getHostInfo()));
