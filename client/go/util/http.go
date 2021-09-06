@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/vespa-engine/vespa/client/go/build"
 )
 
 // Set this to a mock HttpClient instead to unit test HTTP requests
@@ -53,6 +55,10 @@ func HttpGet(host string, path string, description string) (*http.Response, erro
 }
 
 func HttpDo(request *http.Request, timeout time.Duration, description string) (*http.Response, error) {
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
+	request.Header.Set("User-Agent", fmt.Sprintf("Vespa CLI/%s", build.Version))
 	response, err := ActiveHttpClient.Do(request, timeout)
 	if err != nil {
 		return nil, err
