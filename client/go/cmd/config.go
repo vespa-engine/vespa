@@ -14,8 +14,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vespa-engine/vespa/util"
-	"github.com/vespa-engine/vespa/vespa"
+	"github.com/vespa-engine/vespa/client/go/util"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 const (

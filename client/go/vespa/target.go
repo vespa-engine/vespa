@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const (

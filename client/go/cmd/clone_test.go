@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 func TestClone(t *testing.T) {

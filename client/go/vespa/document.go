@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 // Sends the operation given in the file

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 type ApplicationID struct {
