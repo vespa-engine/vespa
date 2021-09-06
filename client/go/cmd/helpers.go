@@ -89,7 +89,7 @@ func getService(service string) *vespa.Service {
 	t := getTarget()
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
-		log.Printf("Waiting %d %s for service discovery to complete ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
+		log.Printf("Waiting up to %d %s for service discovery to complete ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
 	if err := t.DiscoverServices(timeout); err != nil {
 		printErr(err, "Failed to discover services")
@@ -129,7 +129,7 @@ func waitForService(service string) {
 	s := getService(service)
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
-		log.Printf("Waiting %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
+		log.Printf("Waiting up to %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
 	status, err := s.Wait(timeout)
 	if status/100 == 2 {
