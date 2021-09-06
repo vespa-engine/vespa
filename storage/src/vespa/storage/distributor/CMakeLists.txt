@@ -13,7 +13,6 @@ vespa_add_library(storage_distributor
     bucketlistmerger.cpp
     clusterinformation.cpp
     crypto_uuid_generator.cpp
-    distributor.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
     distributor_component.cpp
@@ -52,6 +51,7 @@ vespa_add_library(storage_distributor
     statusreporterdelegate.cpp
     stripe_bucket_db_updater.cpp
     throttlingoperationstarter.cpp
+    top_level_distributor.cpp
     update_metric_set.cpp
     visitormetricsset.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>

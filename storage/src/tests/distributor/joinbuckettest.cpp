@@ -2,7 +2,7 @@
 #include "dummy_cluster_context.h"
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vespalib/gtest/gtest.h>

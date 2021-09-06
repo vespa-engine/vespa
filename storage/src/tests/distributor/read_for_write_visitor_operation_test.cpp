@@ -6,7 +6,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>

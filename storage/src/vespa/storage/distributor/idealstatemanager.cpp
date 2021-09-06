@@ -2,7 +2,7 @@
 
 #include "idealstatemanager.h"
 #include "statecheckers.h"
-#include "distributor.h"
+#include "top_level_distributor.h"
 #include "idealstatemetricsset.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>

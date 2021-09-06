@@ -7,7 +7,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>

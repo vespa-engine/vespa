@@ -3,7 +3,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>

@@ -52,7 +52,7 @@ class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
 
-class Distributor final
+class TopLevelDistributor final
     : public StorageLink,
       public DistributorInterface,
       public StatusDelegator,
@@ -63,16 +63,16 @@ class Distributor final
       public StripeHostInfoNotifier
 {
 public:
-    Distributor(DistributorComponentRegister&,
-                const NodeIdentity& node_identity,
-                framework::TickingThreadPool&,
-                DistributorStripePool& stripe_pool,
-                DoneInitializeHandler&,
-                uint32_t num_distributor_stripes,
-                HostInfo& hostInfoReporterRegistrar,
-                ChainedMessageSender* = nullptr);
+    TopLevelDistributor(DistributorComponentRegister&,
+                        const NodeIdentity& node_identity,
+                        framework::TickingThreadPool&,
+                        DistributorStripePool& stripe_pool,
+                        DoneInitializeHandler&,
+                        uint32_t num_distributor_stripes,
+                        HostInfo& hostInfoReporterRegistrar,
+                        ChainedMessageSender* = nullptr);
 
-    ~Distributor() override;
+    ~TopLevelDistributor() override;
 
     void onOpen() override;
     void onClose() override;
@@ -113,7 +113,7 @@ public:
     class MetricUpdateHook : public framework::MetricUpdateHook
     {
     public:
-        MetricUpdateHook(Distributor& self)
+        MetricUpdateHook(TopLevelDistributor& self)
             : _self(self)
         {
         }
@@ -123,7 +123,7 @@ public:
         }
 
     private:
-        Distributor& _self;
+        TopLevelDistributor& _self;
     };
 
 private:

@@ -4,7 +4,7 @@
 #include "bucket_db_prune_elision.h"
 #include "bucket_space_distribution_configs.h"
 #include "bucket_space_distribution_context.h"
-#include "distributor.h"
+#include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "simpleclusterinformation.h"

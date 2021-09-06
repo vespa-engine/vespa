@@ -11,7 +11,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_status.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -98,7 +98,7 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return _distributor->_status_to_do;
     }
 
-    Distributor::MetricUpdateHook distributor_metric_update_hook() {
+    TopLevelDistributor::MetricUpdateHook distributor_metric_update_hook() {
         return _distributor->_metricUpdateHook;
     }
 

@@ -17,7 +17,7 @@ namespace framework { struct TickingThreadPool; }
 
 namespace distributor {
 
-class Distributor;
+class TopLevelDistributor;
 class DistributorMetricSet;
 class DistributorNodeContext;
 class DistributorStripe;
@@ -106,7 +106,7 @@ protected:
     std::unique_ptr<TestDistributorApp> _node;
     std::unique_ptr<framework::TickingThreadPool> _thread_pool;
     std::unique_ptr<DistributorStripePool> _stripe_pool;
-    std::unique_ptr<Distributor> _distributor;
+    std::unique_ptr<TopLevelDistributor> _distributor;
     std::unique_ptr<storage::DistributorComponent> _component;
     DistributorMessageSenderStub _sender;
     DistributorMessageSenderStub _sender_down;

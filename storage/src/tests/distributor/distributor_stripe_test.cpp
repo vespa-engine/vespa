@@ -5,7 +5,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
-#include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
