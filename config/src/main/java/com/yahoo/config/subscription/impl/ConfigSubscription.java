@@ -40,28 +40,31 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         private final T config;
         private final Long generation;
         private final boolean applyOnRestart;
+        private final PayloadChecksum payloadChecksum;
 
         private ConfigState(boolean generationChanged,
                             Long generation,
                             boolean applyOnRestart,
                             boolean configChanged,
-                            T config) {
+                            T config,
+                            PayloadChecksum payloadChecksum) {
             this.generationChanged = generationChanged;
             this.generation = generation;
             this.applyOnRestart = applyOnRestart;
             this.configChanged = configChanged;
             this.config = config;
+            this.payloadChecksum = payloadChecksum;
         }
 
-        private ConfigState(Long generation, T config) {
-            this(false, generation, false, false, config);
+        private ConfigState(Long generation, T config, PayloadChecksum payloadChecksum) {
+            this(false, generation, false, false, config, payloadChecksum);
         }
 
         private ConfigState() {
-            this(false, 0L, false, false, null);
+            this(false, 0L, false, false, null, PayloadChecksum.empty());
         }
 
-        private ConfigState<T> createUnchanged() {  return new ConfigState<>(generation, config); }
+        private ConfigState<T> createUnchanged() {  return new ConfigState<>(generation, config, payloadChecksum); }
 
         public boolean isConfigChanged() { return configChanged; }
 
@@ -72,6 +75,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         public boolean applyOnRestart() { return applyOnRestart; }
 
         public T getConfig() { return config; }
+
+        public PayloadChecksum getChecksum() { return payloadChecksum; }
 
     }
 
@@ -190,8 +195,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         return !prev.getGeneration().equals(requiredGen) || prev.isConfigChanged();
     }
 
-    void setConfig(Long generation, boolean applyOnRestart, T config) {
-        this.config.set(new ConfigState<>(true, generation, applyOnRestart, true, config));
+    void setConfig(Long generation, boolean applyOnRestart, T config, PayloadChecksum payloadChecksum) {
+        this.config.set(new ConfigState<>(true, generation, applyOnRestart, true, config, payloadChecksum));
     }
 
     /**
@@ -199,22 +204,22 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      */
     protected void setConfigIncGen(T config) {
         ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.applyOnRestart(), true, config));
+        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.applyOnRestart(), true, config, prev.payloadChecksum));
     }
 
     protected void setConfigIfChanged(T config) {
         ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !config.equals(prev.getConfig()), config));
+        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !config.equals(prev.getConfig()), config, prev.payloadChecksum));
     }
 
     void setGeneration(Long generation) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.isConfigChanged(), prev.getConfig()));
+        this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.isConfigChanged(), prev.getConfig(), prev.payloadChecksum));
     }
 
     void setApplyOnRestart(boolean applyOnRestart) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), applyOnRestart, prev.isConfigChanged(), prev.getConfig()));
+        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), applyOnRestart, prev.isConfigChanged(), prev.getConfig(), prev.payloadChecksum));
     }
 
     /**
