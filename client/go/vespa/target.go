@@ -29,6 +29,7 @@ const (
 type Service struct {
 	BaseURL     string
 	Name        string
+	description string
 	certificate tls.Certificate
 }
 
@@ -51,6 +52,14 @@ type customTarget struct {
 
 type localTarget struct{ targetType string }
 
+// Do sends request to this service. Any required authentication happens automatically.
+func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
+	if s.certificate.Certificate != nil {
+		util.ActiveHttpClient.UseCertificate(s.certificate)
+	}
+	return util.HttpDo(request, timeout, s.Description())
+}
+
 // Wait polls the health check of this service until it succeeds or timeout passes.
 func (s *Service) Wait(timeout time.Duration) (int, error) {
 	url := s.BaseURL
@@ -67,8 +76,20 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 		return 0, err
 	}
 	okFunc := func(status int, response []byte) (string, bool) { return "", status/100 == 2 }
-	status, _, err := wait(okFunc, req, &s.certificate, timeout)
+	status, _, err := wait(okFunc, req, s.certificate, timeout)
 	return status, err
+}
+
+func (s *Service) Description() string {
+	switch s.Name {
+	case queryService:
+		return "Container (search API)"
+	case documentService:
+		return "Container (document API)"
+	case deployService:
+		return "Deploy API"
+	}
+	return fmt.Sprintf("No description of service %s", s.Name)
 }
 
 func (t *customTarget) Type() string { return t.targetType }
@@ -153,7 +174,7 @@ func (t *cloudTarget) DiscoverServices(timeout time.Duration) error {
 		}
 		return resp.Endpoints[0].URL, true
 	}
-	_, endpoint, err := wait(endpointFunc, req, &t.keyPair, timeout)
+	_, endpoint, err := wait(endpointFunc, req, t.keyPair, timeout)
 	if err != nil {
 		return err
 	}
@@ -194,9 +215,9 @@ type deploymentResponse struct {
 
 type responseFunc func(status int, response []byte) (string, bool)
 
-func wait(fn responseFunc, req *http.Request, certificate *tls.Certificate, timeout time.Duration) (int, string, error) {
-	if certificate != nil {
-		util.ActiveHttpClient.UseCertificate(*certificate)
+func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeout time.Duration) (int, string, error) {
+	if certificate.Certificate != nil {
+		util.ActiveHttpClient.UseCertificate(certificate)
 	}
 	var (
 		httpErr    error
