@@ -18,12 +18,21 @@ import (
 
 var exitFunc = os.Exit // To allow overriding Exit in tests
 
+func fatalErrHint(err error, hints ...string) {
+	printErrHint(err, hints...)
+	exitFunc(1)
+}
+
+func fatalErr(err error, msg ...interface{}) {
+	printErr(err, msg...)
+	exitFunc(1)
+}
+
 func printErrHint(err error, hints ...string) {
 	printErr(nil, err.Error())
 	for _, hint := range hints {
 		log.Print(color.Cyan("Hint: "), hint)
 	}
-	exitFunc(1)
 }
 
 func printErr(err error, msg ...interface{}) {
@@ -33,7 +42,6 @@ func printErr(err error, msg ...interface{}) {
 	if err != nil {
 		log.Print(color.Yellow(err))
 	}
-	exitFunc(1)
 }
 
 func printSuccess(msg ...interface{}) {
@@ -45,7 +53,7 @@ func readAPIKey(tenant string) []byte {
 	apiKeyPath := filepath.Join(configDir, tenant+".api-key.pem")
 	key, err := os.ReadFile(apiKeyPath)
 	if err != nil {
-		printErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+		fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 	}
 	return key
 }
@@ -53,11 +61,11 @@ func readAPIKey(tenant string) []byte {
 func deploymentFromArgs() vespa.Deployment {
 	zone, err := vespa.ZoneFromString(zoneArg)
 	if err != nil {
-		printErrHint(err, "Zone format is <env>.<region>")
+		fatalErrHint(err, "Zone format is <env>.<region>")
 	}
 	app, err := vespa.ApplicationFromString(getApplication())
 	if err != nil {
-		printErrHint(err, "Application format is <tenant>.<app>.<instance>")
+		fatalErrHint(err, "Application format is <tenant>.<app>.<instance>")
 	}
 	return vespa.Deployment{Application: app, Zone: zone}
 }
@@ -72,7 +80,7 @@ func applicationSource(args []string) string {
 func getApplication() string {
 	app, err := getOption(applicationFlag)
 	if err != nil {
-		printErr(err, "A valid application must be specified")
+		fatalErr(err, "A valid application must be specified")
 	}
 	return app
 }
@@ -80,7 +88,7 @@ func getApplication() string {
 func getTargetType() string {
 	target, err := getOption(targetFlag)
 	if err != nil {
-		printErr(err, "A valid target must be specified")
+		fatalErr(err, "A valid target must be specified")
 	}
 	return target
 }
@@ -92,11 +100,11 @@ func getService(service string) *vespa.Service {
 		log.Printf("Waiting up to %d %s for services to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
 	if err := t.DiscoverServices(timeout); err != nil {
-		printErr(err, "Services unavailable")
+		fatalErr(err, "Services unavailable")
 	}
 	s, err := t.Service(service)
 	if err != nil {
-		printErr(err, "Invalid service")
+		fatalErr(err, "Invalid service")
 	}
 	return s
 }
@@ -117,11 +125,11 @@ func getTarget() vespa.Target {
 		certificateFile := filepath.Join(configDir, "data-plane-public-cert.pem")
 		kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
 		if err != nil {
-			printErr(err, "Could not read key pair")
+			fatalErr(err, "Could not read key pair")
 		}
 		return vespa.CloudTarget(deployment, kp, apiKey)
 	}
-	printErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
+	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil
 }
 

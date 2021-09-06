@@ -30,7 +30,7 @@ var certCmd = &cobra.Command{
 		app := getApplication()
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
-			printErr(err)
+			fatalErr(err)
 			return
 		}
 		configDir := configDir(app)
@@ -44,7 +44,7 @@ var certCmd = &cobra.Command{
 		if !overwriteCertificate {
 			for _, file := range []string{pkgCertificateFile, privateKeyFile, certificateFile} {
 				if util.PathExists(file) {
-					printErrHint(fmt.Errorf("Certificate or private key %s already exists", color.Cyan(file)), "Use -f flag to force overwriting")
+					fatalErrHint(fmt.Errorf("Certificate or private key %s already exists", color.Cyan(file)), "Use -f flag to force overwriting")
 					return
 				}
 			}
@@ -52,23 +52,23 @@ var certCmd = &cobra.Command{
 
 		keyPair, err := vespa.CreateKeyPair()
 		if err != nil {
-			printErr(err, "Could not create key pair")
+			fatalErr(err, "Could not create key pair")
 			return
 		}
 		if err := os.MkdirAll(securityDir, 0755); err != nil {
-			printErr(err, "Could not create security directory")
+			fatalErr(err, "Could not create security directory")
 			return
 		}
 		if err := keyPair.WriteCertificateFile(pkgCertificateFile, overwriteCertificate); err != nil {
-			printErr(err, "Could not write certificate")
+			fatalErr(err, "Could not write certificate")
 			return
 		}
 		if err := keyPair.WriteCertificateFile(certificateFile, overwriteCertificate); err != nil {
-			printErr(err, "Could not write certificate")
+			fatalErr(err, "Could not write certificate")
 			return
 		}
 		if err := keyPair.WritePrivateKeyFile(privateKeyFile, overwriteCertificate); err != nil {
-			printErr(err, "Could not write private key")
+			fatalErr(err, "Could not write private key")
 			return
 		}
 		printSuccess("Certificate written to ", color.Cyan(pkgCertificateFile))

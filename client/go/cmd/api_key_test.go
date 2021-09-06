@@ -19,4 +19,5 @@ func TestAPIKey(t *testing.T) {
 
 	out = execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, configDir: configDir}, t, nil)
 	assert.True(t, strings.HasPrefix(out, "Error: File "+keyFile+" already exists\nHint: Use -f to overwrite it\n"))
+	assert.True(t, strings.Contains(out, "This is your public key"))
 }

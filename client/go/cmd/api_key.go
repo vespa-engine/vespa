@@ -34,7 +34,7 @@ var apiKeyCmd = &cobra.Command{
 		}
 		app, err := vespa.ApplicationFromString(getApplication())
 		if err != nil {
-			printErr(err, "Could not parse application")
+			fatalErr(err, "Could not parse application")
 			return
 		}
 		apiKeyFile := filepath.Join(configDir, app.Tenant+".api-key.pem")
@@ -45,14 +45,14 @@ var apiKeyCmd = &cobra.Command{
 		}
 		apiKey, err := vespa.CreateAPIKey()
 		if err != nil {
-			printErr(err, "Could not create API key")
+			fatalErr(err, "Could not create API key")
 			return
 		}
 		if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 			printSuccess("API private key written to ", apiKeyFile)
 			printPublicKey(apiKeyFile, app.Tenant)
 		} else {
-			printErr(err, "Failed to write ", apiKeyFile)
+			fatalErr(err, "Failed to write ", apiKeyFile)
 		}
 	},
 }
@@ -60,22 +60,22 @@ var apiKeyCmd = &cobra.Command{
 func printPublicKey(apiKeyFile, tenant string) {
 	pemKeyData, err := os.ReadFile(apiKeyFile)
 	if err != nil {
-		printErr(err, "Failed to read ", apiKeyFile)
+		fatalErr(err, "Failed to read ", apiKeyFile)
 		return
 	}
 	key, err := vespa.ECPrivateKeyFrom(pemKeyData)
 	if err != nil {
-		printErr(err, "Failed to load key")
+		fatalErr(err, "Failed to load key")
 		return
 	}
 	pemPublicKey, err := vespa.PEMPublicKeyFrom(key)
 	if err != nil {
-		printErr(err, "Failed to extract public key")
+		fatalErr(err, "Failed to extract public key")
 		return
 	}
 	fingerprint, err := vespa.FingerprintMD5(pemPublicKey)
 	if err != nil {
-		printErr(err, "Failed to extract fingerprint")
+		fatalErr(err, "Failed to extract fingerprint")
 	}
 	log.Printf("\nThis is your public key:\n%s", color.Green(pemPublicKey))
 	log.Printf("Its fingerprint is:\n%s\n", color.Cyan(fingerprint))
