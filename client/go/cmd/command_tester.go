@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 type command struct {

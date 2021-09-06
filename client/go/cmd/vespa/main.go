@@ -5,7 +5,7 @@
 package main
 
 import (
-	"github.com/vespa-engine/vespa/cmd"
+	"github.com/vespa-engine/vespa/client/go/cmd"
 )
 
 func main() {

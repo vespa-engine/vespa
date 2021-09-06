@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/util"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 // Set this to test without downloading this file from github

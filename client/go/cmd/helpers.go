@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vespa-engine/vespa/vespa"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var exitFunc = os.Exit // To allow overriding Exit in tests
