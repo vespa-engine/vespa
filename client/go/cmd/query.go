@@ -22,7 +22,7 @@ func init() {
 var queryCmd = &cobra.Command{
 	Use:     "query <query-parameters>",
 	Short:   "Issue a query to Vespa",
-	Example: `$ vespa query "yql=select from sources * where title contains 'foo';" hits=5`,
+	Example: `$ vespa query "yql=select * from sources * where title contains 'foo';" hits=5`,
 	Long: `Issue a query to Vespa.
 
 Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
@@ -35,7 +35,8 @@ can be set by the syntax [parameter-name]=[value].`,
 }
 
 func query(arguments []string) {
-	url, _ := url.Parse(queryTarget() + "/search/")
+	service := getService("query")
+	url, _ := url.Parse(service.BaseURL + "/search/")
 	urlQuery := url.Query()
 	for i := 0; i < len(arguments); i++ {
 		key, value := splitArg(arguments[i])
@@ -43,8 +44,7 @@ func query(arguments []string) {
 	}
 	url.RawQuery = urlQuery.Encode()
 
-	// TODO: Make this work for Vespa Cloud (pass certificate)
-	response, err := util.HttpDo(&http.Request{URL: url}, time.Second*10, "Container")
+	response, err := service.Do(&http.Request{URL: url}, time.Second*10)
 	if err != nil {
 		log.Print(color.Red("Error: "), "Request failed: ", err)
 		return
@@ -69,8 +69,4 @@ func splitArg(argument string) (string, string) {
 	} else {
 		return argument[0:equalsIndex], argument[equalsIndex+1:]
 	}
-}
-
-func queryTarget() string {
-	return getService("query").BaseURL
 }

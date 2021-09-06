@@ -60,7 +60,7 @@ has started but may not have completed.`,
 		if err := vespa.Deploy(opts); err == nil {
 			printSuccess("Deployed ", color.Cyan(pkg.Path))
 			if opts.IsCloud() {
-				log.Printf("\n\nUse %s for deployment status, or see", color.Cyan("vespa status"))
+				log.Printf("\nUse %s for deployment status, or see", color.Cyan("vespa status"))
 				log.Print(color.Cyan(fmt.Sprintf("https://console.vespa.oath.cloud/tenant/%s/application/%s/dev/instance/%s", opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance)))
 			}
 		} else {

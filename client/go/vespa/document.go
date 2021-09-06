@@ -17,24 +17,24 @@ import (
 )
 
 // Sends the operation given in the file
-func Send(jsonFile string, target string) util.OperationResult {
-	return sendOperation("", jsonFile, target, anyOperation)
+func Send(jsonFile string, service *Service) util.OperationResult {
+	return sendOperation("", jsonFile, service, anyOperation)
 }
 
-func Put(documentId string, jsonFile string, target string) util.OperationResult {
-	return sendOperation(documentId, jsonFile, target, putOperation)
+func Put(documentId string, jsonFile string, service *Service) util.OperationResult {
+	return sendOperation(documentId, jsonFile, service, putOperation)
 }
 
-func Update(documentId string, jsonFile string, target string) util.OperationResult {
-	return sendOperation(documentId, jsonFile, target, updateOperation)
+func Update(documentId string, jsonFile string, service *Service) util.OperationResult {
+	return sendOperation(documentId, jsonFile, service, updateOperation)
 }
 
-func RemoveId(documentId string, target string) util.OperationResult {
-	return sendOperation(documentId, "", target, removeOperation)
+func RemoveId(documentId string, service *Service) util.OperationResult {
+	return sendOperation(documentId, "", service, removeOperation)
 }
 
-func RemoveOperation(jsonFile string, target string) util.OperationResult {
-	return sendOperation("", jsonFile, target, removeOperation)
+func RemoveOperation(jsonFile string, service *Service) util.OperationResult {
+	return sendOperation("", jsonFile, service, removeOperation)
 }
 
 const (
@@ -44,7 +44,7 @@ const (
 	removeOperation string = "remove"
 )
 
-func sendOperation(documentId string, jsonFile string, target string, operation string) util.OperationResult {
+func sendOperation(documentId string, jsonFile string, service *Service, operation string) util.OperationResult {
 	header := http.Header{}
 	header.Add("Content-Type", "application/json")
 
@@ -82,9 +82,9 @@ func sendOperation(documentId string, jsonFile string, target string, operation 
 		return util.Failure("Invalid document id '" + documentId + "': " + documentPathError.Error())
 	}
 
-	url, urlParseError := url.Parse(target + "/document/v1/" + documentPath)
+	url, urlParseError := url.Parse(service.BaseURL + "/document/v1/" + documentPath)
 	if urlParseError != nil {
-		return util.Failure("Invalid request path: '" + target + "/document/v1/" + documentPath + "': " + urlParseError.Error())
+		return util.Failure("Invalid request path: '" + service.BaseURL + "/document/v1/" + documentPath + "': " + urlParseError.Error())
 	}
 
 	request := &http.Request{
@@ -93,8 +93,7 @@ func sendOperation(documentId string, jsonFile string, target string, operation 
 		Header: header,
 		Body:   ioutil.NopCloser(bytes.NewReader(documentData)),
 	}
-	serviceDescription := "Container (document API)"
-	response, err := util.HttpDo(request, time.Second*60, serviceDescription)
+	response, err := service.Do(request, time.Second*60)
 	if response == nil {
 		return util.Failure("Request failed: " + err.Error())
 	}
@@ -105,7 +104,7 @@ func sendOperation(documentId string, jsonFile string, target string, operation 
 	} else if response.StatusCode/100 == 4 {
 		return util.FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
 	} else {
-		return util.FailureWithPayload(serviceDescription+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+		return util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
 }
 
@@ -133,24 +132,22 @@ func operationToHTTPMethod(operation string) string {
 	panic("Unexpected document operation ''" + operation + "'")
 }
 
-func Get(documentId string, target string) util.OperationResult {
+func Get(documentId string, service *Service) util.OperationResult {
 	documentPath, documentPathError := IdToURLPath(documentId)
 	if documentPathError != nil {
 		return util.Failure("Invalid document id '" + documentId + "': " + documentPathError.Error())
 	}
 
-	url, urlParseError := url.Parse(target + "/document/v1/" + documentPath)
+	url, urlParseError := url.Parse(service.BaseURL + "/document/v1/" + documentPath)
 	if urlParseError != nil {
-		return util.Failure("Invalid request path: '" + target + "/document/v1/" + documentPath + "': " + urlParseError.Error())
+		return util.Failure("Invalid request path: '" + service.BaseURL + "/document/v1/" + documentPath + "': " + urlParseError.Error())
 	}
 
 	request := &http.Request{
 		URL:    url,
 		Method: "GET",
 	}
-	serviceDescription := "Container (document API)"
-	// TODO: Make this work for Vespa Cloud (pass certificate)
-	response, err := util.HttpDo(request, time.Second*60, serviceDescription)
+	response, err := service.Do(request, time.Second*60)
 	if response == nil {
 		return util.Failure("Request failed: " + err.Error())
 	}
@@ -161,6 +158,6 @@ func Get(documentId string, target string) util.OperationResult {
 	} else if response.StatusCode/100 == 4 {
 		return util.FailureWithPayload("Invalid document operation: "+response.Status, util.ReaderToJSON(response.Body))
 	} else {
-		return util.FailureWithPayload(serviceDescription+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
+		return util.FailureWithPayload(service.Description()+" at "+request.URL.Host+": "+response.Status, util.ReaderToJSON(response.Body))
 	}
 }

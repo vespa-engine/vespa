@@ -37,7 +37,7 @@ should be used instead of this.`,
 	Example: `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Send(args[0], documentTarget()), false)
+		printResult(vespa.Send(args[0], documentService()), false)
 	},
 }
 
@@ -52,9 +52,9 @@ If the document id is specified both as an argument and in the file the argument
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
-			printResult(vespa.Put("", args[0], documentTarget()), false)
+			printResult(vespa.Put("", args[0], documentService()), false)
 		} else {
-			printResult(vespa.Put(args[0], args[1], documentTarget()), false)
+			printResult(vespa.Put(args[0], args[1], documentService()), false)
 		}
 	},
 }
@@ -69,9 +69,9 @@ If the document id is specified both as an argument and in the file the argument
 $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
-			printResult(vespa.Update("", args[0], documentTarget()), false)
+			printResult(vespa.Update("", args[0], documentService()), false)
 		} else {
-			printResult(vespa.Update(args[0], args[1], documentTarget()), false)
+			printResult(vespa.Update(args[0], args[1], documentService()), false)
 		}
 	},
 }
@@ -86,9 +86,9 @@ If the document id is specified both as an argument and in the file the argument
 $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if strings.HasPrefix(args[0], "id:") {
-			printResult(vespa.RemoveId(args[0], documentTarget()), false)
+			printResult(vespa.RemoveId(args[0], documentService()), false)
 		} else {
-			printResult(vespa.RemoveOperation(args[0], documentTarget()), false)
+			printResult(vespa.RemoveOperation(args[0], documentService()), false)
 		}
 	},
 }
@@ -98,13 +98,11 @@ var documentGetCmd = &cobra.Command{
 	Short: "Gets a document",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		printResult(vespa.Get(args[0], documentTarget()), true)
+		printResult(vespa.Get(args[0], documentService()), true)
 	},
 }
 
-func documentTarget() string {
-	return getService("document").BaseURL
-}
+func documentService() *vespa.Service { return getService("document") }
 
 func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
 	if !result.Success {
