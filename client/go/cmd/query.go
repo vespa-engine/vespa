@@ -22,7 +22,7 @@ func init() {
 var queryCmd = &cobra.Command{
 	Use:     "query <query-parameters>",
 	Short:   "Issue a query to Vespa",
-	Example: `$ vespa query "yql=select from sources * where title contains 'foo';" hits=5`,
+	Example: `$ vespa query "yql=select * from sources * where title contains 'foo';" hits=5`,
 	Long: `Issue a query to Vespa.
 
 Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
