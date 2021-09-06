@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -77,7 +76,7 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         Search search = createSearch("src/test/examples/rankingexpressioninfile", new TestProperties(), registry);
-        new DerivedConfiguration(search, new BaseDeployLogger(), new TestProperties(), registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
+        new DerivedConfiguration(search, registry); // rank profile parsing happens during deriving
     }
 
     private void verifyProfile(RankProfile profile, List<String> expectedFunctions, List<Pair<String, String>> rankProperties,
@@ -100,7 +99,6 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     private void verifySearch(Search search, RankProfileRegistry rankProfileRegistry, LargeRankExpressions largeExpressions,
                               QueryProfileRegistry queryProfiles, ImportedMlModels models, ModelContext.Properties properties)
     {
-        ;
         AttributeFields attributes = new AttributeFields(search);
 
         verifyProfile(rankProfileRegistry.get(search, "base"), Arrays.asList("large_f", "large_m"),
