@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
@@ -11,6 +11,7 @@ import java.lang.reflect.Constructor;
 
 /**
  * Subscription on a programmatically built set of configs
+ *
  * @author Vegard Havdal
  */
 public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubscription<T> {
@@ -20,11 +21,11 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     ConfigSetSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource cset) {
         super(key, subscriber);
-        if (!(cset instanceof ConfigSet)) throw new IllegalArgumentException("Source is not a ConfigSet: "+cset);
-        this.set=(ConfigSet) cset;
+        if (!(cset instanceof ConfigSet)) throw new IllegalArgumentException("Source is not a ConfigSet: " + cset);
+        this.set = (ConfigSet) cset;
         subKey = new ConfigKey<>(configClass, key.getConfigId());
         if (!set.contains(subKey)) {
-            throw new IllegalArgumentException("The given ConfigSet "+set+" does not contain a config for "+subKey);
+            throw new IllegalArgumentException("The given ConfigSet " + set + " does not contain a config for " + subKey);
         }
         setGeneration(0L);
     }

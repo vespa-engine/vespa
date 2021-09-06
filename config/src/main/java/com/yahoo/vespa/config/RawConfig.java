@@ -140,7 +140,7 @@ public class RawConfig extends ConfigInstance {
      * @return  true if this config is equal to the config in the given request.
      */
     public boolean hasEqualConfig(JRTServerConfigRequest req) {
-        return (getConfigMd5().equals(req.getRequestConfigMd5()));
+        return getConfigMd5().equals(req.getRequestConfigMd5());
     }
 
     /**
