@@ -44,7 +44,7 @@ has started but may not have completed.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
-			printErr(nil, err.Error())
+			fatalErr(nil, err.Error())
 			return
 		}
 		target := getTarget()
@@ -52,7 +52,7 @@ has started but may not have completed.`,
 		if opts.IsCloud() {
 			deployment := deploymentFromArgs()
 			if !opts.ApplicationPackage.HasCertificate() {
-				printErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
+				fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
 			}
 			opts.APIKey = readAPIKey(deployment.Application.Tenant)
 			opts.Deployment = deployment
@@ -65,7 +65,7 @@ has started but may not have completed.`,
 			}
 			waitForQueryService()
 		} else {
-			printErr(nil, err.Error())
+			fatalErr(nil, err.Error())
 		}
 	},
 }
@@ -77,7 +77,7 @@ var prepareCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
-			printErr(err, "Could not find application package")
+			fatalErr(err, "Could not find application package")
 			return
 		}
 		configDir := configDir("default")
@@ -93,7 +93,7 @@ var prepareCmd = &cobra.Command{
 			writeSessionID(configDir, sessionID)
 			printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", sessionID)
 		} else {
-			printErr(nil, err.Error())
+			fatalErr(nil, err.Error())
 		}
 	},
 }
@@ -105,7 +105,7 @@ var activateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
-			printErr(err, "Could not find application package")
+			fatalErr(err, "Could not find application package")
 			return
 		}
 		configDir := configDir("default")
@@ -119,7 +119,7 @@ var activateCmd = &cobra.Command{
 			printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
 			waitForQueryService()
 		} else {
-			printErr(nil, err.Error())
+			fatalErr(nil, err.Error())
 		}
 	},
 }
@@ -133,21 +133,21 @@ func waitForQueryService() {
 
 func writeSessionID(appConfigDir string, sessionID int64) {
 	if err := os.MkdirAll(appConfigDir, 0755); err != nil {
-		printErr(err, "Could not create directory for session ID")
+		fatalErr(err, "Could not create directory for session ID")
 	}
 	if err := os.WriteFile(sessionIDFile(appConfigDir), []byte(fmt.Sprintf("%d\n", sessionID)), 0600); err != nil {
-		printErr(err, "Could not write session ID")
+		fatalErr(err, "Could not write session ID")
 	}
 }
 
 func readSessionID(appConfigDir string) int64 {
 	b, err := os.ReadFile(sessionIDFile(appConfigDir))
 	if err != nil {
-		printErr(err, "Could not read session ID")
+		fatalErr(err, "Could not read session ID")
 	}
 	id, err := strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
 	if err != nil {
-		printErr(err, "Invalid session ID")
+		fatalErr(err, "Invalid session ID")
 	}
 	return id
 }

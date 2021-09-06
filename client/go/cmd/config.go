@@ -86,13 +86,13 @@ func configDir(application string) string {
 		var err error
 		home, err = os.UserHomeDir()
 		if err != nil {
-			printErr(err, "Could not determine configuration directory")
+			fatalErr(err, "Could not determine configuration directory")
 			return ""
 		}
 	}
 	configDir := filepath.Join(home, ".vespa", application)
 	if err := os.MkdirAll(configDir, 0755); err != nil {
-		printErr(err, "Could not create config directory")
+		fatalErr(err, "Could not create config directory")
 		return ""
 	}
 	return configDir
@@ -119,7 +119,7 @@ func readConfig() {
 		return // Fine
 	}
 	if err != nil {
-		printErr(err, "Could not read configuration")
+		fatalErr(err, "Could not read configuration")
 	}
 }
 
@@ -167,7 +167,7 @@ func writeConfig() {
 
 	if !util.PathExists(configDir) {
 		if err := os.MkdirAll(configDir, 0700); err != nil {
-			printErr(err, "Could not create ", color.Cyan(configDir))
+			fatalErr(err, "Could not create ", color.Cyan(configDir))
 			return
 		}
 	}
@@ -175,13 +175,13 @@ func writeConfig() {
 	configFile := filepath.Join(configDir, configName+"."+configType)
 	if !util.PathExists(configFile) {
 		if _, err := os.Create(configFile); err != nil {
-			printErr(err, "Could not create ", color.Cyan(configFile))
+			fatalErr(err, "Could not create ", color.Cyan(configFile))
 			return
 		}
 	}
 
 	if err := viper.WriteConfig(); err != nil {
-		printErr(err, "Could not write config")
+		fatalErr(err, "Could not write config")
 		return
 	}
 }
