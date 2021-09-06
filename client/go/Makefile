@@ -2,8 +2,13 @@
 
 all: test checkfmt install
 
+# When building a new release the build system should set the VERSION
+# environment variable to version being built
+VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
+
 install:
-	env GOBIN=$(PWD)/bin go install ./...
+	env GOBIN=$(PWD)/bin \
+		go install -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)" ./...
 
 test:
 	go test ./...
