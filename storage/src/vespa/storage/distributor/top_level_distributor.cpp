@@ -2,7 +2,7 @@
 //
 #include "blockingoperationstarter.h"
 #include "bucket_space_distribution_configs.h"
-#include "bucketdbupdater.h"
+#include "top_level_bucket_db_updater.h"
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributor_status.h"
@@ -112,10 +112,10 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
         LOG(debug, "Setting up distributor with %u stripes using %u stripe bits",
             num_distributor_stripes, _n_stripe_bits);
         _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
-        _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
-                                                               *this, *this,
-                                                               _component.getDistribution(),
-                                                               *_stripe_accessor);
+        _bucket_db_updater = std::make_unique<TopLevelBucketDBUpdater>(_component, _component,
+                                                                       *this, *this,
+                                                                       _component.getDistribution(),
+                                                                       *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
         for (size_t i = 1; i < num_distributor_stripes; ++i) {
             _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg,
@@ -429,7 +429,7 @@ TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 bool
 TopLevelDistributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    // TODO STRIPE this is used by tests. Do we need to invoke top-level BucketDBUpdater for any of them?
+    // TODO STRIPE this is used by tests. Do we need to invoke TopLevelBucketDBUpdater for any of them?
     assert(_use_legacy_mode);
     return _stripe->handleReply(reply);
 }

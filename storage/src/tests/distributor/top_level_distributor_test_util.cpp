@@ -199,7 +199,7 @@ TopLevelDistributorTestUtil::get_bucket(const document::BucketId& bId) const
     return stripe_bucket_database(stripe_of_bucket(bId)).get(bId);
 }
 
-BucketDBUpdater&
+TopLevelBucketDBUpdater&
 TopLevelDistributorTestUtil::bucket_db_updater() {
     return *_distributor->_bucket_db_updater;
 }

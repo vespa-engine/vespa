@@ -21,7 +21,7 @@ class DistributorBucketSpaceRepo;
 class StripeAccessGuard;
 
 /**
- * Class used by BucketDBUpdater to track request bucket info
+ * Class used by TopLevelBucketDBUpdater to track request bucket info
  * messages sent to the storage nodes.
  */
 class PendingClusterState : public vespalib::XmlSerializable {

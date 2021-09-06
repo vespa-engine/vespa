@@ -8,7 +8,6 @@ vespa_add_library(storage_distributor
     bucket_space_distribution_context.cpp
     bucket_space_state_map.cpp
     bucket_spaces_stats_provider.cpp
-    bucketdbupdater.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
     clusterinformation.cpp
@@ -51,6 +50,7 @@ vespa_add_library(storage_distributor
     statusreporterdelegate.cpp
     stripe_bucket_db_updater.cpp
     throttlingoperationstarter.cpp
+    top_level_bucket_db_updater.cpp
     top_level_distributor.cpp
     update_metric_set.cpp
     visitormetricsset.cpp

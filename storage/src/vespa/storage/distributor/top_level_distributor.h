@@ -3,7 +3,7 @@
 #pragma once
 
 #include "bucket_spaces_stats_provider.h"
-#include "bucketdbupdater.h"
+#include "top_level_bucket_db_updater.h"
 #include "distributor_component.h"
 #include "distributor_host_info_reporter.h"
 #include "distributor_interface.h"
@@ -40,7 +40,7 @@ namespace storage::distributor {
 
 class BlockingOperationStarter;
 class BucketPriorityDatabase;
-class BucketDBUpdater;
+class TopLevelBucketDBUpdater;
 class DistributorBucketSpaceRepo;
 class DistributorStatus;
 class DistributorStripe;
@@ -140,7 +140,7 @@ private:
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
 
     /**
-     * Enables a new cluster state. Used by tests to bypass BucketDBUpdater.
+     * Enables a new cluster state. Used by tests to bypass TopLevelBucketDBUpdater.
      */
     void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle);
 
@@ -225,7 +225,7 @@ private:
     distributor::DistributorComponent    _component;
     storage::DistributorComponent        _ideal_state_component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
-    std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;
+    std::unique_ptr<TopLevelBucketDBUpdater>     _bucket_db_updater;
     StatusReporterDelegate               _distributorStatusDelegate;
     std::unique_ptr<StatusReporterDelegate> _bucket_db_status_delegate;
     framework::TickingThreadPool&        _threadPool;

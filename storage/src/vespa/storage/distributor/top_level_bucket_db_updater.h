@@ -32,18 +32,18 @@ class DistributorInterface;
 class StripeAccessor;
 class StripeAccessGuard;
 
-class BucketDBUpdater : public framework::StatusReporter,
-                        public api::MessageHandler
+class TopLevelBucketDBUpdater : public framework::StatusReporter,
+                                public api::MessageHandler
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    BucketDBUpdater(const DistributorNodeContext& node_ctx,
-                    DistributorOperationContext& op_ctx,
-                    DistributorInterface& distributor_interface,
-                    ChainedMessageSender& chained_sender,
-                    std::shared_ptr<const lib::Distribution> bootstrap_distribution,
-                    StripeAccessor& stripe_accessor);
-    ~BucketDBUpdater() override;
+    TopLevelBucketDBUpdater(const DistributorNodeContext& node_ctx,
+                            DistributorOperationContext& op_ctx,
+                            DistributorInterface& distributor_interface,
+                            ChainedMessageSender& chained_sender,
+                            std::shared_ptr<const lib::Distribution> bootstrap_distribution,
+                            StripeAccessor& stripe_accessor);
+    ~TopLevelBucketDBUpdater() override;
 
     void flush();
 
@@ -75,7 +75,7 @@ private:
     friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
     friend class TopLevelDistributorTestUtil;
-    // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
+    // Only to be used by tests that want to ensure both the TopLevelBucketDBUpdater _and_ the Distributor
     // components agree on the currently active cluster state bundle.
     // Transitively invokes Distributor::enableClusterStateBundle
     void simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state,

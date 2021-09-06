@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "bucketdbupdater.h"
+#include "top_level_bucket_db_updater.h"
 #include "bucket_db_prune_elision.h"
 #include "bucket_space_distribution_configs.h"
 #include "bucket_space_distribution_context.h"
@@ -27,12 +27,12 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(const DistributorNodeContext& node_ctx,
-                                 DistributorOperationContext& op_ctx,
-                                 DistributorInterface& distributor_interface,
-                                 ChainedMessageSender& chained_sender,
-                                 std::shared_ptr<const lib::Distribution> bootstrap_distribution,
-                                 StripeAccessor& stripe_accessor)
+TopLevelBucketDBUpdater::TopLevelBucketDBUpdater(const DistributorNodeContext& node_ctx,
+                                                 DistributorOperationContext& op_ctx,
+                                                 DistributorInterface& distributor_interface,
+                                                 ChainedMessageSender& chained_sender,
+                                                 std::shared_ptr<const lib::Distribution> bootstrap_distribution,
+                                                 StripeAccessor& stripe_accessor)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _stripe_accessor(stripe_accessor),
       _active_state_bundle(lib::ClusterState()),
@@ -52,10 +52,10 @@ BucketDBUpdater::BucketDBUpdater(const DistributorNodeContext& node_ctx,
     bootstrap_distribution_config(bootstrap_distribution);
 }
 
-BucketDBUpdater::~BucketDBUpdater() = default;
+TopLevelBucketDBUpdater::~TopLevelBucketDBUpdater() = default;
 
 void
-BucketDBUpdater::propagate_active_state_bundle_internally() {
+TopLevelBucketDBUpdater::propagate_active_state_bundle_internally() {
     for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         for (auto& iter : *repo) {
             iter.second->setClusterState(_active_state_bundle.getDerivedClusterState(iter.first));
@@ -64,7 +64,7 @@ BucketDBUpdater::propagate_active_state_bundle_internally() {
 }
 
 void
-BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
+TopLevelBucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
@@ -75,7 +75,7 @@ BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distri
 }
 
 void
-BucketDBUpdater::propagate_distribution_config(const BucketSpaceDistributionConfigs& configs) {
+TopLevelBucketDBUpdater::propagate_distribution_config(const BucketSpaceDistributionConfigs& configs) {
     for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::default_space())) {
             repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distr);
@@ -90,32 +90,32 @@ BucketDBUpdater::propagate_distribution_config(const BucketSpaceDistributionConf
 //   Must at the very least ensure we use stripe-local TS generation for DB inserts...! i.e. no global TS
 //   Or do we have to touch these at all here? Just defer all this via stripe interface?
 void
-BucketDBUpdater::flush()
+TopLevelBucketDBUpdater::flush()
 {
     // TODO STRIPE: Consider if this must flush_and_close() all stripes
 }
 
 void
-BucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& indent) const
+TopLevelBucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) verbose; (void) indent;
-    out << "BucketDBUpdater";
+    out << "TopLevelBucketDBUpdater";
 }
 
 bool
-BucketDBUpdater::should_defer_state_enabling() const noexcept
+TopLevelBucketDBUpdater::should_defer_state_enabling() const noexcept
 {
     return stale_reads_enabled();
 }
 
 bool
-BucketDBUpdater::has_pending_cluster_state() const
+TopLevelBucketDBUpdater::has_pending_cluster_state() const
 {
     return static_cast<bool>(_pending_cluster_state);
 }
 
 void
-BucketDBUpdater::remove_superfluous_buckets(
+TopLevelBucketDBUpdater::remove_superfluous_buckets(
         StripeAccessGuard& guard,
         const lib::ClusterStateBundle& new_state,
         bool is_distribution_config_change)
@@ -162,17 +162,17 @@ void maybe_sleep_for(std::chrono::milliseconds ms) {
 }
 
 void
-BucketDBUpdater::maybe_inject_simulated_db_pruning_delay() {
+TopLevelBucketDBUpdater::maybe_inject_simulated_db_pruning_delay() {
     maybe_sleep_for(_op_ctx.distributor_config().simulated_db_pruning_latency());
 }
 
 void
-BucketDBUpdater::maybe_inject_simulated_db_merging_delay() {
+TopLevelBucketDBUpdater::maybe_inject_simulated_db_merging_delay() {
     maybe_sleep_for(_op_ctx.distributor_config().simulated_db_merging_latency());
 }
 
 void
-BucketDBUpdater::ensure_transition_timer_started()
+TopLevelBucketDBUpdater::ensure_transition_timer_started()
 {
     // Don't overwrite start time if we're already processing a state, as
     // that will make transition times appear artificially low.
@@ -182,14 +182,14 @@ BucketDBUpdater::ensure_transition_timer_started()
 }
 
 void
-BucketDBUpdater::complete_transition_timer()
+TopLevelBucketDBUpdater::complete_transition_timer()
 {
     _distributor_interface.metrics()
             .stateTransitionTime.addValue(_transition_timer.getElapsedTimeAsDouble());
 }
 
 void
-BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfigs& configs)
+TopLevelBucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfigs& configs)
 {
     propagate_distribution_config(configs);
     ensure_transition_timer_started();
@@ -215,7 +215,7 @@ BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfi
 }
 
 void
-BucketDBUpdater::reply_to_previous_pending_cluster_state_if_any()
+TopLevelBucketDBUpdater::reply_to_previous_pending_cluster_state_if_any()
 {
     if (_pending_cluster_state.get() && _pending_cluster_state->hasCommand()) {
         _chained_sender.sendUp(
@@ -224,7 +224,7 @@ BucketDBUpdater::reply_to_previous_pending_cluster_state_if_any()
 }
 
 void
-BucketDBUpdater::reply_to_activation_with_actual_version(
+TopLevelBucketDBUpdater::reply_to_activation_with_actual_version(
         const api::ActivateClusterStateVersionCommand& cmd,
         uint32_t actualVersion)
 {
@@ -234,7 +234,7 @@ BucketDBUpdater::reply_to_activation_with_actual_version(
 }
 
 bool
-BucketDBUpdater::onSetSystemState(
+TopLevelBucketDBUpdater::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& cmd)
 {
     LOG(debug, "Received new cluster state %s",
@@ -281,7 +281,7 @@ BucketDBUpdater::onSetSystemState(
 }
 
 bool
-BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
+TopLevelBucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
     if (has_pending_cluster_state() && _pending_cluster_state->isVersionedTransition()) {
         const auto pending_version = _pending_cluster_state->clusterStateVersion();
@@ -315,7 +315,7 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
 }
 
 bool
-BucketDBUpdater::onRequestBucketInfoReply(
+TopLevelBucketDBUpdater::onRequestBucketInfoReply(
         const std::shared_ptr<api::RequestBucketInfoReply>& repl)
 {
     if (pending_cluster_state_accepted(repl)) {
@@ -325,7 +325,7 @@ BucketDBUpdater::onRequestBucketInfoReply(
 }
 
 bool
-BucketDBUpdater::pending_cluster_state_accepted(
+TopLevelBucketDBUpdater::pending_cluster_state_accepted(
         const std::shared_ptr<api::RequestBucketInfoReply>& repl)
 {
     if (_pending_cluster_state.get()
@@ -343,7 +343,7 @@ BucketDBUpdater::pending_cluster_state_accepted(
 }
 
 void
-BucketDBUpdater::resend_delayed_messages()
+TopLevelBucketDBUpdater::resend_delayed_messages()
 {
     if (_pending_cluster_state) {
         _pending_cluster_state->resendDelayedMessages();
@@ -351,13 +351,13 @@ BucketDBUpdater::resend_delayed_messages()
 }
 
 bool
-BucketDBUpdater::is_pending_cluster_state_completed() const
+TopLevelBucketDBUpdater::is_pending_cluster_state_completed() const
 {
     return _pending_cluster_state.get() && _pending_cluster_state->done();
 }
 
 void
-BucketDBUpdater::process_completed_pending_cluster_state(StripeAccessGuard& guard)
+TopLevelBucketDBUpdater::process_completed_pending_cluster_state(StripeAccessGuard& guard)
 {
     if (_pending_cluster_state->isDeferred()) {
         LOG(debug, "Deferring completion of pending cluster state version %u until explicitly activated",
@@ -381,7 +381,7 @@ BucketDBUpdater::process_completed_pending_cluster_state(StripeAccessGuard& guar
 }
 
 void
-BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
+TopLevelBucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
 {
     framework::MilliSecTimer process_timer(_node_ctx.clock());
 
@@ -414,21 +414,21 @@ BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
 }
 
 void
-BucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard)
+TopLevelBucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard)
 {
     const lib::ClusterStateBundle& state = _pending_cluster_state->getNewClusterStateBundle();
 
     _active_state_bundle = _pending_cluster_state->getNewClusterStateBundle();
     propagate_active_state_bundle_internally();
 
-    LOG(debug, "BucketDBUpdater finished processing state %s",
+    LOG(debug, "TopLevelBucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
 
     guard.enable_cluster_state_bundle(state, _pending_cluster_state->hasBucketOwnershipTransfer());
 }
 
-void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state,
-                                                               bool has_bucket_ownership_transfer)
+void TopLevelBucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state,
+                                                                       bool has_bucket_ownership_transfer)
 {
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
     guard->enable_cluster_state_bundle(activated_state, has_bucket_ownership_transfer);
@@ -438,7 +438,7 @@ void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::Cluste
 }
 
 void
-BucketDBUpdater::add_current_state_to_cluster_state_history()
+TopLevelBucketDBUpdater::add_current_state_to_cluster_state_history()
 {
     _history.push_back(_pending_cluster_state->getSummary());
 
@@ -448,7 +448,7 @@ BucketDBUpdater::add_current_state_to_cluster_state_history()
 }
 
 vespalib::string
-BucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) const
+TopLevelBucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) const
 {
     return "text/xml";
 }
@@ -462,13 +462,13 @@ const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
 }
 
 bool
-BucketDBUpdater::reportStatus(std::ostream& out,
-                              const framework::HttpUrlPath& path) const
+TopLevelBucketDBUpdater::reportStatus(std::ostream& out,
+                                      const framework::HttpUrlPath& path) const
 {
     using namespace vespalib::xml;
     XmlOutputStream xos(out);
     // FIXME(vekterli): have to do this manually since we cannot inherit
-    // directly from XmlStatusReporter due to data races when BucketDBUpdater
+    // directly from XmlStatusReporter due to data races when TopLevelBucketDBUpdater
     // gets status requests directly.
     xos << XmlTag("status")
         << XmlAttribute("id", BUCKETDB)
@@ -479,8 +479,8 @@ BucketDBUpdater::reportStatus(std::ostream& out,
 }
 
 vespalib::string
-BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
-                                   const framework::HttpUrlPath&) const
+TopLevelBucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
+                                           const framework::HttpUrlPath&) const
 {
     using namespace vespalib::xml;
     xos << XmlTag("bucketdb")
