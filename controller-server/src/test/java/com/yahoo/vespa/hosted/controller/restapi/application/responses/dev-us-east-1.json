@@ -21,6 +21,7 @@
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",
+  "status": "complete",
   "quota": "(ignore)",
   "activity": {
     "lastQueried": 1527848130000,

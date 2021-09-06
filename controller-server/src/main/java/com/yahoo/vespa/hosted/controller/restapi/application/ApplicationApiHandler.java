@@ -1424,6 +1424,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                 response.setString("status", "pending");
                             else response.setString("status", "running");
                         });
+            } else {
+                var deploymentRun = JobType.from(controller.system(), deploymentId.zoneId())
+                        .flatMap(jobType -> controller.jobController().last(deploymentId.applicationId(), jobType));
+
+                deploymentRun.ifPresent(run -> {
+                    response.setString("status", run.hasEnded() ? "complete" : "running");
+                });
             }
         }
 
