@@ -400,10 +400,23 @@ class RestApiImpl implements RestApi {
         @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
         @Override public UriBuilder uriBuilder() {
             URI uri = request.getUri();
-            int uriPort = uri.getPort();
-            return uriPort != -1
-                    ? new UriBuilder(uri.getScheme() + "://" + uri.getHost() + ':' + uriPort)
-                    : new UriBuilder(uri.getScheme() + "://" + uri.getHost());
+            // Reconstruct the URI used by the client to access the API.
+            // This is needed for producing URIs in the response that links to other parts of the Rest API.
+            // request.getUri() cannot be used as its port is the local listen port (as it's intended for request routing).
+            StringBuilder sb = new StringBuilder(uri.getScheme()).append("://");
+            String hostHeader = request.getHeader("X-Forwarded-Host");
+            if (hostHeader == null || hostHeader.isBlank()) {
+                hostHeader = request.getHeader("Host");
+            }
+            if (hostHeader != null && !hostHeader.isBlank()) {
+                sb.append(hostHeader);
+            } else {
+                sb.append(uri.getHost());
+                if (uri.getPort() > 0) {
+                    sb.append(":").append(uri.getPort());
+                }
+            }
+            return new UriBuilder(sb.toString());
         }
         @Override public AclMapping.Action aclAction() { return aclAction; }
         @Override public Optional<Principal> userPrincipal() {

@@ -128,6 +128,11 @@ public interface RestApi {
         Optional<RequestContent> requestContent();
         RequestContent requestContentOrThrow();
         ObjectMapper jacksonJsonMapper();
+        /**
+         * Creates a URI builder pre-initialized with scheme, host and port.
+         * Intended for response generation (e.g for interactive REST APIs).
+         * DO NOT USE FOR CUSTOM ROUTING.
+         */
         UriBuilder uriBuilder();
         AclMapping.Action aclAction();
         Optional<Principal> userPrincipal();
