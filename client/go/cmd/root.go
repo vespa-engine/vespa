@@ -36,6 +36,7 @@ Vespa documentation: https://docs.vespa.ai`,
 const (
 	applicationFlag = "application"
 	targetFlag      = "target"
+	waitFlag        = "wait"
 )
 
 func configureLogger() {
@@ -49,7 +50,7 @@ func init() {
 	cobra.OnInitialize(readConfig)
 	rootCmd.PersistentFlags().StringVarP(&targetArg, targetFlag, "t", "local", "The name or URL of the recipient of this command")
 	rootCmd.PersistentFlags().StringVarP(&applicationArg, applicationFlag, "a", "", "The application to manage")
-	rootCmd.PersistentFlags().IntVarP(&waitSecsArg, "wait", "w", 0, "Number of seconds to wait for a service to become ready")
+	rootCmd.PersistentFlags().IntVarP(&waitSecsArg, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	bindFlagToConfig(targetFlag, rootCmd)
 	bindFlagToConfig(applicationFlag, rootCmd)
 }

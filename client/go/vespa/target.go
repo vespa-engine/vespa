@@ -83,7 +83,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 func (s *Service) Description() string {
 	switch s.Name {
 	case queryService:
-		return "Container (search API)"
+		return "Container (query API)"
 	case documentService:
 		return "Container (document API)"
 	case deployService:
