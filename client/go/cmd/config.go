@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -145,6 +146,12 @@ func setOption(option, value string) error {
 	case applicationFlag:
 		if _, err := vespa.ApplicationFromString(value); err != nil {
 			return err
+		}
+		viper.Set(option, value)
+		return nil
+	case waitFlag:
+		if _, err := strconv.ParseUint(value, 10, 32); err != nil {
+			return fmt.Errorf("%s option must be an integer >= 0, got %q", option, value)
 		}
 		viper.Set(option, value)
 		return nil
