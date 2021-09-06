@@ -114,11 +114,7 @@ public class TenantController {
             TenantId.validate(tenantSpec.tenant().value());
             curator.writeTenant(accessControl.createTenant(tenantSpec, controller.clock().instant(), credentials, asList()));
 
-            try {
-                controller.serviceRegistry().roleService().createTenantRole(tenantSpec.tenant());
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to create tenant role for tenant: " + tenantSpec.tenant());
-            }
+            // We should create tenant roles here but it takes too long - assuming the TenantRoleMaintainer will do it Soon™
         }
     }
 
