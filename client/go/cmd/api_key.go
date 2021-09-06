@@ -79,6 +79,7 @@ func printPublicKey(apiKeyFile, tenant string) {
 	}
 	log.Printf("\nThis is your public key:\n%s", color.Green(pemPublicKey))
 	log.Printf("Its fingerprint is:\n%s\n", color.Cyan(fingerprint))
-	log.Print("\nTo use this key in Vespa Cloud it must be added to your tenant here:")
+	log.Print("\nTo use this key in Vespa Cloud click 'Add custom key' at")
 	log.Printf(color.Cyan("https://console.vespa.oath.cloud/tenant/%s/keys").String(), tenant)
+	log.Print("and paste the entire public key including the BEGIN and END lines.")
 }
