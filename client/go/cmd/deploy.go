@@ -63,6 +63,7 @@ has started but may not have completed.`,
 				log.Printf("\nUse %s for deployment status, or see", color.Cyan("vespa status"))
 				log.Print(color.Cyan(fmt.Sprintf("https://console.vespa.oath.cloud/tenant/%s/application/%s/dev/instance/%s", opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance)))
 			}
+			waitForQueryService()
 		} else {
 			printErr(nil, err.Error())
 		}
@@ -116,10 +117,18 @@ var activateCmd = &cobra.Command{
 		})
 		if err == nil {
 			printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
+			waitForQueryService()
 		} else {
 			printErr(nil, err.Error())
 		}
 	},
+}
+
+func waitForQueryService() {
+	if waitSecsArg > 0 {
+		log.Println()
+		waitForService("query")
+	}
 }
 
 func writeSessionID(appConfigDir string, sessionID int64) {

@@ -5,10 +5,6 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-	"time"
-
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +21,7 @@ var statusCmd = &cobra.Command{
 	Example: `$ vespa status query`,
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		status("query", "Query API")
+		waitForService("query")
 	},
 }
 
@@ -35,7 +31,7 @@ var statusQueryCmd = &cobra.Command{
 	Example: `$ vespa status query`,
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		status("query", "Query API")
+		waitForService("query")
 	},
 }
 
@@ -45,7 +41,7 @@ var statusDocumentCmd = &cobra.Command{
 	Example: `$ vespa status document`,
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		status("document", "Document API")
+		waitForService("document")
 	},
 }
 
@@ -55,25 +51,6 @@ var statusDeployCmd = &cobra.Command{
 	Example: `$ vespa status deploy`,
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		status("deploy", "Deploy API")
+		waitForService("deploy")
 	},
-}
-
-func status(service string, description string) {
-	s := getService(service)
-	timeout := time.Duration(waitSecsArg) * time.Second
-	if timeout > 0 {
-		log.Printf("Waiting %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
-	}
-	status, err := s.Wait(timeout)
-	if status/100 == 2 {
-		log.Print(description, " at ", color.Cyan(s.BaseURL), " is ", color.Green("ready"))
-	} else {
-		log.Print(description, " at ", color.Cyan(s.BaseURL), " is ", color.Red("not ready"))
-		if err == nil {
-			log.Print(color.Yellow(fmt.Sprintf("Status %d", status)))
-		} else {
-			log.Print(color.Yellow(err))
-		}
-	}
 }

@@ -54,13 +54,13 @@ func assertDeployStatus(target string, args []string, t *testing.T) {
 func assertQueryStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"Query API at "+target+" is ready\n",
+		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "query"}, args),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
 
 	assert.Equal(t,
-		"Query API at "+target+" is ready\n",
+		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status"}, args),
 		"vespa status (the default)")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
@@ -69,7 +69,7 @@ func assertQueryStatus(target string, args []string, t *testing.T) {
 func assertDocumentStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
 	assert.Equal(t,
-		"Document API at "+target+" is ready\n",
+		"Container (document API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "document"}, args),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
@@ -78,7 +78,7 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 func assertQueryStatusError(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{nextStatus: 500}
 	assert.Equal(t,
-		"Query API at "+target+" is not ready\nStatus 500\n",
+		"Container (query API) at "+target+" is not ready\nStatus 500\n",
 		executeCommand(t, client, []string{"status", "container"}, args),
 		"vespa status container")
 }
