@@ -190,22 +190,22 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
-            "use-external-rank-expression", false,
-            List.of("baldersheim"), "2021-05-24", "2021-09-01",
+            "use-external-rank-expression", true,
+            List.of("baldersheim"), "2021-05-24", "2021-09-15",
             "Whether to use distributed external rank expression or inline in rankproperties",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISTRIBUTE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
             "distribute-external-rank-expression", false,
-            List.of("baldersheim"), "2021-05-27", "2021-09-01",
+            List.of("baldersheim"), "2021-05-27", "2021-09-15",
             "Whether to use distributed external rank expression files by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
-            "large-rank-expression-limit", 0x10000,
-            List.of("baldersheim"), "2021-06-09", "2021-09-01",
+            "large-rank-expression-limit", 8192,
+            List.of("baldersheim"), "2021-06-09", "2021-09-15",
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
