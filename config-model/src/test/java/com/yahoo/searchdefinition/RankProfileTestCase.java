@@ -88,7 +88,7 @@ public class RankProfileTestCase extends SchemaTestCase {
                 "search test {\n" +
                         "  document test { } \n" +
                         "  rank-profile p1 inherits not_yet_defined {}\n" +
-                        "  rank-profile not_yet_defined inherits not_yet_defined {}\n" +
+                        "  rank-profile not_yet_defined {}\n" +
                         "}");
         builder.build(true);
         assertNotNull(registry.get("test","p1"));
