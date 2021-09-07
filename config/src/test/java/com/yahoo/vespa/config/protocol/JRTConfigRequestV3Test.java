@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.subscription.ConfigSet;
@@ -201,8 +201,7 @@ public class JRTConfigRequestV3Test {
         assertTrue(sub.nextConfig(120_0000));
         sub.close();
         JRTClientConfigRequest nextReq = createReq(sub, Trace.createNew());
-        SimpletypesConfig config = sub.getConfigState().getConfig();
-        assertThat(nextReq.getRequestConfigMd5(), is(config.getConfigMd5()));
+        assertThat(nextReq.getRequestConfigMd5(), is(sub.getConfigState().getChecksum().asString()));
         assertThat(nextReq.getRequestGeneration(), is(currentGeneration));
     }
 

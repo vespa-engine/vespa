@@ -23,10 +23,11 @@ func init() {
 }
 
 var apiKeyCmd = &cobra.Command{
-	Use:     "api-key",
-	Short:   "Create a new user API key for authentication with Vespa Cloud",
-	Example: "$ vespa api-key -a my-tenant.my-app.my-instance",
-	Args:    cobra.ExactArgs(0),
+	Use:               "api-key",
+	Short:             "Create a new user API key for authentication with Vespa Cloud",
+	Example:           "$ vespa api-key -a my-tenant.my-app.my-instance",
+	DisableAutoGenTag: true,
+	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		configDir := configDir("")
 		if configDir == "" {

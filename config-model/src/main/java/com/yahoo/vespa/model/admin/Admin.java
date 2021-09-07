@@ -147,13 +147,13 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
 
     public ClusterControllerContainerCluster getClusterControllers() { return clusterControllers; }
 
-    public void setClusterControllers(ClusterControllerContainerCluster clusterControllers, DeployLogger deployLogger) {
+    public void setClusterControllers(ClusterControllerContainerCluster clusterControllers, DeployState deployState) {
         this.clusterControllers = clusterControllers;
         if (isHostedVespa) {
             // Prefer to put Slobroks on the admin cluster running cluster controllers to avoid unnecessary
             // movement of the slobroks when there are changes to the content cluster nodes
             removeSlobroks();
-            addSlobroks(createSlobroksOn(clusterControllers, deployLogger));
+            addSlobroks(createSlobroksOn(clusterControllers, deployState));
         }
     }
 
@@ -162,13 +162,13 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         slobroks.clear();
     }
 
-    private List<Slobrok> createSlobroksOn(ClusterControllerContainerCluster clusterControllers, DeployLogger deployLogger) {
+    private List<Slobrok> createSlobroksOn(ClusterControllerContainerCluster clusterControllers, DeployState deployState) {
         List<Slobrok> slobroks = new ArrayList<>();
         for (ClusterControllerContainer clusterController : clusterControllers.getContainers()) {
-            Slobrok slobrok = new Slobrok(this, clusterController.index());
+            Slobrok slobrok = new Slobrok(this, clusterController.index(), deployState.featureFlags());
             slobrok.setHostResource(clusterController.getHostResource());
             slobroks.add(slobrok);
-            slobrok.initService(deployLogger);
+            slobrok.initService(deployState.getDeployLogger());
         }
         return slobroks;
     }
@@ -218,7 +218,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
      */
     public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
-            slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
+            slobroks.addAll(createDefaultSlobrokSetup(deployState));
 
         if (! deployState.isHosted() || ! deployState.getProperties().applicationId().instance().isTester())
             addMetricsProxyCluster(hosts, deployState);
@@ -295,12 +295,12 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host
-    private List<Slobrok> createDefaultSlobrokSetup(DeployLogger deployLogger) {
+    private List<Slobrok> createDefaultSlobrokSetup(DeployState deployState) {
         List<HostResource> hosts = hostSystem().getHosts();
         List<Slobrok> slobs = new ArrayList<>();
         if (logserver != null) {
-            Slobrok slobrok = new Slobrok(this, 0);
-            addAndInitializeService(deployLogger, logserver.getHostResource(), slobrok);
+            Slobrok slobrok = new Slobrok(this, 0, deployState.featureFlags());
+            addAndInitializeService(deployState.getDeployLogger(), logserver.getHostResource(), slobrok);
             slobs.add(slobrok);
         }
 
@@ -308,8 +308,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         while ((n < hosts.size()) && (slobs.size() < 3)) {
             HostResource host = hosts.get(n);
             if ((logserver== null || host != logserver.getHostResource()) && ! host.getHost().runsConfigServer()) {
-                Slobrok newSlobrok = new Slobrok(this, slobs.size());
-                addAndInitializeService(deployLogger, host, newSlobrok);
+                Slobrok newSlobrok = new Slobrok(this, slobs.size(), deployState.featureFlags());
+                addAndInitializeService(deployState.getDeployLogger(), host, newSlobrok);
                 slobs.add(newSlobrok);
             }
             n++;

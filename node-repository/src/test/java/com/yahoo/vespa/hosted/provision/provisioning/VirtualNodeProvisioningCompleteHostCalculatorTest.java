@@ -81,7 +81,7 @@ public class VirtualNodeProvisioningCompleteHostCalculatorTest {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (node.parentHostname().isEmpty()) return node.resources(); // hosts use configured flavors
             return realResourcesOf(node.resources());
         }

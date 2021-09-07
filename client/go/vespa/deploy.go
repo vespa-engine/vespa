@@ -146,7 +146,7 @@ func ZoneFromString(s string) (ZoneID, error) {
 // Prepare deployment and return the session ID
 func Prepare(deployment DeploymentOpts) (int64, error) {
 	if deployment.IsCloud() {
-		return 0, fmt.Errorf("%s: prepare is not supported", deployment)
+		return 0, fmt.Errorf("prepare is not supported with %s target", deployment.Target.Type())
 	}
 	sessionURL, err := deployment.url("/application/v2/tenant/default/session")
 	if err != nil {
@@ -179,7 +179,7 @@ func Prepare(deployment DeploymentOpts) (int64, error) {
 // Activate deployment with sessionID from a past prepare
 func Activate(sessionID int64, deployment DeploymentOpts) error {
 	if deployment.IsCloud() {
-		return fmt.Errorf("%s: activate is not supported", deployment)
+		return fmt.Errorf("activate is not supported with %s target", deployment.Target.Type())
 	}
 	u, err := deployment.url(fmt.Sprintf("/application/v2/tenant/default/session/%d/active", sessionID))
 	if err != nil {

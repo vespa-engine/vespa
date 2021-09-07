@@ -26,7 +26,9 @@ Use it on Vespa instances running locally, remotely or in the cloud.
 Prefer web service API's to this in production.
 
 Vespa documentation: https://docs.vespa.ai`,
+		DisableAutoGenTag: true,
 	}
+
 	color          aurora.Aurora
 	targetArg      string
 	applicationArg string
@@ -53,6 +55,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&waitSecsArg, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	bindFlagToConfig(targetFlag, rootCmd)
 	bindFlagToConfig(applicationFlag, rootCmd)
+	bindFlagToConfig(waitFlag, rootCmd)
 }
 
 // Execute executes the root command.

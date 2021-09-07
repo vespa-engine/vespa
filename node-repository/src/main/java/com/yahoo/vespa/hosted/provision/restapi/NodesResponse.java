@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -115,8 +116,9 @@ class NodesResponse extends SlimeJsonResponse {
         toSlime(node, true, object);
     }
 
-    @SuppressWarnings("deprecation")
     private void toSlime(Node node, boolean allFields, Cursor object) {
+        NodeResources realResources = nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository);
+
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
         object.setString("id", node.hostname());
@@ -134,6 +136,7 @@ class NodesResponse extends SlimeJsonResponse {
         if (node.flavor().isConfigured())
             object.setDouble("cpuCores", node.flavor().resources().vcpu());
         NodeResourcesSerializer.toSlime(node.flavor().resources(), object.setObject("resources"));
+        NodeResourcesSerializer.toSlime(realResources, object.setObject("realResources"));
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setString("environment", node.flavor().getType().name());

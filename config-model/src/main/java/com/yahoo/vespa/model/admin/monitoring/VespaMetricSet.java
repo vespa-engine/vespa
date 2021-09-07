@@ -782,6 +782,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.mergethrottler.bounced_due_to_back_pressure.rate"));
         metrics.add(new Metric("vds.mergethrottler.locallyexecutedmerges.ok.rate"));
         metrics.add(new Metric("vds.mergethrottler.mergechains.ok.rate"));
+        metrics.add(new Metric("vds.mergethrottler.mergechains.failures.busy.rate"));
+        metrics.add(new Metric("vds.mergethrottler.mergechains.failures.total.rate"));
         return metrics;
     }
 

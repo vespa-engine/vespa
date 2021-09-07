@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
+import com.yahoo.config.subscription.impl.PayloadChecksum;
 import com.yahoo.vespa.config.protocol.RequestValidation;
 import org.junit.Test;
 
@@ -20,11 +21,11 @@ public class RequestValidationTest {
 
     @Test
     public void testVerifyDefMd5() {
-        assertTrue(RequestValidation.verifyMd5(""));
-        assertTrue(RequestValidation.verifyMd5("e8f0c01c7c3dcb8d3f62d7ff777fce6b"));
-        assertTrue(RequestValidation.verifyMd5("e8f0c01c7c3dcb8d3f62d7ff777fce6B"));
-        assertFalse(RequestValidation.verifyMd5("aaaaaaaaaaaaaaaaaa"));
-        assertFalse(RequestValidation.verifyMd5("-8f0c01c7c3dcb8d3f62d7ff777fce6b"));
+        assertTrue(PayloadChecksum.empty().valid());
+        assertTrue(new PayloadChecksum("e8f0c01c7c3dcb8d3f62d7ff777fce6b").valid());
+        assertTrue(new PayloadChecksum("e8f0c01c7c3dcb8d3f62d7ff777fce6B").valid());
+        assertFalse(new PayloadChecksum("aaaaaaaaaaaaaaaaaa").valid());
+        assertFalse(new PayloadChecksum("-8f0c01c7c3dcb8d3f62d7ff777fce6b").valid());
     }
 
     @Test
@@ -32,4 +33,5 @@ public class RequestValidationTest {
         assertTrue(RequestValidation.verifyTimeout(1000L));
         assertFalse(RequestValidation.verifyTimeout(-1000L));
     }
+
 }

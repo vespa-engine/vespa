@@ -12,9 +12,10 @@ func init() {
 }
 
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Show version number",
-	Args:  cobra.ExactArgs(0),
+	Use:               "version",
+	Short:             "Show version number",
+	DisableAutoGenTag: true,
+	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Print("vespa version ", build.Version)
 	},

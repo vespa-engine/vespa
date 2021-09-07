@@ -9,6 +9,7 @@
   "flavor": "d-2-8-100",
   "cpuCores": 2.0,
   "resources":{"vcpu":2.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"remote"},
+  "realResources":{"vcpu":2.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"remote"},
   "environment": "DOCKER_CONTAINER",
   "owner": {
     "tenant": "tenant3",

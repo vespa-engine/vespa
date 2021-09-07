@@ -28,8 +28,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -362,7 +360,7 @@ class AutoscalingTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (zone.getCloud().dynamicProvisioning())
                 return node.resources().withMemoryGb(node.resources().memoryGb() - 3);
             else

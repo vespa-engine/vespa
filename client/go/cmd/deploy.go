@@ -33,15 +33,18 @@ func init() {
 }
 
 var deployCmd = &cobra.Command{
-	Use:   "deploy <application-directory>",
+	Use:   "deploy [<application-directory>]",
 	Short: "Deploy (prepare and activate) an application package",
 	Long: `Deploy (prepare and activate) an application package.
 
 When this returns successfully the application package has been validated
 and activated on config servers. The process of applying it on individual nodes
-has started but may not have completed.`,
-	Example: "$ vespa deploy .",
-	Args:    cobra.MaximumNArgs(1),
+has started but may not have completed.
+
+If application directory is not specified, it defaults to working directory.`,
+	Example:           "$ vespa deploy .",
+	Args:              cobra.MaximumNArgs(1),
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
@@ -72,9 +75,10 @@ has started but may not have completed.`,
 }
 
 var prepareCmd = &cobra.Command{
-	Use:   "prepare <application-directory>",
-	Short: "Prepare an application package for activation",
-	Args:  cobra.MaximumNArgs(1),
+	Use:               "prepare <application-directory>",
+	Short:             "Prepare an application package for activation",
+	Args:              cobra.MaximumNArgs(1),
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
@@ -100,9 +104,10 @@ var prepareCmd = &cobra.Command{
 }
 
 var activateCmd = &cobra.Command{
-	Use:   "activate",
-	Short: "Activate (deploy) a previously prepared application package",
-	Args:  cobra.MaximumNArgs(1),
+	Use:               "activate",
+	Short:             "Activate (deploy) a previously prepared application package",
+	Args:              cobra.MaximumNArgs(1),
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {

@@ -1,14 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
@@ -17,6 +9,14 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 /**
  * Subscription to use when config id is jar:.../foo.jar[!/pathInJar/]
@@ -63,7 +63,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } catch (IOException e) {
                 throw new ConfigurationRuntimeException(e);
             }
-            setConfig(0L, false, config);
+            setConfig(0L, false, config, PayloadChecksum.empty());
             try {
                 jarFile.close();
             } catch (IOException e) {
