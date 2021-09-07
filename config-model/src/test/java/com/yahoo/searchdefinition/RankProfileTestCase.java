@@ -92,7 +92,7 @@ public class RankProfileTestCase extends SchemaTestCase {
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("There is a cycle in the inheritance for rank-profile 'self' = [self, self]", e.getMessage());
+            assertEquals("There is a cycle in the inheritance for rank-profile 'test.self' = [test.self, test.self]", e.getMessage());
         }
     }
 
@@ -111,7 +111,7 @@ public class RankProfileTestCase extends SchemaTestCase {
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("There is a cycle in the inheritance for rank-profile 'c' = [c, a, b, c]", e.getMessage());
+            assertEquals("There is a cycle in the inheritance for rank-profile 'test.c' = [test.c, test.a, test.b, test.c]", e.getMessage());
         }
     }
 

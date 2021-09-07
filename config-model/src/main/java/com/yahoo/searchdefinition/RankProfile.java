@@ -217,17 +217,22 @@ public class RankProfile implements Cloneable {
                 }
             } else {
                 List<String> children = new ArrayList<>();
-                children.add(getName());
+                children.add(createFullyQualifiedName());
                 verifyNoInheritanceCycle(children, inherited);
             }
         }
         return inherited;
     }
+    private String createFullyQualifiedName() {
+        return (search != null)
+                ? (search.getName() + "." + getName())
+                : getName();
+    }
 
     private void verifyNoInheritanceCycle(List<String> children, RankProfile parent) {
-        children.add(parent.getName());
+        children.add(parent.createFullyQualifiedName());
         String root = children.get(0);
-        if (root.equals(parent.getName())) {
+        if (root.equals(parent.createFullyQualifiedName())) {
             throw new IllegalArgumentException("There is a cycle in the inheritance for rank-profile '" + root + "' = " + children);
         }
         if (parent.getInherited() != null) {
