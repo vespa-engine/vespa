@@ -32,8 +32,9 @@ func init() {
 }
 
 var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Configure default values for flags",
+	Use:               "config",
+	Short:             "Configure default values for flags",
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing
 		cmd.Help()
@@ -42,10 +43,11 @@ var configCmd = &cobra.Command{
 }
 
 var setConfigCmd = &cobra.Command{
-	Use:     "set <option> <value>",
-	Short:   "Set a configuration option.",
-	Example: "$ vespa config set target cloud",
-	Args:    cobra.ExactArgs(2),
+	Use:               "set <option> <value>",
+	Short:             "Set a configuration option.",
+	Example:           "$ vespa config set target cloud",
+	DisableAutoGenTag: true,
+	Args:              cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := setOption(args[0], args[1]); err != nil {
 			log.Print(err)
@@ -56,10 +58,11 @@ var setConfigCmd = &cobra.Command{
 }
 
 var getConfigCmd = &cobra.Command{
-	Use:     "get [<option>]",
-	Short:   "Get a configuration option",
-	Example: "$ vespa config get target",
-	Args:    cobra.MaximumNArgs(1),
+	Use:               "get [<option>]",
+	Short:             "Get a configuration option",
+	Example:           "$ vespa config get target",
+	Args:              cobra.MaximumNArgs(1),
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 { // Print all values
 			printOption(targetFlag)

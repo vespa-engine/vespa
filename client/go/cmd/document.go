@@ -34,8 +34,9 @@ subsequent get or query operation.
 
 To feed with high throughput, https://docs.vespa.ai/en/vespa-feed-client.html
 should be used instead of this.`,
-	Example: `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
-	Args:    cobra.ExactArgs(1),
+	Example:           `$ vespa document src/test/resources/A-Head-Full-of-Dreams.json`,
+	DisableAutoGenTag: true,
+	Args:              cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		printResult(vespa.Send(args[0], documentService()), false)
 	},
@@ -50,6 +51,7 @@ If the document id is specified both as an argument and in the file the argument
 	Args: cobra.RangeArgs(1, 2),
 	Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
 			printResult(vespa.Put("", args[0], documentService()), false)
@@ -67,6 +69,7 @@ If the document id is specified both as an argument and in the file the argument
 	Args: cobra.RangeArgs(1, 2),
 	Example: `$ vespa document update src/test/resources/A-Head-Full-of-Dreams-Update.json
 $ vespa document update id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 1 {
 			printResult(vespa.Update("", args[0], documentService()), false)
@@ -84,6 +87,7 @@ If the document id is specified both as an argument and in the file the argument
 	Args: cobra.ExactArgs(1),
 	Example: `$ vespa document remove src/test/resources/A-Head-Full-of-Dreams-Remove.json
 $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if strings.HasPrefix(args[0], "id:") {
 			printResult(vespa.RemoveId(args[0], documentService()), false)
@@ -94,9 +98,10 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 }
 
 var documentGetCmd = &cobra.Command{
-	Use:   "get <id>",
-	Short: "Gets a document",
-	Args:  cobra.ExactArgs(1),
+	Use:               "get <id>",
+	Short:             "Gets a document",
+	Args:              cobra.ExactArgs(1),
+	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		printResult(vespa.Get(args[0], documentService()), true)
 	},

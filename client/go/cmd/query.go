@@ -28,7 +28,8 @@ var queryCmd = &cobra.Command{
 Any parameter from https://docs.vespa.ai/en/reference/query-api-reference.html
 can be set by the syntax [parameter-name]=[value].`,
 	// TODO: Support referencing a query json file
-	Args: cobra.MinimumNArgs(1),
+	DisableAutoGenTag: true,
+	Args:              cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		query(args)
 	},
