@@ -5,7 +5,6 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -56,7 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
 /**
@@ -89,7 +87,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final HostProvisioner provisioner;
     private final Provisioned provisioned;
     private final Reindexing reindexing;
-    private final ExecutorService executor;
 
     public static DeployState createTestState() {
         return new Builder().build();
@@ -107,7 +104,6 @@ public class DeployState implements ConfigDefinitionStore {
                         SearchDocumentModel searchDocumentModel,
                         RankProfileRegistry rankProfileRegistry,
                         FileRegistry fileRegistry,
-                        ExecutorService executor,
                         DeployLogger deployLogger,
                         Optional<HostProvisioner> hostProvisioner,
                         Provisioned provisioned,
@@ -128,7 +124,6 @@ public class DeployState implements ConfigDefinitionStore {
                         Reindexing reindexing) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
-        this.executor = executor;
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = applicationPackage;
         this.properties = properties;
@@ -287,8 +282,6 @@ public class DeployState implements ConfigDefinitionStore {
     /** The (machine learned) models imported from the models/ directory, as an unmodifiable map indexed by model name */
     public ImportedMlModels getImportedModels() { return importedModels; }
 
-    public ExecutorService getExecutor() { return executor; }
-
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 
     public Optional<DockerImage> getWantedDockerImageRepo() { return wantedDockerImageRepo; }
@@ -319,7 +312,6 @@ public class DeployState implements ConfigDefinitionStore {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
         private FileRegistry fileRegistry = new MockFileRegistry();
-        private ExecutorService executor = new InThreadExecutorService();
         private DeployLogger logger = new BaseDeployLogger();
         private Optional<HostProvisioner> hostProvisioner = Optional.empty();
         private Provisioned provisioned = new Provisioned();
@@ -337,8 +329,6 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
         private Reindexing reindexing = null;
 
-        public Builder() {}
-
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
             return this;
@@ -346,11 +336,6 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder fileRegistry(FileRegistry fileRegistry) {
             this.fileRegistry = fileRegistry;
-            return this;
-        }
-
-        public Builder executor(ExecutorService executor) {
-            this.executor = executor;
             return this;
         }
 
@@ -448,7 +433,6 @@ public class DeployState implements ConfigDefinitionStore {
                                    searchDocumentModel,
                                    rankProfileRegistry,
                                    fileRegistry,
-                                   executor,
                                    logger,
                                    hostProvisioner,
                                    provisioned,
