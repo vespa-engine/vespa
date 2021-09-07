@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -240,12 +241,25 @@ public class RankProfile implements Cloneable {
         }
     }
 
+    private RankProfile resolveInherited(ImmutableSearch search) {
+        SDDocumentType documentType = search.getDocument();
+        if (documentType != null) {
+            if (name.equals(inheritedName)) {
+                // If you seemingly inherit yourself, you are actually referencing a rank-profile in one of your inherited schemas
+                for (SDDocumentType baseType : documentType.getInheritedTypes()) {
+                    RankProfile resolvedFromBase = rankProfileRegistry.resolve(baseType, inheritedName);
+                    if (resolvedFromBase != null) return resolvedFromBase;
+                }
+            }
+            return rankProfileRegistry.resolve(documentType, inheritedName);
+        }
+        return rankProfileRegistry.get(search.getName(), inheritedName);
+    }
+
     private RankProfile resolveInherited() {
         if (inheritedName == null) return null;
         return (getSearch() != null)
-                ? ((search.getDocument() != null)
-                    ? rankProfileRegistry.resolve(search.getDocument(), inheritedName)
-                    : rankProfileRegistry.get(search.getName(), inheritedName))
+                ? resolveInherited(search)
                 : rankProfileRegistry.getGlobal(inheritedName);
     }
 

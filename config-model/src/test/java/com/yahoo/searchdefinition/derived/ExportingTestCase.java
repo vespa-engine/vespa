@@ -166,16 +166,6 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testIllegalSidewaysRankProfileInheritance() throws IOException, ParseException {
-        try {
-            assertCorrectDeriving("illegal_sideways_inheritance", "child1", new TestableDeployLogger());
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertEquals("rank-profile 'child' inherits 'parent', but it does not exist anywhere in the inheritance of search 'child1'.", e.getMessage());
-        }
-    }
-
-    @Test
     public void testLanguage() throws IOException, ParseException {
         TestableDeployLogger logger = new TestableDeployLogger();
         assertCorrectDeriving("language", logger);

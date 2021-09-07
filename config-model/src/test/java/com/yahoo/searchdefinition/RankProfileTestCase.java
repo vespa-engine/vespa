@@ -19,6 +19,9 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -67,11 +70,11 @@ public class RankProfileTestCase extends SchemaTestCase {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
-            builder.importString(
-                    "search test {\n" +
-                    "  document test { } \n" +
-                    "  rank-profile p1 inherits notexist {}\n" +
-                    "}");
+            builder.importString(joinLines(
+                    "search test {",
+                    "  document test { } ",
+                    "  rank-profile p1 inherits notexist {}",
+                    "}"));
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
@@ -84,11 +87,11 @@ public class RankProfileTestCase extends SchemaTestCase {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
-            builder.importString(
-                    "search test {\n" +
-                            "  document test { } \n" +
-                            "  rank-profile self inherits self {}\n" +
-                            "}");
+            builder.importString(joinLines(
+                    "schema test {",
+                    "  document test { } ",
+                    "  rank-profile self inherits self {}",
+                    "}"));
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
@@ -97,17 +100,98 @@ public class RankProfileTestCase extends SchemaTestCase {
     }
 
     @Test
+    public void requireThatSelfInheritanceIsLegalWhenOverloading() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+        builder.importString(joinLines(
+                "schema base {",
+                "  document base { } ",
+                "  rank-profile self inherits default {}",
+                "}"));
+        builder.importString(joinLines(
+                "schema test {",
+                "  document test inherits base { } ",
+                "  rank-profile self inherits self {}",
+                "}"));
+        builder.build(true);
+    }
+
+    @Test
+    public void requireThatSidewaysInheritanceIsImpossible() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+        builder.importString(joinLines(
+                "schema child1 {",
+                "  document child1 {",
+                "    field field1 type int {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile child inherits parent {",
+                "    function function2() {",
+                "      expression: attribute(field1) + 5",
+                "    }",
+                "    first-phase {",
+                "      expression: function2() * function1()",
+                "    }",
+                "    summary-features {",
+                "      function1",
+                "      function2",
+                "      attribute(field1)",
+                "    }",
+                "  }",
+                "}\n"));
+        builder.importString(joinLines(
+                "schema child2 {",
+                "  document child2 {",
+                "    field field1 type int {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile parent {",
+                "    first-phase {",
+                "      expression: function1()",
+                "    }",
+                "    function function1() {",
+                "      expression: attribute(field1) + 7",
+                "    }",
+                "    summary-features {",
+                "      function1",
+                "      attribute(field1)",
+                "    }",
+                "  }",
+                "}"));
+        try {
+            builder.build(true);
+        } catch (IllegalArgumentException e) {
+            assertEquals("rank-profile 'child' inherits 'parent', but it does not exist anywhere in the inheritance of search 'child1'.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void requireThatDefaultCanAlwaysBeInherited() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+        builder.importString(joinLines(
+                "schema test {",
+                "  document test { } ",
+                "  rank-profile default inherits default {}",
+                "}"));
+        builder.build(true);
+    }
+
+    @Test
     public void requireThatCyclicInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
-            builder.importString(
-                    "search test {\n" +
-                            "  document test { } \n" +
-                            "  rank-profile a inherits b {}\n" +
-                            "  rank-profile b inherits c {}\n" +
-                            "  rank-profile c inherits a {}\n" +
-                            "}");
+            builder.importString(joinLines(
+                    "search test {",
+                    "  document test { } ",
+                    "  rank-profile a inherits b {}",
+                    "  rank-profile b inherits c {}",
+                    "  rank-profile c inherits a {}",
+                    "}"));
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
@@ -120,12 +204,12 @@ public class RankProfileTestCase extends SchemaTestCase {
     {
         RankProfileRegistry registry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
-        builder.importString(
-                "search test {\n" +
-                        "  document test { } \n" +
-                        "  rank-profile p1 inherits not_yet_defined {}\n" +
-                        "  rank-profile not_yet_defined {}\n" +
-                        "}");
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { } ",
+                "  rank-profile p1 inherits not_yet_defined {}",
+                "  rank-profile not_yet_defined {}",
+                "}"));
         builder.build(true);
         assertNotNull(registry.get("test","p1"));
         assertTrue(registry.get("test","p1").inherits("not_yet_defined"));
@@ -133,21 +217,22 @@ public class RankProfileTestCase extends SchemaTestCase {
     }
 
     private String createSD(Double termwiseLimit) {
-        return "search test {\n" +
-                "    document test { \n" +
-                "        field a type string { \n" +
-                "            indexing: index \n" +
-                "        }\n" +
-                "    }\n" +
-                "    \n" +
-                "    rank-profile parent {\n" +
-                (termwiseLimit != null ? ("        termwise-limit:" + termwiseLimit + "\n") : "") +
-                "        num-threads-per-search:8\n" +
-                "        min-hits-per-thread:70\n" +
-                "        num-search-partitions:1200\n" +
-                "    }\n" +
-                "    rank-profile child inherits parent { }\n" +
-                "}\n";
+        return joinLines(
+                "search test {",
+                "    document test { ",
+                "        field a type string { ",
+                "            indexing: index ",
+                "        }",
+                "    }",
+                "    ",
+                "    rank-profile parent {",
+                (termwiseLimit != null ? ("        termwise-limit:" + termwiseLimit + "\n") : ""),
+                "        num-threads-per-search:8",
+                "        min-hits-per-thread:70",
+                "        num-search-partitions:1200",
+                "    }",
+                "    rank-profile child inherits parent { }",
+                "}");
     }
 
     @Test
@@ -194,15 +279,16 @@ public class RankProfileTestCase extends SchemaTestCase {
     public void requireThatConfigIsDerivedForAttributeTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(registry);
-        builder.importString("search test {\n" +
-                "  document test { \n" +
-                "    field a type tensor(x[10]) { indexing: attribute }\n" +
-                "    field b type tensor(y{}) { indexing: attribute }\n" +
-                "    field c type tensor(x[5]) { indexing: attribute }\n" +
-                "  }\n" +
-                "  rank-profile p1 {}\n" +
-                "  rank-profile p2 {}\n" +
-                "}");
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { ",
+                "    field a type tensor(x[10]) { indexing: attribute }",
+                "    field b type tensor(y{}) { indexing: attribute }",
+                "    field c type tensor(x[5]) { indexing: attribute }",
+                "  }",
+                "  rank-profile p1 {}",
+                "  rank-profile p2 {}",
+                "}"));
         builder.build();
         Search search = builder.getSearch();
 
@@ -217,11 +303,12 @@ public class RankProfileTestCase extends SchemaTestCase {
     public void requireThatDenseDimensionsMustBeBound() throws ParseException {
         try {
             SearchBuilder builder = new SearchBuilder(new RankProfileRegistry());
-            builder.importString("search test {\n" +
-                                 "  document test { \n" +
-                                 "    field a type tensor(x[]) { indexing: attribute }\n" +
-                                 "  }\n" +
-                                 "}");
+            builder.importString(joinLines(
+                    "search test {",
+                    "  document test { ",
+                    "    field a type tensor(x[]) { indexing: attribute }",
+                    "  }",
+                    "}"));
             builder.build();
         }
         catch (IllegalArgumentException e) {
@@ -245,11 +332,12 @@ public class RankProfileTestCase extends SchemaTestCase {
     public void requireThatConfigIsDerivedForQueryFeatureTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
-        builder.importString("search test {\n" +
-                "  document test { } \n" +
-                "  rank-profile p1 {}\n" +
-                "  rank-profile p2 {}\n" +
-                "}");
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { } ",
+                "  rank-profile p1 {}",
+                "  rank-profile p2 {}",
+                "}"));
         builder.build(true);
         Search search = builder.getSearch();
 
