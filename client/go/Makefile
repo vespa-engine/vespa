@@ -7,7 +7,7 @@ all: test checkfmt install
 VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
 
 install:
-	env GOBIN=$(PWD)/bin \
+	env GOBIN=$(CURDIR)/bin \
 		go install -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)" ./...
 
 test:

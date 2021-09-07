@@ -7,6 +7,7 @@ package cmd
 import (
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ func printSuccess(msg ...interface{}) {
 func readAPIKey(tenant string) []byte {
 	configDir := configDir("")
 	apiKeyPath := filepath.Join(configDir, tenant+".api-key.pem")
-	key, err := os.ReadFile(apiKeyPath)
+	key, err := ioutil.ReadFile(apiKeyPath)
 	if err != nil {
 		fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 	}

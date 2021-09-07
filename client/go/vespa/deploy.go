@@ -236,7 +236,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 		URL:    url,
 		Method: "POST",
 		Header: header,
-		Body:   io.NopCloser(zipReader),
+		Body:   ioutil.NopCloser(zipReader),
 	}
 	if opts.APIKey != nil {
 		signer := NewRequestSigner(opts.Deployment.Application.SerializedForm(), opts.APIKey)

@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -135,13 +136,13 @@ func writeSessionID(appConfigDir string, sessionID int64) {
 	if err := os.MkdirAll(appConfigDir, 0755); err != nil {
 		fatalErr(err, "Could not create directory for session ID")
 	}
-	if err := os.WriteFile(sessionIDFile(appConfigDir), []byte(fmt.Sprintf("%d\n", sessionID)), 0600); err != nil {
+	if err := ioutil.WriteFile(sessionIDFile(appConfigDir), []byte(fmt.Sprintf("%d\n", sessionID)), 0600); err != nil {
 		fatalErr(err, "Could not write session ID")
 	}
 }
 
 func readSessionID(appConfigDir string) int64 {
-	b, err := os.ReadFile(sessionIDFile(appConfigDir))
+	b, err := ioutil.ReadFile(sessionIDFile(appConfigDir))
 	if err != nil {
 		fatalErr(err, "Could not read session ID")
 	}

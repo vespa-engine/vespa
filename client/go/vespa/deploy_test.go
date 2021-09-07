@@ -1,6 +1,7 @@
 package vespa
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -56,6 +57,6 @@ func TestApplicationPackageFrom(t *testing.T) {
 func writeFile(t *testing.T, filename string) {
 	err := os.MkdirAll(filepath.Dir(filename), 0755)
 	assert.Nil(t, err)
-	err = os.WriteFile(filename, []byte{0}, 0644)
+	err = ioutil.WriteFile(filename, []byte{0}, 0644)
 	assert.Nil(t, err)
 }

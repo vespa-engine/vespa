@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -230,7 +230,7 @@ func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeo
 		response, httpErr = util.HttpDo(req, 10*time.Second, "")
 		if httpErr == nil {
 			statusCode = response.StatusCode
-			body, err := io.ReadAll(response.Body)
+			body, err := ioutil.ReadAll(response.Body)
 			if err != nil {
 				return 0, "", err
 			}
