@@ -80,6 +80,23 @@ public class RankProfileTestCase extends SchemaTestCase {
     }
 
     @Test
+    public void requireThatSelfInheritanceIsIllegal() throws ParseException {
+        try {
+            RankProfileRegistry registry = new RankProfileRegistry();
+            SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+            builder.importString(
+                    "search test {\n" +
+                            "  document test { } \n" +
+                            "  rank-profile self inherits self {}\n" +
+                            "}");
+            builder.build(true);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Rank profile 'self' inherits self, which is illegal.", e.getMessage());
+        }
+    }
+
+    @Test
     public void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
     {
         RankProfileRegistry registry = new RankProfileRegistry();
