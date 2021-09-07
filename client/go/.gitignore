@@ -1,3 +1,4 @@
 bin/
 !Makefile
+!build/
 !target/
