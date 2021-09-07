@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Class handling various type of checksums of config definition payload or config payload,
+ * Checksums of config definition payload or config payload,
  * md5 and xxhash64 are the supported types at the moment.
  *
  * @author hmusum
