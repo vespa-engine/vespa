@@ -45,7 +45,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         admin.addSlobroks(getSlobroks(deployState, admin, XML.getChild(adminE, "slobroks")));
         if ( ! admin.multitenant())
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE),
-                                        deployState.getDeployLogger());
+                                        deployState);
 
         ModelElement adminElement = new ModelElement(adminE);
         addLogForwarders(adminElement.child("logforwarding"), admin);
@@ -188,7 +188,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         @Override
         protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
-            return new Slobrok(parent, i);
+            return new Slobrok(parent, i, deployState.featureFlags());
         }
 
     }
