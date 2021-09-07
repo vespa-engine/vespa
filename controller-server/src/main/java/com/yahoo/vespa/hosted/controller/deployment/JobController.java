@@ -561,7 +561,7 @@ public class JobController {
             application.get().productionDeployments().values().stream()
                        .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
-                       .filter(version -> ! version.isUnknown())
+                       .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);

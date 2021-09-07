@@ -1110,15 +1110,16 @@ public class DeploymentTriggerTest {
         // System and staging tests both require unknown versions, and are broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
         app.runJob(productionCdUsCentral1)
-           .abortJob(systemTest)
-           .abortJob(stagingTest)
+           .jobAborted(systemTest)
+           .jobAborted(stagingTest)
            .runJob(systemTest)
            .runJob(stagingTest)
            .runJob(productionCdAwsUsEast1a);
 
         app.runJob(productionCdUsCentral1, cdPackage);
         app.submit(cdPackage);
-        app.runJob(systemTest);
+        app.jobAborted(systemTest)
+           .runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
         app.runJob(productionCdUsCentral1)

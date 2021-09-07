@@ -36,7 +36,7 @@ public final class Change {
     private Change(Optional<Version> platform, Optional<ApplicationVersion> application, boolean pinned) {
         this.platform = requireNonNull(platform, "platform cannot be null");
         this.application = requireNonNull(application, "application cannot be null");
-        if (application.isPresent() && application.get().isUnknown()) {
+        if (application.isPresent() && (application.get().isUnknown() || application.get().isDeployedDirectly())) {
             throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
         this.pinned = pinned;
