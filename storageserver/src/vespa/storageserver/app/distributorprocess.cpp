@@ -56,7 +56,7 @@ DistributorProcess::setupConfig(milliseconds subscribeTimeout)
 
     auto distr_cfg = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(
             _configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
-    _num_distributor_stripes = adjusted_num_distributor_stripes(distr_cfg->numDistributorStripes);
+    _num_distributor_stripes = adjusted_num_distributor_stripes(std::max(distr_cfg->numDistributorStripes, 0));
     _distributorConfigHandler = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
     _visitDispatcherConfigHandler = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
