@@ -65,6 +65,7 @@ public class RankProfile implements Cloneable {
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
+    private RankProfile inherited = null;
 
     /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
@@ -199,20 +200,25 @@ public class RankProfile implements Cloneable {
 
     /** Returns the inherited rank profile, or null if there is none */
     public RankProfile getInherited() {
-        if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
-
-        RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
-        if (inheritedInThisSearch != null) return inheritedInThisSearch;
-        return getInheritedFromRegistry(inheritedName);
-    }
-
-    private RankProfile getInheritedFromRegistry(String inheritedName) {
-        for (RankProfile r : rankProfileRegistry.all()) {
-            if (r.getName().equals(inheritedName)) {
-                return r;
+        if (inheritedName == null) return null;
+        if (inherited == null) {
+            inherited = resolveInherited();
+            if (inherited == null) {
+                throw new IllegalArgumentException("rank-profile '" + getName() + "' inherits '" + inheritedName +
+                        "', but it does not exist anywhere in the inheritance of search '" +
+                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.");
             }
         }
-        return null;
+        return inherited;
+    }
+
+    private RankProfile resolveInherited() {
+        if (inheritedName == null) return null;
+        return (getSearch() != null)
+                ? (search.getDocument() != null)
+                ? rankProfileRegistry.resolve(search.getDocument(), inheritedName)
+                : rankProfileRegistry.get(search.getName(), inheritedName)
+                : rankProfileRegistry.getGlobal(inheritedName);
     }
 
     /**

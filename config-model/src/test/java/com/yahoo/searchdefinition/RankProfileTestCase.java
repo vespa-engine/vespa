@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
@@ -28,7 +27,9 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests rank profiles
@@ -59,6 +60,40 @@ public class RankProfileTestCase extends SchemaTestCase {
 
         setting = i.next();
         assertEquals(RankType.DEFAULT, setting.getValue());
+    }
+
+    @Test
+    public void requireThatIllegalInheritanceIsChecked() throws ParseException {
+        try {
+            RankProfileRegistry registry = new RankProfileRegistry();
+            SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+            builder.importString(
+                    "search test {\n" +
+                    "  document test { } \n" +
+                    "  rank-profile p1 inherits notexist {}\n" +
+                    "}");
+            builder.build(true);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("rank-profile 'p1' inherits 'notexist', but it does not exist anywhere in the inheritance of search 'test'.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
+    {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+        builder.importString(
+                "search test {\n" +
+                        "  document test { } \n" +
+                        "  rank-profile p1 inherits not_yet_defined {}\n" +
+                        "  rank-profile not_yet_defined inherits not_yet_defined {}\n" +
+                        "}");
+        builder.build(true);
+        assertNotNull(registry.get("test","p1"));
+        assertTrue(registry.get("test","p1").inherits("not_yet_defined"));
+        assertNotNull(registry.get("test","not_yet_defined"));
     }
 
     private String createSD(Double termwiseLimit) {

@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests exporting
@@ -162,6 +163,16 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testRankProfileInheritance() throws IOException, ParseException {
         assertCorrectDeriving("rankprofileinheritance", "child", new TestableDeployLogger());
+    }
+
+    @Test
+    public void testIllegalSidewaysRankProfileInheritance() throws IOException, ParseException {
+        try {
+            assertCorrectDeriving("illegal_sideways_inheritance", "child1", new TestableDeployLogger());
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("rank-profile 'child' inherits 'parent', but it does not exist anywhere in the inheritance of search 'child1'.", e.getMessage());
+        }
     }
 
     @Test
