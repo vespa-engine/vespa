@@ -12,6 +12,8 @@ import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -97,8 +99,7 @@ public class StreamingSearchCluster extends SearchCluster implements
                                                  deployState.getProperties(),
                                                  deployState.rankProfileRegistry(),
                                                  deployState.getQueryProfiles().getRegistry(),
-                                                 deployState.getImportedModels(),
-                                                 deployState.getExecutor());
+                                                 deployState.getImportedModels());
     }
     @Override
     public DerivedConfiguration getSdConfig() {

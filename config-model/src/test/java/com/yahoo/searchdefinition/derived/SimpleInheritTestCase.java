@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
 
 import java.io.File;
@@ -31,7 +33,10 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         toDir.mkdirs();
         deleteContent(toDir);
 
-        DerivedConfiguration config = new DerivedConfiguration(search, builder.getRankProfileRegistry());
+        DerivedConfiguration config = new DerivedConfiguration(search,
+                                                               builder.getRankProfileRegistry(),
+                                                               new QueryProfileRegistry(),
+                                                               new ImportedMlModels());
         config.export(toDirName);
 
         checkDir(toDirName, expectedResultsDirName);

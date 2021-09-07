@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
@@ -18,13 +19,8 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.model.AbstractService;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 /**
@@ -65,14 +61,13 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            RankProfileRegistry rankProfileRegistry,
                            QueryProfileRegistry queryProfiles,
                            ImportedMlModels importedModels,
-                           ModelContext.Properties deployProperties,
-                           ExecutorService executor) {
+                           ModelContext.Properties deployProperties) {
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
         this.largeRankExpressions = largeRankExpressions;
         this.onnxModels = onnxModels;  // as ONNX models come from parsing rank expressions
         dryRunOnnxOnSetup = deployProperties.featureFlags().dryRunOnnxOnSetup();
-        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties, executor);
+        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
@@ -80,12 +75,12 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                                     ImportedMlModels importedModels,
                                     Search search,
                                     AttributeFields attributeFields,
-                                    ModelContext.Properties deployProperties,
-                                    ExecutorService executor) {
-        List<Future<RawRankProfile>> futureRawRankProfiles = new ArrayList<>();
+                                    ModelContext.Properties deployProperties) {
         if (search != null) { // profiles belonging to a search have a default profile
-            futureRawRankProfiles.add(executor.submit(() -> new RawRankProfile(rankProfileRegistry.get(search, "default"),
-                    largeRankExpressions, queryProfiles, importedModels, attributeFields, deployProperties)));
+            RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.get(search, "default"),
+                    largeRankExpressions, queryProfiles, importedModels,
+                                                               attributeFields, deployProperties);
+            rankProfiles.put(defaultProfile.getName(), defaultProfile);
         }
 
         for (RankProfile rank : rankProfileRegistry.rankProfilesOf(search)) {
@@ -94,16 +89,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                 this.onnxModels.add(rank.onnxModels());
             }
 
-            futureRawRankProfiles.add(executor.submit(() -> new RawRankProfile(rank, largeRankExpressions, queryProfiles, importedModels,
-                    attributeFields, deployProperties)));
-        }
-        try {
-            for (Future<RawRankProfile> rawFuture : futureRawRankProfiles) {
-                RawRankProfile rawRank = rawFuture.get();
-                rankProfiles.put(rawRank.getName(), rawRank);
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IllegalStateException(e);
+            RawRankProfile rawRank = new RawRankProfile(rank, largeRankExpressions, queryProfiles, importedModels,
+                                                        attributeFields, deployProperties);
+            rankProfiles.put(rawRank.getName(), rawRank);
         }
     }
 
