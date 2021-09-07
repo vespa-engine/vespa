@@ -10,7 +10,7 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
