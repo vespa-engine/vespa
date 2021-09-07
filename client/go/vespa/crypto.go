@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/big"
 	"net/http"
 	"os"
@@ -45,12 +46,12 @@ func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool)
 }
 
 func atomicWriteFile(filename string, data []byte, overwrite bool) error {
-	tmpFile, err := os.CreateTemp("", tempFilePattern)
+	tmpFile, err := ioutil.TempFile("", tempFilePattern)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tmpFile.Name())
-	if err := os.WriteFile(tmpFile.Name(), data, 0600); err != nil {
+	if err := ioutil.WriteFile(tmpFile.Name(), data, 0600); err != nil {
 		return err
 	}
 	_, err = os.Stat(filename)
@@ -142,7 +143,7 @@ func (rs *RequestSigner) SignRequest(request *http.Request) error {
 		return err
 	}
 	base64Signature := base64.StdEncoding.EncodeToString(signature)
-	request.Body = io.NopCloser(body)
+	request.Body = ioutil.NopCloser(body)
 	request.Header.Set("X-Timestamp", timestamp)
 	request.Header.Set("X-Content-Hash", contentHash)
 	request.Header.Set("X-Key-Id", rs.KeyID)

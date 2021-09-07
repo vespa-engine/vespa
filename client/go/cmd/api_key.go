@@ -5,8 +5,8 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ var apiKeyCmd = &cobra.Command{
 			fatalErr(err, "Could not create API key")
 			return
 		}
-		if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
+		if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 			printSuccess("API private key written to ", apiKeyFile)
 			printPublicKey(apiKeyFile, app.Tenant)
 		} else {
@@ -58,7 +58,7 @@ var apiKeyCmd = &cobra.Command{
 }
 
 func printPublicKey(apiKeyFile, tenant string) {
-	pemKeyData, err := os.ReadFile(apiKeyFile)
+	pemKeyData, err := ioutil.ReadFile(apiKeyFile)
 	if err != nil {
 		fatalErr(err, "Failed to read ", apiKeyFile)
 		return
