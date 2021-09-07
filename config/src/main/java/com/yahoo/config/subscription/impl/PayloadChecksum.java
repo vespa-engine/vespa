@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  */
 public class PayloadChecksum {
 
-    private static final Pattern hexChecksumPattern = Pattern.compile("[0-9a-zA-Z]+");
+    private static final Pattern hexChecksumPattern = Pattern.compile("[0-9a-fA-F]+");
 
     private final String checksum;
     private final Type type;
