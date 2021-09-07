@@ -478,16 +478,21 @@ public class JobController {
             controller.applications().store(application);
         });
 
-        last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+        Optional<Run> lastRun = last(id, type);
+        lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+
+        long build = 1 + lastRun.map(run -> run.versions().targetApplication().buildNumber().orElse(0)).orElse(0L);
+        ApplicationVersion version = ApplicationVersion.from(Optional.empty(), build, Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), true);
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
+            controller.applications().applicationStore().putDev(new DeploymentId(id, type.zone(controller.system())), applicationPackage.zippedContent());
             start(id,
                   type,
                   new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                  .flatMap(controller.applications()::lastCompatibleVersion)
                                                                  .orElseGet(controller::readSystemVersion)),
-                               ApplicationVersion.unknown,
+                               version,
                                Optional.empty(),
                                Optional.empty()),
                   false,

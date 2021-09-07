@@ -5,7 +5,9 @@
       "runs": [
         {
           "versions": {
-            "targetApplication": {},
+            "targetApplication": {
+              "build": 1
+            },
             "targetPlatform": "6.1.0"
           },
           "start": 0,

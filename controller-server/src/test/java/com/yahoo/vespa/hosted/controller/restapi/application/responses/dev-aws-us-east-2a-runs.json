@@ -8,7 +8,9 @@
       "status": "success",
       "versions": {
         "targetPlatform": "7.1.0",
-        "targetApplication": {}
+        "targetApplication": {
+          "build": 1
+        }
       },
       "steps": [
         {

@@ -61,7 +61,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private DeploymentTester tester = new DeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testTriggerFailing() {

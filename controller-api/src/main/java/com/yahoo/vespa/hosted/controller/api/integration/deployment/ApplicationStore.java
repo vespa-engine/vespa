@@ -21,7 +21,7 @@ import java.util.Optional;
 public interface ApplicationStore {
 
     /** Returns the tenant application package of the given version. */
-    byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion);
+    byte[] get(DeploymentId deploymentId, ApplicationVersion applicationVersion);
 
     /** Find application package by given build number */
     Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber);
@@ -48,10 +48,7 @@ public interface ApplicationStore {
     void removeAllTesters(TenantName tenant, ApplicationName application);
 
     /** Stores the given application package as the development package for the given application and zone. */
-    void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage);
-
-    /** Returns the development package for the given application and zone. */
-    byte[] getDev(ApplicationId application, ZoneId zone);
+    void putDev(DeploymentId deploymentId, byte[] applicationPackage);
 
     /** Stores the given application meta data with the current time as part of the path. */
     void putMeta(TenantName tenant, ApplicationName application, Instant now, byte[] metaZip);

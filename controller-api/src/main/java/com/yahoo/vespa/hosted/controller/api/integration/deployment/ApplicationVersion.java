@@ -89,15 +89,12 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns an unique identifier for this version or "unknown" if version is not known */
     public String id() {
-        if (isUnknown()) {
-            return "unknown";
-        }
-        return String.format("%s.%d-%s",
-                             majorVersion,
-                             buildNumber.getAsLong(),
-                             source.map(SourceRevision::commit).map(ApplicationVersion::abbreviateCommit)
-                                   .or(this::commit)
-                                   .orElse("unknown"));
+        if (isUnknown()) return "unknown";
+
+        return source.map(SourceRevision::commit).map(ApplicationVersion::abbreviateCommit)
+                .or(this::commit)
+                .map(commit -> String.format("%s.%d-%s", majorVersion, buildNumber.getAsLong(), commit))
+                .orElseGet(() -> majorVersion + "." + buildNumber.getAsLong());
     }
 
     /**

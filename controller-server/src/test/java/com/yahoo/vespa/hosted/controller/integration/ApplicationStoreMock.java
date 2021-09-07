@@ -5,11 +5,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Instant;
 import java.util.Map;
@@ -30,7 +30,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     private static final byte[] tombstone = new byte[0];
 
     private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
-    private final Map<ApplicationId, Map<ZoneId, byte[]>> devStore = new ConcurrentHashMap<>();
+    private final Map<DeploymentId, byte[]> devStore = new ConcurrentHashMap<>();
     private final Map<ApplicationId, NavigableMap<Instant, byte[]>> meta = new ConcurrentHashMap<>();
     private final Map<DeploymentId, NavigableMap<Instant, byte[]>> metaManual = new ConcurrentHashMap<>();
 
@@ -43,10 +43,14 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion) {
-        byte[] bytes = store.get(appId(tenant, application)).get(applicationVersion);
+    public byte[] get(DeploymentId deploymentId, ApplicationVersion applicationVersion) {
+        if (applicationVersion.isDeployedDirectly())
+            return requireNonNull(devStore.get(deploymentId));
+
+        TenantAndApplicationId tenantAndApplicationId = TenantAndApplicationId.from(deploymentId.applicationId());
+        byte[] bytes = store.get(appId(tenantAndApplicationId.tenant(), tenantAndApplicationId.application())).get(applicationVersion);
         if (bytes == null)
-            throw new IllegalArgumentException("No application package found for " + tenant + "." + application +
+            throw new IllegalArgumentException("No application package found for " + tenantAndApplicationId +
                                                " with version " + applicationVersion.id());
         return bytes;
     }
@@ -61,8 +65,8 @@ public class ApplicationStoreMock implements ApplicationStore {
 
     @Override
     public void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage) {
-        store.putIfAbsent(appId(tenant, application), new ConcurrentHashMap<>());
-        store.get(appId(tenant, application)).put(applicationVersion, applicationPackage);
+        store.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>())
+                .put(applicationVersion, applicationPackage);
     }
 
     @Override
@@ -83,8 +87,8 @@ public class ApplicationStoreMock implements ApplicationStore {
 
     @Override
     public void putTester(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] testerPackage) {
-        store.putIfAbsent(testerId(tenant, application), new ConcurrentHashMap<>());
-        store.get(testerId(tenant, application)).put(applicationVersion, testerPackage);
+        store.computeIfAbsent(testerId(tenant, application), key -> new ConcurrentHashMap<>())
+                .put(applicationVersion, testerPackage);
     }
 
     @Override
@@ -99,14 +103,8 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage) {
-        devStore.putIfAbsent(application, new ConcurrentHashMap<>());
-        devStore.get(application).put(zone, applicationPackage);
-    }
-
-    @Override
-    public byte[] getDev(ApplicationId application, ZoneId zone) {
-        return requireNonNull(devStore.get(application).get(zone));
+    public void putDev(DeploymentId deploymentId, byte[] applicationPackage) {
+        devStore.put(deploymentId, applicationPackage);
     }
 
     @Override

@@ -592,13 +592,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("Only manually deployed zones have dev packages");
 
         ZoneId zone = type.zone(controller.system());
-        byte[] applicationPackage = controller.applications().applicationStore().getDev(id, zone);
+        ApplicationVersion version = controller.jobController().last(id, type).get().versions().targetApplication();
+        byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), version);
         return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
     }
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
-        var applicationId = ApplicationId.from(tenantName, applicationName, InstanceName.defaultName().value());
 
         long buildNumber;
         var requestedBuild = Optional.ofNullable(request.getProperty("build")).map(build -> {
