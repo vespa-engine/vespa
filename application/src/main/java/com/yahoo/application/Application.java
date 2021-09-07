@@ -11,7 +11,11 @@ import com.google.common.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
 import com.yahoo.application.content.ContentCluster;
-import com.yahoo.config.*;
+import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.InnerNode;
+import com.yahoo.config.InnerNodeVector;
+import com.yahoo.config.LeafNode;
+import com.yahoo.config.LeafNodeVector;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -37,7 +41,13 @@ import java.net.BindException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
 /**
  * Contains one or more containers built from services.xml.

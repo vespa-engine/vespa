@@ -194,7 +194,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                               deployState.rankProfileRegistry(),
                                               deployState.getQueryProfiles().getRegistry(),
                                               deployState.getImportedModels(),
-                                              deployState.getProperties());
+                                              deployState.getProperties(),
+                                              deployState.getExecutor());
 
         HostSystem hostSystem = root.hostSystem();
         if (complete) { // create a completed, frozen model

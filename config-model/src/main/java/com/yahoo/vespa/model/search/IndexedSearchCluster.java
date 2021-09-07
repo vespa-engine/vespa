@@ -17,7 +17,6 @@ import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.content.DispatchSpec;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,7 +62,7 @@ public class IndexedSearchCluster extends SearchCluster
         return routingSelector;
     }
 
-    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index, DeployState deployState) {
+    public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
@@ -204,7 +203,8 @@ public class IndexedSearchCluster extends SearchCluster
                                                                                     deployState.getProperties(),
                                                                                     deployState.rankProfileRegistry(),
                                                                                     deployState.getQueryProfiles().getRegistry(),
-                                                                                    deployState.getImportedModels()));
+                                                                                    deployState.getImportedModels(),
+                                                                                    deployState.getExecutor()));
                 // TODO: remove explicit adding of user configs when the complete content model is built using builders.
                 db.mergeUserConfigs(spec.getUserConfigs());
                 documentDbs.add(db);
