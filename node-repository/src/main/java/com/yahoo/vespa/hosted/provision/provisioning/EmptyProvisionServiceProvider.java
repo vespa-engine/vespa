@@ -35,7 +35,7 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     private static class IdentityHostResourcesCalculator implements HostResourcesCalculator {
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository repository, boolean exclusive) { return node.resources(); }
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository repository) { return node.resources(); }
 
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) { return flavor.resources(); }

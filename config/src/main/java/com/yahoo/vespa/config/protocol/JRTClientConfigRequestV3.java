@@ -110,11 +110,10 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
                                                                                   CompressionType compressionType,
                                                                                   Optional<VespaVersion> vespaVersion) {
         ConfigSubscription.ConfigState<T> configState = sub.getConfigState();
-        T config = configState.getConfig();
         return createWithParams(sub.getKey(),
                                 sub.getDefContent(),
                                 ConfigUtils.getCanonicalHostName(),
-                                config != null ? config.getConfigMd5() : "",
+                                configState.getChecksum().asString(),
                                 configState.getGeneration(),
                                 sub.timingValues().getSubscribeTimeout(),
                                 trace,

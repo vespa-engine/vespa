@@ -68,7 +68,9 @@ public class JRTConfigRequester implements RequestWaiter {
         this.timingValues = timingValues;
     }
 
-    /** Only for testing */
+    /**
+     * Only for testing
+     */
     public JRTConfigRequester(ConnectionPool connectionPool, TimingValues timingValues) {
         this(null, new ScheduledThreadPoolExecutor(1), connectionPool, timingValues);
     }
@@ -90,12 +92,12 @@ public class JRTConfigRequester implements RequestWaiter {
     private <T extends ConfigInstance> void doRequest(JRTConfigSubscription<T> sub, JRTClientConfigRequest req) {
         Connection connection = connectionPool.getCurrent();
         req.getRequest().setContext(new RequestContext(sub, req, connection));
-        if ( ! req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
+        if (!req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
 
         double jrtClientTimeout = getClientTimeout(req);
         log.log(FINE, () -> "Requesting config for " + sub + " on connection " + connection
-                                      + " with client timeout " + jrtClientTimeout +
-                                      (log.isLoggable(FINEST) ? (",defcontent=" + req.getDefContent().asString()) : ""));
+                + " with client timeout " + jrtClientTimeout +
+                (log.isLoggable(FINEST) ? (",defcontent=" + req.getDefContent().asString()) : ""));
         connection.invokeAsync(req.getRequest(), jrtClientTimeout, this);
     }
 
@@ -177,7 +179,7 @@ public class JRTConfigRequester implements RequestWaiter {
                                             boolean fatalFailures,
                                             TimingValues timingValues,
                                             boolean configured) {
-        long delay = (configured ? timingValues.getConfiguredErrorDelay(): timingValues.getUnconfiguredDelay());
+        long delay = configured ? timingValues.getConfiguredErrorDelay() : timingValues.getUnconfiguredDelay();
 
         switch (errorType) {
             case TRANSIENT:
@@ -199,7 +201,7 @@ public class JRTConfigRequester implements RequestWaiter {
                                          Connection connection) {
         fatalFailures = false;
         log.log(INFO, "Connection to " + connection.getAddress() +
-                      " failed or timed out, clients will keep existing config, will keep trying.");
+                " failed or timed out, clients will keep existing config, will keep trying.");
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
 

@@ -49,14 +49,18 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
     }
 
     private int tuneNumDistributorStripes() {
-        if ((numDistributorStripesFlag == -1) && (getHostResource() != null)) {
-            int cores = (int)getHostResource().realResources().vcpu();
-            if (cores <= 16) {
-                return 1;
-            } else if (cores <= 64) {
-                return 2;
+        if (numDistributorStripesFlag == -1) {
+            if (getHostResource() != null) {
+                int cores = (int)getHostResource().realResources().vcpu();
+                if (cores <= 16) {
+                    return 1;
+                } else if (cores <= 64) {
+                    return 2;
+                } else {
+                    return 4;
+                }
             } else {
-                return 4;
+                return 1;
             }
         }
         return numDistributorStripesFlag;

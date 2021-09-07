@@ -744,7 +744,7 @@ public class ProvisioningTester {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             NodeResources resources = node.resources();
             if (node.type() == NodeType.host) return resources;
             return resources.withMemoryGb(resources.memoryGb() - memoryTaxGb)

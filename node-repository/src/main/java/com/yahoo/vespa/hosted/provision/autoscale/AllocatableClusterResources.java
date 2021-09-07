@@ -43,10 +43,10 @@ public class AllocatableClusterResources {
         this.fulfilment = 1;
     }
 
-    public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository, boolean exclusive) {
+    public AllocatableClusterResources(List<Node> nodes, NodeRepository nodeRepository) {
         this.nodes = nodes.size();
         this.groups = (int)nodes.stream().map(node -> node.allocation().get().membership().cluster().group()).distinct().count();
-        this.realResources = averageRealResourcesOf(nodes, nodeRepository, exclusive); // Average since we average metrics over nodes
+        this.realResources = averageRealResourcesOf(nodes, nodeRepository); // Average since we average metrics over nodes
         this.advertisedResources = nodes.get(0).allocation().get().requestedResources();
         this.clusterSpec = nodes.get(0).allocation().get().membership().cluster();
         this.fulfilment = 1;
@@ -124,10 +124,10 @@ public class AllocatableClusterResources {
                (fulfilment < 1.0 ? " (fulfilment " + fulfilment + ")" : "");
     }
 
-    private static NodeResources averageRealResourcesOf(List<Node> nodes, NodeRepository nodeRepository, boolean exclusive) {
+    private static NodeResources averageRealResourcesOf(List<Node> nodes, NodeRepository nodeRepository) {
         NodeResources sum = new NodeResources(0, 0, 0, 0);
         for (Node node : nodes)
-            sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository, exclusive).justNumbers());
+            sum = sum.add(nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository).justNumbers());
         return nodes.get(0).allocation().get().requestedResources().justNonNumbers()
                                        .withVcpu(sum.vcpu() / nodes.size())
                                        .withMemoryGb(sum.memoryGb() / nodes.size())

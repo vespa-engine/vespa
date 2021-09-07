@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -747,7 +746,7 @@ public class AutoscalingTest {
         }
 
         @Override
-        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive) {
+        public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             return node.resources();
         }
 

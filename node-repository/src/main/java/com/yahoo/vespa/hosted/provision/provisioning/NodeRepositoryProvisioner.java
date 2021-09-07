@@ -161,7 +161,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         AllocatableClusterResources currentResources =
                 firstDeployment // start at min, preserve current resources otherwise
                 ? new AllocatableClusterResources(requested.minResources(), clusterSpec, nodeRepository)
-                : new AllocatableClusterResources(nodes.asList(), nodeRepository, clusterSpec.isExclusive());
+                : new AllocatableClusterResources(nodes.asList(), nodeRepository);
         var clusterModel = new ClusterModel(application, cluster, clusterSpec, nodes, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
     }
@@ -199,7 +199,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(Level.FINE, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository, node.allocation().get().membership().cluster().isExclusive()),
+                                   nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository),
                                    node.flavor().resources(),
                                    requestedResources,
                                    nodeAllocation.membership(),

@@ -54,13 +54,16 @@ App::Main()
     int argi = 1;
     const char* optArg;
     int c;
-    while ((c = GetOpt("c:s:p:", optArg, argi)) != -1) {
+    while ((c = GetOpt("c:s:p:N", optArg, argi)) != -1) {
         switch (c) {
         case 'c':
             cfgId = std::string(optArg);
             break;
         case 'p':
             portnum = atoi(optArg);
+            break;
+        case 'N':
+            // ignore flag for now
             break;
         default:
             LOG(error, "unknown option letter '%c'", c);

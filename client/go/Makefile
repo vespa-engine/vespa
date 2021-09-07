@@ -1,14 +1,23 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-all: test checkfmt install
-
+BIN ?= $(CURDIR)/bin
+SHARE ?= $(CURDIR)/share
 # When building a new release the build system should set the VERSION
 # environment variable to version being built
 VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
 
+all: test checkfmt install
+
 install:
-	env GOBIN=$(CURDIR)/bin \
+	env GOBIN=$(BIN) \
 		go install -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)" ./...
+
+manpages: install
+	mkdir -p $(SHARE)/man/man1
+	$(BIN)/vespa man $(SHARE)/man/man1
+
+clean:
+	rm -rf $(BIN) $(SHARE)
 
 test:
 	go test ./...

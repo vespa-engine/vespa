@@ -41,10 +41,7 @@ public class NodeResourceLimits {
     /** Returns whether the real resources we'll end up with on a given tenant node are within limits */
     public boolean isWithinRealLimits(NodeCandidate candidateNode, ClusterSpec cluster) {
         if (candidateNode.type() != NodeType.tenant) return true; // Resource limits only apply to tenant nodes
-        // This node is allocated exclusively if that has been explicitly requested, or if the host of the node was
-        // provisioned exclusively
-        boolean exclusive = cluster.isExclusive() || candidateNode.parent.flatMap(Node::exclusiveToApplicationId).isPresent();
-        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository, exclusive),
+        return isWithinRealLimits(nodeRepository.resourcesCalculator().realResourcesOf(candidateNode, nodeRepository),
                                   cluster.type());
     }
 
