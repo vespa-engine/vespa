@@ -1079,6 +1079,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties(), Optional.empty()));
         assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(0));
         assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(1));
+        assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(-1));
         assertEquals(4, resolveNumDistributorStripesConfigWithFeatureFlag(4));
     }
 
