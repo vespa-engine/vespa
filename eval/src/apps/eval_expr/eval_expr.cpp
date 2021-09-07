@@ -31,6 +31,16 @@ using vespalib::slime::Cursor;
 
 const auto &factory = FastValueBuilderFactory::get();
 
+void list_commands(FILE *file, const char *prefix) {
+    fprintf(file, "%s'exit' -> exit the program\n", prefix);
+    fprintf(file, "%s'help' -> print available commands\n", prefix);
+    fprintf(file, "%s'list' -> list named values\n", prefix);
+    fprintf(file, "%s'verbose (true|false)' -> enable or disable verbose output\n", prefix);
+    fprintf(file, "%s'def <name> <expr>' -> evaluate expression, bind result to a name\n", prefix);
+    fprintf(file, "%s'undef <name>' -> remove a named value\n", prefix);    
+    fprintf(file, "%s'<expr>' -> evaluate expression\n", prefix);
+}
+
 int usage(const char *self) {
     //               -------------------------------------------------------------------------------
     fprintf(stderr, "usage: %s [--verbose] <expr> [expr ...]\n", self);
@@ -47,12 +57,7 @@ int usage(const char *self) {
     fprintf(stderr, "\n");
     fprintf(stderr, "advanced usage: %s interactive\n", self);
     fprintf(stderr, "  This runs the progam in interactive mode. possible commands (line based):\n");
-    fprintf(stderr, "      'exit' -> exit the program\n");
-    fprintf(stderr, "      'help' -> print available commands\n");
-    fprintf(stderr, "      'list' -> list named values\n");
-    fprintf(stderr, "      'verbose (true|false)' -> enable or disable verbose output\n");
-    fprintf(stderr, "      'def <name> <expr>' -> evaluate expression, bind result to a name\n");
-    fprintf(stderr, "      '<expr>' -> evaluate expression\n");
+    list_commands(stderr, "    ");
     fprintf(stderr, "\n");
     fprintf(stderr, "advanced usage: %s json-repl\n", self);
     fprintf(stderr, "  This will put the program into a read-eval-print loop where it reads\n");
@@ -149,6 +154,19 @@ public:
         _param_types.push_back(value->type());
         _param_values.push_back(std::move(value));
         _param_refs.emplace_back(*_param_values.back());
+    }
+
+    bool remove(const vespalib::string &name) {
+        for (size_t i = 0; i < _param_names.size(); ++i) {
+            if (_param_names[i] == name) {
+                _param_names.erase(_param_names.begin() + i);
+                _param_types.erase(_param_types.begin() + i);
+                _param_values.erase(_param_values.begin() + i);
+                _param_refs.erase(_param_refs.begin() + i);
+                return true;
+            }
+        }
+        return false;
     }
 };
 Context::~Context() = default;
@@ -264,6 +282,7 @@ const vespalib::string help_cmd("help");
 const vespalib::string list_cmd("list");
 const vespalib::string verbose_cmd("verbose ");
 const vespalib::string def_cmd("def ");
+const vespalib::string undef_cmd("undef ");
 
 int interactive_mode(Context &ctx) {
     EditLineWrapper input;
@@ -273,12 +292,7 @@ int interactive_mode(Context &ctx) {
             return 0;
         }
         if (line == help_cmd) {
-            fprintf(stdout, "  'exit' -> exit the program\n");
-            fprintf(stdout, "  'help' -> print available commands\n");
-            fprintf(stdout, "  'list' -> list named values\n");
-            fprintf(stdout, "  'verbose (true|false)' -> enable or disable verbose output\n");
-            fprintf(stdout, "  'def <name> <expr>' -> evaluate expression, bind result to a name\n");
-            fprintf(stdout, "  '<expr>' -> evaluate expression\n");
+            list_commands(stdout, "  ");
             continue;
         }
         if (line == list_cmd) {
@@ -299,8 +313,17 @@ int interactive_mode(Context &ctx) {
             }
             continue;
         }
-        vespalib::string expr;
         vespalib::string name;
+        if (line.find(undef_cmd) == 0) {
+            name = line.substr(undef_cmd.size());
+            if (ctx.remove(name)) {
+                fprintf(stdout, "removed value '%s'\n", name.c_str());
+            } else {
+                fprintf(stdout, "value not found: '%s'\n", name.c_str());
+            }
+            continue;
+        }
+        vespalib::string expr;
         if (line.find(def_cmd) == 0) {
             auto name_size = (line.find(" ", def_cmd.size()) - def_cmd.size());
             name = line.substr(def_cmd.size(), name_size);
