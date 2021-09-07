@@ -92,7 +92,7 @@ public class RankProfileTestCase extends SchemaTestCase {
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'self' inherits self, which is illegal.", e.getMessage());
+            assertEquals("There is a cycle in the inheritance for rank-profile 'self' = [self, self]", e.getMessage());
         }
     }
 

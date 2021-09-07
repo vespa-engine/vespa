@@ -195,15 +195,6 @@ public class RankProfile implements Cloneable {
      * definition
      */
     public void setInherited(String inheritedName) {
-        if (inheritedName.equals(getName())) {
-            String msg = "Rank profile '" + getName() + "' inherits self, which is illegal.";
-            if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
-                throw new IllegalArgumentException(msg);
-            } else {
-                log.warning(msg);
-            }
-            inheritedName = null;
-        }
         this.inheritedName = inheritedName;
     }
 
