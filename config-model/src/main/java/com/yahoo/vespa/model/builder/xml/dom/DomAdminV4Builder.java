@@ -53,20 +53,20 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         Optional<NodesSpecification> requestedLogservers = 
                 NodesSpecification.optionalDedicatedFromParent(adminElement.child("logservers"), context);
 
-        assignSlobroks(deployState.getDeployLogger(), requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
+        assignSlobroks(deployState, requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.child("logforwarding"), admin);
     }
 
-    private void assignSlobroks(DeployLogger deployLogger, NodesSpecification nodesSpecification, Admin admin) {
+    private void assignSlobroks(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.isDedicated()) {
-            createSlobroks(deployLogger,
+            createSlobroks(deployState,
                            admin,
                            allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
         }
         else { // These will be removed later, if an admin cluster (for cluster controllers) is assigned
-            createSlobroks(deployLogger,
+            createSlobroks(deployState,
                            admin,
                            pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
         }
@@ -177,15 +177,15 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return logserver;
     }
 
-    private void createSlobroks(DeployLogger deployLogger, Admin admin, Collection<HostResource> hosts) {
+    private void createSlobroks(DeployState deployState, Admin admin, Collection<HostResource> hosts) {
         if (hosts.isEmpty()) return; // No slobroks can be created (and none are needed)
         List<Slobrok> slobroks = new ArrayList<>();
         int index = 0;
         for (HostResource host : hosts) {
-            Slobrok slobrok = new Slobrok(admin, index++);
+            Slobrok slobrok = new Slobrok(admin, index++, deployState.featureFlags());
             slobrok.setHostResource(host);
             slobroks.add(slobrok);
-            slobrok.initService(deployLogger);
+            slobrok.initService(deployState.getDeployLogger());
         }
         admin.addSlobroks(slobroks);
     }

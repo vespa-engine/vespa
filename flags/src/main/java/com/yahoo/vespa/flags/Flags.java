@@ -270,6 +270,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag NEW_LOCATION_BROKER_LOGIC = defineFeatureFlag(
+            "new-location-broker-logic", false,
+            List.of("arnej"), "2021-09-07", "2021-12-31",
+            "Use new implementation of internal logic in service location broker",
+            "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

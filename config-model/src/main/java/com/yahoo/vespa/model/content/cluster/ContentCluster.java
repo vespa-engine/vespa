@@ -296,7 +296,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                          "cluster-controllers",
                                                                          true,
                                                                          deployState),
-                                                deployState.getDeployLogger());
+                                                deployState);
                 }
                 clusterControllers = admin.getClusterControllers();
             }
@@ -313,7 +313,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                          "cluster-controllers",
                                                                          false,
                                                                          deployState),
-                                                deployState.getDeployLogger());
+                                                deployState);
                 }
                 clusterControllers = admin.getClusterControllers();
             }
@@ -347,7 +347,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                      "cluster-controllers",
                                                                      true,
                                                                      context.getDeployState()),
-                                            deployState.getDeployLogger());
+                                            deployState);
             }
             return admin.getClusterControllers();
         }
