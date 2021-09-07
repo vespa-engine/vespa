@@ -42,6 +42,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,6 +54,7 @@ import java.util.stream.Stream;
  */
 public class RankProfile implements Cloneable {
 
+    private final static Logger log = Logger.getLogger(RankProfile.class.getName());
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
     /** The search definition-unique name of this rank profile */
@@ -204,9 +207,14 @@ public class RankProfile implements Cloneable {
         if (inherited == null) {
             inherited = resolveInherited();
             if (inherited == null) {
-                throw new IllegalArgumentException("rank-profile '" + getName() + "' inherits '" + inheritedName +
+                String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
                         "', but it does not exist anywhere in the inheritance of search '" +
-                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.");
+                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
+                if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
+                    throw new IllegalArgumentException(msg);
+                } else {
+                    log.warning(msg);
+                }
             }
         }
         return inherited;
