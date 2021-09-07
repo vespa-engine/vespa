@@ -117,8 +117,7 @@ class NodesResponse extends SlimeJsonResponse {
     }
 
     private void toSlime(Node node, boolean allFields, Cursor object) {
-        NodeResources realResources = nodeRepository.resourcesCalculator().realResourcesOf(
-                node, nodeRepository, node.allocation().map(a -> a.membership().cluster().isExclusive()).orElse(false));
+        NodeResources realResources = nodeRepository.resourcesCalculator().realResourcesOf(node, nodeRepository);
 
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;

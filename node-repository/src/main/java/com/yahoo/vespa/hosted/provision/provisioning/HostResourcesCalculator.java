@@ -19,7 +19,7 @@ import com.yahoo.vespa.hosted.provision.Nodelike;
 public interface HostResourcesCalculator {
 
     /** Returns the real resources available on a node */
-    NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository, boolean exclusive);
+    NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository);
 
     /** Returns the advertised resources of a flavor */
     NodeResources advertisedResourcesOf(Flavor flavor);
