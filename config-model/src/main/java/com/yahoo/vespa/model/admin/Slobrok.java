@@ -29,10 +29,10 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
      * @param index  unique index for all slobroks
      */
     public Slobrok(AbstractConfigProducer<?> parent, int index,
-		   ModelContext.FeatureFlags featureFlags)
+                   ModelContext.FeatureFlags featureFlags)
     {
         super(parent, "slobrok." + index);
-	this.useNewLogic = featureFlags.newLocationBrokerLogic();
+        this.useNewLogic = featureFlags.newLocationBrokerLogic();
         portsMeta.on(0).tag("rpc").tag("admin").tag("status");
         portsMeta.on(1).tag("http").tag("state");
         setProp("index", index);
@@ -50,9 +50,9 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     }
 
     public String getStartupCommand() {
-	if (useNewLogic) {
-	    return "exec $ROOT/sbin/vespa-slobrok -N -p " + getRpcPort() + " -c " + getConfigId();
-	}
+        if (useNewLogic) {
+            return "exec $ROOT/sbin/vespa-slobrok -N -p " + getRpcPort() + " -c " + getConfigId();
+        }
         return "exec $ROOT/sbin/vespa-slobrok -p " + getRpcPort() + " -c " + getConfigId();
     }
 
