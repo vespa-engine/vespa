@@ -1,13 +1,13 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
+import com.yahoo.config.subscription.impl.PayloadChecksum;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
 
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static java.util.logging.Level.INFO;
 
@@ -19,8 +19,6 @@ import static java.util.logging.Level.INFO;
 public class RequestValidation {
     private static final Logger log = Logger.getLogger(RequestValidation.class.getName());
 
-    private static final Pattern md5Pattern = Pattern.compile("[0-9a-zA-Z]+");
-
     public static int validateRequest(JRTConfigRequest request) {
         ConfigKey<?> key = request.getConfigKey();
         if (!RequestValidation.verifyName(key.getName())) {
@@ -31,13 +29,13 @@ public class RequestValidation {
             log.log(INFO, "Illegal name space '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_NAME_SPACE;
         }
-        if (!RequestValidation.verifyMd5(key.getMd5())) {
-            log.log(INFO, "Illegal md5 sum '" + key.getNamespace() + "'");
-            return ErrorCode.ILLEGAL_DEF_MD5;
+        if (!(new PayloadChecksum(key.getMd5()).valid())) {
+            log.log(INFO, "Illegal checksum '" + key.getNamespace() + "'");
+            return ErrorCode.ILLEGAL_DEF_MD5;  // TODO: Use ILLEGAL_DEF_CHECKSUM
         }
-        if (!RequestValidation.verifyMd5(request.getRequestConfigMd5())) {
-            log.log(INFO, "Illegal config md5 '" + request.getRequestConfigMd5() + "'");
-            return ErrorCode.ILLEGAL_CONFIG_MD5;
+        if (!new PayloadChecksum(request.getRequestConfigMd5()).valid()) {
+            log.log(INFO, "Illegal config checksum '" + request.getRequestConfigMd5() + "'");
+            return ErrorCode.ILLEGAL_CONFIG_MD5; // TODO: Use ILLEGAL_CONFIG_CHECKSUM
         }
         if (!RequestValidation.verifyGeneration(request.getRequestGeneration())) {
             log.log(INFO, "Illegal generation '" + request.getRequestGeneration() + "'");
@@ -59,16 +57,6 @@ public class RequestValidation {
         return m.matches();
     }
 
-    public static boolean verifyMd5(String md5) {
-        if (md5.equals("")) {
-            return true;  // Empty md5 is ok (e.g. upon getconfig from command line tools)
-        } else if (md5.length() != 32) {
-            return false;
-        }
-        Matcher m = md5Pattern.matcher(md5);
-        return m.matches();
-    }
-
     public static boolean verifyTimeout(Long timeout) {
         return (timeout > 0);
     }
@@ -85,4 +73,5 @@ public class RequestValidation {
     private static boolean verifyHostname(String clientHostName) {
         return !("".equals(clientHostName));
     }
+
 }

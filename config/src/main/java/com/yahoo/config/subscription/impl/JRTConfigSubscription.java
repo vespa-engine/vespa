@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
@@ -111,7 +111,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         } catch (IllegalArgumentException e) {
             badConfigE = e;
         }
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance);
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, new PayloadChecksum(jrtReq.getNewConfigMd5()));
         if (badConfigE != null) {
             throw new IllegalArgumentException("Bad config from jrt", badConfigE);
         }
@@ -129,7 +129,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());
-        configInstance.setConfigMd5(jrtRequest.getNewConfigMd5());
+        configInstance.setConfigMd5(jrtRequest.getNewConfigMd5()); // Note: Sets configmd5 in ConfigInstance
         return configInstance;
     }
 

@@ -1,9 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
-
-import java.io.File;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSet;
@@ -17,6 +13,10 @@ import com.yahoo.config.subscription.RawSource;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.DefContent;
+
+import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * Represents one active subscription to one config
@@ -40,35 +40,43 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         private final T config;
         private final Long generation;
         private final boolean applyOnRestart;
+        private final PayloadChecksum payloadChecksum;
 
         private ConfigState(boolean generationChanged,
                             Long generation,
                             boolean applyOnRestart,
                             boolean configChanged,
-                            T config) {
+                            T config,
+                            PayloadChecksum payloadChecksum) {
             this.generationChanged = generationChanged;
             this.generation = generation;
             this.applyOnRestart = applyOnRestart;
             this.configChanged = configChanged;
             this.config = config;
+            this.payloadChecksum = payloadChecksum;
         }
 
-        private ConfigState(Long generation, T config) {
-            this(false, generation, false, false, config);
+        private ConfigState(Long generation, T config, PayloadChecksum payloadChecksum) {
+            this(false, generation, false, false, config, payloadChecksum);
         }
 
         private ConfigState() {
-            this(false, 0L, false, false, null);
+            this(false, 0L, false, false, null, PayloadChecksum.empty());
         }
 
-        private ConfigState<T> createUnchanged() { return new ConfigState<>(generation, config); }
+        private ConfigState<T> createUnchanged() {  return new ConfigState<>(generation, config, payloadChecksum); }
+
         public boolean isConfigChanged() { return configChanged; }
+
         public boolean isGenerationChanged() { return generationChanged; }
+
         public Long getGeneration() { return generation; }
 
         public boolean applyOnRestart() { return applyOnRestart; }
 
         public T getConfig() { return config; }
+
+        public PayloadChecksum getChecksum() { return payloadChecksum; }
 
     }
 
@@ -86,7 +94,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     /**
      * Initializes one subscription
      *
-     * @param key a {@link ConfigKey}
+     * @param key        a {@link ConfigKey}
      * @param subscriber the subscriber for this subscription
      */
     ConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber) {
@@ -96,11 +104,10 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.config.set(new ConfigState<>());
     }
 
-
     /**
      * Correct type of ConfigSubscription instance based on type of source or form of config id
      *
-     * @param key a {@link ConfigKey}
+     * @param key        a {@link ConfigKey}
      * @param subscriber the subscriber for this subscription
      * @return a subclass of a ConfigsSubscription
      */
@@ -113,19 +120,19 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, subscriber, source);
         if (source instanceof ConfigSet) return new ConfigSetSubscription<>(key, subscriber, source);
         if (source instanceof ConfigSourceSet) return new JRTConfigSubscription<>(key, subscriber, source, timingValues);
-        throw new IllegalArgumentException("Unknown source type: "+source);
+        throw new IllegalArgumentException("Unknown source type: " + source);
     }
 
     private static <T extends ConfigInstance> JarConfigSubscription<T> getJarSub(
             ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source) {
         String jarName;
-        String path="config/";
+        String path = "config/";
         if (source instanceof JarSource) {
             JarSource js = (JarSource) source;
-            jarName=js.getJarFile().getName();
-            if (js.getPath()!=null) path=js.getPath();
+            jarName = js.getJarFile().getName();
+            if (js.getPath() != null) path = js.getPath();
         } else {
-            jarName=key.getConfigId().replace("jar:", "").replaceFirst("\\!/.*", "");
+            jarName = key.getConfigId().replace("jar:", "").replaceFirst("\\!/.*", "");
             if (key.getConfigId().contains("!/")) path = key.getConfigId().replaceFirst(".*\\!/", "");
         }
         return new JarConfigSubscription<>(key, subscriber, jarName, path);
@@ -133,20 +140,27 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(
             ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source) {
-        File file = ((source instanceof FileSource))?((FileSource)source).getFile():new File(key.getConfigId().replace("file:", ""));
+        File file = ((source instanceof FileSource))
+                ? ((FileSource) source).getFile()
+                : new File(key.getConfigId().replace("file:", ""));
         return new FileConfigSubscription<>(key, subscriber, file);
     }
 
-    private static <T extends ConfigInstance> ConfigSubscription<T> getRawSub(
-            ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source) {
-        String payload = ((source instanceof RawSource)?((RawSource)source).payload:key.getConfigId().replace("raw:", ""));
-        return new RawConfigSubscription<>(key, subscriber,payload);
+    private static <T extends ConfigInstance> ConfigSubscription<T> getRawSub(ConfigKey<T> key,
+                                                                              ConfigSubscriber subscriber,
+                                                                              ConfigSource source) {
+        String payload = ((source instanceof RawSource)
+                ? ((RawSource) source).payload
+                : key.getConfigId().replace("raw:", ""));
+        return new RawConfigSubscription<>(key, subscriber, payload);
     }
 
-    private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source) {
+    private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key,
+                                                                                  ConfigSubscriber subscriber,
+                                                                                  ConfigSource source) {
         String dir = key.getConfigId().replace("dir:", "");
         if (source instanceof DirSource) {
-            dir = ((DirSource)source).getDir().toString();
+            dir = ((DirSource) source).getDir().toString();
         }
         if (!dir.endsWith(File.separator)) dir = dir + File.separator;
         String name = getConfigFilename(key);
@@ -174,36 +188,38 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      */
     public boolean isConfigChangedAndReset(Long requiredGen) {
         ConfigState<T> prev = config.get();
-        while ( prev.getGeneration().equals(requiredGen) && !config.compareAndSet(prev, prev.createUnchanged())) {
+        while (prev.getGeneration().equals(requiredGen) && !config.compareAndSet(prev, prev.createUnchanged())) {
             prev = config.get();
         }
         // A false positive is a lot better than a false negative
         return !prev.getGeneration().equals(requiredGen) || prev.isConfigChanged();
     }
 
-    void setConfig(Long generation, boolean applyOnRestart, T config) {
-        this.config.set(new ConfigState<>(true, generation, applyOnRestart, true, config));
+    void setConfig(Long generation, boolean applyOnRestart, T config, PayloadChecksum payloadChecksum) {
+        this.config.set(new ConfigState<>(true, generation, applyOnRestart, true, config, payloadChecksum));
     }
 
-    /** Used by {@link FileConfigSubscription} and {@link ConfigSetSubscription} */
+    /**
+     * Used by {@link FileConfigSubscription} and {@link ConfigSetSubscription}
+     */
     protected void setConfigIncGen(T config) {
         ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.applyOnRestart(), true, config));
+        this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.applyOnRestart(), true, config, prev.payloadChecksum));
     }
 
     protected void setConfigIfChanged(T config) {
         ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !config.equals(prev.getConfig()), config));
+        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !config.equals(prev.getConfig()), config, prev.payloadChecksum));
     }
 
     void setGeneration(Long generation) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.isConfigChanged(), prev.getConfig()));
+        this.config.set(new ConfigState<>(true, generation, prev.applyOnRestart(), prev.isConfigChanged(), prev.getConfig(), prev.payloadChecksum));
     }
 
     void setApplyOnRestart(boolean applyOnRestart) {
         ConfigState<T> prev = config.get();
-        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), applyOnRestart, prev.isConfigChanged(), prev.getConfig()));
+        this.config.set(new ConfigState<>(prev.isGenerationChanged(), prev.getGeneration(), applyOnRestart, prev.isConfigChanged(), prev.getConfig(), prev.payloadChecksum));
     }
 
     /**
@@ -211,13 +227,13 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      *
      * @return the ConfigInstance (the config) of this subscription
      */
-
     public ConfigState<T> getConfigState() {
         return config.get();
     }
 
     /**
      * The class of the subscription's desired {@link ConfigInstance}
+     *
      * @return the config class
      */
     public Class<T> getConfigClass() {
@@ -251,7 +267,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      *
      * @param timeout in milliseconds
      * @return false if timed out, true if generation or config or {@link #exception} changed. If true, the {@link #config} field will be set also.
-     *         has changed
+     * has changed
      */
     public abstract boolean nextConfig(long timeout);
 
@@ -311,6 +327,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     /**
      * Force this into the given generation, used in testing
+     *
      * @param generation a config generation
      */
     public void reload(long generation) {

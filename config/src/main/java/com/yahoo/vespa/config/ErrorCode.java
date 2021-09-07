@@ -11,6 +11,7 @@ public final class ErrorCode {
     public static final int UNKNOWN_DEFINITION = UNKNOWN_CONFIG + 1;
     public static final int UNKNOWN_DEF_MD5 = UNKNOWN_CONFIG + 4;
     public static final int UNKNOWN_VESPA_VERSION = UNKNOWN_CONFIG + 5;
+    public static final int UNKNOWN_DEF_CHECKSUM = UNKNOWN_CONFIG + 6;
 
     public static final int ILLEGAL_NAME = UNKNOWN_CONFIG + 100;
     // Version is not a number
@@ -25,6 +26,8 @@ public final class ErrorCode {
     public static final int ILLEGAL_NAME_SPACE = UNKNOWN_CONFIG + 108;
     public static final int ILLEGAL_PROTOCOL_VERSION = UNKNOWN_CONFIG + 109;
     public static final int ILLEGAL_CLIENT_HOSTNAME = UNKNOWN_CONFIG + 110;
+    public static final int ILLEGAL_DEF_CHECKSUM = UNKNOWN_CONFIG + 111;
+    public static final int ILLEGAL_CONFIG_CHECKSUM = UNKNOWN_CONFIG + 112;
 
     // hasUpdatedConfig() is true, but generation says the config is older than previous config.
     public static final int OUTDATED_CONFIG = UNKNOWN_CONFIG + 150;
