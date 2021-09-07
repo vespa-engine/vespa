@@ -211,7 +211,7 @@ public class RankProfile implements Cloneable {
     public String getInheritedName() { return inheritedName; }
 
     /** Returns the inherited rank profile, or null if there is none */
-    public RankProfile getInherited() {
+    private RankProfile getInherited() {
         if (inheritedName == null) return null;
         if (inherited == null) {
             inherited = resolveInherited();
@@ -224,17 +224,32 @@ public class RankProfile implements Cloneable {
                 } else {
                     log.warning(msg);
                 }
+            } else {
+                List<String> children = new ArrayList<>();
+                children.add(getName());
+                verifyNoInheritanceCycle(children, inherited);
             }
         }
         return inherited;
     }
 
+    private void verifyNoInheritanceCycle(List<String> children, RankProfile parent) {
+        children.add(parent.getName());
+        String root = children.get(0);
+        if (root.equals(parent.getName())) {
+            throw new IllegalArgumentException("There is a cycle in the inheritance for rank-profile '" + root + "' = " + children);
+        }
+        if (parent.getInherited() != null) {
+            verifyNoInheritanceCycle(children, parent.getInherited());
+        }
+    }
+
     private RankProfile resolveInherited() {
         if (inheritedName == null) return null;
         return (getSearch() != null)
-                ? (search.getDocument() != null)
-                ? rankProfileRegistry.resolve(search.getDocument(), inheritedName)
-                : rankProfileRegistry.get(search.getName(), inheritedName)
+                ? ((search.getDocument() != null)
+                    ? rankProfileRegistry.resolve(search.getDocument(), inheritedName)
+                    : rankProfileRegistry.get(search.getName(), inheritedName))
                 : rankProfileRegistry.getGlobal(inheritedName);
     }
 

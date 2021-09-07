@@ -97,6 +97,25 @@ public class RankProfileTestCase extends SchemaTestCase {
     }
 
     @Test
+    public void requireThatCyclicInheritanceIsIllegal() throws ParseException {
+        try {
+            RankProfileRegistry registry = new RankProfileRegistry();
+            SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
+            builder.importString(
+                    "search test {\n" +
+                            "  document test { } \n" +
+                            "  rank-profile a inherits b {}\n" +
+                            "  rank-profile b inherits c {}\n" +
+                            "  rank-profile c inherits a {}\n" +
+                            "}");
+            builder.build(true);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("There is a cycle in the inheritance for rank-profile 'c' = [c, a, b, c]", e.getMessage());
+        }
+    }
+
+    @Test
     public void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
     {
         RankProfileRegistry registry = new RankProfileRegistry();
