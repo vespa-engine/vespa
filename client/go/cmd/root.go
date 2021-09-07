@@ -26,7 +26,9 @@ Use it on Vespa instances running locally, remotely or in the cloud.
 Prefer web service API's to this in production.
 
 Vespa documentation: https://docs.vespa.ai`,
+		DisableAutoGenTag: true,
 	}
+
 	color          aurora.Aurora
 	targetArg      string
 	applicationArg string

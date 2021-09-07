@@ -36,7 +36,8 @@ var cloneCmd = &cobra.Command{
 	Example: "$ vespa clone vespa-cloud/album-recommendation my-app",
 
 The application package is copied from a sample application in https://github.com/vespa-engine/sample-apps`,
-	Args: cobra.ExactArgs(2),
+	DisableAutoGenTag: true,
+	Args:              cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		cloneApplication(args[0], args[1])
 	},
