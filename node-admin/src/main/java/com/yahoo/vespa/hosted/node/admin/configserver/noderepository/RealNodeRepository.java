@@ -173,19 +173,24 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.modelName),
-                new NodeResources(
-                        node.resources.vcpu,
-                        node.resources.memoryGb,
-                        node.resources.diskGb,
-                        node.resources.bandwidthGbps,
-                        diskSpeedFromString(node.resources.diskSpeed),
-                        storageTypeFromString(node.resources.storageType)),
+                nodeResources(node.resources),
+                nodeResources(node.realResources),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
                 Optional.ofNullable(node.parentHostname),
                 Optional.ofNullable(node.archiveUri).map(URI::create),
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm));
+    }
+
+    private static NodeResources nodeResources(NodeRepositoryNode.NodeResources nodeResources) {
+        return new NodeResources(
+                nodeResources.vcpu,
+                nodeResources.memoryGb,
+                nodeResources.diskGb,
+                nodeResources.bandwidthGbps,
+                diskSpeedFromString(nodeResources.diskSpeed),
+                storageTypeFromString(nodeResources.storageType));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
