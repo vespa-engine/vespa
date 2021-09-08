@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.jrt.Request;
@@ -7,6 +7,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.Optional;
 
@@ -57,9 +58,8 @@ class SlimeRequestData {
 
     ConfigKey<?> getConfigKey() {
         return ConfigKey.createFull(getRequestField(REQUEST_DEF_NAME).asString(),
-                getRequestField(REQUEST_CLIENT_CONFIGID).asString(),
-                getRequestField(REQUEST_DEF_NAMESPACE).asString(),
-                getRequestField(REQUEST_DEF_MD5).asString());
+                                    getRequestField(REQUEST_CLIENT_CONFIGID).asString(),
+                                    getRequestField(REQUEST_DEF_NAMESPACE).asString());
     }
 
     DefContent getSchema() {
@@ -75,9 +75,9 @@ class SlimeRequestData {
         return getRequestField(REQUEST_TIMEOUT).asLong();
     }
 
-    String getRequestConfigMd5() {
-        return getRequestField(REQUEST_CONFIG_MD5).asString();
-    }
+    String getRequestConfigMd5() { return getRequestField(REQUEST_CONFIG_MD5).asString(); }
+
+    String getRequestDefMd5() { return getRequestField(REQUEST_DEF_MD5).asString(); }
 
     long getRequestGeneration() {
         return getRequestField(REQUEST_CURRENT_GENERATION).asLong();
@@ -98,7 +98,7 @@ class SlimeRequestData {
         request.setLong(REQUEST_VERSION, protocolVersion);
         request.setString(REQUEST_DEF_NAME, key.getName());
         request.setString(REQUEST_DEF_NAMESPACE, key.getNamespace());
-        request.setString(REQUEST_DEF_MD5, key.getMd5());
+        request.setString(REQUEST_DEF_MD5, ConfigUtils.getDefMd5(defSchema.asList()));
         request.setString(REQUEST_CLIENT_CONFIGID, key.getConfigId());
         request.setString(REQUEST_CLIENT_HOSTNAME, hostname);
         defSchema.serialize(request.setArray(REQUEST_DEF_CONTENT));

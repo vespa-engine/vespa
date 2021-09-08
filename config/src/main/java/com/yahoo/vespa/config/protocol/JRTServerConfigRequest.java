@@ -46,6 +46,13 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
     String getRequestConfigMd5();
 
     /**
+     * Returns the md5 of the config definition in the request.
+     *
+     * @return an md5 of config definition in request.
+     */
+    String getRequestDefMd5();
+
+    /**
      * Get the current config generation of the client config.
      *
      * @return the current config generation.

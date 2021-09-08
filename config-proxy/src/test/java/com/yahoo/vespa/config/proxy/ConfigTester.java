@@ -64,10 +64,22 @@ public class ConfigTester {
         return createRequest(configName, configId, namespace, "", null, 0, timeout);
     }
 
-    private JRTServerConfigRequest createRequest(String configName, String configId, String namespace, String md5, String defMd5, long generation, long timeout) {
+    private JRTServerConfigRequest createRequest(String configName,
+                                                 String configId,
+                                                 String namespace,
+                                                 String md5,
+                                                 String defMd5,
+                                                 long generation,
+                                                 long timeout) {
         Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(configName, configId, namespace, defMd5, null), DefContent.fromList(Collections.emptyList()),
-                                 "fromHost", md5, generation, timeout, Trace.createDummy(), CompressionType.UNCOMPRESSED,
+                createWithParams(new ConfigKey<>(configName, configId, namespace, defMd5, null),
+                                 DefContent.fromList(Collections.emptyList()),
+                                 "fromHost",
+                                 md5,
+                                 generation,
+                                 timeout,
+                                 Trace.createDummy(),
+                                 CompressionType.UNCOMPRESSED,
                                  Optional.empty()).getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
     }

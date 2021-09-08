@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -192,6 +191,9 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         return requestData.getRequestConfigMd5();
     }
 
+    @Override
+    public String getRequestDefMd5() { return requestData.getRequestDefMd5(); }
+
     private void addErrorResponse(int errorCode) {
         addErrorResponse(errorCode, ErrorCode.getName(errorCode));
     }
@@ -222,7 +224,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_VERSION, getProtocolVersion());
         setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_DEF_NAME, key.getName());
         setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_DEF_NAMESPACE, key.getNamespace());
-        setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_DEF_MD5, key.getMd5());
+        setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_DEF_MD5, requestData.getRequestDefMd5());
         setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIGID, key.getConfigId());
         setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CLIENT_HOSTNAME, requestData.getClientHostName());
         jsonGenerator.writeFieldName(SlimeResponseData.RESPONSE_TRACE);
