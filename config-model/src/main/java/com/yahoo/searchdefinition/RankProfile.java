@@ -217,7 +217,7 @@ public class RankProfile implements Cloneable {
                 if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
                     throw new IllegalArgumentException(msg);
                 } else {
-                    deployLogger.log(Level.WARNING, msg);
+                    deployLogger.logApplicationPackage(Level.WARNING, msg);
                     inherited = resolveIndependentOfInheritance();
                 }
             } else {
