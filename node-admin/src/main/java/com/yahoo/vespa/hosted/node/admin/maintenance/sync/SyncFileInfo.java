@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -66,7 +67,8 @@ public class SyncFileInfo {
 
     public static Optional<SyncFileInfo> forServiceDump(URI directory, Path file, Instant expiry) {
         String filename = file.getFileName().toString();
-        Compression compression = filename.endsWith(".bin") || filename.endsWith(".hprof") ? Compression.ZSTD : Compression.NONE;
+        List<String> filesToCompress = List.of(".bin", ".hprof", ".jfr", ".log");
+        Compression compression = filesToCompress.stream().anyMatch(filename::endsWith) ? Compression.ZSTD : Compression.NONE;
         if (filename.startsWith(".")) return Optional.empty();
         URI location = directory.resolve(filename + compression.extension);
         return Optional.of(new SyncFileInfo(file, location, compression, expiry));
