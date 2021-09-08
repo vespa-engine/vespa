@@ -115,6 +115,9 @@ if test -f "${HEAP_DUMP_FILE}"; then
 fi
 jmap -dump:live,format=b,file=${HEAP_DUMP_FILE} ${JVM_PID}
 
+echo "Trigger vespa-malloc to dump information to Vespa log"
+kill -SIGPROF ${JVM_PID}
+
 echo "Getting jmap information"
 jhsdb jmap  --heap --pid ${JVM_PID} > ${OUTPUT_DIRECTORY}/jmap-output.txt
 
