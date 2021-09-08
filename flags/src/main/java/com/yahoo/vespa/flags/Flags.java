@@ -183,7 +183,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
-            "max-concurrent-merges-per-node", 16,
+            "max-concurrent-merges-per-node", 128,
             List.of("balder", "vekterli"), "2021-06-06", "2021-11-01",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
