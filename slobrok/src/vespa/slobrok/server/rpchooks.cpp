@@ -215,6 +215,10 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
 }
 
 
+bool RPCHooks::useNewLogic() const {
+    return _env.useNewLogic();
+}
+
 void
 RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
 {
