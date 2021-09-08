@@ -20,6 +20,10 @@ public class Annotation {
         return this;
     }
 
+    public boolean contains(String key) {
+        return annotations.containsKey(key);
+    }
+
     @Override
     public String toString() {
         return annotations == null || annotations.isEmpty()

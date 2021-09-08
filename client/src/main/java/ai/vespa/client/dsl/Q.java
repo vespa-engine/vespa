@@ -183,4 +183,16 @@ public final class Q {
     public static GeoLocation geoLocation(String field, Double longitude, Double latitude, String radius) {
         return new GeoLocation(field, longitude, latitude, radius);
     }
+
+    /**
+     * NearestNeighbor nearest neighbor
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
+     *
+     * @param docVectorName the vector name defined in the vespa schema
+     * @param queryVectorName the vector name in this query
+     * @return the nearest neighbor query
+     */
+    public static NearestNeighbor nearestNeighbor(String docVectorName, String queryVectorName) {
+        return new NearestNeighbor(docVectorName, queryVectorName);
+    }
 }
