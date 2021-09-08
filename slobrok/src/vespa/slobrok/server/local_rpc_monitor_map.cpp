@@ -93,6 +93,7 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         if (exists.spec == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
+            // clear exists.ignoreFirstOk ?
             inflight->doneHandler(OkState(0, "already registered"));
             return;
         }
@@ -103,6 +104,42 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         return;
     }
     addToMap(mapping, localService(mapping, std::move(inflight)), true);
+}
+
+void LocalRpcMonitorMap::removeLocal(const ServiceMapping &mapping) {
+    LOG(debug, "try local remove: mapping %s->%s",
+        mapping.name.c_str(), mapping.spec.c_str());
+    auto old = _map.find(mapping.name);
+    if (old == _map.end()) {
+        return; // already removed, OK
+    }
+    PerService & exists = old->second;
+    if (exists.spec != mapping.spec) {
+        LOG(warning, "tried removeLocal for mapping %s->%s, but already had conflicting mapping %s->%s",
+            mapping.name.c_str(), mapping.spec.c_str(),
+            mapping.name.c_str(), exists.spec.c_str());
+        return; // unregister for old, conflicting mapping
+    }
+    if (exists.localOnly) {
+        // we can just remove it
+        auto removed = removeFromMap(old);
+        if (removed.inflight) {
+            auto target = std::move(removed.inflight);
+            target->doneHandler(OkState(13, "removed during initialization"));
+        }
+        if (removed.up) {
+            _dispatcher.remove(removed.mapping);            
+        }
+        return;
+    }
+    // also exists in consensus map, so we can't just remove it
+    // instead, pretend it's down, and ignore first "up()" notification
+    exists.ignoreFirstOk = true;
+    if (exists.up) {
+        exists.up = false;
+        _dispatcher.remove(mapping);            
+    }
+    return;
 }
 
 void LocalRpcMonitorMap::add(const ServiceMapping &mapping) {
@@ -187,6 +224,10 @@ void LocalRpcMonitorMap::down(const ServiceMapping& mapping) {
 void LocalRpcMonitorMap::up(const ServiceMapping& mapping) {
     PerService &psd = lookup(mapping);
     LOG(debug, "ok: %s->%s", mapping.name.c_str(), psd.spec.c_str());
+    if (psd.ignoreFirstOk) {
+        psd.ignoreFirstOk = false;
+        return;
+    }
     if (psd.inflight) {
         auto target = std::move(psd.inflight);
         target->doneHandler(OkState());

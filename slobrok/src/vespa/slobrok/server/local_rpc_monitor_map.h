@@ -73,6 +73,7 @@ private:
     struct PerService {
         bool up;
         bool localOnly;
+        bool ignoreFirstOk;
         std::unique_ptr<AddLocalCompletionHandler> inflight;
         vespalib::string spec;
     };
@@ -83,6 +84,7 @@ private:
         return PerService{
             .up = false,
             .localOnly = true,
+            .ignoreFirstOk = false,
             .inflight = std::move(inflight),
             .spec = mapping.spec
         };
@@ -92,6 +94,7 @@ private:
         return PerService{
             .up = false,
             .localOnly = false,
+            .ignoreFirstOk = false,
             .inflight = {},
             .spec = mapping.spec
         };
@@ -132,6 +135,9 @@ public:
     /** for use by register API, will call doneHandler() on inflight script */
     void addLocal(const ServiceMapping &mapping,
                   std::unique_ptr<AddLocalCompletionHandler> inflight);
+
+    /** for use by unregister API */
+    void removeLocal(const ServiceMapping &mapping);
 
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;
