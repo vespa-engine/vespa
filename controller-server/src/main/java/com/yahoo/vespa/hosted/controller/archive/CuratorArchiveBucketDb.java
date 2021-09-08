@@ -1,7 +1,6 @@
 // Copyright 2021 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.archive;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
@@ -46,8 +45,7 @@ public class CuratorArchiveBucketDb {
     public CuratorArchiveBucketDb(Controller controller) {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.curatorDb = controller.curator();
-        SystemName system = controller.zoneRegistry().system();
-        this.enabled = system.isPublic() || system.isCd();
+        this.enabled = controller.zoneRegistry().system().isPublic();
     }
 
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
