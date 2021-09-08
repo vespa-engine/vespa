@@ -9,6 +9,10 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
@@ -37,9 +41,11 @@ public class RealNodeRepository implements NodeRepository {
     private static final Logger logger = Logger.getLogger(RealNodeRepository.class.getName());
 
     private final ConfigServerApi configServerApi;
+    private final BooleanFlag useRealResourcesFlag;
 
-    public RealNodeRepository(ConfigServerApi configServerApi) {
+    public RealNodeRepository(ConfigServerApi configServerApi, FlagSource flagSource) {
         this.configServerApi = configServerApi;
+        this.useRealResourcesFlag = Flags.USE_REAL_RESOURCES.bindTo(flagSource);
     }
 
     @Override
@@ -59,7 +65,7 @@ public class RealNodeRepository implements NodeRepository {
         final GetNodesResponse nodesForHost = configServerApi.get(path, GetNodesResponse.class);
 
         return nodesForHost.nodes.stream()
-                .map(RealNodeRepository::createNodeSpec)
+                .map(this::createNodeSpec)
                 .collect(Collectors.toList());
     }
 
@@ -69,7 +75,7 @@ public class RealNodeRepository implements NodeRepository {
             NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                                                                   NodeRepositoryNode.class);
 
-            return Optional.ofNullable(nodeResponse).map(RealNodeRepository::createNodeSpec);
+            return Optional.ofNullable(nodeResponse).map(this::createNodeSpec);
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -141,7 +147,7 @@ public class RealNodeRepository implements NodeRepository {
         throw new NodeRepositoryException("Failed to set node state: " + response.message + " " + response.errorCode);
     }
 
-    private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
+    private NodeSpec createNodeSpec(NodeRepositoryNode node) {
         Objects.requireNonNull(node.type, "Unknown node type");
         NodeType nodeType = NodeType.valueOf(node.type);
 
@@ -151,6 +157,9 @@ public class RealNodeRepository implements NodeRepository {
         Optional<NodeMembership> membership = Optional.ofNullable(node.membership)
                 .map(m -> new NodeMembership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
         NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
+        boolean useRealResources = useRealResourcesFlag.with(FetchVector.Dimension.CLUSTER_TYPE, membership.map(m -> m.type().value()))
+                .with(FetchVector.Dimension.NODE_TYPE, nodeType.name())
+                .value();
         return new NodeSpec(
                 node.hostname,
                 Optional.ofNullable(node.openStackId),
@@ -173,19 +182,24 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.modelName),
-                new NodeResources(
-                        node.resources.vcpu,
-                        node.resources.memoryGb,
-                        node.resources.diskGb,
-                        node.resources.bandwidthGbps,
-                        diskSpeedFromString(node.resources.diskSpeed),
-                        storageTypeFromString(node.resources.storageType)),
+                nodeResources(node.resources),
+                nodeResources(useRealResources ? node.realResources : node.resources),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
                 Optional.ofNullable(node.parentHostname),
                 Optional.ofNullable(node.archiveUri).map(URI::create),
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm));
+    }
+
+    private static NodeResources nodeResources(NodeRepositoryNode.NodeResources nodeResources) {
+        return new NodeResources(
+                nodeResources.vcpu,
+                nodeResources.memoryGb,
+                nodeResources.diskGb,
+                nodeResources.bandwidthGbps,
+                diskSpeedFromString(nodeResources.diskSpeed),
+                storageTypeFromString(nodeResources.storageType));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {

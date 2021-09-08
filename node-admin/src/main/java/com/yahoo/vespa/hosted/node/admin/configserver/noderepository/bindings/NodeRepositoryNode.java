@@ -30,6 +30,8 @@ public class NodeRepositoryNode {
     public String flavor;
     @JsonProperty("resources")
     public NodeResources resources;
+    @JsonProperty("realResources")
+    public NodeResources realResources;
     @JsonProperty("membership")
     public Membership membership;
     @JsonProperty("owner")
@@ -95,6 +97,7 @@ public class NodeRepositoryNode {
                 ", modelName='" + modelName + '\'' +
                 ", flavor='" + flavor + '\'' +
                 ", resources=" + resources +
+                ", realResources=" + realResources +
                 ", membership=" + membership +
                 ", owner=" + owner +
                 ", restartGeneration=" + restartGeneration +

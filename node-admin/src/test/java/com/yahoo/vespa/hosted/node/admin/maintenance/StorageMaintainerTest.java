@@ -143,7 +143,7 @@ public class StorageMaintainerTest {
     @Test
     public void not_run_if_not_enough_used() throws IOException {
         NodeAgentContext context = new NodeAgentContextImpl.Builder(
-                NodeSpec.Builder.testSpec("h123a.domain.tld").resources(new NodeResources(1, 1, 1, 1)).build())
+                NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
         Files.createDirectories(context.pathOnHostFromPathInNode("/"));
         mockDiskUsage(500L);
@@ -155,7 +155,7 @@ public class StorageMaintainerTest {
     @Test
     public void deletes_correct_amount() throws IOException {
         NodeAgentContext context = new NodeAgentContextImpl.Builder(
-                NodeSpec.Builder.testSpec("h123a.domain.tld").resources(new NodeResources(1, 1, 1, 1)).build())
+                NodeSpec.Builder.testSpec("h123a.domain.tld").realResources(new NodeResources(1, 1, 1, 1)).build())
                 .fileSystem(fileSystem).build();
 
         Files.createDirectories(context.pathOnHostFromPathInNode("/"));

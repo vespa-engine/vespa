@@ -697,13 +697,10 @@ public class NodeAgentImplTest {
     }
 
     private void verifyThatContainerIsStopped(NodeState nodeState, Optional<ApplicationId> owner) {
-        NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
-                .resources(resources)
-                .hostname(hostName)
+        NodeSpec.Builder nodeBuilder = nodeBuilder(nodeState)
                 .type(NodeType.tenant)
                 .flavor("docker")
-                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
-                .state(nodeState);
+                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage);
 
         owner.ifPresent(nodeBuilder::owner);
         NodeSpec node = nodeBuilder.build();
@@ -784,6 +781,6 @@ public class NodeAgentImplTest {
     }
 
     private NodeSpec.Builder nodeBuilder(NodeState state) {
-        return NodeSpec.Builder.testSpec(hostName, state).resources(resources);
+        return NodeSpec.Builder.testSpec(hostName, state).realResources(resources);
     }
 }

@@ -55,6 +55,7 @@ public class NodeSpec {
     private final Optional<NodeMembership> membership;
 
     private final NodeResources resources;
+    private final NodeResources realResources;
     private final Set<String> ipAddresses;
     private final Set<String> additionalIpAddresses;
 
@@ -88,6 +89,7 @@ public class NodeSpec {
             Optional<Instant> currentFirmwareCheck,
             Optional<String> modelName,
             NodeResources resources,
+            NodeResources realResources,
             Set<String> ipAddresses,
             Set<String> additionalIpAddresses,
             NodeReports reports,
@@ -125,6 +127,7 @@ public class NodeSpec {
         this.wantedFirmwareCheck = Objects.requireNonNull(wantedFirmwareCheck);
         this.currentFirmwareCheck = Objects.requireNonNull(currentFirmwareCheck);
         this.resources = Objects.requireNonNull(resources);
+        this.realResources = Objects.requireNonNull(realResources);
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
         this.additionalIpAddresses = Objects.requireNonNull(additionalIpAddresses);
         this.reports = Objects.requireNonNull(reports);
@@ -222,28 +225,32 @@ public class NodeSpec {
         return resources;
     }
 
+    public NodeResources realResources() {
+        return realResources;
+    }
+
     public double vcpu() {
-        return resources.vcpu();
+        return realResources.vcpu();
     }
 
     public double memoryGb() {
-        return resources.memoryGb();
+        return realResources.memoryGb();
     }
 
     public DiskSize diskSize() {
-        return DiskSize.of(resources.diskGb(), DiskSize.Unit.GB);
+        return DiskSize.of(realResources.diskGb(), DiskSize.Unit.GB);
     }
 
     public double diskGb() {
-        return resources.diskGb();
+        return realResources.diskGb();
     }
 
     public boolean isFastDisk() {
-        return resources.diskSpeed() == fast;
+        return realResources.diskSpeed() == fast;
     }
 
     public double bandwidthGbps() {
-        return resources.bandwidthGbps();
+        return realResources.bandwidthGbps();
     }
 
     public Set<String> ipAddresses() {
@@ -297,6 +304,7 @@ public class NodeSpec {
                 Objects.equals(wantedFirmwareCheck, that.wantedFirmwareCheck) &&
                 Objects.equals(currentFirmwareCheck, that.currentFirmwareCheck) &&
                 Objects.equals(resources, that.resources) &&
+                Objects.equals(realResources, that.realResources) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(additionalIpAddresses, that.additionalIpAddresses) &&
                 Objects.equals(reports, that.reports) &&
@@ -330,6 +338,7 @@ public class NodeSpec {
                 wantedFirmwareCheck,
                 currentFirmwareCheck,
                 resources,
+                realResources,
                 ipAddresses,
                 additionalIpAddresses,
                 reports,
@@ -363,6 +372,7 @@ public class NodeSpec {
                 + " wantedFirmwareCheck=" + wantedFirmwareCheck
                 + " currentFirmwareCheck=" + currentFirmwareCheck
                 + " resources=" + resources
+                + " realResources=" + realResources
                 + " ipAddresses=" + ipAddresses
                 + " additionalIpAddresses=" + additionalIpAddresses
                 + " reports=" + reports
@@ -394,7 +404,8 @@ public class NodeSpec {
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<String> modelName = Optional.empty();
-        private NodeResources resources = new NodeResources(0, 0, 0, 0, slow);
+        private NodeResources resources;
+        private NodeResources realResources;
         private Set<String> ipAddresses = Set.of();
         private Set<String> additionalIpAddresses = Set.of();
         private NodeReports reports = new NodeReports();
@@ -410,6 +421,7 @@ public class NodeSpec {
             type(node.type);
             flavor(node.flavor);
             resources(node.resources);
+            realResources(node.realResources);
             ipAddresses(node.ipAddresses);
             additionalIpAddresses(node.additionalIpAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
@@ -538,24 +550,29 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder realResources(NodeResources realResources) {
+            this.realResources = realResources;
+            return this;
+        }
+
         public Builder vcpu(double vcpu) {
-            return resources(resources.withVcpu(vcpu));
+            return realResources(realResources.withVcpu(vcpu));
         }
 
         public Builder memoryGb(double memoryGb) {
-            return resources(resources.withMemoryGb(memoryGb));
+            return realResources(realResources.withMemoryGb(memoryGb));
         }
 
         public Builder diskGb(double diskGb) {
-            return resources(resources.withDiskGb(diskGb));
+            return realResources(realResources.withDiskGb(diskGb));
         }
 
         public Builder fastDisk(boolean fastDisk) {
-            return resources(resources.with(fastDisk ? fast : slow));
+            return realResources(realResources.with(fastDisk ? fast : slow));
         }
 
         public Builder bandwidthGbps(double bandwidthGbps) {
-            return resources(resources.withBandwidthGbps(bandwidthGbps));
+            return realResources(realResources.withBandwidthGbps(bandwidthGbps));
         }
 
         public Builder ipAddresses(Set<String> ipAddresses) {
@@ -681,6 +698,10 @@ public class NodeSpec {
             return resources;
         }
 
+        public NodeResources realResources() {
+            return realResources;
+        }
+
         public Set<String> ipAddresses() {
             return ipAddresses;
         }
@@ -708,7 +729,7 @@ public class NodeSpec {
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
-                    resources, ipAddresses, additionalIpAddresses,
+                    resources, realResources, ipAddresses, additionalIpAddresses,
                     reports, parentHostname, archiveUri, exclusiveTo);
         }
 
@@ -727,7 +748,8 @@ public class NodeSpec {
                     .state(state)
                     .type(NodeType.tenant)
                     .flavor("d-2-8-50")
-                    .resources(new NodeResources(2, 8, 50, 10));
+                    .resources(new NodeResources(2, 8, 50, 10))
+                    .realResources(new NodeResources(2, 8, 50, 10));
 
             // Set the required allocated fields
             if (EnumSet.of(NodeState.active, NodeState.inactive, NodeState.reserved).contains(state)) {
