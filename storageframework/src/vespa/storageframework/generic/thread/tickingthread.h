@@ -78,6 +78,7 @@ struct ThreadLock {
 struct TickingThreadPool : public ThreadLock {
     using UP = std::unique_ptr<TickingThreadPool>;
 
+    // TODO STRIPE: Change waitTime default to 100ms when legacy mode is removed.
     static TickingThreadPool::UP createDefault(
             vespalib::stringref name,
             vespalib::duration waitTime = 5ms,

@@ -26,7 +26,9 @@ DistributorNode::DistributorNode(
     : StorageNode(configUri, context, generationFetcher,
                   std::make_unique<HostInfo>(),
                   !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
-      _threadPool(framework::TickingThreadPool::createDefault("distributor")),
+      // TODO STRIPE: Change waitTime default to 100ms when legacy mode is removed.
+      _threadPool(framework::TickingThreadPool::createDefault("distributor",
+                                                              (num_distributor_stripes > 0) ? 100ms : 5ms)),
       _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
       _context(context),
       _timestamp_mutex(),
