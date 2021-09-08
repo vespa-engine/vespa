@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -51,8 +52,6 @@ type customTarget struct {
 	baseURL    string
 }
 
-type localTarget struct{ targetType string }
-
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	if s.certificate.Certificate != nil {
@@ -97,27 +96,36 @@ func (t *customTarget) Type() string { return t.targetType }
 func (t *customTarget) Service(name string) (*Service, error) {
 	switch name {
 	case deployService, queryService, documentService:
-		// TODO: Add default ports if missing
-		return &Service{BaseURL: t.baseURL, Name: name}, nil
+		url, err := t.urlWithPort(name)
+		if err != nil {
+			return nil, err
+		}
+		return &Service{BaseURL: url, Name: name}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
+}
+
+func (t *customTarget) urlWithPort(serviceName string) (string, error) {
+	u, err := url.Parse(t.baseURL)
+	if err != nil {
+		return "", err
+	}
+	port := u.Port()
+	if port == "" {
+		switch serviceName {
+		case deployService:
+			port = "19071"
+		case queryService, documentService:
+			port = "8080"
+		default:
+			return "", fmt.Errorf("unknown service: %s", serviceName)
+		}
+		u.Host = u.Host + ":" + port
+	}
+	return u.String(), nil
 }
 
 func (t *customTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
-
-func (t *localTarget) Type() string { return t.targetType }
-
-func (t *localTarget) Service(name string) (*Service, error) {
-	switch name {
-	case deployService:
-		return &Service{Name: name, BaseURL: "http://127.0.0.1:19071"}, nil
-	case queryService, documentService:
-		return &Service{Name: name, BaseURL: "http://127.0.0.1:8080"}, nil
-	}
-	return nil, fmt.Errorf("unknown service: %s", name)
-}
-
-func (t *localTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
 
 type cloudTarget struct {
 	cloudAPI   string
@@ -233,7 +241,9 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget() Target { return &localTarget{targetType: localTargetType} }
+func LocalTarget() Target {
+	return &customTarget{targetType: localTargetType, baseURL: "http://127.0.0.1"}
+}
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
 func CustomTarget(baseURL string) Target {

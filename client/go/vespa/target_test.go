@@ -42,6 +42,23 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 	}
 }
 
+func TestCustomTarget(t *testing.T) {
+	lt := LocalTarget()
+	assertServiceURL(t, "http://127.0.0.1:19071", lt, "deploy")
+	assertServiceURL(t, "http://127.0.0.1:8080", lt, "query")
+	assertServiceURL(t, "http://127.0.0.1:8080", lt, "document")
+
+	ct := CustomTarget("http://192.0.2.42")
+	assertServiceURL(t, "http://192.0.2.42:19071", ct, "deploy")
+	assertServiceURL(t, "http://192.0.2.42:8080", ct, "query")
+	assertServiceURL(t, "http://192.0.2.42:8080", ct, "document")
+
+	ct2 := CustomTarget("http://192.0.2.42:60000")
+	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "deploy")
+	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "query")
+	assertServiceURL(t, "http://192.0.2.42:60000", ct2, "document")
+}
+
 func TestCustomTargetWait(t *testing.T) {
 	vc := mockVespaApi{}
 	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
@@ -93,6 +110,12 @@ func TestCloudTargetWait(t *testing.T) {
 
 	assertServiceWait(t, 500, target, "query")
 	assertServiceWait(t, 500, target, "document")
+}
+
+func assertServiceURL(t *testing.T, url string, target Target, service string) {
+	s, err := target.Service(service)
+	assert.Nil(t, err)
+	assert.Equal(t, url, s.BaseURL)
 }
 
 func assertServiceWait(t *testing.T, expectedStatus int, target Target, service string) {
