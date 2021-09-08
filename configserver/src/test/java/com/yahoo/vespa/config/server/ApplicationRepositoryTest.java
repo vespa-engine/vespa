@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -39,7 +39,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
-import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
@@ -807,6 +806,10 @@ public class ApplicationRepositoryTest {
             public boolean noCache() {
                 return false;
             }
+
+            @Override
+            public String getRequestDefMd5() { return ""; }
+
         }, Optional.empty());
     }
 

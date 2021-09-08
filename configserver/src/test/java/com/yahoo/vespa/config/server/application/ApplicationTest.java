@@ -105,7 +105,7 @@ public class ApplicationTest {
 
     @Test(expected = UnknownConfigDefinitionException.class)
     public void require_that_def_file_must_exist() {
-        handler.resolveConfig(createRequest("unknown", "namespace", "a", emptySchema));
+        handler.resolveConfig(createRequest("unknown", "namespace", emptySchema));
     }
 
     @Test
@@ -116,8 +116,9 @@ public class ApplicationTest {
     @Test
     public void require_that_build_config_can_be_resolved() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE,
-                                                                   ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA))
+        handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME,
+                                            ModelConfig.CONFIG_DEF_NAMESPACE,
+                                            ModelConfig.CONFIG_DEF_SCHEMA))
                 .serialize(baos, CompressionType.UNCOMPRESSED);
         assertTrue(baos.toString().startsWith("{\"vespaVersion\":\"1.0.0\",\"hosts\":[{\"name\":\"mytesthost\""));
     }
@@ -132,23 +133,23 @@ public class ApplicationTest {
         String[] schema = new String[1];
         schema[0] = "boolval bool default=true"; // changed to be true, original is false
         baos = new ByteArrayOutputStream();
-        handler.resolveConfig(createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, "", schema))
+        handler.resolveConfig(createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, schema))
                                         .serialize(baos, CompressionType.UNCOMPRESSED);
         assertEquals("{\"boolval\":true,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", baos.toString(Utf8.getCharset()));
     }
 
     @Test
     public void require_that_configs_are_cached() {
-        ConfigResponse response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA));
+        ConfigResponse response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_SCHEMA));
         assertNotNull(response);
-        ConfigResponse cached_response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_MD5, ModelConfig.CONFIG_DEF_SCHEMA));
+        ConfigResponse cached_response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_SCHEMA));
         assertNotNull(cached_response);
         assertTrue(response == cached_response);
     }
 
-    private static GetConfigRequest createRequest(String name, String namespace, String defMd5, String[] schema) {
+    private static GetConfigRequest createRequest(String name, String namespace, String[] schema) {
         Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(name, "admin/model", namespace, defMd5, null), DefContent.fromArray(schema),
+                createWithParams(new ConfigKey<>(name, "admin/model", namespace, null), DefContent.fromArray(schema),
                                  "fromHost", "", 0, 100, Trace.createDummy(), CompressionType.UNCOMPRESSED,
                                  Optional.empty()).getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
@@ -157,7 +158,7 @@ public class ApplicationTest {
     private static GetConfigRequest createSimpleConfigRequest() {
         return createRequest(SimpletypesConfig.CONFIG_DEF_NAME,
                              SimpletypesConfig.CONFIG_DEF_NAMESPACE,
-                             SimpletypesConfig.CONFIG_DEF_MD5,
                              ApplicationTest.emptySchema);
     }
+
 }
