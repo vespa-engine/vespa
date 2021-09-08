@@ -230,27 +230,27 @@ public class NodeSpec {
     }
 
     public double vcpu() {
-        return resources.vcpu();
+        return realResources.vcpu();
     }
 
     public double memoryGb() {
-        return resources.memoryGb();
+        return realResources.memoryGb();
     }
 
     public DiskSize diskSize() {
-        return DiskSize.of(resources.diskGb(), DiskSize.Unit.GB);
+        return DiskSize.of(realResources.diskGb(), DiskSize.Unit.GB);
     }
 
     public double diskGb() {
-        return resources.diskGb();
+        return realResources.diskGb();
     }
 
     public boolean isFastDisk() {
-        return resources.diskSpeed() == fast;
+        return realResources.diskSpeed() == fast;
     }
 
     public double bandwidthGbps() {
-        return resources.bandwidthGbps();
+        return realResources.bandwidthGbps();
     }
 
     public Set<String> ipAddresses() {
@@ -404,8 +404,8 @@ public class NodeSpec {
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<String> modelName = Optional.empty();
-        private NodeResources resources = NodeResources.zero();
-        private NodeResources realResources = NodeResources.zero();
+        private NodeResources resources;
+        private NodeResources realResources;
         private Set<String> ipAddresses = Set.of();
         private Set<String> additionalIpAddresses = Set.of();
         private NodeReports reports = new NodeReports();
@@ -556,23 +556,23 @@ public class NodeSpec {
         }
 
         public Builder vcpu(double vcpu) {
-            return resources(resources.withVcpu(vcpu));
+            return realResources(realResources.withVcpu(vcpu));
         }
 
         public Builder memoryGb(double memoryGb) {
-            return resources(resources.withMemoryGb(memoryGb));
+            return realResources(realResources.withMemoryGb(memoryGb));
         }
 
         public Builder diskGb(double diskGb) {
-            return resources(resources.withDiskGb(diskGb));
+            return realResources(realResources.withDiskGb(diskGb));
         }
 
         public Builder fastDisk(boolean fastDisk) {
-            return resources(resources.with(fastDisk ? fast : slow));
+            return realResources(realResources.with(fastDisk ? fast : slow));
         }
 
         public Builder bandwidthGbps(double bandwidthGbps) {
-            return resources(resources.withBandwidthGbps(bandwidthGbps));
+            return realResources(realResources.withBandwidthGbps(bandwidthGbps));
         }
 
         public Builder ipAddresses(Set<String> ipAddresses) {
