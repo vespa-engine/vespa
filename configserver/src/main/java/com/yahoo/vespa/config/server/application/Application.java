@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.collections.Pair;
@@ -102,7 +102,7 @@ public class Application implements ModelResult {
         long start = System.currentTimeMillis();
         metricUpdater.incrementRequests();
         ConfigKey<?> configKey = req.getConfigKey();
-        String defMd5 = configKey.getMd5();
+        String defMd5 = req.getRequestDefMd5();
         if (defMd5 == null || defMd5.isEmpty()) {
             defMd5 = ConfigUtils.getDefMd5(req.getDefContent().asList());
         }

@@ -264,7 +264,7 @@ public class MultiTenantRpcAuthorizerTest {
         Cursor request = data.setObject();
         request.setString("defName", configKey.getName());
         request.setString("defNamespace", configKey.getNamespace());
-        request.setString("defMD5", configKey.getMd5());
+        request.setString("defMD5", "");
         request.setString("configId", configKey.getConfigId());
         request.setString("clientHostname", hostname);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {

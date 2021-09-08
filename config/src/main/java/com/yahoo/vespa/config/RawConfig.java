@@ -77,7 +77,7 @@ public class RawConfig extends ConfigInstance {
      */
     public static RawConfig createFromResponseParameters(JRTClientConfigRequest req) {
         return new RawConfig(req.getConfigKey(),
-                             req.getConfigKey().getMd5(),
+                             ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              req.getNewPayload(),
                              req.getNewConfigMd5(),
                              req.getNewGeneration(),
@@ -94,7 +94,7 @@ public class RawConfig extends ConfigInstance {
      */
     public static RawConfig createFromServerRequest(JRTServerConfigRequest req) {
         return new RawConfig(req.getConfigKey(),
-                             req.getConfigKey().getMd5() ,
+                             ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              Payload.from(new Utf8String(""), CompressionInfo.uncompressed()),
                              req.getRequestConfigMd5(),
                              req.getRequestGeneration(),

@@ -107,7 +107,7 @@ var documentGetCmd = &cobra.Command{
 	},
 }
 
-func documentService() *vespa.Service { return getService("document") }
+func documentService() *vespa.Service { return getService("document", 0) }
 
 func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
 	if !result.Success {

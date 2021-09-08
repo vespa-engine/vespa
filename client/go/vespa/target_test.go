@@ -23,6 +23,14 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 			response = fmt.Sprintf(`{"endpoints": [{"url": "%s"}]}`, v.serverURL)
 		}
 		w.Write([]byte(response))
+	case "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42":
+		response := "{}"
+		if v.endpointsReady {
+			response = `{"active": false, "status": "success"}`
+		} else {
+			response = `{"active": true, "status": "running"}`
+		}
+		w.Write([]byte(response))
 	case "/status.html":
 		w.Write([]byte("OK"))
 	case "/ApplicationStatus":
@@ -76,11 +84,11 @@ func TestCloudTargetWait(t *testing.T) {
 	_, err = target.Service("query")
 	assert.NotNil(t, err)
 
-	err = target.DiscoverServices(0)
+	err = target.DiscoverServices(0, 42)
 	assert.NotNil(t, err)
 
 	vc.endpointsReady = true
-	err = target.DiscoverServices(0)
+	err = target.DiscoverServices(0, 42)
 	assert.Nil(t, err)
 
 	assertServiceWait(t, 500, target, "query")

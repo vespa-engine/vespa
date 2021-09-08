@@ -22,7 +22,7 @@ var statusCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		waitForService("query")
+		waitForService("query", 0)
 	},
 }
 
@@ -33,7 +33,7 @@ var statusQueryCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		waitForService("query")
+		waitForService("query", 0)
 	},
 }
 
@@ -44,7 +44,7 @@ var statusDocumentCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		waitForService("document")
+		waitForService("document", 0)
 	},
 }
 
@@ -55,6 +55,6 @@ var statusDeployCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		waitForService("deploy")
+		waitForService("deploy", 0)
 	},
 }

@@ -36,7 +36,7 @@ can be set by the syntax [parameter-name]=[value].`,
 }
 
 func query(arguments []string) {
-	service := getService("query")
+	service := getService("query", 0)
 	url, _ := url.Parse(service.BaseURL + "/search/")
 	urlQuery := url.Query()
 	for i := 0; i < len(arguments); i++ {

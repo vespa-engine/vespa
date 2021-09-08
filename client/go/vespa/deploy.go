@@ -198,17 +198,17 @@ func Activate(sessionID int64, deployment DeploymentOpts) error {
 	return checkResponse(req, response, serviceDescription)
 }
 
-func Deploy(opts DeploymentOpts) error {
+func Deploy(opts DeploymentOpts) (int64, error) {
 	path := "/application/v2/tenant/default/prepareandactivate"
 	if opts.IsCloud() {
 		if !opts.ApplicationPackage.HasCertificate() {
-			return fmt.Errorf("%s: missing certificate in package", opts)
+			return 0, fmt.Errorf("%s: missing certificate in package", opts)
 		}
 		if opts.APIKey == nil {
-			return fmt.Errorf("%s: missing api key", opts.String())
+			return 0, fmt.Errorf("%s: missing api key", opts.String())
 		}
 		if opts.Deployment.Zone.Environment == "" || opts.Deployment.Zone.Region == "" {
-			return fmt.Errorf("%s: missing zone", opts)
+			return 0, fmt.Errorf("%s: missing zone", opts)
 		}
 		path = fmt.Sprintf("/application/v4/tenant/%s/application/%s/instance/%s/deploy/%s-%s",
 			opts.Deployment.Application.Tenant,
@@ -219,10 +219,9 @@ func Deploy(opts DeploymentOpts) error {
 	}
 	u, err := opts.url(path)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = uploadApplicationPackage(u, opts)
-	return err
+	return uploadApplicationPackage(u, opts)
 }
 
 func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) {
@@ -251,16 +250,20 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 	}
 	defer response.Body.Close()
 
-	var sessionResponse struct {
-		SessionID string `json:"session-id"`
+	var jsonResponse struct {
+		SessionID string `json:"session-id"` // Config server
+		RunID     int64  `json:"run"`        // Controller
 	}
-	sessionResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
+	jsonResponse.SessionID = "0" // Set a default session ID for responses that don't contain int (e.g. cloud deployment)
 	if err := checkResponse(request, response, serviceDescription); err != nil {
 		return 0, err
 	}
 	jsonDec := json.NewDecoder(response.Body)
-	jsonDec.Decode(&sessionResponse) // Ignore error in case this is a non-JSON response
-	return strconv.ParseInt(sessionResponse.SessionID, 10, 64)
+	jsonDec.Decode(&jsonResponse) // Ignore error in case this is a non-JSON response
+	if jsonResponse.RunID > 0 {
+		return jsonResponse.RunID, nil
+	}
+	return strconv.ParseInt(jsonResponse.SessionID, 10, 64)
 }
 
 func checkResponse(req *http.Request, response *http.Response, serviceDescription string) error {

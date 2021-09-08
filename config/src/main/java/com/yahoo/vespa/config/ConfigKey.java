@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.ConfigInstance;
@@ -17,7 +17,6 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
 
     // The two fields below are only set when ConfigKey is constructed from a config class. Can be null
     private final Class<CONFIGCLASS> configClass;
-    private final String md5; // config definition md5
 
     /**
      * Constructs new key
@@ -27,7 +26,7 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
      * @param namespace      namespace for this config definition
      */
     public ConfigKey(String name, String configIdString, String namespace) {
-        this(name, configIdString, namespace, null, null);
+        this(name, configIdString, namespace, null);
     }
 
     /**
@@ -38,10 +37,12 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
      */
     public ConfigKey(Class<CONFIGCLASS> clazz, String configIdString) {
         this(getFieldFromClass(clazz, "CONFIG_DEF_NAME"),
-                configIdString, getFieldFromClass(clazz, "CONFIG_DEF_NAMESPACE"), getFieldFromClass(clazz, "CONFIG_DEF_MD5"), clazz);
+             configIdString,
+             getFieldFromClass(clazz, "CONFIG_DEF_NAMESPACE"),
+             clazz);
     }
 
-    public ConfigKey(String name, String configIdString, String namespace, String defMd5, Class<CONFIGCLASS> clazz) {
+    public ConfigKey(String name, String configIdString, String namespace, Class<CONFIGCLASS> clazz) {
         if (name == null || name.isEmpty())
             throw new ConfigurationRuntimeException("Config name cannot be null or empty!");
         if (namespace == null || namespace.isEmpty())
@@ -49,7 +50,6 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
         this.name = name;
         this.configId = (configIdString == null) ? "" : configIdString;
         this.namespace = namespace;
-        this.md5 = (defMd5 == null) ? "" : defMd5;
         this.configClass = clazz;
     }
 
@@ -108,10 +108,6 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
         return configClass;
     }
 
-    public String getMd5() {
-        return md5;
-    }
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("name=");
@@ -123,8 +119,8 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
         return sb.toString();
     }
 
-    public static ConfigKey<?> createFull(String name, String configId, String namespace, String md5) {
-        return new ConfigKey<>(name, configId, namespace, md5, null);
+    public static ConfigKey<?> createFull(String name, String configId, String namespace) {
+        return new ConfigKey<>(name, configId, namespace, null);
     }
 
 }

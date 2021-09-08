@@ -82,7 +82,8 @@ BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-openssl-devel >= 1.1.1k-1
+BuildRequires: vespa-openssl-devel >= 1.1.1l-1
+%define _use_vespa_openssl 1
 BuildRequires: vespa-protobuf-devel = 3.17.3
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
@@ -104,7 +105,8 @@ BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
 BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
-BuildRequires: openssl-devel
+BuildRequires: vespa-openssl-devel >= 1.1.1l-1
+%define _use_vespa_openssl 1
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
@@ -283,7 +285,7 @@ Requires: %{name}-tools = %{version}-%{release}
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(icui18n|icuuc|lz4|protobuf|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 
 %description
@@ -319,8 +321,8 @@ Requires: vespa-xxhash = 0.8.0
 %else
 Requires: xxhash-libs >= 0.8.0
 %endif
-%if 0%{?el7}
-Requires: vespa-openssl >= 1.1.1k-1
+%if 0%{?el7} || 0%{?el8}
+Requires: vespa-openssl >= 1.1.1l-1
 %else
 Requires: openssl-libs
 %endif
@@ -352,10 +354,13 @@ Requires: %{name}-base-libs = %{version}-%{release}
 %if 0%{?el7}
 Requires: llvm7.0-libs
 Requires: vespa-icu >= 65.1.0-1
-Requires: vespa-openssl >= 1.1.1k-1
 Requires: vespa-protobuf = 3.17.3
 %else
 Requires: libicu
+%endif
+%if 0%{?el7} || 0%{?el8}
+Requires: vespa-openssl >= 1.1.1l-1
+%else
 Requires: openssl-libs
 %endif
 %if 0%{?el8}

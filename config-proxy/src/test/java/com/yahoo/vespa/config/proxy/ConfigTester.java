@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.jrt.Request;
@@ -25,6 +25,7 @@ import java.util.Optional;
 public class ConfigTester {
 
     private static final long defaultTimeout = 10000;
+    private static final List<String> defContent = Collections.singletonList("bar string");
 
     static RawConfig fooConfig;
     static RawConfig barConfig;
@@ -39,7 +40,6 @@ public class ConfigTester {
         ConfigPayload fooConfigPayload = createConfigPayload("bar", "value");
         fooPayload = Payload.from(fooConfigPayload);
 
-        List<String> defContent = Collections.singletonList("bar string");
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
         String configMd5 = ConfigUtils.getMd5(fooConfigPayload);
@@ -57,17 +57,28 @@ public class ConfigTester {
 
     JRTServerConfigRequest createRequest(RawConfig config, long timeout) {
         return createRequest(config.getName(), config.getConfigId(), config.getNamespace(),
-                             config.getConfigMd5(), config.getDefMd5(), config.getGeneration(), timeout);
+                             config.getConfigMd5(), config.getGeneration(), timeout);
     }
 
     JRTServerConfigRequest createRequest(String configName, String configId, String namespace, long timeout) {
-        return createRequest(configName, configId, namespace, "", null, 0, timeout);
+        return createRequest(configName, configId, namespace, null, 0, timeout);
     }
 
-    private JRTServerConfigRequest createRequest(String configName, String configId, String namespace, String md5, String defMd5, long generation, long timeout) {
+    private JRTServerConfigRequest createRequest(String configName,
+                                                 String configId,
+                                                 String namespace,
+                                                 String md5,
+                                                 long generation,
+                                                 long timeout) {
         Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(configName, configId, namespace, defMd5, null), DefContent.fromList(Collections.emptyList()),
-                                 "fromHost", md5, generation, timeout, Trace.createDummy(), CompressionType.UNCOMPRESSED,
+                createWithParams(new ConfigKey<>(configName, configId, namespace, null),
+                                 DefContent.fromList(defContent),
+                                 "fromHost",
+                                 md5,
+                                 generation,
+                                 timeout,
+                                 Trace.createDummy(),
+                                 CompressionType.UNCOMPRESSED,
                                  Optional.empty()).getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
     }
