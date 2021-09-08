@@ -122,7 +122,7 @@ BlockingOperationStarterTest::SetUp()
     _compReg = std::make_unique<StorageComponentRegisterImpl>();
     _compReg->setClock(_clock);
     _clock.setAbsoluteTimeInSeconds(1);
-    _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg);
+    _messageTracker = std::make_unique<PendingMessageTracker>(*_compReg, 0);
     _fake_ctx = std::make_unique<FakeDistributorStripeOperationContext>(*_messageTracker);
     _operation_sequencer = std::make_unique<OperationSequencer>();
     _operationStarter = std::make_unique<BlockingOperationStarter>(*_fake_ctx, *_operation_sequencer, *_starterImpl);

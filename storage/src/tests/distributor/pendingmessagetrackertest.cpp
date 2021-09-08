@@ -149,7 +149,7 @@ Fixture::Fixture()
     _clock.setAbsoluteTimeInSeconds(1);
     // Have to set clock in compReg before constructing tracker, or it'll
     // flip out and die on an explicit nullptr check.
-    _tracker = std::make_unique<PendingMessageTracker>(_compReg);
+    _tracker = std::make_unique<PendingMessageTracker>(_compReg, 0);
 }
 Fixture::~Fixture() = default;
 
@@ -160,7 +160,7 @@ TEST_F(PendingMessageTrackerTest, simple) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
+    PendingMessageTracker tracker(compReg, 0);
 
     auto remove = std::make_shared<api::RemoveCommand>(
                     makeDocumentBucket(document::BucketId(16, 1234)),
@@ -217,14 +217,14 @@ TEST_F(PendingMessageTrackerTest, start_page) {
     StorageComponentRegisterImpl compReg;
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
-    PendingMessageTracker tracker(compReg);
+    PendingMessageTracker tracker(compReg, 3);
 
     {
         std::ostringstream ost;
-        tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages"));
+        tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages3"));
 
         EXPECT_THAT(ost.str(), HasSubstr(
-                "<h1>Pending messages to storage nodes</h1>\n"
+                "<h1>Pending messages to storage nodes (stripe 3)</h1>\n"
                 "View:\n"
                 "<ul>\n"
                 "<li><a href=\"?order=bucket\">Group by bucket</a></li>"
@@ -237,7 +237,7 @@ TEST_F(PendingMessageTrackerTest, multiple_messages) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
+    PendingMessageTracker tracker(compReg, 0);
 
     insertMessages(tracker);
 
@@ -332,7 +332,7 @@ TEST_F(PendingMessageTrackerTest, get_pending_message_types) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
+    PendingMessageTracker tracker(compReg, 0);
     document::BucketId bid(16, 1234);
 
     auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
@@ -364,7 +364,7 @@ TEST_F(PendingMessageTrackerTest, has_pending_message) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
+    PendingMessageTracker tracker(compReg, 0);
     document::BucketId bid(16, 1234);
 
     EXPECT_FALSE(tracker.hasPendingMessage(1, makeDocumentBucket(bid), api::MessageType::REMOVE_ID));
@@ -407,7 +407,7 @@ TEST_F(PendingMessageTrackerTest, get_all_messages_for_single_bucket) {
     framework::defaultimplementation::FakeClock clock;
     compReg.setClock(clock);
     clock.setAbsoluteTimeInSeconds(1);
-    PendingMessageTracker tracker(compReg);
+    PendingMessageTracker tracker(compReg, 0);
 
     insertMessages(tracker);
 
