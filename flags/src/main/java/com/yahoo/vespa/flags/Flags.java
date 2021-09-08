@@ -148,7 +148,7 @@ public class Flags {
             "Takes effect on next host-admin tick.");
 
     public static final UnboundBooleanFlag NEW_SPARE_DISKS = defineFeatureFlag(
-            "new-spare-disks", true,
+            "new-spare-disks", false,
             List.of("hakonhall"), "2021-09-08", "2021-11-08",
             "Use a new algorithm to calculate the spare disks of a host.",
             "Takes effect on first run of DiskTask, typically after host-admin restart/upgrade.");
