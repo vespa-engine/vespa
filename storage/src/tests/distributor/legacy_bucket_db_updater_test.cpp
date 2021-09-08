@@ -561,6 +561,7 @@ LegacyBucketDBUpdaterTest::LegacyBucketDBUpdaterTest()
 
 LegacyBucketDBUpdaterTest::~LegacyBucketDBUpdaterTest() = default;
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, normal_usage) {
     setSystemState(lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"));
 
@@ -592,6 +593,7 @@ TEST_F(LegacyBucketDBUpdaterTest, normal_usage) {
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(10, "distributor:2 storage:3"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, distributor_change) {
     int numBuckets = 100;
 
@@ -622,6 +624,7 @@ TEST_F(LegacyBucketDBUpdaterTest, distributor_change) {
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(numBuckets, "distributor:2 storage:3"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, distributor_change_with_grouping) {
     std::string distConfig(getDistConfig6Nodes2Groups());
     setDistribution(distConfig);
@@ -653,6 +656,7 @@ TEST_F(LegacyBucketDBUpdaterTest, distributor_change_with_grouping) {
     ASSERT_EQ(messageCount(6), _sender.commands().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, normal_usage_initializing) {
     setSystemState(lib::ClusterState("distributor:1 .0.s:i storage:1 .0.s:i"));
 
@@ -690,6 +694,7 @@ TEST_F(LegacyBucketDBUpdaterTest, normal_usage_initializing) {
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(20, "distributor:1 storage:1"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, failed_request_bucket_info) {
     setSystemState(lib::ClusterState("distributor:1 .0.s:i storage:1"));
 
@@ -732,6 +737,7 @@ TEST_F(LegacyBucketDBUpdaterTest, failed_request_bucket_info) {
     EXPECT_EQ(std::string("Set system state"), _senderDown.getCommands());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, down_while_init) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
 
@@ -795,6 +801,7 @@ LegacyBucketDBUpdaterTest::expandNodeVec(const std::vector<uint16_t> &nodes)
     return res;
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, node_down) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
     enableDistributorClusterState("distributor:1 storage:3");
@@ -810,6 +817,7 @@ TEST_F(LegacyBucketDBUpdaterTest, node_down) {
     EXPECT_FALSE(bucketExistsThatHasNode(100, 1));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, storage_node_in_maintenance_clears_buckets_for_node) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
     enableDistributorClusterState("distributor:1 storage:3");
@@ -825,6 +833,7 @@ TEST_F(LegacyBucketDBUpdaterTest, storage_node_in_maintenance_clears_buckets_for
     EXPECT_FALSE(bucketExistsThatHasNode(100, 1));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, node_down_copies_get_in_sync) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
 
@@ -842,6 +851,7 @@ TEST_F(LegacyBucketDBUpdaterTest, node_down_copies_get_in_sync) {
             dumpBucket(bid));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, initializing_while_recheck) {
    lib::ClusterState systemState("distributor:1 storage:2 .0.s:i .0.i:0.1");
     setSystemState(systemState);
@@ -860,6 +870,7 @@ TEST_F(LegacyBucketDBUpdaterTest, initializing_while_recheck) {
     EXPECT_EQ(MessageType::SETSYSTEMSTATE, _senderDown.command(0)->getType());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, bit_change) {
     std::vector<document::BucketId> bucketlist;
 
@@ -959,6 +970,7 @@ TEST_F(LegacyBucketDBUpdaterTest, bit_change) {
     }
 };
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, recheck_node_with_failure) {
     ASSERT_NO_FATAL_FAILURE(initializeNodesAndBuckets(3, 5));
 
@@ -1002,6 +1014,7 @@ TEST_F(LegacyBucketDBUpdaterTest, recheck_node_with_failure) {
     EXPECT_EQ(size_t(2), _sender.commands().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, recheck_node) {
     ASSERT_NO_FATAL_FAILURE(initializeNodesAndBuckets(3, 5));
 
