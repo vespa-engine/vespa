@@ -74,11 +74,8 @@ func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArg
 }
 
 type mockHttpClient struct {
-	// The HTTP status code that will be returned from the next invocation. Default: 200
-	nextStatus int
-
-	// The response body code that will be returned from the next invocation. Default: ""
-	nextBody string
+	// The responses to return for future requests. Once a response is consumed, it's removed from this array
+	nextResponses []mockResponse
 
 	// A recording of the last HTTP request made through this
 	lastRequest *http.Request
@@ -87,19 +84,34 @@ type mockHttpClient struct {
 	requests []*http.Request
 }
 
-func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
-	if c.nextStatus == 0 {
-		c.nextStatus = 200
+type mockResponse struct {
+	status int
+	body   string
+}
+
+func (c *mockHttpClient) NextStatus(status int) { c.NextResponse(status, "") }
+
+func (c *mockHttpClient) NextResponse(status int, body string) {
+	c.nextResponses = append(c.nextResponses, mockResponse{status: status, body: body})
+}
+
+func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
+	response := mockResponse{status: 200}
+	if len(c.nextResponses) > 0 {
+		response = c.nextResponses[0]
+		c.nextResponses = c.nextResponses[1:]
 	}
 	c.lastRequest = request
 	c.requests = append(c.requests, request)
 	return &http.Response{
-			Status:     "Status " + strconv.Itoa(c.nextStatus),
-			StatusCode: c.nextStatus,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(c.nextBody)),
+			Status:     "Status " + strconv.Itoa(response.status),
+			StatusCode: response.status,
+			Body:       ioutil.NopCloser(bytes.NewBufferString(response.body)),
 			Header:     make(http.Header),
 		},
 		nil
 }
 
 func (c *mockHttpClient) UseCertificate(certificate tls.Certificate) {}
+
+func convergeServices(client *mockHttpClient) { client.NextResponse(200, `{"converged":true}`) }

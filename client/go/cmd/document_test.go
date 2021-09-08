@@ -62,6 +62,7 @@ func TestDocumentRemoveWithoutIdArg(t *testing.T) {
 func TestDocumentSendMissingId(t *testing.T) {
 	arguments := []string{"document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"}
 	client := &mockHttpClient{}
+	convergeServices(client)
 	assert.Equal(t,
 		"Error: No document id given neither as argument or as a 'put' key in the json file\n",
 		executeCommand(t, client, arguments, []string{}))
@@ -70,6 +71,7 @@ func TestDocumentSendMissingId(t *testing.T) {
 func TestDocumentSendWithDisagreeingOperations(t *testing.T) {
 	arguments := []string{"document", "update", "testdata/A-Head-Full-of-Dreams-Put.json"}
 	client := &mockHttpClient{}
+	convergeServices(client)
 	assert.Equal(t,
 		"Error: Wanted document operation is update but the JSON file specifies put\n",
 		executeCommand(t, client, arguments, []string{}))
@@ -90,12 +92,12 @@ func TestDocumentGet(t *testing.T) {
 
 func assertDocumentSend(arguments []string, expectedOperation string, expectedMethod string, expectedDocumentId string, expectedPayloadFile string, t *testing.T) {
 	client := &mockHttpClient{}
+	documentURL := documentServiceURL(client)
 	assert.Equal(t,
 		"Success: "+expectedOperation+" "+expectedDocumentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
-	target := getService("document", 0).BaseURL
 	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)
-	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
+	assert.Equal(t, documentURL+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
 	assert.Equal(t, expectedMethod, client.lastRequest.Method)
 
@@ -104,9 +106,9 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 }
 
 func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
-	client := &mockHttpClient{
-		nextBody: "{\"fields\":{\"foo\":\"bar\"}}",
-	}
+	client := &mockHttpClient{}
+	documentURL := documentServiceURL(client)
+	client.NextResponse(200, "{\"fields\":{\"foo\":\"bar\"}}")
 	assert.Equal(t,
 		`{
     "fields": {
@@ -115,14 +117,15 @@ func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
 }
 `,
 		executeCommand(t, client, arguments, []string{}))
-	target := getService("document", 0).BaseURL
 	expectedPath, _ := vespa.IdToURLPath(documentId)
-	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
+	assert.Equal(t, documentURL+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "GET", client.lastRequest.Method)
 }
 
 func assertDocumentError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
+	client := &mockHttpClient{}
+	convergeServices(client)
+	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Invalid document operation: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "put",
@@ -131,10 +134,17 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 }
 
 func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
+	client := &mockHttpClient{}
+	convergeServices(client)
+	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Container (document API) at 127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"document", "put",
 			"id:mynamespace:music::a-head-full-of-dreams",
 			"testdata/A-Head-Full-of-Dreams-Put.json"}, []string{}))
+}
+
+func documentServiceURL(client *mockHttpClient) string {
+	convergeServices(client)
+	return getService("document", 0).BaseURL
 }

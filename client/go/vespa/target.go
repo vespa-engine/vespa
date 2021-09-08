@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -41,17 +42,14 @@ type Target interface {
 	// Service returns the service for given name.
 	Service(name string) (*Service, error)
 
-	// DiscoverServices queries for services available on this target after the given session or deployment run has
-	// completed.
-	DiscoverServices(timeout time.Duration, sessionOrRunID int64) error
+	// DiscoverServices queries for services available on this target after the deployment run has completed.
+	DiscoverServices(timeout time.Duration, runID int64) error
 }
 
 type customTarget struct {
 	targetType string
 	baseURL    string
 }
-
-type localTarget struct{ targetType string }
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
@@ -77,7 +75,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 		return 0, err
 	}
 	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
-	return wait(okFunc, req, s.certificate, timeout)
+	return wait(okFunc, req, &s.certificate, timeout)
 }
 
 func (s *Service) Description() string {
@@ -97,27 +95,65 @@ func (t *customTarget) Type() string { return t.targetType }
 func (t *customTarget) Service(name string) (*Service, error) {
 	switch name {
 	case deployService, queryService, documentService:
-		// TODO: Add default ports if missing
-		return &Service{BaseURL: t.baseURL, Name: name}, nil
+		url, err := t.urlWithPort(name)
+		if err != nil {
+			return nil, err
+		}
+		return &Service{BaseURL: url, Name: name}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-func (t *customTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
-
-func (t *localTarget) Type() string { return t.targetType }
-
-func (t *localTarget) Service(name string) (*Service, error) {
-	switch name {
-	case deployService:
-		return &Service{Name: name, BaseURL: "http://127.0.0.1:19071"}, nil
-	case queryService, documentService:
-		return &Service{Name: name, BaseURL: "http://127.0.0.1:8080"}, nil
+func (t *customTarget) urlWithPort(serviceName string) (string, error) {
+	u, err := url.Parse(t.baseURL)
+	if err != nil {
+		return "", err
 	}
-	return nil, fmt.Errorf("unknown service: %s", name)
+	port := u.Port()
+	if port == "" {
+		switch serviceName {
+		case deployService:
+			port = "19071"
+		case queryService, documentService:
+			port = "8080"
+		default:
+			return "", fmt.Errorf("unknown service: %s", serviceName)
+		}
+		u.Host = u.Host + ":" + port
+	}
+	return u.String(), nil
 }
 
-func (t *localTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
+func (t *customTarget) DiscoverServices(timeout time.Duration, runID int64) error {
+	deployService, err := t.Service("deploy")
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	converged := false
+	convergedFunc := func(status int, response []byte) (bool, error) {
+		if status/100 != 2 {
+			return false, nil
+		}
+		var resp serviceConvergeResponse
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		converged = resp.Converged
+		return converged, nil
+	}
+	if _, err := wait(convergedFunc, req, nil, timeout); err != nil {
+		return err
+	}
+	if !converged {
+		return fmt.Errorf("services have not converged")
+	}
+	return nil
+}
 
 type cloudTarget struct {
 	cloudAPI   string
@@ -190,7 +226,7 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		}
 		return true, nil
 	}
-	_, err = wait(jobSuccessFunc, req, t.keyPair, timeout)
+	_, err = wait(jobSuccessFunc, req, &t.keyPair, timeout)
 	return err
 }
 
@@ -221,7 +257,7 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 		endpointURL = resp.Endpoints[0].URL
 		return true, nil
 	}
-	if _, err = wait(endpointFunc, req, t.keyPair, timeout); err != nil {
+	if _, err = wait(endpointFunc, req, &t.keyPair, timeout); err != nil {
 		return err
 	}
 	if endpointURL == "" {
@@ -233,7 +269,9 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget() Target { return &localTarget{targetType: localTargetType} }
+func LocalTarget() Target {
+	return &customTarget{targetType: localTargetType, baseURL: "http://127.0.0.1"}
+}
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
 func CustomTarget(baseURL string) Target {
@@ -264,11 +302,15 @@ type jobResponse struct {
 	Status string `json:"status"`
 }
 
+type serviceConvergeResponse struct {
+	Converged bool `json:"converged"`
+}
+
 type responseFunc func(status int, response []byte) (bool, error)
 
-func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeout time.Duration) (int, error) {
-	if certificate.Certificate != nil {
-		util.ActiveHttpClient.UseCertificate(certificate)
+func wait(fn responseFunc, req *http.Request, certificate *tls.Certificate, timeout time.Duration) (int, error) {
+	if certificate != nil {
+		util.ActiveHttpClient.UseCertificate(*certificate)
 	}
 	var (
 		httpErr    error

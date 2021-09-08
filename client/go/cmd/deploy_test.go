@@ -111,7 +111,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 
 func assertPrepare(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mockHttpClient{}
-	client.nextBody = `{"session-id":"42"}`
+	client.NextResponse(200, `{"session-id":"42"}`)
 	assert.Equal(t,
 		"Success: Prepared "+applicationPackage+" with session 42\n",
 		executeCommand(t, client, arguments, []string{}))
@@ -155,14 +155,16 @@ func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T
 }
 
 func assertApplicationPackageError(t *testing.T, command string, status int, expectedMessage string, returnBody string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: returnBody}
+	client := &mockHttpClient{}
+	client.NextResponse(status, returnBody)
 	assert.Equal(t,
 		"Error: Invalid application package (Status "+strconv.Itoa(status)+")\n\n"+expectedMessage+"\n",
 		executeCommand(t, client, []string{command, "testdata/applications/withTarget/target/application.zip"}, []string{}))
 }
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
+	client := &mockHttpClient{}
+	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Error from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))

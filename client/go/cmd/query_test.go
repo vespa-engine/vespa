@@ -44,25 +44,31 @@ func TestServerError(t *testing.T) {
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
-	client := &mockHttpClient{nextBody: "{\"query\":\"result\"}"}
+	client := &mockHttpClient{}
+	queryURL := queryServiceURL(client)
+	client.NextResponse(200, "{\"query\":\"result\"}")
 	assert.Equal(t,
 		"{\n    \"query\": \"result\"\n}\n",
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
-	assert.Equal(t, getService("query", 0).BaseURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
+	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 
 func assertQueryNonJsonResult(t *testing.T, expectedQuery string, query ...string) {
-	client := &mockHttpClient{nextBody: "query result"}
+	client := &mockHttpClient{}
+	queryURL := queryServiceURL(client)
+	client.NextResponse(200, "query result")
 	assert.Equal(t,
 		"query result\n",
 		executeCommand(t, client, []string{"query"}, query),
 		"query output")
-	assert.Equal(t, getService("query", 0).BaseURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
+	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 
 func assertQueryError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
+	client := &mockHttpClient{}
+	convergeServices(client)
+	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
@@ -70,9 +76,16 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 }
 
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
-	client := &mockHttpClient{nextStatus: status, nextBody: errorMessage}
+	client := &mockHttpClient{}
+	convergeServices(client)
+	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Status "+strconv.Itoa(status)+" from container at 127.0.0.1:8080\n"+errorMessage+"\n",
 		executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
 		"error output")
+}
+
+func queryServiceURL(client *mockHttpClient) string {
+	convergeServices(client)
+	return getService("query", 0).BaseURL
 }
