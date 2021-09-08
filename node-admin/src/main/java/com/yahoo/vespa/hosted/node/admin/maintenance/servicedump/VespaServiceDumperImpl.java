@@ -11,14 +11,15 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -38,6 +39,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private final SyncClient syncClient;
     private final NodeRepository nodeRepository;
     private final Clock clock;
+    private final Map<String, ArtifactProducer> artifactProducers;
 
     public VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository) {
         this(container, syncClient, nodeRepository, Clock.systemUTC());
@@ -50,6 +52,9 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         this.syncClient = syncClient;
         this.nodeRepository = nodeRepository;
         this.clock = clock;
+        this.artifactProducers = List.of(new JvmDumpProducer(container))
+                .stream()
+                .collect(Collectors.toMap(ArtifactProducer::name, Function.identity()));
     }
 
     @Override
@@ -76,11 +81,17 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, "Request already expired");
             return;
         }
+        List<String> artifactTypes = request.artifacts();
+        if (artifactTypes == null || artifactTypes.isEmpty()) {
+            handleFailure(context, request, startedAt, "No artifacts requested");
+            return;
+        }
         UnixPath directoryInNode = new UnixPath(context.pathInNodeUnderVespaHome("tmp/vespa-service-dump"));
         UnixPath directoryOnHost = new UnixPath(context.pathOnHostFromPathInNode(directoryInNode.toPath()));
         try {
             context.log(log, Level.INFO,
-                    "Creating dump for " + configId + " requested at " + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
+                    "Creating service dump for " + configId + " requested at "
+                            + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
             storeReport(context, createStartedReport(request, startedAt));
             if (directoryOnHost.exists()) {
                 context.log(log, Level.INFO, "Removing existing directory '" + directoryOnHost +"'.");
@@ -89,18 +100,23 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             context.log(log, Level.INFO, "Creating '" + directoryOnHost +"'.");
             directoryOnHost.createDirectory();
             directoryOnHost.setPermissions("rwxrwxrwx");
-            UnixPath vespaJvmDumper = new UnixPath(context.pathInNodeUnderVespaHome("bin/vespa-jvm-dumper"));
-            context.log(log, Level.INFO, "Executing '" + vespaJvmDumper + "' with arguments '" + configId + "' and '" + directoryInNode + "'");
-            CommandResult result = container.executeCommandInContainerAsRoot(
-                    context, vespaJvmDumper.toString(), configId, directoryInNode.toString());
-            context.log(log, Level.INFO, "vespa-jvm-dumper exited with code '" + result.getExitCode() + "' and output:\n" + result.getOutput());
-            if (result.getExitCode() > 0) {
-                handleFailure(context, request, startedAt, "Failed to create dump: " + result.getOutput());
-                return;
-            }
+            List<SyncFileInfo> files = new ArrayList<>();
             URI destination = serviceDumpDestination(nodeSpec, createDumpId(request));
+            for (String artifactType : artifactTypes) {
+                ArtifactProducer producer = artifactProducers.get(artifactType);
+                if (producer == null) {
+                    handleFailure(context, request, startedAt, "No artifact producer exists for '" + artifactType + "'");
+                    return;
+                }
+                context.log(log, "Producing artifact of type '" + artifactType + "'");
+                UnixPath producerDirectoryOnHost = directoryOnHost.resolve(artifactType);
+                producerDirectoryOnHost.createDirectory();
+                producerDirectoryOnHost.setPermissions("rwxrwxrwx");
+                UnixPath producerDirectoryInNode = directoryInNode.resolve(artifactType);
+                producer.produceArtifact(context, configId, producerDirectoryInNode);
+                collectArtifactFilesToUpload(files, producerDirectoryOnHost, destination.resolve(artifactType + '/'), expiry);
+            }
             context.log(log, Level.INFO, "Uploading files with destination " + destination + " and expiry " + expiry);
-            List<SyncFileInfo> files = dumpFiles(directoryOnHost.toPath(), destination, expiry);
             if (!syncClient.sync(context, files, Integer.MAX_VALUE)) {
                 handleFailure(context, request, startedAt, "Unable to upload all files");
                 return;
@@ -117,10 +133,10 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         }
     }
 
-    private List<SyncFileInfo> dumpFiles(Path directoryOnHost, URI destination, Instant expiry) {
-        return FileFinder.files(directoryOnHost).stream()
+    private void collectArtifactFilesToUpload(List<SyncFileInfo> files, UnixPath directoryOnHost, URI destination, Instant expiry) {
+        FileFinder.files(directoryOnHost.toPath()).stream()
                 .flatMap(file -> SyncFileInfo.forServiceDump(destination, file.path(), expiry).stream())
-                .collect(Collectors.toList());
+                .forEach(files::add);
     }
 
     private static Instant expireAt(Instant startedAt, ServiceDumpReport request) {
@@ -150,21 +166,21 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private static ServiceDumpReport createStartedReport(ServiceDumpReport request, Instant startedAt) {
         return new ServiceDumpReport(
                 request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, null, null, request.configId(),
-                request.expireAt(), null);
+                request.expireAt(), null, request.artifacts());
     }
 
     private static ServiceDumpReport createSuccessReport(
             Clock clock, ServiceDumpReport request, Instant startedAt, URI location) {
         return new ServiceDumpReport(
                 request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), clock.instant().toEpochMilli(), null,
-                location.toString(), request.configId(), request.expireAt(), null);
+                location.toString(), request.configId(), request.expireAt(), null, request.artifacts());
     }
 
     private static ServiceDumpReport createErrorReport(
             Clock clock, ServiceDumpReport request, Instant startedAt, String message) {
         return new ServiceDumpReport(
                 request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, clock.instant().toEpochMilli(), null,
-                request.configId(), request.expireAt(), message);
+                request.configId(), request.expireAt(), message, request.artifacts());
     }
 
     static String createDumpId(ServiceDumpReport request) {

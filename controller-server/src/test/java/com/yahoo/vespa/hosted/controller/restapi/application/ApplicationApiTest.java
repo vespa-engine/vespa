@@ -614,13 +614,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST to request a service dump
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1:application1:instance1-prod.us-central-1/service-dump", POST)
                         .userIdentity(HOSTED_VESPA_OPERATOR)
-                        .data("{\"configId\":\"default/container.1\"}"),
+                        .data("{\"configId\":\"default/container.1\",\"artifacts\":[\"jvm-dump\"]}"),
                 "{\"message\":\"Request created\"}");
 
         // GET to get status of service dump
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1:application1:instance1-prod.us-central-1/service-dump", GET)
                         .userIdentity(HOSTED_VESPA_OPERATOR),
-                "{\"createdMillis\":" + tester.controller().clock().millis() + ",\"configId\":\"default/container.1\"}");
+                "{\"createdMillis\":" + tester.controller().clock().millis() + ",\"configId\":\"default/container.1\"" +
+                        ",\"artifacts\":[\"jvm-dump\"]}");
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
