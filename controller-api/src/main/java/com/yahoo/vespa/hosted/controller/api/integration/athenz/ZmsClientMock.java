@@ -18,12 +18,14 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author bjorncs
@@ -145,8 +147,13 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
+    public void createPolicy(AthenzDomain athenzDomain, String athenzPolicy) {
+        // Noop
+    }
 
+    @Override
+    public void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
+        athenz.getOrCreateDomain(athenzDomain).policies.add(new AthenzDbMock.Policy(athenzRole.roleName(), action, resourceName.toResourceNameString()));
     }
 
     @Override
@@ -170,15 +177,24 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public List<AthenzService> listServices(AthenzDomain athenzDomain) {
-        return List.of();
+        return athenz.getOrCreateDomain(athenzDomain).services.keySet().stream()
+                .map(serviceName -> new AthenzService(athenzDomain, serviceName))
+                .collect(Collectors.toList());
     }
 
     @Override
     public void createOrUpdateService(AthenzService athenzService) {
+        athenz.getOrCreateDomain(athenzService.getDomain()).services.put(athenzService.getName(), new AthenzDbMock.Service(false));
     }
 
     @Override
     public void deleteService(AthenzService athenzService) {
+        athenz.getOrCreateDomain(athenzService.getDomain()).services.remove(athenzService.getName());
+    }
+
+    @Override
+    public void createRole(AthenzRole role, Map<String, Object> properties) {
+        athenz.getOrCreateDomain(role.domain()).roles.add(new AthenzDbMock.Role(role.roleName()));
     }
 
     @Override
