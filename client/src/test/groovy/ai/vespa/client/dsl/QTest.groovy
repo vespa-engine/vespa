@@ -244,6 +244,18 @@ class QTest extends Specification {
         q == """yql=select * from sd1 where weakAnd(f1, f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f3, f1 contains "v1", f2 contains "v2"));"""
     }
 
+    def "geo location"() {
+        given:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b").and(Q.geoLocation("taiwan", 25.105497, 121.597366, "200km"))
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sd1 where a contains "b" and geoLocation(taiwan, 25.105497, 121.597366, "200km");"""
+    }
+
     def "rank with only query"() {
         given:
         def q = Q.select("*")

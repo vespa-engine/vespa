@@ -169,4 +169,18 @@ public final class Q {
     public static WeakAnd weakand(String field, Query query) {
         return new WeakAnd(field, query);
     }
+
+    /**
+     * GeoLocation geo locatoin
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#geoLocation
+     *
+     * @param field the field
+     * @param longitude longitude
+     * @param latitude latitude
+     * @param radius a string specifying the radius and it's unit
+     * @return the geo-location query
+     */
+    public static GeoLocation geoLocation(String field, Double longitude, Double latitude, String radius) {
+        return new GeoLocation(field, longitude, latitude, radius);
+    }
 }
