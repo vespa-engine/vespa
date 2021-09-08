@@ -95,7 +95,10 @@ public class SearchBuilder {
 
     /** For testing only */
     public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
-        this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
+        this(rankProfileRegistry, queryProfileRegistry, new TestProperties());
+    }
+    public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
+        this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), properties, rankProfileRegistry, queryProfileRegistry);
     }
 
     public SearchBuilder(ApplicationPackage app,
