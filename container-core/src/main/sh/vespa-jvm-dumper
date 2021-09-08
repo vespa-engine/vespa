@@ -108,6 +108,16 @@ if ! [ -n $(ps -p ${JVM_PID} -o pid=) ]; then
   exit 1
 fi
 
+echo "Starting Java Flight Recorder recording"
+jcmd ${JVM_PID} JFR.start name=vespa-jvm-dumper path-to-gc-roots=true settings=profile filename=${OUTPUT_DIRECTORY}/jvm-jfr-dump.jfr
+
+readonly sleep_seconds=15
+echo "Waiting ${sleep_seconds} before stopping Java Flight Recorder"
+sleep ${sleep_seconds}s
+
+echo "Dumping Java Flight Recorder recording to file"
+jcmd ${JVM_PID} JFR.dump name=vespa-jvm-dumper
+
 echo "Creating heap dump"
 readonly HEAP_DUMP_FILE=${OUTPUT_DIRECTORY}/jvm-heap-dump.hprof
 if test -f "${HEAP_DUMP_FILE}"; then
