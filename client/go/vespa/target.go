@@ -42,9 +42,8 @@ type Target interface {
 	// Service returns the service for given name.
 	Service(name string) (*Service, error)
 
-	// DiscoverServices queries for services available on this target after the given session or deployment run has
-	// completed.
-	DiscoverServices(timeout time.Duration, sessionOrRunID int64) error
+	// DiscoverServices queries for services available on this target after the deployment run has completed.
+	DiscoverServices(timeout time.Duration, runID int64) error
 }
 
 type customTarget struct {
@@ -76,7 +75,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 		return 0, err
 	}
 	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
-	return wait(okFunc, req, s.certificate, timeout)
+	return wait(okFunc, req, &s.certificate, timeout)
 }
 
 func (s *Service) Description() string {
@@ -125,7 +124,36 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 	return u.String(), nil
 }
 
-func (t *customTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
+func (t *customTarget) DiscoverServices(timeout time.Duration, runID int64) error {
+	deployService, err := t.Service("deploy")
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	converged := false
+	convergedFunc := func(status int, response []byte) (bool, error) {
+		if status/100 != 2 {
+			return false, nil
+		}
+		var resp serviceConvergeResponse
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		converged = resp.Converged
+		return converged, nil
+	}
+	if _, err := wait(convergedFunc, req, nil, timeout); err != nil {
+		return err
+	}
+	if !converged {
+		return fmt.Errorf("services have not converged")
+	}
+	return nil
+}
 
 type cloudTarget struct {
 	cloudAPI   string
@@ -198,7 +226,7 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		}
 		return true, nil
 	}
-	_, err = wait(jobSuccessFunc, req, t.keyPair, timeout)
+	_, err = wait(jobSuccessFunc, req, &t.keyPair, timeout)
 	return err
 }
 
@@ -229,7 +257,7 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 		endpointURL = resp.Endpoints[0].URL
 		return true, nil
 	}
-	if _, err = wait(endpointFunc, req, t.keyPair, timeout); err != nil {
+	if _, err = wait(endpointFunc, req, &t.keyPair, timeout); err != nil {
 		return err
 	}
 	if endpointURL == "" {
@@ -274,11 +302,15 @@ type jobResponse struct {
 	Status string `json:"status"`
 }
 
+type serviceConvergeResponse struct {
+	Converged bool `json:"converged"`
+}
+
 type responseFunc func(status int, response []byte) (bool, error)
 
-func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeout time.Duration) (int, error) {
-	if certificate.Certificate != nil {
-		util.ActiveHttpClient.UseCertificate(certificate)
+func wait(fn responseFunc, req *http.Request, certificate *tls.Certificate, timeout time.Duration) (int, error) {
+	if certificate != nil {
+		util.ActiveHttpClient.UseCertificate(*certificate)
 	}
 	var (
 		httpErr    error

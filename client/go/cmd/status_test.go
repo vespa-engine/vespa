@@ -15,7 +15,7 @@ func TestStatusDeployCommand(t *testing.T) {
 }
 
 func TestStatusDeployCommandWithURLTarget(t *testing.T) {
-	assertDeployStatus("http://mydeploytarget", []string{"-t", "http://mydeploytarget"}, t)
+	assertDeployStatus("http://mydeploytarget:19071", []string{"-t", "http://mydeploytarget"}, t)
 }
 
 func TestStatusDeployCommandWithLocalTarget(t *testing.T) {
@@ -27,7 +27,7 @@ func TestStatusQueryCommand(t *testing.T) {
 }
 
 func TestStatusQueryCommandWithUrlTarget(t *testing.T) {
-	assertQueryStatus("http://mycontainertarget", []string{"-t", "http://mycontainertarget"}, t)
+	assertQueryStatus("http://mycontainertarget:8080", []string{"-t", "http://mycontainertarget"}, t)
 }
 
 func TestStatusQueryCommandWithLocalTarget(t *testing.T) {
@@ -44,6 +44,7 @@ func TestStatusErrorResponse(t *testing.T) {
 
 func assertDeployStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
+	convergeServices(client)
 	assert.Equal(t,
 		"Deploy API at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "deploy"}, args),
@@ -53,12 +54,14 @@ func assertDeployStatus(target string, args []string, t *testing.T) {
 
 func assertQueryStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
+	convergeServices(client)
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "query"}, args),
 		"vespa status container")
 	assert.Equal(t, target+"/ApplicationStatus", client.lastRequest.URL.String())
 
+	convergeServices(client)
 	assert.Equal(t,
 		"Container (query API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status"}, args),
@@ -68,6 +71,7 @@ func assertQueryStatus(target string, args []string, t *testing.T) {
 
 func assertDocumentStatus(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
+	convergeServices(client)
 	assert.Equal(t,
 		"Container (document API) at "+target+" is ready\n",
 		executeCommand(t, client, []string{"status", "document"}, args),
@@ -76,7 +80,9 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 }
 
 func assertQueryStatusError(target string, args []string, t *testing.T) {
-	client := &mockHttpClient{nextStatus: 500}
+	client := &mockHttpClient{}
+	convergeServices(client)
+	client.NextStatus(500)
 	assert.Equal(t,
 		"Container (query API) at "+target+" is not ready\nStatus 500\n",
 		executeCommand(t, client, []string{"status", "container"}, args),

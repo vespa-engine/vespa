@@ -11,25 +11,28 @@ import (
 )
 
 type mockVespaApi struct {
-	endpointsReady bool
-	serverURL      string
+	deploymentConverged bool
+	serverURL           string
 }
 
 func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
 	case "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1":
 		response := "{}"
-		if v.endpointsReady {
+		if v.deploymentConverged {
 			response = fmt.Sprintf(`{"endpoints": [{"url": "%s"}]}`, v.serverURL)
 		}
 		w.Write([]byte(response))
 	case "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42":
-		response := "{}"
-		if v.endpointsReady {
+		var response string
+		if v.deploymentConverged {
 			response = `{"active": false, "status": "success"}`
 		} else {
 			response = `{"active": true, "status": "running"}`
 		}
+		w.Write([]byte(response))
+	case "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge":
+		response := fmt.Sprintf(`{"converged": %t}`, v.deploymentConverged)
 		w.Write([]byte(response))
 	case "/status.html":
 		w.Write([]byte("OK"))
@@ -64,6 +67,13 @@ func TestCustomTargetWait(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(vc.mockVespaHandler))
 	defer srv.Close()
 	target := CustomTarget(srv.URL)
+
+	err := target.DiscoverServices(0, 42)
+	assert.NotNil(t, err)
+
+	vc.deploymentConverged = true
+	err = target.DiscoverServices(0, 42)
+	assert.Nil(t, err)
 
 	assertServiceWait(t, 200, target, "deploy")
 	assertServiceWait(t, 500, target, "query")
@@ -104,7 +114,7 @@ func TestCloudTargetWait(t *testing.T) {
 	err = target.DiscoverServices(0, 42)
 	assert.NotNil(t, err)
 
-	vc.endpointsReady = true
+	vc.deploymentConverged = true
 	err = target.DiscoverServices(0, 42)
 	assert.Nil(t, err)
 
