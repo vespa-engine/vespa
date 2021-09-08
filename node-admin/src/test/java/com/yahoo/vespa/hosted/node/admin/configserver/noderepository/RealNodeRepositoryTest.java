@@ -7,6 +7,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.host.FlavorOverrides;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.provision.restapi.NodesV2ApiHandler;
@@ -79,7 +80,7 @@ public class RealNodeRepositoryTest {
 
     private void waitForJdiscContainerToServe(ConfigServerApi configServerApi) throws InterruptedException {
         Instant start = Instant.now();
-        nodeRepositoryApi = new RealNodeRepository(configServerApi);
+        nodeRepositoryApi = new RealNodeRepository(configServerApi, new InMemoryFlagSource());
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
                 nodeRepositoryApi.getNodes("foobar");

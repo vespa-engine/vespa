@@ -13,7 +13,9 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -243,6 +245,13 @@ public class Flags {
             "Whether to dry run onnx models on setup for better error checking",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag USE_REAL_RESOURCES = defineFeatureFlag(
+            "use-real-resources", false,
+            List.of("freva"), "2021-09-08", "2021-10-01",
+            "Whether host-admin should use real resources (rather than advertised resources) when creating linux container and reporting metrics",
+            "Takes effect on next host-admin tick",
+            CLUSTER_TYPE, NODE_TYPE);
 
     public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
             "defer-application-encryption", List.of(), String.class,
