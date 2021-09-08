@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -44,7 +45,6 @@ import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,7 +55,6 @@ import java.util.stream.Stream;
  */
 public class RankProfile implements Cloneable {
 
-    private final static Logger log = Logger.getLogger(RankProfile.class.getName());
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
     /** The search definition-unique name of this rank profile */
@@ -130,6 +129,8 @@ public class RankProfile implements Cloneable {
     /** Global onnx models not tied to a search definition */
     private final OnnxModels onnxModels;
 
+    private final DeployLogger deployLogger;
+
     /**
      * Creates a new rank profile for a particular search definition
      *
@@ -144,6 +145,7 @@ public class RankProfile implements Cloneable {
         this.model = null;
         this.onnxModels = null;
         this.rankProfileRegistry = rankProfileRegistry;
+        this.deployLogger = search.getDeployLogger();
     }
 
     /**
@@ -152,12 +154,13 @@ public class RankProfile implements Cloneable {
      * @param name  the name of the new profile
      * @param model the model owning this profile
      */
-    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry, OnnxModels onnxModels) {
+    public RankProfile(String name, VespaModel model, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
         this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
         this.onnxModels = onnxModels;
+        this.deployLogger = deployLogger;
     }
 
     public String getName() { return name; }
@@ -214,7 +217,8 @@ public class RankProfile implements Cloneable {
                 if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
                     throw new IllegalArgumentException(msg);
                 } else {
-                    log.warning(msg);
+                    deployLogger.log(Level.WARNING, msg);
+                    inherited = resolveIndependentOfInheritance();
                 }
             } else {
                 List<String> children = new ArrayList<>();
@@ -223,6 +227,12 @@ public class RankProfile implements Cloneable {
             }
         }
         return inherited;
+    }
+    private RankProfile resolveIndependentOfInheritance() {
+        for (RankProfile rankProfile : rankProfileRegistry.all()) {
+            if (rankProfile.getName().equals(inheritedName)) return rankProfile;
+        }
+        return null;
     }
     private String createFullyQualifiedName() {
         return (search != null)

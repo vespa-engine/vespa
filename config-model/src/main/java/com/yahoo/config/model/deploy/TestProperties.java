@@ -51,6 +51,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
     private boolean useExternalRankExpression = true;
+    private boolean enforceRankProfileInheritance = true;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
@@ -107,8 +108,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int metricsproxyNumThreads() { return 1; }
-    @Override public boolean enforceRankProfileInheritance() { return true; }
+    @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
 
+    public TestProperties enforceRankProfileInheritance(boolean value) {
+        enforceRankProfileInheritance = value;
+        return this;
+    }
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
         return this;
