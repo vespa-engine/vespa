@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.metric.model.ConsumerId;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class MetricsConsumers {
     private final Map<ConsumerId, List<ConfiguredMetric>> consumerMetrics;
 
     // All consumers for each metric (more useful than the opposite map).
-    private final Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric;
+    private final Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric;
 
     public MetricsConsumers(ConsumersConfig config) {
         consumerMetrics = config.consumer().stream().collect(
@@ -47,7 +48,7 @@ public class MetricsConsumers {
         return consumerMetrics.get(consumer);
     }
 
-    public Map<ConfiguredMetric, List<ConsumerId>> getConsumersByMetric() {
+    public Map<ConfiguredMetric, Set<ConsumerId>> getConsumersByMetric() {
         return consumersByMetric;
     }
 
@@ -59,14 +60,16 @@ public class MetricsConsumers {
      * Helper function to create mapping from metric to consumers.
      * TODO: consider reversing the mapping in metrics-consumers.def instead: metric{}.consumer[]
      */
-    private static Map<ConfiguredMetric, List<ConsumerId>>
+    private static Map<ConfiguredMetric, Set<ConsumerId>>
     createConsumersByMetric(Map<ConsumerId, List<ConfiguredMetric>> metricsByConsumer) {
-        Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric = new LinkedHashMap<>();
+        Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = new LinkedHashMap<>();
         metricsByConsumer.forEach(
                 (consumer, metrics) -> metrics.forEach(
-                        metric -> consumersByMetric.computeIfAbsent(metric, unused -> new ArrayList<>())
+                        metric -> consumersByMetric.computeIfAbsent(metric, unused -> new HashSet<>())
                                 .add(consumer)));
-        return Collections.unmodifiableMap(consumersByMetric);
+        Map<ConfiguredMetric, Set<ConsumerId>> unmodifiableConsumersByMetric = new LinkedHashMap<>();
+        consumersByMetric.forEach((configuredMetric, consumerIds) -> unmodifiableConsumersByMetric.put(configuredMetric, Set.copyOf(consumerIds)));
+        return Collections.unmodifiableMap(unmodifiableConsumersByMetric);
     }
 
     public static <T, K, U> Collector<T, ?, Map<K, U>> toUnmodifiableLinkedMap(Function<? super T, ? extends K> keyMapper,
