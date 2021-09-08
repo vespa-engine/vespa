@@ -97,12 +97,15 @@ ConfigTask::PerformTask()
 
 } // namespace slobrok::<unnamed>
 
-SBEnv::SBEnv(const ConfigShim &shim)
+SBEnv::SBEnv(const ConfigShim &shim) : SBEnv(shim, false) {}
+
+SBEnv::SBEnv(const ConfigShim &shim, bool useNewConsensusLogic)
     : _transport(std::make_unique<FNET_Transport>(TransportConfig().drop_empty_buffers(true))),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _configShim(shim),
       _configurator(shim.factory().create(*this)),
       _shuttingDown(false),
+      _useNewLogic(useNewConsensusLogic),
       _partnerList(),
       _me(createSpec(_configShim.portNumber())),
       _rpcHooks(*this, _rpcsrvmap, _rpcsrvmanager),

@@ -50,6 +50,7 @@ App::Main()
 {
     uint32_t portnum = 2773;
     vespalib::string cfgId;
+    bool useNewLogic = false;
 
     int argi = 1;
     const char* optArg;
@@ -63,7 +64,7 @@ App::Main()
             portnum = atoi(optArg);
             break;
         case 'N':
-            // ignore flag for now
+            useNewLogic = true;
             break;
         default:
             LOG(error, "unknown option letter '%c'", c);
@@ -75,11 +76,11 @@ App::Main()
         if (cfgId.empty()) {
             LOG(debug, "no config id specified");
             ConfigShim shim(portnum);
-            mainobj = std::make_unique<SBEnv>(shim);
+            mainobj = std::make_unique<SBEnv>(shim, useNewLogic);
         } else {
             ConfigShim shim(portnum, cfgId);
             shim.enableStateServer(true);
-            mainobj = std::make_unique<SBEnv>(shim);
+            mainobj = std::make_unique<SBEnv>(shim, useNewLogic);
         }
         hook_sigterm();
         res = mainobj->MainLoop();
