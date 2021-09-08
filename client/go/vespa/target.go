@@ -41,8 +41,9 @@ type Target interface {
 	// Service returns the service for given name.
 	Service(name string) (*Service, error)
 
-	// DiscoverServices queries for services available on this target until one is found or timeout passes.
-	DiscoverServices(timeout time.Duration) error
+	// DiscoverServices queries for services available on this target after the given session or deployment run has
+	// completed.
+	DiscoverServices(timeout time.Duration, sessionOrRunID int64) error
 }
 
 type customTarget struct {
@@ -75,9 +76,8 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	okFunc := func(status int, response []byte) (string, bool) { return "", status/100 == 2 }
-	status, _, err := wait(okFunc, req, s.certificate, timeout)
-	return status, err
+	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
+	return wait(okFunc, req, s.certificate, timeout)
 }
 
 func (s *Service) Description() string {
@@ -103,7 +103,7 @@ func (t *customTarget) Service(name string) (*Service, error) {
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-func (t *customTarget) DiscoverServices(timeout time.Duration) error { return nil }
+func (t *customTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
 
 func (t *localTarget) Type() string { return t.targetType }
 
@@ -117,7 +117,7 @@ func (t *localTarget) Service(name string) (*Service, error) {
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-func (t *localTarget) DiscoverServices(timeout time.Duration) error { return nil }
+func (t *localTarget) DiscoverServices(timeout time.Duration, sessionID int64) error { return nil }
 
 type cloudTarget struct {
 	cloudAPI   string
@@ -150,39 +150,85 @@ func (t *cloudTarget) Service(name string) (*Service, error) {
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-// DiscoverServices queries Vespa Cloud for endpoints until at least one endpoint is returned, or timeout passes.
-func (t *cloudTarget) DiscoverServices(timeout time.Duration) error {
+// DiscoverServices waits for run identified by runID to complete and at least one endpoint is available, or timeout
+// passes.
+func (t *cloudTarget) DiscoverServices(timeout time.Duration, runID int64) error {
+	signer := NewRequestSigner(t.deployment.Application.SerializedForm(), t.apiKey)
+	if runID > 0 {
+		if err := t.waitForRun(signer, runID, timeout); err != nil {
+			return err
+		}
+	}
+	return t.discoverEndpoints(signer, timeout)
+}
+
+func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout time.Duration) error {
+	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s-%s/run/%d",
+		t.cloudAPI,
+		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
+		t.deployment.Zone.Environment, t.deployment.Zone.Region, runID)
+	req, err := http.NewRequest("GET", runURL, nil)
+	if err != nil {
+		return err
+	}
+	if err := signer.SignRequest(req); err != nil {
+		return err
+	}
+	jobSuccessFunc := func(status int, response []byte) (bool, error) {
+		if status/100 != 2 {
+			return false, nil
+		}
+		var resp jobResponse
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		if resp.Active {
+			return false, nil
+		}
+		if resp.Status != "success" {
+			return false, fmt.Errorf("run %d ended with unsuccessful status: %s", runID, resp.Status)
+		}
+		return true, nil
+	}
+	_, err = wait(jobSuccessFunc, req, t.keyPair, timeout)
+	return err
+}
+
+func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Duration) error {
 	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
 		t.cloudAPI,
 		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
 		t.deployment.Zone.Environment, t.deployment.Zone.Region)
 	req, err := http.NewRequest("GET", deploymentURL, nil)
-	signer := NewRequestSigner(t.deployment.Application.SerializedForm(), t.apiKey)
-	if err := signer.SignRequest(req); err != nil {
-		return err
-	}
-	endpointFunc := func(status int, response []byte) (string, bool) {
-		if status/100 != 2 {
-			return "", false
-		}
-		var resp deploymentResponse
-		if err := json.Unmarshal(response, &resp); err != nil {
-			return "", false
-		}
-		if len(resp.Endpoints) == 0 {
-			return "", false
-		}
-		return resp.Endpoints[0].URL, true
-	}
-	_, endpoint, err := wait(endpointFunc, req, t.keyPair, timeout)
 	if err != nil {
 		return err
 	}
-	if endpoint == "" {
+	if err := signer.SignRequest(req); err != nil {
+		return err
+	}
+	var endpointURL string
+	endpointFunc := func(status int, response []byte) (bool, error) {
+		if status/100 != 2 {
+			return false, nil
+		}
+		var resp deploymentResponse
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		if len(resp.Endpoints) == 0 {
+			return false, nil
+		}
+		endpointURL = resp.Endpoints[0].URL
+		return true, nil
+	}
+	if _, err = wait(endpointFunc, req, t.keyPair, timeout); err != nil {
+		return err
+	}
+	if endpointURL == "" {
 		return fmt.Errorf("no endpoint discovered")
 	}
-	t.queryURL = endpoint
-	t.documentURL = endpoint
+	t.queryURL = endpointURL
+	t.documentURL = endpointURL
 	return nil
 }
 
@@ -213,9 +259,14 @@ type deploymentResponse struct {
 	Endpoints []deploymentEndpoint `json:"endpoints"`
 }
 
-type responseFunc func(status int, response []byte) (string, bool)
+type jobResponse struct {
+	Active bool   `json:"active"`
+	Status string `json:"status"`
+}
 
-func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeout time.Duration) (int, string, error) {
+type responseFunc func(status int, response []byte) (bool, error)
+
+func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeout time.Duration) (int, error) {
 	if certificate.Certificate != nil {
 		util.ActiveHttpClient.UseCertificate(certificate)
 	}
@@ -232,12 +283,15 @@ func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeo
 			statusCode = response.StatusCode
 			body, err := ioutil.ReadAll(response.Body)
 			if err != nil {
-				return 0, "", err
+				return 0, err
 			}
 			response.Body.Close()
-			result, ok := fn(statusCode, body)
+			ok, err := fn(statusCode, body)
+			if err != nil {
+				return statusCode, err
+			}
 			if ok {
-				return statusCode, result, nil
+				return statusCode, nil
 			}
 		}
 		if loopOnce {
@@ -245,5 +299,5 @@ func wait(fn responseFunc, req *http.Request, certificate tls.Certificate, timeo
 		}
 		time.Sleep(waitRetryInterval)
 	}
-	return statusCode, "", httpErr
+	return statusCode, httpErr
 }

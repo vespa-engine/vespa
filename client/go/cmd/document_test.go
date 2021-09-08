@@ -93,7 +93,7 @@ func assertDocumentSend(arguments []string, expectedOperation string, expectedMe
 	assert.Equal(t,
 		"Success: "+expectedOperation+" "+expectedDocumentId+"\n",
 		executeCommand(t, client, arguments, []string{}))
-	target := getService("document").BaseURL
+	target := getService("document", 0).BaseURL
 	expectedPath, _ := vespa.IdToURLPath(expectedDocumentId)
 	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "application/json", client.lastRequest.Header.Get("Content-Type"))
@@ -115,7 +115,7 @@ func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
 }
 `,
 		executeCommand(t, client, arguments, []string{}))
-	target := getService("document").BaseURL
+	target := getService("document", 0).BaseURL
 	expectedPath, _ := vespa.IdToURLPath(documentId)
 	assert.Equal(t, target+"/document/v1/"+expectedPath, client.lastRequest.URL.String())
 	assert.Equal(t, "GET", client.lastRequest.Method)

@@ -94,13 +94,13 @@ func getTargetType() string {
 	return target
 }
 
-func getService(service string) *vespa.Service {
+func getService(service string, sessionOrRunID int64) *vespa.Service {
 	t := getTarget()
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
 		log.Printf("Waiting up to %d %s for services to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
-	if err := t.DiscoverServices(timeout); err != nil {
+	if err := t.DiscoverServices(timeout, sessionOrRunID); err != nil {
 		fatalErr(err, "Services unavailable")
 	}
 	s, err := t.Service(service)
@@ -134,8 +134,8 @@ func getTarget() vespa.Target {
 	return nil
 }
 
-func waitForService(service string) {
-	s := getService(service)
+func waitForService(service string, sessionOrRunID int64) {
+	s := getService(service, sessionOrRunID)
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
 		log.Printf("Waiting up to %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
