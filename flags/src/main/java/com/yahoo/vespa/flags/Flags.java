@@ -147,6 +147,12 @@ public class Flags {
             "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
             "Takes effect on next host-admin tick.");
 
+    public static final UnboundBooleanFlag NEW_SPARE_DISKS = defineFeatureFlag(
+            "new-spare-disks", true,
+            List.of("hakonhall"), "2021-09-08", "2021-11-08",
+            "Use a new algorithm to calculate the spare disks of a host.",
+            "Takes effect on first run of DiskTask, typically after host-admin restart/upgrade.");
+
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2021-09-01",
