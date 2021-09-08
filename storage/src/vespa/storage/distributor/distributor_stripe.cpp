@@ -985,6 +985,7 @@ void
 DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
                                                bool has_bucket_ownership_change)
 {
+    assert(!_use_legacy_mode);
     // TODO STRIPE replace legacy func
     enableClusterStateBundle(new_state);
     if (has_bucket_ownership_change) {
@@ -995,6 +996,7 @@ DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& ne
         const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
         _externalOperationHandler.rejectFeedBeforeTimeReached(_ownershipSafeTimeCalc->safeTimePoint(now));
     }
+    _bucketDBUpdater.handle_activated_cluster_state_bundle(); // Triggers resending of queued requests
 }
 
 void

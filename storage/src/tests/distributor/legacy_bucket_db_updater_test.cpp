@@ -1053,6 +1053,7 @@ TEST_F(LegacyBucketDBUpdaterTest, recheck_node) {
     EXPECT_EQ(api::BucketInfo(20,10,12, 50, 60, true, true), copy->getBucketInfo());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, notify_bucket_change) {
     enableDistributorClusterState("distributor:1 storage:1");
 
@@ -1116,6 +1117,7 @@ TEST_F(LegacyBucketDBUpdaterTest, notify_bucket_change) {
               dumpBucket(document::BucketId(16, 2)));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, notify_bucket_change_from_node_down) {
     enableDistributorClusterState("distributor:1 storage:2");
 
@@ -1162,6 +1164,7 @@ TEST_F(LegacyBucketDBUpdaterTest, notify_bucket_change_from_node_down) {
               dumpBucket(document::BucketId(16, 1)));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 /**
  * Test that NotifyBucketChange received while there's a pending cluster state
  * waits until the cluster state has been enabled as current before it sends off
