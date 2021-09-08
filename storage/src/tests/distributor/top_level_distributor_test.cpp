@@ -112,10 +112,6 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
                 distributor_stripes().front()->db_memory_sample_interval()).count();
     }
 
-    static std::vector<document::BucketSpace> bucket_spaces() {
-        return {document::FixedBucketSpaces::default_space(), document::FixedBucketSpaces::global_space()};
-    }
-
     size_t explicit_node_state_reply_send_invocations() const noexcept {
         return _node->getNodeStateUpdater().explicit_node_state_reply_send_invocations();
     }
@@ -242,8 +238,8 @@ public:
 TEST_F(TopLevelDistributorTest, tick_aggregates_status_requests_from_all_stripes) {
     setup_distributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
-    ASSERT_NE(stripe_of_bucket(document::BucketId(16, 1)),
-              stripe_of_bucket(document::BucketId(16, 2)));
+    ASSERT_NE(stripe_index_of_bucket(document::BucketId(16, 1)),
+              stripe_index_of_bucket(document::BucketId(16, 2)));
 
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=1/1/1/t");
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 2), "0=2/2/2/t");
@@ -521,8 +517,8 @@ TEST_F(TopLevelDistributorTest, leaving_recovery_mode_immediately_sends_getnodes
     ASSERT_EQ(0, explicit_node_state_reply_send_invocations());
     // Add a couple of buckets so we have something to iterate over. 2 buckets
     // map to the same stripe so we'll need 2 ticks to complete a full scan.
-    ASSERT_EQ(stripe_of_bucket(document::BucketId(16, 1)),
-              stripe_of_bucket(document::BucketId(16, 5)));
+    ASSERT_EQ(stripe_index_of_bucket(document::BucketId(16, 1)),
+              stripe_index_of_bucket(document::BucketId(16, 5)));
 
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=1/1/1/t/a");
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 2), "0=1/1/1/t/a");

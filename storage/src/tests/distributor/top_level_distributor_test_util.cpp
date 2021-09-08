@@ -88,13 +88,13 @@ TopLevelDistributorTestUtil::setup_distributor(int redundancy,
 }
 
 size_t
-TopLevelDistributorTestUtil::stripe_of_bucket(const document::BucketId& id) const noexcept
+TopLevelDistributorTestUtil::stripe_index_of_bucket(const document::BucketId& id) const noexcept
 {
     return stripe_of_bucket_key(id.toKey(), _distributor->_n_stripe_bits);
 }
 
 size_t
-TopLevelDistributorTestUtil::stripe_of_bucket(const document::Bucket& bucket) const noexcept
+TopLevelDistributorTestUtil::stripe_index_of_bucket(const document::Bucket& bucket) const noexcept
 {
     return stripe_of_bucket_key(bucket.getBucketId().toKey(), _distributor->_n_stripe_bits);
 }
@@ -177,7 +177,73 @@ TopLevelDistributorTestUtil::add_nodes_to_stripe_bucket_db(const document::Bucke
         entry->addNodeManual(node);
     }
 
-    stripe_bucket_database(stripe_of_bucket(bucket), bucket.getBucketSpace()).update(entry);
+    stripe_bucket_database(stripe_index_of_bucket(bucket), bucket.getBucketSpace()).update(entry);
+}
+
+std::string
+TopLevelDistributorTestUtil::get_ideal_str(document::BucketId id, const lib::ClusterState& state)
+{
+    if (!distributor_bucket_space(id).owns_bucket_in_state(state, id)) {
+        return id.toString();
+    }
+    std::vector<uint16_t> nodes;
+    _component->getDistribution()->getIdealNodes(lib::NodeType::STORAGE, state, id, nodes);
+    std::sort(nodes.begin(), nodes.end());
+    std::ostringstream ost;
+    ost << id << ": " << dumpVector(nodes);
+    return ost.str();
+}
+
+void
+TopLevelDistributorTestUtil::add_ideal_nodes(const lib::ClusterState& state, const document::BucketId& id)
+{
+    BucketDatabase::Entry entry = get_bucket(id);
+
+    if (!entry.valid()) {
+        entry = BucketDatabase::Entry(id);
+    }
+
+    std::vector<uint16_t> res;
+    assert(_component.get());
+    _component->getDistribution()->getIdealNodes(lib::NodeType::STORAGE, state, id, res);
+
+    for (uint32_t i = 0; i < res.size(); ++i) {
+        if (state.getNodeState(lib::Node(lib::NodeType::STORAGE, res[i])).getState() !=
+            lib::State::MAINTENANCE)
+        {
+            entry->addNode(BucketCopy(0, res[i], api::BucketInfo(1,1,1)),
+                           toVector<uint16_t>(0));
+        }
+    }
+
+    stripe_bucket_database(stripe_index_of_bucket(id)).update(entry);
+}
+
+void
+TopLevelDistributorTestUtil::add_ideal_nodes(const document::BucketId& id)
+{
+    // TODO STRIPE good way of getting current active cluster state on top-level distributor
+    // We assume that all stripes have the same cluster state internally, so just use the first.
+    assert(_distributor->_stripes[0]);
+    const auto& bundle = _distributor->_stripes[0]->getClusterStateBundle();
+    add_ideal_nodes(*bundle.getBaselineClusterState(), id);
+}
+
+std::string
+TopLevelDistributorTestUtil::get_nodes(document::BucketId id)
+{
+    BucketDatabase::Entry entry = get_bucket(id);
+
+    if (!entry.valid()) {
+        return id.toString();
+    } else {
+        std::vector<uint16_t> nodes = entry->getNodes();
+        std::sort(nodes.begin(), nodes.end());
+
+        std::ostringstream ost;
+        ost << id << ": " << dumpVector(nodes);
+        return ost.str();
+    }
 }
 
 void
@@ -190,13 +256,13 @@ TopLevelDistributorTestUtil::add_nodes_to_stripe_bucket_db(const document::Bucke
 BucketDatabase::Entry
 TopLevelDistributorTestUtil::get_bucket(const document::Bucket& bucket) const
 {
-    return stripe_bucket_database(stripe_of_bucket(bucket), bucket.getBucketSpace()).get(bucket.getBucketId());
+    return stripe_bucket_database(stripe_index_of_bucket(bucket), bucket.getBucketSpace()).get(bucket.getBucketId());
 }
 
 BucketDatabase::Entry
 TopLevelDistributorTestUtil::get_bucket(const document::BucketId& bId) const
 {
-    return stripe_bucket_database(stripe_of_bucket(bId)).get(bId);
+    return stripe_bucket_database(stripe_index_of_bucket(bId)).get(bId);
 }
 
 TopLevelBucketDBUpdater&
@@ -223,9 +289,40 @@ TopLevelDistributorTestUtil::node_context() const {
     return _distributor->distributor_component();
 }
 
-storage::distributor::DistributorStripeOperationContext&
-TopLevelDistributorTestUtil::operation_context() {
-    return _distributor->distributor_component();
+DistributorBucketSpace&
+TopLevelDistributorTestUtil::distributor_bucket_space(const document::BucketId& id)
+{
+    return stripe_of_bucket(id).getBucketSpaceRepo().get(makeBucketSpace());
+}
+
+const DistributorBucketSpace&
+TopLevelDistributorTestUtil::distributor_bucket_space(const document::BucketId& id) const
+{
+    return stripe_of_bucket(id).getBucketSpaceRepo().get(makeBucketSpace());
+}
+
+DistributorStripe&
+TopLevelDistributorTestUtil::stripe_of_bucket(const document::BucketId& id) noexcept
+{
+    return *_distributor->_stripes[stripe_index_of_bucket(id)];
+}
+
+const DistributorStripe&
+TopLevelDistributorTestUtil::stripe_of_bucket(const document::BucketId& id) const noexcept
+{
+    return *_distributor->_stripes[stripe_index_of_bucket(id)];
+}
+
+DistributorStripe&
+TopLevelDistributorTestUtil::stripe_of_bucket(const document::Bucket& bucket) noexcept
+{
+    return *_distributor->_stripes[stripe_index_of_bucket(bucket.getBucketId())];
+}
+
+const DistributorStripe&
+TopLevelDistributorTestUtil::stripe_of_bucket(const document::Bucket& bucket) const noexcept
+{
+    return *_distributor->_stripes[stripe_index_of_bucket(bucket.getBucketId())];
 }
 
 bool
@@ -317,6 +414,20 @@ void
 TopLevelDistributorTestUtil::enable_distributor_cluster_state(const lib::ClusterStateBundle& state)
 {
     bucket_db_updater().simulate_cluster_state_bundle_activation(state);
+}
+
+std::vector<document::BucketSpace>
+TopLevelDistributorTestUtil::bucket_spaces()
+{
+    return {document::FixedBucketSpaces::default_space(), document::FixedBucketSpaces::global_space()};
+}
+
+void
+TopLevelDistributorTestUtil::trigger_distribution_change(std::shared_ptr<lib::Distribution> distr)
+{
+    _node->getComponentRegister().setDistribution(std::move(distr));
+    _distributor->storageDistributionChanged();
+    _distributor->enableNextDistribution();
 }
 
 }

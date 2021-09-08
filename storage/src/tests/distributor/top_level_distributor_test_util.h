@@ -18,6 +18,7 @@ namespace framework { struct TickingThreadPool; }
 namespace distributor {
 
 class TopLevelDistributor;
+class DistributorBucketSpace;
 class DistributorMetricSet;
 class DistributorNodeContext;
 class DistributorStripe;
@@ -38,8 +39,13 @@ public:
 
     void close();
 
-    size_t stripe_of_bucket(const document::BucketId& id) const noexcept;
-    size_t stripe_of_bucket(const document::Bucket& bucket) const noexcept;
+    size_t stripe_index_of_bucket(const document::BucketId& id) const noexcept;
+    size_t stripe_index_of_bucket(const document::Bucket& bucket) const noexcept;
+
+    DistributorStripe& stripe_of_bucket(const document::BucketId& id) noexcept;
+    const DistributorStripe& stripe_of_bucket(const document::BucketId& id) const noexcept;
+    DistributorStripe& stripe_of_bucket(const document::Bucket& bucket) noexcept;
+    const DistributorStripe& stripe_of_bucket(const document::Bucket& bucket) const noexcept;
 
     /**
      * Parses the given string to a set of node => bucket info data,
@@ -56,7 +62,9 @@ public:
     const IdealStateMetricSet& total_ideal_state_metrics() const;
     const DistributorMetricSet& total_distributor_metrics() const;
     const storage::distributor::DistributorNodeContext& node_context() const;
-    storage::distributor::DistributorStripeOperationContext& operation_context();
+
+    DistributorBucketSpace& distributor_bucket_space(const document::BucketId& id);
+    const DistributorBucketSpace& distributor_bucket_space(const document::BucketId& id) const;
 
     std::vector<DistributorStripe*> distributor_stripes() const;
 
@@ -93,6 +101,17 @@ public:
     // Gets bucket entry from default space only
     BucketDatabase::Entry get_bucket(const document::BucketId& bId) const;
 
+    std::string get_ideal_str(document::BucketId id, const lib::ClusterState& state);
+
+    void add_ideal_nodes(const lib::ClusterState& state, const document::BucketId& id);
+    void add_ideal_nodes(const document::BucketId& id);
+
+    /**
+     * Returns a string with the nodes currently stored in the bucket
+     * database for the given bucket.
+     */
+    std::string get_nodes(document::BucketId id);
+
     DistributorMessageSenderStub& sender() noexcept { return _sender; }
     const DistributorMessageSenderStub& sender() const noexcept { return _sender; }
 
@@ -100,6 +119,10 @@ public:
     // the state and just pretending everything has been completed.
     void receive_set_system_state_command(const vespalib::string& state_str);
     bool handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
+
+    void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+
+    static std::vector<document::BucketSpace> bucket_spaces();
 
 protected:
     vdstestlib::DirConfig _config;
