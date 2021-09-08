@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "pendingmessagetracker.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <map>
 #include <algorithm>
 
@@ -9,11 +10,13 @@ LOG_SETUP(".pendingmessages");
 
 namespace storage::distributor {
 
-PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr)
-    : framework::HtmlStatusReporter("pendingmessages", "Pending messages to storage nodes"),
+PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr, uint32_t stripe_index)
+    : framework::HtmlStatusReporter(vespalib::make_string("pendingmessages%u", stripe_index),
+                                    vespalib::make_string("Pending messages to storage nodes (stripe %u)", stripe_index)),
       _component(cr, "pendingmessagetracker"),
       _nodeInfo(_component.getClock()),
       _nodeBusyDuration(60),
+      _deferred_read_tasks(),
       _lock()
 {
     _component.registerStatusPage(*this);

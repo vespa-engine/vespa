@@ -77,7 +77,7 @@ public:
      */
     using TimePoint = std::chrono::milliseconds;
 
-    explicit PendingMessageTracker(framework::ComponentRegister&);
+    explicit PendingMessageTracker(framework::ComponentRegister&, uint32_t stripe_index);
     ~PendingMessageTracker() override;
 
     void insert(const std::shared_ptr<api::StorageMessage>&);
