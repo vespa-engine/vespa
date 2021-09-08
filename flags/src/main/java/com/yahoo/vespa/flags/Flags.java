@@ -225,7 +225,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag REQUIRE_CONNECTIVITY_CHECK = defineFeatureFlag(
             "require-connectivity-check", true,
-            List.of("arnej"), "2021-06-03", "2021-09-01",
+            List.of("arnej"), "2021-06-03", "2021-12-01",
             "Require that config-sentinel connectivity check passes with good quality before starting services",
             "Takes effect on next restart",
             ZONE_ID, APPLICATION_ID);
