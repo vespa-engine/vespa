@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.text.Lowercase;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
 
 import java.io.Serializable;
 
 /**
- * A full document type name, consisting of a <i>name</i> and a <i>version</i>. The name is case insensitive, and the
- * version must be a positive integer or 0. This is a <i>value object</i>.
+ * A full document type name. The name is case sensitive. This is a <i>value object</i>.
  *
  * @author bratseth
  */

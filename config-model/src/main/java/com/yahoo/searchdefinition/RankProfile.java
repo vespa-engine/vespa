@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -42,6 +43,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,6 +55,7 @@ import java.util.stream.Stream;
  */
 public class RankProfile implements Cloneable {
 
+    private final static Logger log = Logger.getLogger(RankProfile.class.getName());
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
     /** The search definition-unique name of this rank profile */
@@ -65,6 +69,7 @@ public class RankProfile implements Cloneable {
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
+    private RankProfile inherited = null;
 
     /** The match settings of this profile */
     private MatchPhaseSettings matchPhaseSettings = null;
@@ -198,21 +203,64 @@ public class RankProfile implements Cloneable {
     public String getInheritedName() { return inheritedName; }
 
     /** Returns the inherited rank profile, or null if there is none */
-    public RankProfile getInherited() {
-        if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
-
-        RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
-        if (inheritedInThisSearch != null) return inheritedInThisSearch;
-        return getInheritedFromRegistry(inheritedName);
-    }
-
-    private RankProfile getInheritedFromRegistry(String inheritedName) {
-        for (RankProfile r : rankProfileRegistry.all()) {
-            if (r.getName().equals(inheritedName)) {
-                return r;
+    private RankProfile getInherited() {
+        if (inheritedName == null) return null;
+        if (inherited == null) {
+            inherited = resolveInherited();
+            if (inherited == null) {
+                String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
+                        "', but it does not exist anywhere in the inheritance of search '" +
+                        ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
+                if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
+                    throw new IllegalArgumentException(msg);
+                } else {
+                    log.warning(msg);
+                }
+            } else {
+                List<String> children = new ArrayList<>();
+                children.add(createFullyQualifiedName());
+                verifyNoInheritanceCycle(children, inherited);
             }
         }
-        return null;
+        return inherited;
+    }
+    private String createFullyQualifiedName() {
+        return (search != null)
+                ? (search.getName() + "." + getName())
+                : getName();
+    }
+
+    private void verifyNoInheritanceCycle(List<String> children, RankProfile parent) {
+        children.add(parent.createFullyQualifiedName());
+        String root = children.get(0);
+        if (root.equals(parent.createFullyQualifiedName())) {
+            throw new IllegalArgumentException("There is a cycle in the inheritance for rank-profile '" + root + "' = " + children);
+        }
+        if (parent.getInherited() != null) {
+            verifyNoInheritanceCycle(children, parent.getInherited());
+        }
+    }
+
+    private RankProfile resolveInherited(ImmutableSearch search) {
+        SDDocumentType documentType = search.getDocument();
+        if (documentType != null) {
+            if (name.equals(inheritedName)) {
+                // If you seemingly inherit yourself, you are actually referencing a rank-profile in one of your inherited schemas
+                for (SDDocumentType baseType : documentType.getInheritedTypes()) {
+                    RankProfile resolvedFromBase = rankProfileRegistry.resolve(baseType, inheritedName);
+                    if (resolvedFromBase != null) return resolvedFromBase;
+                }
+            }
+            return rankProfileRegistry.resolve(documentType, inheritedName);
+        }
+        return rankProfileRegistry.get(search.getName(), inheritedName);
+    }
+
+    private RankProfile resolveInherited() {
+        if (inheritedName == null) return null;
+        return (getSearch() != null)
+                ? resolveInherited(search)
+                : rankProfileRegistry.getGlobal(inheritedName);
     }
 
     /**

@@ -30,7 +30,7 @@ search attributerank {
     rank-type singlestring: default
   }
 
-  rank-profile secondprofile inherits identity {
+  rank-profile secondprofile {
     rank-type singlebyte: identity
     rank-type singleint: identity
     rank-type singlelong: identity

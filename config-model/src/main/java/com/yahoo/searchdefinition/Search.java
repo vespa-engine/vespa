@@ -274,6 +274,7 @@ public class Search implements ImmutableSearch {
     /**
      * @return The document in this search.
      */
+    @Override
     public SDDocumentType getDocument() {
         return docType;
     }
