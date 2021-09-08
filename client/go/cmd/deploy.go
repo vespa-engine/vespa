@@ -69,7 +69,8 @@ If application directory is not specified, it defaults to working directory.`,
 			}
 			if opts.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
-				log.Print(color.Cyan(fmt.Sprintf("https://console.vespa.oath.cloud/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+				log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+					defaultConsoleURL,
 					opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
 					opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
 					sessionOrRunID)))

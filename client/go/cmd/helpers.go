@@ -17,6 +17,8 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
+const defaultConsoleURL = "https://console.vespa.oath.cloud"
+
 var exitFunc = os.Exit // To allow overriding Exit in tests
 
 func fatalErrHint(err error, hints ...string) {
