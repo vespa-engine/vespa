@@ -94,7 +94,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-09-01",
+            List.of("vekterli"), "2020-12-02", "2021-11-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -162,7 +162,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2021-09-01",
+            List.of("vekterli"), "2021-02-19", "2021-11-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -170,21 +170,21 @@ public class Flags {
 
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
-            List.of("geirst", "vekterli"), "2021-04-20", "2021-09-01",
+            List.of("geirst", "vekterli"), "2021-04-20", "2021-11-01",
             "Specifies the number of stripes used by the distributor. When 0, legacy single stripe behavior is used.",
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
             "max-concurrent-merges-per-node", 16,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-09-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2021-11-01",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
             "max-merge-queue-size", 1024,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-09-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2021-11-01",
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
