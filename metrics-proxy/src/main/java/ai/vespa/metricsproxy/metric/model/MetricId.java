@@ -1,6 +1,9 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model;
 
+import com.yahoo.yolean.concurrent.CopyOnWriteHashMap;
+
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -8,11 +11,14 @@ import java.util.Objects;
  */
 public class MetricId {
 
+    private static final Map<String, MetricId> dictionary = new CopyOnWriteHashMap<>();
     public static final MetricId empty = toMetricId("");
     public final String id;
     private MetricId(String id) { this.id = id; }
 
-    public static MetricId toMetricId(String id) { return new MetricId(id); }
+    public static MetricId toMetricId(String id) {
+        return dictionary.computeIfAbsent(id, key -> new MetricId(key));
+    }
 
     @Override
     public boolean equals(Object o) {
