@@ -29,7 +29,7 @@ public class RequestValidation {
             log.log(INFO, "Illegal name space '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_NAME_SPACE;
         }
-        if (!(new PayloadChecksum(key.getMd5()).valid())) {
+        if (!(new PayloadChecksum(request.getRequestDefMd5()).valid())) {
             log.log(INFO, "Illegal checksum '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_DEF_MD5;  // TODO: Use ILLEGAL_DEF_CHECKSUM
         }

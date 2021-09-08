@@ -23,8 +23,8 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -39,12 +39,17 @@ import static org.junit.Assert.assertTrue;
  */
 public class JRTConfigRequestV3Test {
 
+    private static final String [] configDefinition = new String[]{
+            "namespace=my.name.space",
+            "myfield string"
+    };
+
     private final Optional<VespaVersion> vespaVersion = Optional.of(VespaVersion.fromString("5.38.24"));
     private final String defName = "mydef";
     private final String defNamespace = "my.name.space";
     private final String hostname = "myhost";
     private final String configId = "config/id";
-    private final String defMd5 = "595f44fec1e92a71d3e9e77456ba80d1";
+    private final String defMd5 = ConfigUtils.getDefMd5(List.of(configDefinition));
     private final long currentGeneration = 3;
     private final long timeout = 5000;
     private Trace trace ;
@@ -220,13 +225,12 @@ public class JRTConfigRequestV3Test {
     @Test
     public void parameters_are_validated() {
         assertTrue(serverReq.validateParameters());
-        assertValidationFail(createReq("35#$#!$@#", defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, "abcd.o#$*(!&$", defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, "34", hostname, configId, "34", currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, hostname, configId, "34", currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, -34, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, -23, trace));
-        assertValidationFail(createReq(defName, defNamespace, defMd5, "", configId, configMd5, currentGeneration, timeout, trace));
+        assertValidationFail(createReq("35#$#!$@#", defNamespace, hostname, configId, configMd5, currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, "abcd.o#$*(!&$", hostname, configId, configMd5, currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, "34", currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, configMd5, -34, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, configMd5, currentGeneration, -23, trace));
+        assertValidationFail(createReq(defName, defNamespace, "", configId, configMd5, currentGeneration, timeout, trace));
     }
 
     private void assertValidationFail(JRTClientConfigRequest req) {
@@ -243,11 +247,11 @@ public class JRTConfigRequestV3Test {
         return Payload.from(new ConfigPayload(slime));
     }
 
-    private JRTClientConfigRequest createReq(String defName, String defNamespace, String defMd5,
+    private JRTClientConfigRequest createReq(String defName, String defNamespace,
                                              String hostname, String configId, String configMd5,
                                              long currentGeneration, long timeout, Trace trace) {
-        return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace, defMd5),
-                                                         DefContent.fromList(Arrays.asList("namespace=my.name.space", "myfield string")),
+        return JRTClientConfigRequestV3.createWithParams(ConfigKey.createFull(defName, configId, defNamespace),
+                                                         DefContent.fromList(List.of(configDefinition)),
                                                          hostname,
                                                          configMd5,
                                                          currentGeneration,
@@ -272,26 +276,22 @@ public class JRTConfigRequestV3Test {
     private JRTClientConfigRequest createReq() {
         trace = Trace.createNew(3, new ManualClock());
         trace.trace(1, "hei");
-        return createReq(defName, defNamespace, defMd5, hostname, configId, configMd5, currentGeneration, timeout, trace);
+        return createReq(defName, defNamespace, hostname, configId, configMd5, currentGeneration, timeout, trace);
     }
 
     private JRTClientConfigRequest createReq(Payload payload) {
         trace = Trace.createNew(3, new ManualClock());
         trace.trace(1, "hei");
-        return createReq(defName, defNamespace, defMd5, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
+        return createReq(defName, defNamespace, hostname, configId, ConfigUtils.getMd5(payload.getData()), currentGeneration, timeout, trace);
     }
 
     private void request_is_parsed_base() {
-        String [] expectedContent = new String[]{
-                "namespace=my.name.space",
-                "myfield string"
-        };
         System.out.println(serverReq.toString());
         assertThat(serverReq.getConfigKey().getName(), is(defName));
         assertThat(serverReq.getConfigKey().getNamespace(), is(defNamespace));
-        assertThat(serverReq.getConfigKey().getMd5(), is(defMd5));
+        assertThat(serverReq.getRequestDefMd5(), is(defMd5));
         assertThat(serverReq.getConfigKey().getConfigId(), is(configId));
-        assertThat(serverReq.getDefContent().asStringArray(), is(expectedContent));
+        assertThat(serverReq.getDefContent().asStringArray(), is(configDefinition));
         assertFalse(serverReq.noCache());
         assertTrue(serverReq.getRequestTrace().toString().contains("hi"));
         assertThat(serverReq.getRequestConfigMd5(), is(configMd5));
@@ -299,16 +299,12 @@ public class JRTConfigRequestV3Test {
     }
 
     private JRTServerConfigRequest next_request_is_correct_base() {
-        String [] expectedContent = new String[]{
-                "namespace=my.name.space",
-                "myfield string"
-        };
         JRTServerConfigRequest next = createReq(clientReq.nextRequest(6).getRequest());
         assertThat(next.getConfigKey().getName(), is(defName));
         assertThat(next.getConfigKey().getNamespace(), is(defNamespace));
-        assertThat(next.getConfigKey().getMd5(), is(defMd5));
+        assertThat(next.getRequestDefMd5(), is(defMd5));
         assertThat(next.getConfigKey().getConfigId(), is(configId));
-        assertThat(next.getDefContent().asStringArray(), is(expectedContent));
+        assertThat(next.getDefContent().asStringArray(), is(configDefinition));
         assertFalse(next.noCache());
         assertThat(next.getTimeout(), is(6L));
         assertThat(next.getTimeout(), is(6L));

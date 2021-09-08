@@ -260,6 +260,11 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     }
 
     @Override
+    public String getRequestDefMd5() {
+        return requestData.getRequestDefMd5();
+    }
+
+    @Override
     public boolean validateResponse() {
         if (request.isError()) {
             return false;

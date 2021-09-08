@@ -74,7 +74,7 @@ public class SuperModelControllerTest {
     @Test(expected = UnknownConfigDefinitionException.class)
     public void test_unknown_config_definition() {
         String md5 = "asdfasf";
-        Request request = JRTClientConfigRequestV3.createWithParams(new ConfigKey<>("foo", "id", "bar", md5, null), DefContent.fromList(Collections.emptyList()),
+        Request request = JRTClientConfigRequestV3.createWithParams(new ConfigKey<>("foo", "id", "bar", null), DefContent.fromList(Collections.emptyList()),
                                                                     "fromHost", md5, 1, 1, Trace.createDummy(), CompressionType.UNCOMPRESSED,
                                                                     Optional.empty())
                                                   .getRequest();
