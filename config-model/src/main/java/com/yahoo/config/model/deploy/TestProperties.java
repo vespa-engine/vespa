@@ -2,7 +2,6 @@
 package com.yahoo.config.model.deploy;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -60,7 +59,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxMergeQueueSize = 1024;
     private int largeRankExpressionLimit = 8192;
     private boolean allowDisableMtls = true;
-    private boolean dryRunOnnxOnSetup = false;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
     private double resourceLimitMemory = 0.8;
@@ -105,17 +103,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
-    @Override public boolean dryRunOnnxOnSetup() { return dryRunOnnxOnSetup; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int metricsproxyNumThreads() { return 1; }
     @Override public boolean enforceRankProfileInheritance() { return true; }
 
-    public TestProperties setDryRunOnnxOnSetup(boolean value) {
-        dryRunOnnxOnSetup = value;
-        return this;
-    }
     public TestProperties useExternalRankExpression(boolean value) {
         useExternalRankExpression = value;
         return this;
