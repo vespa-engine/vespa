@@ -68,7 +68,7 @@ public class VespaMetrics {
     public List<MetricsPacket.Builder> getMetrics(List<VespaService> services) {
         List<MetricsPacket.Builder> metricsPackets = new ArrayList<>();
 
-        Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric();
+        Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric();
 
         for (VespaService service : services) {
             // One metrics packet for system metrics
@@ -119,7 +119,7 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private Metrics getServiceMetrics(Metrics allServiceMetrics, Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric) {
+    private Metrics getServiceMetrics(Metrics allServiceMetrics, Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric) {
         Metrics configuredServiceMetrics = new Metrics();
         configuredServiceMetrics.setTimeStamp(getMostRecentTimestamp(allServiceMetrics));
         for (Metric candidate : allServiceMetrics.getMetrics()) {
@@ -139,21 +139,17 @@ public class VespaMetrics {
         return dimensions;
     }
 
-    private Set<ConsumerId> extractConsumers(List<ConsumerId> configuredConsumers) {
+    private Set<ConsumerId> extractConsumers(Set<ConsumerId> configuredConsumers) {
         Set<ConsumerId> consumers = Collections.emptySet();
         if (configuredConsumers != null) {
-            if ( configuredConsumers.size() == 1) {
-                consumers = Collections.singleton(configuredConsumers.get(0));
-            } else if (configuredConsumers.size() > 1){
-                consumers = Set.copyOf(configuredConsumers);
-            }
+            consumers = configuredConsumers;
         }
         return consumers;
     }
 
     private Metric metricWithConfigProperties(Metric candidate,
                                               ConfiguredMetric configuredMetric,
-                                              Map<ConfiguredMetric, List<ConsumerId>> consumersByMetric) {
+                                              Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric) {
         Metric metric = candidate.clone();
         metric.setDimensions(extractDimensions(candidate.getDimensions(), configuredMetric.dimension()));
         metric.setConsumers(extractConsumers(consumersByMetric.get(configuredMetric)));
