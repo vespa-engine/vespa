@@ -113,7 +113,7 @@ SBEnv::SBEnv(const ConfigShim &shim, bool useNewConsensusLogic)
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
-      _localRpcMonitorMap(*_supervisor,
+      _localRpcMonitorMap(getScheduler(),
                           [this] (MappingMonitorOwner &owner) {
                               return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
                           }),

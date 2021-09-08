@@ -27,6 +27,13 @@ namespace slobrok {
 class LocalRpcMonitorMap : public MapListener,
                            public MappingMonitorOwner
 {
+public:
+    // Interface used to signal the result of addLocal
+    struct AddLocalCompletionHandler {
+        virtual void doneHandler(OkState result) = 0;
+        virtual ~AddLocalCompletionHandler() {}
+    };
+
 private:
     enum class EventType { ADD, REMOVE };
 
@@ -66,12 +73,12 @@ private:
     struct PerService {
         bool up;
         bool localOnly;
-        std::unique_ptr<ScriptCommand> inflight;
+        std::unique_ptr<AddLocalCompletionHandler> inflight;
         vespalib::string spec;
     };
 
     PerService localService(const ServiceMapping &mapping,
-                            std::unique_ptr<ScriptCommand> inflight)
+                            std::unique_ptr<AddLocalCompletionHandler> inflight)
     {
         return PerService{
             .up = false,
@@ -109,13 +116,13 @@ private:
         ServiceMapping mapping;
         bool up;
         bool localOnly;
-        std::unique_ptr<ScriptCommand> inflight;
+        std::unique_ptr<AddLocalCompletionHandler> inflight;
     };
 
     RemovedData removeFromMap(Map::iterator iter);
 
 public:
-    LocalRpcMonitorMap(FRT_Supervisor &supervisor,
+    LocalRpcMonitorMap(FNET_Scheduler *scheduler,
                        MappingMonitorFactory mappingMonitorFactory);
     ~LocalRpcMonitorMap();
 
@@ -124,7 +131,7 @@ public:
 
     /** for use by register API, will call doneHandler() on inflight script */
     void addLocal(const ServiceMapping &mapping,
-                  std::unique_ptr<ScriptCommand> inflight);
+                  std::unique_ptr<AddLocalCompletionHandler> inflight);
 
     void add(const ServiceMapping &mapping) override;
     void remove(const ServiceMapping &mapping) override;

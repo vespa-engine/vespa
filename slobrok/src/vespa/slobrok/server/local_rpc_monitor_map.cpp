@@ -25,9 +25,9 @@ void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
     }
 }
 
-LocalRpcMonitorMap::LocalRpcMonitorMap(FRT_Supervisor &supervisor,
+LocalRpcMonitorMap::LocalRpcMonitorMap(FNET_Scheduler *scheduler,
                                        MappingMonitorFactory mappingMonitorFactory)
-  : _delayedTasks(supervisor.GetScheduler(), *this),
+  : _delayedTasks(scheduler, *this),
     _map(),
     _dispatcher(),
     _history(),
@@ -83,7 +83,7 @@ ServiceMapHistory & LocalRpcMonitorMap::history() {
 }
 
 void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
-                                  std::unique_ptr<ScriptCommand> inflight)
+                                  std::unique_ptr<AddLocalCompletionHandler> inflight)
 {
     LOG(debug, "try local add: mapping %s->%s",
         mapping.name.c_str(), mapping.spec.c_str());
