@@ -127,17 +127,19 @@ ExchangeManager::diffLists(const ServiceMappingList &lhs, const ServiceMappingLi
 void
 ExchangeManager::healthCheck()
 {
-    auto oldWorldServices = env().rpcServerMap().allManaged();
-    ServiceMappingList oldWorldList;
-    for (const auto *nsp : oldWorldServices) {
-        oldWorldList.emplace_back(nsp->getName(), nsp->getSpec());
-    }
-    std::sort(oldWorldList.begin(), oldWorldList.end());
     auto newWorldList = env().consensusMap().currentConsensus();
-    vespalib::string diff = diffLists(oldWorldList, newWorldList);
-    if (! diff.empty()) {
-        LOG(warning, "Diff from old world rpcServerMap to new world consensus map: %s",
-            diff.c_str());
+    if (! _env.useNewLogic()) {
+        auto oldWorldServices = env().rpcServerMap().allManaged();
+        ServiceMappingList oldWorldList;
+        for (const auto *nsp : oldWorldServices) {
+            oldWorldList.emplace_back(nsp->getName(), nsp->getSpec());
+        }
+        std::sort(oldWorldList.begin(), oldWorldList.end());
+        vespalib::string diff = diffLists(oldWorldList, newWorldList);
+        if (! diff.empty()) {
+            LOG(warning, "Diff from old world rpcServerMap to new world consensus map: %s",
+                diff.c_str());
+        }
     }
     for (const auto & [ name, partner ] : _partners) {
         partner->maybeStartFetch();
@@ -145,7 +147,7 @@ ExchangeManager::healthCheck()
         auto remoteList = partner->remoteMap().allMappings();
         // 0 is expected (when remote is down)
         if (remoteList.size() != 0) {
-            diff = diffLists(newWorldList, remoteList);
+            vespalib::string diff = diffLists(newWorldList, remoteList);
             if (! diff.empty()) {
                 LOG(warning, "Diff from consensus map to peer slobrok mirror: %s",
                     diff.c_str());

@@ -58,6 +58,8 @@ public:
     void countFailedHeartbeat() { _cnts.heartBeatFails++; }
 
 private:
+    bool useNewLogic() const;
+
     void rpc_lookupRpcServer(FRT_RPCRequest *req);
 
     void rpc_registerRpcServer(FRT_RPCRequest *req);
