@@ -61,13 +61,21 @@ If application directory is not specified, it defaults to working directory.`,
 			opts.APIKey = readAPIKey(deployment.Application.Tenant)
 			opts.Deployment = deployment
 		}
-		if err := vespa.Deploy(opts); err == nil {
-			printSuccess("Deployed ", color.Cyan(pkg.Path))
+		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
 			if opts.IsCloud() {
-				log.Printf("\nUse %s for deployment status, or see", color.Cyan("vespa status"))
-				log.Print(color.Cyan(fmt.Sprintf("https://console.vespa.oath.cloud/tenant/%s/application/%s/dev/instance/%s", opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance)))
+				printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
+			} else {
+				printSuccess("Deployed ", color.Cyan(pkg.Path))
 			}
-			waitForQueryService()
+			if opts.IsCloud() {
+				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
+				log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
+					defaultConsoleURL,
+					opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
+					opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
+					sessionOrRunID)))
+			}
+			waitForQueryService(sessionOrRunID)
 		} else {
 			fatalErr(nil, err.Error())
 		}
@@ -123,17 +131,17 @@ var activateCmd = &cobra.Command{
 		})
 		if err == nil {
 			printSuccess("Activated ", color.Cyan(pkg.Path), " with session ", sessionID)
-			waitForQueryService()
+			waitForQueryService(sessionID)
 		} else {
 			fatalErr(nil, err.Error())
 		}
 	},
 }
 
-func waitForQueryService() {
+func waitForQueryService(sessionOrRunID int64) {
 	if waitSecsArg > 0 {
 		log.Println()
-		waitForService("query")
+		waitForService("query", sessionOrRunID)
 	}
 }
 
