@@ -83,51 +83,64 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
-readonly SERVICE=$1
-readonly OUTPUT_DIRECTORY=$2
-if ! [ -d "${OUTPUT_DIRECTORY}" -a -w "${OUTPUT_DIRECTORY}" ]; then
-  echo "Directory '${OUTPUT_DIRECTORY}' is not writable"
+readonly service=$1
+readonly output_directory=$2
+if ! [ -d "${output_directory}" -a -w "${output_directory}" ]; then
+  echo "Directory '${output_directory}' is not writable"
   exit 1
 fi
-readonly STATUS=$(vespa-sentinel-cmd list | grep "id=\"${SERVICE}\"")
-if [ -z "${STATUS}" ]; then
-  echo "No service named '${SERVICE}'"
-  exit 1
-else
-  echo "Found service: ${STATUS}"
-fi
-readonly JVM_PID=$(echo ${STATUS} | cut -d " "  -f 4 | cut -d "=" -f 2)
-if ! [[ "${JVM_PID}" =~ ^[0-9]+$ ]]; then
-  echo "Could not find valid pid for '${SERVICE}' (pid='${JVM_PID}')"
+readonly status=$(vespa-sentinel-cmd list | grep "id=\"${service}\"")
+if [ -z "${status}" ]; then
+  echo "No service named '${service}'"
   exit 1
 else
-  echo "Pid for '${SERVICE}' is '${JVM_PID}'"
+  echo "Found service: ${status}"
 fi
-if ! [ -n $(ps -p ${JVM_PID} -o pid=) ]; then
-  echo "Could not find process for '${JVM_PID}'"
+readonly jvm_pid=$(echo ${status} | cut -d " "  -f 4 | cut -d "=" -f 2)
+if ! [[ "${jvm_pid}" =~ ^[0-9]+$ ]]; then
+  echo "Could not find valid pid for '${service}' (pid='${jvm_pid}')"
+  exit 1
+else
+  echo "Pid for '${service}' is '${jvm_pid}'"
+fi
+if ! [ -n $(ps -p ${jvm_pid} -o pid=) ]; then
+  echo "Could not find process for '${jvm_pid}'"
   exit 1
 fi
+
+echo "Starting Java Flight Recorder recording"
+jcmd ${jvm_pid} JFR.start name=vespa-jvm-dumper path-to-gc-roots=true settings=profile filename=${output_directory}/jvm-jfr-dump.jfr
+
+readonly sleep_seconds=15
+echo "Waiting ${sleep_seconds} before stopping Java Flight Recorder"
+sleep ${sleep_seconds}s
+
+echo "Dumping Java Flight Recorder recording to file"
+jcmd ${jvm_pid} JFR.dump name=vespa-jvm-dumper
 
 echo "Creating heap dump"
-readonly HEAP_DUMP_FILE=${OUTPUT_DIRECTORY}/jvm-heap-dump.hprof
-if test -f "${HEAP_DUMP_FILE}"; then
-    rm "${HEAP_DUMP_FILE}"
+readonly heap_dump_file=${output_directory}/jvm-heap-dump.hprof
+if test -f "${heap_dump_file}"; then
+    rm "${heap_dump_file}"
 fi
-jmap -dump:live,format=b,file=${HEAP_DUMP_FILE} ${JVM_PID}
+jmap -dump:live,format=b,file=${heap_dump_file} ${jvm_pid}
+
+echo "Trigger vespa-malloc to dump information to Vespa log"
+kill -SIGPROF ${jvm_pid}
 
 echo "Getting jmap information"
-jhsdb jmap  --heap --pid ${JVM_PID} > ${OUTPUT_DIRECTORY}/jmap-output.txt
+jhsdb jmap  --heap --pid ${jvm_pid} > ${output_directory}/jmap-output.txt
 
 echo "Getting jstat information"
-jstat -gcutil ${JVM_PID} > ${OUTPUT_DIRECTORY}/jstat-output.txt
+jstat -gcutil ${jvm_pid} > ${output_directory}/jstat-output.txt
 
 echo "Getting jstack information"
-jstack ${JVM_PID} > ${OUTPUT_DIRECTORY}/jstack-output.txt
+jstack ${jvm_pid} > ${output_directory}/jstack-output.txt
 
 echo "Getting pmap information"
-pmap -x ${JVM_PID} | sort -nk3 | tail -10 > ${OUTPUT_DIRECTORY}/pmap-output.txt
+pmap -x ${jvm_pid} | sort -nk3 | tail -10 > ${output_directory}/pmap-output.txt
 
 echo "Copying vespa logs"
-cp ${VESPA_HOME}/logs/vespa/vespa.log ${OUTPUT_DIRECTORY}/vespa.log
+cp ${VESPA_HOME}/logs/vespa/vespa.log ${output_directory}/vespa.log
 
 echo "Done!"
