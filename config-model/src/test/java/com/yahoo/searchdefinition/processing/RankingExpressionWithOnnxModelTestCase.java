@@ -2,10 +2,8 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -17,6 +15,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RankingExpressionWithOnnxModelTestCase {
 
@@ -29,9 +28,9 @@ public class RankingExpressionWithOnnxModelTestCase {
 
     @Test
     public void testOnnxModelFeature() throws Exception  {
-        VespaModel model = loadModel(applicationDir, false);
+        VespaModel model = loadModel(applicationDir);
         assertTransformedFeature(model);
-        assertGeneratedConfig(model, false);
+        assertGeneratedConfig(model);
 
         Path storedApplicationDir = applicationDir.append("copy");
         try {
@@ -41,30 +40,29 @@ public class RankingExpressionWithOnnxModelTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedApplicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
 
-            VespaModel storedModel = loadModel(storedApplicationDir, true);
+            VespaModel storedModel = loadModel(storedApplicationDir);
             assertTransformedFeature(storedModel);
-            assertGeneratedConfig(storedModel, true);
+            assertGeneratedConfig(storedModel);
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDir.toFile());
         }
     }
 
-    private VespaModel loadModel(Path path, boolean dryRunOnnx) throws Exception {
+    private VespaModel loadModel(Path path) throws Exception {
         FilesApplicationPackage applicationPackage = FilesApplicationPackage.fromFile(path.toFile());
-        ModelContext.Properties properties = new TestProperties().setDryRunOnnxOnSetup(dryRunOnnx);
-        DeployState state = new DeployState.Builder().applicationPackage(applicationPackage).properties(properties).build();
+        DeployState state = new DeployState.Builder().applicationPackage(applicationPackage).build();
         return new VespaModel(state);
     }
 
-    private void assertGeneratedConfig(VespaModel vespaModel, boolean expectDryRunOnnx) {
+    private void assertGeneratedConfig(VespaModel vespaModel) {
         DocumentDatabase db = ((IndexedSearchCluster)vespaModel.getSearchClusters().get(0)).getDocumentDbs().get(0);
         OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
         ((OnnxModelsConfig.Producer) db).getConfig(builder);
         OnnxModelsConfig config = new OnnxModelsConfig(builder);
         assertEquals(6, config.model().size());
         for (OnnxModelsConfig.Model model : config.model()) {
-            assertEquals(expectDryRunOnnx, model.dry_run_on_setup());
+            assertTrue(model.dry_run_on_setup());
         }
 
         OnnxModelsConfig.Model model = config.model(0);

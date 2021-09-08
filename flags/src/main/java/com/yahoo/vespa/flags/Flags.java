@@ -237,13 +237,6 @@ public class Flags {
             "Takes effect on next deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DRY_RUN_ONNX_ON_SETUP = defineFeatureFlag(
-            "dry-run-onnx-on-setup", true,
-            List.of("baldersheim"), "2021-06-23", "2021-09-01",
-            "Whether to dry run onnx models on setup for better error checking",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
             "defer-application-encryption", List.of(), String.class,
             List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
