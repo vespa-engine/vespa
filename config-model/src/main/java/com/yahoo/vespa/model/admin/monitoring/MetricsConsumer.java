@@ -35,6 +35,8 @@ public class MetricsConsumer {
     // Referenced from com.yahoo.vespa.hosted.provision.autoscale.NodeMetricsFetcher
     public static final MetricsConsumer autoscaling =
             consumer("autoscaling", autoscalingMetricSet);
+    public static final MetricsConsumer vespaCloud =
+            consumer("vespa-cloud", vespaMetricSet, systemMetricSet, networkMetricSet);
 
     private final String id;
     private final MetricSet metricSet;
