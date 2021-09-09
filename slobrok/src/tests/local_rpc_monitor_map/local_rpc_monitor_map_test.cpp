@@ -240,15 +240,32 @@ TEST_F(LocalRpcMonitorMapTest, local_add_already_up) {
     ASSERT_TRUE(handler_deleted);
 }
 
-TEST_F(LocalRpcMonitorMapTest, local_add_already_down) {
+TEST_F(LocalRpcMonitorMapTest, local_add_unknown_comes_up) {
     std::unique_ptr<OkState> state;
     bool handler_deleted;
     add_mapping(mapping, false);
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
-    monitor_log.expect({});
+    monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, true)});
     map_log.expect({});
+    ASSERT_FALSE(state);
+    map.up(mapping);
     ASSERT_TRUE(state);
     EXPECT_TRUE(state->ok());
+    ASSERT_TRUE(handler_deleted);
+    map_log.expect({MapCall::add(mapping)});
+}
+
+TEST_F(LocalRpcMonitorMapTest, local_add_unknown_goes_down) {
+    std::unique_ptr<OkState> state;
+    bool handler_deleted;
+    add_mapping(mapping, false);
+    map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
+    monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, true)});
+    map_log.expect({});
+    ASSERT_FALSE(state);
+    map.down(mapping);
+    ASSERT_TRUE(state);
+    EXPECT_FALSE(state->ok());
     ASSERT_TRUE(handler_deleted);
 }
 
