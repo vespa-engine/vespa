@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -33,6 +34,7 @@ public class UserManagementMaintainerTest {
         Roles.tenantRoles(tenant).forEach(userManagement::createRole);
         Roles.applicationRoles(tenant, app).forEach(userManagement::createRole);
         Roles.tenantRoles(deletedTenant).forEach(userManagement::createRole);
+        userManagement.createRole(Role.hostedSupporter());
 
         var expectedRoles = Roles.tenantRoles(deletedTenant);
         var actualRoles = userManagementMaintainer.findLeftoverRoles();

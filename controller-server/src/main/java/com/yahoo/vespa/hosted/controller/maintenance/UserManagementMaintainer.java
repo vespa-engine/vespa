@@ -6,7 +6,9 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
+import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 
 import java.time.Duration;
 import java.util.List;
@@ -57,6 +59,7 @@ public class UserManagementMaintainer extends ControllerMaintainer {
                 .collect(Collectors.toList());
 
         return userManagement.listRoles().stream()
+                .filter(role -> role instanceof TenantRole || role instanceof ApplicationRole)
                 .filter(role -> !tenantRoles.contains(role) && !applicationRoles.contains(role))
                 .collect(Collectors.toList());
     }
