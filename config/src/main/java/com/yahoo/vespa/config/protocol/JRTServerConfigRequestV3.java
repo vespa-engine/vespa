@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.protocol;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
@@ -17,6 +18,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * The V3 config protocol implemented on the server side. The V3 protocol uses 2 fields:
@@ -68,9 +72,9 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, String configMd5) {
+    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums payloadChecksums) {
         this.applyOnRestart = applyOnRestart;
-        boolean changedConfig = !configMd5.equals(getRequestConfigMd5());
+        boolean changedConfig = !payloadChecksums.equals(getRequestConfigChecksums());
         boolean changedConfigAndNewGeneration = changedConfig && ConfigUtils.isGenerationNewer(generation, getRequestGeneration());
         Payload responsePayload = payload.withCompression(getCompressionType());
         ByteArrayOutputStream byteArrayOutputStream = new NoCopyByteArrayOutputStream(4096);
@@ -78,7 +82,8 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             JsonGenerator jsonGenerator = createJsonGenerator(byteArrayOutputStream);
             jsonGenerator.writeStartObject();
             addCommonReturnValues(jsonGenerator);
-            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, configMd5);
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, payloadChecksums.getForType(MD5).asString());
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, payloadChecksums.getForType(XXHASH64).asString());
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_APPLY_ON_RESTART, applyOnRestart);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
@@ -193,6 +198,8 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
 
     @Override
     public String getRequestDefMd5() { return requestData.getRequestDefMd5(); }
+
+    public PayloadChecksums getRequestConfigChecksums() { return requestData.getRequestConfigChecksums(); }
 
     private void addErrorResponse(int errorCode) {
         addErrorResponse(errorCode, ErrorCode.getName(errorCode));

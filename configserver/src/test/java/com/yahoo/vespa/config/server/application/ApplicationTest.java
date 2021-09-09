@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -148,10 +149,13 @@ public class ApplicationTest {
     }
 
     private static GetConfigRequest createRequest(String name, String namespace, String[] schema) {
-        Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(name, "admin/model", namespace, null), DefContent.fromArray(schema),
-                                 "fromHost", "", 0, 100, Trace.createDummy(), CompressionType.UNCOMPRESSED,
-                                 Optional.empty()).getRequest();
+        Request request =
+                JRTClientConfigRequestV3.createWithParams(new ConfigKey<>(name, "admin/model", namespace, null),
+                                                          DefContent.fromArray(schema), "fromHost",
+                                                          PayloadChecksums.empty(), 0, 100,
+                                                          Trace.createDummy(), CompressionType.UNCOMPRESSED,
+                                                          Optional.empty())
+                                        .getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
     }
 

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 
@@ -41,6 +42,14 @@ public interface JRTConfigRequest {
      * @return an md5 of config definition in request.
      */
     String getRequestDefMd5();
+
+    /**
+     * Returns the generation of the requested config. If none has been given, 0 should be returned.
+     * Returns the checksum of the config request. Return an empty string if no response has been returned.
+     *
+     * @return a config checksum.
+     */
+    PayloadChecksums getRequestConfigChecksums();
 
     /**
      * Returns the generation of the requested config. If none has been given, 0 should be returned.

@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.ErrorType;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import org.junit.Test;
@@ -139,7 +140,7 @@ public class JRTConfigRequesterTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         final TimingValues timingValues = getTestTimingValues();
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(subscriber, timingValues);
-        sub.setConfig(1L, false, config(), PayloadChecksum.empty());
+        sub.setConfig(1L, false, config(), PayloadChecksums.empty());
 
         final MockConnection connection = new MockConnection(new ErrorResponseHandler());
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
@@ -165,7 +166,7 @@ public class JRTConfigRequesterTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         final TimingValues timingValues = getTestTimingValues();
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(subscriber, timingValues);
-        sub.setConfig(1L, false, config(), PayloadChecksum.empty());
+        sub.setConfig(1L, false, config(), PayloadChecksums.empty());
 
         final MockConnection connection = new MockConnection(new ErrorResponseHandler(com.yahoo.jrt.ErrorCode.TIMEOUT));
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
@@ -179,7 +180,7 @@ public class JRTConfigRequesterTest {
         ConfigSubscriber subscriber = new ConfigSubscriber();
         final TimingValues timingValues = getTestTimingValues();
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(subscriber, timingValues);
-        sub.setConfig(1L, false, config(), PayloadChecksum.empty());
+        sub.setConfig(1L, false, config(), PayloadChecksums.empty());
 
         final MockConnection connection = new MockConnection(new ErrorResponseHandler(ErrorCode.UNKNOWN_DEFINITION));
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);

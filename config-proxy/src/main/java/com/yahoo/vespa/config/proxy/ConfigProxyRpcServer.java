@@ -12,7 +12,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -23,6 +22,7 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -353,7 +353,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         request.addOkResponse(config.getPayload(),
                               config.getGeneration(),
                               config.applyOnRestart(),
-                              config.getConfigMd5());
+                              config.getPayloadChecksums());
         log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
                 ",generation=" + config.getGeneration());
         log.log(Level.FINEST, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
