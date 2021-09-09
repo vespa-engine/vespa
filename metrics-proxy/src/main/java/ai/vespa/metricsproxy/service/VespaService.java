@@ -2,6 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.HealthMetric;
+import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
@@ -134,13 +135,23 @@ public class VespaService implements Comparable<VespaService> {
     /**
      * Get the Metrics registered for this service. Metrics are fetched over HTTP
      * if a metric http port has been defined, otherwise from log file
-     *
-     * @return the non-system metrics
      */
-    public Metrics getMetrics() {
-        Metrics remoteMetrics = remoteMetricsFetcher.getMetrics(metricsFetchCount.get());
+    public void consumeMetrics(MetricsParser.Consumer consumer) {
+        remoteMetricsFetcher.getMetrics(consumer, metricsFetchCount.get());
         metricsFetchCount.getAndIncrement();
-        return remoteMetrics;
+    }
+
+    private static class CollectMetrics implements MetricsParser.Consumer {
+        private final Metrics metrics = new Metrics();
+        @Override
+        public void consume(Metric metric) {
+            metrics.add(metric);
+        }
+    }
+    public final Metrics getMetrics() {
+        CollectMetrics collector = new CollectMetrics();
+        consumeMetrics(collector);
+        return collector.metrics;
     }
 
     /**

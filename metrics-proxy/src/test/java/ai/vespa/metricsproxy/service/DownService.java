@@ -18,8 +18,7 @@ public class DownService extends VespaService {
     }
 
     @Override
-    public Metrics getMetrics() {
-        return new Metrics();
+    public void consumeMetrics(MetricsParser.Consumer consumer) {
     }
 
    @Override
