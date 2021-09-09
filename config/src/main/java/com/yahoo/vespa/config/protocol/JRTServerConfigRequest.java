@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.GetConfigRequest;
 
 /**
@@ -35,9 +34,9 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
      * @param generation The config generation of the given payload.
      * @param applyOnRestart true if this config should only be applied on the next restart,
      *                       false if it should be applied right away
-     * @param payloadChecksums checksums of the given payload.
+     * @param configMd5 The md5sum of the given payload.
      */
-    void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums payloadChecksums);
+    void addOkResponse(Payload payload, long generation, boolean applyOnRestart, String configMd5);
 
     /**
      * Get the current config md5 of the client config.

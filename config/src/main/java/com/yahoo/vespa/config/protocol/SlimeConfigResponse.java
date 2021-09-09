@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 
 /**
  * Class for serializing config responses based on {@link com.yahoo.slime.Slime} implementing the {@link ConfigResponse} interface.
@@ -22,42 +19,25 @@ public class SlimeConfigResponse implements ConfigResponse {
     private final CompressionInfo compressionInfo;
     private final long generation;
     private final boolean applyOnRestart;
-    private final PayloadChecksums payloadChecksums;
+    private final String configMd5;
 
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
-                                                        long generation,
-                                                        boolean applyOnRestart,
-                                                        PayloadChecksums payloadChecksums) {
+    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, long generation,
+                                                        boolean applyOnRestart, String configMd5) {
         AbstractUtf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data,
-                                       generation,
-                                       applyOnRestart,
-                                       payloadChecksums,
-                                       CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
-    }
-
-    // TODO: Legacy method, remove when not used anymore
-    public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
-                                                        long generation,
-                                                        boolean applyOnRestart,
-                                                        String configMd5) {
-        AbstractUtf8Array data = payload.toUtf8Array(true);
-        return new SlimeConfigResponse(data,
-                                       generation,
-                                       applyOnRestart,
-                                       PayloadChecksums.from(configMd5, ""),
+        return new SlimeConfigResponse(data, generation, applyOnRestart,
+                                       configMd5,
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 
     public SlimeConfigResponse(AbstractUtf8Array payload,
                                long generation,
                                boolean applyOnRestart,
-                               PayloadChecksums payloadChecksums,
+                               String configMd5,
                                CompressionInfo compressionInfo) {
         this.payload = payload;
         this.generation = generation;
         this.applyOnRestart = applyOnRestart;
-        this.payloadChecksums = payloadChecksums;
+        this.configMd5 = configMd5;
         this.compressionInfo = compressionInfo;
     }
 
@@ -76,7 +56,7 @@ public class SlimeConfigResponse implements ConfigResponse {
 
     @Override
     public String getConfigMd5() {
-        return payloadChecksums.getForType(MD5).asString();
+        return configMd5;
     }
 
     @Override
@@ -88,13 +68,11 @@ public class SlimeConfigResponse implements ConfigResponse {
     @Override
     public String toString() {
         return "generation=" + generation +  "\n" +
-                "checksums=" + payloadChecksums +  "\n" +
+                "configmd5=" + configMd5 +  "\n" +
                 Payload.from(payload, compressionInfo).withCompression(CompressionType.UNCOMPRESSED);
     }
 
     @Override
     public CompressionInfo getCompressionInfo() { return compressionInfo; }
 
-    @Override
-    public PayloadChecksums getPayloadChecksums() { return payloadChecksums; }
 }

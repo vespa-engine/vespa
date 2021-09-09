@@ -5,8 +5,6 @@ import com.yahoo.jrt.Request;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.DefContent;
@@ -20,9 +18,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * @author bratseth
@@ -47,8 +42,7 @@ public class ConfigTester {
 
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
-        PayloadChecksums configMd5 = PayloadChecksums.from(new PayloadChecksum(ConfigUtils.getMd5(fooConfigPayload), MD5),
-                                                                               PayloadChecksum.empty(XXHASH64));
+        String configMd5 = ConfigUtils.getMd5(fooConfigPayload);
         fooConfig = new RawConfig(configKey, defMd5, fooPayload, configMd5,
                                   generation, false, defContent, Optional.empty());
 
@@ -63,24 +57,24 @@ public class ConfigTester {
 
     JRTServerConfigRequest createRequest(RawConfig config, long timeout) {
         return createRequest(config.getName(), config.getConfigId(), config.getNamespace(),
-                             config.getPayloadChecksums(), config.getGeneration(), timeout);
+                             config.getConfigMd5(), config.getGeneration(), timeout);
     }
 
     JRTServerConfigRequest createRequest(String configName, String configId, String namespace, long timeout) {
-        return createRequest(configName, configId, namespace, PayloadChecksums.empty(), 0, timeout);
+        return createRequest(configName, configId, namespace, null, 0, timeout);
     }
 
     private JRTServerConfigRequest createRequest(String configName,
                                                  String configId,
                                                  String namespace,
-                                                 PayloadChecksums payloadChecksums,
+                                                 String md5,
                                                  long generation,
                                                  long timeout) {
         Request request = JRTClientConfigRequestV3.
                 createWithParams(new ConfigKey<>(configName, configId, namespace, null),
                                  DefContent.fromList(defContent),
                                  "fromHost",
-                                 payloadChecksums,
+                                 md5,
                                  generation,
                                  timeout,
                                  Trace.createDummy(),

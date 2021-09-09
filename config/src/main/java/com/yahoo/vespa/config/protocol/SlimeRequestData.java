@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -12,9 +10,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.Optional;
-
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Contains slime request data objects. Provides methods for reading various fields from slime request data.
@@ -32,7 +27,6 @@ class SlimeRequestData {
     private static final String REQUEST_CLIENT_HOSTNAME = "clientHostname";
     private static final String REQUEST_CURRENT_GENERATION = "currentGeneration";
     private static final String REQUEST_CONFIG_MD5 = "configMD5";
-    private static final String REQUEST_CONFIG_XXHASH64 = "configXxhash64";
     private static final String REQUEST_TRACE = "trace";
     private static final String REQUEST_TIMEOUT = "timeout";
     private static final String REQUEST_DEF_MD5 = "defMD5";
@@ -85,17 +79,6 @@ class SlimeRequestData {
 
     String getRequestDefMd5() { return getRequestField(REQUEST_DEF_MD5).asString(); }
 
-    PayloadChecksum getRequestConfigXxhash64() {
-        Inspector xxhash64Field = getRequestField(REQUEST_CONFIG_XXHASH64);
-        return xxhash64Field.valid()
-                ? new PayloadChecksum(xxhash64Field.asString(), XXHASH64)
-                : PayloadChecksum.empty(XXHASH64);
-    }
-
-    PayloadChecksums getRequestConfigChecksums() {
-        return PayloadChecksums.from(getRequestConfigMd5(), getRequestConfigXxhash64().asString());
-    }
-
     long getRequestGeneration() {
         return getRequestField(REQUEST_CURRENT_GENERATION).asLong();
     }
@@ -103,7 +86,7 @@ class SlimeRequestData {
     static Slime encodeRequest(ConfigKey<?> key,
                                String hostname,
                                DefContent defSchema,
-                               PayloadChecksums payloadChecksums,
+                               String configMd5,
                                long generation,
                                long timeout,
                                Trace trace,
@@ -119,8 +102,7 @@ class SlimeRequestData {
         request.setString(REQUEST_CLIENT_CONFIGID, key.getConfigId());
         request.setString(REQUEST_CLIENT_HOSTNAME, hostname);
         defSchema.serialize(request.setArray(REQUEST_DEF_CONTENT));
-        request.setString(REQUEST_CONFIG_MD5, payloadChecksums.getForType(MD5).asString());
-        request.setString(REQUEST_CONFIG_XXHASH64, payloadChecksums.getForType(XXHASH64).asString());
+        request.setString(REQUEST_CONFIG_MD5, configMd5);
         request.setLong(REQUEST_CURRENT_GENERATION, generation);
         request.setLong(REQUEST_TIMEOUT, timeout);
         request.setString(REQUEST_COMPRESSION_TYPE, compressionType.name());

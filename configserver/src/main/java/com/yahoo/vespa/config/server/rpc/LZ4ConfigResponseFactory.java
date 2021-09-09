@@ -1,7 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.LZ4PayloadCompressor;
@@ -24,10 +23,10 @@ public class LZ4ConfigResponseFactory implements ConfigResponseFactory {
     public ConfigResponse createResponse(AbstractUtf8Array rawPayload,
                                          long generation,
                                          boolean applyOnRestart) {
+        String configMd5 = ConfigUtils.getMd5(rawPayload);
         CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, rawPayload.getByteLength());
         Utf8Array compressed = new Utf8Array(compressor.compress(rawPayload.wrap()));
-        PayloadChecksums payloadChecksums = PayloadChecksums.from(ConfigUtils.getMd5(rawPayload), ConfigUtils.getXxhash64(rawPayload));
-        return new SlimeConfigResponse(compressed, generation, applyOnRestart, payloadChecksums, info);
+        return new SlimeConfigResponse(compressed, generation, applyOnRestart, configMd5, info);
     }
 
 }

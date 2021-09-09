@@ -7,7 +7,6 @@ import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.PayloadChecksums;
 
 import java.util.Arrays;
 
@@ -36,7 +35,7 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         if (payload == null) {
             payload = inputPayload;
             ConfigPayload configPayload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(payload.split("\n")));
-            setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()), PayloadChecksums.empty());
+            setConfig(0L, false, configPayload.toInstance(configClass, key.getConfigId()), PayloadChecksum.empty());
             return true;
         }
         try {
