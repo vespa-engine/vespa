@@ -2,6 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
+import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import com.fasterxml.jackson.core.JsonParser;
@@ -24,61 +25,59 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class MetricsParser {
-    public interface Consumer {
-        void consume(Metric metric);
-    }
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    static void parse(String data, Consumer consumer) throws IOException {
-        parse(jsonMapper.createParser(data), consumer);
+    static Metrics parse(String data) throws IOException {
+        return parse(jsonMapper.createParser(data));
     }
 
-    static void parse(InputStream data, Consumer consumer) throws IOException {
-        parse(jsonMapper.createParser(data), consumer);
+    static Metrics parse(InputStream data) throws IOException {
+        return parse(jsonMapper.createParser(data));
     }
-    private static void parse(JsonParser parser, Consumer consumer) throws IOException {
+    private static Metrics parse(JsonParser parser) throws IOException {
         if (parser.nextToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of object, got " + parser.currentToken());
         }
 
+        Metrics metrics  = new Metrics();
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("metrics")) {
-                parseMetrics(parser, consumer);
+                metrics = parseMetrics(parser);
             } else {
                 if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
                     parser.skipChildren();
                 }
             }
         }
+        return metrics;
     }
-    private static long secondsSince1970UTC() {
-        return System.currentTimeMillis() / 1000L;
-    }
-    static private long parseSnapshot(JsonParser parser) throws IOException {
+
+    static private Metrics parseSnapshot(JsonParser parser) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'snapshot' object, got " + parser.currentToken());
         }
-        long timestamp = secondsSince1970UTC();
+        Metrics metrics = new Metrics();
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("to")) {
-                timestamp = parser.getLongValue();
+                long timestamp = parser.getLongValue();
                 long now = System.currentTimeMillis() / 1000;
                 timestamp = Metric.adjustTime(timestamp, now);
+                metrics = new Metrics(timestamp);
             } else {
                 if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
                     parser.skipChildren();
                 }
             }
         }
-        return timestamp;
+        return metrics;
     }
 
-    static private void parseValues(JsonParser parser, long timestamp, Consumer consumer) throws IOException {
+    static private void parseValues(JsonParser parser, Metrics metrics) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_ARRAY) {
             throw new IOException("Expected start of 'metrics:values' array, got " + parser.currentToken());
         }
@@ -88,34 +87,34 @@ public class MetricsParser {
             // read everything from this START_OBJECT to the matching END_OBJECT
             // and return it as a tree model ObjectNode
             JsonNode value = jsonMapper.readTree(parser);
-            handleValue(value, timestamp, consumer, uniqueDimensions);
+            handleValue(value, metrics.getTimeStamp(), metrics, uniqueDimensions);
 
             // do whatever you need to do with this object
         }
     }
 
-    static private void parseMetrics(JsonParser parser, Consumer consumer) throws IOException {
+    static private Metrics parseMetrics(JsonParser parser) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'metrics' object, got " + parser.currentToken());
         }
-        long timestamp = System.currentTimeMillis() / 1000L;
+        Metrics metrics = new Metrics();
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("snapshot")) {
-                timestamp = parseSnapshot(parser);
+                metrics = parseSnapshot(parser);
             } else if (fieldName.equals("values")) {
-                parseValues(parser, timestamp, consumer);
+                parseValues(parser, metrics);
             } else {
                 if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
                     parser.skipChildren();
                 }
             }
         }
+        return metrics;
     }
 
-    static private void handleValue(JsonNode metric, long timestamp, Consumer consumer,
-                                    Map<String, Map<DimensionId, String>> uniqueDimensions) {
+    static private void handleValue(JsonNode metric, long timestamp, Metrics metrics, Map<String, Map<DimensionId, String>> uniqueDimensions) {
         String name = metric.get("name").textValue();
         String description = "";
 
@@ -156,7 +155,7 @@ public class MetricsParser {
                 throw new IllegalArgumentException("Value for aggregator '" + aggregator + "' is not a number");
             }
             String metricName = new StringBuilder().append(name).append(".").append(aggregator).toString();
-            consumer.consume(new Metric(MetricId.toMetricId(metricName), value, timestamp, dim, description));
+            metrics.add(new Metric(MetricId.toMetricId(metricName), value, timestamp, dim, description));
         }
     }
 }
