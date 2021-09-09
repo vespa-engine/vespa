@@ -9,6 +9,7 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksums;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -63,7 +64,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } catch (IOException e) {
                 throw new ConfigurationRuntimeException(e);
             }
-            setConfig(0L, false, config, PayloadChecksum.empty());
+            setConfig(0L, false, config, PayloadChecksums.empty());
             try {
                 jarFile.close();
             } catch (IOException e) {

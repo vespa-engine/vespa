@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.Payload;
 import org.junit.Before;
@@ -18,24 +19,24 @@ import static org.junit.Assert.*;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class MemoryCacheTest {
-    private String defName = "foo";
-    private String configId = "id";
-    private String namespace = "bar";
+
+    private final String defName = "foo";
+    private final String configId = "id";
+    private final String namespace = "bar";
     private static final String defMd5 = "a";
 
-    private long generation = 1L;
-    private String defName2 = "baz-quux";
-    private String namespace2 = "search.config";
+    private final long generation = 1L;
+    private final String defName2 = "baz-quux";
+    private final String namespace2 = "search.config";
     // Test with a config id with / in it
-    private String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
+    private final String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
     private static final String defMd52 = "a2";
     private static final String differentDefMd5 = "09ef";
-    private static final String configMd5 = "b";
-    private ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
-    private ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
+    private static final PayloadChecksums configMd5 = PayloadChecksums.from("b", "");
+    private final ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
+    private final ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
     private ConfigCacheKey cacheKey;
     private ConfigCacheKey cacheKeyDifferentMd5;
     private ConfigCacheKey cacheKey2;

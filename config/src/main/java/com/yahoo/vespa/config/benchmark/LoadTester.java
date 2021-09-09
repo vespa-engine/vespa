@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.benchmark;
 
 import com.yahoo.collections.Tuple2;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
@@ -256,7 +257,7 @@ public class LoadTester {
 
             final long serverTimeout = 1000;
             return JRTClientConfigRequestV3.createWithParams(fullKey, DefContent.fromList(List.of(defContent.second)),
-                                                             ConfigUtils.getCanonicalHostName(), "",
+                                                             ConfigUtils.getCanonicalHostName(), PayloadChecksums.empty(),
                                                              0, serverTimeout, Trace.createDummy(),
                                                              compressionType, Optional.empty());
         }

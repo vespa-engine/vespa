@@ -7,9 +7,9 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Payload;
-import com.yahoo.vespa.config.util.ConfigUtils;
 
 /**
  * For unit testing
@@ -96,7 +96,7 @@ public class MockConnection implements ConnectionPool, Connection {
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
             long generation = 1;
-            jrtReq.addOkResponse(payload, generation, false, ConfigUtils.getMd5(payload.getData()));
+            jrtReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
         }
 
     }
