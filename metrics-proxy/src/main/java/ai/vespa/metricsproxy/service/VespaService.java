@@ -135,8 +135,6 @@ public class VespaService implements Comparable<VespaService> {
     /**
      * Get the Metrics registered for this service. Metrics are fetched over HTTP
      * if a metric http port has been defined, otherwise from log file
-     *
-     * @return the non-system metrics
      */
     public void consumeMetrics(MetricsParser.Consumer consumer) {
         remoteMetricsFetcher.getMetrics(consumer, metricsFetchCount.get());
