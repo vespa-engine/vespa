@@ -237,7 +237,7 @@ public class JRTConfigRequestV3Test {
         assertTrue(serverReq.validateParameters());
         assertValidationFail(createReq("35#$#!$@#", defNamespace, hostname, configId, payloadChecksums, currentGeneration, timeout, trace));
         assertValidationFail(createReq(defName, "abcd.o#$*(!&$", hostname, configId, payloadChecksums, currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, hostname, configId, PayloadChecksums.from("abcd", "1234"), currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, PayloadChecksums.from("opnq", "1234"), currentGeneration, timeout, trace));
         assertValidationFail(createReq(defName, defNamespace, hostname, configId, payloadChecksums, -34, timeout, trace));
         assertValidationFail(createReq(defName, defNamespace, hostname, configId, payloadChecksums, currentGeneration, -23, trace));
         assertValidationFail(createReq(defName, defNamespace, "", configId, payloadChecksums, currentGeneration, timeout, trace));

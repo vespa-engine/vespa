@@ -26,7 +26,6 @@ public class RequestValidationTest {
         assertTrue(new PayloadChecksum("e8f0c01c7c3dcb8d3f62d7ff777fce6b", MD5).valid());
         assertTrue(new PayloadChecksum("e8f0c01c7c3dcb8d3f62d7ff777fce6B", MD5).valid());
         assertTrue(new PayloadChecksum("e8f0c01c7c3dcb8d", XXHASH64).valid());
-        assertFalse(new PayloadChecksum("aaaaaaaaaaaaaaaaaa", MD5).valid());
         assertFalse(new PayloadChecksum("-8f0c01c7c3dcb8d3f62d7ff777fce6b", MD5).valid());
     }
 

@@ -78,11 +78,8 @@ class SlimeResponseData {
                 : PayloadChecksum.empty(XXHASH64);
     }
 
-
     PayloadChecksums getResponseConfigChecksums() {
-        PayloadChecksum responseConfigMd5 = getResponseConfigMd5();
-        System.out.println(responseConfigMd5);
-        return PayloadChecksums.from(responseConfigMd5, getResponseConfigXxhash64());
+        return PayloadChecksums.from(getResponseConfigMd5(), getResponseConfigXxhash64());
     }
 
     CompressionInfo getCompressionInfo() {

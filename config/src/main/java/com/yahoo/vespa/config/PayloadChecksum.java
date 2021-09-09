@@ -36,12 +36,6 @@ public class PayloadChecksum {
     public boolean valid() {
         if (checksum.equals("")) return true;  // Empty checksum is ok (e.g. when running 'vespa-get-config')
 
-        if (type == Type.MD5 && checksum.length() != 32) {
-            return false;
-        } else if (type == Type.XXHASH64 && checksum.length() != 16) {
-            return false;
-        }
-
         Matcher m = hexChecksumPattern.matcher(checksum);
         return m.matches();
     }
