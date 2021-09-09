@@ -82,9 +82,10 @@ public class VespaMetrics {
 
                 // One metrics packet per set of metrics that share the same dimensions+consumers
                 // TODO: Move aggregation into MetricsPacket itself?
-                Map<AggregationKey, List<Metric>> aggregatedMetrics = aggregateMetrics(service.getDimensions(), serviceMetrics);
+                MetricAggregator aggregator = new MetricAggregator(service.getDimensions());
+                serviceMetrics.getMetrics().forEach(metric -> aggregator.aggregate(metric));
 
-                aggregatedMetrics.forEach((aggregationKey, metrics) -> {
+                aggregator.getAggregated().forEach((aggregationKey, metrics) -> {
                     MetricsPacket.Builder builder = new MetricsPacket.Builder(service.getMonitoringName())
                             .putMetrics(metrics)
                             .putDimension(METRIC_TYPE_DIMENSION_ID, "standard")
@@ -194,25 +195,36 @@ public class VespaMetrics {
         return mostRecentTimestamp;
     }
 
-    private Map<AggregationKey, List<Metric>> aggregateMetrics(Map<DimensionId, String> serviceDimensions,
-                                                               Metrics metrics) {
-        Map<AggregationKey, List<Metric>> aggregatedMetrics = new HashMap<>();
-
-        for (Metric metric :  metrics.getMetrics() ) {
+    private static class MetricAggregator {
+        private final Map<AggregationKey, List<Metric>> aggregated = new HashMap<>();
+        private final Map<DimensionId, String> serviceDimensions;
+        MetricAggregator(Map<DimensionId, String> serviceDimensions) {
+            this.serviceDimensions = serviceDimensions;
+        }
+        Map<AggregationKey, List<Metric>> getAggregated() { return aggregated; }
+        void aggregate(Metric metric) {
             Map<DimensionId, String> mergedDimensions = new LinkedHashMap<>();
             mergedDimensions.putAll(metric.getDimensions());
             mergedDimensions.putAll(serviceDimensions);
             AggregationKey aggregationKey = new AggregationKey(mergedDimensions, metric.getConsumers());
 
-            if (aggregatedMetrics.containsKey(aggregationKey)) {
-                aggregatedMetrics.get(aggregationKey).add(metric);
+            if (aggregated.containsKey(aggregationKey)) {
+                aggregated.get(aggregationKey).add(metric);
             } else {
                 List<Metric> ml = new ArrayList<>();
                 ml.add(metric);
-                aggregatedMetrics.put(aggregationKey, ml);
+                aggregated.put(aggregationKey, ml);
             }
         }
-        return aggregatedMetrics;
+    }
+
+    private Map<AggregationKey, List<Metric>> aggregateMetrics(Map<DimensionId, String> serviceDimensions, Metrics metrics) {
+        MetricAggregator aggregator = new MetricAggregator(serviceDimensions);
+
+        for (Metric metric :  metrics.getMetrics() ) {
+            aggregator.aggregate(metric);
+        }
+        return aggregator.getAggregated();
     }
 
     private List<ConfiguredMetric> getMetricDefinitions(ConsumerId consumer) {
