@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -23,7 +22,6 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -41,6 +39,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.ToIntFunction;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
@@ -59,6 +58,7 @@ public class ModelContextImpl implements ModelContext {
     private final DeployLogger deployLogger;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final FileRegistry fileRegistry;
+    private final ExecutorService executor;
     private final HostProvisioner hostProvisioner;
     private final Provisioned provisioned;
     private final Optional<? extends Reindexing> reindexing;
@@ -85,6 +85,7 @@ public class ModelContextImpl implements ModelContext {
                             DeployLogger deployLogger,
                             ConfigDefinitionRepo configDefinitionRepo,
                             FileRegistry fileRegistry,
+                            ExecutorService executor,
                             Optional<? extends Reindexing> reindexing,
                             HostProvisioner hostProvisioner,
                             Provisioned provisioned,
@@ -99,6 +100,7 @@ public class ModelContextImpl implements ModelContext {
         this.deployLogger = deployLogger;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
+        this.executor = executor;
         this.reindexing = reindexing;
         this.hostProvisioner = hostProvisioner;
         this.provisioned = provisioned;
@@ -136,6 +138,11 @@ public class ModelContextImpl implements ModelContext {
 
     @Override
     public FileRegistry getFileRegistry() { return fileRegistry; }
+
+    @Override
+    public ExecutorService getExecutor() {
+        return executor;
+    }
 
     @Override
     public Optional<? extends Reindexing> reindexing() { return  reindexing; }

@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,11 +58,13 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final Optional<ApplicationSet> currentActiveApplicationSet;
     private final ModelContext.Properties properties;
     private final Curator curator;
+    private final ExecutorService executor;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  PermanentApplicationPackage permanentApplicationPackage,
                                  ConfigDefinitionRepo configDefinitionRepo,
                                  FileRegistry fileRegistry,
+                                 ExecutorService executor,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  Curator curator,
                                  HostValidator<ApplicationId> hostValidator,
@@ -79,6 +82,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
         this.properties = properties;
+        this.executor = executor;
     }
 
     @Override
@@ -100,6 +104,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 deployLogger(),
                 configDefinitionRepo,
                 fileRegistry,
+                executor,
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator).readReindexingStatus(applicationId),
                 createHostProvisioner(applicationPackage, provisioned),
                 provisioned,

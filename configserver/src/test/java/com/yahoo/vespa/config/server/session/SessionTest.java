@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -24,7 +24,7 @@ public class SessionTest {
     public static class MockSessionPreparer extends SessionPreparer {
 
         public MockSessionPreparer() {
-            super(null, null, null, null, null, null, new MockCurator(), null, null, null);
+            super(null, null, new InThreadExecutorService(), null, null, null, null, new MockCurator(), null, null, null);
         }
 
         @Override

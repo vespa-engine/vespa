@@ -136,6 +136,12 @@ public class Flags {
             "Whether the Orchestrator can assume any missing proxy services are down.",
             "Takes effect on first (re)start of config server");
 
+    public static final UnboundIntFlag NUM_DEPLOY_HELPER_THREADS = defineIntFlag(
+            "num-model-builder-threads", 0,
+            List.of("balder"), "2021-09-09", "2021-10-01",
+            "Number of threads used for speeding up building of models.",
+            "Takes effect on first (re)start of config server");
+
     public static final UnboundBooleanFlag GROUP_PERMANENT_SUSPENSION = defineFeatureFlag(
             "group-permanent-suspension", true,
             List.of("hakonhall"), "2021-09-11", "2021-11-11",

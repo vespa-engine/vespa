@@ -9,7 +9,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -39,7 +38,6 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
@@ -56,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -79,9 +78,11 @@ public class SessionPreparer {
     private final Zone zone;
     private final SecretStore secretStore;
     private final FlagSource flagSource;
+    private final ExecutorService executor;
 
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
+                           ExecutorService executor,
                            HostProvisionerProvider hostProvisionerProvider,
                            PermanentApplicationPackage permanentApplicationPackage,
                            ConfigserverConfig configserverConfig,
@@ -100,7 +101,10 @@ public class SessionPreparer {
         this.zone = zone;
         this.secretStore = secretStore;
         this.flagSource = flagSource;
+        this.executor = executor;
     }
+
+    ExecutorService getExecutor() { return executor; }
 
     /**
      * Prepares a session (validates, builds model, writes to zookeeper and distributes files)
@@ -202,6 +206,7 @@ public class SessionPreparer {
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,
                                                                    fileRegistry,
+                                                                   executor,
                                                                    hostProvisionerProvider,
                                                                    curator,
                                                                    hostValidator,
