@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
 import com.yahoo.concurrent.StripedExecutor;
@@ -105,6 +106,7 @@ public class TenantRepository {
     private final StripedExecutor<TenantName> zkSessionWatcherExecutor;
     private final StripedExecutor<TenantName> zkApplicationWatcherExecutor;
     private final FileDistributionFactory fileDistributionFactory;
+    private final ExecutorService modelBuilderExecutor;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
@@ -198,6 +200,8 @@ public class TenantRepository {
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
+        // This we should control with a feature flag.
+        this.modelBuilderExecutor = new InThreadExecutorService();
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -335,6 +339,7 @@ public class TenantRepository {
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry,
                                                               fileDistributionFactory,
+                modelBuilderExecutor,
                                                               hostProvisionerProvider,
                                                               permanentApplicationPackage,
                                                               configserverConfig,

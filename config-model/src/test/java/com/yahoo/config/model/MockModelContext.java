@@ -2,6 +2,7 @@
 package com.yahoo.config.model;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
@@ -18,6 +19,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author hmusum
@@ -83,4 +85,8 @@ public class MockModelContext implements ModelContext {
         return new TestProperties();
     }
 
+    @Override
+    public ExecutorService getExecutor() {
+        return new InThreadExecutorService();
+    }
 }

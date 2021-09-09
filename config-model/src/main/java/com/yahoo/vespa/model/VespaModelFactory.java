@@ -168,6 +168,7 @@ public class VespaModelFactory implements ModelFactory {
             .deployLogger(modelContext.deployLogger())
             .configDefinitionRepo(modelContext.configDefinitionRepo())
             .fileRegistry(modelContext.getFileRegistry())
+            .executor(modelContext.getExecutor())
             .permanentApplicationPackage(modelContext.permanentApplicationPackage())
             .properties(modelContext.properties())
             .vespaVersion(version())

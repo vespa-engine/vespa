@@ -23,6 +23,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Model context containing state provided to model factories.
@@ -39,6 +40,7 @@ public interface ModelContext {
     DeployLogger deployLogger();
     ConfigDefinitionRepo configDefinitionRepo();
     FileRegistry getFileRegistry();
+    ExecutorService getExecutor();
     default Optional<? extends Reindexing> reindexing() { return Optional.empty(); }
     Properties properties();
     default Optional<File> appDir() { return Optional.empty();}
