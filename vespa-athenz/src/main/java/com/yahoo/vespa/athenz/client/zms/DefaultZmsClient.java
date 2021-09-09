@@ -36,7 +36,9 @@ import org.bouncycastle.cert.ocsp.Req;
 import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -303,8 +305,10 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
     public void createRole(AthenzRole role, Map<String, Object> attributes) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", role.domain().getName(), role.roleName()));
+        HashMap<String, Object> finalAttributes = new HashMap<>(attributes);
+        finalAttributes.put("name", role.roleName());
         var request = RequestBuilder.put(uri)
-                .setEntity(toJsonStringEntity(attributes))
+                .setEntity(toJsonStringEntity(finalAttributes))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
