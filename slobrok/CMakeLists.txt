@@ -19,6 +19,7 @@ vespa_define_module(
     TESTS
     src/tests/backoff
     src/tests/configure
+    src/tests/local_rpc_monitor_map
     src/tests/mirrorapi
     src/tests/registerapi
     src/tests/service_map_history
