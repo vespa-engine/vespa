@@ -212,7 +212,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISTRIBUTE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
-            "distribute-external-rank-expression", false,
+            "distribute-external-rank-expression", true,
             List.of("baldersheim"), "2021-05-27", "2021-09-15",
             "Whether to use distributed external rank expression files by filedistribution",
             "Takes effect on next internal redeployment",
