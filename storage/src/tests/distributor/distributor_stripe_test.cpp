@@ -870,7 +870,7 @@ DistributorStripeTest::set_up_and_start_get_op_with_stale_reads_enabled(bool ena
     _stripe->handle_or_enqueue_message(make_dummy_get_command_for_bucket_1());
 }
 
-TEST_F(DistributorStripeTest, gets_are_started_outside_main_distributor_logic_if_stale_reads_enabled)
+TEST_F(DistributorStripeTest, gets_are_started_outside_main_stripe_logic_if_stale_reads_enabled)
 {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     ASSERT_THAT(_sender.commands(), SizeIs(1));
@@ -883,7 +883,7 @@ TEST_F(DistributorStripeTest, gets_are_started_outside_main_distributor_logic_if
     EXPECT_THAT(_sender.replies(), SizeIs(1));
 }
 
-TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_distributor_logic_if_stale_reads_disabled)
+TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_stripe_logic_if_stale_reads_disabled)
 {
     set_up_and_start_get_op_with_stale_reads_enabled(false);
     // Get has been placed into distributor queue, so no external messages are produced.
@@ -894,7 +894,7 @@ TEST_F(DistributorStripeTest, gets_are_not_started_outside_main_distributor_logi
 // There's no need or desire to track "lockfree" Gets in the main pending message tracker,
 // as we only have to track mutations to inhibit maintenance ops safely. Furthermore,
 // the message tracker is a multi-index and therefore has some runtime cost.
-TEST_F(DistributorStripeTest, gets_started_outside_main_thread_are_not_tracked_by_main_pending_message_tracker)
+TEST_F(DistributorStripeTest, gets_started_outside_stripe_thread_are_not_tracked_by_pending_message_tracker)
 {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     Bucket bucket(FixedBucketSpaces::default_space(), BucketId(16, 1));
@@ -902,7 +902,7 @@ TEST_F(DistributorStripeTest, gets_started_outside_main_thread_are_not_tracked_b
             0, bucket, api::MessageType::GET_ID));
 }
 
-TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_main_distributor_thread)
+TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread)
 {
     set_up_and_start_get_op_with_stale_reads_enabled(true);
     _stripe->flush_and_close();
