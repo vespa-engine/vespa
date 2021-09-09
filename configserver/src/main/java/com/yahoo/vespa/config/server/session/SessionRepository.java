@@ -503,6 +503,7 @@ public class SessionRepository {
                                                                     session.getSessionId(),
                                                                     sessionZooKeeperClient,
                                                                     previousApplicationSet,
+                                                                    sessionPreparer.getExecutor(),
                                                                     curator,
                                                                     metrics,
                                                                     permanentApplicationPackage,

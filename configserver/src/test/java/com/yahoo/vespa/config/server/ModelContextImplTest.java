@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -58,6 +59,7 @@ public class ModelContextImplTest {
                 new BaseDeployLogger(),
                 new StaticConfigDefinitionRepo(),
                 new MockFileRegistry(),
+                new InThreadExecutorService(),
                 Optional.empty(),
                 hostProvisioner,
                 new Provisioned(),

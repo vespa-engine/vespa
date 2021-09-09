@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -123,6 +124,7 @@ public class SessionPreparerTest {
         return new SessionPreparer(
                 modelFactoryRegistry,
                 new MockFileDistributionFactory(configserverConfig),
+                new InThreadExecutorService(),
                 hostProvisionerProvider,
                 new PermanentApplicationPackage(configserverConfig),
                 configserverConfig,

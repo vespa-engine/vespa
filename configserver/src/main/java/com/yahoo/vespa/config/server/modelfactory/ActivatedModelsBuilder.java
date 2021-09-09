@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -29,20 +28,17 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
-import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
-import com.yahoo.vespa.config.server.tenant.TenantListener;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
-import java.security.cert.X509Certificate;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,11 +61,13 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final Curator curator;
     private final FlagSource flagSource;
     private final SecretStore secretStore;
+    private final ExecutorService executor;
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long applicationGeneration,
                                   SessionZooKeeperClient zkClient,
                                   Optional<ApplicationSet> currentActiveApplicationSet,
+                                  ExecutorService executor,
                                   Curator curator,
                                   Metrics metrics,
                                   PermanentApplicationPackage permanentApplicationPackage,
@@ -80,11 +78,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   Zone zone,
                                   ModelFactoryRegistry modelFactoryRegistry,
                                   ConfigDefinitionRepo configDefinitionRepo) {
-        super(modelFactoryRegistry,
-              configserverConfig,
-              zone,
-              hostProvisionerProvider,
-              new SilentDeployLogger());
+        super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, new SilentDeployLogger());
         this.tenant = tenant;
         this.applicationGeneration = applicationGeneration;
         this.zkClient = zkClient;
@@ -95,6 +89,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.curator = curator;
         this.flagSource = flagSource;
         this.secretStore = secretStore;
+        this.executor = executor;
     }
 
     @Override
@@ -116,6 +111,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 new SilentDeployLogger(),
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistries(), modelFactory.version()).orElse(new MockFileRegistry()),
+                executor,
                 new ApplicationCuratorDatabase(tenant, curator).readReindexingStatus(applicationId),
                 createStaticProvisioner(applicationPackage, modelContextProperties.applicationId(), provisioned),
                 provisioned,
