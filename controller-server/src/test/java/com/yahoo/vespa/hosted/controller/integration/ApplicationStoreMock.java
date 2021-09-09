@@ -63,6 +63,14 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
+    public void pruneDiffs(TenantName tenantName, ApplicationName applicationName, long beforeBuildNumber) {
+        Optional.ofNullable(diffs.get(appId(tenantName, applicationName)))
+                .ifPresent(map -> map.keySet().stream()
+                        .filter(buildNumber -> buildNumber < beforeBuildNumber)
+                        .forEach(map::remove));
+    }
+
+    @Override
     public Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber) {
         return store.getOrDefault(appId(tenant, application), Map.of()).entrySet().stream()
                     .filter(kv -> kv.getKey().buildNumber().orElse(Long.MIN_VALUE) == buildNumber)
@@ -113,6 +121,14 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public Optional<String> getDevDiff(DeploymentId deploymentId, long buildNumber) {
         return Optional.ofNullable(devDiffs.get(deploymentId)).map(map -> map.get(buildNumber));
+    }
+
+    @Override
+    public void pruneDevDiffs(DeploymentId deploymentId, long beforeBuildNumber) {
+        Optional.ofNullable(devDiffs.get(deploymentId))
+                .ifPresent(map -> map.keySet().stream()
+                        .filter(buildNumber -> buildNumber < beforeBuildNumber)
+                        .forEach(map::remove));
     }
 
     @Override

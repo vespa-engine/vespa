@@ -367,7 +367,8 @@ public class JobController {
         List<Lock> locks = new ArrayList<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            for (Step step : report.allPrerequisites(run(id).get().steps().keySet()))
+            Run unlockedRun = run(id).get();
+            for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.add(curator.lock(id.application(), id.type(), step));
 
             locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
@@ -398,6 +399,20 @@ public class JobController {
                 metric.jobFinished(run.id().job(), finishedRun.status());
                 return finishedRun;
             });
+
+            DeploymentId deploymentId = new DeploymentId(unlockedRun.id().application(), unlockedRun.id().job().type().zone(controller.system()));
+            (unlockedRun.versions().targetApplication().isDeployedDirectly() ?
+                            Stream.of(unlockedRun.id().type()) :
+                            JobType.allIn(controller.system()).stream().filter(jobType -> !jobType.environment().isManuallyDeployed()))
+                    .flatMap(jobType -> controller.jobController().runs(unlockedRun.id().application(), jobType).values().stream())
+                    .mapToLong(run -> run.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
+                    .min()
+                    .ifPresent(oldestBuild -> {
+                        if (unlockedRun.versions().targetApplication().isDeployedDirectly())
+                            controller.applications().applicationStore().pruneDevDiffs(deploymentId, oldestBuild);
+                        else
+                            controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
+                    });
         }
         finally {
             for (Lock lock : locks)

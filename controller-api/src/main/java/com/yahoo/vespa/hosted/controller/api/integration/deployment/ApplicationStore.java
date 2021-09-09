@@ -24,6 +24,9 @@ public interface ApplicationStore {
     /** Returns the application package diff, compared to the previous build, for the given tenant, application and build number */
     Optional<String> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber);
 
+    /** Removes diffs for packages before the given build number */
+    void pruneDiffs(TenantName tenantName, ApplicationName applicationName, long beforeBuildNumber);
+
     /** Find application package by given build number */
     Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber);
 
@@ -50,6 +53,9 @@ public interface ApplicationStore {
 
     /** Returns the application package diff, compared to the previous build, for the given deployment and build number */
     Optional<String> getDevDiff(DeploymentId deploymentId, long buildNumber);
+
+    /** Removes diffs for dev packages before the given build number */
+    void pruneDevDiffs(DeploymentId deploymentId, long beforeBuildNumber);
 
     /** Stores the given application package as the development package for the given deployment and version and diff since previous version. */
     void putDev(DeploymentId deploymentId, ApplicationVersion version, byte[] applicationPackage, String diff);
