@@ -1,0 +1,275 @@
+{
+  "name": "tree",
+  "version": "v3",
+  "num_class": 1,
+  "num_tree_per_iteration": 1,
+  "label_index": 0,
+  "max_feature_idx": 3,
+  "average_output": false,
+  "objective": "regression",
+  "feature_names": [
+    "numerical_1",
+    "numerical_2",
+    "categorical_1",
+    "categorical_2"
+  ],
+  "monotone_constraints": [],
+  "tree_info": [
+    {
+      "tree_index": 0,
+      "num_leaves": 3,
+      "num_cat": 1,
+      "shrinkage": 1,
+      "tree_structure": {
+        "split_index": 0,
+        "split_feature": 1,
+        "split_gain": 68.5353012084961,
+        "threshold": 0.46643291586559305,
+        "decision_type": "<=",
+        "default_left": true,
+        "missing_type": "NaN",
+        "internal_value": 0,
+        "internal_weight": 0,
+        "internal_count": 1000,
+        "left_child": {
+          "leaf_index": 0,
+          "leaf_value": 2.1594397038037663,
+          "leaf_weight": 469,
+          "leaf_count": 469
+        },
+        "right_child": {
+          "split_index": 1,
+          "split_feature": 3,
+          "split_gain": 41.27640151977539,
+          "threshold": "2||3||4",
+          "decision_type": "==",
+          "default_left": false,
+          "missing_type": "NaN",
+          "internal_value": 0.246035,
+          "internal_weight": 531,
+          "internal_count": 531,
+          "left_child": {
+            "leaf_index": 1,
+            "leaf_value": 2.235297305276056,
+            "leaf_weight": 302,
+            "leaf_count": 302
+          },
+          "right_child": {
+            "leaf_index": 2,
+            "leaf_value": 2.1792953471546546,
+            "leaf_weight": 229,
+            "leaf_count": 229
+          }
+        }
+      }
+    },
+    {
+      "tree_index": 1,
+      "num_leaves": 3,
+      "num_cat": 1,
+      "shrinkage": 0.1,
+      "tree_structure": {
+        "split_index": 0,
+        "split_feature": 2,
+        "split_gain": 64.22250366210938,
+        "threshold": "3||4",
+        "decision_type": "==",
+        "default_left": false,
+        "missing_type": "NaN",
+        "internal_value": 0,
+        "internal_weight": 0,
+        "internal_count": 1000,
+        "left_child": {
+          "leaf_index": 0,
+          "leaf_value": 0.03070842919354316,
+          "leaf_weight": 399,
+          "leaf_count": 399
+        },
+        "right_child": {
+          "split_index": 1,
+          "split_feature": 0,
+          "split_gain": 36.74250030517578,
+          "threshold": 0.5102250691730842,
+          "decision_type": "<=",
+          "default_left": true,
+          "missing_type": "NaN",
+          "internal_value": -0.204906,
+          "internal_weight": 601,
+          "internal_count": 601,
+          "left_child": {
+            "leaf_index": 1,
+            "leaf_value": -0.04439151147520909,
+            "leaf_weight": 315,
+            "leaf_count": 315
+          },
+          "right_child": {
+            "leaf_index": 2,
+            "leaf_value": 0.005117411709368601,
+            "leaf_weight": 286,
+            "leaf_count": 286
+          }
+        }
+      }
+    },
+    {
+      "tree_index": 2,
+      "num_leaves": 3,
+      "num_cat": 0,
+      "shrinkage": 0.1,
+      "tree_structure": {
+        "split_index": 0,
+        "split_feature": 1,
+        "split_gain": 57.1327018737793,
+        "threshold": 0.668665477622446,
+        "decision_type": "<=",
+        "default_left": true,
+        "missing_type": "NaN",
+        "internal_value": 0,
+        "internal_weight": 0,
+        "internal_count": 1000,
+        "left_child": {
+          "split_index": 1,
+          "split_feature": 1,
+          "split_gain": 40.859100341796875,
+          "threshold": 0.008118820676863816,
+          "decision_type": "<=",
+          "default_left": true,
+          "missing_type": "NaN",
+          "internal_value": -0.162926,
+          "internal_weight": 681,
+          "internal_count": 681,
+          "left_child": {
+            "leaf_index": 0,
+            "leaf_value": -0.15361238490967524,
+            "leaf_weight": 21,
+            "leaf_count": 21
+          },
+          "right_child": {
+            "leaf_index": 2,
+            "leaf_value": -0.01192330846157292,
+            "leaf_weight": 660,
+            "leaf_count": 660
+          }
+        },
+        "right_child": {
+          "leaf_index": 1,
+          "leaf_value": 0.03499044894987518,
+          "leaf_weight": 319,
+          "leaf_count": 319
+        }
+      }
+    },
+    {
+      "tree_index": 3,
+      "num_leaves": 3,
+      "num_cat": 1,
+      "shrinkage": 0.1,
+      "tree_structure": {
+        "split_index": 0,
+        "split_feature": 0,
+        "split_gain": 54.77090072631836,
+        "threshold": 0.5201391072644542,
+        "decision_type": "<=",
+        "default_left": true,
+        "missing_type": "NaN",
+        "internal_value": 0,
+        "internal_weight": 0,
+        "internal_count": 1000,
+        "left_child": {
+          "leaf_index": 0,
+          "leaf_value": -0.02141000620783247,
+          "leaf_weight": 543,
+          "leaf_count": 543
+        },
+        "right_child": {
+          "split_index": 1,
+          "split_feature": 2,
+          "split_gain": 27.200700759887695,
+          "threshold": "0||1",
+          "decision_type": "==",
+          "default_left": false,
+          "missing_type": "NaN",
+          "internal_value": 0.255704,
+          "internal_weight": 457,
+          "internal_count": 457,
+          "left_child": {
+            "leaf_index": 1,
+            "leaf_value": -0.004121485787596721,
+            "leaf_weight": 191,
+            "leaf_count": 191
+          },
+          "right_child": {
+            "leaf_index": 2,
+            "leaf_value": 0.04534090904886873,
+            "leaf_weight": 266,
+            "leaf_count": 266
+          }
+        }
+      }
+    },
+    {
+      "tree_index": 4,
+      "num_leaves": 3,
+      "num_cat": 1,
+      "shrinkage": 0.1,
+      "tree_structure": {
+        "split_index": 0,
+        "split_feature": 3,
+        "split_gain": 51.84349822998047,
+        "threshold": "2||3||4",
+        "decision_type": "==",
+        "default_left": false,
+        "missing_type": "NaN",
+        "internal_value": 0,
+        "internal_weight": 0,
+        "internal_count": 1000,
+        "left_child": {
+          "split_index": 1,
+          "split_feature": 1,
+          "split_gain": 39.352699279785156,
+          "threshold": 0.27283279016959255,
+          "decision_type": "<=",
+          "default_left": true,
+          "missing_type": "NaN",
+          "internal_value": 0.188414,
+          "internal_weight": 593,
+          "internal_count": 593,
+          "left_child": {
+            "leaf_index": 0,
+            "leaf_value": -0.01924803254356527,
+            "leaf_weight": 184,
+            "leaf_count": 184
+          },
+          "right_child": {
+            "leaf_index": 2,
+            "leaf_value": 0.03643772842347651,
+            "leaf_weight": 409,
+            "leaf_count": 409
+          }
+        },
+        "right_child": {
+          "leaf_index": 1,
+          "leaf_value": -0.02701711918923075,
+          "leaf_weight": 407,
+          "leaf_count": 407
+        }
+      }
+    }
+  ],
+  "pandas_categorical": [
+    [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e"
+    ],
+    [
+      "i",
+      "j",
+      "k",
+      "l",
+      "m"
+    ]
+  ]
+}
