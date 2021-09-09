@@ -644,6 +644,10 @@ public class RankProfile implements Cloneable {
     /** Adds a function and returns it */
     public RankingExpressionFunction addFunction(ExpressionFunction function, boolean inline) {
         RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
+        if (functions.containsKey(function.getName())) {
+            deployLogger.log(Level.WARNING, "Function '" + function.getName() + "' replaces a previous function " +
+                    "with the same name in rank profile '" + this.name + "'");
+        }
         functions.put(function.getName(), rankingExpressionFunction);
         allFunctionsCached = null;
         return rankingExpressionFunction;
