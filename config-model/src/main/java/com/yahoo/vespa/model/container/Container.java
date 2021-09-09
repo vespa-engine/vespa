@@ -310,11 +310,12 @@ public abstract class Container extends AbstractService implements
     @Override
     public void getConfig(QrConfig.Builder builder) {
         builder.rpc(new Rpc.Builder()
-                        .enabled(rpcServerEnabled())
-                        .port(getRpcPort())
-                        .slobrokId(serviceSlobrokId()))
+                            .enabled(rpcServerEnabled())
+                            .port(getRpcPort())
+                            .slobrokId(serviceSlobrokId()))
                 .filedistributor(filedistributorConfig())
-                .discriminator((clusterName != null ? clusterName + "." : "" ) + name);
+                .discriminator((clusterName != null ? clusterName + "." : "" ) + name)
+                .nodeIndex(index);
     }
 
     /** Returns the jvm args set explicitly for this node */
