@@ -14,8 +14,10 @@ public class SystemInfoTest {
     @Test
     public void testSystemInfo() {
         Zone zone = new Zone(Environment.dev, "us-west-1");
-        SystemInfo info = new SystemInfo(zone);
+        Node node = new Node("default.container.1");
+        SystemInfo info = new SystemInfo(zone, node);
         assertEquals(zone, info.zone());
+        assertEquals(node, info.node());
     }
 
     @Test

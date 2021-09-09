@@ -2,11 +2,13 @@
 package com.yahoo.container.jdisc;
 
 import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.Node;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.di.componentgraph.Provider;
 
 /**
@@ -20,8 +22,9 @@ public class SystemInfoProvider extends AbstractComponent implements Provider<Sy
     private final SystemInfo instance;
 
     @Inject
-    public SystemInfoProvider(ConfigserverConfig config) {
-        this.instance = new SystemInfo(new Zone(Environment.valueOf(config.environment()), config.region()));
+    public SystemInfoProvider(ConfigserverConfig csConfig, QrConfig qrConfig) {
+        this.instance = new SystemInfo(new Zone(Environment.valueOf(csConfig.environment()), csConfig.region()),
+                                       new Node(qrConfig.discriminator()));
     }
 
     @Override
