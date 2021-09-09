@@ -2,7 +2,6 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.TestUtil;
-import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.Test;
@@ -16,24 +15,11 @@ public class MetricsFetcherTest {
 
     private static int port = 9;  //port number is not used in this test
 
-    private class MetricsConsumer implements MetricsParser.Consumer {
-        Metrics metrics = new Metrics();
-        @Override
-        public void consume(Metric metric) {
-            metrics.add(metric);
-        }
-    }
-    Metrics fetch(String data) {
-        RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
-        MetricsConsumer consumer = new MetricsConsumer();
-        fetcher.createMetrics(data, consumer, 0);
-        return consumer.metrics;
-    }
-
     @Test
     public void testStateFormatMetricsParse() {
         String jsonData = TestUtil.getFileContents("metrics-state.json");
-        Metrics metrics = fetch(jsonData);
+        RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
+        Metrics metrics = fetcher.createMetrics(jsonData, 0);
         assertThat(metrics.size(), is(10));
         assertThat(metrics.getMetric(MetricId.toMetricId("query_hits.count")).getValue().intValue(), is(28));
         assertThat(metrics.getMetric(MetricId.toMetricId("queries.rate")).getValue().doubleValue(), is(0.4667));
@@ -43,7 +29,8 @@ public class MetricsFetcherTest {
     @Test
     public void testEmptyJson() {
         String  jsonData = "{}";
-        Metrics metrics = fetch(jsonData);
+        RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
+        Metrics metrics = fetcher.createMetrics(jsonData, 0);
         assertThat("Wrong number of metrics", metrics.size(), is(0));
     }
 
@@ -52,8 +39,10 @@ public class MetricsFetcherTest {
         String jsonData;
         Metrics metrics;
 
+        RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
+
         jsonData = "";
-        metrics = fetch(jsonData);
+        metrics = fetcher.createMetrics(jsonData, 0);
         assertThat("Wrong number of metrics", metrics.size(), is(0));
 
         jsonData = "{\n" +
@@ -62,7 +51,7 @@ public class MetricsFetcherTest {
                 "  \"message\" : \"Everything ok here\"\n" +
                 "}\n" +
                 "}";
-        metrics = fetch(jsonData);
+        metrics = fetcher.createMetrics(jsonData, 0);
         assertThat("Wrong number of metrics", metrics.size(), is(0));
 
         jsonData = "{\n" +
@@ -91,7 +80,7 @@ public class MetricsFetcherTest {
                 "}\n" +
                 "}";
 
-        metrics = fetch(jsonData);
+        metrics = fetcher.createMetrics(jsonData, 0);
         assertThat("Wrong number of metrics", metrics.size(), is(0));
     }
 }

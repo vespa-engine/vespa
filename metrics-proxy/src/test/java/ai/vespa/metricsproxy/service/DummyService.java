@@ -2,6 +2,7 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
+import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 
 /**
@@ -20,10 +21,14 @@ public class DummyService extends VespaService {
     }
 
     @Override
-    public void consumeMetrics(MetricsParser.Consumer consumer) {
+    public Metrics getMetrics() {
+        Metrics m = new Metrics();
+
         long timestamp = System.currentTimeMillis() / 1000;
-        consumer.consume(new Metric(MetricId.toMetricId(METRIC_1), 5 * num + 1, timestamp));
-        consumer.consume(new Metric(MetricId.toMetricId(METRIC_2), 1.3 * num + 1.05, timestamp));
+        m.add(new Metric(MetricId.toMetricId(METRIC_1), 5 * num + 1, timestamp));
+        m.add(new Metric(MetricId.toMetricId(METRIC_2), 1.3 * num + 1.05, timestamp));
+
+        return m;
     }
 
 }

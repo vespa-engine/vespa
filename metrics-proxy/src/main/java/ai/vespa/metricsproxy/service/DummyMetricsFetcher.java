@@ -1,6 +1,8 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
+import ai.vespa.metricsproxy.metric.Metrics;
+
 /**
  * Dummy class used for getting health status for a vespa service that has no HTTP service
  * for getting metrics
@@ -19,6 +21,7 @@ public class DummyMetricsFetcher extends RemoteMetricsFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    public void getMetrics(MetricsParser.Consumer consumer, int fetchCount) {
+    public Metrics getMetrics(int fetchCount) {
+        return new Metrics();
     }
 }

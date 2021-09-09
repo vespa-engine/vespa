@@ -12,7 +12,6 @@ import ai.vespa.metricsproxy.metric.model.Dimension;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.service.MetricsParser;
 import ai.vespa.metricsproxy.service.VespaService;
 
 import java.util.ArrayList;
@@ -76,20 +75,23 @@ public class VespaMetrics {
             Optional<MetricsPacket.Builder> systemCheck = getSystemMetrics(service);
             systemCheck.ifPresent(metricsPackets::add);
 
-            MetricAggregator aggregator = new MetricAggregator(service.getDimensions());
-            GetServiceMetricsConsumer metricsConsumer = new GetServiceMetricsConsumer(consumersByMetric, aggregator);
-            service.consumeMetrics(metricsConsumer);
+            Metrics allServiceMetrics = service.getMetrics();
 
-            if (! aggregator.getAggregated().isEmpty()) {
+            if (! allServiceMetrics.getMetrics().isEmpty()) {
+                Metrics serviceMetrics = getServiceMetrics(allServiceMetrics, consumersByMetric);
 
                 // One metrics packet per set of metrics that share the same dimensions+consumers
+                // TODO: Move aggregation into MetricsPacket itself?
+                MetricAggregator aggregator = new MetricAggregator(service.getDimensions());
+                serviceMetrics.getMetrics().forEach(metric -> aggregator.aggregate(metric));
+
                 aggregator.getAggregated().forEach((aggregationKey, metrics) -> {
                     MetricsPacket.Builder builder = new MetricsPacket.Builder(service.getMonitoringName())
                             .putMetrics(metrics)
                             .putDimension(METRIC_TYPE_DIMENSION_ID, "standard")
                             .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName())
                             .putDimensions(aggregationKey.getDimensions());
-                    setMetaInfo(builder, metrics.get(0).getTimeStamp());
+                    setMetaInfo(builder, serviceMetrics.getTimeStamp());
                     builder.addConsumers(aggregationKey.getConsumers());
                     metricsPackets.add(builder);
                 });
@@ -118,20 +120,15 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private class GetServiceMetricsConsumer implements MetricsParser.Consumer {
-        private final MetricAggregator aggregator;
-        private final Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric;
-        GetServiceMetricsConsumer(Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric, MetricAggregator aggregator) {
-            this.consumersByMetric = consumersByMetric;
-            this.aggregator = aggregator;
-        }
-
-        @Override
-        public void consume(Metric candidate) {
+    private Metrics getServiceMetrics(Metrics allServiceMetrics, Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric) {
+        Metrics configuredServiceMetrics = new Metrics();
+        configuredServiceMetrics.setTimeStamp(getMostRecentTimestamp(allServiceMetrics));
+        for (Metric candidate : allServiceMetrics.getMetrics()) {
             getConfiguredMetrics(candidate.getName(), consumersByMetric.keySet()).forEach(
-                    configuredMetric -> aggregator.aggregate(
+                    configuredMetric -> configuredServiceMetrics.add(
                             metricWithConfigProperties(candidate, configuredMetric, consumersByMetric)));
         }
+        return configuredServiceMetrics;
     }
 
     private Map<DimensionId, String> extractDimensions(Map<DimensionId, String> dimensions, List<Dimension> configuredDimensions) {
@@ -188,6 +185,16 @@ public class VespaMetrics {
         return Optional.of(builder);
     }
 
+    private long getMostRecentTimestamp(Metrics metrics) {
+        long mostRecentTimestamp = 0L;
+        for (Metric metric : metrics.getMetrics()) {
+            if (metric.getTimeStamp() > mostRecentTimestamp) {
+                mostRecentTimestamp = metric.getTimeStamp();
+            }
+        }
+        return mostRecentTimestamp;
+    }
+
     private static class MetricAggregator {
         private final Map<AggregationKey, List<Metric>> aggregated = new HashMap<>();
         private final Map<DimensionId, String> serviceDimensions;
@@ -211,6 +218,15 @@ public class VespaMetrics {
         }
     }
 
+    private Map<AggregationKey, List<Metric>> aggregateMetrics(Map<DimensionId, String> serviceDimensions, Metrics metrics) {
+        MetricAggregator aggregator = new MetricAggregator(serviceDimensions);
+
+        for (Metric metric :  metrics.getMetrics() ) {
+            aggregator.aggregate(metric);
+        }
+        return aggregator.getAggregated();
+    }
+
     private List<ConfiguredMetric> getMetricDefinitions(ConsumerId consumer) {
         if (metricsConsumers == null) return Collections.emptyList();
 
@@ -224,100 +240,75 @@ public class VespaMetrics {
                 .statusMessage("Data collected successfully");
     }
 
-    private class MetricStringBuilder implements MetricsParser.Consumer {
-        private final StringBuilder sb = new StringBuilder();
-        private VespaService service;
-        @Override
-        public void consume(Metric metric) {
-            MetricId key = metric.getName();
-            MetricId alias = key;
-
-            boolean isForwarded = false;
-            for (ConfiguredMetric metricConsumer : getMetricDefinitions(vespaMetricsConsumerId)) {
-                if (metricConsumer.id().equals(key)) {
-                    alias = metricConsumer.outputname();
-                    isForwarded = true;
-                }
-            }
-            if (isForwarded) {
-                sb.append(formatter.format(service, alias.id, metric.getValue())).append(" ");
-            }
-        }
-
-        @Override
-        public String toString() {
-            return sb.toString();
-        }
-    }
     /**
      * Returns a string representation of metrics for the given services;
      * a space separated list of key=value.
      */
     public String getMetricsAsString(List<VespaService> services) {
-        MetricStringBuilder msb = new MetricStringBuilder();
-        for (VespaService service : services) {
-            msb.service = service;
-            service.consumeMetrics(msb);
-        }
-        return msb.toString();
-    }
+        StringBuilder b = new StringBuilder();
+        for (VespaService s : services) {
+            for (Metric metric : s.getMetrics().getMetrics()) {
+                MetricId key = metric.getName();
+                MetricId alias = key;
 
-    private class MetricNamesBuilder implements MetricsParser.Consumer {
-        private final StringBuilder bufferOn = new StringBuilder();
-        private final StringBuilder bufferOff = new StringBuilder();
-        private final ConsumerId consumer;
-        MetricNamesBuilder(ConsumerId consumer) {
-            this.consumer = consumer;
-        }
-        @Override
-        public void consume(Metric m) {
-            String description = m.getDescription();
-            MetricId alias = MetricId.empty;
-            boolean isForwarded = false;
-
-            for (ConfiguredMetric metric : getMetricDefinitions(consumer)) {
-                if (metric.id().equals(m.getName())) {
-                    alias = metric.outputname();
-                    isForwarded = true;
-                    if (description.isEmpty()) {
-                        description = metric.description();
+                boolean isForwarded = false;
+                for (ConfiguredMetric metricConsumer : getMetricDefinitions(vespaMetricsConsumerId)) {
+                    if (metricConsumer.id().equals(key)) {
+                        alias = metricConsumer.outputname();
+                        isForwarded = true;
                     }
                 }
+                if (isForwarded) {
+                    b.append(formatter.format(s, alias.id, metric.getValue())).append(" ");
+                }
             }
-
-            String message = "OFF";
-            StringBuilder buffer = bufferOff;
-            if (isForwarded) {
-                buffer = bufferOn;
-                message = "ON";
-            }
-            buffer.append(m.getName()).append('=').append(message);
-            if (!description.isEmpty()) {
-                buffer.append(";description=").append(description);
-            }
-            if (!alias.id.isEmpty()) {
-                buffer.append(";output-name=").append(alias);
-            }
-            buffer.append(',');
         }
-
-        @Override
-        public String toString() {
-            return bufferOn.append(bufferOff).toString();
-        }
+        return b.toString();
     }
+
     /**
      * Get all metric names for the given services
      *
      * @return String representation
      */
     public String getMetricNames(List<VespaService> services, ConsumerId consumer) {
-        MetricNamesBuilder metricNamesBuilder = new MetricNamesBuilder(consumer);
-        for (VespaService service : services) {
-            service.consumeMetrics(metricNamesBuilder);
+        StringBuilder bufferOn = new StringBuilder();
+        StringBuilder bufferOff = new StringBuilder();
+        for (VespaService s : services) {
+
+            for (Metric m : s.getMetrics().getMetrics()) {
+                String description = m.getDescription();
+                MetricId alias = MetricId.empty;
+                boolean isForwarded = false;
+
+                for (ConfiguredMetric metric : getMetricDefinitions(consumer)) {
+                    if (metric.id().equals(m.getName())) {
+                        alias = metric.outputname();
+                        isForwarded = true;
+                        if (description.isEmpty()) {
+                            description = metric.description();
+                        }
+                    }
+                }
+
+                String message = "OFF";
+                StringBuilder buffer = bufferOff;
+                if (isForwarded) {
+                    buffer = bufferOn;
+                    message = "ON";
+                }
+                buffer.append(m.getName()).append('=').append(message);
+                if (!description.isEmpty()) {
+                    buffer.append(";description=").append(description);
+                }
+                if (!alias.id.isEmpty()) {
+                    buffer.append(";output-name=").append(alias);
+                }
+                buffer.append(',');
+            }
         }
 
-        return metricNamesBuilder.toString();
+        return bufferOn.append(bufferOff).toString();
     }
 
 }

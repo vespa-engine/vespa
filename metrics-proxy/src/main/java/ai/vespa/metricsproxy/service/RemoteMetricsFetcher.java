@@ -23,25 +23,32 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    public void getMetrics(MetricsParser.Consumer consumer, int fetchCount) {
+    public Metrics getMetrics(int fetchCount) {
         try {
-            createMetrics(getJson(), consumer, fetchCount);
+            return createMetrics(getJson(), fetchCount);
         } catch (IOException | InterruptedException | ExecutionException e) {
+            return new Metrics();
         }
     }
 
-    void createMetrics(String data, MetricsParser.Consumer consumer, int fetchCount) {
+    Metrics createMetrics(String data, int fetchCount) {
+        Metrics remoteMetrics = new Metrics();
         try {
-            MetricsParser.parse(data, consumer);
+            remoteMetrics = MetricsParser.parse(data);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
         }
+
+        return remoteMetrics;
     }
-    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) {
+    Metrics createMetrics(InputStream data, int fetchCount) {
+        Metrics remoteMetrics = new Metrics();
         try {
-            MetricsParser.parse(data, consumer);
+            remoteMetrics = MetricsParser.parse(data);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
         }
+
+        return remoteMetrics;
     }
 }
