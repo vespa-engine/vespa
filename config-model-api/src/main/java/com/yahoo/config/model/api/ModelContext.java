@@ -83,7 +83,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enforceRankProfileInheritance() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int largeRankExpressionLimit() { return 8192; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useExternalRankExpressions() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean distributeExternalRankExpressions() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean distributeExternalRankExpressions() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean dryRunOnnxOnSetup() { return true; }

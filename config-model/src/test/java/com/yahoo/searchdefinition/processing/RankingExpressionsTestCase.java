@@ -36,7 +36,7 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
 
     @Test
     public void testFunctions() throws IOException, ParseException {
-        ModelContext.Properties deployProperties = new TestProperties().useExternalRankExpression(true);
+        ModelContext.Properties deployProperties = new TestProperties();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         Search search = createSearch("src/test/examples/rankingexpressionfunction", deployProperties, rankProfileRegistry);
         RankProfile functionsRankProfile = rankProfileRegistry.get(search, "macros");
@@ -115,7 +115,7 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
 
     @Test
     public void testLargeInheritedFunctions() throws IOException, ParseException {
-        ModelContext.Properties properties = new TestProperties().useExternalRankExpression(true).largeRankExpressionLimit(50);
+        ModelContext.Properties properties = new TestProperties().largeRankExpressionLimit(50);
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry());
         QueryProfileRegistry queryProfiles = new QueryProfileRegistry();
