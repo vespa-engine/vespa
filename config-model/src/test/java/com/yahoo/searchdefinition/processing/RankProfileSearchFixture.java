@@ -24,6 +24,8 @@ import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -43,6 +45,7 @@ class RankProfileSearchFixture {
     private final QueryProfileRegistry queryProfileRegistry;
     private final Search search;
     private final Map<String, RankProfile> compiledRankProfiles = new HashMap<>();
+    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public RankProfileRegistry getRankProfileRegistry() {
         return rankProfileRegistry;
@@ -105,7 +108,7 @@ class RankProfileSearchFixture {
     public RankProfile compileRankProfile(String rankProfile, Path applicationDir) {
         RankProfile compiled = rankProfileRegistry.get(search, rankProfile)
                                                   .compile(queryProfileRegistry,
-                                                           new ImportedMlModels(applicationDir.toFile(), importers));
+                                                           new ImportedMlModels(applicationDir.toFile(), executor, importers));
         compiledRankProfiles.put(rankProfile, compiled);
         return compiled;
     }
