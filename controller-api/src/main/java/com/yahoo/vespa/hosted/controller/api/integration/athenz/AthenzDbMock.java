@@ -42,6 +42,7 @@ public class AthenzDbMock {
         public final Set<AthenzIdentity> tenantAdmins = new HashSet<>();
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public final Map<String, Service> services = new HashMap<>();
+        public final List<Role> roles = new ArrayList<>();
         public final List<Policy> policies = new ArrayList<>();
         public boolean isVespaTenant = false;
 
@@ -125,6 +126,18 @@ public class AthenzDbMock {
 
         public boolean resourceMatches(String resource) {
             return this.resource.matcher(resource).matches();
+        }
+    }
+
+    public static class Role {
+        private final String name;
+
+        public Role(String name) {
+            this.name = name;
+        }
+
+        public String name() {
+            return name;
         }
     }
 }
