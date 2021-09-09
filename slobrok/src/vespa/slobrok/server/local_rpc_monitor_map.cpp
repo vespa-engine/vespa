@@ -10,6 +10,26 @@ namespace slobrok {
 
 #pragma GCC diagnostic ignored "-Winline"
 
+namespace {
+
+struct ChainedAddLocalCompletionHandler : LocalRpcMonitorMap::AddLocalCompletionHandler {
+    std::unique_ptr<AddLocalCompletionHandler> first;
+    std::unique_ptr<AddLocalCompletionHandler> second;
+
+    ChainedAddLocalCompletionHandler(std::unique_ptr<AddLocalCompletionHandler> f,
+                                     std::unique_ptr<AddLocalCompletionHandler> s)
+        : first(std::move(f)), second(std::move(s))
+    {}
+
+    void doneHandler(OkState result) override {
+        first->doneHandler(result);
+        second->doneHandler(result);
+    }
+    ~ChainedAddLocalCompletionHandler() override {}
+};
+
+}
+
 void LocalRpcMonitorMap::DelayedTasks::PerformTask() {
     std::vector<Event> todo;
     std::swap(todo, _queue);
@@ -89,12 +109,23 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
         mapping.name.c_str(), mapping.spec.c_str());
     auto old = _map.find(mapping.name);
     if (old != _map.end()) {
-        const PerService & exists = old->second;
+        PerService & exists = old->second;
         if (exists.spec == mapping.spec) {
             LOG(debug, "added mapping %s->%s was already present",
                 mapping.name.c_str(), mapping.spec.c_str());
-            // clear exists.ignoreFirstOk ?
-            inflight->doneHandler(OkState(0, "already registered"));
+            if (exists.up) {
+                inflight->doneHandler(OkState(0, "already registered"));
+            } else if (exists.inflight) {
+                auto newInflight = std::make_unique<ChainedAddLocalCompletionHandler>(
+                    std::move(exists.inflight),
+                    std::move(inflight));
+                exists.inflight = std::move(newInflight);
+            } else {
+                _mappingMonitor->stop(mapping);
+                exists.inflight = std::move(inflight);
+                exists.ignoreFirstOk = false;
+                _mappingMonitor->start(mapping, true);
+            }
             return;
         }
         LOG(warning, "tried addLocal for mapping %s->%s, but already had conflicting mapping %s->%s",
