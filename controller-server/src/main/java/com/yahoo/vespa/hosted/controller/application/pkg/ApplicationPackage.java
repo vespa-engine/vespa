@@ -251,10 +251,11 @@ public class ApplicationPackage {
         private Map<Path, Optional<byte[]>> read(Collection<String> names) {
             var entries = new ZipStreamReader(new ByteArrayInputStream(zip),
                                               name -> names.contains(withoutLegacyDir(name)),
-                                              maxSize)
+                                              maxSize,
+                                              true)
                     .entries().stream()
                     .collect(toMap(entry -> Paths.get(withoutLegacyDir(entry.zipEntry().getName())).normalize(),
-                                   entry -> Optional.of(entry.content())));
+                             ZipStreamReader.ZipEntryWithContent::content));
             names.stream().map(Paths::get).forEach(path -> entries.putIfAbsent(path.normalize(), Optional.empty()));
             return entries;
         }

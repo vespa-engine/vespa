@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -23,16 +24,15 @@ public class ZipStreamReader {
     private final List<ZipEntryWithContent> entries = new ArrayList<>();
     private final int maxEntrySizeInBytes;
 
-    public ZipStreamReader(InputStream input, Predicate<String> entryNameMatcher, int maxEntrySizeInBytes) {
+    public ZipStreamReader(InputStream input, Predicate<String> entryNameMatcher, int maxEntrySizeInBytes, boolean throwIfEntryExceedsMaxSize) {
         this.maxEntrySizeInBytes = maxEntrySizeInBytes;
         try (ZipInputStream zipInput = new ZipInputStream(input)) {
             ZipEntry zipEntry;
 
             while (null != (zipEntry = zipInput.getNextEntry())) {
                 if (!entryNameMatcher.test(requireName(zipEntry.getName()))) continue;
-                entries.add(new ZipEntryWithContent(zipEntry, readContent(zipInput)));
+                entries.add(readContent(zipEntry, zipInput, throwIfEntryExceedsMaxSize));
             }
-
         } catch (IOException e) {
             throw new UncheckedIOException("IO error reading zip content", e);
         }
@@ -59,7 +59,7 @@ public class ZipStreamReader {
         }
     }
 
-    private byte[] readContent(ZipInputStream zipInput) {
+    private ZipEntryWithContent readContent(ZipEntry zipEntry, ZipInputStream zipInput, boolean throwIfEntryExceedsMaxSize) {
         try (ByteArrayOutputStream bis = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[2048];
             int read;
@@ -67,12 +67,15 @@ public class ZipStreamReader {
             while ( -1 != (read = zipInput.read(buffer))) {
                 size += read;
                 if (size > maxEntrySizeInBytes) {
-                    throw new IllegalArgumentException("Entry in zip content exceeded size limit of " +
-                                                       maxEntrySizeInBytes + " bytes");
-                }
-                bis.write(buffer, 0, read);
+                    if (throwIfEntryExceedsMaxSize) throw new IllegalArgumentException(
+                            "Entry in zip content exceeded size limit of " + maxEntrySizeInBytes + " bytes");
+                } else bis.write(buffer, 0, read);
             }
-            return bis.toByteArray();
+
+            boolean hasContent = size <= maxEntrySizeInBytes;
+            return new ZipEntryWithContent(zipEntry,
+                    Optional.of(bis).filter(__ -> hasContent).map(ByteArrayOutputStream::toByteArray),
+                    size);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed reading from zipped content", e);
         }
@@ -96,16 +99,19 @@ public class ZipStreamReader {
     public static class ZipEntryWithContent {
 
         private final ZipEntry zipEntry;
-        private final byte[] content;
+        private final Optional<byte[]> content;
+        private final long size;
 
-        public ZipEntryWithContent(ZipEntry zipEntry, byte[] content) {
+        public ZipEntryWithContent(ZipEntry zipEntry, Optional<byte[]> content, long size) {
             this.zipEntry = zipEntry;
             this.content = content;
+            this.size = size;
         }
 
         public ZipEntry zipEntry() { return zipEntry; }
-        public byte[] content() { return content; }
-
+        public byte[] contentOrThrow() { return content.orElseThrow(); }
+        public Optional<byte[]> content() { return content; }
+        public long size() { return size; }
     }
 
 }
