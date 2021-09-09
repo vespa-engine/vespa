@@ -597,6 +597,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
     }
 
+    private HttpResponse devApplicationPackageDiff(RunId runId) {
+        DeploymentId deploymentId = new DeploymentId(runId.application(), runId.job().type().zone(controller.system()));
+        return controller.applications().applicationStore().getDevDiff(deploymentId, runId.number())
+                .map(StringResponse::new)
+                .orElseThrow(() -> new NotExistsException("No application package diff found for " + runId));
+    }
+
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
 

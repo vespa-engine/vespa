@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -424,11 +425,18 @@ public class JobController {
                                                 sourceUrl,
                                                 revision.map(SourceRevision::commit),
                                                 false));
+            String diff = application.get().latestVersion()
+                    .map(ApplicationVersion::buildNumber)
+                    .flatMap(build -> build.isPresent() ? Optional.of(build.getAsLong()) : Optional.empty())
+                    .flatMap(prevBuild -> controller.applications().applicationStore().find(id.tenant(), id.application(), prevBuild))
+                    .map(prevApplication -> ApplicationPackageDiff.diff(new ApplicationPackage(prevApplication), applicationPackage))
+                    .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
 
             controller.applications().applicationStore().put(id.tenant(),
                                                              id.application(),
                                                              version.get(),
-                                                             applicationPackage.zippedContent());
+                                                             applicationPackage.zippedContent(),
+                                                             diff);
             controller.applications().applicationStore().putTester(id.tenant(),
                                                                    id.application(),
                                                                    version.get(),
@@ -478,6 +486,7 @@ public class JobController {
             controller.applications().store(application);
         });
 
+        DeploymentId deploymentId = new DeploymentId(id, type.zone(controller.system()));
         Optional<Run> lastRun = last(id, type);
         lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
 
@@ -485,8 +494,12 @@ public class JobController {
         ApplicationVersion version = ApplicationVersion.from(Optional.empty(), build, Optional.empty(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), true);
 
+        String diff = lastRun.map(run -> run.versions().targetApplication())
+                .map(prevVersion -> ApplicationPackageDiff.diff(new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion)), applicationPackage))
+                .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
+
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            controller.applications().applicationStore().putDev(new DeploymentId(id, type.zone(controller.system())), applicationPackage.zippedContent());
+            controller.applications().applicationStore().putDev(deploymentId, version, applicationPackage.zippedContent(), diff);
             start(id,
                   type,
                   new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
