@@ -24,6 +24,7 @@ public class FunctionInliner extends ExpressionTransformer<RankProfileTransformC
     }
 
     private ExpressionNode transformFeatureNode(ReferenceNode feature, RankProfileTransformContext context) {
+        if (feature.getArguments().size() > 0) return feature;  // From RankProfile: only inline no-arg functions
         RankProfile.RankingExpressionFunction rankingExpressionFunction = context.inlineFunctions().get(feature.getName());
         if (rankingExpressionFunction == null) return feature;
         return transform(rankingExpressionFunction.function().getBody().getRoot(), context); // inline recursively and return

@@ -2,8 +2,10 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -11,7 +13,9 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -26,7 +30,7 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
-                "search test {\n" +
+                        "search test {\n" +
                         "    document test { \n" +
                         "        field a type double { \n" +
                         "            indexing: attribute \n" +
@@ -186,6 +190,39 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
         assertEquals("attribute(b) + 1", getRankingExpression("D", test, s));
     }
 
+    @Test
+    public void testFunctionInliningWithReplacement() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        MockDeployLogger deployLogger = new MockDeployLogger();
+        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+                                                  new MockFileRegistry(),
+                                                  deployLogger,
+                                                  new TestProperties(),
+                                                  rankProfileRegistry,
+                                                  new QueryProfileRegistry());
+        builder.importString(
+                        "search test {\n" +
+                        "    document test { }\n" +
+                        "    rank-profile test {\n" +
+                        "        first-phase {\n" +
+                        "            expression: foo\n" +
+                        "        }\n" +
+                        "        function foo(x) {\n" +
+                        "            expression: x + x\n" +
+                        "        }\n" +
+                        "        function inline foo() {\n" +  // replaces previous "foo" during parsing
+                        "            expression: foo(2)\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}\n");
+        builder.build();
+        Search s = builder.getSearch();
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
+        assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
+        assertTrue("Does not contain expected warning", deployLogger.contains("Function 'foo' replaces " +
+                "a previous function with the same name in rank profile 'test'"));
+    }
+
     /**
      * Expression evaluation has no stack so function arguments are bound at config time creating a separate version of
      * each function for each binding, using hashes to name the bound variants of the function.
@@ -219,6 +256,19 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
                         .findFirst();
         assertTrue(rankExpression.isPresent());
         return censorBindingHash(rankExpression.get());
+    }
+
+    private static class MockDeployLogger implements DeployLogger {
+        private final ArrayList<String> msgs = new ArrayList<>();
+
+        @Override
+        public void log(Level level, String message) {
+            msgs.add(message);
+        }
+
+        public boolean contains(String expected) {
+            return msgs.stream().anyMatch(msg -> msg.equals(expected));
+        }
     }
 
 }
