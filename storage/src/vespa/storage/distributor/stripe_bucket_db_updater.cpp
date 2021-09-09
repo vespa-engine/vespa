@@ -170,6 +170,12 @@ StripeBucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
     sendRequestBucketInfo(nodeIdx, bucket, std::shared_ptr<MergeReplyGuard>());
 }
 
+void
+StripeBucketDBUpdater::handle_activated_cluster_state_bundle()
+{
+    sendAllQueuedBucketRechecks();
+}
+
 namespace {
 
 class ReadOnlyDbMergingInserter : public BucketDatabase::MergingProcessor {

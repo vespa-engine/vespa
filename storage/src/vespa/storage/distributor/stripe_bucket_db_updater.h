@@ -46,6 +46,7 @@ public:
     void flush();
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const;
     void recheckBucketInfo(uint32_t nodeIdx, const document::Bucket& bucket);
+    void handle_activated_cluster_state_bundle();
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
     bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd) override;
