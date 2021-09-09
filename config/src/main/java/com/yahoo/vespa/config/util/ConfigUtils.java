@@ -10,6 +10,8 @@ import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
+import net.jpountz.xxhash.XXHash64;
+import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -92,6 +94,15 @@ public class ConfigUtils {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Could not get md5 instance");
         }
+    }
+
+    public static String getXxhash64(AbstractUtf8Array input) {
+        return getXxhash64(input.wrap());
+    }
+
+    public static String getXxhash64(ByteBuffer input) {
+        XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
+        return Long.toHexString(hasher.hash(input, 0)).toLowerCase();
     }
 
     /**

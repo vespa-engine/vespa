@@ -4,8 +4,8 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -13,17 +13,18 @@ import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
+import com.yahoo.vespa.config.protocol.Payload;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.protocol.SlimeConfigResponse.fromConfigPayload;
 
 /**
 * @author hmusum
@@ -126,7 +127,7 @@ class GetConfigProcessor implements Runnable {
         // config == null is not an error, but indicates that the config will be returned later.
         if ((config != null) && (!config.hasEqualConfig(request) || config.hasNewerGeneration(request) || forceResponse)) {
             // debugLog(trace, "config response before encoding:" + config.toString());
-            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getConfigMd5());
+            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getPayloadChecksums());
             if (logDebug(trace)) {
                 debugLog(trace, "return response: " + request.getShortDescription());
             }
@@ -166,9 +167,11 @@ class GetConfigProcessor implements Runnable {
     private void returnEmpty(JRTServerConfigRequest request) {
         log.log(Level.FINE, () -> "Returning empty sentinel config for request from " + request.getClientHostName());
         var emptyPayload = ConfigPayload.fromInstance(new SentinelConfig.Builder().build());
-        String configMd5 = ConfigUtils.getMd5(emptyPayload);
-        ConfigResponse config = SlimeConfigResponse.fromConfigPayload(emptyPayload, 0, false, configMd5);
-        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getConfigMd5());
+        ConfigResponse config = fromConfigPayload(emptyPayload,
+                                                  0,
+                                                  false,
+                                                  PayloadChecksums.fromPayload(Payload.from(emptyPayload)));
+        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getPayloadChecksums());
         respond(request);
     }
 

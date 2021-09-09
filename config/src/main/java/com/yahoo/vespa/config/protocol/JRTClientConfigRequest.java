@@ -1,5 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
+
+import com.yahoo.vespa.config.PayloadChecksums;
 
 /**
  * Interface for config requests used by clients.
@@ -57,11 +59,18 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
     boolean responseIsApplyOnRestart();
 
     /**
-     * Get the config md5 of the config returned by the server. Return an empty string if no response has been returned.
+     * Gets the config md5 of the config returned by the server. Returns an empty string if no response has been returned.
      *
      * @return a config md5.
      */
     String getNewConfigMd5();
+
+    /**
+     * Gets the config checksums of the config returned by the server. Returns an empty string if no response has been returned.
+     *
+     * @return a config checksum.
+     */
+    PayloadChecksums getNewChecksums();
 
     /**
      * Test whether or not the response contains an updated config or not.
