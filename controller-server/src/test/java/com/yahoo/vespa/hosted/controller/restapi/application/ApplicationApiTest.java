@@ -757,6 +757,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(packageWithService, 123)),
                               "{\"message\":\"Application package version: 1.0.2-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/diff/2", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              (response) -> assertTrue(response.getBodyAsString(),
+                                    response.getBodyAsString().contains("+ <deployment version='1.0' athenz-domain='domain1' athenz-service='service'>\n" +
+                                    "- <deployment version='1.0' >\n")),
+                              200);
+
         // GET last submitted application package
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR),
                               (response) -> {

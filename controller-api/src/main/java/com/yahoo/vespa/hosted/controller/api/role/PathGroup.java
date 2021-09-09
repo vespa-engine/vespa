@@ -103,6 +103,7 @@ enum PathGroup {
     applicationInfo(Matcher.tenant,
                     Matcher.application,
                     "/application/v4/tenant/{tenant}/application/{application}/package",
+                    "/application/v4/tenant/{tenant}/application/{application}/diff/{number}",
                     "/application/v4/tenant/{tenant}/application/{application}/compile-version",
                     "/application/v4/tenant/{tenant}/application/{application}/deployment",
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
