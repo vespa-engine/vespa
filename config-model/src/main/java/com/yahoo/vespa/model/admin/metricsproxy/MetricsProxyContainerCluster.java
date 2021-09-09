@@ -158,7 +158,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     @Override
     public void getConfig(ConsumersConfig.Builder builder) {
         var amendedVespaConsumer = addMetrics(MetricsConsumer.vespa, getAdditionalDefaultMetrics().getMetrics());
-        builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers()));
+        builder.consumer.addAll(generateConsumers(amendedVespaConsumer, getUserMetricsConsumers(), getZone().system()));
 
         builder.consumer.add(toConsumerBuilder(MetricsConsumer.defaultConsumer));
     }

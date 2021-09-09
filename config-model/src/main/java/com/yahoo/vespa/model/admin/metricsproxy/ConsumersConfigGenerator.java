@@ -3,6 +3,7 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
@@ -24,13 +25,17 @@ class ConsumersConfigGenerator {
      * @return a list of consumer builders (a mapping from consumer to its metrics)
      */
     static List<Consumer.Builder> generateConsumers(MetricsConsumer defaultConsumer,
-                                                    Map<String, MetricsConsumer> userConsumers) {
+                                                    Map<String, MetricsConsumer> userConsumers,
+                                                    SystemName systemName) {
         // Normally, the user given consumers should not contain VESPA_CONSUMER_ID,
         // but it's allowed for some internally used applications.
         var allConsumers = new LinkedHashMap<>(userConsumers);
         allConsumers.put(MetricsConsumer.vespa.id(),
                          combineConsumers(defaultConsumer, allConsumers.get(MetricsConsumer.vespa.id())));
         allConsumers.put(MetricsConsumer.autoscaling.id(), MetricsConsumer.autoscaling);
+
+        if (systemName.isPublic())
+            allConsumers.put(MetricsConsumer.vespaCloud.id(), MetricsConsumer.vespaCloud);
 
         return allConsumers.values().stream()
                 .map(ConsumersConfigGenerator::toConsumerBuilder)
