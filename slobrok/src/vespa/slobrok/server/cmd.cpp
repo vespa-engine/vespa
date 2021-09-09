@@ -62,6 +62,15 @@ ScriptCommand::makeIgnoreCmd(SBEnv &env, const std::string & name, const std::st
     return ScriptCommand(std::move(data));
 }
 
+ScriptCommand
+ScriptCommand::makeRegCompleter(SBEnv &env,
+                                const std::string &name, const std::string &spec,
+                                FRT_RPCRequest *req)
+{
+    auto data = std::make_unique<ScriptData>(env, name, spec, req);
+    data->_state = ScriptData::XCH_DOADD;
+    return ScriptCommand(std::move(data));
+}
 
 void
 ScriptCommand::doRequest()
@@ -124,7 +133,9 @@ ScriptCommand::doneHandler(OkState result)
         LOG(debug, "done doAdd(%s,%s)", name_p, spec_p);
         data._state = ScriptData::RDC_INVAL;
         // all OK
-        data.registerRequest->Return();
+        if (data.registerRequest != nullptr) {
+            data.registerRequest->Return();
+        }
         cleanupReservation(data);
         return;
     } else if (data._state == ScriptData::XCH_IGNORE) {
