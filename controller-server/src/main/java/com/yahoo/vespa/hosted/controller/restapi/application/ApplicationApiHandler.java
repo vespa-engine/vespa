@@ -25,12 +25,12 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
-import com.yahoo.restapi.StringResponse;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -603,7 +603,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse devApplicationPackageDiff(RunId runId) {
         DeploymentId deploymentId = new DeploymentId(runId.application(), runId.job().type().zone(controller.system()));
         return controller.applications().applicationStore().getDevDiff(deploymentId, runId.number())
-                .map(StringResponse::new)
+                .map(ByteArrayResponse::new)
                 .orElseThrow(() -> new NotExistsException("No application package diff found for " + runId));
     }
 
@@ -641,7 +641,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse applicationPackageDiff(String tenant, String application, String number) {
         TenantAndApplicationId tenantAndApplication = TenantAndApplicationId.from(tenant, application);
         return controller.applications().applicationStore().getDiff(tenantAndApplication.tenant(), tenantAndApplication.application(), Long.parseLong(number))
-                .map(StringResponse::new)
+                .map(ByteArrayResponse::new)
                 .orElseThrow(() -> new NotExistsException("No application package diff found for '" + tenantAndApplication + "' with build number " + number));
     }
 

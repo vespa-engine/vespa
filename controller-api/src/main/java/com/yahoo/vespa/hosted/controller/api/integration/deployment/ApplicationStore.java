@@ -22,7 +22,7 @@ public interface ApplicationStore {
     byte[] get(DeploymentId deploymentId, ApplicationVersion applicationVersion);
 
     /** Returns the application package diff, compared to the previous build, for the given tenant, application and build number */
-    Optional<String> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber);
+    Optional<byte[]> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber);
 
     /** Removes diffs for packages before the given build number */
     void pruneDiffs(TenantName tenantName, ApplicationName applicationName, long beforeBuildNumber);
@@ -31,7 +31,7 @@ public interface ApplicationStore {
     Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber);
 
     /** Stores the given tenant application package of the given version and diff since previous version. */
-    void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, String diff);
+    void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] diff);
 
     /** Removes applications older than the given version, for the given application, and returns whether something was removed. */
     boolean prune(TenantName tenant, ApplicationName application, ApplicationVersion olderThanVersion);
@@ -52,13 +52,13 @@ public interface ApplicationStore {
     void removeAllTesters(TenantName tenant, ApplicationName application);
 
     /** Returns the application package diff, compared to the previous build, for the given deployment and build number */
-    Optional<String> getDevDiff(DeploymentId deploymentId, long buildNumber);
+    Optional<byte[]> getDevDiff(DeploymentId deploymentId, long buildNumber);
 
     /** Removes diffs for dev packages before the given build number */
     void pruneDevDiffs(DeploymentId deploymentId, long beforeBuildNumber);
 
     /** Stores the given application package as the development package for the given deployment and version and diff since previous version. */
-    void putDev(DeploymentId deploymentId, ApplicationVersion version, byte[] applicationPackage, String diff);
+    void putDev(DeploymentId deploymentId, ApplicationVersion version, byte[] applicationPackage, byte[] diff);
 
     /** Stores the given application meta data with the current time as part of the path. */
     void putMeta(TenantName tenant, ApplicationName application, Instant now, byte[] metaZip);

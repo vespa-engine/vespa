@@ -31,8 +31,8 @@ public class ApplicationStoreMock implements ApplicationStore {
 
     private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
     private final Map<DeploymentId, byte[]> devStore = new ConcurrentHashMap<>();
-    private final Map<ApplicationId, Map<Long, String>> diffs = new ConcurrentHashMap<>();
-    private final Map<DeploymentId, Map<Long, String>> devDiffs = new ConcurrentHashMap<>();
+    private final Map<ApplicationId, Map<Long, byte[]>> diffs = new ConcurrentHashMap<>();
+    private final Map<DeploymentId, Map<Long, byte[]>> devDiffs = new ConcurrentHashMap<>();
     private final Map<ApplicationId, NavigableMap<Instant, byte[]>> meta = new ConcurrentHashMap<>();
     private final Map<DeploymentId, NavigableMap<Instant, byte[]>> metaManual = new ConcurrentHashMap<>();
 
@@ -58,7 +58,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public Optional<String> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber) {
+    public Optional<byte[]> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber) {
         return Optional.ofNullable(diffs.get(appId(tenantName, applicationName))).map(map -> map.get(buildNumber));
     }
 
@@ -79,7 +79,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, String diff) {
+    public void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] diff) {
         store.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>()).put(applicationVersion, applicationPackage);
         applicationVersion.buildNumber().ifPresent(buildNumber ->
                 diffs.computeIfAbsent(appId(tenant, application), __ -> new ConcurrentHashMap<>()).put(buildNumber, diff));
@@ -119,7 +119,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public Optional<String> getDevDiff(DeploymentId deploymentId, long buildNumber) {
+    public Optional<byte[]> getDevDiff(DeploymentId deploymentId, long buildNumber) {
         return Optional.ofNullable(devDiffs.get(deploymentId)).map(map -> map.get(buildNumber));
     }
 
@@ -132,7 +132,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public void putDev(DeploymentId deploymentId, ApplicationVersion applicationVersion, byte[] applicationPackage, String diff) {
+    public void putDev(DeploymentId deploymentId, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] diff) {
         devStore.put(deploymentId, applicationPackage);
         applicationVersion.buildNumber().ifPresent(buildNumber ->
                 devDiffs.computeIfAbsent(deploymentId, __ -> new ConcurrentHashMap<>()).put(buildNumber, diff));

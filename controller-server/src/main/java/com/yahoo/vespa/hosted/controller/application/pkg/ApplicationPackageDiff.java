@@ -22,17 +22,17 @@ import static com.yahoo.vespa.hosted.controller.application.pkg.ZipStreamReader.
  */
 public class ApplicationPackageDiff {
 
-    public static String diffAgainstEmpty(ApplicationPackage right) {
+    public static byte[] diffAgainstEmpty(ApplicationPackage right) {
         byte[] emptyZip = new byte[]{80, 75, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         return diff(new ApplicationPackage(emptyZip), right);
     }
 
-    public static String diff(ApplicationPackage left, ApplicationPackage right) {
+    public static byte[] diff(ApplicationPackage left, ApplicationPackage right) {
         return diff(left, right, 10 << 20, 1 << 20, 10 << 20);
     }
 
-    static String diff(ApplicationPackage left, ApplicationPackage right, int maxFileSizeToDiff, int maxDiffSizePerFile, int maxTotalDiffSize) {
-        if (Arrays.equals(left.zippedContent(), right.zippedContent())) return "No diff\n";
+    static byte[] diff(ApplicationPackage left, ApplicationPackage right, int maxFileSizeToDiff, int maxDiffSizePerFile, int maxTotalDiffSize) {
+        if (Arrays.equals(left.zippedContent(), right.zippedContent())) return "No diff\n".getBytes(StandardCharsets.UTF_8);
 
         Map<String, ZipEntryWithContent> leftContents = readContents(left, maxFileSizeToDiff);
         Map<String, ZipEntryWithContent> rightContents = readContents(right, maxFileSizeToDiff);
@@ -51,7 +51,7 @@ public class ApplicationPackageDiff {
                         .ifPresent(diff -> sb.append("--- ").append(file).append('\n').append(diff).append('\n'));
         }
 
-        return sb.length() == 0 ? "No diff\n" : sb.toString();
+        return (sb.length() == 0 ? "No diff\n" : sb.toString()).getBytes(StandardCharsets.UTF_8);
     }
 
     private static Optional<String> diff(Optional<ZipEntryWithContent> left, Optional<ZipEntryWithContent> right, int maxDiffSizePerFile) {

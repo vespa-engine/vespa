@@ -26,7 +26,7 @@ public class ApplicationPackageDiffTest {
 
     @Test
     public void no_diff() {
-        assertEquals("No diff\n", diff(app1, app1));
+        assertEquals("No diff\n", new String(diff(app1, app1)));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class ApplicationPackageDiffTest {
                 "@@ -1,0 +1,2 @@\n" +
                 "+ contents of the\n" +
                 "+ first file\n" +
-                "\n", diffAgainstEmpty(app1));
+                "\n", new String(diffAgainstEmpty(app1)));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class ApplicationPackageDiffTest {
                 "- contents of the\n" +
                 "  first file\n" +
                 "+ after some changes\n" +
-                "\n", diff(app1, app2));
+                "\n", new String(diff(app1, app2)));
     }
 
     @Test
@@ -78,7 +78,7 @@ public class ApplicationPackageDiffTest {
                 "\n" +
                 "--- file1\n" +
                 "Diff skipped: File too large (26B -> 53B)\n" +
-                "\n", diff(app1, app2, 12, 1000, 1000));
+                "\n", new String(diff(app1, app2, 12, 1000, 1000)));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class ApplicationPackageDiffTest {
                 "\n" +
                 "--- file1\n" +
                 "Diff skipped: Diff too large (96B)\n" +
-                "\n", diff(app1, app2, 1000, 50, 1000));
+                "\n", new String(diff(app1, app2, 1000, 50, 1000)));
     }
 
     @Test
@@ -107,7 +107,7 @@ public class ApplicationPackageDiffTest {
                 "\n" +
                 "--- file1\n" +
                 "Diff skipped: Total diff size >20B)\n" +
-                "\n", diff(app1, app2, 1000, 1000, 20));
+                "\n", new String(diff(app1, app2, 1000, 1000, 20)));
     }
 
     private static ApplicationPackage applicationPackage(Map<String, String> files) {
