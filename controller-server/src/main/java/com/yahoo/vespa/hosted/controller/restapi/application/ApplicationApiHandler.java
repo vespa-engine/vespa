@@ -2085,10 +2085,20 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (configId.isEmpty()) {
             throw new IllegalArgumentException("Missing configId");
         }
+        Cursor artifactsCursor = requestPayloadCursor.field("artifacts");
+        int artifactEntries = artifactsCursor.entries();
+        if (artifactEntries == 0) {
+            throw new IllegalArgumentException("Missing or empty 'artifacts'");
+        }
+
         Slime dumpRequest = new Slime();
         Cursor dumpRequestCursor = dumpRequest.setObject();
         dumpRequestCursor.setLong("createdMillis", controller.clock().millis());
         dumpRequestCursor.setString("configId", configId);
+        Cursor dumpRequestArtifactsCursor = dumpRequestCursor.setArray("artifacts");
+        for (int i = 0; i < artifactEntries; i++) {
+            dumpRequestArtifactsCursor.addString(artifactsCursor.entry(i).asString());
+        }
         if (expiresAt > 0) {
             dumpRequestCursor.setLong("expiresAt", expiresAt);
         }

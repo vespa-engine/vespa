@@ -234,7 +234,7 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     private static void log(String format, Object... args) {
-        log.log(Level.INFO, String.format(format, args));
+        log.log(Level.FINE, String.format(format, args));
     }
 
 }

@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
 
+import java.util.List;
+
 /**
  * JSON representation of Vespa service dump report.
  *
@@ -27,6 +29,7 @@ class ServiceDumpReport extends BaseReport {
     private static final String CONFIG_ID_FIELD = "configId";
     private static final String EXPIRE_AT_FIELD = "expireAt";
     private static final String ERROR_FIELD = "error";
+    private static final String ARTIFACTS_FIELD = "artifacts";
 
     private final Long startedAt;
     private final Long completedAt;
@@ -35,6 +38,7 @@ class ServiceDumpReport extends BaseReport {
     private final String configId;
     private final Long expireAt;
     private final String error;
+    private final List<String> artifacts;
 
     @JsonCreator
     public ServiceDumpReport(@JsonProperty(CREATED_FIELD) Long createdAt,
@@ -44,7 +48,8 @@ class ServiceDumpReport extends BaseReport {
                              @JsonProperty(LOCATION_FIELD) String location,
                              @JsonProperty(CONFIG_ID_FIELD) String configId,
                              @JsonProperty(EXPIRE_AT_FIELD) Long expireAt,
-                             @JsonProperty(ERROR_FIELD) String error) {
+                             @JsonProperty(ERROR_FIELD) String error,
+                             @JsonProperty(ARTIFACTS_FIELD) List<String> artifacts) {
         super(createdAt, null);
         this.startedAt = startedAt;
         this.completedAt = completedAt;
@@ -53,6 +58,7 @@ class ServiceDumpReport extends BaseReport {
         this.configId = configId;
         this.expireAt = expireAt;
         this.error = error;
+        this.artifacts = artifacts;
     }
 
     @JsonGetter(STARTED_AT_FIELD) public Long startedAt() { return startedAt; }
@@ -62,6 +68,7 @@ class ServiceDumpReport extends BaseReport {
     @JsonGetter(CONFIG_ID_FIELD) public String configId() { return configId; }
     @JsonGetter(EXPIRE_AT_FIELD) public Long expireAt() { return expireAt; }
     @JsonGetter(ERROR_FIELD) public String error() { return error; }
+    @JsonGetter(ARTIFACTS_FIELD) public List<String> artifacts() { return artifacts; }
 
     @JsonIgnore public boolean isCompletedOrFailed() { return !isNullTimestamp(failedAt) || !isNullTimestamp(completedAt);  }
 
