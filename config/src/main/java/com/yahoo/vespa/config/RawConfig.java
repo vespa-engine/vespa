@@ -78,7 +78,7 @@ public class RawConfig extends ConfigInstance {
         return new RawConfig(req.getConfigKey(),
                              ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              req.getNewPayload(),
-                             req.getRequestConfigChecksums(),
+                             req.getNewChecksums(),
                              req.getNewGeneration(),
                              req.responseIsApplyOnRestart(),
                              0,
