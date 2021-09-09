@@ -35,7 +35,7 @@ public class ProxyServerTest {
     // errorConfig based on fooConfig
     private static final ConfigKey<?> errorConfigKey = new ConfigKey<>("error", fooConfig.getConfigId(), fooConfig.getNamespace());
     static final RawConfig errorConfig = new RawConfig(errorConfigKey, fooConfig.getDefMd5(), fooConfig.getPayload(),
-                                                       fooConfig.getPayloadChecksums(), fooConfig.getGeneration(), false,
+                                                       fooConfig.getConfigMd5(), fooConfig.getGeneration(), false,
                                                        ErrorCode.UNKNOWN_DEFINITION, fooConfig.getDefContent(), Optional.empty());
 
     @Rule
@@ -179,7 +179,7 @@ public class ProxyServerTest {
 
         // Simulate an empty response
         RawConfig emptyConfig = new RawConfig(fooConfig.getKey(), fooConfig.getDefMd5(), Payload.from("{}"),
-                                              fooConfig.getPayloadChecksums(), 0, false,
+                                              fooConfig.getConfigMd5(), 0, false,
                                               0, fooConfig.getDefContent(), Optional.empty());
         source.put(fooConfig.getKey(), emptyConfig);
 
@@ -238,7 +238,7 @@ public class ProxyServerTest {
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode, Payload payload, long configGeneration) {
         return new RawConfig(config.getKey(), config.getDefMd5(),
-                             payload, config.getPayloadChecksums(),
+                             payload, config.getConfigMd5(),
                              configGeneration, false,
                              errorCode, config.getDefContent(), Optional.empty());
     }

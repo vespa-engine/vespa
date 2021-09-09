@@ -33,7 +33,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         RawConfig rawConfig = RawConfig.createFromResponseParameters(jrtReq);
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksums());
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, new PayloadChecksum(jrtReq.getNewConfigMd5()));
         log.log(FINE, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
     }
 
