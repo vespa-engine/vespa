@@ -18,7 +18,7 @@ public class ModelsEvaluatorTest {
     @Test
     public void testModelsEvaluatorTester() {
         ModelsEvaluator modelsEvaluator = ModelsEvaluatorTester.create("src/test/cfg/application/stateless_eval");
-        assertEquals(2, modelsEvaluator.models().size());
+        assertEquals(3, modelsEvaluator.models().size());
 
         // ONNX model evaluation
         FunctionEvaluator mul = modelsEvaluator.evaluatorOf("mul");
@@ -26,6 +26,12 @@ public class ModelsEvaluatorTest {
         Tensor input2 = Tensor.from("tensor<float>(d0[1]):[3]");
         Tensor output = mul.bind("input1", input1).bind("input2", input2).evaluate();
         assertEquals(6.0, output.sum().asDouble(), 1e-9);
+
+        // LightGBM model evaluation
+        FunctionEvaluator lgbm = modelsEvaluator.evaluatorOf("lightgbm_regression");
+        lgbm.bind("numerical_1", 0.1).bind("numerical_2", 0.2).bind("categorical_1", "a").bind("categorical_2", "i");
+        output = lgbm.evaluate();
+        assertEquals(2.0547, output.sum().asDouble(), 1e-4);
 
         // Vespa model evaluation
         FunctionEvaluator foo1 = modelsEvaluator.evaluatorOf("example", "foo1");

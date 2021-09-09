@@ -3,8 +3,6 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.net.HostName;
-import net.jpountz.xxhash.XXHashFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
