@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.subscription.impl;
+package com.yahoo.vespa.config;
 
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,13 +18,13 @@ public class PayloadChecksum {
     private final String checksum;
     private final Type type;
 
-    public PayloadChecksum(String checksum) {
+    public PayloadChecksum(String checksum, Type type) {
         this.checksum = checksum;
-        this.type = Type.MD5;
+        this.type = type;
     }
 
-    public static PayloadChecksum empty() {
-        return new PayloadChecksum("");
+    public static PayloadChecksum empty(Type type) {
+        return new PayloadChecksum("", type);
     }
 
     public String asString() { return checksum; }
@@ -45,4 +46,21 @@ public class PayloadChecksum {
         return m.matches();
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(checksum, type);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PayloadChecksum that = (PayloadChecksum) o;
+        return Objects.equals(checksum, that.checksum) && type == that.type;
+    }
+
+    @Override
+    public String toString() {
+        return type.name() + ":" + checksum;
+    }
 }

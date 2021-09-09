@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.ConfigInstance;
@@ -28,7 +28,7 @@ public class RawConfig extends ConfigInstance {
     private final List<String> defContent;
     private final Payload payload;
     private final int errorCode;
-    private final String configMd5;
+    private final PayloadChecksums payloadChecksums;
     private final Optional<VespaVersion> vespaVersion;
     private long generation;
     private boolean applyOnRestart;
@@ -40,29 +40,28 @@ public class RawConfig extends ConfigInstance {
      * @param defMd5  The md5 sum of the .def-file.
      */
     public RawConfig(ConfigKey<?> key, String defMd5) {
-        this(key, defMd5, null, "", 0L, false, 0, Collections.emptyList(), Optional.empty());
+        this(key, defMd5, null, PayloadChecksums.empty(), 0L, false, 0, Collections.emptyList(), Optional.empty());
     }
 
-    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
-                     boolean applyOnRestart, List<String> defContent,
-                     Optional<VespaVersion> vespaVersion) {
-        this(key, defMd5, payload, configMd5, generation, applyOnRestart, 0, defContent, vespaVersion);
+    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksums payloadChecksums, long generation,
+                     boolean applyOnRestart, List<String> defContent, Optional<VespaVersion> vespaVersion) {
+        this(key, defMd5, payload, payloadChecksums, generation, applyOnRestart, 0, defContent, vespaVersion);
     }
 
     /** Copy constructor */
     public RawConfig(RawConfig rawConfig) {
-        this(rawConfig.key, rawConfig.defMd5, rawConfig.payload, rawConfig.configMd5,
+        this(rawConfig.key, rawConfig.defMd5, rawConfig.payload, rawConfig.payloadChecksums,
              rawConfig.generation, rawConfig.applyOnRestart,
              rawConfig.errorCode, rawConfig.defContent, rawConfig.getVespaVersion());
     }
 
-    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, String configMd5, long generation,
+    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksums payloadChecksums, long generation,
                      boolean applyOnRestart, int errorCode, List<String> defContent,
                      Optional<VespaVersion> vespaVersion) {
         this.key = key;
         this.defMd5 = ConfigUtils.getDefMd5FromRequest(defMd5, defContent);
         this.payload = payload;
-        this.configMd5 = configMd5;
+        this.payloadChecksums = payloadChecksums;
         this.generation = generation;
         this.applyOnRestart = applyOnRestart;
         this.errorCode = errorCode;
@@ -79,7 +78,7 @@ public class RawConfig extends ConfigInstance {
         return new RawConfig(req.getConfigKey(),
                              ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              req.getNewPayload(),
-                             req.getNewConfigMd5(),
+                             req.getRequestConfigChecksums(),
                              req.getNewGeneration(),
                              req.responseIsApplyOnRestart(),
                              0,
@@ -96,7 +95,7 @@ public class RawConfig extends ConfigInstance {
         return new RawConfig(req.getConfigKey(),
                              ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              Payload.from(new Utf8String(""), CompressionInfo.uncompressed()),
-                             req.getRequestConfigMd5(),
+                             req.getRequestConfigChecksums(),
                              req.getRequestGeneration(),
                              req.applyOnRestart(),
                              0,
@@ -113,7 +112,7 @@ public class RawConfig extends ConfigInstance {
 
     public String getConfigId() { return key.getConfigId(); }
 
-    public String getConfigMd5() { return configMd5; }
+    public String getConfigMd5() { return payloadChecksums.getForType(PayloadChecksum.Type.MD5).asString(); }
 
     public String getDefMd5() { return defMd5; }
 
@@ -132,6 +131,8 @@ public class RawConfig extends ConfigInstance {
     public String getDefNamespace() { return key.getNamespace(); }
 
     public Optional<VespaVersion> getVespaVersion() { return vespaVersion; }
+
+    public PayloadChecksums getPayloadChecksums() { return payloadChecksums; }
 
     /**
      * Returns true if this config is equal to the config (same payload md5) in the given request.
@@ -174,11 +175,7 @@ public class RawConfig extends ConfigInstance {
         // while non-zero and equal error codes means configs are equal.
         if (isError()) return true;
         if (generation != other.generation) return false;
-        if (configMd5 != null) {
-            return configMd5.equals(other.configMd5);
-        } else {
-            return (other.configMd5 == null);
-        }
+        return (payloadChecksums.equals(((RawConfig) o).payloadChecksums));
     }
 
     @Override
@@ -194,9 +191,7 @@ public class RawConfig extends ConfigInstance {
         if (! isError()) {
             // configMd5 and generation only matter when the RawConfig is not an error.
             hash = 31 * hash + (int)(generation ^(generation >>>32));
-            if (configMd5 != null) {
-                hash = 31 * hash + configMd5.hashCode();
-            }
+            hash = 31 * hash + payloadChecksums.hashCode();
         }
         return hash;
     }
@@ -210,7 +205,7 @@ public class RawConfig extends ConfigInstance {
         sb.append(",");
         sb.append(key.getConfigId());
         sb.append(",");
-        sb.append(getConfigMd5());
+        sb.append(payloadChecksums);
         sb.append(",");
         sb.append(getGeneration());
         sb.append(",");
