@@ -123,7 +123,6 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
             } else {
                 _mappingMonitor->stop(mapping);
                 exists.inflight = std::move(inflight);
-                exists.ignoreFirstOk = false;
                 _mappingMonitor->start(mapping, true);
             }
             return;
@@ -164,12 +163,13 @@ void LocalRpcMonitorMap::removeLocal(const ServiceMapping &mapping) {
         return;
     }
     // also exists in consensus map, so we can't just remove it
-    // instead, pretend it's down, and ignore first "up()" notification
-    exists.ignoreFirstOk = true;
+    // instead, pretend it's down and delay next ping
+    _mappingMonitor->stop(mapping);
     if (exists.up) {
         exists.up = false;
         _dispatcher.remove(mapping);            
     }
+    _mappingMonitor->start(mapping, false);
     return;
 }
 
@@ -255,10 +255,6 @@ void LocalRpcMonitorMap::down(const ServiceMapping& mapping) {
 void LocalRpcMonitorMap::up(const ServiceMapping& mapping) {
     PerService &psd = lookup(mapping);
     LOG(debug, "ok: %s->%s", mapping.name.c_str(), psd.spec.c_str());
-    if (psd.ignoreFirstOk) {
-        psd.ignoreFirstOk = false;
-        return;
-    }
     if (psd.inflight) {
         auto target = std::move(psd.inflight);
         target->doneHandler(OkState());
