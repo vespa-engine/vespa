@@ -3,6 +3,7 @@ module github.com/vespa-engine/vespa/client/go
 go 1.15
 
 require (
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-colorable v0.0.9
 	github.com/mattn/go-isatty v0.0.3
