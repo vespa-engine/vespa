@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 		cmd.configDir = t.TempDir()
 		viper.Reset()
 	}
-	os.Setenv("VESPA_CLI_HOME", cmd.configDir)
+	os.Setenv("VESPA_CLI_HOME", filepath.Join(cmd.configDir, ".vespa"))
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
 	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {

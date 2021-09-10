@@ -92,8 +92,9 @@ func configDir(application string) string {
 			fatalErr(err, "Could not determine configuration directory")
 			return ""
 		}
+		home = filepath.Join(home, ".vespa")
 	}
-	configDir := filepath.Join(home, ".vespa", application)
+	configDir := filepath.Join(home, application)
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		fatalErr(err, "Could not create config directory")
 		return ""
