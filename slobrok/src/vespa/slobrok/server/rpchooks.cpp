@@ -289,6 +289,9 @@ void RPCHooks::new_registerRpcServer(FRT_RPCRequest *req) {
     auto script = ScriptCommand::makeRegCompleter(_env, dName, dSpec, req);
     req->Detach();
     _env.localMonitorMap().addLocal(mapping, std::make_unique<ScriptCommandWrapper>(std::move(script)));
+    // TODO: remove this
+    script = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, nullptr);
+    script.doRequest();
     return;
 }
 
