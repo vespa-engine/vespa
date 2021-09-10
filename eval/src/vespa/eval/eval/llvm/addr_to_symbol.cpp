@@ -8,12 +8,18 @@
 
 using vespalib::demangle;
 using llvm::object::ObjectFile;
+using SymbolType = llvm::object::SymbolRef::Type;
 
 namespace vespalib::eval {
 
 namespace {
 
 void my_local_test_symbol() {}
+
+bool symbol_is_data_or_function(SymbolType type)
+{
+    return ((type == SymbolType::ST_Data) || (type == SymbolType::ST_Function));
+}
 
 } // <unnamed>
 
@@ -42,7 +48,10 @@ vespalib::string addr_to_symbol(const void *addr) {
     for (const auto &symbol: symbols) {
         auto sym_name = symbol.getName();
         auto sym_addr = symbol.getAddress();
-        if (sym_name && sym_addr && (*sym_addr == offset)) {
+        auto sym_type = symbol.getType();
+        if (sym_name && sym_addr && sym_type &&
+            symbol_is_data_or_function(*sym_type) &&
+            (*sym_addr == offset)) {
             return demangle(sym_name->str().c_str());
         }
     }
