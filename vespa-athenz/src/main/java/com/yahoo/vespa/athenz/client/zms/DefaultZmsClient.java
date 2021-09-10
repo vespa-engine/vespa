@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
+import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -28,10 +29,13 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.Header;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -190,7 +194,11 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     public void createPolicy(AthenzDomain athenzDomain, String athenzPolicy) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/policy/%s",
                                                athenzDomain.getName(), athenzPolicy));
-        execute(RequestBuilder.put(uri).build(), response -> readEntity(response, Void.class));
+        StringEntity entity = toJsonStringEntity(Map.of("name", athenzPolicy, "assertions", List.of()));
+        HttpUriRequest request = RequestBuilder.put(uri)
+                .setEntity(entity)
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
