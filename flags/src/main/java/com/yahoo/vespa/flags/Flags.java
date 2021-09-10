@@ -130,12 +130,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ORCHESTRATE_MISSING_PROXIES = defineFeatureFlag(
-            "orchestrate-missing-proxies", true,
-            List.of("hakonhall"), "2021-08-05", "2021-10-05",
-            "Whether the Orchestrator can assume any missing proxy services are down.",
-            "Takes effect on first (re)start of config server");
-
     public static final UnboundIntFlag NUM_DEPLOY_HELPER_THREADS = defineIntFlag(
             "num-model-builder-threads", 0,
             List.of("balder"), "2021-09-09", "2021-10-01",

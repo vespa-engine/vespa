@@ -86,15 +86,9 @@ public class OrchestratorImpl implements Orchestrator {
              zone,
              Clock.systemUTC(),
              new ApplicationApiFactory(configServerConfig.zookeeperserver().size(),
-                                       resolveNumProxies(orchestratorConfig, flagSource),
+                                       orchestratorConfig.numProxies(),
                                        Clock.systemUTC()),
              orchestratorConfig.serviceMonitorConvergenceLatencySeconds());
-    }
-
-    private static int resolveNumProxies(OrchestratorConfig orchestratorConfig, FlagSource flagSource) {
-        return Flags.ORCHESTRATE_MISSING_PROXIES.bindTo(flagSource).value() ?
-                orchestratorConfig.numProxies() :
-                0;
     }
 
     private OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
