@@ -125,7 +125,27 @@ using vespalib::compression::CompressionConfig;
 
 namespace search::bmcluster {
 
-vespalib::string base_dir = "testdb";
+namespace {
+
+enum PortBias
+{
+    TLS_LISTEN_PORT,
+    SERVICE_LAYER_MBUS_PORT,
+    SERVICE_LAYER_RPC_PORT,
+    SERVICE_LAYER_STATUS_PORT,
+    DISTRIBUTOR_MBUS_PORT,
+    DISTRIBUTOR_RPC_PORT,
+    DISTRIBUTOR_STATUS_PORT,
+    NUM_PORTS,
+    
+};
+
+int port_number(int base_port, PortBias bias)
+{
+    return base_port + static_cast<int>(bias);
+}
+
+}
 
 std::shared_ptr<AttributesConfig> make_attributes_config() {
     AttributesConfigBuilder builder;
@@ -389,22 +409,19 @@ struct DistributorConfigSet : public StorageConfigSet
 
 DistributorConfigSet::~DistributorConfigSet() = default;
 
-BmNode::BmNode(std::shared_ptr<document::DocumenttypesConfig> document_types)
-    : _document_types(std::move(document_types)),
-      _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
-      _doc_type_name("test"),
-      _document_type(_repo->getDocumentType(_doc_type_name.getName())),
-      _field(_document_type->getField("int"))
-{
-}
+BmNode::BmNode() = default;
 
 BmNode::~BmNode() = default;
 
 class MyBmNode : public BmNode
 {
+    std::shared_ptr<DocumenttypesConfig>       _document_types;
+    std::shared_ptr<const DocumentTypeRepo>    _repo;
+    proton::DocTypeName                        _doc_type_name;
     std::shared_ptr<DocumentDBConfig>          _document_db_config;
     vespalib::string                           _base_dir;
     search::index::DummyFileHeaderContext      _file_header_context;
+    int                                        _node_idx;
     int                                        _tls_listen_port;
     int                                        _slobrok_port;
     int                                        _service_layer_mbus_port;
@@ -441,7 +458,7 @@ class MyBmNode : public BmNode
 
     void create_document_db(const BmClusterParams&  params);
 public:
-    MyBmNode(const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types);
+    MyBmNode(const vespalib::string &base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
     ~MyBmNode() override;
     std::unique_ptr<SpiBmFeedHandler> make_create_bucket_feed_handler(bool skip_get_spi_bucket_info) override;
     void start_service_layer(const BmClusterParams& params) override;
@@ -455,19 +472,23 @@ public:
     PersistenceProvider* get_persistence_provider() override;
 };
 
-MyBmNode::MyBmNode(const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types)
-    : BmNode(std::move(document_types)),
+MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+    : BmNode(),
+      _document_types(std::move(document_types)),
+      _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
+      _doc_type_name("test"),
       _document_db_config(make_document_db_config(_document_types, _repo, _doc_type_name)),
       _base_dir(base_dir),
       _file_header_context(),
-      _tls_listen_port(9017),
-      _slobrok_port(9018),
-      _service_layer_mbus_port(9020),
-      _service_layer_rpc_port(9021),
-      _service_layer_status_port(9022),
-      _distributor_mbus_port(9023),
-      _distributor_rpc_port(9024),
-      _distributor_status_port(9025),
+      _node_idx(node_idx),
+      _tls_listen_port(port_number(base_port, PortBias::TLS_LISTEN_PORT)),
+      _slobrok_port(slobrok_port),
+      _service_layer_mbus_port(port_number(base_port, PortBias::SERVICE_LAYER_MBUS_PORT)),
+      _service_layer_rpc_port(port_number(base_port, PortBias::SERVICE_LAYER_RPC_PORT)),
+      _service_layer_status_port(port_number(base_port, PortBias::SERVICE_LAYER_STATUS_PORT)),
+      _distributor_mbus_port(port_number(base_port, PortBias::DISTRIBUTOR_MBUS_PORT)),
+      _distributor_rpc_port(port_number(base_port, PortBias::DISTRIBUTOR_RPC_PORT)),
+      _distributor_status_port(port_number(base_port, PortBias::DISTRIBUTOR_STATUS_PORT)),
       _tls("tls", _tls_listen_port, _base_dir, _file_header_context),
       _tls_spec(vespalib::make_string("tcp/localhost:%d", _tls_listen_port)),
       _query_limiter(),
@@ -513,7 +534,6 @@ MyBmNode::~MyBmNode()
         _document_db->close();
     }
 }
-
 
 void
 MyBmNode::create_document_db(const BmClusterParams& params)
@@ -666,10 +686,16 @@ MyBmNode::get_persistence_provider()
     return _persistence_engine.get();
 }
     
-std::unique_ptr<BmNode>
-BmNode::create(const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types)
+unsigned int
+BmNode::num_ports()
 {
-    return std::make_unique<MyBmNode>(params, std::move(document_types));
+    return static_cast<unsigned int>(PortBias::NUM_PORTS);
+}
+
+std::unique_ptr<BmNode>
+BmNode::create(const vespalib::string& base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+{
+    return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, params, std::move(document_types), slobrok_port);
 }
 
 }

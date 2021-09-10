@@ -49,6 +49,7 @@ using vespalib::makeLambdaTask;
 namespace {
 
 vespalib::string base_dir = "testdb";
+constexpr int base_port = 9017;
 
 std::shared_ptr<DocumenttypesConfig> make_document_types() {
     using Struct = document::config_builder::Struct;
@@ -155,8 +156,8 @@ struct PersistenceProviderFixture {
 PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
     : _document_types(make_document_types()),
       _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
-      _bm_cluster(std::make_unique<BmCluster>(params, _repo)),
-      _bm_node(BmNode::create(params, _document_types)),
+      _bm_cluster(std::make_unique<BmCluster>(base_dir, base_port, params, _document_types, _repo)),
+      _bm_node(_bm_cluster->make_bm_node(0)),
       _feed(_repo),
       _feed_handler(nullptr)
 {

@@ -1,12 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_cluster.h"
+#include "bm_node.h"
 #include "bm_message_bus.h"
 #include <vespa/config/common/configcontext.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 
@@ -24,6 +27,18 @@ namespace {
 
 vespalib::string message_bus_config_id("bm-message-bus");
 vespalib::string rpc_client_config_id("bm-rpc-client");
+
+enum class PortBias
+{
+    SLOBROK_PORT = 0,
+    RPC_CLIENT_PORT = 1,
+    NUM_PORTS = 2        
+};
+
+int port_number(int base_port, PortBias bias)
+{
+    return base_port + static_cast<int>(bias);
+}
 
 void
 make_slobroks_config(SlobroksConfigBuilder& slobroks, int slobrok_port)
@@ -76,10 +91,10 @@ struct BmCluster::RpcClientConfigSet {
 
 BmCluster::RpcClientConfigSet::~RpcClientConfigSet() = default;
 
-BmCluster::BmCluster(const BmClusterParams& params, std::shared_ptr<const document::DocumentTypeRepo> repo)
+BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo)
     : _params(params),
-      _slobrok_port(9018),
-      _rpc_client_port(9019),
+      _slobrok_port(port_number(base_port, PortBias::SLOBROK_PORT)),
+      _rpc_client_port(port_number(base_port, PortBias::RPC_CLIENT_PORT)),
       _message_bus_config(std::make_unique<MessageBusConfigSet>(message_bus_config_id, _slobrok_port)),
       _rpc_client_config(std::make_unique<RpcClientConfigSet>(rpc_client_config_id, _slobrok_port)),
       _config_set(std::make_unique<config::ConfigSet>()),
@@ -87,11 +102,15 @@ BmCluster::BmCluster(const BmClusterParams& params, std::shared_ptr<const docume
       _slobrok(),
       _message_bus(),
       _rpc_client(),
-      _repo(repo)
+      _base_dir(base_dir),
+      _base_port(base_port),
+      _document_types(std::move(document_types)),
+      _repo(std::move(repo))
     
 {
     _message_bus_config->add_builders(*_config_set);
     _rpc_client_config->add_builders(*_config_set);
+    vespalib::mkdir(_base_dir, false);
 }
  
 BmCluster::~BmCluster()
@@ -175,6 +194,16 @@ BmCluster::stop_rpc_client()
         _rpc_client->shutdown();
         _rpc_client.reset();
     }
+}
+
+std::unique_ptr<BmNode>
+BmCluster::make_bm_node(int node_idx)
+{
+    vespalib::asciistream s;
+    s << _base_dir << "/n" << node_idx;
+    vespalib::string node_base_dir(s.str());
+    int node_base_port = port_number(_base_port, PortBias::NUM_PORTS) + BmNode::num_ports() * node_idx;
+    return BmNode::create(node_base_dir, node_base_port, node_idx, _params, _document_types, _slobrok_port);
 }
 
 }

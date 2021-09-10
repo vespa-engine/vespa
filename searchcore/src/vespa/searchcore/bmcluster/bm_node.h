@@ -3,7 +3,6 @@
 #pragma once
 
 #include <memory>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 
 namespace document {
@@ -13,6 +12,8 @@ class DocumentType;
 class Field;
 
 };
+
+namespace document::internal { class InternalDocumenttypesType; }
 
 namespace storage::spi { struct PersistenceProvider; }
 
@@ -28,13 +29,8 @@ class SpiBmFeedHandler;
  */
 class BmNode {
 protected:
-    std::shared_ptr<document::DocumenttypesConfig> _document_types;
-    std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    proton::DocTypeName                        _doc_type_name;
-    const document::DocumentType*              _document_type;
-    const document::Field&                     _field;
 
-    BmNode(std::shared_ptr<document::DocumenttypesConfig> document_types);
+    BmNode();
 public:
     virtual ~BmNode();
     virtual std::unique_ptr<SpiBmFeedHandler> make_create_bucket_feed_handler(bool skip_get_spi_bucket_info) = 0;
@@ -47,10 +43,8 @@ public:
     virtual void shutdown_service_layer() = 0;
     virtual IBmFeedHandler* get_feed_handler() = 0;
     virtual storage::spi::PersistenceProvider *get_persistence_provider() = 0;
-    static std::unique_ptr<BmNode> create(const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types);
-    const proton::DocTypeName& get_doc_type_name() const noexcept { return _doc_type_name; }
-    const document::DocumentType *get_document_type() const noexcept { return _document_type; }
-    const document::Field& get_field() const noexcept { return _field; }
+    static unsigned int num_ports();
+    static std::unique_ptr<BmNode> create(const vespalib::string &base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<const document::internal::InternalDocumenttypesType> document_types, int slobrok_port);
 };
 
 }
