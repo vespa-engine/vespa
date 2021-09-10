@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
-import com.fasterxml.jackson.databind.ser.std.MapSerializer;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -19,6 +18,7 @@ import com.yahoo.vespa.athenz.client.zms.bindings.DomainListResponseEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.MembershipEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.PolicyEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ProviderResourceGroupRolesRequestEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.ResponseListEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.RoleEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceListResponseEntity;
@@ -26,12 +26,9 @@ import com.yahoo.vespa.athenz.client.zms.bindings.TenancyRequestEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
-import org.bouncycastle.cert.ocsp.Req;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
@@ -303,6 +300,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         execute(RequestBuilder.delete(uri).build(), response -> readEntity(response, Void.class));
     }
 
+    @Override
     public void createRole(AthenzRole role, Map<String, Object> attributes) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", role.domain().getName(), role.roleName()));
         HashMap<String, Object> finalAttributes = new HashMap<>(attributes);
@@ -311,6 +309,22 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setEntity(toJsonStringEntity(finalAttributes))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public Set<AthenzRole> listRoles(AthenzDomain domain) {
+        var uri = zmsUrl.resolve(String.format("domain/%s/role", domain.getName()));
+        ResponseListEntity listResponse = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, ResponseListEntity.class));
+        return listResponse.entity.stream()
+                .map(name -> new AthenzRole(domain, name))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<String> listPolicies(AthenzDomain domain) {
+        var uri = zmsUrl.resolve(String.format("domain/%s/policy", domain.getName()));
+        ResponseListEntity listResponse = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, ResponseListEntity.class));
+        return Set.copyOf(listResponse.entity);
     }
 
     private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {

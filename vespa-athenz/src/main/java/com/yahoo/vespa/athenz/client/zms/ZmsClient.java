@@ -66,5 +66,9 @@ public interface ZmsClient extends AutoCloseable {
 
     void createRole(AthenzRole role, Map<String, Object> properties);
 
+    Set<AthenzRole> listRoles(AthenzDomain domain);
+
+    Set<String> listPolicies(AthenzDomain domain);
+
     void close();
 }

@@ -148,12 +148,17 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public void createPolicy(AthenzDomain athenzDomain, String athenzPolicy) {
-        // Noop
+        List<AthenzDbMock.Policy> policies = athenz.getOrCreateDomain(athenzDomain).policies;
+        if (policies.stream().anyMatch(p -> p.name().equals(athenzPolicy))) {
+            throw new IllegalArgumentException("Policy already exists");
+        }
+
+        // Policy will be created in the mock when an assertion is added
     }
 
     @Override
     public void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
-        athenz.getOrCreateDomain(athenzDomain).policies.add(new AthenzDbMock.Policy(athenzRole.roleName(), action, resourceName.toResourceNameString()));
+        athenz.getOrCreateDomain(athenzDomain).policies.add(new AthenzDbMock.Policy(athenzPolicy, athenzRole.roleName(), action, resourceName.toResourceNameString()));
     }
 
     @Override
@@ -194,7 +199,25 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public void createRole(AthenzRole role, Map<String, Object> properties) {
-        athenz.getOrCreateDomain(role.domain()).roles.add(new AthenzDbMock.Role(role.roleName()));
+        List<AthenzDbMock.Role> roles = athenz.getOrCreateDomain(role.domain()).roles;
+        if (roles.stream().anyMatch(r -> r.name().equals(role.roleName()))) {
+            throw new IllegalArgumentException("Role already exists");
+        }
+        roles.add(new AthenzDbMock.Role(role.roleName()));
+    }
+
+    @Override
+    public Set<AthenzRole> listRoles(AthenzDomain domain) {
+        return athenz.getOrCreateDomain(domain).roles.stream()
+                .map(role -> new AthenzRole(domain, role.name()))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<String> listPolicies(AthenzDomain domain) {
+        return athenz.getOrCreateDomain(domain).policies.stream()
+                .map(AthenzDbMock.Policy::name)
+                .collect(Collectors.toSet());
     }
 
     @Override
