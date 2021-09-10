@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -965,6 +966,24 @@ public class ProvisioningTest {
         assertEquals("Cluster type is updated",
                      Set.of(ClusterSpec.Type.content),
                      newNodes.stream().map(n -> n.membership().get().cluster().type()).collect(Collectors.toSet()));
+    }
+
+    @Test
+    public void transitions_directly_to_dirty_in_cd() {
+        ApplicationId application = ProvisioningTester.applicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("1.2.3").build();
+        Capacity capacity = Capacity.from(new ClusterResources(2, 1, defaultResources));
+
+        BiConsumer<Zone, Node.State> stateAsserter = (zone, state) -> {
+            ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).build();
+            tester.makeReadyHosts(2, defaultResources).activateTenantHosts();
+            tester.activate(application, tester.prepare(application, cluster, capacity));
+            tester.deactivate(application);
+            assertEquals(2, tester.getNodes(application, state).size());
+        };
+
+        stateAsserter.accept(new Zone(Environment.prod, RegionName.from("us-east")), Node.State.inactive);
+        stateAsserter.accept(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east")), Node.State.dirty);
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
