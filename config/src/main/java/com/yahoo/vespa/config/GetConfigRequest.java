@@ -44,4 +44,11 @@ public interface GetConfigRequest {
      */
     String getRequestDefMd5();
 
+    /**
+     * Returns the payload checksums from the config request.
+     *
+     * @return the payload checksums from request.
+     */
+    PayloadChecksums configPayloadChecksums();
+
 }

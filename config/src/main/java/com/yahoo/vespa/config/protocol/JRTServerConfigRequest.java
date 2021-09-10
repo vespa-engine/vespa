@@ -85,4 +85,12 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
      */
     Payload payloadFromResponse(ConfigResponse response);
 
+
+    /**
+     * Returns the payload checksums from the config request.
+     *
+     * @return the payload checksumss from request.
+     */
+    PayloadChecksums configPayloadChecksums();
+
 }

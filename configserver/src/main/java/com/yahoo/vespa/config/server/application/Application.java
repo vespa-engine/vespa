@@ -130,12 +130,11 @@ public class Application implements ModelResult {
             metricUpdater.incrementFailedRequests();
             throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
         }
-        log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Resolving " + configKey + " with config definition " + def));
+        log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + "Resolving " + configKey + " with config definition " + def);
 
         var payload = createPayload(configKey, def);
-        var response = responseFactory.createResponse(payload.getFirst(), applicationGeneration, payload.getSecond());
 
-        return response;
+        return responseFactory.createResponse(payload.getFirst(), applicationGeneration, payload.getSecond(), req.configPayloadChecksums());
     }
 
     private Pair<AbstractUtf8Array, Boolean> createPayload(ConfigKey<?> configKey, ConfigDefinition def) {

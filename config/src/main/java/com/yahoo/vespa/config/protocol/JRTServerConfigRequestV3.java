@@ -273,7 +273,9 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public Optional<VespaVersion> getVespaVersion() {
-        return requestData.getVespaVersion();
-    }
+    public Optional<VespaVersion> getVespaVersion() { return requestData.getVespaVersion(); }
+
+    @Override
+    public PayloadChecksums configPayloadChecksums() { return requestData.getRequestConfigChecksums(); }
+
 }
