@@ -426,7 +426,7 @@ public class ApplicationSerializer {
 
         // TODO (freva): Simplify once this has rolled out everywhere
         Inspector deployedDirectlyInspector = object.field(deployedDirectlyField);
-        boolean deployedDirectly = !deployedDirectlyInspector.valid() || deployedDirectlyInspector.asBool();
+        boolean deployedDirectly = deployedDirectlyInspector.valid() && deployedDirectlyInspector.asBool();
 
         return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
     }
