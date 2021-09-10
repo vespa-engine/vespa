@@ -23,7 +23,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
      */
     public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty(),
                                                                             Optional.empty(), Optional.empty(), Optional.empty(),
-                                                                            Optional.empty(), Optional.empty(), false);
+                                                                            Optional.empty(), Optional.empty(), true);
 
     // This never changes and is only used to create a valid semantic version number, as required by application bundles
     private static final String majorVersion = "1.0";
