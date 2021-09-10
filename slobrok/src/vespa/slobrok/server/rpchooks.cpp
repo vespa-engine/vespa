@@ -506,8 +506,6 @@ void RPCHooks::new_doAdd(FRT_RPCRequest *req) {
     } else {
         retval.AddInt32(0);
         retval.AddString("ok");
-        auto script = ScriptCommand::makeIgnoreCmd(_env, dName, dSpec);
-        _env.localMonitorMap().addLocal(mapping, std::make_unique<ScriptCommandWrapper>(std::move(script)));
     }
     LOG(debug, "%s->doAdd(%s,%s) %s",
         remsb, dName, dSpec, ok ? "OK" : "failed");
