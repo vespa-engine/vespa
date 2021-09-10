@@ -1970,6 +1970,13 @@ public class ParseTestCase {
     }
 
     @Test
+    public void testNegativeTermPositiveNumberInParentheses() {
+        tester.assertParsed("+a -12", "a -(12)", Query.Type.ALL);
+        tester.assertParsed("+a -(AND 12 15)", "a -(12 15)", Query.Type.ALL);
+        tester.assertParsed("+a -12 -15", "a -(12) -(15)", Query.Type.ALL);
+    }
+
+    @Test
     public void testSingleNegativeNumberLikeTerm() {
         tester.assertParsed("-12", "-12", Query.Type.ALL);
     }
