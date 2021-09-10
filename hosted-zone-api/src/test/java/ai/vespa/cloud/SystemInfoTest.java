@@ -48,4 +48,11 @@ public class SystemInfoTest {
         }
     }
 
+    @Test
+    public void testNode() {
+        String id = "default.container.1";
+        Node node = new Node(id);
+        assertEquals(id, node.id());
+    }
+
 }
