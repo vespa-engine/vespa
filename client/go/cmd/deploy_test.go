@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -124,12 +125,14 @@ func assertPrepare(applicationPackage string, arguments []string, t *testing.T) 
 
 func assertActivate(applicationPackage string, arguments []string, t *testing.T) {
 	client := &mockHttpClient{}
-	configDir := t.TempDir()
-	appConfigDir := filepath.Join(configDir, ".vespa", "default")
-	writeSessionID(appConfigDir, 42)
+	homeDir := t.TempDir()
+	cfg := Config{Home: filepath.Join(homeDir, ".vespa"), createDirs: true}
+	if err := cfg.WriteSessionID(vespa.DefaultApplication, 42); err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t,
 		"Success: Activated "+applicationPackage+" with session 42\n",
-		execute(command{args: arguments, configDir: configDir}, t, client))
+		execute(command{args: arguments, homeDir: homeDir}, t, client))
 	url := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/active"
 	assert.Equal(t, url, client.lastRequest.URL.String())
 	assert.Equal(t, "PUT", client.lastRequest.Method)

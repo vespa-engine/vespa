@@ -24,9 +24,9 @@ import (
 )
 
 type command struct {
-	configDir string
-	args      []string
-	moreArgs  []string
+	homeDir  string
+	args     []string
+	moreArgs []string
 }
 
 func execute(cmd command, t *testing.T, client *mockHttpClient) string {
@@ -38,11 +38,11 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 	color = aurora.NewAurora(false)
 
 	// Set config dir. Use a separate one per test if none is specified
-	if cmd.configDir == "" {
-		cmd.configDir = t.TempDir()
+	if cmd.homeDir == "" {
+		cmd.homeDir = t.TempDir()
 		viper.Reset()
 	}
-	os.Setenv("VESPA_CLI_HOME", filepath.Join(cmd.configDir, ".vespa"))
+	os.Setenv("VESPA_CLI_HOME", filepath.Join(cmd.homeDir, ".vespa"))
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
 	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {

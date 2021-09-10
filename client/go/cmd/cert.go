@@ -28,20 +28,34 @@ var certCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		app := getApplication()
+		app, err := vespa.ApplicationFromString(getApplication())
+		if err != nil {
+			fatalErr(err)
+			return
+		}
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
 			fatalErr(err)
 			return
 		}
-		configDir := configDir(app)
-		if configDir == "" {
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err)
 			return
 		}
 		securityDir := filepath.Join(pkg.Path, "security")
 		pkgCertificateFile := filepath.Join(securityDir, "clients.pem")
-		privateKeyFile := filepath.Join(configDir, "data-plane-private-key.pem")
-		certificateFile := filepath.Join(configDir, "data-plane-public-cert.pem")
+		privateKeyFile, err := cfg.PrivateKeyPath(app)
+		if err != nil {
+			fatalErr(err)
+			return
+		}
+		certificateFile, err := cfg.CertificatePath(app)
+		if err != nil {
+			fatalErr(err)
+			return
+		}
+
 		if !overwriteCertificate {
 			for _, file := range []string{pkgCertificateFile, privateKeyFile, certificateFile} {
 				if util.PathExists(file) {

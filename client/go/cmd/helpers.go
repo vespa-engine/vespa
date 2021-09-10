@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -51,16 +50,6 @@ func printSuccess(msg ...interface{}) {
 	log.Print(color.Green("Success: "), fmt.Sprint(msg...))
 }
 
-func readAPIKey(tenant string) []byte {
-	configDir := configDir("")
-	apiKeyPath := filepath.Join(configDir, tenant+".api-key.pem")
-	key, err := ioutil.ReadFile(apiKeyPath)
-	if err != nil {
-		fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
-	}
-	return key
-}
-
 func deploymentFromArgs() vespa.Deployment {
 	zone, err := vespa.ZoneFromString(zoneArg)
 	if err != nil {
@@ -81,7 +70,12 @@ func applicationSource(args []string) string {
 }
 
 func getApplication() string {
-	app, err := getOption(applicationFlag)
+	cfg, err := LoadConfig()
+	if err != nil {
+		fatalErr(err, "Could not load config")
+		return ""
+	}
+	app, err := cfg.Get(applicationFlag)
 	if err != nil {
 		fatalErr(err, "A valid application must be specified")
 	}
@@ -89,7 +83,12 @@ func getApplication() string {
 }
 
 func getTargetType() string {
-	target, err := getOption(targetFlag)
+	cfg, err := LoadConfig()
+	if err != nil {
+		fatalErr(err, "Could not load config")
+		return ""
+	}
+	target, err := cfg.Get(targetFlag)
 	if err != nil {
 		fatalErr(err, "A valid target must be specified")
 	}
@@ -122,10 +121,25 @@ func getTarget() vespa.Target {
 		return vespa.LocalTarget()
 	case "cloud":
 		deployment := deploymentFromArgs()
-		apiKey := readAPIKey(deployment.Application.Tenant)
-		configDir := configDir(deployment.Application.String())
-		privateKeyFile := filepath.Join(configDir, "data-plane-private-key.pem")
-		certificateFile := filepath.Join(configDir, "data-plane-public-cert.pem")
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
+			return nil
+		}
+		apiKey, err := ioutil.ReadFile(cfg.APIKeyPath(deployment.Application.Tenant))
+		if err != nil {
+			fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+		}
+		privateKeyFile, err := cfg.PrivateKeyPath(deployment.Application)
+		if err != nil {
+			fatalErr(err)
+			return nil
+		}
+		certificateFile, err := cfg.CertificatePath(deployment.Application)
+		if err != nil {
+			fatalErr(err)
+			return nil
+		}
 		kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
 		if err != nil {
 			fatalErr(err, "Could not read key pair")
