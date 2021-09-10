@@ -62,6 +62,12 @@ private:
 
     void rpc_lookupRpcServer(FRT_RPCRequest *req);
 
+    void new_registerRpcServer(FRT_RPCRequest *req);
+    void new_unregisterRpcServer(FRT_RPCRequest *req);
+    void new_wantAdd(FRT_RPCRequest *req);
+    void new_doRemove(FRT_RPCRequest *req);
+    void new_doAdd(FRT_RPCRequest *req);
+
     void rpc_registerRpcServer(FRT_RPCRequest *req);
     void rpc_unregisterRpcServer(FRT_RPCRequest *req);
 

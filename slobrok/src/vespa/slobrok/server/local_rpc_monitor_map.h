@@ -129,6 +129,8 @@ public:
     MapSource &dispatcher() { return _dispatcher; }
     ServiceMapHistory & history();
 
+    bool wouldConflict(const ServiceMapping &mapping) const;
+
     /** for use by register API, will call doneHandler() on inflight script */
     void addLocal(const ServiceMapping &mapping,
                   std::unique_ptr<AddLocalCompletionHandler> inflight);
