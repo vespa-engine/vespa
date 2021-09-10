@@ -67,6 +67,7 @@
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/servicelayerprocess.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <tests/proton/common/dummydbowner.h>
 
@@ -460,6 +461,7 @@ class MyBmNode : public BmNode
 public:
     MyBmNode(const vespalib::string &base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
     ~MyBmNode() override;
+    void initialize_persistence_provider() override;
     std::unique_ptr<SpiBmFeedHandler> make_create_bucket_feed_handler(bool skip_get_spi_bucket_info) override;
     void start_service_layer(const BmClusterParams& params) override;
     void wait_service_layer() override;
@@ -468,6 +470,8 @@ public:
     void shutdown_feed_handler() override;
     void shutdown_distributor() override;
     void shutdown_service_layer() override;
+    void wait_service_layer_slobrok(BmCluster& cluster) override;
+    void wait_distributor_slobrok(BmCluster& cluster) override;
     IBmFeedHandler* get_feed_handler() override;
     PersistenceProvider* get_persistence_provider() override;
 };
@@ -571,6 +575,12 @@ MyBmNode::create_document_db(const BmClusterParams& params)
                                       std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     _document_db->start();
     _document_db->waitForOnlineState();
+}
+
+void
+MyBmNode::initialize_persistence_provider()
+{
+    get_persistence_provider()->initialize();
 }
 
 std::unique_ptr<SpiBmFeedHandler>
@@ -685,7 +695,27 @@ MyBmNode::get_persistence_provider()
 {
     return _persistence_engine.get();
 }
+
+void
+MyBmNode::wait_service_layer_slobrok(BmCluster& cluster)
+{
+    vespalib::asciistream s;
+    s << "storage/cluster.storage/storage/" << _node_idx;
+    cluster.wait_slobrok(s.str());
+    s << "/default";
+    cluster.wait_slobrok(s.str());
+}
     
+void
+MyBmNode::wait_distributor_slobrok(BmCluster& cluster)
+{
+    vespalib::asciistream s;
+    s << "storage/cluster.storage/distributor/" << _node_idx;
+    cluster.wait_slobrok(s.str());
+    s << "/default";
+    cluster.wait_slobrok(s.str());
+}
+
 unsigned int
 BmNode::num_ports()
 {

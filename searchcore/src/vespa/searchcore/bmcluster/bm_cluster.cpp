@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_cluster.h"
-#include "bm_node.h"
+#include "bm_cluster_controller.h"
+#include "bm_feed.h"
 #include "bm_message_bus.h"
+#include "bm_node.h"
+#include "spi_bm_feed_handler.h"
 #include <vespa/config/common/configcontext.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/messagebus/config-messagebus.h>
@@ -105,7 +108,8 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
       _base_dir(base_dir),
       _base_port(base_port),
       _document_types(std::move(document_types)),
-      _repo(std::move(repo))
+      _repo(std::move(repo)),
+      _nodes(params.get_num_nodes())
     
 {
     _message_bus_config->add_builders(*_config_set);
@@ -115,6 +119,7 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
  
 BmCluster::~BmCluster()
 {
+    _nodes.clear();
     stop_message_bus();
     stop_rpc_client();
     stop_slobrok();
@@ -196,14 +201,172 @@ BmCluster::stop_rpc_client()
     }
 }
 
-std::unique_ptr<BmNode>
-BmCluster::make_bm_node(int node_idx)
+void
+BmCluster::make_node(unsigned int node_idx)
 {
+    assert(node_idx < _nodes.size());
+    assert(!_nodes[node_idx]);
     vespalib::asciistream s;
     s << _base_dir << "/n" << node_idx;
     vespalib::string node_base_dir(s.str());
     int node_base_port = port_number(_base_port, PortBias::NUM_PORTS) + BmNode::num_ports() * node_idx;
-    return BmNode::create(node_base_dir, node_base_port, node_idx, _params, _document_types, _slobrok_port);
+    _nodes[node_idx] = BmNode::create(node_base_dir, node_base_port, node_idx, _params, _document_types, _slobrok_port);
+}
+
+void
+BmCluster::make_nodes()
+{
+    for (unsigned int node_idx = 0; node_idx < _nodes.size(); ++node_idx) {
+        make_node(node_idx);
+    }
+}
+
+BmNode&
+BmCluster::get_node(unsigned int node_idx)
+{
+    assert(node_idx < _nodes.size());
+    assert(_nodes[node_idx]);
+    return *_nodes[node_idx];
+}
+
+void
+BmCluster::initialize_providers()
+{
+    LOG(info, "start initialize");
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->initialize_persistence_provider();
+        }
+    }
+}
+
+void
+BmCluster::create_buckets(BmFeed& feed)
+{
+    LOG(info, "create %u buckets", feed.num_buckets());
+    auto feed_handler = get_node(0).make_create_bucket_feed_handler(false);
+    for (unsigned int i = 0; i < feed.num_buckets(); ++i) {
+        feed_handler->create_bucket(feed.make_bucket(i));
+    }
+}
+
+void
+BmCluster::start_service_layers()
+{
+    start_slobrok();
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->start_service_layer(_params);
+        }
+    }
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->wait_service_layer();
+        }
+    }
+    start_rpc_client();
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->wait_service_layer_slobrok(*this);
+        }
+    }
+    BmClusterController fake_controller(get_rpc_client());
+    fake_controller.set_cluster_up(false);
+}
+
+void
+BmCluster::start_distributors()
+{
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->start_distributor(_params);
+        }
+    }
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->wait_distributor_slobrok(*this);
+        }
+    }
+    BmClusterController fake_controller(get_rpc_client());
+    fake_controller.set_cluster_up(true);
+    // Wait for bucket ownership transfer safe time
+    std::this_thread::sleep_for(2s);
+}
+
+void
+BmCluster::create_feed_handlers()
+{
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->create_feed_handler(_params, *this);
+        }
+    }
+}
+
+void
+BmCluster::shutdown_feed_handlers()
+{
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->shutdown_feed_handler();
+        }
+    }
+}
+
+void
+BmCluster::shutdown_distributors()
+{
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->shutdown_distributor();
+        }
+    }
+}
+
+void
+BmCluster::shutdown_service_layers()
+{
+    stop_rpc_client();
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->shutdown_service_layer();
+        }
+    }
+    stop_slobrok();
+}
+
+void
+BmCluster::start(BmFeed& feed)
+{
+    initialize_providers();
+    if (!_params.needs_distributor()) {
+        create_buckets(feed);
+    }
+    if (_params.needs_service_layer()) {
+        start_service_layers();
+    }
+    if (_params.needs_distributor()) {
+        start_distributors();
+    }
+    if (_params.needs_message_bus()) {
+        start_message_bus();
+    }
+    create_feed_handlers();
+}
+
+void
+BmCluster::stop()
+{
+    shutdown_feed_handlers();
+    stop_message_bus();
+    shutdown_distributors();
+    shutdown_service_layers();
+}
+
+IBmFeedHandler*
+BmCluster::get_feed_handler()
+{
+    return get_node(0).get_feed_handler();
 }
 
 }

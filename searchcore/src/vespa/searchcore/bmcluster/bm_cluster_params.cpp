@@ -11,6 +11,7 @@ BmClusterParams::BmClusterParams()
       _enable_distributor(false),
       _enable_service_layer(false),
       _indexing_sequencer(),
+      _num_nodes(1),
       _response_threads(2),         // Same default as in stor-filestor.def
       _rpc_events_before_wakeup(1), // Same default as in stor-communicationmanager.def
       _rpc_network_threads(1),      // Same default as previous in stor-communicationmanager.def

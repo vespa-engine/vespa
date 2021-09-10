@@ -4,7 +4,6 @@
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fastos/app.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/searchcore/bmcluster/bm_cluster.h>
 #include <vespa/searchcore/bmcluster/bm_cluster_controller.h>
 #include <vespa/searchcore/bmcluster/bm_cluster_params.h>
@@ -99,7 +98,6 @@ public:
     void set_update_passes(uint32_t update_passes_in) { _update_passes = update_passes_in; }
     void set_remove_passes(uint32_t remove_passes_in) { _remove_passes = remove_passes_in; }
     bool check() const;
-    bool needs_message_bus() const { return get_use_message_bus() || get_use_document_api(); }
 };
 
 bool
@@ -134,116 +132,24 @@ struct PersistenceProviderFixture {
     std::shared_ptr<const DocumenttypesConfig> _document_types;
     std::shared_ptr<const DocumentTypeRepo>    _repo;
     std::unique_ptr<BmCluster>                 _bm_cluster;
-    std::unique_ptr<BmNode>                    _bm_node;
     BmFeed                                     _feed;
     IBmFeedHandler*                            _feed_handler;
 
     explicit PersistenceProviderFixture(const BMParams& params);
     ~PersistenceProviderFixture();
-    void create_buckets();
-    void wait_slobrok(const vespalib::string &name);
-    void start_service_layer(const BmClusterParams& params);
-    void start_distributor(const BmClusterParams& params);
-    void start_message_bus();
-    void create_feed_handler(const BmClusterParams& params);
-    void shutdown_feed_handler();
-    void shutdown_message_bus();
-    void shutdown_distributor();
-    void shutdown_service_layer();
-    PersistenceProvider* get_persistence_provider() { return _bm_node->get_persistence_provider(); }
 };
 
 PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
     : _document_types(make_document_types()),
       _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
       _bm_cluster(std::make_unique<BmCluster>(base_dir, base_port, params, _document_types, _repo)),
-      _bm_node(_bm_cluster->make_bm_node(0)),
       _feed(_repo),
       _feed_handler(nullptr)
 {
+    _bm_cluster->make_nodes();
 }
 
 PersistenceProviderFixture::~PersistenceProviderFixture() = default;
-
-void
-PersistenceProviderFixture::create_buckets()
-{
-    auto feed_handler = _bm_node->make_create_bucket_feed_handler(false);
-    for (unsigned int i = 0; i < _feed.num_buckets(); ++i) {
-        feed_handler->create_bucket(_feed.make_bucket(i));
-    }
-}
-
-void
-PersistenceProviderFixture::wait_slobrok(const vespalib::string &name)
-{
-    _bm_cluster->wait_slobrok(name);
-}
-
-void
-PersistenceProviderFixture::start_service_layer(const BmClusterParams& params)
-{
-    _bm_cluster->start_slobrok();
-    _bm_node->start_service_layer(params);
-    _bm_node->wait_service_layer();
-    _bm_cluster->start_rpc_client();
-    wait_slobrok("storage/cluster.storage/storage/0/default");
-    wait_slobrok("storage/cluster.storage/storage/0");
-    BmClusterController fake_controller(_bm_cluster->get_rpc_client());
-    fake_controller.set_cluster_up(false);
-}
-
-void
-PersistenceProviderFixture::start_distributor(const BmClusterParams& params)
-{
-    _bm_node->start_distributor(params);
-    wait_slobrok("storage/cluster.storage/distributor/0/default");
-    wait_slobrok("storage/cluster.storage/distributor/0");
-    BmClusterController fake_controller(_bm_cluster->get_rpc_client());
-    fake_controller.set_cluster_up(true);
-    // Wait for bucket ownership transfer safe time
-    std::this_thread::sleep_for(2s);
-}
-
-void
-PersistenceProviderFixture::start_message_bus()
-{
-    _bm_cluster->start_message_bus();
-}
-
-void
-PersistenceProviderFixture::create_feed_handler(const BmClusterParams& params)
-{
-    _bm_node->create_feed_handler(params, *_bm_cluster);
-    _feed_handler = _bm_node->get_feed_handler();
-}
-
-void
-PersistenceProviderFixture::shutdown_feed_handler()
-{
-    _bm_node->shutdown_feed_handler();
-    _feed_handler = nullptr;
-}
-
-void
-PersistenceProviderFixture::shutdown_message_bus()
-{
-    _bm_cluster->stop_message_bus();
-}
-
-void
-PersistenceProviderFixture::shutdown_distributor()
-{
-    _bm_node->shutdown_distributor();
-}
-
-void
-PersistenceProviderFixture::shutdown_service_layer()
-{
-    _bm_cluster->stop_rpc_client();
-    _bm_node->shutdown_service_layer();
-    _bm_cluster->stop_slobrok();
-}
 
 std::vector<vespalib::nbostream>
 make_feed(vespalib::ThreadStackExecutor &executor, const BMParams &bm_params, std::function<vespalib::nbostream(BmRange,BucketSelector)> func, uint32_t num_buckets, const vespalib::string &label)
@@ -435,23 +341,9 @@ void benchmark_async_spi(const BMParams &bm_params)
 {
     vespalib::rmdir(base_dir, true);
     PersistenceProviderFixture f(bm_params);
-    auto &provider = *f.get_persistence_provider();
-    LOG(info, "start initialize");
-    provider.initialize();
-    LOG(info, "create %u buckets", f._feed.num_buckets());
-    if (!bm_params.needs_distributor()) {
-        f.create_buckets();
-    }
-    if (bm_params.needs_service_layer()) {
-        f.start_service_layer(bm_params);
-    }
-    if (bm_params.needs_distributor()) {
-        f.start_distributor(bm_params);
-    }
-    if (bm_params.needs_message_bus()) {
-        f.start_message_bus();
-    }
-    f.create_feed_handler(bm_params);
+    auto& cluster = *f._bm_cluster;
+    cluster.start(f._feed);
+    f._feed_handler = cluster.get_feed_handler();
     vespalib::ThreadStackExecutor executor(bm_params.get_client_threads(), 128_Ki);
     auto& feed = f._feed;
     auto put_feed = make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_put_feed(range, bucket_selector); }, f._feed.num_buckets(), "put");
@@ -465,10 +357,8 @@ void benchmark_async_spi(const BMParams &bm_params)
     benchmark_async_remove(f, executor, time_bias, remove_feed, bm_params);
     LOG(info, "--------------------------------");
 
-    f.shutdown_feed_handler();
-    f.shutdown_message_bus();
-    f.shutdown_distributor();
-    f.shutdown_service_layer();
+    f._feed_handler = nullptr;
+    cluster.stop();
 }
 
 class App : public FastOS_Application
