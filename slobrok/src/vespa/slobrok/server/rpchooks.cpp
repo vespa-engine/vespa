@@ -321,15 +321,9 @@ void RPCHooks::new_unregisterRpcServer(FRT_RPCRequest *req) {
     const char *dName  = args[0]._string._str;
     const char *dSpec  = args[1]._string._str;
     ServiceMapping mapping{dName, dSpec};
-    bool ok = ! _env.consensusMap().wouldConflict(mapping);
-    if (! ok) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, "conflict detected");
-    }
     _env.localMonitorMap().removeLocal(mapping);
     _env.exchangeManager().forwardRemove(dName, dSpec);
-    LOG(debug, "unregisterRpcServer(%s,%s) %s",
-        dName, dSpec,
-        ok ? "OK" : "failed");
+    LOG(debug, "unregisterRpcServer(%s,%s)", dName, dSpec);
     _cnts.otherReqs++;
     return;
 }
@@ -509,7 +503,7 @@ void RPCHooks::new_doAdd(FRT_RPCRequest *req) {
     }
     LOG(debug, "%s->doAdd(%s,%s) %s",
         remsb, dName, dSpec, ok ? "OK" : "failed");
-    _cnts.wantAddReqs++;
+    _cnts.doAddReqs++;
     return;
 }
 
