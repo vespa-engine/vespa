@@ -5,6 +5,19 @@ cache:
        build-vespa: [/main_job_cache]
 
 jobs:
+  test-pr:
+    requires: [~pr]
+    image: vespaengine/vespa-build-centos7:latest
+    annotations:
+      screwdriver.cd/timeout: 5
+
+    environment:
+      USER_SHELL_BIN: bash
+
+    steps:
+      - inspect: |
+          curl https://zts.athenz.ouroath.com:4443/zts/v1
+
   build-vespa:
     requires: [~pr, ~commit]
     image: vespaengine/vespa-build-centos7:latest
