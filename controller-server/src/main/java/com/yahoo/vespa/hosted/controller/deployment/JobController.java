@@ -441,8 +441,7 @@ public class JobController {
                                                 revision.map(SourceRevision::commit),
                                                 false));
             byte[] diff = application.get().latestVersion()
-                    .map(ApplicationVersion::buildNumber)
-                    .flatMap(build -> build.isPresent() ? Optional.of(build.getAsLong()) : Optional.empty())
+                    .map(v -> v.buildNumber().getAsLong())
                     .flatMap(prevBuild -> controller.applications().applicationStore().find(id.tenant(), id.application(), prevBuild))
                     .map(prevApplication -> ApplicationPackageDiff.diff(new ApplicationPackage(prevApplication), applicationPackage))
                     .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));

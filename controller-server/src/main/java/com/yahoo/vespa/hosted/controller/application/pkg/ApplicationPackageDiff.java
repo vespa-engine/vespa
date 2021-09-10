@@ -81,9 +81,7 @@ public class ApplicationPackageDiff {
 
     private static List<String> lines(byte[] data) {
         List<String> lines = new ArrayList<>(Math.min(16, data.length / 100));
-        try (ByteArrayInputStream stream = new ByteArrayInputStream(data);
-             InputStreamReader streamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-             BufferedReader bufferedReader = new BufferedReader(streamReader)) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(data), StandardCharsets.UTF_8))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 lines.add(line);
