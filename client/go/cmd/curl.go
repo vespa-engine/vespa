@@ -22,7 +22,7 @@ func init() {
 }
 
 var curlCmd = &cobra.Command{
-	Use:   "curl <path>",
+	Use:   "curl [curl-options] path",
 	Short: "Query Vespa using curl",
 	Long: `Query Vespa using curl.
 
