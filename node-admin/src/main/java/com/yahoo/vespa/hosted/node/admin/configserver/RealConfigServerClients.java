@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.flags.FlagRepository;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.flags.RealFlagRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
@@ -27,9 +26,9 @@ public class RealConfigServerClients implements ConfigServerClients {
     /**
      * @param configServerApi the backend API to use - will be closed at {@link #stop()}.
      */
-    public RealConfigServerClients(ConfigServerApi configServerApi, FlagSource flagSource) {
+    public RealConfigServerClients(ConfigServerApi configServerApi) {
         this.configServerApi = configServerApi;
-        nodeRepository = new RealNodeRepository(configServerApi, flagSource);
+        nodeRepository = new RealNodeRepository(configServerApi);
         orchestrator = new OrchestratorImpl(configServerApi);
         state = new StateImpl(configServerApi);
         flagRepository = new RealFlagRepository(configServerApi);
