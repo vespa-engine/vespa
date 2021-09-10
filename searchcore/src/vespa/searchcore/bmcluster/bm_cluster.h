@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <memory>
 #include "bm_cluster_params.h"
+#include <memory>
+#include <vector>
 
 namespace config {
 
@@ -19,8 +20,10 @@ namespace storage::rpc { class SharedRpcResources; }
 
 namespace search::bmcluster {
 
+class BmFeed;
 class BmMessageBus;
 class BmNode;
+class IBmFeedHandler;
 
 /*
  * Class representing a benchmark cluster with one or more benchmark nodes.
@@ -43,6 +46,7 @@ class BmCluster {
     int                                               _base_port;
     std::shared_ptr<DocumenttypesConfig>              _document_types;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
+    std::vector<std::unique_ptr<BmNode>>              _nodes;
 
 public:
     BmCluster(const vespalib::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo);
@@ -54,9 +58,22 @@ public:
     void stop_message_bus();
     void start_rpc_client();
     void stop_rpc_client();
+    void start_service_layers();
+    void start_distributors();
+    void create_feed_handlers();
+    void shutdown_feed_handlers();
+    void shutdown_distributors();
+    void shutdown_service_layers();
+    void create_buckets(BmFeed &feed);
+    void initialize_providers();
+    void start(BmFeed &feed);
+    void stop();
     storage::rpc::SharedRpcResources &get_rpc_client() { return *_rpc_client; }
     BmMessageBus& get_message_bus() { return *_message_bus; }
-    std::unique_ptr<BmNode> make_bm_node(int node_idx);
+    void make_node(unsigned int node_idx);
+    void make_nodes();
+    BmNode& get_node(unsigned int node_idx);
+    IBmFeedHandler* get_feed_handler();
 };
 
 }

@@ -33,6 +33,7 @@ protected:
     BmNode();
 public:
     virtual ~BmNode();
+    virtual void initialize_persistence_provider()= 0;
     virtual std::unique_ptr<SpiBmFeedHandler> make_create_bucket_feed_handler(bool skip_get_spi_bucket_info) = 0;
     virtual void start_service_layer(const BmClusterParams& params) = 0;
     virtual void wait_service_layer() = 0;
@@ -41,6 +42,8 @@ public:
     virtual void shutdown_feed_handler() = 0;
     virtual void shutdown_distributor() = 0;
     virtual void shutdown_service_layer() = 0;
+    virtual void wait_service_layer_slobrok(BmCluster& cluster) = 0;
+    virtual void wait_distributor_slobrok(BmCluster& cluster) = 0;
     virtual IBmFeedHandler* get_feed_handler() = 0;
     virtual storage::spi::PersistenceProvider *get_persistence_provider() = 0;
     static unsigned int num_ports();
