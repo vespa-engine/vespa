@@ -35,12 +35,14 @@ public class RoleEntity {
         private final String memberName;
         private final boolean active;
         private final boolean approved;
+        private final String auditRef;
 
         @JsonCreator
-        public Member(@JsonProperty("memberName") String memberName, @JsonProperty("active") boolean active, @JsonProperty("approved") boolean approved) {
+        public Member(@JsonProperty("memberName") String memberName, @JsonProperty("active") boolean active, @JsonProperty("approved") boolean approved, @JsonProperty("auditRef") String auditRef) {
             this.memberName = memberName;
             this.active = active;
             this.approved = approved;
+            this.auditRef = auditRef;
         }
 
         public String memberName() {
@@ -49,6 +51,10 @@ public class RoleEntity {
 
         public boolean pendingApproval() {
             return !approved;
+        }
+
+        public String auditRef() {
+            return auditRef;
         }
     }
 }
