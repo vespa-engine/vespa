@@ -236,13 +236,15 @@ public class Nodes {
      * transaction commits.
      */
     public List<Node> deactivate(List<Node> nodes, ApplicationTransaction transaction) {
+        if ( ! zone.environment().isProduction() || zone.system().isCd())
+            return deallocate(nodes, Agent.application, "Deactivated by application", transaction.nested());
+
         var stateless = NodeList.copyOf(nodes).stateless();
         var stateful  = NodeList.copyOf(nodes).stateful();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
         written.addAll(db.writeTo(Node.State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
         return written;
-
     }
 
     /**
