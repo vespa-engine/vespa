@@ -102,6 +102,14 @@ ServiceMapHistory & LocalRpcMonitorMap::history() {
     return _history;
 }
 
+bool LocalRpcMonitorMap::wouldConflict(const ServiceMapping &mapping) const {
+    auto iter = _map.find(mapping.name);
+    if (iter == _map.end()) {
+        return false; // no mapping, no conflict
+    }
+    return (iter->second.spec != mapping.spec);
+}
+
 void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
                                   std::unique_ptr<AddLocalCompletionHandler> inflight)
 {
