@@ -22,6 +22,7 @@ class CompactionStrategy;
 
 namespace search::tensor {
 
+class NearestNeighborIndexLoader;
 class NearestNeighborIndexSaver;
 
 /**
@@ -77,7 +78,13 @@ public:
      * and the caller ensures that an attribute read guard is held during the lifetime of the saver.
      */
     virtual std::unique_ptr<NearestNeighborIndexSaver> make_saver() const = 0;
-    virtual bool load(const fileutil::LoadedBuffer& buf) = 0;
+
+    /**
+     * Creates a loader that is used to load the index from the given buffer.
+     *
+     * This might throw vespalib::IoException.
+     */
+    virtual std::unique_ptr<NearestNeighborIndexLoader> make_loader(std::unique_ptr<fileutil::LoadedBuffer> buf) = 0;
 
     virtual std::vector<Neighbor> find_top_k(uint32_t k,
                                              vespalib::eval::TypedCells vector,

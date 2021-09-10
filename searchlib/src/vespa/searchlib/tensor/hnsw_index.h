@@ -183,7 +183,7 @@ public:
     void shrink_lid_space(uint32_t doc_id_limit) override;
 
     std::unique_ptr<NearestNeighborIndexSaver> make_saver() const override;
-    bool load(const fileutil::LoadedBuffer& buf) override;
+    std::unique_ptr<NearestNeighborIndexLoader> make_loader(std::unique_ptr<fileutil::LoadedBuffer> buf) override;
 
     std::vector<Neighbor> find_top_k(uint32_t k, TypedCells vector, uint32_t explore_k,
                                      double distance_threshold) const override;
