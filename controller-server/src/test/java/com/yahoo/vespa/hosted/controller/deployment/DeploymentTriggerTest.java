@@ -8,7 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Assert;
@@ -61,7 +61,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private DeploymentTester tester = new DeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testTriggerFailing() {
@@ -1110,15 +1110,16 @@ public class DeploymentTriggerTest {
         // System and staging tests both require unknown versions, and are broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
         app.runJob(productionCdUsCentral1)
-           .abortJob(systemTest)
-           .abortJob(stagingTest)
+           .jobAborted(systemTest)
+           .jobAborted(stagingTest)
            .runJob(systemTest)
            .runJob(stagingTest)
            .runJob(productionCdAwsUsEast1a);
 
         app.runJob(productionCdUsCentral1, cdPackage);
         app.submit(cdPackage);
-        app.runJob(systemTest);
+        app.jobAborted(systemTest)
+           .runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsCentral1, "user", false);
         app.runJob(productionCdUsCentral1)

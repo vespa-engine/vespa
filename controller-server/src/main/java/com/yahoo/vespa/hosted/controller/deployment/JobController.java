@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -22,13 +21,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -48,7 +47,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -369,7 +367,8 @@ public class JobController {
         List<Lock> locks = new ArrayList<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            for (Step step : report.allPrerequisites(run(id).get().steps().keySet()))
+            Run unlockedRun = run(id).get();
+            for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.add(curator.lock(id.application(), id.type(), step));
 
             locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
@@ -400,6 +399,20 @@ public class JobController {
                 metric.jobFinished(run.id().job(), finishedRun.status());
                 return finishedRun;
             });
+
+            DeploymentId deploymentId = new DeploymentId(unlockedRun.id().application(), unlockedRun.id().job().type().zone(controller.system()));
+            (unlockedRun.versions().targetApplication().isDeployedDirectly() ?
+                            Stream.of(unlockedRun.id().type()) :
+                            JobType.allIn(controller.system()).stream().filter(jobType -> !jobType.environment().isManuallyDeployed()))
+                    .flatMap(jobType -> controller.jobController().runs(unlockedRun.id().application(), jobType).values().stream())
+                    .mapToLong(run -> run.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
+                    .min()
+                    .ifPresent(oldestBuild -> {
+                        if (unlockedRun.versions().targetApplication().isDeployedDirectly())
+                            controller.applications().applicationStore().pruneDevDiffs(deploymentId, oldestBuild);
+                        else
+                            controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
+                    });
         }
         finally {
             for (Lock lock : locks)
@@ -425,12 +438,19 @@ public class JobController {
                                                 applicationPackage.compileVersion(),
                                                 applicationPackage.buildTime(),
                                                 sourceUrl,
-                                                revision.map(SourceRevision::commit)));
+                                                revision.map(SourceRevision::commit),
+                                                false));
+            byte[] diff = application.get().latestVersion()
+                    .map(v -> v.buildNumber().getAsLong())
+                    .flatMap(prevBuild -> controller.applications().applicationStore().find(id.tenant(), id.application(), prevBuild))
+                    .map(prevApplication -> ApplicationPackageDiff.diff(new ApplicationPackage(prevApplication), applicationPackage))
+                    .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
 
             controller.applications().applicationStore().put(id.tenant(),
                                                              id.application(),
                                                              version.get(),
-                                                             applicationPackage.zippedContent());
+                                                             applicationPackage.zippedContent(),
+                                                             diff);
             controller.applications().applicationStore().putTester(id.tenant(),
                                                                    id.application(),
                                                                    version.get(),
@@ -480,16 +500,26 @@ public class JobController {
             controller.applications().store(application);
         });
 
-        last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+        DeploymentId deploymentId = new DeploymentId(id, type.zone(controller.system()));
+        Optional<Run> lastRun = last(id, type);
+        lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+
+        long build = 1 + lastRun.map(run -> run.versions().targetApplication().buildNumber().orElse(0)).orElse(0L);
+        ApplicationVersion version = ApplicationVersion.from(Optional.empty(), build, Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), true);
+
+        byte[] diff = lastRun.map(run -> run.versions().targetApplication())
+                .map(prevVersion -> ApplicationPackageDiff.diff(new ApplicationPackage(controller.applications().applicationStore().get(deploymentId, prevVersion)), applicationPackage))
+                .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            controller.applications().applicationStore().putDev(id, type.zone(controller.system()), applicationPackage.zippedContent());
+            controller.applications().applicationStore().putDev(deploymentId, version, applicationPackage.zippedContent(), diff);
             start(id,
                   type,
                   new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                  .flatMap(controller.applications()::lastCompatibleVersion)
                                                                  .orElseGet(controller::readSystemVersion)),
-                               ApplicationVersion.unknown,
+                               version,
                                Optional.empty(),
                                Optional.empty()),
                   false,
@@ -558,7 +588,7 @@ public class JobController {
             application.get().productionDeployments().values().stream()
                        .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
-                       .filter(version -> ! version.isUnknown())
+                       .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);

@@ -1,5 +1,5 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.application;
+package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -38,15 +38,15 @@ public class ZipStreamReaderTest {
     public void test_size_limit() {
         Map<String, String> entries = Map.of("foo.xml", "foobar");
         try {
-            new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals, 1);
+            new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals, 1, true);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
 
         entries = Map.of("foo.xml", "foobar",
                          "foo.jar", "0".repeat(100) // File not extracted and thus not subject to size limit
         );
-        ZipStreamReader reader = new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals,10);
-        byte[] extracted = reader.entries().get(0).content();
+        ZipStreamReader reader = new ZipStreamReader(new ByteArrayInputStream(zip(entries)), "foo.xml"::equals, 10, true);
+        byte[] extracted = reader.entries().get(0).contentOrThrow();
         assertEquals("foobar", new String(extracted, StandardCharsets.UTF_8));
     }
 
@@ -65,7 +65,7 @@ public class ZipStreamReaderTest {
         );
         tests.forEach((name, expectException) -> {
             try {
-                new ZipStreamReader(new ByteArrayInputStream(zip(Map.of(name, "foo"))), name::equals, 1024);
+                new ZipStreamReader(new ByteArrayInputStream(zip(Map.of(name, "foo"))), name::equals, 1024, true);
                 assertFalse("Expected exception for '" + name + "'", expectException);
             } catch (IllegalArgumentException ignored) {
                 assertTrue("Unexpected exception for '" + name + "'", expectException);

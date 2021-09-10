@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -492,8 +492,8 @@ public class DeploymentContext {
         Run run = jobs.last(job)
                       .filter(r -> r.id().type() == job.type())
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
-        assertFalse(run.id() + " should not have failed yet", run.hasFailed());
-        assertFalse(run.id() + " should not have ended yet", run.hasEnded());
+        assertFalse(run.id() + " should not have failed yet: " + run, run.hasFailed());
+        assertFalse(run.id() + " should not have ended yet: " + run, run.hasEnded());
         return run;
     }
 

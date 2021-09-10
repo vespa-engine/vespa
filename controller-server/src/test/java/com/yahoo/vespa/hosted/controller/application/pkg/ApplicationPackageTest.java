@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.application;
+package com.yahoo.vespa.hosted.controller.application.pkg;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -109,10 +109,10 @@ public class ApplicationPackageTest {
     }
 
     private static Map<String, String> unzip(byte[] zip) {
-        return new ZipStreamReader(new ByteArrayInputStream(zip), __ -> true, 1 << 10)
+        return new ZipStreamReader(new ByteArrayInputStream(zip), __ -> true, 1 << 10, true)
                 .entries().stream()
                 .collect(Collectors.toMap(entry -> entry.zipEntry().getName(),
-                                          entry -> new String(entry.content(), UTF_8)));
+                                          entry -> new String(entry.contentOrThrow(), UTF_8)));
     }
 
 }

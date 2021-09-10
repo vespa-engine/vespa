@@ -1,10 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.time.Instant;
@@ -21,13 +19,19 @@ import java.util.Optional;
 public interface ApplicationStore {
 
     /** Returns the tenant application package of the given version. */
-    byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion);
+    byte[] get(DeploymentId deploymentId, ApplicationVersion applicationVersion);
+
+    /** Returns the application package diff, compared to the previous build, for the given tenant, application and build number */
+    Optional<byte[]> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber);
+
+    /** Removes diffs for packages before the given build number */
+    void pruneDiffs(TenantName tenantName, ApplicationName applicationName, long beforeBuildNumber);
 
     /** Find application package by given build number */
     Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber);
 
-    /** Stores the given tenant application package of the given version. */
-    void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage);
+    /** Stores the given tenant application package of the given version and diff since previous version. */
+    void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] diff);
 
     /** Removes applications older than the given version, for the given application, and returns whether something was removed. */
     boolean prune(TenantName tenant, ApplicationName application, ApplicationVersion olderThanVersion);
@@ -47,11 +51,14 @@ public interface ApplicationStore {
     /** Removes all tester packages for the given tester. */
     void removeAllTesters(TenantName tenant, ApplicationName application);
 
-    /** Stores the given application package as the development package for the given application and zone. */
-    void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage);
+    /** Returns the application package diff, compared to the previous build, for the given deployment and build number */
+    Optional<byte[]> getDevDiff(DeploymentId deploymentId, long buildNumber);
 
-    /** Returns the development package for the given application and zone. */
-    byte[] getDev(ApplicationId application, ZoneId zone);
+    /** Removes diffs for dev packages before the given build number */
+    void pruneDevDiffs(DeploymentId deploymentId, long beforeBuildNumber);
+
+    /** Stores the given application package as the development package for the given deployment and version and diff since previous version. */
+    void putDev(DeploymentId deploymentId, ApplicationVersion version, byte[] applicationPackage, byte[] diff);
 
     /** Stores the given application meta data with the current time as part of the path. */
     void putMeta(TenantName tenant, ApplicationName application, Instant now, byte[] metaZip);

@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -45,8 +44,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
@@ -332,11 +331,6 @@ public class ApplicationController {
         });
     }
 
-    /** Fetches the requested application package from the artifact store(s). */
-    public ApplicationPackage getApplicationPackage(ApplicationId id, ApplicationVersion version) {
-        return new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version));
-    }
-
     /** Returns given application with a new instance */
     public LockedApplication withNewInstance(LockedApplication application, ApplicationId instance) {
         if (instance.instance().isTester())
@@ -372,7 +366,7 @@ public class ApplicationController {
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
             ApplicationVersion revision = run.versions().sourceApplication().filter(__ -> deploySourceVersions).orElse(run.versions().targetApplication());
-            ApplicationPackage applicationPackage = getApplicationPackage(job.application(), zone, revision);
+            ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(new DeploymentId(job.application(), zone), revision));
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
@@ -826,11 +820,6 @@ public class ApplicationController {
     private QuotaUsage deploymentQuotaUsage(ZoneId zoneId, ApplicationId applicationId) {
         var application = configServer.nodeRepository().getApplication(zoneId, applicationId);
         return DeploymentQuotaCalculator.calculateQuotaUsage(application);
-    }
-
-    private ApplicationPackage getApplicationPackage(ApplicationId application, ZoneId zone, ApplicationVersion revision) {
-        return new ApplicationPackage(revision.isUnknown() ? applicationStore.getDev(application, zone)
-                                              : applicationStore.get(application.tenant(), application.application(), revision));
     }
 
     /*

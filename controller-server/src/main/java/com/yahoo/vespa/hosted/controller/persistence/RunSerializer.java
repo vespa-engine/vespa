@@ -89,6 +89,7 @@ class RunSerializer {
     private static final String branchField = "branch";
     private static final String commitField = "commit";
     private static final String authorEmailField = "authorEmail";
+    private static final String deployedDirectlyField = "deployedDirectly";
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
     private static final String sourceUrlField = "sourceUrl";
@@ -175,8 +176,12 @@ class RunSerializer {
         Optional<String> sourceUrl = SlimeUtils.optionalString(versionObject.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(versionObject.field(commitField));
 
+        // TODO (freva): Simplify once this has rolled out everywhere
+        Inspector deployedDirectlyInspector = versionObject.field(deployedDirectlyField);
+        boolean deployedDirectly = !deployedDirectlyInspector.valid() || deployedDirectlyInspector.asBool();
+
         return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
-                                      compileVersion, buildTime, sourceUrl, commit);
+                                      compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
     }
 
     // Don't change this — introduce a separate array instead.
@@ -259,6 +264,7 @@ class RunSerializer {
         applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
         applicationVersion.sourceUrl().ifPresent(url -> versionsObject.setString(sourceUrlField, url));
         applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
+        versionsObject.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
     }
 
     // Don't change this - introduce a separate array with new values if needed.

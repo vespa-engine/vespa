@@ -52,7 +52,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -299,6 +299,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .data(createApplicationDeployData(applicationPackageInstance1, false)),
                               new File("deployment-job-accepted-2.json"));
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser/job/dev-us-east-1/diff/1", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                (response) -> assertTrue(response.getBodyAsString(),
+                        response.getBodyAsString().contains("--- search-definitions/test.sd\n" +
+                                "@@ -1,0 +1,1 @@\n" +
+                                "+ search test { }\n")),
+                200);
 
         // DELETE a dev deployment is allowed under user instance for tenant admins
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser/environment/dev/region/us-east-1", DELETE)
@@ -756,6 +763,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService, 123)),
                               "{\"message\":\"Application package version: 1.0.2-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/diff/2", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              (response) -> assertTrue(response.getBodyAsString(),
+                                    response.getBodyAsString().contains("+ <deployment version='1.0' athenz-domain='domain1' athenz-service='service'>\n" +
+                                    "- <deployment version='1.0' >\n")),
+                              200);
 
         // GET last submitted application package
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR),

@@ -88,7 +88,8 @@ public class ApplicationSerializerTest {
                                                                         Optional.of(Version.fromString("1.2.3")),
                                                                         Optional.of(Instant.ofEpochMilli(666)),
                                                                         Optional.empty(),
-                                                                        Optional.of("best commit"));
+                                                                        Optional.of("best commit"),
+                                                                        true);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
