@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
@@ -77,8 +78,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -185,7 +184,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         VespaModelBuilder builder = new VespaDomBuilder();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
-        createGlobalRankProfiles(deployState);
+        createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
+                                 deployState.rankProfileRegistry(), deployState.getQueryProfiles());
         rankProfileList = new RankProfileList(null, // null search -> global
                                               rankingConstants,
                                               largeRankExpressions,
@@ -291,24 +291,18 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * Creates a rank profile not attached to any search definition, for each imported model in the application package,
      * and adds it to the given rank profile registry.
      */
-    private void createGlobalRankProfiles(DeployState deployState) {
-        var importedModels = deployState.getImportedModels().all();
-        DeployLogger deployLogger = deployState.getDeployLogger();
-        RankProfileRegistry rankProfileRegistry = deployState.rankProfileRegistry();
-        QueryProfiles queryProfiles = deployState.getQueryProfiles();
-        List <Future<ConvertedModel>> futureModels = new ArrayList<>();
-        if ( ! importedModels.isEmpty()) { // models/ directory is available
-            for (ImportedMlModel model : importedModels) {
+    private void createGlobalRankProfiles(DeployLogger deployLogger, ImportedMlModels importedModels,
+                                          RankProfileRegistry rankProfileRegistry,
+                                          QueryProfiles queryProfiles) {
+        if ( ! importedModels.all().isEmpty()) { // models/ directory is available
+            for (ImportedMlModel model : importedModels.all()) {
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 OnnxModels onnxModels = onnxModelInfoFromSource(model);
                 RankProfile profile = new RankProfile(model.name(), this, deployLogger, rankProfileRegistry, onnxModels);
                 rankProfileRegistry.add(profile);
-                futureModels.add(deployState.getExecutor().submit(() -> {
-                    ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
-                            model.name(), profile, queryProfiles.getRegistry(), model);
-                    convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
-                    return convertedModel;
-                }));
+                ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
+                                                                          model.name(), profile, queryProfiles.getRegistry(), model);
+                convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
             }
         }
         else { // generated and stored model information may be available instead
@@ -320,18 +314,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 OnnxModels onnxModels = onnxModelInfoFromStore(modelName);
                 RankProfile profile = new RankProfile(modelName, this, deployLogger, rankProfileRegistry, onnxModels);
                 rankProfileRegistry.add(profile);
-                futureModels.add(deployState.getExecutor().submit(() -> {
-                    ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
-                    convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
-                    return convertedModel;
-                }));
-            }
-        }
-        for (var futureConvertedModel : futureModels) {
-            try {
-                futureConvertedModel.get();
-            } catch (ExecutionException |InterruptedException e) {
-                throw new RuntimeException(e);
+                ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
+                convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
             }
         }
         new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);

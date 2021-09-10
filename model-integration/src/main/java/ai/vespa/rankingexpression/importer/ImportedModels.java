@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.rankingexpression.importer.configmodelview;
+package ai.vespa.rankingexpression.importer;
 
 import com.yahoo.path.Path;
 
@@ -11,31 +11,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * All models imported from the models/ directory in the application package.
- * If this is empty it may be due to either not having any models in the application package,
- * or this being created for a ZooKeeper application package, which does not have imported models.
- *
- * @author bratseth
- */
-public class ImportedMlModels {
+// TODO: Remove this class after November 2018
+public class ImportedModels {
 
     /** All imported models, indexed by their names */
-    private final Map<String, ImportedMlModel> importedModels;
-
-    /** Models that were not imported due to some error */
-    private final Map<String, String> skippedModels = new HashMap<>();
+    private final Map<String, ImportedModel> importedModels;
 
     /** Create a null imported models */
-    public ImportedMlModels() {
+    public ImportedModels() {
         importedModels = Collections.emptyMap();
     }
 
-    public ImportedMlModels(File modelsDirectory, Collection<MlModelImporter> importers) {
-        Map<String, ImportedMlModel> models = new HashMap<>();
+    public ImportedModels(File modelsDirectory, Collection<ModelImporter> importers) {
+        Map<String, ImportedModel> models = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, models, importers, skippedModels);
+        importRecursively(modelsDirectory, models, importers);
         importedModels = Collections.unmodifiableMap(models);
     }
 
@@ -47,47 +38,37 @@ public class ImportedMlModels {
      *                  models directory works
      * @return the model at this path or null if none
      */
-    public ImportedMlModel get(File modelPath) {
+    public ImportedModel get(File modelPath) {
         return importedModels.get(toName(modelPath));
     }
 
     /** Returns an immutable collection of all the imported models */
-    public Collection<ImportedMlModel> all() {
+    public Collection<ImportedModel> all() {
         return importedModels.values();
     }
 
-    public Map<String, String> getSkippedModels() {
-        return skippedModels;
-    }
-
     private static void importRecursively(File dir,
-                                          Map<String, ImportedMlModel> models,
-                                          Collection<MlModelImporter> importers,
-                                          Map<String, String> skippedModels) {
+                                          Map<String, ImportedModel> models,
+                                          Collection<ModelImporter> importers) {
         if ( ! dir.isDirectory()) return;
 
         Arrays.stream(dir.listFiles()).sorted().forEach(child -> {
-            Optional<MlModelImporter> importer = findImporterOf(child, importers);
+            Optional<ModelImporter> importer = findImporterOf(child, importers);
             if (importer.isPresent()) {
                 String name = toName(child);
-                ImportedMlModel existing = models.get(name);
+                ImportedModel existing = models.get(name);
                 if (existing != null)
                     throw new IllegalArgumentException("The models in " + child + " and " + existing.source() +
                                                        " both resolve to the model name '" + name + "'");
-                try {
-                    ImportedMlModel importedModel = importer.get().importModel(name, child);
-                    models.put(name, importedModel);
-                } catch (RuntimeException e) {
-                    skippedModels.put(name, e.getMessage());
-                }
+                models.put(name, importer.get().importModel(name, child));
             }
             else {
-                importRecursively(child, models, importers, skippedModels);
+                importRecursively(child, models, importers);
             }
         });
     }
 
-    private static Optional<MlModelImporter> findImporterOf(File path, Collection<MlModelImporter> importers) {
+    private static Optional<ModelImporter> findImporterOf(File path, Collection<ModelImporter> importers) {
         return importers.stream().filter(item -> item.canImport(path.toString())).findFirst();
     }
 
