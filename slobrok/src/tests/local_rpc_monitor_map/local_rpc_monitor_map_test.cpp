@@ -247,12 +247,12 @@ TEST_F(LocalRpcMonitorMapTest, local_add_unknown_comes_up) {
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, true)});
     map_log.expect({});
-    ASSERT_FALSE(state);
+    EXPECT_FALSE(state);
     map.up(mapping);
+    map_log.expect({MapCall::add(mapping)});
     ASSERT_TRUE(state);
     EXPECT_TRUE(state->ok());
     ASSERT_TRUE(handler_deleted);
-    map_log.expect({MapCall::add(mapping)});
 }
 
 TEST_F(LocalRpcMonitorMapTest, local_add_unknown_goes_down) {
@@ -262,8 +262,9 @@ TEST_F(LocalRpcMonitorMapTest, local_add_unknown_goes_down) {
     map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, true)});
     map_log.expect({});
-    ASSERT_FALSE(state);
+    EXPECT_FALSE(state);
     map.down(mapping);
+    map_log.expect({});
     ASSERT_TRUE(state);
     EXPECT_FALSE(state->ok());
     ASSERT_TRUE(handler_deleted);
@@ -275,6 +276,52 @@ TEST_F(LocalRpcMonitorMapTest, local_add_conflict) {
     add_mapping(mapping, true);
     map.addLocal(mapping_conflict, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
     monitor_log.expect({});
+    map_log.expect({});
+    ASSERT_TRUE(state);
+    EXPECT_TRUE(state->failed());
+    ASSERT_TRUE(handler_deleted);
+}
+
+TEST_F(LocalRpcMonitorMapTest, local_multi_add) {
+    std::unique_ptr<OkState> state1;
+    bool handler_deleted1;
+    std::unique_ptr<OkState> state2;
+    bool handler_deleted2;
+    map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state1, handler_deleted1));
+    monitor_log.expect({MonitorCall::start(mapping, true)});
+    map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state2, handler_deleted2));
+    monitor_log.expect({});
+    map_log.expect({});
+    EXPECT_FALSE(state1);
+    EXPECT_FALSE(state2);
+    map.up(mapping);
+    monitor_log.expect({});
+    map_log.expect({MapCall::add(mapping)});
+    ASSERT_TRUE(state1);
+    ASSERT_TRUE(state2);
+    EXPECT_TRUE(state1->ok());
+    EXPECT_TRUE(state2->ok());
+    ASSERT_TRUE(handler_deleted1);
+    ASSERT_TRUE(handler_deleted2);
+}
+
+TEST_F(LocalRpcMonitorMapTest, local_remove) {
+    add_mapping(mapping, true);
+    map.removeLocal(mapping);
+    monitor_log.expect({MonitorCall::stop(mapping), MonitorCall::start(mapping, false)});
+    map_log.expect({MapCall::remove(mapping)});
+    map.up(mapping); // timeout case (should normally not happen)
+    map_log.expect({MapCall::add(mapping)});
+}
+
+TEST_F(LocalRpcMonitorMapTest, local_add_local_remove) {
+    std::unique_ptr<OkState> state;
+    bool handler_deleted;
+    map.addLocal(mapping, std::make_unique<MyAddLocalHandler>(state, handler_deleted));
+    monitor_log.expect({MonitorCall::start(mapping, true)});
+    map_log.expect({});
+    map.removeLocal(mapping);
+    monitor_log.expect({MonitorCall::stop(mapping)});
     map_log.expect({});
     ASSERT_TRUE(state);
     EXPECT_TRUE(state->failed());
