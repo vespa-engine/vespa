@@ -65,9 +65,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public void pruneDiffs(TenantName tenantName, ApplicationName applicationName, long beforeBuildNumber) {
         Optional.ofNullable(diffs.get(appId(tenantName, applicationName)))
-                .ifPresent(map -> map.keySet().stream()
-                        .filter(buildNumber -> buildNumber < beforeBuildNumber)
-                        .forEach(map::remove));
+                .ifPresent(map -> map.keySet().removeIf(buildNumber -> buildNumber < beforeBuildNumber));
     }
 
     @Override
@@ -126,9 +124,7 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public void pruneDevDiffs(DeploymentId deploymentId, long beforeBuildNumber) {
         Optional.ofNullable(devDiffs.get(deploymentId))
-                .ifPresent(map -> map.keySet().stream()
-                        .filter(buildNumber -> buildNumber < beforeBuildNumber)
-                        .forEach(map::remove));
+                .ifPresent(map -> map.keySet().removeIf(buildNumber -> buildNumber < beforeBuildNumber));
     }
 
     @Override
