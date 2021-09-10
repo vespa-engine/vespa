@@ -1212,6 +1212,7 @@ TEST_F(LegacyBucketDBUpdaterTest, notify_change_with_pending_state_queues_bucket
     }
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, merge_reply) {
     enableDistributorClusterState("distributor:1 storage:3");
 
@@ -1254,6 +1255,7 @@ TEST_F(LegacyBucketDBUpdaterTest, merge_reply) {
               dumpBucket(document::BucketId(16, 1234)));
 };
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, merge_reply_node_down) {
     enableDistributorClusterState("distributor:1 storage:3");
     std::vector<api::MergeBucketCommand::Node> nodes;
@@ -1296,6 +1298,7 @@ TEST_F(LegacyBucketDBUpdaterTest, merge_reply_node_down) {
               dumpBucket(document::BucketId(16, 1234)));
 };
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
     enableDistributorClusterState("distributor:1 storage:3");
     std::vector<api::MergeBucketCommand::Node> nodes;
@@ -1338,7 +1341,7 @@ TEST_F(LegacyBucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
               dumpBucket(document::BucketId(16, 1234)));
 };
 
-
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, flush) {
     enableDistributorClusterState("distributor:1 storage:3");
     _sender.clear();
@@ -1417,6 +1420,7 @@ LegacyBucketDBUpdaterTest::getSentNodesDistributionChanged(
     return ost.str();
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_send_messages) {
     EXPECT_EQ(getNodeList({0, 1, 2}),
              getSentNodes("cluster:d",
@@ -1514,6 +1518,7 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_send_messages) {
                            "distributor:3 storage:3 .1.s:m"));
 };
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_receive) {
     DistributorMessageSenderStub sender;
 
@@ -1552,6 +1557,7 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_receive) {
     EXPECT_EQ(3, (int)pendingTransition.results().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_with_group_down) {
     std::string config(getDistConfig6Nodes4Groups());
     config += "distributor_auto_ownership_transfer_on_whole_group_down true\n";
@@ -1571,6 +1577,7 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_with_group_down) {
                            "distributor:6 .2.s:d storage:6"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_with_group_down_and_no_handover) {
     std::string config(getDistConfig6Nodes4Groups());
     config += "distributor_auto_ownership_transfer_on_whole_group_down false\n";
@@ -1581,6 +1588,8 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_with_group_down_and_no_h
               getSentNodes("distributor:6 storage:6",
                            "distributor:6 .2.s:d .3.s:d storage:6"));
 }
+
+namespace {
 
 void
 parseInputData(const std::string& data,
@@ -1656,6 +1665,8 @@ struct BucketDumper : public BucketDatabase::EntryProcessor
     }
 };
 
+}
+
 std::string
 LegacyBucketDBUpdaterTest::mergeBucketLists(
         const lib::ClusterState& oldState,
@@ -1724,6 +1735,7 @@ LegacyBucketDBUpdaterTest::mergeBucketLists(const std::string& existingData,
             includeBucketInfo);
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_merge) {
     // Simple initializing case - ask all nodes for info
     EXPECT_EQ(
@@ -1763,6 +1775,7 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_merge) {
               mergeBucketLists("", "0:5/0/0/0|1:5/2/3/4", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_merge_replica_changed) {
     // Node went from initializing to up and non-invalid bucket changed.
     EXPECT_EQ(
@@ -1775,6 +1788,7 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_merge_replica_changed) {
                     true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_current_state) {
     document::BucketId bucket(16, 3);
     lib::ClusterState stateBefore("distributor:1 storage:1");
@@ -1804,6 +1818,7 @@ TEST_F(LegacyBucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_cur
     EXPECT_EQ(std::string("NONEXISTING"), dumpBucket(bucket));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     document::BucketId bucket(16, 3);
     lib::ClusterState stateBefore("distributor:1 storage:1");
@@ -1831,6 +1846,7 @@ TEST_F(LegacyBucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_pen
     EXPECT_EQ(std::string("NONEXISTING"), dumpBucket(bucket));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 /*
  * If we get a distribution config change, it's important that cluster states that
  * arrive after this--but _before_ the pending cluster state has finished--must trigger
@@ -1880,6 +1896,7 @@ TEST_F(LegacyBucketDBUpdaterTest, cluster_state_always_sends_full_fetch_when_dis
     EXPECT_EQ(size_t(0), _sender.commands().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, changed_distribution_config_triggers_recovery_mode) {
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:6 storage:6"), messageCount(6), 20));
     _sender.clear();
@@ -1929,6 +1946,7 @@ std::unique_ptr<BucketDatabase::EntryProcessor> func_processor(Func&& f) {
 
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, changed_distribution_config_does_not_elide_bucket_db_pruning) {
     setDistribution(getDistConfig3Nodes1Group());
 
@@ -1948,6 +1966,7 @@ TEST_F(LegacyBucketDBUpdaterTest, changed_distribution_config_does_not_elide_buc
     }));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, newly_added_buckets_have_current_time_as_gc_timestamp) {
     getClock().setAbsoluteTimeInSeconds(101234);
     lib::ClusterState stateBefore("distributor:1 storage:1");
@@ -1963,6 +1982,7 @@ TEST_F(LegacyBucketDBUpdaterTest, newly_added_buckets_have_current_time_as_gc_ti
     EXPECT_EQ(uint32_t(101234), e->getLastGarbageCollectionTime());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, newer_mutations_not_overwritten_by_earlier_bucket_fetch) {
     {
         lib::ClusterState stateBefore("distributor:1 storage:1 .0.s:i");
@@ -2051,6 +2071,7 @@ LegacyBucketDBUpdaterTest::getSentNodesWithPreemption(
 
 using nodeVec = std::vector<uint16_t>;
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 /*
  * If we don't carry over the set of nodes that we need to fetch from,
  * a naive comparison between the active state and the new state will
@@ -2067,6 +2088,7 @@ TEST_F(LegacyBucketDBUpdaterTest, preempted_distributor_change_carries_node_set_
                                    "version:3 distributor:6 storage:6"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, preempted_storage_change_carries_node_set_over_to_next_state_fetch) {
     EXPECT_EQ(
         expandNodeVec({2, 3}),
@@ -2077,6 +2099,7 @@ TEST_F(LegacyBucketDBUpdaterTest, preempted_storage_change_carries_node_set_over
                 "version:3 distributor:6 storage:6"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, preempted_storage_node_down_must_be_re_fetched) {
     EXPECT_EQ(
         expandNodeVec({2}),
@@ -2087,6 +2110,7 @@ TEST_F(LegacyBucketDBUpdaterTest, preempted_storage_node_down_must_be_re_fetched
                 "version:3 distributor:6 storage:6"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, do_not_send_to_preempted_node_now_in_down_state) {
     EXPECT_EQ(
         nodeVec{},
@@ -2097,6 +2121,7 @@ TEST_F(LegacyBucketDBUpdaterTest, do_not_send_to_preempted_node_now_in_down_stat
                 "version:3 distributor:6 storage:6 .2.s:d")); // 2 down again.
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, doNotSendToPreemptedNodeNotPartOfNewState) {
     // Even though 100 nodes are preempted, not all of these should be part
     // of the request afterwards when only 6 are part of the state.
@@ -2109,6 +2134,7 @@ TEST_F(LegacyBucketDBUpdaterTest, doNotSendToPreemptedNodeNotPartOfNewState) {
                 "version:3 distributor:6 storage:6"));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, outdated_node_set_cleared_after_successful_state_completion) {
     lib::ClusterState stateBefore(
             "version:1 distributor:6 storage:6 .1.t:1234");
@@ -2123,6 +2149,7 @@ TEST_F(LegacyBucketDBUpdaterTest, outdated_node_set_cleared_after_successful_sta
     EXPECT_EQ(size_t(0), _sender.commands().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest (despite being disabled)
 // XXX test currently disabled since distribution config currently isn't used
 // at all in order to deduce the set of nodes to send to. This might not matter
 // in practice since it is assumed that the cluster state matching the new
@@ -2144,6 +2171,7 @@ TEST_F(LegacyBucketDBUpdaterTest, DISABLED_cluster_config_downsize_only_sends_to
     EXPECT_EQ((nodeVec{0, 1, 2}), getSendSet());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 /**
  * Test scenario where a cluster is downsized by removing a subset of the nodes
  * from the distribution configuration. The system must be able to deal with

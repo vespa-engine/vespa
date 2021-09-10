@@ -70,18 +70,6 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return posted_msgs.str();
     }
 
-    void tick_distributor_and_stripes_n_times(uint32_t n) {
-        for (uint32_t i = 0; i < n; ++i) {
-            tick(false);
-        }
-    }
-
-    void tick_top_level_distributor_n_times(uint32_t n) {
-        for (uint32_t i = 0; i < n; ++i) {
-            tick(true);
-        }
-    }
-
     StatusReporterDelegate& distributor_status_delegate() {
         return _distributor->_distributorStatusDelegate;
     }

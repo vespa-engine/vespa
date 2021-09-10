@@ -19,12 +19,14 @@ namespace distributor {
 
 class TopLevelDistributor;
 class DistributorBucketSpace;
+class DistributorBucketSpaceRepo;
 class DistributorMetricSet;
 class DistributorNodeContext;
 class DistributorStripe;
 class DistributorStripeComponent;
 class DistributorStripeOperationContext;
 class DistributorStripePool;
+class StripeAccessGuard;
 class IdealStateMetricSet;
 class Operation;
 class TopLevelBucketDBUpdater;
@@ -58,6 +60,12 @@ public:
     // As the above, but always inserts into default bucket space
     void add_nodes_to_stripe_bucket_db(const document::BucketId& id, const std::string& nodeStr);
 
+    // TODO STRIPE replace with BucketSpaceStateMap once legacy is gone
+    DistributorBucketSpaceRepo& top_level_bucket_space_repo() noexcept;
+    const DistributorBucketSpaceRepo& top_level_bucket_space_repo() const noexcept;
+
+    std::unique_ptr<StripeAccessGuard> acquire_stripe_guard();
+
     TopLevelBucketDBUpdater& bucket_db_updater();
     const IdealStateMetricSet& total_ideal_state_metrics() const;
     const DistributorMetricSet& total_distributor_metrics() const;
@@ -82,6 +90,11 @@ public:
     const BucketDatabase& stripe_bucket_database(uint16_t stripe_idx) const; // Implicit default space only
     const BucketDatabase& stripe_bucket_database(uint16_t stripe_idx, document::BucketSpace space) const;
     [[nodiscard]] bool all_distributor_stripes_are_in_recovery_mode() const;
+
+    void tick_distributor_and_stripes_n_times(uint32_t n);
+    void tick_top_level_distributor_n_times(uint32_t n);
+
+    void complete_recovery_mode_on_all_stripes();
 
     void setup_distributor(int redundancy,
                            int node_count,

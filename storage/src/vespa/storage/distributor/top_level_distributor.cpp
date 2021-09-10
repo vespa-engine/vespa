@@ -58,6 +58,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
                                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
       framework::StatusReporter("distributor", "Distributor"),
+      _node_identity(node_identity),
       _comp_reg(compReg),
       _use_legacy_mode(num_distributor_stripes == 0),
       _metrics(std::make_shared<DistributorMetricSet>()),

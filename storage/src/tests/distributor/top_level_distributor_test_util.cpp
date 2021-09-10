@@ -265,6 +265,25 @@ TopLevelDistributorTestUtil::get_bucket(const document::BucketId& bId) const
     return stripe_bucket_database(stripe_index_of_bucket(bId)).get(bId);
 }
 
+DistributorBucketSpaceRepo&
+TopLevelDistributorTestUtil::top_level_bucket_space_repo() noexcept
+{
+    return _distributor->_component.bucket_space_repo();
+}
+
+const DistributorBucketSpaceRepo&
+TopLevelDistributorTestUtil::top_level_bucket_space_repo() const noexcept
+{
+    return _distributor->_component.bucket_space_repo();
+}
+
+std::unique_ptr<StripeAccessGuard>
+TopLevelDistributorTestUtil::acquire_stripe_guard()
+{
+    // Note: this won't actually interact with any threads, as the pool is running in single-threaded test mode.
+    return _distributor->_stripe_accessor->rendezvous_and_hold_all();
+}
+
 TopLevelBucketDBUpdater&
 TopLevelDistributorTestUtil::bucket_db_updater() {
     return *_distributor->_bucket_db_updater;
@@ -428,6 +447,30 @@ TopLevelDistributorTestUtil::trigger_distribution_change(std::shared_ptr<lib::Di
     _node->getComponentRegister().setDistribution(std::move(distr));
     _distributor->storageDistributionChanged();
     _distributor->enableNextDistribution();
+}
+
+void
+TopLevelDistributorTestUtil::tick_distributor_and_stripes_n_times(uint32_t n)
+{
+    for (uint32_t i = 0; i < n; ++i) {
+        tick(false);
+    }
+}
+
+void
+TopLevelDistributorTestUtil::tick_top_level_distributor_n_times(uint32_t n)
+{
+    for (uint32_t i = 0; i < n; ++i) {
+        tick(true);
+    }
+}
+
+void
+TopLevelDistributorTestUtil::complete_recovery_mode_on_all_stripes()
+{
+    for (auto* s : distributor_stripes()) {
+        s->scanAllBuckets();
+    }
 }
 
 }
