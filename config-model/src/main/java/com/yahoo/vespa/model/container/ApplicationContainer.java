@@ -35,6 +35,7 @@ public final class ApplicationContainer extends Container implements
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.SessionCache"));
+        addComponent(new SimpleComponent("com.yahoo.container.jdisc.SystemInfoProvider"));
     }
 
     @Override
