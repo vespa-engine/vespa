@@ -18,7 +18,7 @@ var (
 	// TODO: add timeout flag
 	// TODO: add flag to show http request made
 	rootCmd = &cobra.Command{
-		Use:   "vespa <command>",
+		Use:   "vespa command-name",
 		Short: "The command-line tool for Vespa.ai",
 		Long: `The command-line tool for Vespa.ai.
 
