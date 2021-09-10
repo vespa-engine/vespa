@@ -11,6 +11,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.RequestHandler;
@@ -194,5 +195,8 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
 
     @Override
     public String getRequestDefMd5() { return ConfigUtils.getDefMd5(getDefContent().asList()); }
+
+    @Override
+    public PayloadChecksums configPayloadChecksums() { return PayloadChecksums.empty(); }
 
 }

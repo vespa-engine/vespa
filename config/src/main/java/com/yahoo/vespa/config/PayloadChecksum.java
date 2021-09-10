@@ -1,9 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
+import com.yahoo.text.AbstractUtf8Array;
+import com.yahoo.vespa.config.protocol.Payload;
+import com.yahoo.vespa.config.util.ConfigUtils;
+
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Checksums of config definition payload or config payload,
@@ -26,6 +33,24 @@ public class PayloadChecksum {
     public static PayloadChecksum empty(Type type) {
         return new PayloadChecksum("", type);
     }
+
+    public static PayloadChecksum fromPayload(Payload payload, Type type) {
+        switch (type) {
+            case MD5: return fromMd5Data(payload.getData());
+            case XXHASH64: return fromXxhash64Data(payload.getData());
+            default: throw new IllegalArgumentException("Unknown type " + type);
+        }
+    }
+
+    private static PayloadChecksum fromMd5Data(AbstractUtf8Array data) {
+        return new PayloadChecksum(ConfigUtils.getMd5(data), MD5);
+    }
+
+    private static PayloadChecksum fromXxhash64Data(AbstractUtf8Array data) {
+        return new PayloadChecksum(ConfigUtils.getXxhash64(data), XXHASH64);
+    }
+
+    public boolean isEmpty() { return checksum.isEmpty(); }
 
     public String asString() { return checksum; }
 
