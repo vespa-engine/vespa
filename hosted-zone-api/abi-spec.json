@@ -19,6 +19,20 @@
       "public static final enum ai.vespa.cloud.Environment prod"
     ]
   },
+  "ai.vespa.cloud.Node": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String id()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
   "ai.vespa.cloud.SystemInfo": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -26,8 +40,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(ai.vespa.cloud.Zone)",
-      "public ai.vespa.cloud.Zone zone()"
+      "public void <init>(ai.vespa.cloud.Zone, ai.vespa.cloud.Node)",
+      "public ai.vespa.cloud.Zone zone()",
+      "public ai.vespa.cloud.Node node()"
     ],
     "fields": []
   },
