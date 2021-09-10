@@ -1,0 +1,23 @@
+{
+  "endpoints": [
+    {
+      "endpoint": "default",
+      "dns": "a1--t1.global.vespa.oath.cloud",
+      "routingMethod": "shared",
+      "cluster": "default",
+      "scope": "global",
+      "zones": [
+        {
+          "zone": "prod.us-east-3",
+          "status": "in",
+          "reason": ""
+        },
+        {
+          "zone": "prod.us-west-1",
+          "status": "in",
+          "reason": ""
+        }
+      ]
+    }
+  ]
+}

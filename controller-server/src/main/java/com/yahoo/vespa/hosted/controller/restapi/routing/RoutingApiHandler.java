@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
@@ -85,9 +86,36 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}")) return application(path, request);
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path, request);
         if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deployment(path);
+        if (path.matches("/routing/v1/status/tenant/{tenant}/application/{application}/instance/{instance}/endpoint")) return endpoints(path);
         if (path.matches("/routing/v1/status/environment")) return environment(request);
         if (path.matches("/routing/v1/status/environment/{environment}/region/{region}")) return zone(path);
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse endpoints(Path path) {
+        var instanceId = instanceFrom(path);
+        var endpoints = controller.routing().endpointsOf(instanceId);
+        var zoneStatus = endpoints.asList().stream()
+                .flatMap(e -> e.zones().stream())
+                .distinct()
+                .collect(Collectors.toMap(
+                        zone -> zone,
+                        zone -> controller.routing().globalRotationStatus(new DeploymentId(instanceId, zone))
+                ));
+
+        var slime = new Slime();
+        var root = slime.setObject();
+        var endpointsRoot = root.setArray("endpoints");
+        endpoints.forEach(endpoint -> {
+            var endpointRoot = endpointsRoot.addObject();
+            endpointToSlime(endpointRoot, endpoint);
+            var zonesRoot = endpointRoot.setArray("zones");
+            zoneStatus.forEach((zone, status) -> {
+                endpointStatusToSlime(zonesRoot.addObject(), zone, status.get(endpoint));
+            });
+        });
+
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse environment(HttpRequest request) {
@@ -302,6 +330,20 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         object.setString("status", asString(globalRouting.status()));
         object.setString("agent", asString(globalRouting.agent()));
         object.setLong("changedAt", globalRouting.changedAt().toEpochMilli());
+    }
+
+    private static void endpointToSlime(Cursor object, Endpoint endpoint) {
+        object.setString("endpoint", endpoint.name());
+        object.setString("dns", endpoint.dnsName());
+        object.setString("routingMethod", endpoint.routingMethod().name());
+        object.setString("cluster", endpoint.cluster().value());
+        object.setString("scope", endpoint.scope().name());
+    }
+
+    private static void endpointStatusToSlime(Cursor object, ZoneId zone, EndpointStatus status) {
+        object.setString("zone", zone.value());
+        object.setString("status", status.getStatus().name());
+        object.setString("reason", status.getReason());
     }
 
     private TenantName tenantFrom(Path path) {
