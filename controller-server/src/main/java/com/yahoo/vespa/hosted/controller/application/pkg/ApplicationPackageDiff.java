@@ -60,11 +60,11 @@ public class ApplicationPackageDiff {
         if (leftContent.isPresent() && rightContent.isPresent() && Arrays.equals(leftContent.get(), rightContent.get()))
             return Optional.empty();
 
-        if (left.map(entry -> entry.content().isEmpty()).orElse(false) || right.map(entry -> entry.content().isEmpty()).orElse(false))
+        if (Stream.of(left, right).flatMap(Optional::stream).anyMatch(entry -> entry.content().isEmpty()))
             return Optional.of(String.format("Diff skipped: File too large (%s -> %s)\n",
                     left.map(e -> e.size() + "B").orElse("new file"), right.map(e -> e.size() + "B").orElse("file deleted")));
 
-        if (leftContent.map(c -> isBinary(c)).or(() -> rightContent.map(c -> isBinary(c))).orElse(false))
+        if (Stream.of(leftContent, rightContent).flatMap(Optional::stream).anyMatch(c -> isBinary(c)))
             return Optional.of(String.format("Diff skipped: File is binary (%s -> %s)\n",
                     left.map(e -> e.size() + "B").orElse("new file"), right.map(e -> e.size() + "B").orElse("file deleted")));
 
