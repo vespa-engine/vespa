@@ -103,9 +103,8 @@ public:
         return vector_writer.output;
     }
     void load_copy(std::vector<char> data) {
-        HnswIndexLoader loader(copy);
-        LoadedBuffer buffer(&data[0], data.size());
-        loader.load(buffer);
+        HnswIndexLoader loader(copy, std::make_unique<LoadedBuffer>(&data[0], data.size()));
+        while (loader.load_next()) {}
     }
 
     void expect_copy_as_populated() const {

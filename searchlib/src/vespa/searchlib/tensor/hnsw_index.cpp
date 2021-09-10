@@ -1,16 +1,17 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "bitvector_visited_tracker.h"
 #include "distance_function.h"
+#include "hash_set_visited_tracker.h"
 #include "hnsw_index.h"
 #include "hnsw_index_loader.h"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
-#include "bitvector_visited_tracker.h"
-#include "hash_set_visited_tracker.h"
 #include "reusable_set_visited_tracker.h"
 #include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
+#include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -694,12 +695,11 @@ HnswIndex::make_saver() const
     return std::make_unique<HnswIndexSaver>(_graph);
 }
 
-bool
-HnswIndex::load(const fileutil::LoadedBuffer& buf)
+std::unique_ptr<NearestNeighborIndexLoader>
+HnswIndex::make_loader(std::unique_ptr<fileutil::LoadedBuffer> buf)
 {
     assert(get_entry_docid() == 0); // cannot load after index has data
-    HnswIndexLoader loader(_graph);
-    return loader.load(buf);
+    return std::make_unique<HnswIndexLoader>(_graph, std::move(buf));
 }
 
 struct NeighborsByDocId {

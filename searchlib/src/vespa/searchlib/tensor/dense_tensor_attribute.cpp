@@ -3,6 +3,7 @@
 #include "dense_tensor_attribute.h"
 #include "dense_tensor_attribute_saver.h"
 #include "nearest_neighbor_index.h"
+#include "nearest_neighbor_index_loader.h"
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/eval/eval/value.h>
@@ -10,10 +11,11 @@
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -29,6 +31,7 @@ namespace search::tensor {
 namespace {
 
 constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
+constexpr uint32_t LOAD_COMMIT_INTERVAL = 256;
 const vespalib::string tensorTypeTag("tensortype");
 
 class BlobSequenceReader : public ReaderBase
@@ -266,7 +269,7 @@ private:
         _attr.setCommittedDocIdLimit(std::max(_attr.getCommittedDocIdLimit(), lid + 1));
         _attr._index->complete_add_document(lid, std::move(prepared));
         --_pending;
-        if ((lid % 256) == 0) {
+        if ((lid % LOAD_COMMIT_INTERVAL) == 0) {
             _attr.commit();
         };
     }
@@ -319,7 +322,7 @@ public:
         // This ensures that get_vector() (via getTensor()) is able to find the newly added tensor.
         _attr.setCommittedDocIdLimit(lid + 1);
         _attr._index->add_document(lid);
-        if ((lid % 256) == 0) {
+        if ((lid % LOAD_COMMIT_INTERVAL) == 0) {
             _attr.commit();
         }
     }
@@ -375,7 +378,17 @@ DenseTensorAttribute::onLoad(vespalib::Executor *executor)
     setCommittedDocIdLimit(numDocs);
     if (_index && use_index_file) {
         auto buffer = LoadUtils::loadFile(*this, DenseTensorAttributeSaver::index_file_suffix());
-        if (!_index->load(*buffer)) {
+        try {
+            auto index_loader = _index->make_loader(std::move(buffer));
+            size_t cnt = 0;
+            while (index_loader->load_next()) {
+                if ((++cnt % LOAD_COMMIT_INTERVAL) == 0) {
+                    commit();
+                }
+            }
+        } catch (const vespalib::IoException& ex) {
+            LOG(error, "IoException while loading nearest neighbor index for tensor attribute '%s': %s",
+                getName().c_str(), ex.what());
             return false;
         }
     }
