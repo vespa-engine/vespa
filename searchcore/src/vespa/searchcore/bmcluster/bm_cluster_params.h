@@ -54,6 +54,7 @@ public:
     void set_enable_distributor(bool value) { _enable_distributor = value; }
     void set_enable_service_layer(bool value) { _enable_service_layer = value; }
     void set_indexing_sequencer(vespalib::stringref sequencer) { _indexing_sequencer = sequencer; }
+    void set_num_nodes(uint32_t value) { _num_nodes = value; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_rpc_events_before_wakeup(uint32_t value) { _rpc_events_before_wakeup = value; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }

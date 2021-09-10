@@ -428,6 +428,7 @@ App::get_options()
         { "get-passes", 1, nullptr, 0 },
         { "indexing-sequencer", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
+        { "nodes", 1, nullptr, 0 },
         { "put-passes", 1, nullptr, 0 },
         { "remove-passes", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
@@ -452,6 +453,7 @@ App::get_options()
         LONGOPT_GET_PASSES,
         LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_MAX_PENDING,
+        LONGOPT_NODES,
         LONGOPT_PUT_PASSES,
         LONGOPT_REMOVE_PASSES,
         LONGOPT_RESPONSE_THREADS,
@@ -498,6 +500,9 @@ App::get_options()
                 break;
             case LONGOPT_MAX_PENDING:
                 _bm_params.set_max_pending(atoi(opt_argument));
+                break;
+            case LONGOPT_NODES:
+                _bm_params.set_num_nodes(atoi(opt_argument));
                 break;
             case LONGOPT_PUT_PASSES:
                 _bm_params.set_put_passes(atoi(opt_argument));

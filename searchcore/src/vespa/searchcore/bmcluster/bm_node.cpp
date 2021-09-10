@@ -146,6 +146,8 @@ int port_number(int base_port, PortBias bias)
     return base_port + static_cast<int>(bias);
 }
 
+storage::spi::Context context(storage::spi::Priority(0), 0);
+
 }
 
 std::shared_ptr<AttributesConfig> make_attributes_config() {
@@ -277,7 +279,7 @@ struct StorageConfigSet
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
 
-    StorageConfigSet(bool distributor, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+    StorageConfigSet(const vespalib::string &base_dir, unsigned int node_idx, bool distributor, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
                      int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
         : config_id(config_id_in),
           documenttypes(documenttypes_in),
@@ -299,9 +301,11 @@ struct StorageConfigSet
             {
                 StorDistributionConfigBuilder::Group group;
                 {
-                    StorDistributionConfigBuilder::Group::Nodes node;
-                    node.index = 0;
-                    group.nodes.push_back(std::move(node));
+                    for (unsigned int i = 0; i < params.get_num_nodes(); ++i) {
+                        StorDistributionConfigBuilder::Group::Nodes node;
+                        node.index = i;
+                        group.nodes.push_back(std::move(node));
+                    }
                 }
                 group.index = "invalid";
                 group.name = "invalid";
@@ -312,12 +316,13 @@ struct StorageConfigSet
             dc.redundancy = 1;
             dc.readyCopies = 1;
         }
+        stor_server.nodeIndex = node_idx;
         stor_server.isDistributor = distributor;
         stor_server.contentNodeBucketDbStripeBits = params.get_bucket_db_stripe_bits();
         if (distributor) {
-            stor_server.rootFolder = "distributor";
+            stor_server.rootFolder = base_dir + "/distributor";
         } else {
-            stor_server.rootFolder = "storage";
+            stor_server.rootFolder = base_dir + "/storage";
         }
         make_slobroks_config(slobroks, slobrok_port);
         stor_communicationmanager.rpc.numNetworkThreads = params.get_rpc_network_threads();
@@ -359,9 +364,9 @@ struct ServiceLayerConfigSet : public StorageConfigSet
     StorBucketInitConfigBuilder   stor_bucket_init;
     StorVisitorConfigBuilder      stor_visitor;
 
-    ServiceLayerConfigSet(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+    ServiceLayerConfigSet(const vespalib::string& base_dir, unsigned int node_idx, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
                          int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
-        : StorageConfigSet(false, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
+        : StorageConfigSet(base_dir, node_idx, false, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           persistence(),
           stor_filestor(),
           stor_bucket_init(),
@@ -390,9 +395,9 @@ struct DistributorConfigSet : public StorageConfigSet
     StorDistributormanagerConfigBuilder stor_distributormanager;
     StorVisitordispatcherConfigBuilder  stor_visitordispatcher;
 
-    DistributorConfigSet(const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+    DistributorConfigSet(const vespalib::string& base_dir, unsigned int node_idx, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
                          int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
-        : StorageConfigSet(true, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
+        : StorageConfigSet(base_dir, node_idx, true, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           stor_distributormanager(),
           stor_visitordispatcher()
     {
@@ -416,13 +421,14 @@ BmNode::~BmNode() = default;
 
 class MyBmNode : public BmNode
 {
+    BmCluster&                                 _cluster;
     std::shared_ptr<DocumenttypesConfig>       _document_types;
     std::shared_ptr<const DocumentTypeRepo>    _repo;
     proton::DocTypeName                        _doc_type_name;
     std::shared_ptr<DocumentDBConfig>          _document_db_config;
     vespalib::string                           _base_dir;
     search::index::DummyFileHeaderContext      _file_header_context;
-    int                                        _node_idx;
+    unsigned int                               _node_idx;
     int                                        _tls_listen_port;
     int                                        _slobrok_port;
     int                                        _service_layer_mbus_port;
@@ -459,25 +465,26 @@ class MyBmNode : public BmNode
 
     void create_document_db(const BmClusterParams&  params);
 public:
-    MyBmNode(const vespalib::string &base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
+    MyBmNode(const vespalib::string &base_dir, int base_port, unsigned int node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
     ~MyBmNode() override;
     void initialize_persistence_provider() override;
-    std::unique_ptr<SpiBmFeedHandler> make_create_bucket_feed_handler(bool skip_get_spi_bucket_info) override;
+    void create_bucket(const document::Bucket& bucket) override;
     void start_service_layer(const BmClusterParams& params) override;
     void wait_service_layer() override;
     void start_distributor(const BmClusterParams& params) override;
-    void create_feed_handler(const BmClusterParams& params, BmCluster& cluster) override;
+    void create_feed_handler(const BmClusterParams& params) override;
     void shutdown_feed_handler() override;
     void shutdown_distributor() override;
     void shutdown_service_layer() override;
-    void wait_service_layer_slobrok(BmCluster& cluster) override;
-    void wait_distributor_slobrok(BmCluster& cluster) override;
+    void wait_service_layer_slobrok() override;
+    void wait_distributor_slobrok() override;
     IBmFeedHandler* get_feed_handler() override;
     PersistenceProvider* get_persistence_provider() override;
 };
 
-MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, unsigned int node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
     : BmNode(),
+      _cluster(cluster),
       _document_types(std::move(document_types)),
       _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
       _doc_type_name("test"),
@@ -508,8 +515,8 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, int node_idx
       _disk_mem_usage_notifier(),
       _persistence_engine(),
       _field_set_repo(std::make_unique<const document::FieldSetRepo>(*_repo)),
-      _service_layer_config("bm-servicelayer", *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params),
-      _distributor_config("bm-distributor", *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params),
+      _service_layer_config(_base_dir, _node_idx, "bm-servicelayer", *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params),
+      _distributor_config(_base_dir, _node_idx, "bm-distributor", *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params),
       _config_set(),
       _config_context(std::make_shared<config::ConfigContext>(_config_set)),
       _feed_handler(),
@@ -583,10 +590,10 @@ MyBmNode::initialize_persistence_provider()
     get_persistence_provider()->initialize();
 }
 
-std::unique_ptr<SpiBmFeedHandler>
-MyBmNode::make_create_bucket_feed_handler(bool skip_get_spi_bucket_info)
+void
+MyBmNode::create_bucket(const document::Bucket& bucket)
 {
-    return std::make_unique<SpiBmFeedHandler>(*_persistence_engine, *_field_set_repo, skip_get_spi_bucket_info);
+    get_persistence_provider()->createBucket(storage::spi::Bucket(bucket), context);
 }
 
 void
@@ -629,31 +636,31 @@ MyBmNode::start_distributor(const BmClusterParams& params)
 }
 
 void
-MyBmNode::create_feed_handler(const BmClusterParams& params, BmCluster& cluster)
+MyBmNode::create_feed_handler(const BmClusterParams& params)
 {
     StorageApiRpcService::Params rpc_params;
     // This is the same compression config as the default in stor-communicationmanager.def.
     rpc_params.compression_config = CompressionConfig(CompressionConfig::Type::LZ4, 3, 90, 1024);
     rpc_params.num_rpc_targets_per_node = params.get_rpc_targets_per_node();
     if (params.get_use_document_api()) {
-        _feed_handler = std::make_unique<DocumentApiMessageBusBmFeedHandler>(cluster.get_message_bus());
+        _feed_handler = std::make_unique<DocumentApiMessageBusBmFeedHandler>(_cluster.get_message_bus());
     } else if (params.get_enable_distributor()) {
         if (params.get_use_storage_chain()) {
             assert(_distributor_chain_context);
             _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_distributor_chain_context, true);
         } else if (params.get_use_message_bus()) {
-            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(cluster.get_message_bus(), true);
+            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(_cluster.get_message_bus(), true);
         } else {
-            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(cluster.get_rpc_client(), _repo, rpc_params, true);
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(_cluster.get_rpc_client(), _repo, rpc_params, true);
         }
     } else if (params.needs_service_layer()) {
         if (params.get_use_storage_chain()) {
             assert(_service_layer_chain_context);
             _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(_service_layer_chain_context, false);
         } else if (params.get_use_message_bus()) {
-            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(cluster.get_message_bus(), false);
+            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(_cluster.get_message_bus(), false);
         } else {
-            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(cluster.get_rpc_client(), _repo, rpc_params, false);
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(_cluster.get_rpc_client(), _repo, rpc_params, false);
         }
     }
 }
@@ -697,23 +704,23 @@ MyBmNode::get_persistence_provider()
 }
 
 void
-MyBmNode::wait_service_layer_slobrok(BmCluster& cluster)
+MyBmNode::wait_service_layer_slobrok()
 {
     vespalib::asciistream s;
     s << "storage/cluster.storage/storage/" << _node_idx;
-    cluster.wait_slobrok(s.str());
+    _cluster.wait_slobrok(s.str());
     s << "/default";
-    cluster.wait_slobrok(s.str());
+    _cluster.wait_slobrok(s.str());
 }
     
 void
-MyBmNode::wait_distributor_slobrok(BmCluster& cluster)
+MyBmNode::wait_distributor_slobrok()
 {
     vespalib::asciistream s;
     s << "storage/cluster.storage/distributor/" << _node_idx;
-    cluster.wait_slobrok(s.str());
+    _cluster.wait_slobrok(s.str());
     s << "/default";
-    cluster.wait_slobrok(s.str());
+    _cluster.wait_slobrok(s.str());
 }
 
 unsigned int
@@ -723,9 +730,9 @@ BmNode::num_ports()
 }
 
 std::unique_ptr<BmNode>
-BmNode::create(const vespalib::string& base_dir, int base_port, int node_idx, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+BmNode::create(const vespalib::string& base_dir, int base_port, unsigned int node_idx, BmCluster &cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
 {
-    return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, params, std::move(document_types), slobrok_port);
+    return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, cluster, params, std::move(document_types), slobrok_port);
 }
 
 }
