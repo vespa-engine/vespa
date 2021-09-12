@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.configmodelview;
 
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.path.Path;
 
 import java.io.File;
@@ -33,6 +34,12 @@ public class ImportedMlModels {
     /** Create a null imported models */
     public ImportedMlModels() {
         importedModels = Collections.emptyMap();
+    }
+
+    /** Will disappear shortly */
+    @Deprecated
+    public ImportedMlModels(File modelsDirectory, Collection<MlModelImporter> importers) {
+        this(modelsDirectory, new InThreadExecutorService(), importers);
     }
 
     public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers) {
