@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.configmodelview;
 
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.path.Path;
 
 import java.io.File;
@@ -10,6 +11,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * All models imported from the models/ directory in the application package.
@@ -24,18 +29,35 @@ public class ImportedMlModels {
     private final Map<String, ImportedMlModel> importedModels;
 
     /** Models that were not imported due to some error */
-    private final Map<String, String> skippedModels = new HashMap<>();
+    private final Map<String, String> skippedModels = new ConcurrentHashMap<>();
 
     /** Create a null imported models */
     public ImportedMlModels() {
         importedModels = Collections.emptyMap();
     }
 
+    /** Will disappear shortly */
+    @Deprecated
     public ImportedMlModels(File modelsDirectory, Collection<MlModelImporter> importers) {
-        Map<String, ImportedMlModel> models = new HashMap<>();
+        this(modelsDirectory, new InThreadExecutorService(), importers);
+    }
+
+    public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers) {
+        Map<String, Future<ImportedMlModel>> futureModels = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, models, importers, skippedModels);
+        importRecursively(modelsDirectory, executor, futureModels, importers, skippedModels);
+        Map<String, ImportedMlModel> models = new HashMap<>();
+        futureModels.forEach((name, future) -> {
+            try {
+                ImportedMlModel model = future.get();
+                if (model != null) {
+                    models.put(name, model);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                skippedModels.put(name, e.getMessage());
+            }
+        });
         importedModels = Collections.unmodifiableMap(models);
     }
 
@@ -61,7 +83,8 @@ public class ImportedMlModels {
     }
 
     private static void importRecursively(File dir,
-                                          Map<String, ImportedMlModel> models,
+                                          ExecutorService executor,
+                                          Map<String, Future<ImportedMlModel>> models,
                                           Collection<MlModelImporter> importers,
                                           Map<String, String> skippedModels) {
         if ( ! dir.isDirectory()) return;
@@ -70,19 +93,26 @@ public class ImportedMlModels {
             Optional<MlModelImporter> importer = findImporterOf(child, importers);
             if (importer.isPresent()) {
                 String name = toName(child);
-                ImportedMlModel existing = models.get(name);
-                if (existing != null)
-                    throw new IllegalArgumentException("The models in " + child + " and " + existing.source() +
-                                                       " both resolve to the model name '" + name + "'");
-                try {
-                    ImportedMlModel importedModel = importer.get().importModel(name, child);
-                    models.put(name, importedModel);
-                } catch (RuntimeException e) {
-                    skippedModels.put(name, e.getMessage());
+                Future<ImportedMlModel> existing = models.get(name);
+                if (existing != null) {
+                    try {
+                        throw new IllegalArgumentException("The models in " + child + " and " + existing.get().source() +
+                                " both resolve to the model name '" + name + "'");
+                    } catch (InterruptedException | ExecutionException e) {}
                 }
+
+                Future<ImportedMlModel> future = executor.submit(() -> {
+                    try {
+                        return importer.get().importModel(name, child);
+                    } catch (RuntimeException e) {
+                        skippedModels.put(name, e.getMessage());
+                    }
+                    return null;
+                });
+                models.put(name, future);
             }
             else {
-                importRecursively(child, models, importers, skippedModels);
+                importRecursively(child, executor, models, importers, skippedModels);
             }
         });
     }

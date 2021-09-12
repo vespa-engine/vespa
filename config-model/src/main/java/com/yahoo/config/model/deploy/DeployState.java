@@ -145,7 +145,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.importedModels = importMlModels(applicationPackage, modelImporters, deployLogger);
+        this.importedModels = importMlModels(applicationPackage, modelImporters, deployLogger, executor);
 
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                                      .orElse(ValidationOverrides.empty);
@@ -211,9 +211,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     private static ImportedMlModels importMlModels(ApplicationPackage applicationPackage,
                                                    Collection<MlModelImporter> modelImporters,
-                                                   DeployLogger deployLogger) {
+                                                   DeployLogger deployLogger,
+                                                   ExecutorService executor) {
         File importFrom = applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR);
-        ImportedMlModels importedModels = new ImportedMlModels(importFrom, modelImporters);
+        ImportedMlModels importedModels = new ImportedMlModels(importFrom, executor, modelImporters);
         for (var entry : importedModels.getSkippedModels().entrySet()) {
             deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
                     "occurred during import. Error: " + entry.getValue());
