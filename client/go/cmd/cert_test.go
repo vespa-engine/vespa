@@ -11,20 +11,23 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 func TestCert(t *testing.T) {
-	tmpDir := t.TempDir()
-	mockApplicationPackage(t, tmpDir)
-	out := execute(command{args: []string{"cert", "-a", "t1.a1.i1", tmpDir}, configDir: tmpDir}, t, nil)
+	homeDir := t.TempDir()
+	mockApplicationPackage(t, homeDir)
+	out := execute(command{args: []string{"cert", "-a", "t1.a1.i1", homeDir}, homeDir: homeDir}, t, nil)
 
-	pkgCertificate := filepath.Join(tmpDir, "security", "clients.pem")
-	certificate := filepath.Join(tmpDir, ".vespa", "t1.a1.i1", "data-plane-public-cert.pem")
-	privateKey := filepath.Join(tmpDir, ".vespa", "t1.a1.i1", "data-plane-private-key.pem")
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	assert.Nil(t, err)
+	pkgCertificate := filepath.Join(homeDir, "security", "clients.pem")
+	certificate := filepath.Join(homeDir, ".vespa", app.String(), "data-plane-public-cert.pem")
+	privateKey := filepath.Join(homeDir, ".vespa", app.String(), "data-plane-private-key.pem")
 
 	assert.Equal(t, fmt.Sprintf("Success: Certificate written to %s\nSuccess: Certificate written to %s\nSuccess: Private key written to %s\n", pkgCertificate, certificate, privateKey), out)
 
-	out = execute(command{args: []string{"cert", "-a", "t1.a1.i1", tmpDir}, configDir: tmpDir}, t, nil)
+	out = execute(command{args: []string{"cert", "-a", "t1.a1.i1", homeDir}, homeDir: homeDir}, t, nil)
 	assert.True(t, strings.HasPrefix(out, "Error: Certificate or private key"))
 }
 

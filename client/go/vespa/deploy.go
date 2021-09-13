@@ -23,6 +23,8 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
+var DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+
 type ApplicationID struct {
 	Tenant      string
 	Application string

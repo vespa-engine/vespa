@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -49,10 +50,17 @@ var setConfigCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := setOption(args[0], args[1]); err != nil {
-			log.Print(err)
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
+			return
+		}
+		if err := cfg.Set(args[0], args[1]); err != nil {
+			fatalErr(err)
 		} else {
-			writeConfig()
+			if err := cfg.Write(); err != nil {
+				fatalErr(err)
+			}
 		}
 	},
 }
@@ -64,69 +72,121 @@ var getConfigCmd = &cobra.Command{
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
+			return
+		}
+
 		if len(args) == 0 { // Print all values
-			printOption(targetFlag)
-			printOption(applicationFlag)
+			printOption(cfg, targetFlag)
+			printOption(cfg, applicationFlag)
 		} else {
-			printOption(args[0])
+			printOption(cfg, args[0])
 		}
 	},
 }
 
-func printOption(option string) {
-	value, err := getOption(option)
-	if err != nil {
-		value = color.Faint("<unset>").String()
-	} else {
-		value = color.Cyan(value).String()
-	}
-	log.Printf("%s = %s", option, value)
+type Config struct {
+	Home       string
+	createDirs bool
 }
 
-func configDir(application string) string {
+func LoadConfig() (*Config, error) {
 	home := os.Getenv("VESPA_CLI_HOME")
 	if home == "" {
 		var err error
 		home, err = os.UserHomeDir()
 		if err != nil {
-			fatalErr(err, "Could not determine configuration directory")
-			return ""
+			return nil, err
+		}
+		home = filepath.Join(home, ".vespa")
+	}
+	if err := os.MkdirAll(home, 0700); err != nil {
+		return nil, err
+	}
+	c := &Config{Home: home, createDirs: true}
+	if err := c.load(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *Config) Write() error {
+	if err := os.MkdirAll(c.Home, 0700); err != nil {
+		return err
+	}
+	configFile := filepath.Join(c.Home, configName+"."+configType)
+	if !util.PathExists(configFile) {
+		if _, err := os.Create(configFile); err != nil {
+			return err
 		}
 	}
-	configDir := filepath.Join(home, ".vespa", application)
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		fatalErr(err, "Could not create config directory")
-		return ""
-	}
-	return configDir
+	return viper.WriteConfig()
 }
 
-func bindFlagToConfig(option string, command *cobra.Command) {
-	flagToConfigBindings[option] = command
+func (c *Config) CertificatePath(app vespa.ApplicationID) (string, error) {
+	return c.applicationFilePath(app, "data-plane-public-cert.pem")
 }
 
-func readConfig() {
-	configDir := configDir("")
-	if configDir == "" {
-		return
+func (c *Config) PrivateKeyPath(app vespa.ApplicationID) (string, error) {
+	return c.applicationFilePath(app, "data-plane-private-key.pem")
+}
+
+func (c *Config) APIKeyPath(tenantName string) string {
+	return filepath.Join(c.Home, tenantName+".api-key.pem")
+}
+
+func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
+	return ioutil.ReadFile(c.APIKeyPath(tenantName))
+}
+
+func (c *Config) ReadSessionID(app vespa.ApplicationID) (int64, error) {
+	sessionPath, err := c.applicationFilePath(app, "session_id")
+	if err != nil {
+		return 0, err
 	}
+	b, err := ioutil.ReadFile(sessionPath)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
+}
+
+func (c *Config) WriteSessionID(app vespa.ApplicationID, sessionID int64) error {
+	sessionPath, err := c.applicationFilePath(app, "session_id")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(sessionPath, []byte(fmt.Sprintf("%d\n", sessionID)), 0600)
+}
+
+func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (string, error) {
+	appDir := filepath.Join(c.Home, app.String())
+	if c.createDirs {
+		if err := os.MkdirAll(appDir, 0700); err != nil {
+			return "", err
+		}
+	}
+	return filepath.Join(appDir, name), nil
+}
+
+func (c *Config) load() error {
 	viper.SetConfigName(configName)
 	viper.SetConfigType(configType)
-	viper.AddConfigPath(configDir)
+	viper.AddConfigPath(c.Home)
 	viper.AutomaticEnv()
 	for option, command := range flagToConfigBindings {
 		viper.BindPFlag(option, command.PersistentFlags().Lookup(option))
 	}
 	err := viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		return // Fine
+		return nil
 	}
-	if err != nil {
-		fatalErr(err, "Could not read configuration")
-	}
+	return err
 }
 
-func getOption(option string) (string, error) {
+func (c *Config) Get(option string) (string, error) {
 	value := viper.GetString(option)
 	if value == "" {
 		return "", fmt.Errorf("no such option: %q", option)
@@ -134,7 +194,7 @@ func getOption(option string) (string, error) {
 	return value, nil
 }
 
-func setOption(option, value string) error {
+func (c *Config) Set(option, value string) error {
 	switch option {
 	case targetFlag:
 		switch value {
@@ -162,29 +222,16 @@ func setOption(option, value string) error {
 	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }
 
-func writeConfig() {
-	configDir := configDir("")
-	if configDir == "" {
-		return
+func printOption(cfg *Config, option string) {
+	value, err := cfg.Get(option)
+	if err != nil {
+		value = color.Faint("<unset>").String()
+	} else {
+		value = color.Cyan(value).String()
 	}
+	log.Printf("%s = %s", option, value)
+}
 
-	if !util.PathExists(configDir) {
-		if err := os.MkdirAll(configDir, 0700); err != nil {
-			fatalErr(err, "Could not create ", color.Cyan(configDir))
-			return
-		}
-	}
-
-	configFile := filepath.Join(configDir, configName+"."+configType)
-	if !util.PathExists(configFile) {
-		if _, err := os.Create(configFile); err != nil {
-			fatalErr(err, "Could not create ", color.Cyan(configFile))
-			return
-		}
-	}
-
-	if err := viper.WriteConfig(); err != nil {
-		fatalErr(err, "Could not write config")
-		return
-	}
+func bindFlagToConfig(option string, command *cobra.Command) {
+	flagToConfigBindings[option] = command
 }

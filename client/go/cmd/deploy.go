@@ -6,12 +6,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/vespa"
@@ -51,6 +46,11 @@ If application directory is not specified, it defaults to working directory.`,
 			fatalErr(nil, err.Error())
 			return
 		}
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
+			return
+		}
 		target := getTarget()
 		opts := vespa.DeploymentOpts{ApplicationPackage: pkg, Target: target}
 		if opts.IsCloud() {
@@ -58,7 +58,11 @@ If application directory is not specified, it defaults to working directory.`,
 			if !opts.ApplicationPackage.HasCertificate() {
 				fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
 			}
-			opts.APIKey = readAPIKey(deployment.Application.Tenant)
+			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
+			if err != nil {
+				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
+				return
+			}
 			opts.Deployment = deployment
 		}
 		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
@@ -93,8 +97,9 @@ var prepareCmd = &cobra.Command{
 			fatalErr(err, "Could not find application package")
 			return
 		}
-		configDir := configDir("default")
-		if configDir == "" {
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
 			return
 		}
 		target := getTarget()
@@ -103,7 +108,10 @@ var prepareCmd = &cobra.Command{
 			Target:             target,
 		})
 		if err == nil {
-			writeSessionID(configDir, sessionID)
+			if err := cfg.WriteSessionID(vespa.DefaultApplication, sessionID); err != nil {
+				fatalErr(err, "Could not write session ID")
+				return
+			}
 			printSuccess("Prepared ", color.Cyan(pkg.Path), " with session ", sessionID)
 		} else {
 			fatalErr(nil, err.Error())
@@ -122,8 +130,16 @@ var activateCmd = &cobra.Command{
 			fatalErr(err, "Could not find application package")
 			return
 		}
-		configDir := configDir("default")
-		sessionID := readSessionID(configDir)
+		cfg, err := LoadConfig()
+		if err != nil {
+			fatalErr(err, "Could not load config")
+			return
+		}
+		sessionID, err := cfg.ReadSessionID(vespa.DefaultApplication)
+		if err != nil {
+			fatalErr(err, "Could not read session ID")
+			return
+		}
 		target := getTarget()
 		err = vespa.Activate(sessionID, vespa.DeploymentOpts{
 			ApplicationPackage: pkg,
@@ -144,26 +160,3 @@ func waitForQueryService(sessionOrRunID int64) {
 		waitForService("query", sessionOrRunID)
 	}
 }
-
-func writeSessionID(appConfigDir string, sessionID int64) {
-	if err := os.MkdirAll(appConfigDir, 0755); err != nil {
-		fatalErr(err, "Could not create directory for session ID")
-	}
-	if err := ioutil.WriteFile(sessionIDFile(appConfigDir), []byte(fmt.Sprintf("%d\n", sessionID)), 0600); err != nil {
-		fatalErr(err, "Could not write session ID")
-	}
-}
-
-func readSessionID(appConfigDir string) int64 {
-	b, err := ioutil.ReadFile(sessionIDFile(appConfigDir))
-	if err != nil {
-		fatalErr(err, "Could not read session ID")
-	}
-	id, err := strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
-	if err != nil {
-		fatalErr(err, "Invalid session ID")
-	}
-	return id
-}
-
-func sessionIDFile(appConfigDir string) string { return filepath.Join(appConfigDir, "session_id") }

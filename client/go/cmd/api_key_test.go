@@ -11,13 +11,13 @@ import (
 )
 
 func TestAPIKey(t *testing.T) {
-	configDir := t.TempDir()
-	keyFile := configDir + "/.vespa/t1.api-key.pem"
+	homeDir := t.TempDir()
+	keyFile := homeDir + "/.vespa/t1.api-key.pem"
 
-	out := execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, configDir: configDir}, t, nil)
+	out := execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
 	assert.True(t, strings.HasPrefix(out, "Success: API private key written to "+keyFile+"\n"))
 
-	out = execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, configDir: configDir}, t, nil)
+	out = execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
 	assert.True(t, strings.HasPrefix(out, "Error: File "+keyFile+" already exists\nHint: Use -f to overwrite it\n"))
 	assert.True(t, strings.Contains(out, "This is your public key"))
 }
