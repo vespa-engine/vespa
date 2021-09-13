@@ -79,10 +79,17 @@ public class NodeAdminStateUpdaterTest {
             verify(orchestrator, times(1)).resume(hostHostname.value());
             verify(nodeAdmin, times(2)).setFrozen(eq(false));
 
+            // Host is externally suspended in orchestrator, should be resumed by node-admin
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.ALLOWED_TO_BE_DOWN);
+            updater.converge(RESUMED);
+            verify(orchestrator, times(2)).resume(hostHostname.value());
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.NO_REMARKS);
+
             // Lets try to suspend node admin only
             when(nodeAdmin.setFrozen(eq(true))).thenReturn(false);
             assertConvergeError(SUSPENDED_NODE_ADMIN, "NodeAdmin is not yet frozen");
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
         }
 
         {
@@ -93,10 +100,24 @@ public class NodeAdminStateUpdaterTest {
             doThrow(new RuntimeException(exceptionMessage)).doNothing()
                     .when(orchestrator).suspend(eq(hostHostname.value()));
             assertConvergeError(SUSPENDED_NODE_ADMIN, exceptionMessage);
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
 
             updater.converge(SUSPENDED_NODE_ADMIN);
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            verify(orchestrator, times(2)).suspend(hostHostname.value());
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.ALLOWED_TO_BE_DOWN);
+
+            // Already suspended, no changes
+            updater.converge(SUSPENDED_NODE_ADMIN);
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            verify(orchestrator, times(2)).suspend(hostHostname.value());
+
+            // Host is externally resumed
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.NO_REMARKS);
+            updater.converge(SUSPENDED_NODE_ADMIN);
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
+            verify(orchestrator, times(3)).suspend(hostHostname.value());
+            setHostOrchestratorStatus(hostHostname, OrchestratorStatus.ALLOWED_TO_BE_DOWN);
         }
 
         {
@@ -107,7 +128,7 @@ public class NodeAdminStateUpdaterTest {
             assertConvergeError(SUSPENDED, exceptionMessage);
             verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(suspendHostnames));
             // Make sure we dont roll back if we fail to stop services - we will try to stop again next tick
-            verify(nodeAdmin, times(2)).setFrozen(eq(false));
+            verify(nodeAdmin, times(3)).setFrozen(eq(false));
 
             // Finally we are successful in transitioning to frozen
             updater.converge(SUSPENDED);

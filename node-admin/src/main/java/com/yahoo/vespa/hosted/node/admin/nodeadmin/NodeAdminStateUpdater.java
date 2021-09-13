@@ -117,10 +117,10 @@ public class NodeAdminStateUpdater {
             throw new ConvergenceException("Timed out trying to freeze all nodes: will force an unfrozen tick");
         }
 
-        if (currentState == wantedState) return;
+        boolean wantFrozen = wantedState != RESUMED;
+        if (currentState == wantedState && wantFrozen == node.orchestratorStatus().isSuspended()) return;
         currentState = TRANSITIONING;
 
-        boolean wantFrozen = wantedState != RESUMED;
         if (!nodeAdmin.setFrozen(wantFrozen))
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
 
