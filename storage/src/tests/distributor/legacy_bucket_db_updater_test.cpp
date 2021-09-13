@@ -2216,6 +2216,7 @@ TEST_F(LegacyBucketDBUpdaterTest, node_missing_from_config_is_treated_as_needing
     EXPECT_EQ(expandNodeVec({0, 1}), getSendSet());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, changed_distributor_set_implies_ownership_transfer) {
     auto fixture = createPendingStateFixtureForStateChange(
             "distributor:2 storage:2", "distributor:1 storage:2");
@@ -2226,6 +2227,7 @@ TEST_F(LegacyBucketDBUpdaterTest, changed_distributor_set_implies_ownership_tran
     EXPECT_TRUE(fixture->state->hasBucketOwnershipTransfer());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, unchanged_distributor_set_implies_no_ownership_transfer) {
     auto fixture = createPendingStateFixtureForStateChange(
             "distributor:2 storage:2", "distributor:2 storage:1");
@@ -2236,18 +2238,21 @@ TEST_F(LegacyBucketDBUpdaterTest, unchanged_distributor_set_implies_no_ownership
     EXPECT_FALSE(fixture->state->hasBucketOwnershipTransfer());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, changed_distribution_config_implies_ownership_transfer) {
     auto fixture = createPendingStateFixtureForDistributionChange(
             "distributor:2 storage:2");
     EXPECT_TRUE(fixture->state->hasBucketOwnershipTransfer());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, transition_time_tracked_for_single_state_change) {
     ASSERT_NO_FATAL_FAILURE(completeStateTransitionInSeconds("distributor:2 storage:2", 5, messageCount(2)));
 
     EXPECT_EQ(uint64_t(5000), lastTransitionTimeInMillis());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, transition_time_reset_across_non_preempting_state_changes) {
     ASSERT_NO_FATAL_FAILURE(completeStateTransitionInSeconds("distributor:2 storage:2", 5, messageCount(2)));
     ASSERT_NO_FATAL_FAILURE(completeStateTransitionInSeconds("distributor:2 storage:3", 3, messageCount(1)));
@@ -2255,6 +2260,7 @@ TEST_F(LegacyBucketDBUpdaterTest, transition_time_reset_across_non_preempting_st
     EXPECT_EQ(uint64_t(3000), lastTransitionTimeInMillis());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, transition_time_tracked_for_distribution_config_change) {
     lib::ClusterState state("distributor:2 storage:2");
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(state, messageCount(2), 1));
@@ -2267,6 +2273,7 @@ TEST_F(LegacyBucketDBUpdaterTest, transition_time_tracked_for_distribution_confi
     EXPECT_EQ(uint64_t(4000), lastTransitionTimeInMillis());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, transition_time_tracked_across_preempted_transitions) {
     _sender.clear();
     lib::ClusterState state("distributor:2 storage:2");
@@ -2280,6 +2287,7 @@ TEST_F(LegacyBucketDBUpdaterTest, transition_time_tracked_across_preempted_trans
     EXPECT_EQ(uint64_t(8000), lastTransitionTimeInMillis());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 /*
  * Brief reminder on test DSL for checking bucket merge operations:
  *
@@ -2303,31 +2311,37 @@ TEST_F(LegacyBucketDBUpdaterTest, batch_update_of_existing_diverging_replicas_do
                     "0:5/1/2/3|1:5/7/8/9", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, batch_add_of_new_diverging_replicas_does_not_mark_any_as_trusted) {
     EXPECT_EQ(std::string("5:1/7/8/9/u,0/1/2/3/u|"),
               mergeBucketLists("", "0:5/1/2/3|1:5/7/8/9", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, batch_add_with_single_resulting_replica_implicitly_marks_as_trusted) {
     EXPECT_EQ(std::string("5:0/1/2/3/t|"),
               mergeBucketLists("", "0:5/1/2/3", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, identity_update_of_single_replica_does_not_clear_trusted) {
     EXPECT_EQ(std::string("5:0/1/2/3/t|"),
               mergeBucketLists("0:5/1/2/3", "0:5/1/2/3", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, identity_update_of_diverging_untrusted_replicas_does_not_mark_any_as_trusted) {
     EXPECT_EQ(std::string("5:1/7/8/9/u,0/1/2/3/u|"),
               mergeBucketLists("0:5/1/2/3|1:5/7/8/9", "0:5/1/2/3|1:5/7/8/9", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, adding_diverging_replica_to_existing_trusted_does_not_remove_trusted) {
     EXPECT_EQ(std::string("5:1/2/3/4/u,0/1/2/3/t|"),
               mergeBucketLists("0:5/1/2/3", "0:5/1/2/3|1:5/2/3/4", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, batch_update_from_distributor_change_does_not_mark_diverging_replicas_as_trusted) {
     // This differs from batch_update_of_existing_diverging_replicas_does_not_mark_any_as_trusted
     // in that _all_ content nodes are considered outdated when distributor changes take place,
@@ -2343,6 +2357,7 @@ TEST_F(LegacyBucketDBUpdaterTest, batch_update_from_distributor_change_does_not_
                     "0:5/1/2/3|1:5/7/8/9", true));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
 TEST_F(LegacyBucketDBUpdaterTest, global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection) {
     std::string distConfig(getDistConfig6Nodes2Groups());
@@ -2412,6 +2427,7 @@ void for_each_bucket(const DistributorBucketSpaceRepo& repo, Func&& f) {
 
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, non_owned_buckets_moved_to_read_only_db_on_ownership_change) {
     getBucketDBUpdater().set_stale_reads_enabled(true);
 
@@ -2453,6 +2469,7 @@ TEST_F(LegacyBucketDBUpdaterTest, non_owned_buckets_moved_to_read_only_db_on_own
     });
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, buckets_no_longer_available_are_not_moved_to_read_only_database) {
     constexpr uint32_t n_buckets = 10;
     // No ownership change, just node down. Test redundancy is 2, so removing 2 nodes will
@@ -2464,6 +2481,7 @@ TEST_F(LegacyBucketDBUpdaterTest, buckets_no_longer_available_are_not_moved_to_r
     EXPECT_EQ(size_t(0), read_only_global_db().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, non_owned_buckets_purged_when_read_only_support_is_config_disabled) {
     getBucketDBUpdater().set_stale_reads_enabled(false);
 
@@ -2509,6 +2527,7 @@ void LegacyBucketDBUpdaterTest::trigger_completed_but_not_yet_activated_transiti
     _sender.clear();
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, deferred_activated_state_does_not_enable_state_until_activation_received) {
     getBucketDBUpdater().set_stale_reads_enabled(true);
     constexpr uint32_t n_buckets = 10;
@@ -2529,6 +2548,7 @@ TEST_F(LegacyBucketDBUpdaterTest, deferred_activated_state_does_not_enable_state
     EXPECT_EQ(uint64_t(n_buckets), mutable_global_db().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, read_only_db_cleared_once_pending_state_is_activated) {
     getBucketDBUpdater().set_stale_reads_enabled(true);
     constexpr uint32_t n_buckets = 10;
@@ -2541,6 +2561,7 @@ TEST_F(LegacyBucketDBUpdaterTest, read_only_db_cleared_once_pending_state_is_act
     EXPECT_EQ(uint64_t(0), read_only_global_db().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, read_only_db_is_populated_even_when_self_is_marked_down) {
     getBucketDBUpdater().set_stale_reads_enabled(true);
     constexpr uint32_t n_buckets = 10;
@@ -2555,6 +2576,7 @@ TEST_F(LegacyBucketDBUpdaterTest, read_only_db_is_populated_even_when_self_is_ma
     EXPECT_EQ(uint64_t(n_buckets), read_only_global_db().size());
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, activate_cluster_state_request_with_mismatching_version_returns_actual_version) {
     getBucketDBUpdater().set_stale_reads_enabled(true);
     constexpr uint32_t n_buckets = 10;
@@ -2569,6 +2591,7 @@ TEST_F(LegacyBucketDBUpdaterTest, activate_cluster_state_request_with_mismatchin
     ASSERT_NO_FATAL_FAILURE(assert_has_activate_cluster_state_reply_with_actual_version(5));
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, activate_cluster_state_request_without_pending_transition_passes_message_through) {
     getBucketDBUpdater().set_stale_reads_enabled(true);
     constexpr uint32_t n_buckets = 10;
@@ -2585,6 +2608,7 @@ TEST_F(LegacyBucketDBUpdaterTest, activate_cluster_state_request_without_pending
     EXPECT_EQ(size_t(0), _sender.replies().size());
 }
 
+// TODO STRIPE disabled benchmark tests are NOT migrated to new test suite
 TEST_F(LegacyBucketDBUpdaterTest, DISABLED_benchmark_bulk_loading_into_empty_db) {
     // Need to trigger an initial edge to complete first bucket scan
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:2 storage:1"),
@@ -2703,6 +2727,7 @@ TEST_F(LegacyBucketDBUpdaterTest, DISABLED_benchmark_all_buckets_removed_during_
     fprintf(stderr, "Took %g seconds to scan and remove %u buckets\n", timer.min_time(), n_buckets);
 }
 
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
 TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_getter_is_non_null_only_when_state_is_pending) {
     auto initial_baseline = std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:d");
     auto initial_default = std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:m");
@@ -2728,7 +2753,7 @@ TEST_F(LegacyBucketDBUpdaterTest, pending_cluster_state_getter_is_non_null_only_
     EXPECT_TRUE(state == nullptr);
 }
 
-struct BucketDBUpdaterSnapshotTest : LegacyBucketDBUpdaterTest {
+struct LegacyBucketDBUpdaterSnapshotTest : LegacyBucketDBUpdaterTest {
     lib::ClusterState empty_state;
     std::shared_ptr<lib::ClusterState> initial_baseline;
     std::shared_ptr<lib::ClusterState> initial_default;
@@ -2736,7 +2761,7 @@ struct BucketDBUpdaterSnapshotTest : LegacyBucketDBUpdaterTest {
     Bucket default_bucket;
     Bucket global_bucket;
 
-    BucketDBUpdaterSnapshotTest()
+    LegacyBucketDBUpdaterSnapshotTest()
         : LegacyBucketDBUpdaterTest(),
           empty_state(),
           initial_baseline(std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:d")),
@@ -2747,7 +2772,7 @@ struct BucketDBUpdaterSnapshotTest : LegacyBucketDBUpdaterTest {
           global_bucket(FixedBucketSpaces::global_space(), BucketId(16, 1234))
     {
     }
-    ~BucketDBUpdaterSnapshotTest() override;
+    ~LegacyBucketDBUpdaterSnapshotTest() override;
 
     void SetUp() override {
         LegacyBucketDBUpdaterTest::SetUp();
@@ -2774,19 +2799,22 @@ struct BucketDBUpdaterSnapshotTest : LegacyBucketDBUpdaterTest {
     }
 };
 
-BucketDBUpdaterSnapshotTest::~BucketDBUpdaterSnapshotTest() = default;
+LegacyBucketDBUpdaterSnapshotTest::~LegacyBucketDBUpdaterSnapshotTest() = default;
 
-TEST_F(BucketDBUpdaterSnapshotTest, default_space_snapshot_prior_to_activated_state_is_non_routable) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, default_space_snapshot_prior_to_activated_state_is_non_routable) {
     auto rs = getBucketDBUpdater().read_snapshot_for_bucket(default_bucket);
     EXPECT_FALSE(rs.is_routable());
 }
 
-TEST_F(BucketDBUpdaterSnapshotTest, global_space_snapshot_prior_to_activated_state_is_non_routable) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, global_space_snapshot_prior_to_activated_state_is_non_routable) {
     auto rs = getBucketDBUpdater().read_snapshot_for_bucket(global_bucket);
     EXPECT_FALSE(rs.is_routable());
 }
 
-TEST_F(BucketDBUpdaterSnapshotTest, read_snapshot_returns_appropriate_cluster_states) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, read_snapshot_returns_appropriate_cluster_states) {
     set_cluster_state_bundle(initial_bundle);
     // State currently pending, empty initial state is active
 
@@ -2816,7 +2844,8 @@ TEST_F(BucketDBUpdaterSnapshotTest, read_snapshot_returns_appropriate_cluster_st
     EXPECT_FALSE(global_rs.context().has_pending_state_transition());
 }
 
-TEST_F(BucketDBUpdaterSnapshotTest, snapshot_with_no_pending_state_transition_returns_mutable_db_guard) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, snapshot_with_no_pending_state_transition_returns_mutable_db_guard) {
     constexpr uint32_t n_buckets = 10;
     ASSERT_NO_FATAL_FAILURE(
             trigger_completed_but_not_yet_activated_transition("version:1 distributor:2 storage:4", 0, 4,
@@ -2828,7 +2857,8 @@ TEST_F(BucketDBUpdaterSnapshotTest, snapshot_with_no_pending_state_transition_re
               n_buckets);
 }
 
-TEST_F(BucketDBUpdaterSnapshotTest, snapshot_returns_unroutable_for_non_owned_bucket_in_current_state) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, snapshot_returns_unroutable_for_non_owned_bucket_in_current_state) {
     ASSERT_NO_FATAL_FAILURE(
             trigger_completed_but_not_yet_activated_transition("version:1 distributor:2 storage:4", 0, 4,
                                                                "version:2 distributor:2 .0.s:d storage:4", 0, 0));
@@ -2838,7 +2868,8 @@ TEST_F(BucketDBUpdaterSnapshotTest, snapshot_returns_unroutable_for_non_owned_bu
     EXPECT_FALSE(def_rs.is_routable());
 }
 
-TEST_F(BucketDBUpdaterSnapshotTest, snapshot_with_pending_state_returns_read_only_guard_for_bucket_only_owned_in_current_state) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, snapshot_with_pending_state_returns_read_only_guard_for_bucket_only_owned_in_current_state) {
     constexpr uint32_t n_buckets = 10;
     ASSERT_NO_FATAL_FAILURE(
             trigger_completed_but_not_yet_activated_transition("version:1 distributor:1 storage:4", n_buckets, 4,
@@ -2849,7 +2880,8 @@ TEST_F(BucketDBUpdaterSnapshotTest, snapshot_with_pending_state_returns_read_onl
               n_buckets);
 }
 
-TEST_F(BucketDBUpdaterSnapshotTest, snapshot_is_unroutable_if_stale_reads_disabled_and_bucket_not_owned_in_pending_state) {
+// TODO STRIPE migrated to TopLevelBucketDBUpdaterTest
+TEST_F(LegacyBucketDBUpdaterSnapshotTest, snapshot_is_unroutable_if_stale_reads_disabled_and_bucket_not_owned_in_pending_state) {
     getBucketDBUpdater().set_stale_reads_enabled(false);
     constexpr uint32_t n_buckets = 10;
     ASSERT_NO_FATAL_FAILURE(

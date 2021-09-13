@@ -85,6 +85,8 @@ public:
         return _node->getClock();
     }
 
+    framework::MetricUpdateHook& distributor_metric_update_hook();
+
     BucketDatabase& stripe_bucket_database(uint16_t stripe_idx); // Implicit default space only
     BucketDatabase& stripe_bucket_database(uint16_t stripe_idx, document::BucketSpace space);
     const BucketDatabase& stripe_bucket_database(uint16_t stripe_idx) const; // Implicit default space only
@@ -134,6 +136,8 @@ public:
     bool handle_top_level_message(const std::shared_ptr<api::StorageMessage>& msg);
 
     void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
+
+    const lib::ClusterStateBundle& current_cluster_state_bundle() const;
 
     static std::vector<document::BucketSpace> bucket_spaces();
 

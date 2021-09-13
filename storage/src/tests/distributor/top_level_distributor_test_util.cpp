@@ -375,6 +375,11 @@ TopLevelDistributorTestUtil::reconfigure(const DistributorConfig& cfg)
     tick(); // Config is propagated upon next top-level tick
 }
 
+framework::MetricUpdateHook&
+TopLevelDistributorTestUtil::distributor_metric_update_hook() {
+    return _distributor->_metricUpdateHook;
+}
+
 BucketDatabase&
 TopLevelDistributorTestUtil::stripe_bucket_database(uint16_t stripe_idx) {
     assert(stripe_idx < _distributor->_stripes.size());
@@ -447,6 +452,19 @@ TopLevelDistributorTestUtil::trigger_distribution_change(std::shared_ptr<lib::Di
     _node->getComponentRegister().setDistribution(std::move(distr));
     _distributor->storageDistributionChanged();
     _distributor->enableNextDistribution();
+}
+
+const lib::ClusterStateBundle&
+TopLevelDistributorTestUtil::current_cluster_state_bundle() const
+{
+    // We assume that all stripes have the same cluster state internally, so just use the first.
+    assert(_distributor->_stripes[0]);
+    const auto& bundle = _distributor->_stripes[0]->getClusterStateBundle();
+    // ... but sanity-check just to make sure...
+    for (size_t i = 1; i < _num_distributor_stripes; ++i) {
+        assert(_distributor->_stripes[i]->getClusterStateBundle() == bundle);
+    }
+    return bundle;
 }
 
 void
