@@ -279,7 +279,7 @@ struct StorageConfigSet
     SlobroksConfigBuilder         slobroks;
     MessagebusConfigBuilder       messagebus;
 
-    StorageConfigSet(const vespalib::string &base_dir, unsigned int node_idx, bool distributor, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+    StorageConfigSet(const vespalib::string &base_dir, uint32_t node_idx, bool distributor, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
                      int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
         : config_id(config_id_in),
           documenttypes(documenttypes_in),
@@ -301,7 +301,7 @@ struct StorageConfigSet
             {
                 StorDistributionConfigBuilder::Group group;
                 {
-                    for (unsigned int i = 0; i < params.get_num_nodes(); ++i) {
+                    for (uint32_t i = 0; i < params.get_num_nodes(); ++i) {
                         StorDistributionConfigBuilder::Group::Nodes node;
                         node.index = i;
                         group.nodes.push_back(std::move(node));
@@ -364,7 +364,7 @@ struct ServiceLayerConfigSet : public StorageConfigSet
     StorBucketInitConfigBuilder   stor_bucket_init;
     StorVisitorConfigBuilder      stor_visitor;
 
-    ServiceLayerConfigSet(const vespalib::string& base_dir, unsigned int node_idx, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+    ServiceLayerConfigSet(const vespalib::string& base_dir, uint32_t node_idx, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
                          int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
         : StorageConfigSet(base_dir, node_idx, false, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           persistence(),
@@ -395,7 +395,7 @@ struct DistributorConfigSet : public StorageConfigSet
     StorDistributormanagerConfigBuilder stor_distributormanager;
     StorVisitordispatcherConfigBuilder  stor_visitordispatcher;
 
-    DistributorConfigSet(const vespalib::string& base_dir, unsigned int node_idx, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
+    DistributorConfigSet(const vespalib::string& base_dir, uint32_t node_idx, const vespalib::string& config_id_in, const DocumenttypesConfig& documenttypes_in,
                          int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
         : StorageConfigSet(base_dir, node_idx, true, config_id_in, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
           stor_distributormanager(),
@@ -428,7 +428,7 @@ class MyBmNode : public BmNode
     std::shared_ptr<DocumentDBConfig>          _document_db_config;
     vespalib::string                           _base_dir;
     search::index::DummyFileHeaderContext      _file_header_context;
-    unsigned int                               _node_idx;
+    uint32_t                                   _node_idx;
     int                                        _tls_listen_port;
     int                                        _slobrok_port;
     int                                        _service_layer_mbus_port;
@@ -465,7 +465,7 @@ class MyBmNode : public BmNode
 
     void create_document_db(const BmClusterParams&  params);
 public:
-    MyBmNode(const vespalib::string &base_dir, int base_port, unsigned int node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
+    MyBmNode(const vespalib::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
     ~MyBmNode() override;
     void initialize_persistence_provider() override;
     void create_bucket(const document::Bucket& bucket) override;
@@ -482,7 +482,7 @@ public:
     PersistenceProvider* get_persistence_provider() override;
 };
 
-MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, unsigned int node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
     : BmNode(),
       _cluster(cluster),
       _document_types(std::move(document_types)),
@@ -730,7 +730,7 @@ BmNode::num_ports()
 }
 
 std::unique_ptr<BmNode>
-BmNode::create(const vespalib::string& base_dir, int base_port, unsigned int node_idx, BmCluster &cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+BmNode::create(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster &cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
 {
     return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, cluster, params, std::move(document_types), slobrok_port);
 }

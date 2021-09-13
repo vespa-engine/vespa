@@ -395,6 +395,7 @@ App::usage()
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
         "[--max-pending max-pending]\n"
         "[--documents documents]\n"
+        "[--nodes nodes]\n"
         "[--put-passes put-passes]\n"
         "[--update-passes update-passes]\n"
         "[--remove-passes remove-passes]\n"

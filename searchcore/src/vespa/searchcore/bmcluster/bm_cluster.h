@@ -70,9 +70,9 @@ public:
     void stop();
     storage::rpc::SharedRpcResources &get_rpc_client() { return *_rpc_client; }
     BmMessageBus& get_message_bus() { return *_message_bus; }
-    void make_node(unsigned int node_idx);
+    void make_node(uint32_t node_idx);
     void make_nodes();
-    BmNode& get_node(unsigned int node_idx);
+    BmNode& get_node(uint32_t node_idx);
     IBmFeedHandler* get_feed_handler();
 };
 
