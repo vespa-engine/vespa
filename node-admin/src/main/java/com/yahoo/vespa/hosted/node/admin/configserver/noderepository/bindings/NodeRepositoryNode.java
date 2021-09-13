@@ -203,12 +203,17 @@ public class NodeRepositoryNode {
     }
 
     public static class Event {
-        @JsonProperty
-        public String agent;
-        @JsonProperty
-        public String event;
-        @JsonProperty
-        public long at;
+        public final String agent;
+        public final String event;
+        public final long at;
+
+        public Event(@JsonProperty(value = "agent", required = true) String agent,
+                     @JsonProperty(value = "event", required = true) String event,
+                     @JsonProperty(value = "at", required = true) Long at) {
+            this.agent = agent;
+            this.event = event;
+            this.at = at;
+        }
 
         @Override
         public String toString() {
