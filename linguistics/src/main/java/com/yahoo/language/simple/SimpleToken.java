@@ -17,16 +17,17 @@ public class SimpleToken implements Token {
     private final String orig;
     private TokenType type = TokenType.UNKNOWN;
     private TokenScript script = TokenScript.UNKNOWN;
-    private String tokenString = null;
+    private String tokenString;
     private boolean specialToken = false;
     private long offset = 0;
 
     public SimpleToken(String orig) {
-        this.orig = orig;
+        this(orig, null);
     }
 
     public SimpleToken(String orig, String tokenString) {
         this.orig = orig;
+        this.tokenString = tokenString;
     }
 
     @Override
