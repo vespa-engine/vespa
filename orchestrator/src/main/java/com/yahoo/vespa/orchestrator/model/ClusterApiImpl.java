@@ -126,7 +126,10 @@ class ClusterApiImpl implements ClusterApi {
                 continue;
             }
 
-            if (service.serviceStatus() == ServiceStatus.DOWN) {
+            if (service.serviceStatus() == ServiceStatus.UNKNOWN) {
+                reasons.mergeWith(SuspensionReasons.unknownStatus(service));
+                continue;
+            } else if (service.serviceStatus() == ServiceStatus.DOWN) {
                 Optional<Instant> since = service.serviceStatusInfo().since();
                 if (since.isEmpty()) {
                     reasons.mergeWith(SuspensionReasons.isDown(service));

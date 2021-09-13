@@ -41,7 +41,7 @@ public class StateV1HealthModelTest {
     private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::from).collect(Collectors.toList());
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
-    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);
+    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor, false);
 
     @Test
     public void test() {

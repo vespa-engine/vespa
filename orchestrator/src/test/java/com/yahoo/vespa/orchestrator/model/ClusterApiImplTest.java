@@ -192,7 +192,7 @@ public class ClusterApiImplTest {
 
     @Test
     public void testSingleConfigServerCanSuspend() {
-        for (var status : EnumSet.of(ServiceStatus.UP, ServiceStatus.DOWN)) {
+        for (var status : EnumSet.of(ServiceStatus.UP, ServiceStatus.DOWN, ServiceStatus.UNKNOWN)) {
             var clusterApi = makeConfigClusterApi(1, status);
             var policy = new HostedVespaClusterPolicy(flagSource, zone);
             try {

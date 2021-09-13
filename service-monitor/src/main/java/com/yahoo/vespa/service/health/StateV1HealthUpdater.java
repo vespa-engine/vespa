@@ -24,13 +24,16 @@ class StateV1HealthUpdater implements HealthUpdater {
     private final String endpoint;
     private final StateV1HealthClient healthClient;
 
-    private volatile ServiceStatusInfo serviceStatusInfo = new ServiceStatusInfo(ServiceStatus.NOT_CHECKED);
+    private volatile ServiceStatusInfo serviceStatusInfo;
 
-    StateV1HealthUpdater(URL url, Duration requestTimeout, Duration connectionKeepAlive) {
-        this(url.toString(), new StateV1HealthClient(url, requestTimeout, connectionKeepAlive));
+    StateV1HealthUpdater(URL url, Duration requestTimeout, Duration connectionKeepAlive,
+                         boolean useUnknownServiceStatus) {
+        this(url.toString(), new StateV1HealthClient(url, requestTimeout, connectionKeepAlive), useUnknownServiceStatus);
     }
 
-    StateV1HealthUpdater(String endpoint, StateV1HealthClient healthClient) {
+    StateV1HealthUpdater(String endpoint, StateV1HealthClient healthClient, boolean useUnknownServiceStatus) {
+        var serviceStatus = useUnknownServiceStatus ? ServiceStatus.UNKNOWN : ServiceStatus.NOT_CHECKED;
+        this.serviceStatusInfo = new ServiceStatusInfo(serviceStatus);
         this.endpoint = endpoint;
         this.healthClient = healthClient;
     }

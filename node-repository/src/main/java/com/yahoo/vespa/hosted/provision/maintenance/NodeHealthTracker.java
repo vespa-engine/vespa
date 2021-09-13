@@ -116,7 +116,8 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                                                           .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
 
         return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
-               countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
+               countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L &&
+               countsByStatus.getOrDefault(ServiceStatus.UNKNOWN, 0L) == 0L;
     }
 
     /** Get node by given hostname and application. The applicationLock must be held when calling this */
