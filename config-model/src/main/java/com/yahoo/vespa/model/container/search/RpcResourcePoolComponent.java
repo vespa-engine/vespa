@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.xml.PlatformBundles;
+import com.yahoo.vespa.model.container.PlatformBundles;
 
 public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent, ComponentModel> {
 
