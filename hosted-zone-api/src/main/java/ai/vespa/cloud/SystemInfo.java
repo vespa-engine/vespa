@@ -10,16 +10,20 @@ package ai.vespa.cloud;
 public class SystemInfo {
 
     private final Zone zone;
+    private final Cluster cluster;
     private final Node node;
 
-    public SystemInfo(Zone zone, Node node) {
+    public SystemInfo(Zone zone, Cluster cluster, Node node) {
         this.zone = zone;
+        this.cluster = cluster;
         this.node = node;
     }
 
     /** Returns the zone this is running in */
     public Zone zone() { return zone; }
 
+    /** Returns the cluster this is part of */
+    public Cluster cluster() { return cluster; }
 
     /** Returns the node this is running on */
     public Node node() { return node; }
