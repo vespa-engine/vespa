@@ -354,8 +354,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private static void endpointToSlime(Cursor object, Endpoint endpoint) {
-        object.setString("endpoint", endpoint.name());
-        object.setString("dns", endpoint.dnsName());
+        object.setString("name", endpoint.name());
+        object.setString("dnsName", endpoint.dnsName());
         object.setString("routingMethod", endpoint.routingMethod().name());
         object.setString("cluster", endpoint.cluster().value());
         object.setString("scope", endpoint.scope().name());
