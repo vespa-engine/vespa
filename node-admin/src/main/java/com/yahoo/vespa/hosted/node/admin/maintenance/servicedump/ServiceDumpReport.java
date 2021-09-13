@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
 
+import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -63,6 +65,34 @@ class ServiceDumpReport extends BaseReport {
         this.error = error;
         this.artifacts = artifacts;
         this.dumpOptions = dumpOptions;
+    }
+
+    public static ServiceDumpReport createRequestReport(Instant createdAt, Instant expireAt, String configId,
+                                                  List<String> artifacts, DumpOptions options) {
+        return new ServiceDumpReport(
+                createdAt.toEpochMilli(), null, null, null, null, configId,
+                expireAt != null ? expireAt.toEpochMilli() : null, null, artifacts, options);
+    }
+
+    public static ServiceDumpReport createStartedReport(ServiceDumpReport request, Instant startedAt) {
+        return new ServiceDumpReport(
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, null, null, request.configId(),
+                request.expireAt(), null, request.artifacts(), request.dumpOptions());
+    }
+
+    public static ServiceDumpReport createSuccessReport(
+            ServiceDumpReport request, Instant startedAt, Instant completedAt, URI location) {
+        return new ServiceDumpReport(
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), completedAt.toEpochMilli(), null,
+                location.toString(), request.configId(), request.expireAt(), null, request.artifacts(),
+                request.dumpOptions());
+    }
+
+    public static ServiceDumpReport createErrorReport(
+            ServiceDumpReport request, Instant startedAt, Instant failedAt, String message) {
+        return new ServiceDumpReport(
+                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, failedAt.toEpochMilli(), null,
+                request.configId(), request.expireAt(), message, request.artifacts(), request.dumpOptions());
     }
 
     @JsonGetter(STARTED_AT_FIELD) public Long startedAt() { return startedAt; }

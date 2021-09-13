@@ -125,8 +125,8 @@ class VespaServiceDumperImplTest {
     }
 
     private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, String artifactName, ServiceDumpReport.DumpOptions options) {
-        ServiceDumpReport request = new ServiceDumpReport(
-                1600000000000L, null, null, null, null, "default/container.1", null, null, List.of(artifactName), options);
+        ServiceDumpReport request = ServiceDumpReport.createRequestReport(
+                Instant.ofEpochMilli(1600000000000L), null, "default/container.1", List.of(artifactName), options);
         NodeSpec spec = NodeSpec.Builder
                 .testSpec(HOSTNAME, NodeState.active)
                 .report(ServiceDumpReport.REPORT_ID, request.toJsonNode())
