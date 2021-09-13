@@ -59,10 +59,14 @@ public interface ConfigResponseFactory {
                 || ( ! requestChecksumMd5.isEmpty() && ! requestChecksumXxhash64.isEmpty())) {
             md5 = new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5);
             xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
-        } else if ( ! requestChecksumMd5.isEmpty())
+        } else if ( ! requestChecksumMd5.isEmpty()) {
             md5 = new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5);
-        else
+        } else if (requestChecksumMd5.isEmpty() && !requestChecksumXxhash64.isEmpty()) {
             xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
+        } else {
+            md5 = new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5);
+            xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
+        }
 
         return PayloadChecksums.from(md5, xxhash64);
     }

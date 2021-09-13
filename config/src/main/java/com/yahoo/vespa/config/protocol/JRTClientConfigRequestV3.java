@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.protocol;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.slime.JsonFormat;
@@ -13,13 +12,19 @@ import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.JRTMethods;
+import com.yahoo.vespa.config.PayloadChecksum;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Represents version 3 config request for config clients. Provides methods for inspecting request and response
@@ -252,8 +257,20 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
 
     @Override
     public boolean hasUpdatedConfig() {
-        String respMd5 = getNewConfigMd5();
-        return !respMd5.equals("") && !getRequestConfigMd5().equals(respMd5);
+        PayloadChecksums requestConfigChecksums = getRequestConfigChecksums();
+        log.log(Level.FINE, () -> "request checksums for " + getConfigKey() + ":"  + requestConfigChecksums);
+
+        PayloadChecksums newChecksums = getNewChecksums();
+        log.log(Level.FINE, () -> "new checksums for " + getConfigKey() + ": " + newChecksums);
+        if (newChecksums.isEmpty()) return false;
+
+        PayloadChecksum respMd5 = newChecksums.getForType(MD5);
+        boolean updated = respMd5 != null && ! requestConfigChecksums.getForType(MD5).equals(respMd5);
+
+        if (!updated) return false;
+
+        PayloadChecksum respXxhash64 = newChecksums.getForType(XXHASH64);
+        return respXxhash64 != null &&  ! requestConfigChecksums.getForType(XXHASH64).equals(respXxhash64);
     }
 
     @Override

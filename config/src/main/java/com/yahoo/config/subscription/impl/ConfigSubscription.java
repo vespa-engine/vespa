@@ -19,6 +19,8 @@ import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
+
 /**
  * Represents one active subscription to one config
  *
@@ -103,6 +105,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.configClass = key.getConfigClass();
         this.subscriber = subscriber;
         this.config.set(new ConfigState<>());
+        getConfigState().getChecksums().removeChecksumsOfType(MD5);  // TODO: Temporary until we don't use md5 anymore
     }
 
     /**
