@@ -41,7 +41,7 @@ class VespaServiceDumperImplTest {
     void creates_valid_dump_id_from_dump_request() {
         long nowMillis = Instant.now().toEpochMilli();
         ServiceDumpReport request = new ServiceDumpReport(
-                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(JvmDumpProducer.NAME));
+                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(JvmDumpProducer.NAME), null);
         String dumpId = VespaServiceDumperImpl.createDumpId(request);
         assertEquals("default-container-3-" + nowMillis, dumpId);
     }
@@ -59,7 +59,7 @@ class VespaServiceDumperImplTest {
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         ServiceDumpReport request = new ServiceDumpReport(
-                1600000000000L, null, null, null, null, "default/container.1", null, null, List.of(JvmDumpProducer.NAME));
+                1600000000000L, null, null, null, null, "default/container.1", null, null, List.of(JvmDumpProducer.NAME), null);
         NodeSpec initialSpec = NodeSpec.Builder
                 .testSpec(HOSTNAME, NodeState.active)
                 .report(ServiceDumpReport.REPORT_ID, request.toJsonNode())

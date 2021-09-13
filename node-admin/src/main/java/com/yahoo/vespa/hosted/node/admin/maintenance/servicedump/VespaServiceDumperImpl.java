@@ -113,7 +113,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 producerDirectoryOnHost.createDirectory();
                 producerDirectoryOnHost.setPermissions("rwxrwxrwx");
                 UnixPath producerDirectoryInNode = directoryInNode.resolve(artifactType);
-                producer.produceArtifact(context, configId, producerDirectoryInNode);
+                producer.produceArtifact(context, configId, request.dumpOptions(), producerDirectoryInNode);
                 collectArtifactFilesToUpload(files, producerDirectoryOnHost, destination.resolve(artifactType + '/'), expiry);
             }
             context.log(log, Level.INFO, "Uploading files with destination " + destination + " and expiry " + expiry);
@@ -166,21 +166,21 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private static ServiceDumpReport createStartedReport(ServiceDumpReport request, Instant startedAt) {
         return new ServiceDumpReport(
                 request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, null, null, request.configId(),
-                request.expireAt(), null, request.artifacts());
+                request.expireAt(), null, request.artifacts(), request.dumpOptions());
     }
 
     private static ServiceDumpReport createSuccessReport(
             Clock clock, ServiceDumpReport request, Instant startedAt, URI location) {
         return new ServiceDumpReport(
                 request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), clock.instant().toEpochMilli(), null,
-                location.toString(), request.configId(), request.expireAt(), null, request.artifacts());
+                location.toString(), request.configId(), request.expireAt(), null, request.artifacts(), request.dumpOptions());
     }
 
     private static ServiceDumpReport createErrorReport(
             Clock clock, ServiceDumpReport request, Instant startedAt, String message) {
         return new ServiceDumpReport(
                 request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, clock.instant().toEpochMilli(), null,
-                request.configId(), request.expireAt(), message, request.artifacts());
+                request.configId(), request.expireAt(), message, request.artifacts(), request.dumpOptions());
     }
 
     static String createDumpId(ServiceDumpReport request) {

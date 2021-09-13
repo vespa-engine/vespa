@@ -28,7 +28,8 @@ class JvmDumpProducer implements ArtifactProducer {
     @Override public String name() { return NAME; }
 
     @Override
-    public void produceArtifact(NodeAgentContext context, String configId, UnixPath resultDirectoryInNode) throws IOException {
+    public void produceArtifact(NodeAgentContext context, String configId, ServiceDumpReport.DumpOptions options,
+                                UnixPath resultDirectoryInNode) throws IOException {
         UnixPath vespaJvmDumper = new UnixPath(context.pathInNodeUnderVespaHome("bin/vespa-jvm-dumper"));
         context.log(log, Level.INFO,
                 "Executing '" + vespaJvmDumper + "' with arguments '" + configId + "' and '" + resultDirectoryInNode + "'");
