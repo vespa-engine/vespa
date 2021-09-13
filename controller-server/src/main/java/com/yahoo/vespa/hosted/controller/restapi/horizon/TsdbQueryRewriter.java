@@ -7,12 +7,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
-import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 
 import java.io.IOException;
-import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,20 +19,8 @@ import java.util.stream.Collectors;
 public class TsdbQueryRewriter {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final EnumSet<RoleDefinition> operatorRoleDefinitions =
-            EnumSet.of(RoleDefinition.hostedOperator, RoleDefinition.hostedSupporter);
 
-    public static byte[] rewrite(byte[] data, Set<Role> roles, SystemName systemName) throws IOException {
-        boolean operator = roles.stream().map(Role::definition).anyMatch(operatorRoleDefinitions::contains);
-
-        // Anyone with any tenant relation can view metrics for apps within those tenants
-        Set<TenantName> authorizedTenants = roles.stream()
-                .filter(TenantRole.class::isInstance)
-                .map(role -> ((TenantRole) role).tenant())
-                .collect(Collectors.toUnmodifiableSet());
-        if (!operator && authorizedTenants.isEmpty())
-            throw new UnauthorizedException();
-
+    public static byte[] rewrite(byte[] data, Set<TenantName> authorizedTenants, boolean operator, SystemName systemName) throws IOException {
         JsonNode root = mapper.readTree(data);
         requireLegalType(root);
         getField(root, "executionGraph", ArrayNode.class)

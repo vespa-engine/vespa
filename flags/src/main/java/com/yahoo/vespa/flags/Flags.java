@@ -283,6 +283,14 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
+            "enabled-horizon-dashboard", false,
+            List.of("olaa"), "2021-09-13", "2021-12-31",
+            "Enable Horizon dashboard",
+            "Takes effect immediately",
+            TENANT_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
