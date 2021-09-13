@@ -79,7 +79,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts) {
         Map<String, NodeAgentContext> nodeAgentContextsByHostname = nodeAgentContexts.stream()
-                .collect(Collectors.toMap(nac -> nac.hostname().value(), Function.identity()));
+                .collect(Collectors.toMap(NodeAdminImpl::nodeAgentId, Function.identity()));
 
         // Stop and remove NodeAgents that should no longer be running
         diff(nodeAgentWithSchedulerByHostname.keySet(), nodeAgentContextsByHostname.keySet())
@@ -221,5 +221,15 @@ public class NodeAdminImpl implements NodeAdmin {
         NodeAgentContextManager contextManager = new NodeAgentContextManager(clock, context);
         NodeAgent nodeAgent = nodeAgentFactory.create(contextManager, context);
         return new NodeAgentWithScheduler(nodeAgent, contextManager);
+    }
+
+    private static String nodeAgentId(NodeAgentContext nac) {
+        // NodeAgentImpl has some internal state that should not be reused when the same hostname is re-allocated
+        // to a different application/cluster, solve this by including reservation timestamp in the key.
+        return nac.hostname().value() + "-" + nac.node().events().stream()
+                .filter(event -> "reserved".equals(event.type()))
+                .findFirst()
+                .map(event -> Long.toString(event.at().toEpochMilli()))
+                .orElse("");
     }
 }

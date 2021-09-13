@@ -178,6 +178,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
+                node.history.stream().map(event -> new Event(event.agent, event.event, Instant.ofEpochMilli(event.at))).collect(Collectors.toUnmodifiableList()),
                 Optional.ofNullable(node.parentHostname),
                 Optional.ofNullable(node.archiveUri).map(URI::create),
                 Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm));
