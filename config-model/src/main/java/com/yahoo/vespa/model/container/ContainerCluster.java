@@ -171,6 +171,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         componentGroup = new ComponentGroup<>(this, "component");
 
+        addCommonVespaBundles();
+
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
         addComponent(new DefaultThreadpoolProvider(this, deployState.featureFlags().metricsproxyNumThreads()));
@@ -456,6 +458,13 @@ public abstract class ContainerCluster<CONTAINER extends Container>
                     checksum(applicationMetaData.getChecksum()).
                     generation(applicationMetaData.getGeneration());
         }
+    }
+
+    /**
+     * Adds the Vespa bundles that are necessary for all container types.
+     */
+    public void addCommonVespaBundles() {
+        PlatformBundles.commonVespaBundles().forEach(this::addPlatformBundle);
     }
 
     /**
