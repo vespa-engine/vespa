@@ -5,16 +5,31 @@ SHARE ?= $(CURDIR)/share
 # When building a new release the build system should set the VERSION
 # environment variable to version being built
 VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
+GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
 
 all: test checkfmt install
 
-install:
-	env GOBIN=$(BIN) \
-		go install -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)" ./...
+# Cross-platform build targets
+build-mac: GOOS=darwin
+build-mac: xbuild
+
+build-linux: GOOS=linux
+build-linux: xbuild
+
+build-win: GOOS=windows
+build-win: xbuild
+
+xbuild:
+	mkdir -p bin/$(GOOS)_amd64
+	env GOOS=$(GOOS) go build -o bin/$(GOOS)_amd64 $(GO_FLAGS) ./...
 
 manpages: install
 	mkdir -p $(SHARE)/man/man1
 	$(BIN)/vespa man $(SHARE)/man/man1
+
+# Development targets
+install:
+	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 clean:
 	rm -rf $(BIN) $(SHARE)
