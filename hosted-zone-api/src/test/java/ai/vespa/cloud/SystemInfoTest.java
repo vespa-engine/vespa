@@ -14,8 +14,13 @@ public class SystemInfoTest {
     @Test
     public void testSystemInfo() {
         Zone zone = new Zone(Environment.dev, "us-west-1");
-        SystemInfo info = new SystemInfo(zone);
+        Cluster cluster = new Cluster(1);
+        Node node = new Node(0);
+
+        SystemInfo info = new SystemInfo(zone, cluster, node);
         assertEquals(zone, info.zone());
+        assertEquals(cluster, info.cluster());
+        assertEquals(node, info.node());
     }
 
     @Test
@@ -44,6 +49,20 @@ public class SystemInfoTest {
         catch (IllegalArgumentException e) {
             assertEquals("Invalid zone 'invalid.us-west-1': No environment named 'invalid'", e.getMessage());
         }
+    }
+
+    @Test
+    public void testCluster() {
+        int size = 1;
+        Cluster cluster = new Cluster(size);
+        assertEquals(size, cluster.size());
+    }
+
+    @Test
+    public void testNode() {
+        int index = 0;
+        Node node = new Node(index);
+        assertEquals(index, node.index());
     }
 
 }

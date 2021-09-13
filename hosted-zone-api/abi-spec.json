@@ -1,4 +1,16 @@
 {
+  "ai.vespa.cloud.Cluster": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public int size()"
+    ],
+    "fields": []
+  },
   "ai.vespa.cloud.Environment": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
@@ -19,6 +31,20 @@
       "public static final enum ai.vespa.cloud.Environment prod"
     ]
   },
+  "ai.vespa.cloud.Node": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public int index()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
   "ai.vespa.cloud.SystemInfo": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -26,8 +52,10 @@
       "public"
     ],
     "methods": [
-      "public void <init>(ai.vespa.cloud.Zone)",
-      "public ai.vespa.cloud.Zone zone()"
+      "public void <init>(ai.vespa.cloud.Zone, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
+      "public ai.vespa.cloud.Zone zone()",
+      "public ai.vespa.cloud.Cluster cluster()",
+      "public ai.vespa.cloud.Node node()"
     ],
     "fields": []
   },
