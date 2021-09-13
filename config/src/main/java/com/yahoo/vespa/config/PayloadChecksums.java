@@ -52,6 +52,8 @@ public class PayloadChecksums {
         return this;
     }
 
+    public void removeChecksumsOfType(PayloadChecksum.Type type) { checksums.remove(type); }
+
     public PayloadChecksum getForType(PayloadChecksum.Type type) {
         return checksums.get(type);
     }
@@ -59,6 +61,8 @@ public class PayloadChecksums {
     public boolean valid() {
         return checksums.values().stream().allMatch(PayloadChecksum::valid);
     }
+
+    public boolean isEmpty() { return this.equals(empty()); }
 
     @Override
     public String toString() {

@@ -50,7 +50,13 @@ public class PayloadChecksum {
         return new PayloadChecksum(ConfigUtils.getXxhash64(data), XXHASH64);
     }
 
-    public boolean isEmpty() { return checksum.isEmpty(); }
+    public boolean isEmpty() {
+        switch (type) {
+            case MD5: return this.equals(empty(MD5));
+            case XXHASH64: return this.equals(empty(XXHASH64));
+            default: throw new IllegalArgumentException("Unknown type " + type);
+        }
+    }
 
     public String asString() { return checksum; }
 
