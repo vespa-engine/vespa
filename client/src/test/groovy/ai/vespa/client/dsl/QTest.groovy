@@ -244,6 +244,46 @@ class QTest extends Specification {
         q == """yql=select * from sd1 where weakAnd(f1, f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f3, f1 contains "v1", f2 contains "v2"));"""
     }
 
+    def "geo location"() {
+        given:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b").and(Q.geoLocation("taiwan", 25.105497, 121.597366, "200km"))
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sd1 where a contains "b" and geoLocation(taiwan, 25.105497, 121.597366, "200km");"""
+    }
+
+    def "nearest neighbor query"() {
+        when:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b")
+                .and(Q.nearestNeighbor("vec1", "vec2")
+                        .annotate(A.a("targetHits", 10, "approximate", false))
+                )
+                .semicolon()
+                .build()
+
+        then:
+        q == """yql=select * from sd1 where a contains "b" and ([{"approximate":false,"targetHits":10}]nearestNeighbor(vec1, vec2));"""
+    }
+
+    def "invalid nearest neighbor should throws an exception (targetHits annotation is required)"() {
+        when:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("a").contains("b").and(Q.nearestNeighbor("vec1", "vec2"))
+                .semicolon()
+                .build()
+
+        then:
+        thrown(IllegalArgumentException)
+    }
+
+
     def "rank with only query"() {
         given:
         def q = Q.select("*")
