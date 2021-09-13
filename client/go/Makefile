@@ -1,15 +1,27 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+# When building a new release the build system should set the VERSION
+# environment variable to version being built or released
+VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
+
 BIN ?= $(CURDIR)/bin
 SHARE ?= $(CURDIR)/share
-# When building a new release the build system should set the VERSION
-# environment variable to version being built
-VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
 
 all: test checkfmt install
 
+#
+# Dist targets
+#
+
+# Bump the version of the vespa-cli formula and create a pull request to Homebrew repository
+dist-homebrew:
+	brew bump-formula-pr --tag vespa-$(VERSION)-1 --version $(VERSION) vespa-cli
+
+#
 # Cross-platform build targets
+#
+
 build-mac: GOOS=darwin
 build-mac: xbuild
 
@@ -23,13 +35,16 @@ xbuild:
 	mkdir -p bin/$(GOOS)_amd64
 	env GOOS=$(GOOS) go build -o bin/$(GOOS)_amd64 $(GO_FLAGS) ./...
 
+#
+# Development targets
+#
+
+install:
+	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
+
 manpages: install
 	mkdir -p $(SHARE)/man/man1
 	$(BIN)/vespa man $(SHARE)/man/man1
-
-# Development targets
-install:
-	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 clean:
 	rm -rf $(BIN) $(SHARE)
