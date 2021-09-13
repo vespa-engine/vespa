@@ -54,17 +54,6 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
 }
 
-func assertQueryNonJsonResult(t *testing.T, expectedQuery string, query ...string) {
-	client := &mockHttpClient{}
-	queryURL := queryServiceURL(client)
-	client.NextResponse(200, "query result")
-	assert.Equal(t,
-		"query result\n",
-		executeCommand(t, client, []string{"query"}, query),
-		"query output")
-	assert.Equal(t, queryURL+"/search/"+expectedQuery, client.lastRequest.URL.String())
-}
-
 func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
 	convergeServices(client)

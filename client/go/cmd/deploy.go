@@ -28,7 +28,7 @@ func init() {
 }
 
 var deployCmd = &cobra.Command{
-	Use:   "deploy [<application-directory>]",
+	Use:   "deploy [application-directory]",
 	Short: "Deploy (prepare and activate) an application package",
 	Long: `Deploy (prepare and activate) an application package.
 
@@ -87,7 +87,7 @@ If application directory is not specified, it defaults to working directory.`,
 }
 
 var prepareCmd = &cobra.Command{
-	Use:               "prepare <application-directory>",
+	Use:               "prepare application-directory",
 	Short:             "Prepare an application package for activation",
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,

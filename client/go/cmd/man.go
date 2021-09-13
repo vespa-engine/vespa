@@ -10,7 +10,7 @@ func init() {
 }
 
 var manCmd = &cobra.Command{
-	Use:               "man <directory>",
+	Use:               "man directory",
 	Short:             "Generate man pages and write them to given directory",
 	Args:              cobra.ExactArgs(1),
 	Hidden:            true, // Not intended to be called by users

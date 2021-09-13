@@ -20,7 +20,7 @@ func init() {
 }
 
 var queryCmd = &cobra.Command{
-	Use:     "query <query-parameters>",
+	Use:     "query query-parameters",
 	Short:   "Issue a query to Vespa",
 	Example: `$ vespa query "yql=select * from sources * where title contains 'foo';" hits=5`,
 	Long: `Issue a query to Vespa.

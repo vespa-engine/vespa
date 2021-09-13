@@ -30,7 +30,7 @@ func init() {
 
 var cloneCmd = &cobra.Command{
 	// TODO: "application" and "list" subcommands?
-	Use:   "clone <sample-application-path> <target-directory>",
+	Use:   "clone sample-application-path target-directory",
 	Short: "Create files and directory structure for a new Vespa application from a sample application",
 	Long: `Creates an application package file structure.
 	Example: "$ vespa clone vespa-cloud/album-recommendation my-app",

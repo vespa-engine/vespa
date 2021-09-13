@@ -30,7 +30,6 @@ const (
 type Service struct {
 	BaseURL     string
 	Name        string
-	description string
 	certificate tls.Certificate
 }
 
