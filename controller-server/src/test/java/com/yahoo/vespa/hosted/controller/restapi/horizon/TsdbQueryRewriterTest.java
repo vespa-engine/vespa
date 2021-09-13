@@ -22,33 +22,28 @@ public class TsdbQueryRewriterTest {
 
     @Test
     public void rewrites_query() throws IOException {
-        assertRewrite("filters-complex.json", "filters-complex.expected.json", Role.reader(TenantName.from("tenant2")));
+        assertRewrite("filters-complex.json", "filters-complex.expected.json", Set.of(TenantName.from("tenant2")), false);
 
         assertRewrite("filter-in-execution-graph.json",
                 "filter-in-execution-graph.expected.json",
-                Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
+                Set.of(TenantName.from("tenant2"), TenantName.from("tenant3")), false);
 
         assertRewrite("filter-in-execution-graph.json",
                 "filter-in-execution-graph.expected.operator.json",
-                Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")), Role.hostedOperator());
+                Set.of(TenantName.from("tenant2"), TenantName.from("tenant3")), true);
 
         assertRewrite("no-filters.json",
                 "no-filters.expected.json",
-                Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
+                Set.of(TenantName.from("tenant2"), TenantName.from("tenant3")), false);
 
         assertRewrite("filters-meta-query.json",
                 "filters-meta-query.expected.json",
-                Role.reader(TenantName.from("tenant2")), Role.athenzTenantAdmin(TenantName.from("tenant3")));
+                Set.of(TenantName.from("tenant2"), TenantName.from("tenant3")), false);
     }
 
-    @Test(expected = TsdbQueryRewriter.UnauthorizedException.class)
-    public void throws_if_no_roles() throws IOException {
-        assertRewrite("filters-complex.json", "filters-complex.expected.json");
-    }
-
-    private static void assertRewrite(String initialFilename, String expectedFilename, Role... roles) throws IOException {
+    private static void assertRewrite(String initialFilename, String expectedFilename, Set<TenantName> tenants, boolean operator) throws IOException {
         byte[] data = Files.readAllBytes(Paths.get("src/test/resources/horizon", initialFilename));
-        data = TsdbQueryRewriter.rewrite(data, Set.of(roles), SystemName.Public);
+        data = TsdbQueryRewriter.rewrite(data, tenants, operator, SystemName.Public);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new JsonFormat(false).encode(baos, SlimeUtils.jsonToSlime(data));

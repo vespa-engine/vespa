@@ -22,6 +22,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -71,6 +72,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final Controller controller;
     private final BooleanFlag enable_public_signup_flow;
     private final IntFlag maxTrialTenants;
+    private final BooleanFlag enabledHorizonDashboard;
 
     @Inject
     public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource) {
@@ -79,6 +81,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         this.controller = controller;
         this.enable_public_signup_flow = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
         this.maxTrialTenants = PermanentFlags.MAX_TRIAL_TENANTS.bindTo(flagSource);
+        this.enabledHorizonDashboard = Flags.ENABLED_HORIZON_DASHBOARD.bindTo(flagSource);
     }
 
     @Override
@@ -184,6 +187,10 @@ public class UserApiHandler extends LoggingRequestHandler {
                     Cursor tenantRolesObject = tenantObject.setArray("roles");
                     tenantRolesByTenantName.getOrDefault(tenant, List.of())
                             .forEach(role -> tenantRolesObject.addString(role.definition().name()));
+                    if (controller.system().isPublic()) {
+                        tenantObject.setBool(enabledHorizonDashboard.id().toString(),
+                                enabledHorizonDashboard.with(FetchVector.Dimension.TENANT_ID, tenant.value()).value());
+                    }
                 });
 
         if (!operatorRoles.isEmpty()) {

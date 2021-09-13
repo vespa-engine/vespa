@@ -3,22 +3,36 @@ package com.yahoo.vespa.hosted.controller.restapi.horizon;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonResponse;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Proxies metrics requests from Horizon UI
@@ -27,22 +41,36 @@ import java.util.logging.Level;
  */
 public class HorizonApiHandler extends LoggingRequestHandler {
 
+    private final BillingController billingController;
     private final SystemName systemName;
     private final HorizonClient client;
+    private final BooleanFlag enabledHorizonDashboard;
+
+    private static final EnumSet<RoleDefinition> operatorRoleDefinitions =
+            EnumSet.of(RoleDefinition.hostedOperator, RoleDefinition.hostedSupporter);
 
     @Inject
-    public HorizonApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller) {
+    public HorizonApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller, FlagSource flagSource) {
         super(parentCtx);
+        this.billingController = controller.serviceRegistry().billingController();
         this.systemName = controller.system();
         this.client = controller.serviceRegistry().horizonClient();
+        this.enabledHorizonDashboard = Flags.ENABLED_HORIZON_DASHBOARD.bindTo(flagSource);
     }
 
     @Override
     public HttpResponse handle(HttpRequest request) {
+        var roles = getRoles(request);
+        var operator = roles.stream().map(Role::definition).anyMatch(operatorRoleDefinitions::contains);
+        var authorizedTenants = getAuthorizedTenants(roles);
+
+        if (!operator && authorizedTenants.isEmpty())
+            return ErrorResponse.forbidden("No tenant with enabled metrics view");
+
         try {
             switch (request.getMethod()) {
                 case GET: return get(request);
-                case POST: return post(request);
+                case POST: return post(request, authorizedTenants, operator);
                 case PUT: return put(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
@@ -65,10 +93,10 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse post(HttpRequest request) {
+    private HttpResponse post(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request, true);
-        if (path.matches("/horizon/v1/meta/search/timeseries")) return tsdbQuery(request, false);
+        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request, authorizedTenants, operator, true);
+        if (path.matches("/horizon/v1/meta/search/timeseries")) return tsdbQuery(request, authorizedTenants, operator, false);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -78,10 +106,9 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse tsdbQuery(HttpRequest request, boolean isMetricQuery) {
-        SecurityContext securityContext = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class);
+    private HttpResponse tsdbQuery(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator, boolean isMetricQuery) {
         try {
-            byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), securityContext.roles(), systemName);
+            byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), authorizedTenants, operator, systemName);
             return new JsonInputStreamResponse(isMetricQuery ? client.getMetrics(data) : client.getMetaData(data));
         } catch (TsdbQueryRewriter.UnauthorizedException e) {
             return ErrorResponse.forbidden("Access denied");
@@ -90,11 +117,22 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private static <T> T getAttribute(HttpRequest request, String attributeName, Class<T> clazz) {
-        return Optional.ofNullable(request.getJDiscRequest().context().get(attributeName))
-                .filter(clazz::isInstance)
-                .map(clazz::cast)
-                .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
+    private static Set<Role> getRoles(HttpRequest request) {
+        return Optional.ofNullable(request.getJDiscRequest().context().get(SecurityContext.ATTRIBUTE_NAME))
+                .filter(SecurityContext.class::isInstance)
+                .map(SecurityContext.class::cast)
+                .map(SecurityContext::roles)
+                .orElseThrow(() -> new IllegalArgumentException("Attribute '" + SecurityContext.ATTRIBUTE_NAME + "' was not set on request"));
+    }
+
+    private Set<TenantName> getAuthorizedTenants(Set<Role> roles) {
+        var horizonEnabled = roles.stream()
+                .filter(TenantRole.class::isInstance)
+                .map(role -> ((TenantRole) role).tenant())
+                .filter(tenant -> enabledHorizonDashboard.with(FetchVector.Dimension.TENANT_ID, tenant.value()).value())
+                .collect(Collectors.toList());
+
+        return new HashSet<>(billingController.tenantsWithPlan(horizonEnabled, PlanId.from("pay-as-you-go")));
     }
 
     private static class JsonInputStreamResponse extends HttpResponse {
