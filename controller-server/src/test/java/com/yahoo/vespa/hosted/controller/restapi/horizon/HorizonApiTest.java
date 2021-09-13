@@ -1,10 +1,10 @@
 package com.yahoo.vespa.hosted.controller.restapi.horizon;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
@@ -20,20 +20,23 @@ public class HorizonApiTest extends ControllerContainerCloudTest {
     @Test
     public void only_operators_and_flag_enabled_tenants_allowed() {
         ContainerTester tester = new ContainerTester(container, "");
+        TenantName tenantName = TenantName.defaultName();
 
         tester.assertResponse(request("/horizon/v1/config/dashboard/topFolders")
                         .roles(Set.of(Role.hostedOperator())),
                 "", 200);
 
         tester.assertResponse(request("/horizon/v1/config/dashboard/topFolders")
-                        .roles(Set.of(Role.reader(TenantName.from("tenant")))),
+                        .roles(Set.of(Role.reader(tenantName))),
                 "{\"error-code\":\"FORBIDDEN\",\"message\":\"No tenant with enabled metrics view\"}", 403);
 
         ((InMemoryFlagSource) tester.controller().flagSource())
                 .withBooleanFlag(Flags.ENABLED_HORIZON_DASHBOARD.id(), true);
 
+        tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), true);
+
         tester.assertResponse(request("/horizon/v1/config/dashboard/topFolders")
-                        .roles(Set.of(Role.reader(TenantName.from("tenant")))),
+                        .roles(Set.of(Role.reader(tenantName))),
                 "", 200);
     }
 
