@@ -7,5 +7,5 @@ import (
 )
 
 func TestVersion(t *testing.T) {
-	assert.Equal(t, "vespa version 0.0.0-devel\n", execute(command{args: []string{"version"}}, t, nil))
+	assert.Contains(t, execute(command{args: []string{"version"}}, t, nil), "vespa version 0.0.0-devel compiled with")
 }
