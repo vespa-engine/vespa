@@ -6,7 +6,11 @@ VERSION ?= $(shell echo "0.0.0-`git rev-parse --short HEAD`")
 
 BIN ?= $(CURDIR)/bin
 SHARE ?= $(CURDIR)/share
+DIST ?= $(CURDIR)/dist
+
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
+GIT_ROOT := $(shell git rev-parse --show-toplevel)
+DIST_TARGETS := dist-mac dist-linux dist-win32 dist-win64
 
 all: test checkfmt install
 
@@ -22,18 +26,32 @@ dist-homebrew:
 # Cross-platform build targets
 #
 
-build-mac: GOOS=darwin
-build-mac: xbuild
+dist: $(DIST_TARGETS) sha256sums
 
-build-linux: GOOS=linux
-build-linux: xbuild
+dist-mac: GOOS=darwin
+dist-mac: GOARCH=amd64
 
-build-win: GOOS=windows
-build-win: xbuild
+dist-linux: GOOS=linux
+dist-linux: GOARCH=amd64
 
-xbuild:
-	mkdir -p bin/$(GOOS)_amd64
-	env GOOS=$(GOOS) go build -o bin/$(GOOS)_amd64 $(GO_FLAGS) ./...
+dist-win32: GOOS=windows
+dist-win32: GOARCH=386
+
+dist-win64: GOOS=windows
+dist-win64: GOARCH=amd64
+
+$(DIST_TARGETS): DIST_NAME=vespa-cli_$(VERSION)_$(GOOS)_$(GOARCH)
+$(DIST_TARGETS): manpages
+$(DIST_TARGETS):
+	mkdir -p $(DIST)/$(DIST_NAME)/bin
+	env GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(DIST)/$(DIST_NAME)/bin $(GO_FLAGS) ./...
+	cp -a $(GIT_ROOT)/LICENSE $(DIST)/$(DIST_NAME)
+	if [ "$(GOOS)" = "windows" ]; then \
+		cd $(DIST) && zip -r $(DIST)/$(DIST_NAME).zip $(DIST_NAME); \
+	else \
+		cp -a share $(DIST)/$(DIST_NAME); \
+		tar -czvf $(DIST)/$(DIST_NAME).tar.gz -C $(DIST) $(DIST_NAME); \
+	fi
 
 #
 # Development targets
@@ -47,7 +65,7 @@ manpages: install
 	$(BIN)/vespa man $(SHARE)/man/man1
 
 clean:
-	rm -rf $(BIN) $(SHARE)
+	rm -rf $(BIN) $(SHARE) $(DIST)
 
 test:
 	go test ./...
