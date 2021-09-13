@@ -107,3 +107,28 @@ jobs:
             echo "Current Docker image is older than 7 days"
             exit 1
           fi
+
+  mirror-copr-rpms-to-artifactory:
+    annotations:
+      screwdriver.cd/cpu: LOW
+      screwdriver.cd/ram: LOW
+      screwdriver.cd/disk: HIGH
+      screwdriver.cd/timeout: 60
+      screwdriver.cd/buildPeriodically: H 6 * * *
+    secrets:
+      - JFROG_API_TOKEN
+    steps:
+      - mirror: |
+          screwdriver/publish-unpublished-rpms-to-jfrog-cloud.sh
+
+  delete-old-versions-on-artifactory:
+    annotations:
+      screwdriver.cd/cpu: LOW
+      screwdriver.cd/ram: LOW
+      screwdriver.cd/timeout: 10
+      screwdriver.cd/buildPeriodically: H 6 * * 1
+    secrets:
+      - JFROG_API_TOKEN
+    steps:
+      - mirror: |
+          screwdriver/delete-old-artifactory-artifacts.sh
