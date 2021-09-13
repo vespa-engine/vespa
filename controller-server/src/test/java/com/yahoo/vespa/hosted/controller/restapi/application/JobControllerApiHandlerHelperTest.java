@@ -157,9 +157,10 @@ public class JobControllerApiHandlerHelperTest {
         tester.configServer().setLogStream(() -> "Nope, this won't be logged");
         tester.configServer().convergeServices(app.instanceId(), zone);
         tester.runner().run();
-
-        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), "8"), "dev-us-east-1-log-second-part.json");
+
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
     }
 
     @Test

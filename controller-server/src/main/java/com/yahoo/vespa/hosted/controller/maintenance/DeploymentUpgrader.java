@@ -44,7 +44,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                         if ( ! deployment.zone().environment().isManuallyDeployed()) continue;
 
                         Run last = controller().jobController().last(job).get();
-                        Versions target = new Versions(systemVersion, last.versions().targetApplication(), Optional.empty(), Optional.empty());
+                        Versions target = new Versions(systemVersion, last.versions().targetApplication(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetApplication()));
                         if ( ! deployment.version().isBefore(target.targetPlatform())) continue;
                         if (   controller().clock().instant().isBefore(last.start().plus(Duration.ofDays(1)))) continue;
                         if ( ! isLikelyNightFor(job)) continue;

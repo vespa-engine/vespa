@@ -520,8 +520,8 @@ public class JobController {
                                                                  .flatMap(controller.applications()::lastCompatibleVersion)
                                                                  .orElseGet(controller::readSystemVersion)),
                                version,
-                               Optional.empty(),
-                               Optional.empty()),
+                               lastRun.map(run -> run.versions().targetPlatform()),
+                               lastRun.map(run -> run.versions().targetApplication())),
                   false,
                   JobProfile.development);
         });
