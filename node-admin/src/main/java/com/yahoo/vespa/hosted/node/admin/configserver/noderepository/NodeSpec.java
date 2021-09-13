@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 import java.net.URI;
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -60,6 +61,7 @@ public class NodeSpec {
     private final Set<String> additionalIpAddresses;
 
     private final NodeReports reports;
+    private final List<Event> events;
 
     private final Optional<String> parentHostname;
     private final Optional<URI> archiveUri;
@@ -93,6 +95,7 @@ public class NodeSpec {
             Set<String> ipAddresses,
             Set<String> additionalIpAddresses,
             NodeReports reports,
+            List<Event> events,
             Optional<String> parentHostname,
             Optional<URI> archiveUri,
             Optional<ApplicationId> exclusiveTo) {
@@ -128,9 +131,10 @@ public class NodeSpec {
         this.currentFirmwareCheck = Objects.requireNonNull(currentFirmwareCheck);
         this.resources = Objects.requireNonNull(resources);
         this.realResources = Objects.requireNonNull(realResources);
-        this.ipAddresses = Objects.requireNonNull(ipAddresses);
-        this.additionalIpAddresses = Objects.requireNonNull(additionalIpAddresses);
+        this.ipAddresses = Set.copyOf(ipAddresses);
+        this.additionalIpAddresses = Set.copyOf(additionalIpAddresses);
         this.reports = Objects.requireNonNull(reports);
+        this.events = List.copyOf(events);
         this.parentHostname = Objects.requireNonNull(parentHostname);
         this.archiveUri = Objects.requireNonNull(archiveUri);
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo);
@@ -263,6 +267,10 @@ public class NodeSpec {
 
     public NodeReports reports() { return reports; }
 
+    public List<Event> events() {
+        return events;
+    }
+
     public Optional<String> parentHostname() {
         return parentHostname;
     }
@@ -308,6 +316,7 @@ public class NodeSpec {
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(additionalIpAddresses, that.additionalIpAddresses) &&
                 Objects.equals(reports, that.reports) &&
+                Objects.equals(events, that.events) &&
                 Objects.equals(parentHostname, that.parentHostname) &&
                 Objects.equals(archiveUri, that.archiveUri) &&
                 Objects.equals(exclusiveTo, that.exclusiveTo);
@@ -342,6 +351,7 @@ public class NodeSpec {
                 ipAddresses,
                 additionalIpAddresses,
                 reports,
+                events,
                 parentHostname,
                 archiveUri,
                 exclusiveTo);
@@ -376,6 +386,7 @@ public class NodeSpec {
                 + " ipAddresses=" + ipAddresses
                 + " additionalIpAddresses=" + additionalIpAddresses
                 + " reports=" + reports
+                + " events=" + events
                 + " parentHostname=" + parentHostname
                 + " archiveUri=" + archiveUri
                 + " exclusiveTo=" + exclusiveTo
@@ -409,6 +420,7 @@ public class NodeSpec {
         private Set<String> ipAddresses = Set.of();
         private Set<String> additionalIpAddresses = Set.of();
         private NodeReports reports = new NodeReports();
+        private List<Event> events = List.of();
         private Optional<String> parentHostname = Optional.empty();
         private Optional<URI> archiveUri = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
@@ -428,6 +440,7 @@ public class NodeSpec {
             currentRebootGeneration(node.currentRebootGeneration);
             orchestratorStatus(node.orchestratorStatus);
             reports(new NodeReports(node.reports));
+            events(node.events);
             node.wantedDockerImage.ifPresent(this::wantedDockerImage);
             node.currentDockerImage.ifPresent(this::currentDockerImage);
             node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
@@ -600,6 +613,11 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder events(List<Event> events) {
+            this.events = events;
+            return this;
+        }
+
         public Builder parentHostname(String parentHostname) {
             this.parentHostname = Optional.of(parentHostname);
             return this;
@@ -714,6 +732,10 @@ public class NodeSpec {
             return reports;
         }
 
+        public List<Event> events() {
+            return events;
+        }
+
         public Optional<String> parentHostname() {
             return parentHostname;
         }
@@ -730,7 +752,7 @@ public class NodeSpec {
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
                     resources, realResources, ipAddresses, additionalIpAddresses,
-                    reports, parentHostname, archiveUri, exclusiveTo);
+                    reports, events, parentHostname, archiveUri, exclusiveTo);
         }
 
 
