@@ -267,7 +267,7 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         PayloadChecksum respMd5 = newChecksums.getForType(MD5);
         boolean updated = respMd5 != null && ! requestConfigChecksums.getForType(MD5).equals(respMd5);
 
-        if (!updated) return false;
+        if (updated) return true;
 
         PayloadChecksum respXxhash64 = newChecksums.getForType(XXHASH64);
         return respXxhash64 != null &&  ! requestConfigChecksums.getForType(XXHASH64).equals(respXxhash64);
