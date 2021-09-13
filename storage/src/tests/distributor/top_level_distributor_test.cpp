@@ -86,10 +86,6 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return _distributor->_status_to_do;
     }
 
-    TopLevelDistributor::MetricUpdateHook distributor_metric_update_hook() {
-        return _distributor->_metricUpdateHook;
-    }
-
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats distributor_bucket_spaces_stats() {
         return _distributor->getBucketSpacesStats();
     }
