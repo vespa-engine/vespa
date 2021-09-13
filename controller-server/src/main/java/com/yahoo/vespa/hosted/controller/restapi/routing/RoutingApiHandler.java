@@ -32,8 +32,10 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This implements the /routing/v1 API, which provides operator with global routing control at both zone- and
@@ -95,12 +97,20 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse endpoints(Path path) {
         var instanceId = instanceFrom(path);
         var endpoints = controller.routing().endpointsOf(instanceId);
-        var zoneStatus = endpoints.asList().stream()
+
+        var deployments = endpoints.asList().stream()
                 .flatMap(e -> e.zones().stream())
                 .distinct()
+                .map(zoneId -> new DeploymentId(instanceId, zoneId))
+                .collect(Collectors.toList());
+
+        var deploymentsStatus = deployments.stream()
                 .collect(Collectors.toMap(
-                        zone -> zone,
-                        zone -> controller.routing().globalRotationStatus(new DeploymentId(instanceId, zone))
+                        deploymentId -> deploymentId,
+                        deploymentId -> Stream.concat(
+                                directGlobalRoutingStatus(deploymentId).stream(),
+                                sharedGlobalRoutingStatus(deploymentId).stream()
+                        ).collect(Collectors.toList())
                 ));
 
         var slime = new Slime();
@@ -110,8 +120,11 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             var endpointRoot = endpointsRoot.addObject();
             endpointToSlime(endpointRoot, endpoint);
             var zonesRoot = endpointRoot.setArray("zones");
-            zoneStatus.forEach((zone, status) -> {
-                endpointStatusToSlime(zonesRoot.addObject(), zone, status.get(endpoint));
+            endpoint.zones().forEach(zoneId -> {
+                var deploymentId = new DeploymentId(instanceId, zoneId);
+                deploymentsStatus.getOrDefault(deploymentId, List.of()).forEach(status -> {
+                    deploymentStatusToSlime(zonesRoot.addObject(), deploymentId, status, endpoint.routingMethod());
+                });
             });
         });
 
@@ -269,40 +282,48 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                 for (var zone : zones) {
                     var deploymentId = requireDeployment(new DeploymentId(instance.id(), zone), instance);
                     // Include status from rotation
-                    if (rotationCanRouteTo(zone)) {
-                        var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
-                        // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
-                        var endpointStatus = rotationStatus.values().stream().findFirst();
-                        if (endpointStatus.isPresent()) {
-                            var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
-                            GlobalRouting.Agent agent;
-                            try {
-                                agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
-                            } catch (IllegalArgumentException e) {
-                                agent = GlobalRouting.Agent.unknown;
-                            }
-                            var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
-                                    ? GlobalRouting.Status.in
-                                    : GlobalRouting.Status.out;
-                            deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId,
-                                                    new GlobalRouting(status, agent, changedAt),
-                                                    RoutingMethod.shared);
-                        }
-                    }
+                    sharedGlobalRoutingStatus(deploymentId).ifPresent(status -> {
+                        deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId, status, RoutingMethod.shared);
+                    });
 
                     // Include status from routing policies
-                    var routingPolicies = controller.routing().policies().get(deploymentId);
-                    for (var policy : routingPolicies.values()) {
-                        if (policy.endpoints().isEmpty()) continue; // This policy does not apply to a global endpoint
-                        if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(RoutingMethod.exclusive)) continue;
-                        deploymentStatusToSlime(deploymentsArray.addObject(), new DeploymentId(policy.id().owner(),
-                                                                                               policy.id().zone()),
-                                                policy.status().globalRouting(), RoutingMethod.exclusive);
-                    }
+                    directGlobalRoutingStatus(deploymentId).forEach(status -> {
+                        deploymentStatusToSlime(deploymentsArray.addObject(), deploymentId, status, RoutingMethod.exclusive);
+                    });
                 }
             }
         }
 
+    }
+
+    private Optional<GlobalRouting> sharedGlobalRoutingStatus(DeploymentId deploymentId) {
+        if (rotationCanRouteTo(deploymentId.zoneId())) {
+            var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
+            // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
+            var endpointStatus = rotationStatus.values().stream().findFirst();
+            if (endpointStatus.isPresent()) {
+                var changedAt = Instant.ofEpochSecond(endpointStatus.get().getEpoch());
+                GlobalRouting.Agent agent;
+                try {
+                    agent = GlobalRouting.Agent.valueOf(endpointStatus.get().getAgent());
+                } catch (IllegalArgumentException e) {
+                    agent = GlobalRouting.Agent.unknown;
+                }
+                var status = endpointStatus.get().getStatus() == EndpointStatus.Status.in
+                        ? GlobalRouting.Status.in
+                        : GlobalRouting.Status.out;
+                return Optional.of(new GlobalRouting(status, agent, changedAt));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private List<GlobalRouting> directGlobalRoutingStatus(DeploymentId deploymentId) {
+        return controller.routing().policies().get(deploymentId).values().stream()
+                .filter(p -> ! p.endpoints().isEmpty())  // This policy does not apply to a global endpoint
+                .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
+                .map(p -> p.status().globalRouting())
+                .collect(Collectors.toList());
     }
 
     /** Returns whether a rotation can route traffic to given zone */
@@ -338,12 +359,6 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         object.setString("routingMethod", endpoint.routingMethod().name());
         object.setString("cluster", endpoint.cluster().value());
         object.setString("scope", endpoint.scope().name());
-    }
-
-    private static void endpointStatusToSlime(Cursor object, ZoneId zone, EndpointStatus status) {
-        object.setString("zone", zone.value());
-        object.setString("status", status.getStatus().name());
-        object.setString("reason", status.getReason());
     }
 
     private TenantName tenantFrom(Path path) {

@@ -8,14 +8,22 @@
       "scope": "global",
       "zones": [
         {
-          "zone": "prod.us-east-3",
+          "routingMethod": "shared",
+          "instance": "t1:a1:default",
+          "environment": "prod",
+          "region": "us-east-3",
           "status": "in",
-          "reason": ""
+          "agent": "unknown",
+          "changedAt": 1497618757000
         },
         {
-          "zone": "prod.us-west-1",
+          "routingMethod": "shared",
+          "instance": "t1:a1:default",
+          "environment": "prod",
+          "region": "us-west-1",
           "status": "in",
-          "reason": ""
+          "agent": "unknown",
+          "changedAt": 1497618757000
         }
       ]
     }
