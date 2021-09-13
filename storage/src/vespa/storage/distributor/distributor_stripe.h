@@ -198,6 +198,7 @@ private:
     friend class TopLevelDistributor;
     friend class DistributorStripeTestUtil;
     friend class DistributorTestUtil;
+    friend class TopLevelDistributorTestUtil;
     friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend class MultiThreadedStripeAccessGuard;

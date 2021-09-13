@@ -20,6 +20,7 @@
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
@@ -33,7 +34,6 @@
 namespace storage {
     struct DoneInitializeHandler;
     class HostInfo;
-    class NodeIdentity;
 }
 
 namespace storage::distributor {
@@ -83,6 +83,8 @@ public:
     void start_stripe_pool();
 
     DistributorMetricSet& getMetrics();
+
+    const NodeIdentity& node_identity() const noexcept { return _node_identity; }
 
     // Implements DistributorInterface and DistributorMessageSender.
     DistributorMetricSet& metrics() override { return getMetrics(); }
@@ -205,6 +207,7 @@ private:
 
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
 
+    const NodeIdentity                    _node_identity;
     DistributorComponentRegister&         _comp_reg;
     const bool                            _use_legacy_mode;
     std::shared_ptr<DistributorMetricSet> _metrics;
