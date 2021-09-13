@@ -65,7 +65,7 @@ class VespaServiceDumperImplTest {
                 .report(ServiceDumpReport.REPORT_ID, request.toJsonNode())
                 .archiveUri(URI.create("s3://uri-1/tenant1/"))
                 .build();
-        nodeRepository.updateNodeRepositoryNode(initialSpec);
+        nodeRepository.updateNodeSpec(initialSpec);
 
         // Create dumper and invoke tested method
         VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock);

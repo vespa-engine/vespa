@@ -2,13 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.OrchestratorStatus;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.integration.NodeRepoMock;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import org.junit.Test;
 
@@ -16,7 +18,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.when;
  */
 public class NodeAdminStateUpdaterTest {
     private final NodeAgentContextFactory nodeAgentContextFactory = mock(NodeAgentContextFactory.class);
-    private final NodeRepository nodeRepository = mock(NodeRepository.class);
+    private final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
@@ -238,20 +239,22 @@ public class NodeAdminStateUpdaterTest {
     }
 
     private void mockNodeRepo(NodeState hostState, int numberOfNodes) {
-        List<NodeSpec> containersToRun = IntStream.range(1, numberOfNodes + 1)
-                .mapToObj(i -> NodeSpec.Builder.testSpec("host" + i + ".yahoo.com").build())
-                .collect(Collectors.toList());
+        nodeRepository.resetNodeSpecs();
 
-        when(nodeRepository.getNodes(eq(hostHostname.value()))).thenReturn(containersToRun);
-        when(nodeRepository.getNode(eq(hostHostname.value()))).thenReturn(
-                NodeSpec.Builder.testSpec(hostHostname.value(), hostState).build());
+        IntStream.rangeClosed(1, numberOfNodes)
+                .mapToObj(i -> NodeSpec.Builder.testSpec("host" + i + ".yahoo.com").parentHostname(hostHostname.value()).build())
+                .forEach(nodeRepository::updateNodeSpec);
+
+        nodeRepository.updateNodeSpec(NodeSpec.Builder.testSpec(hostHostname.value(), hostState).type(NodeType.host).build());
     }
 
     private void mockAcl(Acl acl, int... nodeIds) {
-        Map<String, Acl> aclByHostname = Arrays.stream(nodeIds)
+        nodeRepository.setAcl(Arrays.stream(nodeIds)
                 .mapToObj(i -> "host" + i + ".yahoo.com")
-                .collect(Collectors.toMap(Function.identity(), h -> acl));
+                .collect(Collectors.toMap(Function.identity(), h -> acl)));
+    }
 
-        when(nodeRepository.getAcls(eq(hostHostname.value()))).thenReturn(aclByHostname);
+    private void setHostOrchestratorStatus(HostName hostname, OrchestratorStatus orchestratorStatus) {
+        nodeRepository.updateNodeSpec(hostname.value(), node -> node.orchestratorStatus(orchestratorStatus));
     }
 }

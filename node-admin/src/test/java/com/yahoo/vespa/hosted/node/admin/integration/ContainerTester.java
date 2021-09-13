@@ -78,7 +78,7 @@ public class ContainerTester implements AutoCloseable {
         for (int i = 1; i < 4; i++) ipAddresses.addAddress("host" + i + ".test.yahoo.com", "f000::" + i);
 
         NodeSpec hostSpec = NodeSpec.Builder.testSpec(HOST_HOSTNAME.value()).type(NodeType.host).build();
-        nodeRepository.updateNodeRepositoryNode(hostSpec);
+        nodeRepository.updateNodeSpec(hostSpec);
 
         Clock clock = Clock.systemUTC();
         Metrics metrics = new Metrics();
@@ -122,7 +122,7 @@ public class ContainerTester implements AutoCloseable {
                                                    ", but that image does not exist in the container engine");
             }
         }
-        nodeRepository.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
+        nodeRepository.updateNodeSpec(new NodeSpec.Builder(nodeSpec)
                 .parentHostname(HOST_HOSTNAME.value())
                 .build());
     }

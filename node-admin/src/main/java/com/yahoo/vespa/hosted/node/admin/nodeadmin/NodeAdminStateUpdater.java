@@ -102,6 +102,8 @@ public class NodeAdminStateUpdater {
      * with respect to: freeze, Orchestrator, and services running.
      */
     public void converge(State wantedState) {
+        NodeSpec node = nodeRepository.getNode(hostHostname);
+        boolean hostIsActiveInNR = node.state() == NodeState.active;
         if (wantedState == RESUMED) {
             adjustNodeAgentsToRunFromNodeRepository();
         } else if (currentState == TRANSITIONING && nodeAdmin.subsystemFreezeDuration().compareTo(FREEZE_CONVERGENCE_TIMEOUT) > 0) {
@@ -110,8 +112,7 @@ public class NodeAdminStateUpdater {
             adjustNodeAgentsToRunFromNodeRepository();
             nodeAdmin.setFrozen(false);
 
-            NodeState currentNodeState = nodeRepository.getNode(hostHostname).state();
-            if (currentNodeState == NodeState.active) orchestrator.resume(hostHostname);
+            if (hostIsActiveInNR) orchestrator.resume(hostHostname);
 
             throw new ConvergenceException("Timed out trying to freeze all nodes: will force an unfrozen tick");
         }
@@ -120,11 +121,9 @@ public class NodeAdminStateUpdater {
         currentState = TRANSITIONING;
 
         boolean wantFrozen = wantedState != RESUMED;
-        if (!nodeAdmin.setFrozen(wantFrozen)) {
+        if (!nodeAdmin.setFrozen(wantFrozen))
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
-        }
 
-        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).state() == NodeState.active;
         switch (wantedState) {
             case RESUMED:
                 if (hostIsActiveInNR) orchestrator.resume(hostHostname);
