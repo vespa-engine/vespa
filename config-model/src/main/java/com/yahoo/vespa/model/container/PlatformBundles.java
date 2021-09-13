@@ -26,16 +26,15 @@ public class PlatformBundles {
 
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
-
     private static final Set<String> searchAndDocprocComponents;
-
-    public static boolean isSearchAndDocprocClass(String className) {
-        return searchAndDocprocComponents.contains(className);
-    }
 
     public static Path absoluteBundlePath(String fileName) {
         if (fileName == null) return null;
         return LIBRARY_PATH.resolve(Paths.get(fileName + JarSuffix.JAR_WITH_DEPS.suffix));
+    }
+
+    public static boolean isSearchAndDocprocClass(String className) {
+        return searchAndDocprocComponents.contains(className);
     }
 
     // This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
