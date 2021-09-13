@@ -13,9 +13,10 @@ namespace search::bmcluster {
 class BmClusterController
 {
     storage::rpc::SharedRpcResources& _shared_rpc_resources;
+    unsigned int                      _num_nodes;
 public:
-    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in);
-    void set_cluster_up(bool distributor);
+    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in, unsigned int num_nodes);
+    void set_cluster_up(unsigned int node_idx, bool distributor);
 };
 
 }

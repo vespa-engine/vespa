@@ -124,12 +124,6 @@ SpiBmFeedHandler::get(const document::Bucket& bucket, vespalib::stringref field_
 }
 
 void
-SpiBmFeedHandler::create_bucket(const document::Bucket& bucket)
-{
-    _provider.createBucket(Bucket(bucket), context);
-}
-
-void
 SpiBmFeedHandler::attach_bucket_info_queue(PendingTracker& tracker)
 {
     if (!_skip_get_spi_bucket_info) {

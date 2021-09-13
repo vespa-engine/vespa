@@ -111,7 +111,9 @@ BmMessageBus::ReplyHandler::handleReply(std::unique_ptr<Reply> reply)
         }
         if (failed) {
             ++_errors;
-            LOG(error, "Unexpected %s", reply_as_string(*reply).c_str());
+            if (_errors <= 10) {
+                LOG(error, "Unexpected %s", reply_as_string(*reply).c_str());
+            }
         }
         tracker->release();
     } else {

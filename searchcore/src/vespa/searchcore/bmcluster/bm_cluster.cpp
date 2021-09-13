@@ -210,7 +210,7 @@ BmCluster::make_node(unsigned int node_idx)
     s << _base_dir << "/n" << node_idx;
     vespalib::string node_base_dir(s.str());
     int node_base_port = port_number(_base_port, PortBias::NUM_PORTS) + BmNode::num_ports() * node_idx;
-    _nodes[node_idx] = BmNode::create(node_base_dir, node_base_port, node_idx, _params, _document_types, _slobrok_port);
+    _nodes[node_idx] = BmNode::create(node_base_dir, node_base_port, node_idx, *this, _params, _document_types, _slobrok_port);
 }
 
 void
@@ -244,9 +244,9 @@ void
 BmCluster::create_buckets(BmFeed& feed)
 {
     LOG(info, "create %u buckets", feed.num_buckets());
-    auto feed_handler = get_node(0).make_create_bucket_feed_handler(false);
+    auto& node = get_node(0);
     for (unsigned int i = 0; i < feed.num_buckets(); ++i) {
-        feed_handler->create_bucket(feed.make_bucket(i));
+        node.create_bucket(feed.make_bucket(i));
     }
 }
 
@@ -267,11 +267,17 @@ BmCluster::start_service_layers()
     start_rpc_client();
     for (const auto &node : _nodes) {
         if (node) {
-            node->wait_service_layer_slobrok(*this);
+            node->wait_service_layer_slobrok();
         }
     }
-    BmClusterController fake_controller(get_rpc_client());
-    fake_controller.set_cluster_up(false);
+    BmClusterController fake_controller(get_rpc_client(), _params.get_num_nodes());
+    unsigned int node_idx = 0;
+    for (const auto &node : _nodes) {
+        if (node) {
+            fake_controller.set_cluster_up(node_idx, false);
+        }
+        ++node_idx;
+    }
 }
 
 void
@@ -284,11 +290,17 @@ BmCluster::start_distributors()
     }
     for (const auto &node : _nodes) {
         if (node) {
-            node->wait_distributor_slobrok(*this);
+            node->wait_distributor_slobrok();
         }
     }
-    BmClusterController fake_controller(get_rpc_client());
-    fake_controller.set_cluster_up(true);
+    BmClusterController fake_controller(get_rpc_client(), _params.get_num_nodes());
+    unsigned int node_idx = 0;
+    for (const auto &node : _nodes) {
+        if (node) {
+            fake_controller.set_cluster_up(node_idx, true);
+        }
+        ++node_idx;
+    }
     // Wait for bucket ownership transfer safe time
     std::this_thread::sleep_for(2s);
 }
@@ -298,7 +310,7 @@ BmCluster::create_feed_handlers()
 {
     for (const auto &node : _nodes) {
         if (node) {
-            node->create_feed_handler(_params, *this);
+            node->create_feed_handler(_params);
         }
     }
 }

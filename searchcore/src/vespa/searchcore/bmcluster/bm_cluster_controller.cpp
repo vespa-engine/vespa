@@ -8,6 +8,7 @@
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using storage::api::StorageMessageAddress;
 using storage::rpc::SharedRpcResources;
@@ -18,9 +19,11 @@ namespace search::bmcluster {
 namespace {
 
 FRT_RPCRequest *
-make_set_cluster_state_request()
+make_set_cluster_state_request(unsigned int num_nodes)
 {
-    storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState("version:2 distributor:1 storage:1"));
+    vespalib::asciistream s;
+    s << "version:2 distributor:" << num_nodes << " storage:" << num_nodes;
+    storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState(s.str()));
     storage::rpc::SlimeClusterStateBundleCodec codec;
     auto encoded_bundle = codec.encode(bundle);
     auto *req = new FRT_RPCRequest();
@@ -34,17 +37,18 @@ make_set_cluster_state_request()
 
 }
 
-BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in)
-    : _shared_rpc_resources(shared_rpc_resources_in)
+BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in, unsigned int num_nodes)
+    : _shared_rpc_resources(shared_rpc_resources_in),
+      _num_nodes(num_nodes)
 {
 }
 
 void
-BmClusterController::set_cluster_up(bool distributor)
+BmClusterController::set_cluster_up(unsigned int node_idx, bool distributor)
 {
     static vespalib::string _storage("storage");
-    StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0);
-    auto req = make_set_cluster_state_request();
+    StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, node_idx);
+    auto req = make_set_cluster_state_request(_num_nodes);
     auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(_shared_rpc_resources.slobrok_mirror(),
                                                                                     _shared_rpc_resources.target_factory(), 1);
     uint64_t fake_bucket_id = 0;
