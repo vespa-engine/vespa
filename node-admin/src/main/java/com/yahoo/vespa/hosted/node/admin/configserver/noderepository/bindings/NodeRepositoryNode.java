@@ -202,18 +202,15 @@ public class NodeRepositoryNode {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Event {
-        public final String agent;
-        public final String event;
-        public final long at;
-
-        public Event(@JsonProperty(value = "agent", required = true) String agent,
-                     @JsonProperty(value = "event", required = true) String event,
-                     @JsonProperty(value = "at", required = true) Long at) {
-            this.agent = agent;
-            this.event = event;
-            this.at = at;
-        }
+        @JsonProperty
+        public String event;
+        @JsonProperty
+        public String agent;
+        @JsonProperty
+        public Long at;
 
         @Override
         public String toString() {
