@@ -297,6 +297,14 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag ENABLE_ONPREM_TENANT_S3_ARCHIVE = defineFeatureFlag(
+            "enable-onprem-tenant-s3-archive", false,
+            List.of("bjorncs"), "2021-09-14", "2021-12-31",
+            "Enable tenant S3 buckets in cd/main. Must be set on controller cluster only.",
+            "Takes effect immediately",
+            ZONE_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

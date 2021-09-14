@@ -5,6 +5,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -41,21 +44,28 @@ public class CuratorArchiveBucketDb {
 
     private final ArchiveService archiveService;
     private final CuratorDb curatorDb;
-    private final boolean enabled;
+    private final FlagSource flagSource;
+    private final SystemName system;
 
     public CuratorArchiveBucketDb(Controller controller) {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.curatorDb = controller.curator();
-        SystemName system = controller.zoneRegistry().system();
-        this.enabled = system.isPublic() || system.isCd();
+        this.flagSource = controller.flagSource();
+        this.system = controller.zoneRegistry().system();
     }
 
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
-        if (enabled) {
+        if (enabled(zoneId)) {
             return Optional.of(URI.create(Text.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
         } else {
             return Optional.empty();
         }
+    }
+
+    private boolean enabled(ZoneId zone) {
+        return system.isPublic() || Flags.ENABLE_ONPREM_TENANT_S3_ARCHIVE.bindTo(flagSource)
+                .with(FetchVector.Dimension.ZONE_ID, zone.value())
+                .value();
     }
 
     private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
