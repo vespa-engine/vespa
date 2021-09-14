@@ -19,8 +19,8 @@ public class DefaultRankProfile extends RankProfile {
      *
      * @param rankProfileRegistry The {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing and looking up rank profiles.
      */
-    public DefaultRankProfile(Search search, RankProfileRegistry rankProfileRegistry) {
-        super("default", search, rankProfileRegistry);
+    public DefaultRankProfile(Search search, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
+        super("default", search, rankProfileRegistry, rankingConstants);
     }
 
     /**

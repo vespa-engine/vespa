@@ -84,11 +84,12 @@ public class ConvertedModel {
     public static ConvertedModel fromSourceOrStore(Path modelPath,
                                                    boolean pathIsFile,
                                                    RankProfileTransformContext context) {
+        ApplicationPackage applicationPackage = context.rankProfile().applicationPackage();
         ImportedMlModel sourceModel = // TODO: Convert to name here, make sure its done just one way
-                context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
+                context.importedModels().get(sourceModelFile(applicationPackage, modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
 
-        if (sourceModel == null && ! new ModelStore(context.rankProfile().applicationPackage(), modelName).exists())
+        if (sourceModel == null && ! new ModelStore(applicationPackage, modelName).exists())
             throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +
                                                context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
 
@@ -96,26 +97,22 @@ public class ConvertedModel {
             if ( ! sourceModel.isNative()) {
                 sourceModel = sourceModel.asNative();
             }
-            return fromSource(modelName,
-                              modelPath.toString(),
-                              context.rankProfile(),
-                              context.queryProfiles(),
-                              sourceModel);
+            return fromSource(applicationPackage, modelName, modelPath.toString(), context.rankProfile(),
+                              context.queryProfiles(), sourceModel);
         }
         else {
-            return fromStore(modelName,
-                             modelPath.toString(),
-                             context.rankProfile());
+            return fromStore(applicationPackage, modelName, modelPath.toString(), context.rankProfile());
         }
     }
 
-    public static ConvertedModel fromSource(ModelName modelName,
+    public static ConvertedModel fromSource(ApplicationPackage applicationPackage,
+                                            ModelName modelName,
                                             String modelDescription,
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
                                             ImportedMlModel importedModel) {
         try {
-            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            ModelStore modelStore = new ModelStore(applicationPackage, modelName);
             return new ConvertedModel(modelName,
                                       modelDescription,
                                       convertAndStore(importedModel, rankProfile, queryProfileRegistry, modelStore),
@@ -127,11 +124,12 @@ public class ConvertedModel {
         }
     }
 
-    public static ConvertedModel fromStore(ModelName modelName,
+    public static ConvertedModel fromStore(ApplicationPackage applicationPackage,
+                                           ModelName modelName,
                                            String modelDescription,
                                            RankProfile rankProfile) {
         try {
-            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            ModelStore modelStore = new ModelStore(applicationPackage, modelName);
             return new ConvertedModel(modelName,
                                       modelDescription,
                                       convertStored(modelStore, rankProfile),
@@ -319,8 +317,10 @@ public class ConvertedModel {
             constantsReplacedByFunctions.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
-            Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            profile.rankingConstants().computeIfAbsent(constantName, name -> new RankingConstant(name, constantValue.type(), constantPath.toString()));
+            profile.rankingConstants().computeIfAbsent(constantName, name -> {
+                Path constantPath = store.writeLargeConstant(name, constantValue);
+                return new RankingConstant(name, constantValue.type(), constantPath.toString());
+            });
         }
     }
 

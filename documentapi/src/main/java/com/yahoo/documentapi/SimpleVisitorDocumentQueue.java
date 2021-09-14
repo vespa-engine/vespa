@@ -14,12 +14,11 @@ import java.util.List;
  * Retrieving the list is not thread safe, so wait until visitor is done. This
  * is a simple class merely meant for testing.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Håkon Humberset
  */
 public class SimpleVisitorDocumentQueue extends DumpVisitorDataHandler {
-    private final List<Document> documents = new LinkedList<Document>();
+    private final List<Document> documents = new LinkedList<>();
 
-    // Inherit doc from VisitorDataHandler
     public void reset() {
         super.reset();
         documents.clear();

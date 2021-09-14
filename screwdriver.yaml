@@ -131,5 +131,5 @@ jobs:
     secrets:
       - JFROG_API_TOKEN
     steps:
-      - mirror: |
+      - cleanup: |
           screwdriver/delete-old-artifactory-artifacts.sh

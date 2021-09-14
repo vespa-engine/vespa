@@ -434,9 +434,10 @@ Search rootSchema(String dir) :
     Search search;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() { search = new Search(name, app, fileRegistry,deployLogger, properties);
-                                     rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
-                                     rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() {
+        search = new Search(name, app, fileRegistry,deployLogger, properties);
+        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));}
       lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return search; }
 }
@@ -2026,12 +2027,12 @@ void rankProfile(Search search) :
     ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
         {
             if (documentsOnly) {
-                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
+                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry, search.rankingConstants());
             }
             else if ("default".equals(name)) {
                 profile = rankProfileRegistry.get(search, "default");
             } else {
-                profile = new RankProfile(name, search, rankProfileRegistry);
+                profile = new RankProfile(name, search, rankProfileRegistry, search.rankingConstants());
             }
         }
       [inheritsRankProfile(profile)]

@@ -32,8 +32,8 @@ public class RankProfileRegistry {
 
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Search search) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
-        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));
+        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));
         return rankProfileRegistry;
     }
 
