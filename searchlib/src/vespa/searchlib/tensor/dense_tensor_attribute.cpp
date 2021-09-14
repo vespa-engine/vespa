@@ -43,7 +43,7 @@ public:
     BlobSequenceReader(AttributeVector &attr);
     ~BlobSequenceReader();
     bool is_present();
-    void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
+    void readTensor(void *buf, size_t len) { _datFile.file().ReadBuf(buf, len); }
 };
 
 BlobSequenceReader::BlobSequenceReader(AttributeVector &attr)
@@ -55,7 +55,7 @@ BlobSequenceReader::~BlobSequenceReader() = default;
 bool
 BlobSequenceReader::is_present() {
     unsigned char detect;
-    _datFile->ReadBuf(&detect, sizeof(detect));
+    _datFile.file().ReadBuf(&detect, sizeof(detect));
     if (detect == tensorIsNotPresent) {
         return false;
     }

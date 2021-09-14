@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "writeablefilechunk.h"
 #include "data_store_file_chunk_stats.h"
 #include "summaryexceptions.h"
-#include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/data/databuffer.h>
+#include "writeablefilechunk.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchlib/util/file_settings.h>
+#include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.writeablefilechunk");
@@ -27,8 +28,7 @@ namespace search {
 
 namespace {
 
-const uint64_t Alignment = 4_Ki;
-const uint64_t headerAlign = 4_Ki;
+const size_t Alignment = FileSettings::DIRECTIO_ALIGNMENT;
 
 }
 
@@ -785,7 +785,7 @@ void
 WriteableFileChunk::writeDataHeader(const FileHeaderContext &fileHeaderContext)
 {
     typedef FileHeader::Tag Tag;
-    FileHeader h(headerAlign);
+    FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     assert(_dataFile.IsOpened());
     assert(_dataFile.IsWriteMode());
     assert(_dataFile.GetPosition() == 0);

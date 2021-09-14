@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributefilewriter.h"
-#include "attributefilebufferwriter.h"
 #include "attribute_header.h"
-#include <vespa/vespalib/data/fileheader.h>
+#include "attributefilebufferwriter.h"
+#include "attributefilewriter.h"
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributefilewriter");
@@ -20,15 +21,12 @@ namespace search {
 
 namespace {
 
-const uint32_t headerAlign = 4_Ki;
-const uint32_t MIN_ALIGNMENT = 4_Ki;
-
 void
 writeDirectIOAligned(FastOS_FileInterface &file, const void *buf, size_t length)
 {
     const char * data(static_cast<const char *>(buf));
     size_t remaining(length);
-    for (size_t maxChunk(2_Mi); maxChunk >= MIN_ALIGNMENT; maxChunk >>= 1) {
+    for (size_t maxChunk(2_Mi); maxChunk >= FileSettings::DIRECTIO_ALIGNMENT; maxChunk >>= 1) {
         for ( ; remaining > maxChunk; remaining -= maxChunk, data += maxChunk) {
             file.WriteBuf(data, maxChunk);
         }
@@ -41,7 +39,7 @@ writeDirectIOAligned(FastOS_FileInterface &file, const void *buf, size_t length)
 void
 updateHeader(const vespalib::string &name, uint64_t fileBitSize)
 {
-    vespalib::FileHeader h(headerAlign);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     FastOS_File f;
     f.OpenReadWrite(name.c_str());
     h.readFile(f);
@@ -122,11 +120,11 @@ AttributeFileWriter::open(const vespalib::string &fileName)
 void
 AttributeFileWriter::writeHeader()
 {
-    vespalib::FileHeader header(headerAlign);
+    vespalib::FileHeader header(FileSettings::DIRECTIO_ALIGNMENT);
     _fileHeaderContext.addTags(header, _file->GetFileName());
     addTags(header);
     size_t headerLen = header.writeFile(*_file);
-    assert((headerLen % MIN_ALIGNMENT) == 0);
+    assert((headerLen % FileSettings::DIRECTIO_ALIGNMENT) == 0);
     _fileBitSize = headerLen * 8;
 }
 
@@ -141,7 +139,7 @@ AttributeFileWriter::addTags(vespalib::GenericHeader &header)
 AttributeFileWriter::Buffer
 AttributeFileWriter::allocBuf(size_t size)
 {
-    return std::make_unique<BufferBuf>(size, MIN_ALIGNMENT);
+    return std::make_unique<BufferBuf>(size, FileSettings::DIRECTIO_ALIGNMENT);
 }
 
 void

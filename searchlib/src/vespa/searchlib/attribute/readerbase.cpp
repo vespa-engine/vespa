@@ -19,8 +19,6 @@ const vespalib::string versionTag = "version";
 const vespalib::string docIdLimitTag = "docIdLimit";
 const vespalib::string createSerialNumTag = "createSerialNum";
 
-constexpr size_t DIRECTIO_ALIGNMENT(4_Ki);
-
 uint64_t
 extractCreateSerialNum(const vespalib::GenericHeader &header)
 {
@@ -35,53 +33,38 @@ ReaderBase::ReaderBase(AttributeVector &attr)
                   attribute::LoadUtils::openWeight(attr) : std::unique_ptr<Fast_BufferedFile>()),
       _idxFile(attr.hasMultiValue() ?
                attribute::LoadUtils::openIDX(attr) : std::unique_ptr<Fast_BufferedFile>()),
-      _weightReader(*_weightFile),
-      _idxReader(*_idxFile),
-      _enumReader(*_datFile),
+      _weightReader(_weightFile.file()),
+      _idxReader(_idxFile.file()),
+      _enumReader(_datFile.file()),
       _currIdx(0),
-      _datHeaderLen(0u),
-      _idxHeaderLen(0u),
-      _weightHeaderLen(0u),
       _createSerialNum(0u),
       _fixedWidth(attr.getFixedWidth()),
       _enumerated(false),
       _hasLoadData(false),
       _version(0),
-      _docIdLimit(0),
-      _datHeader(DIRECTIO_ALIGNMENT),
-      _datFileSize(0),
-      _idxFileSize(0)
+      _docIdLimit(0)
 {
-    _datHeaderLen = _datHeader.readFile(*_datFile);
-    _datFile->SetPosition(_datHeaderLen);
-    if (!attr.headerTypeOK(_datHeader) ||
-        !extractFileSize(_datHeader, *_datFile, _datFileSize)) {
-        _datFile->Close();
+    if (!attr.headerTypeOK(_datFile.header())) {
+        _datFile.close();
     }
-    _createSerialNum = extractCreateSerialNum(_datHeader);
-    if (_datHeader.hasTag(versionTag)) {
-        _version = _datHeader.getTag(versionTag).asInteger();
+    _createSerialNum = extractCreateSerialNum(_datFile.header());
+    if (_datFile.header().hasTag(versionTag)) {
+        _version = _datFile.header().getTag(versionTag).asInteger();
     }
-    _docIdLimit = _datHeader.getTag(docIdLimitTag).asInteger();
+    _docIdLimit = _datFile.header().getTag(docIdLimitTag).asInteger();
     if (hasIdx()) {
-        vespalib::FileHeader idxHeader(DIRECTIO_ALIGNMENT);
-        _idxHeaderLen = idxHeader.readFile(*_idxFile);
-        _idxFile->SetPosition(_idxHeaderLen);
-        if (!attr.headerTypeOK(idxHeader) ||
-            !extractFileSize(idxHeader, *_idxFile, _idxFileSize)) {
-            _idxFile->Close();
+        if (!attr.headerTypeOK(_idxFile.header())) {
+            _idxFile.close();
         } else  {
             _currIdx = _idxReader.readHostOrder();
         }
     }
     if (hasWeight()) {
-        vespalib::FileHeader weightHeader(DIRECTIO_ALIGNMENT);
-        _weightHeaderLen = weightHeader.readFile(*_weightFile);
-        _weightFile->SetPosition(_weightHeaderLen);
-        if (!attr.headerTypeOK(weightHeader))
-            _weightFile->Close();
+        if (!attr.headerTypeOK(_weightFile.header())) {
+            _weightFile.close();
+        }
     }
-    if (hasData() && AttributeVector::isEnumerated(_datHeader)) {
+    if (hasData() && AttributeVector::isEnumerated(_datFile.header())) {
         _enumerated = true;
     }
     _hasLoadData = hasData() &&
@@ -93,40 +76,30 @@ ReaderBase::~ReaderBase() = default;
 
 bool
 ReaderBase::hasWeight() const {
-    return _weightFile.get() && _weightFile->IsOpened();
+    return _weightFile.valid();
 }
 
 bool
 ReaderBase::hasIdx() const {
-    return _idxFile.get() && _idxFile->IsOpened();
+    return _idxFile.valid();
 }
 
 bool
 ReaderBase::hasData() const {
-    return _datFile.get() && _datFile->IsOpened();
-}
-
-bool
-ReaderBase::
-extractFileSize(const vespalib::GenericHeader &header,
-                FastOS_FileInterface &file, uint64_t &fileSize)
-{
-    fileSize = file.GetSize();
-    return FileSizeCalculator::extractFileSize(header, header.getSize(),
-                                               file.GetFileName(), fileSize);
+    return _datFile.valid();
 }
 
 void
 ReaderBase::rewind()
 {
-    _datFile->SetPosition(_datHeaderLen);
+    _datFile.rewind();
     _currIdx = 0;
     if (hasIdx()) {
-        _idxFile->SetPosition(_idxHeaderLen);
+        _idxFile.rewind();
         _currIdx = _idxReader.readHostOrder();
     }
     if (hasWeight()) {
-        _weightFile->SetPosition(_weightHeaderLen);
+        _weightFile.rewind();
     }
 }
 
@@ -137,13 +110,13 @@ ReaderBase::getNumValues()
        return getEnumCount();
     } else {
        if (_fixedWidth > 0) {
-           size_t dataSize(_datFileSize - _datHeaderLen);
+           size_t dataSize = _datFile.data_size();
            assert((dataSize % _fixedWidth) == 0);
            return dataSize / _fixedWidth;
         } else {
             // TODO. This limits the number of multivalues to 2^32-1
             // This is assert during write, so this should never be a problem here.
-            _idxFile->SetPosition(_idxFileSize - 4);
+            _idxFile.file().SetPosition(_idxFile.file_size() - 4);
             size_t numValues = _idxReader.readHostOrder();
             rewind();
             return numValues;

@@ -1,13 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "singleboolattribute.h"
 #include "attributevector.hpp"
-#include "primitivereader.h"
 #include "iattributesavetarget.h"
 #include "ipostinglistsearchcontext.h"
+#include "primitivereader.h"
+#include "singleboolattribute.h"
+#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -245,7 +246,7 @@ SingleBoolAttribute::onShrinkLidSpace()
 uint64_t
 SingleBoolAttribute::getEstimatedSaveByteSize() const
 {
-    constexpr uint64_t headerSize = 4_Ki + sizeof(uint32_t);
+    constexpr uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT + sizeof(uint32_t);
     return headerSize + _bv.sizeBytes();
 }
 

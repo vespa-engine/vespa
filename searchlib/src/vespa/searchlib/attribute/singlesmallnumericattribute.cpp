@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "singlesmallnumericattribute.h"
-#include "attributevector.hpp"
-#include "primitivereader.h"
 #include "attributeiterators.hpp"
+#include "attributevector.hpp"
 #include "iattributesavetarget.h"
+#include "primitivereader.h"
+#include "singlesmallnumericattribute.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -200,7 +201,7 @@ SingleValueSmallNumericAttribute::onShrinkLidSpace()
 uint64_t
 SingleValueSmallNumericAttribute::getEstimatedSaveByteSize() const
 {
-    uint64_t headerSize = 4_Ki;
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
     const size_t numDocs(getCommittedDocIdLimit());
     const size_t numDataWords((numDocs + _valueShiftMask) >> _wordShift);
     const size_t sz((numDataWords + 1) * sizeof(Word));

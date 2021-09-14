@@ -2,7 +2,7 @@
 
 #include "pagedict4file.h"
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -35,12 +35,6 @@ using search::index::PostingListParams;
 using vespalib::getLastErrorString;
 
 namespace search::diskindex {
-
-namespace {
-
-const uint32_t headerAlign = 4_Ki;
-
-}
 
 PageDict4FileSeqRead::PageDict4FileSeqRead()
     : _pReader(nullptr),
@@ -467,7 +461,7 @@ PageDict4FileSeqWrite::makePHeader(const FileHeaderContext &fileHeaderContext)
     // subheader only written to SS file.
 
     typedef vespalib::GenericHeader::Tag Tag;
-    vespalib::FileHeader header(headerAlign);
+    vespalib::FileHeader header(FileSettings::DIRECTIO_ALIGNMENT);
 
     fileHeaderContext.addTags(header, _pfile.GetFileName());
     header.putTag(Tag("frozen", 0));
@@ -499,7 +493,7 @@ PageDict4FileSeqWrite::makeSPHeader(const FileHeaderContext &fileHeaderContext)
     // subheader only written to SS file.
 
     typedef vespalib::GenericHeader::Tag Tag;
-    vespalib::FileHeader header(headerAlign);
+    vespalib::FileHeader header(FileSettings::DIRECTIO_ALIGNMENT);
 
     fileHeaderContext.addTags(header, _spfile.GetFileName());
     header.putTag(Tag("frozen", 0));
@@ -529,7 +523,7 @@ PageDict4FileSeqWrite::makeSSHeader(const FileHeaderContext &fileHeaderContext)
     ComprFileWriteContext &wc = _ssWriteContext;
 
     typedef vespalib::GenericHeader::Tag Tag;
-    vespalib::FileHeader header(headerAlign);
+    vespalib::FileHeader header(FileSettings::DIRECTIO_ALIGNMENT);
 
     fileHeaderContext.addTags(header, _ssfile.GetFileName());
     header.putTag(Tag("frozen", 0));
@@ -557,7 +551,7 @@ PageDict4FileSeqWrite::makeSSHeader(const FileHeaderContext &fileHeaderContext)
 void
 PageDict4FileSeqWrite::updatePHeader(uint64_t fileBitSize)
 {
-    vespalib::FileHeader h(headerAlign);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     FastOS_File f;
     f.OpenReadWrite(_pfile.GetFileName());
     h.readFile(f);
@@ -574,7 +568,7 @@ PageDict4FileSeqWrite::updatePHeader(uint64_t fileBitSize)
 void
 PageDict4FileSeqWrite::updateSPHeader(uint64_t fileBitSize)
 {
-    vespalib::FileHeader h(headerAlign);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     FastOS_File f;
     f.OpenReadWrite(_spfile.GetFileName());
     h.readFile(f);
@@ -591,7 +585,7 @@ PageDict4FileSeqWrite::updateSPHeader(uint64_t fileBitSize)
 void
 PageDict4FileSeqWrite::updateSSHeader(uint64_t fileBitSize)
 {
-    vespalib::FileHeader h(headerAlign);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     FastOS_File f;
     f.OpenReadWrite(_ssfile.GetFileName());
     h.readFile(f);
