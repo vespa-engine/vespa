@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -45,5 +46,10 @@ abstract class AbstractProducer implements ArtifactProducer {
         return result;
     }
 
+    protected int findVespaServicePid(NodeAgentContext ctx, String configId) throws IOException {
+        Path findPidBinary = ctx.pathInNodeUnderVespaHome("libexec/vespa/find-pid");
+        CommandResult findPidResult = executeCommand(ctx, List.of(findPidBinary.toString(), configId), true);
+        return Integer.parseInt(findPidResult.getOutput());
+    }
 
 }
