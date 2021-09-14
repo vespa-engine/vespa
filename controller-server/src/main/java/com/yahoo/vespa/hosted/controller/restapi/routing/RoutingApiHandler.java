@@ -96,12 +96,15 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse endpoints(Path path) {
         var instanceId = instanceFrom(path);
-        var endpoints = controller.routing().endpointsOf(instanceId);
+        var endpoints = controller.routing().endpointsOf(instanceId)
+                .sortedBy(Comparator.comparing(Endpoint::name))
+                .asList();
 
-        var deployments = endpoints.asList().stream()
+        var deployments = endpoints.stream()
                 .flatMap(e -> e.zones().stream())
                 .distinct()
                 .map(zoneId -> new DeploymentId(instanceId, zoneId))
+                .sorted(Comparator.comparing(DeploymentId::dottedString))
                 .collect(Collectors.toList());
 
         var deploymentsStatus = deployments.stream()
@@ -120,7 +123,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             var endpointRoot = endpointsRoot.addObject();
             endpointToSlime(endpointRoot, endpoint);
             var zonesRoot = endpointRoot.setArray("zones");
-            endpoint.zones().forEach(zoneId -> {
+            endpoint.zones().stream().sorted(Comparator.comparing(ZoneId::value)).forEach(zoneId -> {
                 var deploymentId = new DeploymentId(instanceId, zoneId);
                 deploymentsStatus.getOrDefault(deploymentId, List.of()).forEach(status -> {
                     deploymentStatusToSlime(zonesRoot.addObject(), deploymentId, status, endpoint.routingMethod());
