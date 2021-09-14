@@ -301,6 +301,15 @@ TEST_F(LegacyDistributorTest, recovery_mode_on_cluster_state_change) {
     EXPECT_TRUE(distributor_is_in_recovery_mode());
 }
 
+TEST_F(LegacyDistributorTest, distributor_considered_initialized_once_self_observed_up) {
+    setupDistributor(Redundancy(1), NodeCount(2), "distributor:1 .0.s:d storage:1"); // We're down D:
+    EXPECT_FALSE(_distributor->done_initializing());
+    enableDistributorClusterState("distributor:1 storage:1"); // We're up :D
+    EXPECT_TRUE(_distributor->done_initializing());
+    enableDistributorClusterState("distributor:1 .0.s:d storage:1"); // And down again :I but that does not change init state
+    EXPECT_TRUE(_distributor->done_initializing());
+}
+
 // Migrated to DistributorStripeTest
 TEST_F(LegacyDistributorTest, operations_are_throttled) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");

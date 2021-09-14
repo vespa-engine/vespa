@@ -66,6 +66,7 @@ public:
                       ChainedMessageSender& messageSender,
                       StripeHostInfoNotifier& stripe_host_info_notifier,
                       bool use_legacy_mode,
+                      bool& done_initializing_ref, // TODO STRIPE const ref once legacy is gone and stripe can't mutate init state
                       uint32_t stripe_index = 0);
 
     ~DistributorStripe() override;
@@ -147,7 +148,7 @@ public:
     void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply) override;
 
     bool initializing() const override {
-        return !_doneInitializing;
+        return !_done_initializing_ref;
     }
 
     const DistributorConfiguration& getConfig() const override {
@@ -342,8 +343,8 @@ private:
     mutable std::vector<std::shared_ptr<DistributorStatus>> _statusToDo;
     mutable std::vector<std::shared_ptr<DistributorStatus>> _fetchedStatusRequests;
 
-    DoneInitializeHandler& _doneInitializeHandler;
-    bool _doneInitializing;
+    DoneInitializeHandler& _doneInitializeHandler; // TODO STRIPE remove when legacy is gone
+    bool& _done_initializing_ref;
 
     std::unique_ptr<BucketPriorityDatabase> _bucketPriorityDb;
     std::unique_ptr<SimpleMaintenanceScanner> _scanner;

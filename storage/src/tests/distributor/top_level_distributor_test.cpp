@@ -162,6 +162,15 @@ TEST_F(TopLevelDistributorTest, recovery_mode_on_cluster_state_change_is_trigger
     EXPECT_TRUE(all_distributor_stripes_are_in_recovery_mode());
 }
 
+TEST_F(TopLevelDistributorTest, distributor_considered_initialized_once_self_observed_up) {
+    setup_distributor(Redundancy(1), NodeCount(2), "distributor:1 .0.s:d storage:1"); // We're down D:
+    EXPECT_FALSE(_distributor->done_initializing());
+    enable_distributor_cluster_state("distributor:1 storage:1"); // We're up :D
+    EXPECT_TRUE(_distributor->done_initializing());
+    enable_distributor_cluster_state("distributor:1 .0.s:d storage:1"); // And down again :I but that does not change init state
+    EXPECT_TRUE(_distributor->done_initializing());
+}
+
 // TODO STRIPE consider moving to generic test, not specific to top-level distributor or stripe
 TEST_F(TopLevelDistributorTest, contains_time_statement) {
     setup_distributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");

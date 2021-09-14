@@ -32,9 +32,11 @@ TopLevelBucketDBUpdater::TopLevelBucketDBUpdater(const DistributorNodeContext& n
                                                  DistributorInterface& distributor_interface,
                                                  ChainedMessageSender& chained_sender,
                                                  std::shared_ptr<const lib::Distribution> bootstrap_distribution,
-                                                 StripeAccessor& stripe_accessor)
+                                                 StripeAccessor& stripe_accessor,
+                                                 ClusterStateBundleActivationListener* state_activation_listener)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _stripe_accessor(stripe_accessor),
+      _state_activation_listener(state_activation_listener),
       _active_state_bundle(lib::ClusterState()),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
@@ -60,6 +62,9 @@ TopLevelBucketDBUpdater::propagate_active_state_bundle_internally() {
         for (auto& iter : *repo) {
             iter.second->setClusterState(_active_state_bundle.getDerivedClusterState(iter.first));
         }
+    }
+    if (_state_activation_listener) {
+        _state_activation_listener->on_cluster_state_bundle_activated(_active_state_bundle);
     }
 }
 
@@ -419,12 +424,12 @@ TopLevelBucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_
     const lib::ClusterStateBundle& state = _pending_cluster_state->getNewClusterStateBundle();
 
     _active_state_bundle = _pending_cluster_state->getNewClusterStateBundle();
+
+    guard.enable_cluster_state_bundle(state, _pending_cluster_state->hasBucketOwnershipTransfer());
     propagate_active_state_bundle_internally();
 
     LOG(debug, "TopLevelBucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
-
-    guard.enable_cluster_state_bundle(state, _pending_cluster_state->hasBucketOwnershipTransfer());
 }
 
 void TopLevelBucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state,

@@ -25,6 +25,7 @@ DistributorStripeTestUtil::DistributorStripeTestUtil()
       _sender(),
       _senderDown(),
       _hostInfo(),
+      _done_initializing(true),
       _messageSender(_sender, _senderDown)
 {
     _config = getStandardConfig(false);
@@ -47,7 +48,8 @@ DistributorStripeTestUtil::createLinks()
                                                   *this,
                                                   _messageSender,
                                                   *this,
-                                                  false);
+                                                  false,
+                                                  _done_initializing);
 }
 
 void

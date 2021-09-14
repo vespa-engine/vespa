@@ -43,6 +43,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      ChainedMessageSender& messageSender,
                                      StripeHostInfoNotifier& stripe_host_info_notifier,
                                      bool use_legacy_mode,
+                                     bool& done_initializing_ref,
                                      uint32_t stripe_index)
     : DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
@@ -68,7 +69,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _external_message_mutex(),
       _threadPool(threadPool),
       _doneInitializeHandler(doneInitHandler),
-      _doneInitializing(false),
+      _done_initializing_ref(done_initializing_ref),
       _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
       _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
@@ -299,8 +300,8 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
     propagateClusterStates();
 
     const auto& baseline_state = *state.getBaselineClusterState();
-    if (!_doneInitializing && (baseline_state.getNodeState(my_node).getState() == lib::State::UP)) {
-        _doneInitializing = true;
+    if (_use_legacy_mode && !_done_initializing_ref && (baseline_state.getNodeState(my_node).getState() == lib::State::UP)) {
+        _done_initializing_ref = true; // TODO STRIPE remove; responsibility moved to TopLevelDistributor in non-legacy
         _doneInitializeHandler.notifyDoneInitializing();
     }
     enterRecoveryMode();
@@ -365,9 +366,8 @@ DistributorStripe::leaveRecoveryMode()
     if (isInRecoveryMode()) {
         LOG(debug, "Leaving recovery mode");
         // FIXME don't use shared metric for this
-        _metrics.recoveryModeTime.addValue(
-                _recoveryTimeStarted.getElapsedTimeAsDouble());
-        if (_doneInitializing) {
+        _metrics.recoveryModeTime.addValue(_recoveryTimeStarted.getElapsedTimeAsDouble());
+        if (_done_initializing_ref) {
             _must_send_updated_host_info = true;
         }
     }

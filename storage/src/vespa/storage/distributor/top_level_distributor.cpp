@@ -52,7 +52,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
                                          const NodeIdentity& node_identity,
                                          framework::TickingThreadPool& threadPool,
                                          DistributorStripePool& stripe_pool,
-                                         DoneInitializeHandler& doneInitHandler,
+                                         DoneInitializeHandler& done_init_handler,
                                          uint32_t num_distributor_stripes,
                                          HostInfo& hostInfoReporterRegistrar,
                                          ChainedMessageSender* messageSender)
@@ -60,7 +60,9 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _node_identity(node_identity),
       _comp_reg(compReg),
+      _done_init_handler(done_init_handler),
       _use_legacy_mode(num_distributor_stripes == 0),
+      _done_initializing(false),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _total_metrics(_use_legacy_mode ? std::shared_ptr<DistributorTotalMetrics>()
                                       : std::make_shared<DistributorTotalMetrics>(num_distributor_stripes)),
@@ -75,7 +77,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
                                                   (_use_legacy_mode ? *_ideal_state_metrics
                                                                     : _ideal_state_total_metrics->stripe(0)),
                                                   node_identity, threadPool,
-                                                  doneInitHandler, *this, *this, _use_legacy_mode)),
+                                                  _done_init_handler, *this, *this, _use_legacy_mode, _done_initializing)),
       _stripe_pool(stripe_pool),
       _stripes(),
       _stripe_accessor(),
@@ -116,14 +118,16 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
         _bucket_db_updater = std::make_unique<TopLevelBucketDBUpdater>(_component, _component,
                                                                        *this, *this,
                                                                        _component.getDistribution(),
-                                                                       *_stripe_accessor);
+                                                                       *_stripe_accessor,
+                                                                       this);
         _stripes.emplace_back(std::move(_stripe));
         for (size_t i = 1; i < num_distributor_stripes; ++i) {
             _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg,
                                                                       _total_metrics->stripe(i),
                                                                       _ideal_state_total_metrics->stripe(i),
                                                                       node_identity, threadPool,
-                                                                      doneInitHandler, *this, *this, _use_legacy_mode, i));
+                                                                      _done_init_handler, *this, *this, _use_legacy_mode,
+                                                                      _done_initializing, i));
         }
         _stripe_scan_stats.resize(num_distributor_stripes);
         _distributorStatusDelegate.registerStatusPage();
@@ -682,10 +686,10 @@ TopLevelDistributor::enableNextConfig() // TODO STRIPE rename to enable_next_con
     }
 }
 
-
 void
 TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
 {
+    // TODO STRIPE assert(_done_initializing); (can't currently do due to some unit test restrictions; uncomment and find out)
     LOG(debug, "Stripe %u has signalled an intent to send host info out-of-band", stripe_index);
     std::lock_guard lock(_stripe_scan_notify_mutex);
     assert(!_use_legacy_mode);
@@ -730,6 +734,18 @@ TopLevelDistributor::send_host_info_if_appropriate()
             }
         }
     }
+}
+
+void
+TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle)
+{
+    assert(!_use_legacy_mode);
+    lib::Node my_node(lib::NodeType::DISTRIBUTOR, getDistributorIndex());
+    if (!_done_initializing && (new_bundle.getBaselineClusterState()->getNodeState(my_node).getState() == lib::State::UP)) {
+        _done_initializing = true;
+        _done_init_handler.notifyDoneInitializing();
+    }
+    LOG(debug, "Activated new state version in distributor: %s", new_bundle.toString().c_str());
 }
 
 void

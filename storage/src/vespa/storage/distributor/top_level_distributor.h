@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bucket_spaces_stats_provider.h"
+#include "cluster_state_bundle_activation_listener.h"
 #include "top_level_bucket_db_updater.h"
 #include "distributor_component.h"
 #include "distributor_host_info_reporter.h"
@@ -60,7 +61,8 @@ class TopLevelDistributor final
       public framework::TickingThread,
       public MinReplicaProvider,
       public BucketSpacesStatsProvider,
-      public StripeHostInfoNotifier
+      public StripeHostInfoNotifier,
+      public ClusterStateBundleActivationListener
 {
 public:
     TopLevelDistributor(DistributorComponentRegister&,
@@ -85,6 +87,8 @@ public:
     DistributorMetricSet& getMetrics();
 
     const NodeIdentity& node_identity() const noexcept { return _node_identity; }
+
+    [[nodiscard]] bool done_initializing() const noexcept { return _done_initializing; }
 
     // Implements DistributorInterface and DistributorMessageSender.
     DistributorMetricSet& metrics() override { return getMetrics(); }
@@ -200,6 +204,9 @@ private:
     uint32_t random_stripe_idx();
     uint32_t stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg);
 
+    // ClusterStateBundleActivationListener impl:
+    void on_cluster_state_bundle_activated(const lib::ClusterStateBundle&) override;
+
     struct StripeScanStats {
         bool wants_to_send_host_info = false;
         bool has_reported_in_at_least_once = false;
@@ -209,7 +216,9 @@ private:
 
     const NodeIdentity                    _node_identity;
     DistributorComponentRegister&         _comp_reg;
+    DoneInitializeHandler&                _done_init_handler;
     const bool                            _use_legacy_mode;
+    bool                                  _done_initializing;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
