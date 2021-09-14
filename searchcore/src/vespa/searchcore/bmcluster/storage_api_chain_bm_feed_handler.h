@@ -3,12 +3,15 @@
 #pragma once
 
 #include "i_bm_feed_handler.h"
+#include <vector>
+#include <atomic>
 
 namespace storage::api { class StorageCommand; }
 
 namespace search::bmcluster {
 
 struct BmStorageLinkContext;
+class IBmDistribution;
 
 /*
  * Benchmark feed handler for feed to service layer or distributor
@@ -17,12 +20,15 @@ struct BmStorageLinkContext;
 class StorageApiChainBmFeedHandler : public IBmFeedHandler
 {
 private:
-    vespalib::string                      _name;
-    bool                                  _distributor;
-    std::shared_ptr<BmStorageLinkContext> _context;
+    vespalib::string                                   _name;
+    bool                                               _distributor;
+    std::vector<std::shared_ptr<BmStorageLinkContext>> _contexts;
+    std::atomic<uint32_t>                              _no_link_error_count;
+    const IBmDistribution&                             _distribution;
+
     void send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& tracker);
 public:
-    StorageApiChainBmFeedHandler(std::shared_ptr<BmStorageLinkContext> context, bool distributor);
+    StorageApiChainBmFeedHandler(std::vector<std::shared_ptr<BmStorageLinkContext>> contexts, const IBmDistribution& distribution, bool distributor);
     ~StorageApiChainBmFeedHandler();
     void put(const document::Bucket& bucket, std::unique_ptr<document::Document> document, uint64_t timestamp, PendingTracker& tracker) override;
     void update(const document::Bucket& bucket, std::unique_ptr<document::DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker) override;

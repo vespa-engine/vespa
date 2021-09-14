@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storage_api_rpc_bm_feed_handler.h"
+#include "i_bm_distribution.h"
 #include "pending_tracker.h"
 #include "pending_tracker_hash.h"
 #include "storage_reply_error_checker.h"
@@ -23,10 +24,6 @@ using storage::rpc::StorageApiRpcService;
 using storage::lib::NodeType;
 
 namespace search::bmcluster {
-
-namespace {
-    vespalib::string _Storage("storage");
-}
 
 class StorageApiRpcBmFeedHandler::MyMessageDispatcher : public storage::MessageDispatcher,
                                  public StorageReplyErrorChecker
@@ -66,15 +63,18 @@ StorageApiRpcBmFeedHandler::MyMessageDispatcher::~MyMessageDispatcher()
 StorageApiRpcBmFeedHandler::StorageApiRpcBmFeedHandler(SharedRpcResources& shared_rpc_resources_in,
                                                        std::shared_ptr<const DocumentTypeRepo> repo,
                                                        const StorageApiRpcService::Params& rpc_params,
+                                                       const IBmDistribution& distribution,
                                                        bool distributor)
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiRpcBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
+      _addresses(distribution.get_num_nodes(), distributor),
+      _no_address_error_count(0u),
       _shared_rpc_resources(shared_rpc_resources_in),
       _message_dispatcher(std::make_unique<MyMessageDispatcher>()),
       _message_codec_provider(std::make_unique<storage::rpc::MessageCodecProvider>(repo)),
-      _rpc_client(std::make_unique<storage::rpc::StorageApiRpcService>(*_message_dispatcher, _shared_rpc_resources, *_message_codec_provider, rpc_params))
+      _rpc_client(std::make_unique<storage::rpc::StorageApiRpcService>(*_message_dispatcher, _shared_rpc_resources, *_message_codec_provider, rpc_params)),
+      _distribution(distribution)
 {
 }
 
@@ -83,10 +83,20 @@ StorageApiRpcBmFeedHandler::~StorageApiRpcBmFeedHandler() = default;
 void
 StorageApiRpcBmFeedHandler::send_rpc(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& pending_tracker)
 {
-    cmd->setSourceIndex(0);
-    cmd->setAddress(*_storage_address);
-    _message_dispatcher->retain(cmd->getMsgId(), pending_tracker);
-    _rpc_client->send_rpc_v1_request(std::move(cmd));
+    auto bucket = cmd->getBucket();
+    if (_distributor) {
+        cmd->setSourceIndex(0);
+    } else {
+        cmd->setSourceIndex(_distribution.get_distributor_node_idx(bucket));
+    }
+    uint32_t node_idx = _distributor ? _distribution.get_distributor_node_idx(bucket) : _distribution.get_service_layer_node_idx(bucket);
+    if (_addresses.has_address(node_idx)) {
+        cmd->setAddress(_addresses.get_address(node_idx));
+        _message_dispatcher->retain(cmd->getMsgId(), pending_tracker);
+        _rpc_client->send_rpc_v1_request(std::move(cmd));
+    } else {
+        ++_no_address_error_count;
+    }
 }
 
 void
@@ -125,7 +135,7 @@ StorageApiRpcBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
 uint32_t
 StorageApiRpcBmFeedHandler::get_error_count() const
 {
-    return _message_dispatcher->get_error_count();
+    return _message_dispatcher->get_error_count() + _no_address_error_count;
 }
 
 const vespalib::string&

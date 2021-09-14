@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storage_api_chain_bm_feed_handler.h"
+#include "i_bm_distribution.h"
 #include "pending_tracker.h"
 #include "storage_reply_error_checker.h"
 #include "bm_storage_link_context.h"
@@ -20,27 +21,14 @@ using document::DocumentUpdate;
 
 namespace search::bmcluster {
 
-namespace {
-
-std::shared_ptr<storage::api::StorageCommand> make_set_cluster_state_cmd() {
-    storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState("version:2 distributor:1 storage:1"));
-    auto cmd = std::make_shared<storage::api::SetSystemStateCommand>(bundle);
-    cmd->setPriority(storage::api::StorageMessage::VERYHIGH);
-    return cmd;
-}
-
-}
-
-StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler(std::shared_ptr<BmStorageLinkContext> context, bool distributor)
+StorageApiChainBmFeedHandler::StorageApiChainBmFeedHandler(std::vector<std::shared_ptr<BmStorageLinkContext>> contexts, const IBmDistribution& distribution, bool distributor)
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiChainBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _context(std::move(context))
+      _contexts(std::move(contexts)),
+      _no_link_error_count(0u),
+      _distribution(distribution)
 {
-    auto cmd = make_set_cluster_state_cmd();
-    PendingTracker tracker(1);
-    send_msg(std::move(cmd), tracker);
-    tracker.drain();
 }
 
 StorageApiChainBmFeedHandler::~StorageApiChainBmFeedHandler() = default;
@@ -48,10 +36,20 @@ StorageApiChainBmFeedHandler::~StorageApiChainBmFeedHandler() = default;
 void
 StorageApiChainBmFeedHandler::send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& pending_tracker)
 {
-    cmd->setSourceIndex(0);
-    auto bm_link = _context->bm_link;
-    bm_link->retain(cmd->getMsgId(), pending_tracker);
-    bm_link->sendDown(std::move(cmd));
+    auto bucket = cmd->getBucket();
+    if (_distributor) {
+        cmd->setSourceIndex(0);
+    } else {
+        cmd->setSourceIndex(_distribution.get_distributor_node_idx(bucket));
+    }
+    uint32_t node_idx = _distributor ? _distribution.get_distributor_node_idx(bucket) : _distribution.get_service_layer_node_idx(bucket);
+    if (node_idx < _contexts.size() && _contexts[node_idx]) {
+        auto bm_link = _contexts[node_idx]->bm_link;
+        bm_link->retain(cmd->getMsgId(), pending_tracker);
+        bm_link->sendDown(std::move(cmd));
+    } else {
+        ++_no_link_error_count;
+    }
 }
 
 void
@@ -90,7 +88,14 @@ StorageApiChainBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
 uint32_t
 StorageApiChainBmFeedHandler::get_error_count() const
 {
-    return _context->bm_link->get_error_count();
+    uint32_t error_count = 0;
+    for (auto &context : _contexts) {
+        if (context) {
+            error_count += context->bm_link->get_error_count();
+        }
+    }
+    error_count += _no_link_error_count;
+    return error_count;
 }
 
 const vespalib::string&

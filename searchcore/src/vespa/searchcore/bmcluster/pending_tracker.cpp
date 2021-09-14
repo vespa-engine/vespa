@@ -47,9 +47,9 @@ PendingTracker::drain()
 }
 
 void
-PendingTracker::attach_bucket_info_queue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors)
+PendingTracker::attach_bucket_info_queue(std::atomic<uint32_t>& errors)
 {
-    _bucket_info_queue = std::make_unique<BucketInfoQueue>(provider, errors);
+    _bucket_info_queue = std::make_unique<BucketInfoQueue>(errors);
 }
 
 }

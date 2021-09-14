@@ -18,19 +18,19 @@ namespace search::bmcluster {
  */
 class BucketInfoQueue
 {
+    using PendingGetBucketInfo = std::pair<storage::spi::Bucket, storage::spi::PersistenceProvider*>;
     std::mutex                         _mutex;
-    std::deque<storage::spi::Bucket>   _buckets;
-    storage::spi::PersistenceProvider& _provider;
+    std::deque<PendingGetBucketInfo>   _pending_get_bucket_infos;
     std::atomic<uint32_t>&             _errors;
 
 public:
-    BucketInfoQueue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors);
+    BucketInfoQueue(std::atomic<uint32_t>& errors);
     ~BucketInfoQueue();
 
-    void put_bucket(storage::spi::Bucket bucket)
+    void put_bucket(storage::spi::Bucket bucket, storage::spi::PersistenceProvider* provider)
     {
         std::lock_guard guard(_mutex);
-        _buckets.emplace_back(std::move(bucket));
+        _pending_get_bucket_infos.emplace_back(std::make_pair(std::move(bucket), provider));
     }
 
     void get_bucket_info_loop();

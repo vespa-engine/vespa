@@ -5,8 +5,6 @@
 #include <atomic>
 #include <memory>
 
-namespace storage::spi { struct PersistenceProvider; }
-
 namespace search::bmcluster {
 
 class BucketInfoQueue;
@@ -30,7 +28,7 @@ public:
     void retain();
     void drain();
 
-    void attach_bucket_info_queue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors);
+    void attach_bucket_info_queue(std::atomic<uint32_t>& errors);
     BucketInfoQueue *get_bucket_info_queue() { return _bucket_info_queue.get(); }
 };
 

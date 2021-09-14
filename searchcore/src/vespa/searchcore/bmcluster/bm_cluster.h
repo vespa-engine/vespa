@@ -13,7 +13,12 @@ class ConfigSet;
 
 }
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+
+class DocumentTypeRepo;
+class FieldSetRepo;
+
+}
 namespace document::internal { class InternalDocumenttypesType; }
 namespace mbus { class Slobrok; }
 namespace storage::rpc { class SharedRpcResources; }
@@ -23,6 +28,7 @@ namespace search::bmcluster {
 class BmFeed;
 class BmMessageBus;
 class BmNode;
+class IBmDistribution;
 class IBmFeedHandler;
 
 /*
@@ -46,7 +52,10 @@ class BmCluster {
     int                                               _base_port;
     std::shared_ptr<DocumenttypesConfig>              _document_types;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
+    std::unique_ptr<const document::FieldSetRepo>     _field_set_repo;
+    std::shared_ptr<const IBmDistribution>            _distribution;
     std::vector<std::unique_ptr<BmNode>>              _nodes;
+    std::unique_ptr<IBmFeedHandler>                   _feed_handler;
 
 public:
     BmCluster(const vespalib::string& base_dir, int base_port, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const document::DocumentTypeRepo> repo);
@@ -60,8 +69,8 @@ public:
     void stop_rpc_client();
     void start_service_layers();
     void start_distributors();
-    void create_feed_handlers();
-    void shutdown_feed_handlers();
+    void create_feed_handler();
+    void shutdown_feed_handler();
     void shutdown_distributors();
     void shutdown_service_layers();
     void create_buckets(BmFeed &feed);
@@ -70,9 +79,9 @@ public:
     void stop();
     storage::rpc::SharedRpcResources &get_rpc_client() { return *_rpc_client; }
     BmMessageBus& get_message_bus() { return *_message_bus; }
+    const IBmDistribution& get_distribution() { return *_distribution; }
     void make_node(uint32_t node_idx);
     void make_nodes();
-    BmNode& get_node(uint32_t node_idx);
     IBmFeedHandler* get_feed_handler();
 };
 

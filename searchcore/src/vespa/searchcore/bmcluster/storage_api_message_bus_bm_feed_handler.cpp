@@ -2,6 +2,7 @@
 
 #include "storage_api_message_bus_bm_feed_handler.h"
 #include "bm_message_bus.h"
+#include "i_bm_distribution.h"
 #include "pending_tracker.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
@@ -17,16 +18,14 @@ using storage::lib::NodeType;
 
 namespace search::bmcluster {
 
-namespace {
-    vespalib::string _Storage("storage");
-}
-StorageApiMessageBusBmFeedHandler::StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, bool distributor)
+StorageApiMessageBusBmFeedHandler::StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, const IBmDistribution& distribution, bool distributor)
     : IBmFeedHandler(),
       _name(vespalib::string("StorageApiMessageBusBmFeedHandler(") + (distributor ? "distributor" : "service-layer") + ")"),
       _distributor(distributor),
-      _storage_address(std::make_unique<StorageMessageAddress>(&_Storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, 0)),
       _message_bus(message_bus),
-      _route(_storage_address->to_mbus_route())
+      _routes(distribution.get_num_nodes(), distributor),
+      _no_route_error_count(0),
+      _distribution(distribution)
 {
 }
 
@@ -35,9 +34,20 @@ StorageApiMessageBusBmFeedHandler::~StorageApiMessageBusBmFeedHandler() = defaul
 void
 StorageApiMessageBusBmFeedHandler::send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& pending_tracker)
 {
-    cmd->setSourceIndex(0);
+    auto bucket = cmd->getBucket();
+    if (_distributor) {
+        cmd->setSourceIndex(0);
+    } else {
+        cmd->setSourceIndex(_distribution.get_distributor_node_idx(bucket));
+    }
     auto msg = std::make_unique<storage::mbusprot::StorageCommand>(cmd);
-    _message_bus.send_msg(std::move(msg), _route, pending_tracker);
+    uint32_t node_idx = _distributor ? _distribution.get_distributor_node_idx(bucket) : _distribution.get_service_layer_node_idx(bucket);
+    if (_routes.has_route(node_idx)) {
+        auto& route = _routes.get_route(node_idx);
+        _message_bus.send_msg(std::move(msg), route, pending_tracker);
+    } else {
+        ++_no_route_error_count;
+    }
 }
 
 void
@@ -76,7 +86,7 @@ StorageApiMessageBusBmFeedHandler::attach_bucket_info_queue(PendingTracker&)
 uint32_t
 StorageApiMessageBusBmFeedHandler::get_error_count() const
 {
-    return _message_bus.get_error_count();
+    return _message_bus.get_error_count() + _no_route_error_count;
 }
 
 const vespalib::string&

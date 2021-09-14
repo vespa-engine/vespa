@@ -5,10 +5,9 @@
 
 namespace search::bmcluster {
 
-BucketInfoQueue::BucketInfoQueue(storage::spi::PersistenceProvider& provider, std::atomic<uint32_t>& errors)
+BucketInfoQueue::BucketInfoQueue(std::atomic<uint32_t>& errors)
     : _mutex(),
-      _buckets(),
-      _provider(provider),
+      _pending_get_bucket_infos(),
       _errors(errors)
 {
 }
@@ -22,11 +21,11 @@ void
 BucketInfoQueue::get_bucket_info_loop()
 {
     std::unique_lock guard(_mutex);
-    while (!_buckets.empty()) {
-        auto bucket = _buckets.front();
-        _buckets.pop_front();
+    while (!_pending_get_bucket_infos.empty()) {
+        auto pending_get_bucket_info = _pending_get_bucket_infos.front();
+        _pending_get_bucket_infos.pop_front();
         guard.unlock();
-        auto bucket_info = _provider.getBucketInfo(bucket);
+        auto bucket_info = pending_get_bucket_info.second->getBucketInfo(pending_get_bucket_info.first);
         if (bucket_info.hasError()) {
             ++_errors;
         }

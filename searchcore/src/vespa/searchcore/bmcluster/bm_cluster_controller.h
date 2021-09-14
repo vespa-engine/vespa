@@ -9,15 +9,17 @@ namespace storage::rpc { class SharedRpcResources; }
 
 namespace search::bmcluster {
 
+class IBmDistribution;
+
 /*
  * Fake cluster controller that sets cluster state to be up.
  */
 class BmClusterController
 {
     storage::rpc::SharedRpcResources& _shared_rpc_resources;
-    uint32_t                          _num_nodes;
+    const IBmDistribution&            _distribution;
 public:
-    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in, uint32_t num_nodes);
+    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in, const IBmDistribution& distribution);
     void set_cluster_up(uint32_t node_idx, bool distributor);
 };
 

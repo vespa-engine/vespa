@@ -3,18 +3,15 @@
 #pragma once
 
 #include "i_bm_feed_handler.h"
-#include <vespa/messagebus/routing/route.h>
+#include "bm_message_bus_routes.h"
+#include <atomic>
 
-namespace document { class DocumentTypeRepo; }
-namespace documentapi { class DocumentMessage; };
-namespace storage::api {
-class StorageCommand;
-class StorageMessageAddress;
-}
+namespace storage::api { class StorageCommand; }
 
 namespace search::bmcluster {
 
 class BmMessageBus;
+class IBmDistribution;
 
 /*
  * Benchmark feed handler for feed to service layer or distributor
@@ -22,14 +19,15 @@ class BmMessageBus;
  */
 class StorageApiMessageBusBmFeedHandler : public IBmFeedHandler
 {
-    vespalib::string _name;
-    bool             _distributor;
-    std::unique_ptr<storage::api::StorageMessageAddress> _storage_address;
-    BmMessageBus&                                        _message_bus;
-    mbus::Route _route;
+    vespalib::string       _name;
+    bool                   _distributor;
+    BmMessageBus&          _message_bus;
+    BmMessageBusRoutes     _routes;
+    std::atomic<uint32_t>  _no_route_error_count;
+    const IBmDistribution& _distribution;
     void send_msg(std::shared_ptr<storage::api::StorageCommand> cmd, PendingTracker& tracker);
 public:
-    StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, bool distributor);
+    StorageApiMessageBusBmFeedHandler(BmMessageBus &message_bus, const IBmDistribution& distribution, bool distributor);
     ~StorageApiMessageBusBmFeedHandler();
     void put(const document::Bucket& bucket, std::unique_ptr<document::Document> document, uint64_t timestamp, PendingTracker& tracker) override;
     void update(const document::Bucket& bucket, std::unique_ptr<document::DocumentUpdate> document_update, uint64_t timestamp, PendingTracker& tracker) override;
