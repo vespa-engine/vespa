@@ -17,6 +17,7 @@ vespa_add_library(searchcore_bmcluster STATIC
     pending_tracker.cpp
     pending_tracker_hash.cpp
     spi_bm_feed_handler.cpp
+    storage_api_bm_feed_handler_base.cpp
     storage_api_chain_bm_feed_handler.cpp
     storage_api_message_bus_bm_feed_handler.cpp
     storage_api_rpc_bm_feed_handler.cpp
