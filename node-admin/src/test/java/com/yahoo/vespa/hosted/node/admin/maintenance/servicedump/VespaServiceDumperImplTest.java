@@ -38,14 +38,12 @@ class VespaServiceDumperImplTest {
 
     private static final String HOSTNAME = "host-1.domain.tld";
 
-    private Path tmpDirectory;
-    private FileSystem fileSystem;
+    private final FileSystem fileSystem = TestFileSystem.create();;
+    private final Path tmpDirectory = fileSystem.getPath("/home/docker/container-storage/host-1/opt/vespa/tmp");
 
     @BeforeEach
-    void create_test_file_system() throws IOException {
+    void create_tmp_directory() throws IOException {
         // Create temporary directory in container
-        fileSystem = TestFileSystem.create();
-        tmpDirectory = fileSystem.getPath("/home/docker/container-storage/host-1/opt/vespa/tmp");
         Files.createDirectories(tmpDirectory);
     }
 
