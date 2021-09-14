@@ -73,8 +73,6 @@ public class ServerCacheTest {
 
     @Test
     public void testThatCacheWorksWithDifferentKeySameMd5() {
-        System.out.println(cache.get(fooBarCacheKey));
-        System.out.println(cache.get(bazQuuxCacheKey));
         assertEquals(cache.get(fooBarCacheKey).getPayload(), cache.get(bazQuuxCacheKey).getPayload());
     }
 
