@@ -102,6 +102,7 @@ var documentGetCmd = &cobra.Command{
 	Short:             "Gets a document",
 	Args:              cobra.ExactArgs(1),
 	DisableAutoGenTag: true,
+	Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
 	Run: func(cmd *cobra.Command, args []string) {
 		printResult(vespa.Get(args[0], documentService()), true)
 	},

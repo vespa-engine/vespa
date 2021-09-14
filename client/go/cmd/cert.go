@@ -28,11 +28,7 @@ var certCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		app, err := vespa.ApplicationFromString(getApplication())
-		if err != nil {
-			fatalErr(err)
-			return
-		}
+		app := getApplication()
 		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
 		if err != nil {
 			fatalErr(err)
