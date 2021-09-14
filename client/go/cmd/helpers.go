@@ -145,7 +145,7 @@ func getTarget() vespa.Target {
 		}
 		kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
 		if err != nil {
-			fatalErr(err, "Could not read key pair")
+			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
 		}
 		return vespa.CloudTarget(deployment, kp, apiKey)
 	}
