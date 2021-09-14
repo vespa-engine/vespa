@@ -24,8 +24,7 @@ class PerfReportProducer extends AbstractProducer {
     public void produceArtifact(NodeAgentContext context, String configId, ServiceDumpReport.DumpOptions options,
                                 UnixPath resultDirectoryInNode) throws IOException {
         int pid = findVespaServicePid(context, configId);
-        int duration = options != null && options.duration() != null && options.duration() > 0
-                ? options.duration().intValue() : 30;
+        int duration = (int) duration(context, options, 30.0);
         List<String> perfRecordCommand = new ArrayList<>(List.of("perf", "record"));
         if (options != null && Boolean.TRUE.equals(options.callGraphRecording())) {
             perfRecordCommand.add("-g");

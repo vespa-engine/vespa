@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,6 +51,18 @@ abstract class AbstractProducer implements ArtifactProducer {
         Path findPidBinary = ctx.pathInNodeUnderVespaHome("libexec/vespa/find-pid");
         CommandResult findPidResult = executeCommand(ctx, List.of(findPidBinary.toString(), configId), true);
         return Integer.parseInt(findPidResult.getOutput());
+    }
+
+    protected double duration(NodeAgentContext ctx, ServiceDumpReport.DumpOptions options, double defaultValue) {
+        double duration = options != null && options.duration() != null && options.duration() > 0
+                ? options.duration() : defaultValue;
+        double maxDuration = 300;
+        if (duration > maxDuration) {
+            ctx.log(log, Level.WARNING,
+                    String.format("Specified duration %.3fs longer than max allowed (%.3fs)", duration, maxDuration));
+            return maxDuration;
+        }
+        return duration;
     }
 
 }
