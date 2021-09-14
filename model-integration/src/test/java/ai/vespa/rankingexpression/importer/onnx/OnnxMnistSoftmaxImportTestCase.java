@@ -2,13 +2,7 @@
 package ai.vespa.rankingexpression.importer.onnx;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
-import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.evaluation.Context;
-import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import ai.vespa.rankingexpression.importer.ImportedModel;
-import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;

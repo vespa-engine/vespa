@@ -219,10 +219,8 @@ public class ConvertedModel {
             for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
                 profile.addInputFeature(input.getKey(), input.getValue());
             }
-            addExpression(expression, expression.getName(),
-                          constantsReplacedByFunctions,
-                          model, store, profile, queryProfiles,
-                          expressions);
+            addExpression(expression, expression.getName(), constantsReplacedByFunctions,
+                          store, profile, queryProfiles, expressions);
         }
 
         // Transform and save function - must come after reading expressions due to optimization transforms
@@ -254,7 +252,6 @@ public class ConvertedModel {
     private static void addExpression(ExpressionFunction expression,
                                       String expressionName,
                                       Set<String> constantsReplacedByFunctions,
-                                      ImportedMlModel model,
                                       ModelStore store,
                                       RankProfile profile,
                                       QueryProfileRegistry queryProfiles,
@@ -276,9 +273,7 @@ public class ConvertedModel {
         }
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName())) {
-                profile.rankingConstants().add(constant);
-            }
+            profile.rankingConstants().putIfAbsent(constant);
         }
 
         for (Pair<String, RankingExpression> function : store.readFunctions()) {
@@ -325,10 +320,7 @@ public class ConvertedModel {
         }
         else {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
-                profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
-                                                                   constantPath.toString()));
-            }
+            profile.rankingConstants().computeIfAbsent(constantName, name -> new RankingConstant(name, constantValue.type(), constantPath.toString()));
         }
     }
 
@@ -365,7 +357,7 @@ public class ConvertedModel {
         addFunctionNamesIn(expression.getRoot(), functionNames, model);
         for (String functionName : functionNames) {
             Optional<TensorType> requiredType = model.inputTypeSpec(functionName).map(TensorType::fromSpec);
-            if ( ! requiredType.isPresent()) continue; // Not a required function
+            if ( requiredType.isEmpty()) continue; // Not a required function
 
             RankProfile.RankingExpressionFunction rankingExpressionFunction = profile.getFunctions().get(functionName);
             if (rankingExpressionFunction == null)
@@ -634,7 +626,7 @@ public class ConvertedModel {
             // Secret file format for remembering constants:
             application.getFile(modelFiles.smallConstantsPath()).appendFile(name + "\t" +
                                                                             constant.type().toString() + "\t" +
-                                                                            constant.toString() + "\n");
+                                                                            constant + "\n");
         }
 
         /** Workaround for being constructed with the .preprocessed dir as root while later being used outside it */

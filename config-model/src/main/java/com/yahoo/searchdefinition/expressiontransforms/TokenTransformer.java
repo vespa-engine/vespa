@@ -205,7 +205,7 @@ public class TokenTransformer extends ExpressionTransformer<RankProfileTransform
             return new TensorType.Builder(TensorType.Value.FLOAT).indexed("d0", 1).indexed("d1", length).build();
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("Invalid argument to " + featureName + ": the first argument must be " +
-                    "the length to the token sequence to generate. Got " + argument.toString());
+                    "the length to the token sequence to generate. Got " + argument);
         }
     }
 
