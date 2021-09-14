@@ -96,23 +96,17 @@ public class SentencePieceEncoder implements Segmenter {
         while (start < input.length()) { // segment from this position to the end of the text
             Trie.Node node = model.tokens.root;
             int characterPosition = start;
-            boolean addedSingleCharacterSegment = false;
-            while (characterPosition < input.length()) { // traverse the trie one character at the time from this position
-                node = node.children.get(input.charAt(characterPosition));
-                characterPosition++;
-                if (node == null) break;
+            while (node != null && characterPosition < input.length()) { // traverse the trie one character at the time from this position
+                node = node.children.get(input.charAt(characterPosition++));
                 int length = characterPosition - start;
-                if (node.isToken()) {
-                    if (node.type == TokenType.unused) continue;
-
+                if (node != null && node.isToken() && node.type != TokenType.unused) {
                     float score = node.type == TokenType.userDefined ? (length * model.maxScore - 0.1f) : node.score;
                     addSegment(TokenType.text, node.id, start, characterPosition, score, segmentEnds);
                 }
-                if (! addedSingleCharacterSegment && length == 1)
-                    addedSingleCharacterSegment = true;
+                else if (length == 1) { // add an 'unknown' length 1 token to make the next position reachable
+                    addSegment(TokenType.unknown, 0, start, start + 1, unknownScore, segmentEnds);
+                }
             }
-            if ( ! addedSingleCharacterSegment) // add an unknown 1 character token to be able to start from the next character
-                addSegment(TokenType.unknown, 0, start, start + 1, unknownScore, segmentEnds);
             start++;
         }
 
@@ -248,7 +242,7 @@ public class SentencePieceEncoder implements Segmenter {
             Float score;
             private final Map<Character, Node> children = new HashMap<>();
 
-            boolean isToken() { return score != null; }
+            boolean isToken() { return type != null; }
 
         }
 
