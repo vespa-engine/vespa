@@ -50,7 +50,7 @@ public class RankProfileTestCase extends SchemaTestCase {
         a.setRankType(RankType.IDENTITY);
         document.addField("b", DataType.STRING);
         search.addDocument(document);
-        RankProfile child = new RankProfile("child", search, rankProfileRegistry);
+        RankProfile child = new RankProfile("child", search, rankProfileRegistry, search.rankingConstants());
         child.setInherited("default");
         rankProfileRegistry.add(child);
 

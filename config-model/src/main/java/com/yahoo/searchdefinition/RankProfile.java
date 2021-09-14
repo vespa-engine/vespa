@@ -63,9 +63,6 @@ public class RankProfile implements Cloneable {
     /** The search definition owning this profile, or null if global (owned by a model) */
     private final ImmutableSearch search;
 
-    /** The model owning this profile if it is global, or null if it is owned by a search definition */
-    private final VespaModel model;
-
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
     private RankProfile inherited = null;
@@ -128,7 +125,8 @@ public class RankProfile implements Cloneable {
 
     /** Global onnx models not tied to a search definition */
     private final OnnxModels onnxModels;
-
+    private final RankingConstants rankingConstants;
+    private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
     /**
@@ -139,12 +137,13 @@ public class RankProfile implements Cloneable {
      * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
      *                            and looking up rank profiles.
      */
-    public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
+    public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = Objects.requireNonNull(search, "search cannot be null");
-        this.model = null;
         this.onnxModels = null;
+        this.rankingConstants = rankingConstants;
         this.rankProfileRegistry = rankProfileRegistry;
+        this.applicationPackage = search.applicationPackage();
         this.deployLogger = search.getDeployLogger();
     }
 
@@ -152,14 +151,14 @@ public class RankProfile implements Cloneable {
      * Creates a global rank profile
      *
      * @param name  the name of the new profile
-     * @param model the model owning this profile
      */
-    public RankProfile(String name, VespaModel model, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, OnnxModels onnxModels) {
+    public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants, OnnxModels onnxModels) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
-        this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
+        this.rankingConstants = rankingConstants;
         this.onnxModels = onnxModels;
+        this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
     }
 
@@ -170,12 +169,12 @@ public class RankProfile implements Cloneable {
 
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
-        return search != null ? search.applicationPackage() : model.applicationPackage();
+        return applicationPackage;
     }
 
     /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
-        return search != null ? search.rankingConstants() : model.rankingConstants();
+        return rankingConstants;
     }
 
     public Map<String, OnnxModel> onnxModels() {
