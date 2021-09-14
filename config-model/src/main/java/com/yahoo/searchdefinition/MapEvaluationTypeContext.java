@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchdefinition.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.searchdefinition.expressiontransforms.TokenTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -54,7 +55,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     private final SortedSet<Reference> queryFeaturesNotDeclared;
     private boolean tensorsAreUsed;
 
-    MapEvaluationTypeContext(Collection<ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
+    MapEvaluationTypeContext(ImmutableMap<String, ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
         this.parent = Optional.empty();
         this.featureTypes.putAll(featureTypes);
@@ -64,7 +65,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         globallyResolvedTypes = new HashMap<>();
     }
 
-    private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
+    private MapEvaluationTypeContext(ImmutableMap<String, ExpressionFunction> functions,
                                      Map<String, String> bindings,
                                      Optional<MapEvaluationTypeContext> parent,
                                      Map<Reference, TensorType> featureTypes,
@@ -331,10 +332,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             bindings.put(formalArguments.get(i), identifier);
         }
         return bindings;
-    }
-
-    public Map<Reference, TensorType> featureTypes() {
-        return Collections.unmodifiableMap(featureTypes);
     }
 
     /**
