@@ -128,8 +128,8 @@ public final class Application implements AutoCloseable {
             List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
                                                            new TensorFlowImporter(),
                                                            new OnnxImporter(),
-                                                           new LightGBMImporter(),
-                                                           new XGBoostImporter());
+                                                           new XGBoostImporter(),
+                                                           new LightGBMImporter());
             DeployState deployState = new DeployState.Builder()
                     .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
                     .modelImporters(modelImporters)
