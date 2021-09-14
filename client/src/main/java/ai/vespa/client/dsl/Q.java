@@ -171,8 +171,8 @@ public final class Q {
     }
 
     /**
-     * GeoLocation geo locatoin
-     * https://docs.vespa.ai/en/reference/query-language-reference.html#geoLocation
+     * GeoLocation geo location
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#geolocation
      *
      * @param field the field
      * @param longitude longitude
