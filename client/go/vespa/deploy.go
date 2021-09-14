@@ -80,7 +80,17 @@ func (d *DeploymentOpts) url(path string) (*url.URL, error) {
 
 func (ap *ApplicationPackage) HasCertificate() bool {
 	if ap.IsZip() {
-		return true // TODO: Consider looking inside zip to verify
+		r, err := zip.OpenReader(ap.Path)
+		if err != nil {
+			return false
+		}
+		defer r.Close()
+		for _, f := range r.File {
+			if f.Name == "security/clients.pem" {
+				return true
+			}
+		}
+		return false
 	}
 	return util.PathExists(filepath.Join(ap.Path, "security", "clients.pem"))
 }
