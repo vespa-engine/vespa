@@ -16,6 +16,7 @@ import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.policy.ClusterParams;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -103,13 +104,75 @@ public class ClusterApiImplTest {
         assertEquals(80, clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown());
     }
 
+    @Test
+    public void testUnknownServiceStatusInGroup() throws HostStateChangeDeniedException {
+        ClusterApi clusterApi = makeClusterApiWithUnknownStatus(ServiceStatus.UNKNOWN, ServiceStatus.UP, ServiceStatus.UP);
+        clusterApi.noServicesOutsideGroupIsDown();
+    }
+
+    @Test
+    public void testUnknownServiceStatusOutsideGroup() {
+        ClusterApi clusterApi = makeClusterApiWithUnknownStatus(ServiceStatus.UP, ServiceStatus.UNKNOWN, ServiceStatus.UP);
+
+        try {
+            clusterApi.noServicesOutsideGroupIsDown();
+            fail();
+        } catch (HostStateChangeDeniedException e) {
+            assertEquals(HostedVespaPolicy.UNKNOWN_SERVICE_STATUS, e.getConstraintName());
+        }
+    }
+
+    /** The first service status will be for the service IN the node group, the rest are OUTSIDE. */
+    private ClusterApi makeClusterApiWithUnknownStatus(ServiceStatus... statuses) {
+        var serviceStatusList = List.of(statuses);
+        var infraApplication = new ConfigServerApplication();
+
+        var hostnames = IntStream.rangeClosed(1, serviceStatusList.size())
+                                 .mapToObj(i -> new HostName("cfg" + i))
+                                 .collect(Collectors.toList());
+        var instances = new ArrayList<ServiceInstance>();
+        for (int i = 0; i < hostnames.size(); i++) {
+            instances.add(modelUtils.createServiceInstance("cs" + i + 1, hostnames.get(i), serviceStatusList.get(i)));
+        }
+
+        ServiceCluster serviceCluster = modelUtils.createServiceCluster(
+                infraApplication.getClusterId().s(),
+                infraApplication.getServiceType(),
+                instances
+        );
+        for (var instance : instances) {
+            instance.setServiceCluster(serviceCluster);
+        }
+
+        Set<ServiceCluster> serviceClusterSet = Set.of(serviceCluster);
+
+        ApplicationInstance application = new ApplicationInstance(
+                infraApplication.getTenantId(),
+                infraApplication.getApplicationInstanceId(Zone.defaultZone()),
+                serviceClusterSet);
+
+        serviceCluster.setApplicationInstance(application);
+
+        when(applicationApi.applicationId()).thenReturn(OrchestratorUtil.toApplicationId(application.reference()));
+
+        return new ClusterApiImpl(
+                applicationApi,
+                serviceCluster,
+                new NodeGroup(application, hostnames.get(0)),
+                modelUtils.getHostInfos(),
+                modelUtils.getClusterControllerClientFactory(),
+                new ClusterParams.Builder().setSize(serviceStatusList.size()).build(),
+                clock);
+    }
+
     /** Make a ClusterApiImpl for the cfg1 config server, with cfg3 missing from the cluster (not provisioned). */
-    private ClusterApiImpl makeCfg1ClusterApi(ServiceStatus cfg1ServiceStatus, ServiceStatus cfg2ServiceStatus) {
+    private ClusterApiImpl makeCfg1ClusterApi(ServiceStatus cfg1ServiceStatus, ServiceStatus cfg2ServiceStatus)
+            throws HostStateChangeDeniedException {
         return makeConfigClusterApi(ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, cfg1ServiceStatus, cfg2ServiceStatus);
     }
 
     @Test
-    public void testCfg1SuspensionFailsWithMissingCfg3() {
+    public void testCfg1SuspensionFailsWithMissingCfg3() throws HostStateChangeDeniedException {
         ClusterApiImpl clusterApi = makeCfg1ClusterApi(ServiceStatus.UP, ServiceStatus.UP);
 
         HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource, zone);
@@ -137,7 +200,7 @@ public class ClusterApiImplTest {
     }
 
     @Test
-    public void testCfghost1SuspensionFailsWithMissingCfghost3() {
+    public void testCfghost1SuspensionFailsWithMissingCfghost3() throws HostStateChangeDeniedException {
         ClusterApiImpl clusterApi = makeConfigClusterApi(
                 ModelTestUtils.NUMBER_OF_CONFIG_SERVERS,
                 new ConfigServerHostApplication(),
@@ -191,7 +254,7 @@ public class ClusterApiImplTest {
     }
 
     @Test
-    public void testSingleConfigServerCanSuspend() {
+    public void testSingleConfigServerCanSuspend() throws HostStateChangeDeniedException {
         for (var status : EnumSet.of(ServiceStatus.UP, ServiceStatus.DOWN, ServiceStatus.UNKNOWN)) {
             var clusterApi = makeConfigClusterApi(1, status);
             var policy = new HostedVespaClusterPolicy(flagSource, zone);
@@ -204,7 +267,7 @@ public class ClusterApiImplTest {
     }
 
     @Test
-    public void testNoServices() {
+    public void testNoServices() throws HostStateChangeDeniedException {
         HostName hostName1 = new HostName("host1");
         HostName hostName2 = new HostName("host2");
         HostName hostName3 = new HostName("host3");
@@ -271,7 +334,7 @@ public class ClusterApiImplTest {
     private void verifyNoServices(ServiceCluster serviceCluster,
                                   Optional<SuspensionReasons> expectedNoServicesInGroupIsUp,
                                   boolean expectedNoServicesOutsideGroupIsDown,
-                                  HostName... groupNodes) {
+                                  HostName... groupNodes) throws HostStateChangeDeniedException {
         ClusterApiImpl clusterApi = new ClusterApiImpl(
                 applicationApi,
                 serviceCluster,
@@ -318,12 +381,14 @@ public class ClusterApiImplTest {
         assertEquals(Optional.of(hostName1), clusterApi.storageNodeInGroup().map(storageNode -> storageNode.hostName()));
     }
 
-    private ClusterApiImpl makeConfigClusterApi(int clusterSize, ServiceStatus first, ServiceStatus... rest) {
+    private ClusterApiImpl makeConfigClusterApi(int clusterSize, ServiceStatus first, ServiceStatus... rest)
+            throws HostStateChangeDeniedException {
         return makeConfigClusterApi(clusterSize, new ConfigServerApplication(), first, rest);
     }
 
     private ClusterApiImpl makeConfigClusterApi(int clusterSize, InfraApplication infraApplication,
-                                                ServiceStatus first, ServiceStatus... rest) {
+                                                ServiceStatus first, ServiceStatus... rest)
+            throws HostStateChangeDeniedException {
         var serviceStatusList = new ArrayList<ServiceStatus>();
         serviceStatusList.add(first);
         serviceStatusList.addAll(List.of(rest));

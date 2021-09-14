@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,25 @@ public class HostedVespaClusterPolicyTest {
     public void setUp() {
         when(clusterApi.getApplication()).thenReturn(applicationApi);
         when(zone.system()).thenReturn(SystemName.main);
+
+        NodeGroup nodeGroup = mock(NodeGroup.class);
+        when(clusterApi.getNodeGroup()).thenReturn(nodeGroup);
+        when(nodeGroup.toCommaSeparatedString()).thenReturn("node-group");
+    }
+
+    @Test
+    public void testUnknownServiceStatus() throws HostStateChangeDeniedException {
+        doThrow(new HostStateChangeDeniedException(clusterApi.getNodeGroup(),
+                                                   HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
+                                                   "foo"))
+                .when(clusterApi).noServicesOutsideGroupIsDown();
+
+        try {
+            policy.verifyGroupGoingDownIsFine(clusterApi);
+            fail();
+        } catch (HostStateChangeDeniedException e) {
+            assertEquals(HostedVespaPolicy.UNKNOWN_SERVICE_STATUS, e.getConstraintName());
+        }
     }
 
     @Test
@@ -94,30 +114,30 @@ public class HostedVespaClusterPolicyTest {
     }
 
     @Test
-    public void verifyGroupGoingDownIsFine_noServicesOutsideGroupIsDownIsFine() {
+    public void verifyGroupGoingDownIsFine_noServicesOutsideGroupIsDownIsFine() throws HostStateChangeDeniedException {
         verifyGroupGoingDownIsFine(true, Optional.empty(), 13, true);
     }
 
     @Test
-    public void verifyGroupGoingDownIsFine_noServicesInGroupIsUp() {
+    public void verifyGroupGoingDownIsFine_noServicesInGroupIsUp() throws HostStateChangeDeniedException {
         var reasons = new SuspensionReasons().addReason(new HostName("host1"), "supension reason 1");
         verifyGroupGoingDownIsFine(false, Optional.of(reasons), 13, true);
     }
 
     @Test
-    public void verifyGroupGoingDownIsFine_percentageIsFine() {
+    public void verifyGroupGoingDownIsFine_percentageIsFine() throws HostStateChangeDeniedException {
         verifyGroupGoingDownIsFine(false, Optional.empty(), 9, true);
     }
 
     @Test
-    public void verifyGroupGoingDownIsFine_fails() {
+    public void verifyGroupGoingDownIsFine_fails() throws HostStateChangeDeniedException {
         verifyGroupGoingDownIsFine(false, Optional.empty(), 13, false);
     }
 
     private void verifyGroupGoingDownIsFine(boolean noServicesOutsideGroupIsDown,
                                             Optional<SuspensionReasons> noServicesInGroupIsUp,
                                             int percentageOfServicesDownIfGroupIsAllowedToBeDown,
-                                            boolean expectSuccess) {
+                                            boolean expectSuccess) throws HostStateChangeDeniedException {
         when(clusterApi.noServicesOutsideGroupIsDown()).thenReturn(noServicesOutsideGroupIsDown);
         when(clusterApi.reasonsForNoServicesInGroupIsUp()).thenReturn(noServicesInGroupIsUp);
         when(clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()).thenReturn(20);
@@ -128,10 +148,6 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.percentageOfServicesDown()).thenReturn(5);
         when(clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()).thenReturn(percentageOfServicesDownIfGroupIsAllowedToBeDown);
         when(clusterApi.downDescription()).thenReturn(" Down description");
-
-        NodeGroup nodeGroup = mock(NodeGroup.class);
-        when(clusterApi.getNodeGroup()).thenReturn(nodeGroup);
-        when(nodeGroup.toCommaSeparatedString()).thenReturn("node-group");
 
         try {
             SuspensionReasons reasons = policy.verifyGroupGoingDownIsFine(clusterApi);

@@ -56,9 +56,8 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
     @Override
     public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        // This policy is similar to verifyGroupGoingDownIsFine, except that services being down in the group
-        // is no excuse to allow suspension (like it is for verifyGroupGoingDownIsFine), since if we grant
-        // suspension in this case they will permanently be down/removed.
+        // This policy is similar to verifyGroupGoingDownIsFine, except that having no services up in the group will
+        // not allow the suspension:  We are a bit more cautious when removing nodes.
 
         if (clusterApi.noServicesOutsideGroupIsDown()) {
             return;
