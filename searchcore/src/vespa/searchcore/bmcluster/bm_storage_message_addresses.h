@@ -11,7 +11,7 @@ namespace search::bmcluster {
 
 /*
  * Class representing the storage message addresses for a set of nodes at
- * the given layer (service layer or ditributor).
+ * the given layer (service layer or distributor).
  */
 class BmStorageMessageAddresses
 {

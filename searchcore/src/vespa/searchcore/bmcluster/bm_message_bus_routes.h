@@ -9,7 +9,7 @@ namespace search::bmcluster {
 
 /*
  * Class containing the message bus routes for a set of nodes at
- * the given layer (service layer or ditributor).
+ * the given layer (service layer or distributor).
  */
 class BmMessageBusRoutes : public BmStorageMessageAddresses
 {
