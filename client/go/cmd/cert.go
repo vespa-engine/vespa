@@ -29,7 +29,7 @@ var certCmd = &cobra.Command{
 	Args:              cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		app := getApplication()
-		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		pkg, err := vespa.FindApplicationPackage(applicationSource(args), false)
 		if err != nil {
 			fatalErr(err)
 			return

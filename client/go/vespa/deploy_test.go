@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,38 +26,57 @@ func TestZoneFromString(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestApplicationPackageFrom(t *testing.T) {
+func TestFindApplicationPackage(t *testing.T) {
 	dir := t.TempDir()
-	var tests = []struct {
-		in   string
-		out  string
-		fail bool
-	}{
-		{filepath.Join(dir, "foo"), "", true},
-		{filepath.Join(dir, "services.xml"), dir, false},
-		{filepath.Join(dir, "src", "main", "application", "services.xml"), filepath.Join(dir, "src", "main", "application"), false},
-	}
-
-	zipFile := filepath.Join(dir, "application.zip")
-	writeFile(t, zipFile)
-	pkg, err := ApplicationPackageFrom(zipFile)
-	assert.Nil(t, err)
-	assert.Equal(t, zipFile, pkg.Path)
-
-	for i, tt := range tests {
-		writeFile(t, tt.in)
-		pkg, err := ApplicationPackageFrom(dir)
-		if tt.fail {
-			assert.NotNil(t, err)
-		} else if pkg.Path != tt.out {
-			t.Errorf("#%d: FindApplicationPackage(%q) = (%q, %s), want (%q, nil)", i, dir, pkg.Path, err, tt.out)
-		}
-	}
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath: dir,
+		existingFile: filepath.Join(dir, "services.xml"),
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath: filepath.Join(dir, "src", "main", "application"),
+		existingFile: filepath.Join(dir, "src", "main", "application") + string(os.PathSeparator),
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath: filepath.Join(dir, "src", "main", "application"),
+		existingFile: filepath.Join(dir, "pom.xml"),
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		existingFile:     filepath.Join(dir, "pom.xml"),
+		requirePackaging: true,
+		fail:             true,
+	})
+	assertFindApplicationPackage(t, dir, pkgFixture{
+		expectedPath:     filepath.Join(dir, "target", "application.zip"),
+		existingFiles:    []string{filepath.Join(dir, "pom.xml"), filepath.Join(dir, "target", "application.zip")},
+		requirePackaging: true,
+	})
 }
 
-func writeFile(t *testing.T, filename string) {
-	err := os.MkdirAll(filepath.Dir(filename), 0755)
+type pkgFixture struct {
+	expectedPath     string
+	existingFile     string
+	existingFiles    []string
+	requirePackaging bool
+	fail             bool
+}
+
+func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixture) {
+	if fixture.existingFile != "" {
+		writeFile(t, fixture.existingFile)
+	}
+	for _, f := range fixture.existingFiles {
+		writeFile(t, f)
+	}
+	pkg, err := FindApplicationPackage(zipOrDir, fixture.requirePackaging)
+	assert.Equal(t, err != nil, fixture.fail, "Expected error for "+zipOrDir)
+	assert.Equal(t, fixture.expectedPath, pkg.Path)
+}
+
+func writeFile(t *testing.T, name string) {
+	err := os.MkdirAll(filepath.Dir(name), 0755)
 	assert.Nil(t, err)
-	err = ioutil.WriteFile(filename, []byte{0}, 0644)
-	assert.Nil(t, err)
+	if !strings.HasSuffix(name, string(os.PathSeparator)) {
+		err = ioutil.WriteFile(name, []byte{0}, 0644)
+		assert.Nil(t, err)
+	}
 }

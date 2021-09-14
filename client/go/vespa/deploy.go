@@ -107,26 +107,27 @@ func (ap *ApplicationPackage) zipReader() (io.ReadCloser, error) {
 	return r, nil
 }
 
-// Find an application package zip or directory below an application path
-func ApplicationPackageFrom(application string) (ApplicationPackage, error) {
-	if isZip(application) {
-		return ApplicationPackage{Path: application}, nil
+// FindApplicationPackage finds the path to an application package from the zip file or directory zipOrDir.
+func FindApplicationPackage(zipOrDir string, requirePackaging bool) (ApplicationPackage, error) {
+	if isZip(zipOrDir) {
+		return ApplicationPackage{Path: zipOrDir}, nil
 	}
-	if util.PathExists(filepath.Join(application, "pom.xml")) {
-		zip := filepath.Join(application, "target", "application.zip")
-		if !util.PathExists(zip) {
-			return ApplicationPackage{}, errors.New("pom.xml exists but no target/application.zip. Run mvn package first")
-		} else {
+	if util.PathExists(filepath.Join(zipOrDir, "pom.xml")) {
+		zip := filepath.Join(zipOrDir, "target", "application.zip")
+		if util.PathExists(zip) {
 			return ApplicationPackage{Path: zip}, nil
 		}
+		if requirePackaging {
+			return ApplicationPackage{}, errors.New("pom.xml exists but no target/application.zip. Run mvn package first")
+		}
 	}
-	if util.PathExists(filepath.Join(application, "src", "main", "application")) {
-		return ApplicationPackage{Path: filepath.Join(application, "src", "main", "application")}, nil
+	if util.PathExists(filepath.Join(zipOrDir, "src", "main", "application")) {
+		return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application")}, nil
 	}
-	if util.PathExists(filepath.Join(application, "services.xml")) {
-		return ApplicationPackage{Path: application}, nil
+	if util.PathExists(filepath.Join(zipOrDir, "services.xml")) {
+		return ApplicationPackage{Path: zipOrDir}, nil
 	}
-	return ApplicationPackage{}, errors.New("Could not find an application package source in '" + application + "'")
+	return ApplicationPackage{}, errors.New("Could not find an application package source in '" + zipOrDir + "'")
 }
 
 func ApplicationFromString(s string) (ApplicationID, error) {
