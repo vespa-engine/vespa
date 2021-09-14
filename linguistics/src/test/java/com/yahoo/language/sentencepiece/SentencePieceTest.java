@@ -17,7 +17,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class SentencePieceTest {
 
     @Test
-    public void testEnglishTokenization() throws IOException {
+    public void testEnglishTokenization() {
         var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
         tester.assertSegmented("h", "▁h");
         tester.assertSegmented("he", "▁he");
@@ -39,6 +39,25 @@ public class SentencePieceTest {
         tester.assertSegmented("A normal sentence. Yes one more.", "▁", "A", "▁normal", "▁sentence", ".", "▁", "Y", "es", "▁one", "▁more", ".");
         tester.assertEncoded("hello, world!", 908, 1418, 9934, 501, 9960);
         tester.assertEncoded("Hello, world!", 9912, 0, 6595, 9934, 501, 9960);
+    }
+
+    @Test
+    public void testNoCollapse() {
+        var tester = new SentencePieceTester(new SentencePieceEncoder.Builder()
+                                                     .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())
+                                                     .setCollapseUnknowns(false));
+        tester.assertSegmented("KHJ hello", "▁", "K", "H", "J", "▁hel", "lo");
+    }
+
+    @Test
+    public void testHighestScore() {
+        var tester = new SentencePieceTester(new SentencePieceEncoder.Builder()
+                                                     .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())
+                                                     .setScoring(SentencePieceEncoder.Scoring.highestScore));
+        tester.assertSegmented("h", "▁h");
+        tester.assertSegmented("he", "▁he");
+        tester.assertSegmented("hel", "▁h", "el");
+        tester.assertSegmented("hello", "▁h", "el", "lo");
     }
 
     @Test
