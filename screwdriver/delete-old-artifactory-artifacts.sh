@@ -25,7 +25,7 @@ for VERSION in $VERSIONS_TO_DELETE; do
     curl -sSL -H "content-type:text/plain" -H "Authorization: Bearer $JFROG_API_TOKEN" \
          --data "items.find({ \"repo\": { \"\$eq\": \"vespa\" }, \"name\": {\"\$match\": \"vespa*$VERSION*\"}   }).include(\"repo\", \"path\", \"name\")" \
          "$ARTIFACTORY_URL/api/search/aql" \
-        | jq -re ".results[]|\"$ARTIFACTORY_URL/artifactory/\(.repo)/\(.path)/\(.name)\"" >> $RPMS_TO_DELETE
+        | jq -re ".results[]|\"$ARTIFACTORY_URL/\(.repo)/\(.path)/\(.name)\"" >> $RPMS_TO_DELETE
 done
 
 echo "Deleting the following RPMs:"
