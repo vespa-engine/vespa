@@ -319,8 +319,10 @@ public class ConvertedModel {
             constantsReplacedByFunctions.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
-            Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            profile.rankingConstants().computeIfAbsent(constantName, name -> new RankingConstant(name, constantValue.type(), constantPath.toString()));
+            profile.rankingConstants().computeIfAbsent(constantName, name -> {
+                Path constantPath = store.writeLargeConstant(name, constantValue);
+                return new RankingConstant(name, constantValue.type(), constantPath.toString());
+            });
         }
     }
 
