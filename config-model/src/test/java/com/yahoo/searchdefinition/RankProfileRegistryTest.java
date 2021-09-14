@@ -35,7 +35,7 @@ public class RankProfileRegistryTest {
     public void testRankProfileDuplicateNameIsIllegal() {
         Search search = new Search("foo");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
-        RankProfile barRankProfile = new RankProfile("bar", search, rankProfileRegistry);
+        RankProfile barRankProfile = new RankProfile("bar", search, rankProfileRegistry, search.rankingConstants());
         rankProfileRegistry.add(barRankProfile);
         rankProfileRegistry.add(barRankProfile);
     }
@@ -47,7 +47,7 @@ public class RankProfileRegistryTest {
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
             assertNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
-            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, search, rankProfileRegistry);
+            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, search, rankProfileRegistry, search.rankingConstants());
             rankProfileWithAddedFunction.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
             rankProfileRegistry.add(rankProfileWithAddedFunction);
             assertNotNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));

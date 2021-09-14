@@ -299,10 +299,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             for (ImportedMlModel model : importedModels) {
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 OnnxModels onnxModels = onnxModelInfoFromSource(model);
-                RankProfile profile = new RankProfile(model.name(), this, deployLogger, rankProfileRegistry, onnxModels);
+                RankProfile profile = new RankProfile(model.name(), applicationPackage, deployLogger, rankProfileRegistry, rankingConstants, onnxModels);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
-                    ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
+                    ConvertedModel convertedModel = ConvertedModel.fromSource(applicationPackage, new ModelName(model.name()),
                             model.name(), profile, queryProfiles.getRegistry(), model);
                     convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
                     return convertedModel;
@@ -316,10 +316,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 OnnxModels onnxModels = onnxModelInfoFromStore(modelName);
-                RankProfile profile = new RankProfile(modelName, this, deployLogger, rankProfileRegistry, onnxModels);
+                RankProfile profile = new RankProfile(modelName, applicationPackage, deployLogger, rankProfileRegistry, rankingConstants, onnxModels);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
-                    ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
+                    ConvertedModel convertedModel = ConvertedModel.fromStore(applicationPackage, new ModelName(modelName), modelName, profile);
                     convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
                     return convertedModel;
                 }));
