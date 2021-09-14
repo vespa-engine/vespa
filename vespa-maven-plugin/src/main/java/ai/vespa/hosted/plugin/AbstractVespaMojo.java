@@ -12,6 +12,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -90,17 +91,27 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
                 .orElseThrow(() -> new MojoExecutionException("'instance' must be specified as a parameter or project property"));
         id = ApplicationId.from(tenant, application, instance);
 
+        Optional<Path> apiKeyPath = apiKeyPath(tenant);
         if ( ! isNullOrBlank(apiKey)) {
             controller = ControllerHttpClient.withSignatureKey(URI.create(endpoint), apiKey, id);
         }
-        else if ( ! isNullOrBlank(apiKeyFile)) {
+        else if (apiKeyPath.isPresent()) {
             controller = isNullOrBlank(apiCertificateFile)
-                    ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(apiKeyFile), id)
-                    : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(apiKeyFile), Paths.get(apiCertificateFile));
+                    ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), apiKeyPath.get(), id)
+                    : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), apiKeyPath.get(), Paths.get(apiCertificateFile));
         }
         else {
             throw new IllegalArgumentException("One of the properties 'apiKey' or 'apiKeyFile' is required.");
         }
+    }
+
+    private Optional<Path> apiKeyPath(String tenant) {
+        if (!isNullOrBlank(apiKeyFile)) return Optional.of(Paths.get(apiKeyFile));
+
+        Path cliApiKeyFile = Paths.get(System.getProperty("user.home"), ".vespa", tenant + ".api-key.pem");
+        if (Files.exists(cliApiKeyFile)) return Optional.of(cliApiKeyFile);
+
+        return Optional.empty();
     }
 
     protected String projectPathOf(String first, String... rest) {
@@ -132,4 +143,5 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
                 .filter(s -> !s.isBlank())
                 .isEmpty();
     }
+
 }
