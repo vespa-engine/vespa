@@ -60,7 +60,7 @@ public class OperationStats {
 
     /** Number of HTTP responses received. */
     public long responses() {
-        return requests - inflight;
+        return requests - inflight - exceptions;
     }
 
     /** Number of 200 OK HTTP responses received. */
