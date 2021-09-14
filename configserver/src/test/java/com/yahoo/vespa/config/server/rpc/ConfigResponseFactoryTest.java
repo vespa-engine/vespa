@@ -12,6 +12,7 @@ import org.junit.Test;
 import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Ulf Lilleengen
@@ -39,30 +40,30 @@ public class ConfigResponseFactoryTest {
 
     @Test
     public void testLZ4CompressedFactory() {
-        // Both checksums in request
+        // md5 and xxhash64 checksums in request, both md5 and xxhash64 checksums should be in response
         {
             ConfigResponse response = createResponse(payloadChecksums);
             assertEquals(payloadChecksums, response.getPayloadChecksums());
         }
 
-        // No checksums in request (empty checksums), both checksums should be in response
+        // Empty md5 and xxhash64 checksums in request, both md5 and xxhash64 checksum should be in response
         {
             ConfigResponse response = createResponse(payloadChecksumsEmpty);
             assertEquals(payloadChecksums.getForType(MD5), response.getPayloadChecksums().getForType(MD5));
             assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
         }
 
-        // Only md5 checksums in request
+        // md5 checksum and no xxhash64 checksum in request, md5 and xxhash6 checksum in response
         {
             ConfigResponse response = createResponse(payloadChecksumsOnlyMd5);
             assertEquals(payloadChecksumsOnlyMd5.getForType(MD5), response.getPayloadChecksums().getForType(MD5));
-            assertEquals(payloadChecksumsOnlyMd5.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
+            assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
         }
 
-        // Only xxhash64 checksums in request
+        // Only xxhash64 checksum in request, only xxhash64 checksums in response
         {
             ConfigResponse response = createResponse(payloadChecksumsOnlyXxhash64);
-            assertEquals(payloadChecksumsOnlyXxhash64.getForType(MD5), response.getPayloadChecksums().getForType(MD5));
+            assertNull(response.getPayloadChecksums().getForType(MD5));
             assertEquals(payloadChecksumsOnlyXxhash64.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
         }
     }
