@@ -97,13 +97,10 @@ public class SentencePieceEncoder implements Segmenter {
             Trie.Node node = model.tokens.root;
             int characterPosition = start;
             while (node != null && characterPosition < input.length()) { // traverse the trie one character at the time from this position
-                node = node.children.get(input.charAt(characterPosition));
-                characterPosition++;
+                node = node.children.get(input.charAt(characterPosition++));
                 int length = characterPosition - start;
-                if (node != null) {
+                if (node != null && node.type != TokenType.unused) {
                     if (node.isToken()) {
-                        if (node.type == TokenType.unused) continue;
-
                         float score = node.type == TokenType.userDefined ? (length * model.maxScore - 0.1f) : node.score;
                         addSegment(TokenType.text, node.id, start, characterPosition, score, segmentEnds);
                     }
@@ -247,7 +244,7 @@ public class SentencePieceEncoder implements Segmenter {
             Float score;
             private final Map<Character, Node> children = new HashMap<>();
 
-            boolean isToken() { return score != null; }
+            boolean isToken() { return type != null; }
 
         }
 
