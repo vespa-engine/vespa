@@ -31,15 +31,16 @@ abstract class AbstractProducer implements ArtifactProducer {
         String prefixedOutput = output.contains("\n")
                 ? "\n" + output
                 : (output.isEmpty() ? "<no output>" : output);
-        String logMsg = logOutput
-                ? String.format("Executed command %s.\nExited with code %d and output: %s", cmdString, exitCode, prefixedOutput)
-                : String.format("Executed command %s.\nExited with code %d.", cmdString, exitCode);
-        ctx.log(log, logMsg);
         if (exitCode > 0) {
             String errorMsg = logOutput
-                    ? String.format("Failed to execute %s: %s", cmdString, prefixedOutput)
+                    ? String.format("Failed to execute %s (exited with code %d): %s", cmdString, exitCode, prefixedOutput)
                     : String.format("Failed to execute %s (exited with code %d)", cmdString, exitCode);
             throw new IOException(errorMsg);
+        } else {
+            String logMsg = logOutput
+                    ? String.format("Executed command %s. Exited with code %d and output: %s", cmdString, exitCode, prefixedOutput)
+                    : String.format("Executed command %s. Exited with code %d.", cmdString, exitCode);
+            ctx.log(log, logMsg);
         }
         return result;
     }
