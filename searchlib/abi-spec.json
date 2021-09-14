@@ -1424,6 +1424,7 @@
       "public void <init>(java.util.Collection, java.util.Map)",
       "public void <init>(java.util.Map)",
       "public void <init>(java.util.Map, java.util.Map)",
+      "protected void <init>(com.google.common.collect.ImmutableMap, java.util.Map)",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction getFunction(java.lang.String)",
       "protected com.google.common.collect.ImmutableMap functions()",
       "public java.lang.String getBinding(java.lang.String)",
