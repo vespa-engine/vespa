@@ -7,8 +7,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
@@ -22,7 +20,8 @@ public final class IfNode extends CompositeNode {
 
     /** The expression nodes that make up this condition. */
     private final ExpressionNode condition, trueExpression, falseExpression;
-
+    /** Frequent calls to children() makes this caching necessary. Might skip the entries above and just keep them as list.*/
+    private final List<ExpressionNode> asList;
     private final Double trueProbability;
 
     public IfNode(ExpressionNode condition, ExpressionNode trueExpression, ExpressionNode falseExpression) {
@@ -46,15 +45,12 @@ public final class IfNode extends CompositeNode {
         this.trueProbability = trueProbability;
         this.trueExpression = trueExpression;
         this.falseExpression = falseExpression;
+        this.asList = List.of(condition, trueExpression, falseExpression);
     }
 
     @Override
     public List<ExpressionNode> children() {
-        List<ExpressionNode> children = new ArrayList<>(4);
-        children.add(condition);
-        children.add(trueExpression);
-        children.add(falseExpression);
-        return Collections.unmodifiableList(children);
+        return asList;
     }
 
     public ExpressionNode getCondition() { return condition; }
