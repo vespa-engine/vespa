@@ -155,7 +155,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_UNKNOWN_SERVICE_STATUS = defineFeatureFlag(
             "use-unknown-service-status", false,
-            List.of("hakonhall"), "2021-09-13", "2021-09-13",
+            List.of("hakonhall"), "2021-09-13", "2021-10-13",
             "Whether to use the UNKNOWN ServiceStatus for services that have not yet been probed by service monitor.",
             "Takes effect on first (re)start of config server.");
 
