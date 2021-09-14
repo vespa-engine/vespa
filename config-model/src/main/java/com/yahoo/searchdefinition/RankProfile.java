@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -23,7 +24,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -106,7 +106,7 @@ public class RankProfile implements Cloneable {
 
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
     // This cache must be invalidated every time modifications are done to 'functions'.
-    private Map<String, RankingExpressionFunction> allFunctionsCached = null;
+    private CachedFunctions allFunctionsCached = null;
 
     private Map<Reference, TensorType> inputFeatures = new LinkedHashMap<>();
 
@@ -128,6 +128,20 @@ public class RankProfile implements Cloneable {
     private final RankingConstants rankingConstants;
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
+
+    private static class CachedFunctions {
+        private final Map<String, RankingExpressionFunction> allRankingExpressionFunctions;
+        private final ImmutableMap<String, ExpressionFunction> allExpressionFunctions;
+        CachedFunctions(Map<String, RankingExpressionFunction> functions) {
+            allRankingExpressionFunctions = functions;
+            ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
+            for (var entry : functions.entrySet()) {
+                ExpressionFunction function = entry.getValue().function();
+                mapBuilder.put(function.getName(), function);
+            }
+            allExpressionFunctions = mapBuilder.build();
+        }
+    }
 
     /**
      * Creates a new rank profile for a particular search definition
@@ -677,11 +691,19 @@ public class RankProfile implements Cloneable {
     }
     /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
-        if (needToUpdateFunctionCache()) {
-            allFunctionsCached = gatherAllFunctions();
-        }
-        return allFunctionsCached;
+        updateCachedFunctions();
+        return allFunctionsCached.allRankingExpressionFunctions;
     }
+    private ImmutableMap<String, ExpressionFunction> getExpressionFunctions() {
+        updateCachedFunctions();
+        return allFunctionsCached.allExpressionFunctions;
+    }
+    private void updateCachedFunctions() {
+        if (needToUpdateFunctionCache()) {
+            allFunctionsCached = new CachedFunctions(gatherAllFunctions());
+        }
+    }
+
     private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
         if (functions.isEmpty()) return getInherited().getFunctions();
@@ -914,10 +936,7 @@ public class RankProfile implements Cloneable {
     }
     
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles, Map<Reference, TensorType> featureTypes) {
-        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getFunctions().values().stream()
-                                                                                      .map(RankingExpressionFunction::function)
-                                                                                      .collect(Collectors.toList()),
-                                                                        featureTypes);
+        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
         // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
