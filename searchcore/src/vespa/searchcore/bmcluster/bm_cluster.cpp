@@ -202,7 +202,7 @@ BmCluster::stop_rpc_client()
 }
 
 void
-BmCluster::make_node(unsigned int node_idx)
+BmCluster::make_node(uint32_t node_idx)
 {
     assert(node_idx < _nodes.size());
     assert(!_nodes[node_idx]);
@@ -216,13 +216,13 @@ BmCluster::make_node(unsigned int node_idx)
 void
 BmCluster::make_nodes()
 {
-    for (unsigned int node_idx = 0; node_idx < _nodes.size(); ++node_idx) {
+    for (uint32_t node_idx = 0; node_idx < _nodes.size(); ++node_idx) {
         make_node(node_idx);
     }
 }
 
 BmNode&
-BmCluster::get_node(unsigned int node_idx)
+BmCluster::get_node(uint32_t node_idx)
 {
     assert(node_idx < _nodes.size());
     assert(_nodes[node_idx]);
@@ -271,7 +271,7 @@ BmCluster::start_service_layers()
         }
     }
     BmClusterController fake_controller(get_rpc_client(), _params.get_num_nodes());
-    unsigned int node_idx = 0;
+    uint32_t node_idx = 0;
     for (const auto &node : _nodes) {
         if (node) {
             fake_controller.set_cluster_up(node_idx, false);
@@ -294,7 +294,7 @@ BmCluster::start_distributors()
         }
     }
     BmClusterController fake_controller(get_rpc_client(), _params.get_num_nodes());
-    unsigned int node_idx = 0;
+    uint32_t node_idx = 0;
     for (const auto &node : _nodes) {
         if (node) {
             fake_controller.set_cluster_up(node_idx, true);

@@ -19,7 +19,7 @@ namespace search::bmcluster {
 namespace {
 
 FRT_RPCRequest *
-make_set_cluster_state_request(unsigned int num_nodes)
+make_set_cluster_state_request(uint32_t num_nodes)
 {
     vespalib::asciistream s;
     s << "version:2 distributor:" << num_nodes << " storage:" << num_nodes;
@@ -37,14 +37,14 @@ make_set_cluster_state_request(unsigned int num_nodes)
 
 }
 
-BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in, unsigned int num_nodes)
+BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in, uint32_t num_nodes)
     : _shared_rpc_resources(shared_rpc_resources_in),
       _num_nodes(num_nodes)
 {
 }
 
 void
-BmClusterController::set_cluster_up(unsigned int node_idx, bool distributor)
+BmClusterController::set_cluster_up(uint32_t node_idx, bool distributor)
 {
     static vespalib::string _storage("storage");
     StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, node_idx);

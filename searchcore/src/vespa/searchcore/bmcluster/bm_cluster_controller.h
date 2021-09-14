@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace storage::api { class StorageMessageAddress; }
 namespace storage::rpc { class SharedRpcResources; }
 
@@ -13,10 +15,10 @@ namespace search::bmcluster {
 class BmClusterController
 {
     storage::rpc::SharedRpcResources& _shared_rpc_resources;
-    unsigned int                      _num_nodes;
+    uint32_t                          _num_nodes;
 public:
-    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in, unsigned int num_nodes);
-    void set_cluster_up(unsigned int node_idx, bool distributor);
+    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in, uint32_t num_nodes);
+    void set_cluster_up(uint32_t node_idx, bool distributor);
 };
 
 }
