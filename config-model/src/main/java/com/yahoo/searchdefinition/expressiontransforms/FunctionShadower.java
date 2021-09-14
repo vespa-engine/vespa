@@ -26,10 +26,11 @@ public class FunctionShadower extends ExpressionTransformer<RankProfileTransform
 
     @Override
     public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
-        String name = expression.getName();
         ExpressionNode node = expression.getRoot();
         ExpressionNode result = transform(node, context);
-        return new RankingExpression(name, result);
+        return (result == node)
+                ? expression
+                : new RankingExpression(expression.getName(), result);
     }
 
     @Override
