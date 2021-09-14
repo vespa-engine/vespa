@@ -9,6 +9,8 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.policy.ClusterParams;
+import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -17,6 +19,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -126,10 +129,7 @@ class ClusterApiImpl implements ClusterApi {
                 continue;
             }
 
-            if (service.serviceStatus() == ServiceStatus.UNKNOWN) {
-                reasons.mergeWith(SuspensionReasons.unknownStatus(service));
-                continue;
-            } else if (service.serviceStatus() == ServiceStatus.DOWN) {
+            if (service.serviceStatus() == ServiceStatus.DOWN) {
                 Optional<Instant> since = service.serviceStatusInfo().since();
                 if (since.isEmpty()) {
                     reasons.mergeWith(SuspensionReasons.isDown(service));
@@ -155,7 +155,18 @@ class ClusterApiImpl implements ClusterApi {
     int missingServices() { return missingServices; }
 
     @Override
-    public boolean noServicesOutsideGroupIsDown() {
+    public boolean noServicesOutsideGroupIsDown() throws HostStateChangeDeniedException {
+        Optional<ServiceInstance> serviceWithUnknownStatus = servicesNotInGroup
+                .stream()
+                .filter(serviceInstance -> serviceInstance.serviceStatus() == ServiceStatus.UNKNOWN)
+                .min(Comparator.comparing(ServiceInstance::descriptiveName));
+        if (serviceWithUnknownStatus.isPresent()) {
+            throw new HostStateChangeDeniedException(
+                    nodeGroup,
+                    HostedVespaPolicy.UNKNOWN_SERVICE_STATUS,
+                    "Service status of " + serviceWithUnknownStatus.get().descriptiveName() + " is not yet known");
+        }
+
         return servicesDownAndNotInGroup.size() + missingServices == 0;
     }
 
