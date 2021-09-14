@@ -107,6 +107,7 @@ public class RankProfile implements Cloneable {
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
     // This cache must be invalidated every time modifications are done to 'functions'.
     private Map<String, RankingExpressionFunction> allFunctionsCached = null;
+    private List<ExpressionFunction> allExpressionFunctionCached = null;
 
     private Map<Reference, TensorType> inputFeatures = new LinkedHashMap<>();
 
@@ -677,11 +678,22 @@ public class RankProfile implements Cloneable {
     }
     /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
-        if (needToUpdateFunctionCache()) {
-            allFunctionsCached = gatherAllFunctions();
-        }
+        updateCachedFunctions();
         return allFunctionsCached;
     }
+    private List<ExpressionFunction> getExpressionFunctions() {
+        updateCachedFunctions();
+        return allExpressionFunctionCached;
+    }
+    private void updateCachedFunctions() {
+        if (needToUpdateFunctionCache()) {
+            allFunctionsCached = gatherAllFunctions();
+            allExpressionFunctionCached = allFunctionsCached.values().stream()
+                    .map(RankingExpressionFunction::function)
+                    .collect(Collectors.toList());
+        }
+    }
+
     private  Map<String, RankingExpressionFunction> gatherAllFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
         if (functions.isEmpty()) return getInherited().getFunctions();
@@ -914,10 +926,7 @@ public class RankProfile implements Cloneable {
     }
     
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles, Map<Reference, TensorType> featureTypes) {
-        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getFunctions().values().stream()
-                                                                                      .map(RankingExpressionFunction::function)
-                                                                                      .collect(Collectors.toList()),
-                                                                        featureTypes);
+        MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
         // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
