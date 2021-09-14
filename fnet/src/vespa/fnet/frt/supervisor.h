@@ -10,6 +10,7 @@
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/simplepacketstreamer.h>
 
+class TransportConfig;
 class FNET_Transport;
 class FRT_Target;
 class FastOS_ThreadPool;
@@ -129,10 +130,12 @@ namespace fnet::frt {
  */
 class StandaloneFRT {
 public:
+    explicit StandaloneFRT(const TransportConfig &config);
     StandaloneFRT();
     explicit StandaloneFRT(std::shared_ptr<vespalib::CryptoEngine> crypto);
     ~StandaloneFRT();
-    FRT_Supervisor & supervisor() { return *_supervisor; }
+    FRT_Supervisor &supervisor() { return *_supervisor; }
+    const FRT_Supervisor &supervisor() const { return *_supervisor; }
     void shutdown();
 private:
     std::unique_ptr<FastOS_ThreadPool> _threadPool;

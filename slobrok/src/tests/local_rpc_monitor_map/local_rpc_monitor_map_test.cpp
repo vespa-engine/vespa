@@ -104,7 +104,7 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
     ServiceMapping mapping_conflict;
     LocalRpcMonitorMapTest()
       : time(duration::zero()),
-        scheduler(&time, &time), monitor_log(), map_log(),
+        scheduler(&time), monitor_log(), map_log(),
         map(&scheduler, [this](auto &owner)
             {
                 EXPECT_EQ(&owner, &map);

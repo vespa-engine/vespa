@@ -29,4 +29,5 @@ vespa_define_module(
     src/tests/sync_execute
     src/tests/thread_selection
     src/tests/time
+    src/tests/transport_debugger
 )
