@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectoridxfile.h"
-#include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/index/bitvectorkeys.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
@@ -23,8 +24,6 @@ readHeader(vespalib::FileHeader &h, const vespalib::string &name)
     h.readFile(file);
     file.Close();
 }
-
-const size_t FILE_HEADERSIZE_ALIGNMENT = 4_Ki;
 
 }
 
@@ -90,7 +89,7 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
 void
 BitVectorIdxFileWrite::makeIdxHeader(const FileHeaderContext &fileHeaderContext)
 {
-    vespalib::FileHeader h(FILE_HEADERSIZE_ALIGNMENT);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     typedef vespalib::GenericHeader::Tag Tag;
     fileHeaderContext.addTags(h, _idxFile->GetFileName());
     h.putTag(Tag("docIdLimit", _docIdLimit));
@@ -108,7 +107,7 @@ BitVectorIdxFileWrite::makeIdxHeader(const FileHeaderContext &fileHeaderContext)
 void
 BitVectorIdxFileWrite::updateIdxHeader(uint64_t fileBitSize)
 {
-    vespalib::FileHeader h(FILE_HEADERSIZE_ALIGNMENT);
+    vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     typedef vespalib::GenericHeader::Tag Tag;
     readHeader(h, _idxFile->GetFileName());
     FileHeaderContext::setFreezeTime(h);

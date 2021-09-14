@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/util/file_with_header.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <cassert>
 
@@ -21,17 +22,14 @@ public:
     bool hasData() const;
 
     uint32_t getNumIdx() const {
-        return (_idxFileSize - _idxHeaderLen) /sizeof(uint32_t);
+        return (_idxFile.data_size()) /sizeof(uint32_t);
     }
 
     size_t getEnumCount() const {
-        size_t dataSize(_datFileSize - _datHeaderLen);
+        size_t dataSize = _datFile.data_size();
         assert((dataSize % sizeof(uint32_t)) == 0);
         return dataSize / sizeof(uint32_t);
     }
-
-    static bool
-    extractFileSize(const vespalib::GenericHeader &header, FastOS_FileInterface &file, uint64_t &fileSize);
 
     size_t getNumValues();
     int32_t getNextWeight() { return _weightReader.readHostOrder(); }
@@ -43,32 +41,26 @@ public:
     uint32_t getVersion() const { return _version; }
     uint32_t getDocIdLimit() const { return _docIdLimit; }
     const vespalib::GenericHeader &getDatHeader() const {
-        return _datHeader;
+        return _datFile.header();
     }
 protected:
-    std::unique_ptr<FastOS_FileInterface>  _datFile;
+    FileWithHeader _datFile;
 private:
-    std::unique_ptr<FastOS_FileInterface>  _weightFile;
-    std::unique_ptr<FastOS_FileInterface>  _idxFile;
+    FileWithHeader        _weightFile;
+    FileWithHeader        _idxFile;
     FileReader<int32_t>   _weightReader;
     FileReader<uint32_t>  _idxReader;
     FileReader<uint32_t>  _enumReader;
     uint32_t              _currIdx;
-    uint32_t              _datHeaderLen;
-    uint32_t              _idxHeaderLen;
-    uint32_t              _weightHeaderLen;
     uint64_t              _createSerialNum;
     size_t                _fixedWidth;
     bool                  _enumerated;
     bool                  _hasLoadData;
     uint32_t              _version;
     uint32_t              _docIdLimit;
-    vespalib::FileHeader  _datHeader;
-    uint64_t              _datFileSize;
-    uint64_t              _idxFileSize;
 protected:
     size_t getDataCountHelper(size_t elemSize) const {
-        size_t dataSize(_datFileSize - _datHeaderLen);
+        size_t dataSize = _datFile.data_size();
         return dataSize / elemSize;
     }
 };

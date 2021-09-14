@@ -3,6 +3,7 @@
 #include "sourceselector.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 using search::queryeval::Source;
@@ -83,7 +84,7 @@ SourceSelector::LoadInfo::load()
     // XXX no checking for success
     file.ReadOpen(fileName.c_str());
 
-    FileHeader fileHeader(4_Ki);
+    FileHeader fileHeader(FileSettings::DIRECTIO_ALIGNMENT);
     fileHeader.readFile(file);
     if (fileHeader.hasTag(defaultSourceTag)) {
         _header._defaultSource = fileHeader.getTag(defaultSourceTag).asInteger();

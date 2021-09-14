@@ -20,6 +20,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchlib/util/logutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -46,8 +47,6 @@ const vespalib::string enumeratedTag = "enumerated";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string docIdLimitTag = "docIdLimit";
-
-constexpr size_t DIRECTIO_ALIGNMENT(4_Ki);
 
 }
 
@@ -351,7 +350,7 @@ AttributeVector::isEnumeratedSaveFormat() const
 {
     vespalib::string datName(vespalib::make_string("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile;
-    vespalib::FileHeader datHeader(DIRECTIO_ALIGNMENT);
+    vespalib::FileHeader datHeader(FileSettings::DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
         LOG(error, "could not open %s: %s", datFile.GetFileName(), getLastErrorString().c_str());
         throw IllegalStateException(make_string("Failed opening attribute data file '%s' for reading",
@@ -648,7 +647,7 @@ IExtendAttribute *AttributeVector::getExtendInterface() { return nullptr; }
 uint64_t
 AttributeVector::getEstimatedSaveByteSize() const
 {
-    uint64_t headerSize = 4_Ki;
+    uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
     uint64_t totalValueCount = _status.getNumValues();
     uint64_t uniqueValueCount = _status.getNumUniqueValues();
     uint64_t docIdLimit = getCommittedDocIdLimit();

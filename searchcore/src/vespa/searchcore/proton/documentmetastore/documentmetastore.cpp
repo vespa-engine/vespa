@@ -14,15 +14,15 @@
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
-#include <vespa/vespalib/datastore/buffer_type.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore");
@@ -33,12 +33,12 @@ using proton::bucketdb::BucketState;
 using proton::documentmetastore::GidToLidMapKey;
 using search::AttributeVector;
 using search::FileReader;
+using search::FileWithHeader;
 using search::GrowStrategy;
 using search::IAttributeSaveTarget;
 using search::LidUsageStats;
 using search::attribute::LoadUtils;
 using search::attribute::SearchContextParams;
-using vespalib::btree::BTreeNoLeafData;
 using search::fef::TermFieldMatchData;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
@@ -47,6 +47,7 @@ using vespalib::GenerationHandler;
 using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
 using vespalib::MemoryUsage;
+using vespalib::btree::BTreeNoLeafData;
 using vespalib::make_string;
 
 namespace proton {
@@ -58,36 +59,25 @@ vespalib::string VERSION("version");
 
 class Reader {
 private:
-    std::unique_ptr<FastOS_FileInterface> _datFile;
+    FileWithHeader _datFile;
     FileReader<uint32_t> _lidReader;
     FileReader<GlobalId> _gidReader;
     FileReader<uint8_t> _bucketUsedBitsReader;
     FileReader<Timestamp> _timestampReader;
-    vespalib::FileHeader _header;
-    uint32_t _headerLen;
     uint32_t _docIdLimit;
     uint32_t _version;
-    uint64_t _datFileSize;
 
 public:
     Reader(std::unique_ptr<FastOS_FileInterface> datFile)
         : _datFile(std::move(datFile)),
-          _lidReader(*_datFile),
-          _gidReader(*_datFile),
-          _bucketUsedBitsReader(*_datFile),
-          _timestampReader(*_datFile),
-          _header(),
-          _headerLen(0u),
-          _docIdLimit(0),
-          _datFileSize(0u)
+          _lidReader(_datFile.file()),
+          _gidReader(_datFile.file()),
+          _bucketUsedBitsReader(_datFile.file()),
+          _timestampReader(_datFile.file()),
+          _docIdLimit(0)
     {
-        _headerLen = _header.readFile(*_datFile);
-        _datFile->SetPosition(_headerLen);
-        if (!search::ReaderBase::extractFileSize(_header, *_datFile, _datFileSize)) {
-            LOG_ABORT("should not be reached");
-        }
-        _docIdLimit = _header.getTag(DOCID_LIMIT).asInteger();
-        _version = _header.getTag(VERSION).asInteger();
+        _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();
+        _version = _datFile.header().getTag(VERSION).asInteger();
     }
 
     uint32_t getDocIdLimit() const { return _docIdLimit; }
@@ -118,14 +108,14 @@ public:
         }
         uint8_t sizeLow;
         uint16_t sizeHigh;
-        _datFile->ReadBuf(&sizeLow, sizeof(sizeLow));
-        _datFile->ReadBuf(&sizeHigh, sizeof(sizeHigh));
+        _datFile.file().ReadBuf(&sizeLow, sizeof(sizeLow));
+        _datFile.file().ReadBuf(&sizeHigh, sizeof(sizeHigh));
         return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
     }
 
     size_t
     getNumElems() const {
-        return (_datFileSize - _headerLen) /
+        return _datFile.data_size() /
                (sizeof(uint32_t) + sizeof(GlobalId) +
                 sizeof(uint8_t) + sizeof(Timestamp::Type) +
                 ((_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) ? 0 : 3));

@@ -17,10 +17,10 @@ private:
 public:
     BlobSequenceReader(AttributeVector &attr)
         : ReaderBase(attr),
-          _sizeReader(*_datFile)
+          _sizeReader(_datFile.file())
     { }
     uint32_t getNextSize() { return _sizeReader.readHostOrder(); }
-    void readBlob(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
+    void readBlob(void *buf, size_t len) { _datFile.file().ReadBuf(buf, len); }
 };
 
 } // namespace
