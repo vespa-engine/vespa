@@ -4,16 +4,20 @@ vespa_add_library(searchcore_bmcluster STATIC
     bm_cluster.cpp
     bm_cluster_controller.cpp
     bm_cluster_params.cpp
+    bm_distribution.cpp
     bm_feed.cpp
     bm_message_bus.cpp
+    bm_message_bus_routes.cpp
     bm_node.cpp
     bm_storage_chain_builder.cpp
     bm_storage_link.cpp
+    bm_storage_message_addresses.cpp
     bucket_info_queue.cpp
     document_api_message_bus_bm_feed_handler.cpp
     pending_tracker.cpp
     pending_tracker_hash.cpp
     spi_bm_feed_handler.cpp
+    storage_api_bm_feed_handler_base.cpp
     storage_api_chain_bm_feed_handler.cpp
     storage_api_message_bus_bm_feed_handler.cpp
     storage_api_rpc_bm_feed_handler.cpp

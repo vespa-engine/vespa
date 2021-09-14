@@ -8,6 +8,9 @@ namespace storage::api { class StorageMessage; }
 
 namespace search::bmcluster {
 
+/*
+ * Class tracking errors in storage replies.
+ */
 class StorageReplyErrorChecker {
 protected:
     std::atomic<uint32_t> _errors;

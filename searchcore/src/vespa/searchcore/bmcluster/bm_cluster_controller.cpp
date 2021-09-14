@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_cluster_controller.h"
+#include "i_bm_distribution.h"
 #include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/storageserver/rpc/slime_cluster_state_bundle_codec.h>
@@ -8,7 +9,6 @@
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 using storage::api::StorageMessageAddress;
 using storage::rpc::SharedRpcResources;
@@ -19,11 +19,9 @@ namespace search::bmcluster {
 namespace {
 
 FRT_RPCRequest *
-make_set_cluster_state_request(uint32_t num_nodes)
+make_set_cluster_state_request(const IBmDistribution& distribution)
 {
-    vespalib::asciistream s;
-    s << "version:2 distributor:" << num_nodes << " storage:" << num_nodes;
-    storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState(s.str()));
+    storage::lib::ClusterStateBundle bundle(distribution.get_cluster_state_bundle());
     storage::rpc::SlimeClusterStateBundleCodec codec;
     auto encoded_bundle = codec.encode(bundle);
     auto *req = new FRT_RPCRequest();
@@ -37,9 +35,9 @@ make_set_cluster_state_request(uint32_t num_nodes)
 
 }
 
-BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in, uint32_t num_nodes)
+BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in, const IBmDistribution &distribution)
     : _shared_rpc_resources(shared_rpc_resources_in),
-      _num_nodes(num_nodes)
+      _distribution(distribution)
 {
 }
 
@@ -48,7 +46,7 @@ BmClusterController::set_cluster_up(uint32_t node_idx, bool distributor)
 {
     static vespalib::string _storage("storage");
     StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, node_idx);
-    auto req = make_set_cluster_state_request(_num_nodes);
+    auto req = make_set_cluster_state_request(_distribution);
     auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(_shared_rpc_resources.slobrok_mirror(),
                                                                                     _shared_rpc_resources.target_factory(), 1);
     uint64_t fake_bucket_id = 0;

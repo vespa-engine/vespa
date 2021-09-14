@@ -2,11 +2,17 @@
 
 #include "bm_cluster.h"
 #include "bm_cluster_controller.h"
+#include "bm_distribution.h"
 #include "bm_feed.h"
 #include "bm_message_bus.h"
 #include "bm_node.h"
+#include "document_api_message_bus_bm_feed_handler.h"
 #include "spi_bm_feed_handler.h"
+#include "storage_api_chain_bm_feed_handler.h"
+#include "storage_api_message_bus_bm_feed_handler.h"
+#include "storage_api_rpc_bm_feed_handler.h"
 #include <vespa/config/common/configcontext.h>
+#include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -23,6 +29,9 @@ using cloud::config::SlobroksConfigBuilder;
 using config::ConfigSet;
 using messagebus::MessagebusConfigBuilder;
 using storage::rpc::SharedRpcResources;
+using storage::rpc::StorageApiRpcService;
+using storage::spi::PersistenceProvider;
+using vespalib::compression::CompressionConfig;
 
 namespace search::bmcluster {
 
@@ -49,6 +58,34 @@ make_slobroks_config(SlobroksConfigBuilder& slobroks, int slobrok_port)
     SlobroksConfigBuilder::Slobrok slobrok;
     slobrok.connectionspec = vespalib::make_string("tcp/localhost:%d", slobrok_port);
     slobroks.slobrok.push_back(std::move(slobrok));
+}
+
+std::vector<std::shared_ptr<BmStorageLinkContext>>
+collect_storage_link_contexts(const std::vector<std::unique_ptr<BmNode>> &nodes, bool distributor)
+{
+    std::vector<std::shared_ptr<BmStorageLinkContext>> contexts;
+    for (auto& node : nodes) {
+        if (node) {
+            contexts.emplace_back(node->get_storage_link_context(distributor));
+        } else {
+            contexts.emplace_back();
+        }
+    }
+    return contexts;
+}
+
+std::vector<PersistenceProvider *>
+collect_persistence_providers(const std::vector<std::unique_ptr<BmNode>> &nodes)
+{
+    std::vector<PersistenceProvider *> providers;
+    for (auto& node : nodes) {
+        if (node) {
+            providers.emplace_back(node->get_persistence_provider());
+        } else {
+            providers.emplace_back(nullptr);
+        }
+    }
+    return providers;
 }
 
 }
@@ -109,8 +146,10 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
       _base_port(base_port),
       _document_types(std::move(document_types)),
       _repo(std::move(repo)),
-      _nodes(params.get_num_nodes())
-    
+      _field_set_repo(std::make_unique<const document::FieldSetRepo>(*_repo)),
+      _distribution(std::make_shared<const BmDistribution>(params.get_num_nodes())),
+      _nodes(params.get_num_nodes()),
+      _feed_handler()
 {
     _message_bus_config->add_builders(*_config_set);
     _rpc_client_config->add_builders(*_config_set);
@@ -221,14 +260,6 @@ BmCluster::make_nodes()
     }
 }
 
-BmNode&
-BmCluster::get_node(uint32_t node_idx)
-{
-    assert(node_idx < _nodes.size());
-    assert(_nodes[node_idx]);
-    return *_nodes[node_idx];
-}
-
 void
 BmCluster::initialize_providers()
 {
@@ -244,9 +275,15 @@ void
 BmCluster::create_buckets(BmFeed& feed)
 {
     LOG(info, "create %u buckets", feed.num_buckets());
-    auto& node = get_node(0);
     for (unsigned int i = 0; i < feed.num_buckets(); ++i) {
-        node.create_bucket(feed.make_bucket(i));
+        auto bucket = feed.make_bucket(i);
+        uint32_t node_idx = _distribution->get_service_layer_node_idx(bucket);
+        if (node_idx < _nodes.size()) {
+            auto& node = _nodes[node_idx];
+            if (node) {
+                node->create_bucket(feed.make_bucket(i));
+            }
+        }
     }
 }
 
@@ -270,7 +307,7 @@ BmCluster::start_service_layers()
             node->wait_service_layer_slobrok();
         }
     }
-    BmClusterController fake_controller(get_rpc_client(), _params.get_num_nodes());
+    BmClusterController fake_controller(get_rpc_client(), *_distribution);
     uint32_t node_idx = 0;
     for (const auto &node : _nodes) {
         if (node) {
@@ -293,7 +330,7 @@ BmCluster::start_distributors()
             node->wait_distributor_slobrok();
         }
     }
-    BmClusterController fake_controller(get_rpc_client(), _params.get_num_nodes());
+    BmClusterController fake_controller(get_rpc_client(), *_distribution);
     uint32_t node_idx = 0;
     for (const auto &node : _nodes) {
         if (node) {
@@ -306,23 +343,42 @@ BmCluster::start_distributors()
 }
 
 void
-BmCluster::create_feed_handlers()
+BmCluster::create_feed_handler()
 {
-    for (const auto &node : _nodes) {
-        if (node) {
-            node->create_feed_handler(_params);
+    StorageApiRpcService::Params rpc_params;
+    // This is the same compression config as the default in stor-communicationmanager.def.
+    rpc_params.compression_config = CompressionConfig(CompressionConfig::Type::LZ4, 3, 90, 1024);
+    rpc_params.num_rpc_targets_per_node = _params.get_rpc_targets_per_node();
+    if (_params.get_use_document_api()) {
+        _feed_handler = std::make_unique<DocumentApiMessageBusBmFeedHandler>(get_message_bus(), *_distribution);
+    } else if (_params.get_enable_distributor()) {
+        if (_params.get_use_storage_chain()) {
+            auto contexts = collect_storage_link_contexts(_nodes, true);
+            _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(std::move(contexts), *_distribution, true);
+        } else if (_params.get_use_message_bus()) {
+            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(get_message_bus(), *_distribution, true);
+        } else {
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(get_rpc_client(), _repo, rpc_params, *_distribution, true);
         }
+    } else if (_params.needs_service_layer()) {
+        if (_params.get_use_storage_chain()) {
+            auto contexts = collect_storage_link_contexts(_nodes, false);
+            _feed_handler = std::make_unique<StorageApiChainBmFeedHandler>(std::move(contexts), *_distribution, false);
+        } else if (_params.get_use_message_bus()) {
+            _feed_handler = std::make_unique<StorageApiMessageBusBmFeedHandler>(get_message_bus(), *_distribution, false);
+        } else {
+            _feed_handler = std::make_unique<StorageApiRpcBmFeedHandler>(get_rpc_client(), _repo, rpc_params, *_distribution, false);
+        }
+    } else {
+        auto providers = collect_persistence_providers(_nodes);
+        _feed_handler = std::make_unique<SpiBmFeedHandler>(std::move(providers), *_field_set_repo, *_distribution, _params.get_skip_get_spi_bucket_info());
     }
 }
 
 void
-BmCluster::shutdown_feed_handlers()
+BmCluster::shutdown_feed_handler()
 {
-    for (const auto &node : _nodes) {
-        if (node) {
-            node->shutdown_feed_handler();
-        }
-    }
+    _feed_handler.reset();
 }
 
 void
@@ -363,13 +419,13 @@ BmCluster::start(BmFeed& feed)
     if (_params.needs_message_bus()) {
         start_message_bus();
     }
-    create_feed_handlers();
+    create_feed_handler();
 }
 
 void
 BmCluster::stop()
 {
-    shutdown_feed_handlers();
+    shutdown_feed_handler();
     stop_message_bus();
     shutdown_distributors();
     shutdown_service_layers();
@@ -378,7 +434,7 @@ BmCluster::stop()
 IBmFeedHandler*
 BmCluster::get_feed_handler()
 {
-    return get_node(0).get_feed_handler();
+    return _feed_handler.get();
 }
 
 }
