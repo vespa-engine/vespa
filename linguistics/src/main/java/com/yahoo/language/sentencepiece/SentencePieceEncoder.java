@@ -99,13 +99,11 @@ public class SentencePieceEncoder implements Segmenter {
             while (node != null && characterPosition < input.length()) { // traverse the trie one character at the time from this position
                 node = node.children.get(input.charAt(characterPosition++));
                 int length = characterPosition - start;
-                if (node != null && node.type != TokenType.unused) {
-                    if (node.isToken()) {
-                        float score = node.type == TokenType.userDefined ? (length * model.maxScore - 0.1f) : node.score;
-                        addSegment(TokenType.text, node.id, start, characterPosition, score, segmentEnds);
-                    }
+                if (node != null && node.isToken() && node.type != TokenType.unused) {
+                    float score = node.type == TokenType.userDefined ? (length * model.maxScore - 0.1f) : node.score;
+                    addSegment(TokenType.text, node.id, start, characterPosition, score, segmentEnds);
                 }
-                else if (length == 1) { // add an 'unknown' token of length 1 instead to make the next position reachable
+                else if (length == 1) { // add an 'unknown' length 1 token to make the next position reachable
                     addSegment(TokenType.unknown, 0, start, start + 1, unknownScore, segmentEnds);
                 }
             }
