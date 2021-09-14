@@ -283,7 +283,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag NEW_LOCATION_BROKER_LOGIC = defineFeatureFlag(
-            "new-location-broker-logic", false,
+            "new-location-broker-logic", true,
             List.of("arnej"), "2021-09-07", "2021-12-31",
             "Use new implementation of internal logic in service location broker",
             "Takes effect immediately",
