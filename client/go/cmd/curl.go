@@ -9,7 +9,6 @@ import (
 
 	"github.com/kballard/go-shellquote"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 var curlDryRun bool
@@ -39,11 +38,7 @@ $ vespa curl -t local -- -v /search/?yql=query
 			fatalErr(err, "Could not load config")
 			return
 		}
-		app, err := vespa.ApplicationFromString(getApplication())
-		if err != nil {
-			fatalErr(err)
-			return
-		}
+		app := getApplication()
 		privateKeyFile, err := cfg.PrivateKeyPath(app)
 		if err != nil {
 			fatalErr(err)

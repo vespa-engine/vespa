@@ -28,16 +28,12 @@ var apiKeyCmd = &cobra.Command{
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		app, err := vespa.ApplicationFromString(getApplication())
-		if err != nil {
-			fatalErr(err, "Could not parse application")
-			return
-		}
 		cfg, err := LoadConfig()
 		if err != nil {
 			fatalErr(err, "Could not load config")
 			return
 		}
+		app := getApplication()
 		apiKeyFile := cfg.APIKeyPath(app.Tenant)
 		if util.PathExists(apiKeyFile) && !overwriteKey {
 			printErrHint(fmt.Errorf("File %s already exists", apiKeyFile), "Use -f to overwrite it")

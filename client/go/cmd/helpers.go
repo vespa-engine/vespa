@@ -55,10 +55,7 @@ func deploymentFromArgs() vespa.Deployment {
 	if err != nil {
 		fatalErrHint(err, "Zone format is <env>.<region>")
 	}
-	app, err := vespa.ApplicationFromString(getApplication())
-	if err != nil {
-		fatalErrHint(err, "Application format is <tenant>.<app>.<instance>")
-	}
+	app := getApplication()
 	return vespa.Deployment{Application: app, Zone: zone}
 }
 
@@ -69,17 +66,23 @@ func applicationSource(args []string) string {
 	return "."
 }
 
-func getApplication() string {
+func getApplication() vespa.ApplicationID {
 	cfg, err := LoadConfig()
 	if err != nil {
 		fatalErr(err, "Could not load config")
-		return ""
+		return vespa.ApplicationID{}
 	}
 	app, err := cfg.Get(applicationFlag)
 	if err != nil {
-		fatalErr(err, "A valid application must be specified")
+		fatalErrHint(err, "No application specified. Try the --"+applicationFlag+" flag")
+		return vespa.ApplicationID{}
 	}
-	return app
+	application, err := vespa.ApplicationFromString(app)
+	if err != nil {
+		fatalErrHint(err, "Application format is <tenant>.<app>.<instance>")
+		return vespa.ApplicationID{}
+	}
+	return application
 }
 
 func getTargetType() string {
