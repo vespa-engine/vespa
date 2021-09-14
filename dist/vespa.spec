@@ -707,6 +707,7 @@ fi
 %dir %{_prefix}/libexec
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/common-env.sh
+%{_prefix}/libexec/vespa/find-pid
 %{_prefix}/libexec/vespa/vespa-curl-wrapper
 
 %files base-libs

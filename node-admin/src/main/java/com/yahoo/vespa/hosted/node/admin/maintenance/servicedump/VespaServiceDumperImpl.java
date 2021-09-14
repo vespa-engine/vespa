@@ -52,8 +52,10 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         this.syncClient = syncClient;
         this.nodeRepository = nodeRepository;
         this.clock = clock;
-        this.artifactProducers = List.of(new JvmDumpProducer(container))
-                .stream()
+        List<AbstractProducer> producers = List.of(
+                new JvmDumpProducer(container),
+                new PerfReportProducer(container));
+        this.artifactProducers = producers.stream()
                 .collect(Collectors.toMap(ArtifactProducer::name, Function.identity()));
     }
 
@@ -92,7 +94,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             context.log(log, Level.INFO,
                     "Creating service dump for " + configId + " requested at "
                             + Instant.ofEpochMilli(request.getCreatedMillisOrNull()));
-            storeReport(context, createStartedReport(request, startedAt));
+            storeReport(context, ServiceDumpReport.createStartedReport(request, startedAt));
             if (directoryOnHost.exists()) {
                 context.log(log, Level.INFO, "Removing existing directory '" + directoryOnHost +"'.");
                 directoryOnHost.deleteRecursively();
@@ -113,7 +115,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 producerDirectoryOnHost.createDirectory();
                 producerDirectoryOnHost.setPermissions("rwxrwxrwx");
                 UnixPath producerDirectoryInNode = directoryInNode.resolve(artifactType);
-                producer.produceArtifact(context, configId, producerDirectoryInNode);
+                producer.produceArtifact(context, configId, request.dumpOptions(), producerDirectoryInNode);
                 collectArtifactFilesToUpload(files, producerDirectoryOnHost, destination.resolve(artifactType + '/'), expiry);
             }
             context.log(log, Level.INFO, "Uploading files with destination " + destination + " and expiry " + expiry);
@@ -122,7 +124,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 return;
             }
             context.log(log, Level.INFO, "Upload complete");
-            storeReport(context, createSuccessReport(clock, request, startedAt, destination));
+            storeReport(context, ServiceDumpReport.createSuccessReport(request, startedAt, clock.instant(), destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e);
         } finally {
@@ -147,13 +149,13 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
     private void handleFailure(NodeAgentContext context, ServiceDumpReport request, Instant startedAt, Exception failure) {
         context.log(log, Level.WARNING, failure.toString(), failure);
-        ServiceDumpReport report = createErrorReport(clock, request, startedAt, failure.toString());
+        ServiceDumpReport report = ServiceDumpReport.createErrorReport(request, startedAt, clock.instant(), failure.toString());
         storeReport(context, report);
     }
 
     private void handleFailure(NodeAgentContext context, ServiceDumpReport request, Instant startedAt, String message) {
         context.log(log, Level.WARNING, message);
-        ServiceDumpReport report = createErrorReport(clock, request, startedAt, message);
+        ServiceDumpReport report = ServiceDumpReport.createErrorReport(request, startedAt, clock.instant(), message);
         storeReport(context, report);
     }
 
@@ -161,26 +163,6 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         NodeAttributes nodeAttributes = new NodeAttributes();
         nodeAttributes.withReport(ServiceDumpReport.REPORT_ID, report.toJsonNode());
         nodeRepository.updateNodeAttributes(context.hostname().value(), nodeAttributes);
-    }
-
-    private static ServiceDumpReport createStartedReport(ServiceDumpReport request, Instant startedAt) {
-        return new ServiceDumpReport(
-                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, null, null, request.configId(),
-                request.expireAt(), null, request.artifacts());
-    }
-
-    private static ServiceDumpReport createSuccessReport(
-            Clock clock, ServiceDumpReport request, Instant startedAt, URI location) {
-        return new ServiceDumpReport(
-                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), clock.instant().toEpochMilli(), null,
-                location.toString(), request.configId(), request.expireAt(), null, request.artifacts());
-    }
-
-    private static ServiceDumpReport createErrorReport(
-            Clock clock, ServiceDumpReport request, Instant startedAt, String message) {
-        return new ServiceDumpReport(
-                request.getCreatedMillisOrNull(), startedAt.toEpochMilli(), null, clock.instant().toEpochMilli(), null,
-                request.configId(), request.expireAt(), message, request.artifacts());
     }
 
     static String createDumpId(ServiceDumpReport request) {

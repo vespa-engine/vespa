@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.test.file.TestFileSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -37,35 +38,39 @@ class VespaServiceDumperImplTest {
 
     private static final String HOSTNAME = "host-1.domain.tld";
 
+    private final FileSystem fileSystem = TestFileSystem.create();;
+    private final Path tmpDirectory = fileSystem.getPath("/home/docker/container-storage/host-1/opt/vespa/tmp");
+
+    @BeforeEach
+    void create_tmp_directory() throws IOException {
+        // Create temporary directory in container
+        Files.createDirectories(tmpDirectory);
+    }
+
     @Test
     void creates_valid_dump_id_from_dump_request() {
         long nowMillis = Instant.now().toEpochMilli();
         ServiceDumpReport request = new ServiceDumpReport(
-                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(JvmDumpProducer.NAME));
+                nowMillis, null, null, null, null, "default/container.3", null, null, List.of(JvmDumpProducer.NAME), null);
         String dumpId = VespaServiceDumperImpl.createDumpId(request);
         assertEquals("default-container-3-" + nowMillis, dumpId);
     }
 
     @Test
-    public void generates_dump_from_request() throws IOException {
-        // Create temporary directory in container
-        FileSystem fileSystem = TestFileSystem.create();
-        Path tmpDirectory = fileSystem.getPath("/home/docker/container-storage/host-1/opt/vespa/tmp");
-        Files.createDirectories(tmpDirectory);
-
+    void generates_jvm_dump_from_request() throws IOException {
         // Setup mocks
-        ContainerOperations operations = createContainerMock(tmpDirectory);
+        ContainerOperations operations = mock(ContainerOperations.class);
+        when(operations.executeCommandInContainerAsRoot(any(), any()))
+                .thenAnswer(invocation -> {
+                    // Create dummy files to simulate vespa-jvm-dumper
+                    Files.createFile(tmpDirectory.resolve("vespa-service-dump/" + JvmDumpProducer.NAME + "/heap.bin"));
+                    Files.createFile(tmpDirectory.resolve("vespa-service-dump/" + JvmDumpProducer.NAME + "/jstack"));
+                    return new CommandResult(null, 0, "result");
+                });
         SyncClient syncClient = createSyncClientMock();
         NodeRepoMock nodeRepository = new NodeRepoMock();
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
-        ServiceDumpReport request = new ServiceDumpReport(
-                1600000000000L, null, null, null, null, "default/container.1", null, null, List.of(JvmDumpProducer.NAME));
-        NodeSpec initialSpec = NodeSpec.Builder
-                .testSpec(HOSTNAME, NodeState.active)
-                .report(ServiceDumpReport.REPORT_ID, request.toJsonNode())
-                .archiveUri(URI.create("s3://uri-1/tenant1/"))
-                .build();
-        nodeRepository.updateNodeSpec(initialSpec);
+        NodeSpec initialSpec = createNodeSpecWithDumpRequest(nodeRepository, JvmDumpProducer.NAME, null);
 
         // Create dumper and invoke tested method
         VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock);
@@ -86,7 +91,47 @@ class VespaServiceDumperImplTest {
                 URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/jvm-dump/heap.bin.zst"),
                 URI.create("s3://uri-1/tenant1/service-dump/default-container-1-1600000000000/jvm-dump/jstack"));
         assertSyncedFiles(context, syncClient, expectedUris);
+    }
 
+    @Test
+    void invokes_perf_commands_when_generating_perf_report() {
+        // Setup mocks
+        ContainerOperations operations = mock(ContainerOperations.class);
+        when(operations.executeCommandInContainerAsRoot(any(), any()))
+                .thenReturn(new CommandResult(null, 0, "12345"))
+                .thenReturn(new CommandResult(null, 0, ""))
+                .thenReturn(new CommandResult(null, 0, ""));
+        SyncClient syncClient = createSyncClientMock();
+        NodeRepoMock nodeRepository = new NodeRepoMock();
+        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, PerfReportProducer.NAME, new ServiceDumpReport.DumpOptions(true, 45.0));
+
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock);
+        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
+                .fileSystem(fileSystem)
+                .build();
+        reporter.processServiceDumpRequest(context);
+
+        verify(operations).executeCommandInContainerAsRoot(
+                context, "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
+        verify(operations).executeCommandInContainerAsRoot(
+                context, "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump/perf-report/perf-record.bin",
+                "--pid=12345", "sleep", "45");
+        verify(operations).executeCommandInContainerAsRoot(
+                context, "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-report/perf-record.bin" +
+                        " > /opt/vespa/tmp/vespa-service-dump/perf-report/perf-report.txt");
+    }
+
+    private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, String artifactName, ServiceDumpReport.DumpOptions options) {
+        ServiceDumpReport request = ServiceDumpReport.createRequestReport(
+                Instant.ofEpochMilli(1600000000000L), null, "default/container.1", List.of(artifactName), options);
+        NodeSpec spec = NodeSpec.Builder
+                .testSpec(HOSTNAME, NodeState.active)
+                .report(ServiceDumpReport.REPORT_ID, request.toJsonNode())
+                .archiveUri(URI.create("s3://uri-1/tenant1/"))
+                .build();
+        repository.updateNodeSpec(spec);
+        return spec;
     }
 
     private static void assertReportEquals(NodeRepoMock nodeRepository, String expectedJson) {
@@ -106,18 +151,6 @@ class VespaServiceDumperImplTest {
                 .sorted()
                 .collect(Collectors.toList());
         assertEquals(expectedDestinations, actualFilenames);
-    }
-
-    private static ContainerOperations createContainerMock(Path tmpDirectory) {
-        ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainerAsRoot(any(), any()))
-                .thenAnswer(invocation -> {
-                    // Create dummy files to simulate vespa-jvm-dumper
-                    Files.createFile(tmpDirectory.resolve("vespa-service-dump/" + JvmDumpProducer.NAME + "/heap.bin"));
-                    Files.createFile(tmpDirectory.resolve("vespa-service-dump/" + JvmDumpProducer.NAME + "/jstack"));
-                    return new CommandResult(null, 0, "result");
-                });
-        return operations;
     }
 
     private SyncClient createSyncClientMock() {

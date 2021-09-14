@@ -15,6 +15,8 @@ interface ArtifactProducer {
 
     String name();
 
-    void produceArtifact(NodeAgentContext context, String configId, UnixPath resultDirectoryInNode) throws IOException;
+    void produceArtifact(NodeAgentContext context, String configId, ServiceDumpReport.DumpOptions options,
+                         UnixPath resultDirectoryInNode) throws IOException;
+
 
 }
