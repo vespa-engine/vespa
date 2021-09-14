@@ -6,8 +6,9 @@ import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Constant values for ranking/model execution tied to a search definition, or globally to an application
@@ -17,7 +18,7 @@ import java.util.Map;
  */
 public class RankingConstants {
 
-    private final Map<String, RankingConstant> constants = new HashMap<>();
+    private final Map<String, RankingConstant> constants = new ConcurrentHashMap<>();
     private final FileRegistry fileRegistry;
 
     public RankingConstants(FileRegistry fileRegistry) {
@@ -28,9 +29,23 @@ public class RankingConstants {
         constant.validate();
         constant.register(fileRegistry);
         String name = constant.getName();
-        if (constants.containsKey(name))
+        RankingConstant prev = constants.putIfAbsent(name, constant);
+        if ( prev != null )
             throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");
-        constants.put(name, constant);
+    }
+    public void putIfAbsent(RankingConstant constant) {
+        constant.validate();
+        constant.register(fileRegistry);
+        String name = constant.getName();
+        constants.putIfAbsent(name, constant);
+    }
+    public void computeIfAbsent(String name, Function<? super String, ? extends RankingConstant> createConstant) {
+        constants.computeIfAbsent(name, key -> {
+            RankingConstant constant = createConstant.apply(key);
+            constant.validate();
+            constant.register(fileRegistry);
+            return constant;
+        });
     }
 
     /** Returns the ranking constant with the given name, or null if not present */

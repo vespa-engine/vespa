@@ -26,6 +26,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
     private final Map<Path, ConvertedModel> convertedTensorFlowModels = new HashMap<>();
 
+    public TensorFlowFeatureConverter() {}
+
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
         if (node instanceof ReferenceNode)

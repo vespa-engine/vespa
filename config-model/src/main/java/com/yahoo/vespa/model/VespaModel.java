@@ -265,8 +265,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Returns the global ranking constants of this */
     public RankingConstants rankingConstants() { return rankingConstants; }
 
-    public LargeRankExpressions rankExpressionFiles() { return largeRankExpressions; }
-
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false);
