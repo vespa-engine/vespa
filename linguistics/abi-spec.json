@@ -700,5 +700,77 @@
       "public abstract java.lang.String accentDrop(java.lang.String, com.yahoo.language.Language)"
     ],
     "fields": []
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void addModel(com.yahoo.language.Language, java.nio.file.Path)",
+      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder addDefaultModel(java.nio.file.Path)",
+      "public java.util.Map getModels()",
+      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder setCollapseUnknowns(boolean)",
+      "public boolean getCollapseUnknowns()",
+      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder setScoring(com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring)",
+      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring getScoring()",
+      "public com.yahoo.language.sentencepiece.SentencePieceEncoder build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring[] values()",
+      "public static com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring highestScore",
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$Scoring fewestSegments"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType[] values()",
+      "public static com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType text",
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType control",
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType userDefined",
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType unknown",
+      "public static final enum com.yahoo.language.sentencepiece.SentencePieceEncoder$TokenType unused"
+    ]
+  },
+  "com.yahoo.language.sentencepiece.SentencePieceEncoder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.language.process.Segmenter"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder)",
+      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
+      "public java.util.List encode(java.lang.String, com.yahoo.language.Language)",
+      "public java.lang.String normalize(java.lang.String)"
+    ],
+    "fields": []
   }
 }
