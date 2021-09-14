@@ -114,7 +114,6 @@ public class Application implements ModelResult {
             config = cache.computeIfAbsent(cacheKey, (ConfigCacheKey key) -> {
                 var response = createConfigResponse(configKey, req, responseFactory);
                 metricUpdater.setCacheConfigElems(cache.configElems());
-                metricUpdater.setCacheChecksumElems(cache.checkSumElems());
                 return response;
             });
         } else {

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -21,9 +21,7 @@ public class ServerCache {
     private final ConfigDefinitionRepo builtinConfigDefinitions;
     private final ConfigDefinitionRepo userConfigDefinitions;
 
-    // NOTE: The reason we do a double mapping here is to de-dupe configs that have the same md5.
-    private final Map<ConfigCacheKey, String> md5Sums = new ConcurrentHashMap<>();
-    private final Map<String, ConfigResponse> md5ToConfig = new ConcurrentHashMap<>();
+    private final Map<ConfigCacheKey, ConfigResponse> configChecksums = new ConcurrentHashMap<>();
     private final Object [] stripedLocks = new Object[113];
 
     public ServerCache(ConfigDefinitionRepo builtinConfigDefinitions, ConfigDefinitionRepo userConfigDefinitions) {
@@ -40,15 +38,11 @@ public class ServerCache {
     }
 
     private void put(ConfigCacheKey key, ConfigResponse config) {
-        String configMd5 = config.getConfigMd5();
-        md5Sums.put(key, configMd5);
-        md5ToConfig.put(configMd5, config);
+        configChecksums.put(key, config);
     }
 
     ConfigResponse get(ConfigCacheKey key) {
-        String md5 = md5Sums.get(key);
-        if (md5 == null) return null;
-        return md5ToConfig.get(md5);
+        return configChecksums.get(key);
     }
 
     public ConfigResponse computeIfAbsent(ConfigCacheKey key, Function<ConfigCacheKey, ConfigResponse> mappingFunction) {
@@ -56,14 +50,11 @@ public class ServerCache {
         if (config != null) {
             return config;
         }
+
         synchronized (stripedLocks[Math.abs(key.hashCode()%stripedLocks.length)]) {
-            String md5 = md5Sums.get(key);
-            if (md5 == null) {
-                config = mappingFunction.apply(key);
-                put(key, config);
-                return config;
-            }
-            return md5ToConfig.get(md5);
+            config = mappingFunction.apply(key);
+            put(key, config);
+            return config;
         }
     }
 
@@ -73,8 +64,7 @@ public class ServerCache {
         sb.append("Cache\n");
         sb.append("builtin defs: ").append(builtinConfigDefinitions.getConfigDefinitions().size()).append("\n");
         sb.append("user defs:    ").append(userConfigDefinitions.getConfigDefinitions().size()).append("\n");
-        sb.append("md5sums:      ").append(md5Sums.size()).append("\n");
-        sb.append("md5ToConfig:  ").append(md5ToConfig.size()).append("\n");
+        sb.append("configs:      ").append(configChecksums.size()).append("\n");
 
         return sb.toString();
     }
@@ -89,15 +79,7 @@ public class ServerCache {
      * @return elems
      */
     public int configElems() {
-        return md5ToConfig.size();
-    }
-    
-    /**
-     * The number of different key→checksum mappings
-     * @return elems
-     */
-    public int checkSumElems() {
-        return md5Sums.size();
+        return configChecksums.size();
     }
 
 }

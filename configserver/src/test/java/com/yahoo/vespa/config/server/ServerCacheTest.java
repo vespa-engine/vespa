@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.vespa.config.ConfigCacheKey;
@@ -12,9 +12,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -73,6 +73,9 @@ public class ServerCacheTest {
 
     @Test
     public void testThatCacheWorksWithDifferentKeySameMd5() {
-        assertTrue(cache.get(fooBarCacheKey) == cache.get(bazQuuxCacheKey));
+        System.out.println(cache.get(fooBarCacheKey));
+        System.out.println(cache.get(bazQuuxCacheKey));
+        assertEquals(cache.get(fooBarCacheKey).getPayload(), cache.get(bazQuuxCacheKey).getPayload());
     }
+
 }

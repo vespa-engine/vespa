@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.monitoring;
 
 import com.yahoo.jdisc.Metric;
@@ -30,7 +30,6 @@ public class MetricUpdater {
     private static final String METRIC_HOSTS = getMetricName("hosts");
     private static final String METRIC_APPLICATIONS = getMetricName("applications");
     private static final String METRIC_CACHE_CONFIG_ELEMENTS = getMetricName("cacheConfigElems");
-    private static final String METRIC_CACHE_CONFIG_CHECKSUMS = getMetricName("cacheChecksumElems");
     private static final String METRIC_DELAYED_RESPONSES = getMetricName("delayedResponses");
     private static final String METRIC_RPCSERVER_WORK_QUEUE_SIZE = getMetricName("rpcServerWorkQueueSize");
 
@@ -65,15 +64,6 @@ public class MetricUpdater {
      */
     public void setCacheConfigElems(long elems) {
         staticMetrics.put(METRIC_CACHE_CONFIG_ELEMENTS, elems);
-    }
-
-    /**
-     * Sets the count for number of checksum elements in the {@link ServerCache}
-     *
-     * @param elems number of elements
-     */
-    public void setCacheChecksumElems(long elems) {
-        staticMetrics.put(METRIC_CACHE_CONFIG_CHECKSUMS, elems);
     }
 
     /**
