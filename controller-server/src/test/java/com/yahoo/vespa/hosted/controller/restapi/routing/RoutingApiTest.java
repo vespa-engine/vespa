@@ -362,4 +362,19 @@ public class RoutingApiTest extends ControllerContainerTest {
                               400);
     }
 
+    @Test
+    public void endpoints_list() {
+        var context = deploymentTester.newDeploymentContext("t1", "a1", "default");
+        var westZone = ZoneId.from("prod", "us-west-1");
+        var eastZone = ZoneId.from("prod", "us-east-3");
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(westZone.region())
+                .region(eastZone.region())
+                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
+                .build();
+        context.submit(applicationPackage).deploy();
+
+        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1/instance/default/endpoint", "", Request.Method.GET),
+                              new File("endpoint/endpoints.json"));
+    }
 }
