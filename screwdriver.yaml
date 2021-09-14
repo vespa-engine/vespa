@@ -1,13 +1,15 @@
 # Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 ---
 cache:
-   job:
-       build-vespa: [/main_job_cache]
+ job:
+   build-vespa: [/main_job_cache]
+
+shared:
+  image: vespaengine/vespa-build-centos7:latest
 
 jobs:
   build-vespa:
     requires: [~pr, ~commit]
-    image: vespaengine/vespa-build-centos7:latest
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
@@ -72,7 +74,6 @@ jobs:
           df -h
 
   verify-opensource-release-7days:
-    image: vespaengine/vespa-pipeline
     environment:
       USER_SHELL_BIN: bash
     annotations:
