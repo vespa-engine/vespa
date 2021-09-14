@@ -33,15 +33,15 @@ import static org.mockito.Mockito.when;
  * @author hakonhall
  */
 public class StateV1HealthModelTest {
-    private RunletExecutor executor = mock(RunletExecutor.class);
-    private Duration healthStaleness = Duration.ofSeconds(1);
-    private Duration requestTimeout = Duration.ofSeconds(2);
-    private Duration keepAlive = Duration.ofSeconds(3);
+    private final RunletExecutor executor = mock(RunletExecutor.class);
+    private final Duration healthStaleness = Duration.ofSeconds(1);
+    private final Duration requestTimeout = Duration.ofSeconds(2);
+    private final Duration keepAlive = Duration.ofSeconds(3);
     private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
     private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::from).collect(Collectors.toList());
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
-    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);
+    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor, true);
 
     @Test
     public void test() {
@@ -64,7 +64,7 @@ public class StateV1HealthModelTest {
         Cancellable cancellable = mock(Cancellable.class);
         when(executor.scheduleWithFixedDelay(any(), any())).thenReturn(cancellable);
         try (HealthMonitor healthMonitor = endpoint1.startMonitoring()) {
-            assertEquals(ServiceStatus.NOT_CHECKED, healthMonitor.getStatus().serviceStatus());
+            assertEquals(ServiceStatus.UNKNOWN, healthMonitor.getStatus().serviceStatus());
         }
     }
 

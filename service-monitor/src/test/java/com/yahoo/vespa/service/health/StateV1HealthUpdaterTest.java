@@ -165,6 +165,6 @@ public class StateV1HealthUpdaterTest {
     private StateV1HealthUpdater makeUpdater(CloseableHttpClient client, Function<HttpEntity, String> getContentFunction) {
         ApacheHttpClient apacheHttpClient = new ApacheHttpClient(url, client);
         StateV1HealthClient healthClient = new StateV1HealthClient(apacheHttpClient, getContentFunction);
-        return new StateV1HealthUpdater(url.toString(), healthClient);
+        return new StateV1HealthUpdater(url.toString(), healthClient, true);
     }
 }

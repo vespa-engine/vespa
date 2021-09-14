@@ -248,6 +248,8 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
             metric.set("someServicesDown", (numberOfServicesDown > 0 ? 1 : 0), context);
 
+            metric.set("numberOfServicesUnknown", servicesCount.getOrDefault(ServiceStatus.UNKNOWN, 0L), context);
+
             boolean down = NodeHealthTracker.allDown(services);
             metric.set("nodeFailerBadNode", (down ? 1 : 0), context);
 

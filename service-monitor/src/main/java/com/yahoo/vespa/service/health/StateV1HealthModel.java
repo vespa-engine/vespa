@@ -30,15 +30,18 @@ public class StateV1HealthModel implements AutoCloseable {
     private final Duration requestTimeout;
     private final Duration connectionKeepAlive;
     private final RunletExecutor executor;
+    private final boolean useUnknownServiceStatus;
 
     StateV1HealthModel(Duration targetHealthStaleness,
                        Duration requestTimeout,
                        Duration connectionKeepAlive,
-                       RunletExecutor executor) {
+                       RunletExecutor executor,
+                       boolean useUnknownServiceStatus) {
         this.targetHealthStaleness = targetHealthStaleness;
         this.requestTimeout = requestTimeout;
         this.connectionKeepAlive = connectionKeepAlive;
         this.executor = executor;
+        this.useUnknownServiceStatus = useUnknownServiceStatus;
     }
 
     Map<ServiceId, HealthEndpoint> extractHealthEndpoints(ApplicationInfo application) {
@@ -57,7 +60,8 @@ public class StateV1HealthModel implements AutoCloseable {
                                 targetHealthStaleness,
                                 requestTimeout,
                                 connectionKeepAlive,
-                                executor);
+                                executor,
+                                useUnknownServiceStatus);
                         endpoints.put(serviceId, endpoint);
                         break; // Avoid >1 endpoints per serviceId
                     }

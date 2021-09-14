@@ -672,14 +672,23 @@ public class NodeFailerTest {
 
     @Test
     public void testUpness() {
-        assertFalse(badNode(0, 0, 0));
-        assertFalse(badNode(0, 0, 2));
-        assertFalse(badNode(0, 3, 0));
-        assertFalse(badNode(0, 3, 2));
-        assertTrue(badNode(1, 0, 0));
-        assertTrue(badNode(1, 0, 2));
-        assertFalse(badNode(1, 3, 0));
-        assertFalse(badNode(1, 3, 2));
+        assertFalse(badNode(0, 0, 0, 0));
+        assertFalse(badNode(0, 0, 0, 2));
+        assertFalse(badNode(0, 3, 0, 0));
+        assertFalse(badNode(0, 3, 0, 2));
+        assertTrue(badNode(1, 0, 0, 0));
+        assertTrue(badNode(1, 0, 0, 2));
+        assertFalse(badNode(1, 3, 0, 0));
+        assertFalse(badNode(1, 3, 0, 2));
+
+        assertFalse(badNode(0, 0, 1, 0));
+        assertFalse(badNode(0, 0, 1, 2));
+        assertFalse(badNode(0, 3, 1, 0));
+        assertFalse(badNode(0, 3, 1, 2));
+        assertFalse(badNode(1, 0, 1, 0));
+        assertFalse(badNode(1, 0, 1, 2));
+        assertFalse(badNode(1, 3, 1, 0));
+        assertFalse(badNode(1, 3, 1, 2));
     }
 
     private void addServiceInstances(List<ServiceInstance> list, ServiceStatus status, int num) {
@@ -690,10 +699,11 @@ public class NodeFailerTest {
         }
     }
 
-    private boolean badNode(int numDown, int numUp, int numNotChecked) {
+    private boolean badNode(int numDown, int numUp, int numUnknown, int numNotChecked) {
         List<ServiceInstance> services = new ArrayList<>();
         addServiceInstances(services, ServiceStatus.DOWN, numDown);
         addServiceInstances(services, ServiceStatus.UP, numUp);
+        addServiceInstances(services, ServiceStatus.UNKNOWN, numUnknown);
         addServiceInstances(services, ServiceStatus.NOT_CHECKED, numNotChecked);
         Collections.shuffle(services);
 

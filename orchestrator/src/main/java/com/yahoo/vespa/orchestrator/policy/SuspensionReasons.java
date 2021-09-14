@@ -23,10 +23,17 @@ public class SuspensionReasons {
     private final Map<HostName, List<String>> reasons = new HashMap<>();
 
     public static SuspensionReasons nothingNoteworthy() { return new SuspensionReasons(); }
+
     public static SuspensionReasons isDown(ServiceInstance service) {
         return new SuspensionReasons().addReason(
                 service.hostName(),
                 service.descriptiveName() + " is down");
+    }
+
+    public static SuspensionReasons unknownStatus(ServiceInstance service) {
+        return new SuspensionReasons().addReason(
+                service.hostName(),
+                service.descriptiveName() + " has not yet been probed for health");
     }
 
     public static SuspensionReasons downSince(ServiceInstance service, Instant instant, Duration downDuration) {

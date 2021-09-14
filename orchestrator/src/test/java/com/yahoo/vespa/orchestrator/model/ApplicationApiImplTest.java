@@ -165,9 +165,11 @@ public class ApplicationApiImplTest {
         verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UP, true);
         verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.NOT_CHECKED, true);
         verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.DOWN, true);
+        verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UNKNOWN, true);
         verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UP, false);
         verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.NOT_CHECKED, false);
         verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.DOWN, false);
+        verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UNKNOWN, false);
     }
 
     private void verifyNoRemarksConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {
