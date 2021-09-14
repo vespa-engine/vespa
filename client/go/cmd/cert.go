@@ -29,7 +29,7 @@ var certCmd = &cobra.Command{
 	Args:              cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		app := getApplication()
-		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		pkg, err := vespa.FindApplicationPackage(applicationSource(args), false)
 		if err != nil {
 			fatalErr(err)
 			return
@@ -39,8 +39,6 @@ var certCmd = &cobra.Command{
 			fatalErr(err)
 			return
 		}
-		securityDir := filepath.Join(pkg.Path, "security")
-		pkgCertificateFile := filepath.Join(securityDir, "clients.pem")
 		privateKeyFile, err := cfg.PrivateKeyPath(app)
 		if err != nil {
 			fatalErr(err)
@@ -53,12 +51,24 @@ var certCmd = &cobra.Command{
 		}
 
 		if !overwriteCertificate {
-			for _, file := range []string{pkgCertificateFile, privateKeyFile, certificateFile} {
-				if util.PathExists(file) {
-					fatalErrHint(fmt.Errorf("Certificate or private key %s already exists", color.Cyan(file)), "Use -f flag to force overwriting")
-					return
-				}
+			hint := "Use -f flag to force overwriting"
+			if pkg.HasCertificate() {
+				fatalErrHint(fmt.Errorf("Application package %s already contains a certificate", pkg.Path), hint)
+				return
 			}
+			if util.PathExists(privateKeyFile) {
+				fatalErrHint(fmt.Errorf("Private key %s already exists", color.Cyan(privateKeyFile)), hint)
+				return
+			}
+			if util.PathExists(certificateFile) {
+				fatalErrHint(fmt.Errorf("Certificate %s already exists", color.Cyan(certificateFile)), hint)
+				return
+			}
+		}
+		if pkg.IsZip() {
+			fatalErrHint(fmt.Errorf("Cannot add certificate to compressed application package %s", pkg.Path),
+				"Try running 'mvn clean' before 'vespa cert', and then 'mvn package'")
+			return
 		}
 
 		keyPair, err := vespa.CreateKeyPair()
@@ -66,7 +76,8 @@ var certCmd = &cobra.Command{
 			fatalErr(err, "Could not create key pair")
 			return
 		}
-		if err := os.MkdirAll(securityDir, 0755); err != nil {
+		pkgCertificateFile := filepath.Join(pkg.Path, "security", "clients.pem")
+		if err := os.MkdirAll(filepath.Dir(pkgCertificateFile), 0755); err != nil {
 			fatalErr(err, "Could not create security directory")
 			return
 		}

@@ -41,7 +41,7 @@ If application directory is not specified, it defaults to working directory.`,
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
 		if err != nil {
 			fatalErr(nil, err.Error())
 			return
@@ -57,6 +57,7 @@ If application directory is not specified, it defaults to working directory.`,
 			deployment := deploymentFromArgs()
 			if !opts.ApplicationPackage.HasCertificate() {
 				fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
+				return
 			}
 			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 			if err != nil {
@@ -92,7 +93,7 @@ var prepareCmd = &cobra.Command{
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
 		if err != nil {
 			fatalErr(err, "Could not find application package")
 			return
@@ -125,7 +126,7 @@ var activateCmd = &cobra.Command{
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		pkg, err := vespa.ApplicationPackageFrom(applicationSource(args))
+		pkg, err := vespa.FindApplicationPackage(applicationSource(args), true)
 		if err != nil {
 			fatalErr(err, "Could not find application package")
 			return
