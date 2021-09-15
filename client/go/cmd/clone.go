@@ -54,8 +54,8 @@ func cloneApplication(source string, name string) {
 
 	zipReader, zipOpenError := zip.OpenReader(zipFile.Name())
 	if zipOpenError != nil {
-		log.Print(color.Red("Error: "), "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
-		log.Print(color.Yellow(zipOpenError))
+		printErr(zipOpenError, "Could not open sample apps zip '", color.Cyan(zipFile.Name()), "'")
+		return
 	}
 	defer zipReader.Close()
 
@@ -66,8 +66,7 @@ func cloneApplication(source string, name string) {
 			if !found { // Create destination directory lazily when source is found
 				createErr := os.Mkdir(name, 0755)
 				if createErr != nil {
-					log.Print(color.Red("Error: "), "Could not create directory '", color.Cyan(name), "'")
-					log.Print(color.Yellow(createErr))
+					printErr(createErr, "Could not create directory '", color.Cyan(name), "'")
 					return
 				}
 			}
@@ -75,14 +74,13 @@ func cloneApplication(source string, name string) {
 
 			copyError := copy(f, name, zipEntryPrefix)
 			if copyError != nil {
-				log.Print(color.Red("Error: "), "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(name))
-				log.Print(color.Yellow(copyError))
+				printErr(copyError, "Could not copy zip entry '", color.Cyan(f.Name), "' to ", color.Cyan(name))
 				return
 			}
 		}
 	}
 	if !found {
-		log.Print(color.Red("Error: "), "Could not find source application '", color.Cyan(source), "'")
+		printErr(nil, "Could not find source application '", color.Cyan(source), "'")
 	} else {
 		log.Print("Created ", color.Cyan(name))
 	}
@@ -92,8 +90,7 @@ func getSampleAppsZip() *os.File {
 	if existingSampleAppsZip != "" {
 		existing, openExistingError := os.Open(existingSampleAppsZip)
 		if openExistingError != nil {
-			log.Print(color.Red("Error: "), "Could not open existing sample apps zip file '", color.Cyan(existingSampleAppsZip), "'")
-			log.Print(color.Yellow(openExistingError))
+			printErr(openExistingError, "Could not open existing sample apps zip file '", color.Cyan(existingSampleAppsZip), "'")
 		}
 		return existing
 	}
@@ -107,27 +104,24 @@ func getSampleAppsZip() *os.File {
 	}
 	response, reqErr := util.HttpDo(request, time.Minute*60, "GitHub")
 	if reqErr != nil {
-		log.Print(color.Red("Error: "), "Could not download sample apps from github")
-		log.Print(color.Yellow(reqErr))
+		printErr(reqErr, "Could not download sample apps from GitHub")
 		return nil
 	}
 	defer response.Body.Close()
 	if response.StatusCode != 200 {
-		log.Print(color.Red("Error: "), "Could not download sample apps from github:", response.StatusCode)
+		printErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
 		return nil
 	}
 
 	destination, tempFileError := ioutil.TempFile("", "prefix")
 	if tempFileError != nil {
-		log.Print(color.Red("Error: "), "Could not create a temp file to hold sample apps")
-		log.Print(color.Yellow(tempFileError))
+		printErr(tempFileError, "Could not create a temporary file to hold sample apps")
 	}
 	// destination, _ := os.Create("./" + name + "/sample-apps.zip")
 	// defer destination.Close()
 	_, err := io.Copy(destination, response.Body)
 	if err != nil {
-		log.Print(color.Red("Error: "), "Could not download sample apps from GitHub")
-		log.Print(color.Yellow(err))
+		printErr(err, "Could not download sample apps from GitHub")
 		return nil
 	}
 	return destination
