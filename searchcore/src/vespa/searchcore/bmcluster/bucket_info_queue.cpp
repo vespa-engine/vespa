@@ -34,4 +34,3 @@ BucketInfoQueue::get_bucket_info_loop()
 }
 
 }
-
