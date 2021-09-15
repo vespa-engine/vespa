@@ -104,12 +104,10 @@ public class ProvisioningTest {
         assertEquals(3, tester.getNodes(application1, Node.State.inactive).size());
 
         // delete app
-        NodeList previouslyActive = tester.getNodes(application1, Node.State.active);
-        NodeList previouslyInactive = tester.getNodes(application1, Node.State.inactive);
+        NodeList previousNodes = tester.getNodes(application1);
         tester.remove(application1);
-        assertEquals(previouslyActive.not().container().hostnames(),
-                     tester.nodeRepository().nodes().list(Node.State.inactive).owner(application1).hostnames());
-        assertTrue(tester.nodeRepository().nodes().list(Node.State.dirty).asList().containsAll(previouslyActive.container().asList()));
+        assertEquals(previousNodes.hostnames(),
+                     tester.nodeRepository().nodes().list(Node.State.dirty).owner(application1).hostnames());
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertTrue(tester.nodeRepository().applications().get(application1).isEmpty());
 
@@ -978,7 +976,7 @@ public class ProvisioningTest {
             ProvisioningTester tester = new ProvisioningTester.Builder().zone(zone).build();
             tester.makeReadyHosts(2, defaultResources).activateTenantHosts();
             tester.activate(application, tester.prepare(application, cluster, capacity));
-            tester.deactivate(application);
+            tester.activate(application, List.of());
             assertEquals(2, tester.getNodes(application, state).size());
         };
 
