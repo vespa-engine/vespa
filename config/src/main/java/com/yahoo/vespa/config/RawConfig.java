@@ -103,7 +103,6 @@ public class RawConfig extends ConfigInstance {
                              req.getVespaVersion());
     }
 
-
     public ConfigKey<?> getKey() { return key; }
 
     public String getName() { return key.getName(); }
@@ -111,8 +110,6 @@ public class RawConfig extends ConfigInstance {
     public String getNamespace() { return key.getNamespace(); }
 
     public String getConfigId() { return key.getConfigId(); }
-
-    public String getConfigMd5() { return payloadChecksums.getForType(PayloadChecksum.Type.MD5).asString(); }
 
     public String getDefMd5() { return defMd5; }
 

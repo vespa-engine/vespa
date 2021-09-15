@@ -102,7 +102,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret[0], is(config.getNamespace() + "." + config.getName() + "," +
                 config.getConfigId() + "," +
                 config.getGeneration() + "," +
-                config.getConfigMd5()));
+                config.getPayloadChecksums()));
     }
 
     /**
@@ -128,7 +128,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret[0], is(config.getNamespace() + "." + config.getName() + "," +
                 config.getConfigId() + "," +
                 config.getGeneration() + "," +
-                config.getConfigMd5() + "," +
+                config.getPayloadChecksums() + "," +
                 config.getPayload().getData()));
     }
 

@@ -315,7 +315,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
             sb.append(",");
             sb.append(config.getGeneration());
             sb.append(",");
-            sb.append(config.getConfigMd5());
+            sb.append(config.getPayloadChecksums());
             if (full) {
                 sb.append(",");
                 sb.append(config.getPayload());
@@ -354,7 +354,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
                               config.getGeneration(),
                               config.applyOnRestart(),
                               config.getPayloadChecksums());
-        log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",configMd5=" + config.getConfigMd5() +
+        log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",config checksums=" + config.getPayloadChecksums() +
                 ",generation=" + config.getGeneration());
         log.log(Level.FINEST, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
 

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
@@ -16,6 +15,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -112,9 +112,7 @@ public class MemoryCache {
         String filename = path + File.separator + createCacheFileName(config);
         Writer writer = null;
         try {
-            if (log.isLoggable(Level.FINE)) {
-                log.log(Level.FINE, "Writing '" + config.getKey() + "' to '" + filename + "'");
-            }
+            log.log(Level.FINE, () -> "Writing '" + config.getKey() + "' to '" + filename + "'");
             final Payload payload = config.getPayload();
             long protocolVersion = 3;
             log.log(Level.FINE, () -> "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
@@ -122,9 +120,9 @@ public class MemoryCache {
 
             // First three lines are meta-data about config as comment lines, fourth line is empty
             writer.write("# defMd5:" + config.getDefMd5() + "\n");
-            writer.write("# configMd5:" + config.getConfigMd5() + "\n");
-            writer.write("# generation:" + Long.toString(config.getGeneration()) + "\n");
-            writer.write("# protocolVersion:" + Long.toString(protocolVersion) + "\n");
+            writer.write("# config checksums:" + config.getPayloadChecksums() + "\n");
+            writer.write("# generation:" + config.getGeneration() + "\n");
+            writer.write("# protocolVersion:" + protocolVersion + "\n");
             writer.write("\n");
             writer.write(payload.withCompression(CompressionType.UNCOMPRESSED).toString());
             writer.write("\n");
