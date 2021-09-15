@@ -82,7 +82,7 @@ if (( $# != 1 )); then
 fi
 
 readonly config_id=$1
-readonly status=$(vespa-sentinel-cmd list 2>/dev/null | grep "id=\"${config_id}\"")
+status=$(vespa-sentinel-cmd list 2>/dev/null | grep "id=\"${config_id}\"")
 if [ -z "${status}" ]; then
   echo "No service named '${config_id}'" >&2
   exit 1
@@ -97,4 +97,3 @@ if [ -z "$(ps -p ${pid} -o pid=)" ]; then
   exit 1
 fi
 echo $pid
-exit 0
