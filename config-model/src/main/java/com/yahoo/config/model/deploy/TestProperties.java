@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
 import com.google.common.collect.ImmutableList;
@@ -50,7 +50,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
     private boolean enableFeedBlockInDistributor = true;
-    private boolean useExternalRankExpression = true;
     private boolean enforceRankProfileInheritance = true;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
@@ -99,8 +98,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int numDistributorStripes() { return numDistributorStripes; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
-    @Override public boolean useExternalRankExpressions() { return useExternalRankExpression; }
-    @Override public boolean distributeExternalRankExpressions() { return useExternalRankExpression; }
     @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
@@ -112,10 +109,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties enforceRankProfileInheritance(boolean value) {
         enforceRankProfileInheritance = value;
-        return this;
-    }
-    public TestProperties useExternalRankExpression(boolean value) {
-        useExternalRankExpression = value;
         return this;
     }
     public TestProperties largeRankExpressionLimit(int value) {

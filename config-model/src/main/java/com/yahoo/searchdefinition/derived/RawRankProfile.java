@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -139,8 +139,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final double termwiseLimit;
         private final double rankScoreDropLimit;
         private final int largeRankExpressionLimit;
-        private final boolean distributeLargeRankExpressions;
-        private final boolean useDistributedRankExpressions;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -176,8 +174,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
             largeRankExpressionLimit = deployProperties.featureFlags().largeRankExpressionLimit();
-            distributeLargeRankExpressions = deployProperties.featureFlags().distributeExternalRankExpressions();
-            useDistributedRankExpressions = deployProperties.featureFlags().useExternalRankExpressions();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
@@ -413,7 +409,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         }
 
         private void distributeLargeExpressionsAsFiles(List<Pair<String, String>> properties, LargeRankExpressions largeRankExpressions) {
-            if (!distributeLargeRankExpressions) return;
             for (ListIterator<Pair<String, String>> iter = properties.listIterator(); iter.hasNext();) {
                 Pair<String, String> property = iter.next();
                 String expression = property.getSecond();
@@ -423,9 +418,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     if (functionName != null) {
                         String mangledName = rankprofileName + "." + functionName;
                         largeRankExpressions.add(new RankExpressionBody(mangledName, ByteBuffer.wrap(expression.getBytes(StandardCharsets.UTF_8))));
-                        if (useDistributedRankExpressions) {
-                            iter.set(new Pair<>(RankingExpression.propertyExpressionName(functionName), mangledName));
-                        }
+                        iter.set(new Pair<>(RankingExpression.propertyExpressionName(functionName), mangledName));
                     }
                 }
             }

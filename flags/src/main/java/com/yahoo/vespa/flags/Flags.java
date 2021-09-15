@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
@@ -207,20 +207,6 @@ public class Flags {
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
-            "use-external-rank-expression", true,
-            List.of("baldersheim"), "2021-05-24", "2021-09-15",
-            "Whether to use distributed external rank expression or inline in rankproperties",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag DISTRIBUTE_EXTERNAL_RANK_EXPRESSION = defineFeatureFlag(
-            "distribute-external-rank-expression", true,
-            List.of("baldersheim"), "2021-05-27", "2021-09-15",
-            "Whether to use distributed external rank expression files by filedistribution",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 8192,

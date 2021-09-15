@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
 import com.yahoo.component.Version;
@@ -84,8 +84,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default int metricsproxyNumThreads() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enforceRankProfileInheritance() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int largeRankExpressionLimit() { return 8192; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useExternalRankExpressions() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean distributeExternalRankExpressions() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.468") default boolean useExternalRankExpressions() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.468") default boolean distributeExternalRankExpressions() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean dryRunOnnxOnSetup() { return true; }
