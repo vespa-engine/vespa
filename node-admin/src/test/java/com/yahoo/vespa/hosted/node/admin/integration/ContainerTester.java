@@ -132,7 +132,7 @@ public class ContainerTester implements AutoCloseable {
     }
 
     <T> T inOrder(T t) {
-        return inOrder.verify(t, timeout(5000));
+        return inOrder.verify(t, timeout(10000));
     }
 
     public static NodeAgentContext containerMatcher(ContainerName containerName) {
