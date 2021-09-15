@@ -8,6 +8,7 @@
 #include "mapping_monitor.h"
 #include "named_service.h"
 #include "proxy_map_source.h"
+#include "request_completion_handler.h"
 #include "service_map_history.h"
 #include "service_mapping.h"
 
@@ -27,13 +28,6 @@ namespace slobrok {
 class LocalRpcMonitorMap : public MapListener,
                            public MappingMonitorOwner
 {
-public:
-    // Interface used to signal the result of addLocal
-    struct AddLocalCompletionHandler {
-        virtual void doneHandler(OkState result) = 0;
-        virtual ~AddLocalCompletionHandler() {}
-    };
-
 private:
     enum class EventType { ADD, REMOVE };
 
@@ -73,12 +67,12 @@ private:
     struct PerService {
         bool up;
         bool localOnly;
-        std::unique_ptr<AddLocalCompletionHandler> inflight;
+        std::unique_ptr<CompletionHandler> inflight;
         vespalib::string spec;
     };
 
     PerService localService(const ServiceMapping &mapping,
-                            std::unique_ptr<AddLocalCompletionHandler> inflight)
+                            std::unique_ptr<CompletionHandler> inflight)
     {
         return PerService{
             .up = false,
@@ -116,7 +110,7 @@ private:
         ServiceMapping mapping;
         bool up;
         bool localOnly;
-        std::unique_ptr<AddLocalCompletionHandler> inflight;
+        std::unique_ptr<CompletionHandler> inflight;
     };
 
     RemovedData removeFromMap(Map::iterator iter);
@@ -133,7 +127,7 @@ public:
 
     /** for use by register API, will call doneHandler() on inflight script */
     void addLocal(const ServiceMapping &mapping,
-                  std::unique_ptr<AddLocalCompletionHandler> inflight);
+                  std::unique_ptr<CompletionHandler> inflight);
 
     /** for use by unregister API */
     void removeLocal(const ServiceMapping &mapping);

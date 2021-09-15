@@ -20,6 +20,7 @@ vespa_add_library(slobrok_slobrokserver
     reconfigurable_stateserver.cpp
     remote_check.cpp
     remote_slobrok.cpp
+    request_completion_handler.cpp
     reserved_name.cpp
     rpc_mapping_monitor.cpp
     rpc_server_manager.cpp
