@@ -4,7 +4,7 @@ package com.yahoo.vespa.athenz.api;
 
 import java.util.Objects;
 
-public class AthenzGroup {
+public class AthenzGroup implements AthenzIdentity {
     private final AthenzDomain domain;
     private final String groupName;
 
@@ -37,5 +37,20 @@ public class AthenzGroup {
     @Override
     public int hashCode() {
         return Objects.hash(domain, groupName);
+    }
+
+    @Override
+    public AthenzDomain getDomain() {
+        return domain;
+    }
+
+    @Override
+    public String getName() {
+        return groupName;
+    }
+
+    @Override
+    public String getFullName() {
+        return getDomainName() + ":group." + getName();
     }
 }
