@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -8,6 +9,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
@@ -56,6 +58,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.startPollAnwWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(1, metricsByNode.size());
         assertEquals(4, metricsByNode.get(node).size());
@@ -73,6 +76,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.startPollAnwWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(2, metricsByNode.size());
         assertEquals(4, metricsByNode.get(node0).size());
@@ -101,6 +105,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.startPollAnwWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(2, metricsByNode.size());
         assertEquals(0, metricsByNode.get(node0).size());
@@ -110,7 +115,7 @@ public class ApplicationMetricsRetrieverTest {
     @Test
     public void an_exception_is_thrown_when_retrieving_times_out() {
         var config = nodesConfig("/node0");
-
+        Node node = new Node(config.node(0));
         wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                      .willReturn(aResponse()
                                                          .withBody(RESPONSE)
@@ -118,13 +123,9 @@ public class ApplicationMetricsRetrieverTest {
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
         retriever.setTaskTimeout(Duration.ofMillis(1));
+        retriever.startPollAnwWait();
+        assertTrue(retriever.getMetrics().get(node).isEmpty());
 
-        try {
-            retriever.getMetrics();
-            fail("Did not get expected exception");
-        } catch (ApplicationMetricsException expected) {
-            assertTrue(expected.getCause() instanceof TimeoutException);
-        }
     }
 
     @Test
@@ -139,12 +140,8 @@ public class ApplicationMetricsRetrieverTest {
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
         retriever.setTaskTimeout(Duration.ofMillis(1));
-        try {
-            retriever.getMetrics();
-            fail("Did not get expected exception");
-        } catch (ApplicationMetricsException expected) {
-        }
-
+        retriever.startPollAnwWait();
+        assertTrue(retriever.getMetrics().get(node).isEmpty());
         // Verify successful retrieving
         wireMockRule.removeStubMapping(delayedStub);
         verifyRetrievingMetricsFromSingleNode(config, node);
