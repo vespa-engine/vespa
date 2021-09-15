@@ -219,6 +219,7 @@ protected:
     DistributorMessageSenderStub _sender;
     DistributorMessageSenderStub _senderDown;
     HostInfo _hostInfo;
+    bool _done_initializing;
 
     struct MessageSenderImpl : public ChainedMessageSender {
         DistributorMessageSenderStub& _sender;

@@ -28,6 +28,7 @@ namespace storage::distributor {
 
 struct BucketSpaceDistributionConfigs;
 class BucketSpaceDistributionContext;
+class ClusterStateBundleActivationListener;
 class DistributorInterface;
 class StripeAccessor;
 class StripeAccessGuard;
@@ -42,7 +43,8 @@ public:
                             DistributorInterface& distributor_interface,
                             ChainedMessageSender& chained_sender,
                             std::shared_ptr<const lib::Distribution> bootstrap_distribution,
-                            StripeAccessor& stripe_accessor);
+                            StripeAccessor& stripe_accessor,
+                            ClusterStateBundleActivationListener* state_activation_listener);
     ~TopLevelBucketDBUpdater() override;
 
     void flush();
@@ -109,6 +111,7 @@ private:
 
     // TODO STRIPE remove once distributor component dependencies have been pruned
     StripeAccessor& _stripe_accessor;
+    ClusterStateBundleActivationListener* _state_activation_listener;
     lib::ClusterStateBundle _active_state_bundle;
 
     const DistributorNodeContext& _node_ctx;
