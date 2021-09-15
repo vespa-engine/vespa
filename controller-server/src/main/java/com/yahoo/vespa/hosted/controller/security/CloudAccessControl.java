@@ -72,7 +72,7 @@ public class CloudAccessControl implements AccessControl {
 
     private void requireTenantTrialLimitNotReached(List<Tenant> existing) {
         var trialPlanId = PlanId.from("trial");
-        var tenantNames = existing.stream().map(Tenant::name).collect(Collectors.toList());
+        var tenantNames = existing.stream().filter(tenant -> tenant.type() == Tenant.Type.cloud).map(Tenant::name).collect(Collectors.toList());
         var trialTenants = billingController.tenantsWithPlan(tenantNames, trialPlanId).size();
 
         if (maxTrialTenants.value() >= 0 && maxTrialTenants.value() <= trialTenants) {
