@@ -66,7 +66,7 @@ func isApp(rf repositoryFile) (ok bool, follow bool) {
 		return false, false
 	}
 	switch rf.Path {
-	case "news", "vespa-cloud":
+	case "news", "operations", "vespa-cloud":
 		return false, true
 	}
 	return true, false

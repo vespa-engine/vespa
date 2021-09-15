@@ -13,6 +13,7 @@ func TestListSampleApps(t *testing.T) {
 	c := &mockHttpClient{}
 	c.NextResponse(200, readTestData(t, "sample-apps-contents.json"))
 	c.NextResponse(200, readTestData(t, "sample-apps-news.json"))
+	c.NextResponse(200, readTestData(t, "sample-apps-operations.json"))
 	c.NextResponse(200, readTestData(t, "sample-apps-vespa-cloud.json"))
 	util.ActiveHttpClient = c
 
@@ -37,7 +38,7 @@ func TestListSampleApps(t *testing.T) {
 		"news/app-5-recommendation",
 		"news/app-6-recommendation-with-searchers",
 		"news/app-7-parent-child",
-		"operations",
+		"operations/multinode",
 		"part-purchases-demo",
 		"secure-vespa-with-mtls",
 		"semantic-qa-retrieval",
