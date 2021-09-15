@@ -20,6 +20,7 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,6 +58,10 @@ public class MetricsProxyContainer extends Container implements
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
+        addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
+                AccessLogComponent.CompressionType.ZSTD,
+                "metrics-proxy",
+                deployState.isHosted()));
     }
 
     private void addNodeSpecificComponents() {
