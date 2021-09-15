@@ -24,14 +24,20 @@ public class PayloadChecksums {
     private final Map<PayloadChecksum.Type, PayloadChecksum> checksums = new LinkedHashMap<>();
 
     private PayloadChecksums() {
-        Arrays.stream(PayloadChecksum.Type.values()).forEach(type -> checksums.put(type, PayloadChecksum.empty(type)));
+        this(false);
     }
 
-    public static PayloadChecksums empty() { return new PayloadChecksums(); }
+    private PayloadChecksums(boolean addEmptyChecksumForAllTypes) {
+        if (addEmptyChecksumForAllTypes)
+            Arrays.stream(PayloadChecksum.Type.values())
+                  .forEach(type -> checksums.put(type, PayloadChecksum.empty(type)));
+    }
+
+    public static PayloadChecksums empty() { return new PayloadChecksums(true); }
 
     public static PayloadChecksums from(PayloadChecksum... checksums) {
         PayloadChecksums payloadChecksums = new PayloadChecksums();
-        Arrays.stream(checksums).forEach(payloadChecksums::add);
+        Arrays.stream(checksums).filter(Objects::nonNull).forEach(payloadChecksums::add);
         return payloadChecksums;
     }
 
