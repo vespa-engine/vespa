@@ -205,7 +205,7 @@ enum Policy {
 
     horizonProxyOperations(Privilege.grant(Action.all())
             .on(PathGroup.horizonProxy)
-            .in(SystemName.PublicCd));
+            .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;
 
