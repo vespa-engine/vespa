@@ -41,6 +41,10 @@ func getRepositoryFiles(url string) ([]repositoryFile, error) {
 		return nil, err
 	}
 	response, err := util.HttpDo(req, time.Minute, "GitHub")
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
 	var files []repositoryFile
 	dec := json.NewDecoder(response.Body)
 	if err := dec.Decode(&files); err != nil {
