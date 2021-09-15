@@ -164,7 +164,7 @@ struct LocalRpcMonitorMapTest : public ::testing::Test {
 };
 LocalRpcMonitorMapTest::~LocalRpcMonitorMapTest() = default;
 
-struct MyAddLocalHandler : LocalRpcMonitorMap::AddLocalCompletionHandler {
+struct MyAddLocalHandler : CompletionHandler {
     std::unique_ptr<OkState> &state;
     bool &handler_deleted;
     MyAddLocalHandler(std::unique_ptr<OkState> &s, bool &hd)

@@ -12,12 +12,12 @@ namespace slobrok {
 
 namespace {
 
-struct ChainedAddLocalCompletionHandler : LocalRpcMonitorMap::AddLocalCompletionHandler {
-    std::unique_ptr<AddLocalCompletionHandler> first;
-    std::unique_ptr<AddLocalCompletionHandler> second;
+struct ChainedCompletionHandler : CompletionHandler {
+    std::unique_ptr<CompletionHandler> first;
+    std::unique_ptr<CompletionHandler> second;
 
-    ChainedAddLocalCompletionHandler(std::unique_ptr<AddLocalCompletionHandler> f,
-                                     std::unique_ptr<AddLocalCompletionHandler> s)
+    ChainedCompletionHandler(std::unique_ptr<CompletionHandler> f,
+                                     std::unique_ptr<CompletionHandler> s)
         : first(std::move(f)), second(std::move(s))
     {}
 
@@ -25,7 +25,7 @@ struct ChainedAddLocalCompletionHandler : LocalRpcMonitorMap::AddLocalCompletion
         first->doneHandler(result);
         second->doneHandler(result);
     }
-    ~ChainedAddLocalCompletionHandler() override {}
+    ~ChainedCompletionHandler() override {}
 };
 
 }
@@ -111,7 +111,7 @@ bool LocalRpcMonitorMap::wouldConflict(const ServiceMapping &mapping) const {
 }
 
 void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
-                                  std::unique_ptr<AddLocalCompletionHandler> inflight)
+                                  std::unique_ptr<CompletionHandler> inflight)
 {
     LOG(debug, "try local add: mapping %s->%s",
         mapping.name.c_str(), mapping.spec.c_str());
@@ -124,7 +124,7 @@ void LocalRpcMonitorMap::addLocal(const ServiceMapping &mapping,
             if (exists.up) {
                 inflight->doneHandler(OkState(0, "already registered"));
             } else if (exists.inflight) {
-                auto newInflight = std::make_unique<ChainedAddLocalCompletionHandler>(
+                auto newInflight = std::make_unique<ChainedCompletionHandler>(
                     std::move(exists.inflight),
                     std::move(inflight));
                 exists.inflight = std::move(newInflight);

@@ -3,6 +3,7 @@
 #include "rpchooks.h"
 #include "ok_state.h"
 #include "named_service.h"
+#include "request_completion_handler.h"
 #include "rpc_server_map.h"
 #include "rpc_server_manager.h"
 #include "remote_slobrok.h"
@@ -35,12 +36,6 @@ public:
     }
 
     ~MetricsReport() override { Kill(); }
-};
-
-struct ScriptCommandWrapper : LocalRpcMonitorMap::AddLocalCompletionHandler {
-    ScriptCommand script;
-    ScriptCommandWrapper(ScriptCommand &&script_in) : script(std::move(script_in)) {}
-    void doneHandler(OkState result) override { script.doneHandler(result); } 
 };
 
 } // namespace <unnamed>
@@ -249,9 +244,8 @@ RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req)
     _cnts.registerReqs++;
     {
         // TODO: run only this path, and complete the request instead of ignoring
-        auto script = ScriptCommand::makeIgnoreCmd(_env, dName, dSpec);
         ServiceMapping mapping{dName, dSpec};
-        _env.localMonitorMap().addLocal(mapping, std::make_unique<ScriptCommandWrapper>(std::move(script)));
+        _env.localMonitorMap().addLocal(mapping, std::make_unique<RequestCompletionHandler>(nullptr));
     }
     // is this already OK?
     if (_rpcsrvmanager.alreadyManaged(dName, dSpec)) {
@@ -286,11 +280,10 @@ void RPCHooks::new_registerRpcServer(FRT_RPCRequest *req) {
         LOG(info, "cannot register %s at %s: conflict", dName, dSpec);
         return;
     }
-    auto script = ScriptCommand::makeRegCompleter(_env, dName, dSpec, req);
     req->Detach();
-    _env.localMonitorMap().addLocal(mapping, std::make_unique<ScriptCommandWrapper>(std::move(script)));
+    _env.localMonitorMap().addLocal(mapping, std::make_unique<RequestCompletionHandler>(req));
     // TODO: remove this
-    script = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, nullptr);
+    auto script = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, nullptr);
     script.doRequest();
     return;
 }
