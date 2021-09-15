@@ -1,7 +1,6 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.text.AbstractUtf8Array;
 
@@ -29,15 +28,7 @@ public interface ConfigResponse {
     void serialize(OutputStream os, CompressionType uncompressed) throws IOException;
 
     default boolean hasEqualConfig(JRTServerConfigRequest request) {
-        PayloadChecksums payloadChecksums = getPayloadChecksums();
-        PayloadChecksum xxhash64 = payloadChecksums.getForType(PayloadChecksum.Type.XXHASH64);
-        PayloadChecksum md5 = payloadChecksums.getForType(PayloadChecksum.Type.MD5);
-        if (xxhash64 != null)
-            return xxhash64.equals(request.getRequestConfigChecksums().getForType(PayloadChecksum.Type.XXHASH64));
-        if (md5 != null)
-            return md5.equals(request.getRequestConfigChecksums().getForType(PayloadChecksum.Type.MD5));
-
-        return true;
+        return (getConfigMd5().equals(request.getRequestConfigMd5()));
     }
 
     default boolean hasNewerGeneration(JRTServerConfigRequest request) {

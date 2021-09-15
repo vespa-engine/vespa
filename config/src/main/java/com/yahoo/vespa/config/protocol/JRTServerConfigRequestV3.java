@@ -82,10 +82,8 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             JsonGenerator jsonGenerator = createJsonGenerator(byteArrayOutputStream);
             jsonGenerator.writeStartObject();
             addCommonReturnValues(jsonGenerator);
-            if (payloadChecksums.getForType(MD5) != null)
-                setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, payloadChecksums.getForType(MD5).asString());
-            if (payloadChecksums.getForType(XXHASH64) != null)
-                setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, payloadChecksums.getForType(XXHASH64).asString());
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, payloadChecksums.getForType(MD5).asString());
+            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, payloadChecksums.getForType(XXHASH64).asString());
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_APPLY_ON_RESTART, applyOnRestart);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
