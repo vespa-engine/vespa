@@ -51,7 +51,10 @@ func atomicWriteFile(filename string, data []byte, overwrite bool) error {
 		return err
 	}
 	defer os.Remove(tmpFile.Name())
-	if err := ioutil.WriteFile(tmpFile.Name(), data, 0600); err != nil {
+	if _, err := tmpFile.Write(data); err != nil {
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
 		return err
 	}
 	_, err = os.Stat(filename)
