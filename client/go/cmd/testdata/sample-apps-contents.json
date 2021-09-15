@@ -1,0 +1,610 @@
+[
+  {
+    "name": ".github",
+    "path": ".github",
+    "sha": "6bcd814282757c3ca7ba265972f000bc62a76aa8",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/.github?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/.github",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/6bcd814282757c3ca7ba265972f000bc62a76aa8",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/.github?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/6bcd814282757c3ca7ba265972f000bc62a76aa8",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/.github"
+    }
+  },
+  {
+    "name": ".gitignore",
+    "path": ".gitignore",
+    "sha": "e33d8f27d17a696ae99b12063f553a53d0d08510",
+    "size": 163,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/.gitignore?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/.gitignore",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/e33d8f27d17a696ae99b12063f553a53d0d08510",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/.gitignore",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/.gitignore?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/e33d8f27d17a696ae99b12063f553a53d0d08510",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/.gitignore"
+    }
+  },
+  {
+    "name": "CONTRIBUTING.md",
+    "path": "CONTRIBUTING.md",
+    "sha": "56d974d3c4d9b5b8f1739c24fc293f822e2fcec8",
+    "size": 3814,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/CONTRIBUTING.md?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/CONTRIBUTING.md",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/56d974d3c4d9b5b8f1739c24fc293f822e2fcec8",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/CONTRIBUTING.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/CONTRIBUTING.md?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/56d974d3c4d9b5b8f1739c24fc293f822e2fcec8",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/CONTRIBUTING.md"
+    }
+  },
+  {
+    "name": "Code-of-Conduct.md",
+    "path": "Code-of-Conduct.md",
+    "sha": "a812e1cfa8e464fc4a0ba6743030662efa1e4244",
+    "size": 7414,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/Code-of-Conduct.md?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/Code-of-Conduct.md",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/a812e1cfa8e464fc4a0ba6743030662efa1e4244",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/Code-of-Conduct.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/Code-of-Conduct.md?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/a812e1cfa8e464fc4a0ba6743030662efa1e4244",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/Code-of-Conduct.md"
+    }
+  },
+  {
+    "name": "Gemfile",
+    "path": "Gemfile",
+    "sha": "a7befcbb3c5a4ff65d51ee222c27bc3aef92bdc8",
+    "size": 308,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/Gemfile?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/Gemfile",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/a7befcbb3c5a4ff65d51ee222c27bc3aef92bdc8",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/Gemfile",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/Gemfile?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/a7befcbb3c5a4ff65d51ee222c27bc3aef92bdc8",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/Gemfile"
+    }
+  },
+  {
+    "name": "LICENSE",
+    "path": "LICENSE",
+    "sha": "df0bb94aeb6578299d1995c791da29f8f00f0cbc",
+    "size": 11354,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/LICENSE?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/LICENSE",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/df0bb94aeb6578299d1995c791da29f8f00f0cbc",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/LICENSE",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/LICENSE?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/df0bb94aeb6578299d1995c791da29f8f00f0cbc",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/LICENSE"
+    }
+  },
+  {
+    "name": "README.md",
+    "path": "README.md",
+    "sha": "44b3d846b1c594196d1362a44c965b91482fb806",
+    "size": 8401,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/README.md?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/README.md",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/44b3d846b1c594196d1362a44c965b91482fb806",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/README.md",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/README.md?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/44b3d846b1c594196d1362a44c965b91482fb806",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/README.md"
+    }
+  },
+  {
+    "name": "Vagrantfile",
+    "path": "Vagrantfile",
+    "sha": "0cb4b6dbe12404fb0bfa67e8e950287cdad722f4",
+    "size": 913,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/Vagrantfile?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/Vagrantfile",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/0cb4b6dbe12404fb0bfa67e8e950287cdad722f4",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/Vagrantfile",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/Vagrantfile?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/0cb4b6dbe12404fb0bfa67e8e950287cdad722f4",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/Vagrantfile"
+    }
+  },
+  {
+    "name": "_config.yml",
+    "path": "_config.yml",
+    "sha": "d0a1af407e12cd80401d55679b5566538a925cc6",
+    "size": 630,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/_config.yml?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/_config.yml",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/d0a1af407e12cd80401d55679b5566538a925cc6",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/_config.yml",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/_config.yml?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/d0a1af407e12cd80401d55679b5566538a925cc6",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/_config.yml"
+    }
+  },
+  {
+    "name": "_plugins-vespafeed",
+    "path": "_plugins-vespafeed",
+    "sha": "34a1dec1e26d0905f461a70ebdea5213e8510eea",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/_plugins-vespafeed?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/_plugins-vespafeed",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/34a1dec1e26d0905f461a70ebdea5213e8510eea",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/_plugins-vespafeed?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/34a1dec1e26d0905f461a70ebdea5213e8510eea",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/_plugins-vespafeed"
+    }
+  },
+  {
+    "name": "album-recommendation-monitoring",
+    "path": "album-recommendation-monitoring",
+    "sha": "f2f816138535aae9c1080c8dca20e544b0a8fbde",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/album-recommendation-monitoring?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/album-recommendation-monitoring",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/f2f816138535aae9c1080c8dca20e544b0a8fbde",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/album-recommendation-monitoring?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/f2f816138535aae9c1080c8dca20e544b0a8fbde",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/album-recommendation-monitoring"
+    }
+  },
+  {
+    "name": "album-recommendation-selfhosted",
+    "path": "album-recommendation-selfhosted",
+    "sha": "1355199dee65aba689b784a8c92977886e8b0dcb",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/album-recommendation-selfhosted?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/album-recommendation-selfhosted",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1355199dee65aba689b784a8c92977886e8b0dcb",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/album-recommendation-selfhosted?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1355199dee65aba689b784a8c92977886e8b0dcb",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/album-recommendation-selfhosted"
+    }
+  },
+  {
+    "name": "aws_bootstrap.sh",
+    "path": "aws_bootstrap.sh",
+    "sha": "4451c011e7d84d31bda78c6bb64d1b39bf79543c",
+    "size": 945,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/aws_bootstrap.sh?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/aws_bootstrap.sh",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/4451c011e7d84d31bda78c6bb64d1b39bf79543c",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/aws_bootstrap.sh",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/aws_bootstrap.sh?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/4451c011e7d84d31bda78c6bb64d1b39bf79543c",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/aws_bootstrap.sh"
+    }
+  },
+  {
+    "name": "basic-search-on-gke",
+    "path": "basic-search-on-gke",
+    "sha": "e3045c5e7e3d5a9604fe5d6e79e28276341e3190",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/basic-search-on-gke?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/basic-search-on-gke",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/e3045c5e7e3d5a9604fe5d6e79e28276341e3190",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/basic-search-on-gke?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/e3045c5e7e3d5a9604fe5d6e79e28276341e3190",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/basic-search-on-gke"
+    }
+  },
+  {
+    "name": "boolean-search",
+    "path": "boolean-search",
+    "sha": "f698016bfba3492e36251bfdc7af27f3157dcb58",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/boolean-search?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/boolean-search",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/f698016bfba3492e36251bfdc7af27f3157dcb58",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/boolean-search?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/f698016bfba3492e36251bfdc7af27f3157dcb58",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/boolean-search"
+    }
+  },
+  {
+    "name": "dense-passage-retrieval-with-ann",
+    "path": "dense-passage-retrieval-with-ann",
+    "sha": "3281faf0e968e5dda398f784b0f370b93a94dd7d",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/dense-passage-retrieval-with-ann?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/dense-passage-retrieval-with-ann",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/3281faf0e968e5dda398f784b0f370b93a94dd7d",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/dense-passage-retrieval-with-ann?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/3281faf0e968e5dda398f784b0f370b93a94dd7d",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/dense-passage-retrieval-with-ann"
+    }
+  },
+  {
+    "name": "feed_to_vespa.py",
+    "path": "feed_to_vespa.py",
+    "sha": "ca825ded90c8c2300b29f6c016b8875c5547f6b6",
+    "size": 6825,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/feed_to_vespa.py?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/feed_to_vespa.py",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/ca825ded90c8c2300b29f6c016b8875c5547f6b6",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/feed_to_vespa.py",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/feed_to_vespa.py?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/ca825ded90c8c2300b29f6c016b8875c5547f6b6",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/feed_to_vespa.py"
+    }
+  },
+  {
+    "name": "generic-request-processing",
+    "path": "generic-request-processing",
+    "sha": "ae922ab9efebf6cc9f8ee9726e48693b794eb235",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/generic-request-processing?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/generic-request-processing",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/ae922ab9efebf6cc9f8ee9726e48693b794eb235",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/generic-request-processing?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/ae922ab9efebf6cc9f8ee9726e48693b794eb235",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/generic-request-processing"
+    }
+  },
+  {
+    "name": "http-api-using-request-handlers-and-processors",
+    "path": "http-api-using-request-handlers-and-processors",
+    "sha": "b8403feb85fe2a113114a2bd086057aec0538e46",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/http-api-using-request-handlers-and-processors?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/http-api-using-request-handlers-and-processors",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/b8403feb85fe2a113114a2bd086057aec0538e46",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/http-api-using-request-handlers-and-processors?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/b8403feb85fe2a113114a2bd086057aec0538e46",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/http-api-using-request-handlers-and-processors"
+    }
+  },
+  {
+    "name": "incremental-search",
+    "path": "incremental-search",
+    "sha": "6d38eb194e4a8f6565a66591758a17bf8e6459e9",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/incremental-search?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/incremental-search",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/6d38eb194e4a8f6565a66591758a17bf8e6459e9",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/incremental-search?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/6d38eb194e4a8f6565a66591758a17bf8e6459e9",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/incremental-search"
+    }
+  },
+  {
+    "name": "model-evaluation",
+    "path": "model-evaluation",
+    "sha": "5f782af796cd13ebfb0c3e2d4ab074bc33e41913",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/model-evaluation?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/model-evaluation",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/5f782af796cd13ebfb0c3e2d4ab074bc33e41913",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/model-evaluation?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/5f782af796cd13ebfb0c3e2d4ab074bc33e41913",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/model-evaluation"
+    }
+  },
+  {
+    "name": "msmarco-ranking",
+    "path": "msmarco-ranking",
+    "sha": "44af5a222f523e0c1aa92fc11dda4cbe095ca6b1",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/msmarco-ranking?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/msmarco-ranking",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/44af5a222f523e0c1aa92fc11dda4cbe095ca6b1",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/msmarco-ranking?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/44af5a222f523e0c1aa92fc11dda4cbe095ca6b1",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/msmarco-ranking"
+    }
+  },
+  {
+    "name": "multiple-bundles-lib",
+    "path": "multiple-bundles-lib",
+    "sha": "8604cc153faee34c538a82b275e09f743f83216b",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/multiple-bundles-lib?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/multiple-bundles-lib",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/8604cc153faee34c538a82b275e09f743f83216b",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/multiple-bundles-lib?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/8604cc153faee34c538a82b275e09f743f83216b",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/multiple-bundles-lib"
+    }
+  },
+  {
+    "name": "multiple-bundles",
+    "path": "multiple-bundles",
+    "sha": "1cc37ba975795212e19801a1f2c1dd27abfbec77",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/multiple-bundles?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/multiple-bundles",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1cc37ba975795212e19801a1f2c1dd27abfbec77",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/multiple-bundles?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1cc37ba975795212e19801a1f2c1dd27abfbec77",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/multiple-bundles"
+    }
+  },
+  {
+    "name": "news",
+    "path": "news",
+    "sha": "aed7b1fde19b139781fb5df4d7feb3e8ec1db603",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/news",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/aed7b1fde19b139781fb5df4d7feb3e8ec1db603",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/news?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/aed7b1fde19b139781fb5df4d7feb3e8ec1db603",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/news"
+    }
+  },
+  {
+    "name": "operations",
+    "path": "operations",
+    "sha": "d73d99d8a7b2f496ff1e43da6b3f87d612227232",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/operations?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/operations",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/d73d99d8a7b2f496ff1e43da6b3f87d612227232",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/operations?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/d73d99d8a7b2f496ff1e43da6b3f87d612227232",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/operations"
+    }
+  },
+  {
+    "name": "part-purchases-demo",
+    "path": "part-purchases-demo",
+    "sha": "c1f64f68d2abe8b207da901e6ccb9277971167dc",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/part-purchases-demo?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/part-purchases-demo",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/c1f64f68d2abe8b207da901e6ccb9277971167dc",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/part-purchases-demo?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/c1f64f68d2abe8b207da901e6ccb9277971167dc",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/part-purchases-demo"
+    }
+  },
+  {
+    "name": "pom.xml",
+    "path": "pom.xml",
+    "sha": "191e06595d1db24d864833b333539a083d8a5f30",
+    "size": 1839,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/pom.xml?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/pom.xml",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/191e06595d1db24d864833b333539a083d8a5f30",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/pom.xml",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/pom.xml?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/191e06595d1db24d864833b333539a083d8a5f30",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/pom.xml"
+    }
+  },
+  {
+    "name": "screwdriver.yaml",
+    "path": "screwdriver.yaml",
+    "sha": "fd9460121b230498baed2b1760b36e2f1a067fd7",
+    "size": 2771,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/screwdriver.yaml?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/blob/master/screwdriver.yaml",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/fd9460121b230498baed2b1760b36e2f1a067fd7",
+    "download_url": "https://raw.githubusercontent.com/vespa-engine/sample-apps/master/screwdriver.yaml",
+    "type": "file",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/screwdriver.yaml?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/blobs/fd9460121b230498baed2b1760b36e2f1a067fd7",
+      "html": "https://github.com/vespa-engine/sample-apps/blob/master/screwdriver.yaml"
+    }
+  },
+  {
+    "name": "secure-vespa-with-mtls",
+    "path": "secure-vespa-with-mtls",
+    "sha": "c6321c984bc4965f274d5f773af241935edb21a2",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/secure-vespa-with-mtls?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/secure-vespa-with-mtls",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/c6321c984bc4965f274d5f773af241935edb21a2",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/secure-vespa-with-mtls?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/c6321c984bc4965f274d5f773af241935edb21a2",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/secure-vespa-with-mtls"
+    }
+  },
+  {
+    "name": "semantic-qa-retrieval",
+    "path": "semantic-qa-retrieval",
+    "sha": "67bc047714c2c76e1318eb8faa5b208747b62d5e",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/semantic-qa-retrieval?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/semantic-qa-retrieval",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/67bc047714c2c76e1318eb8faa5b208747b62d5e",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/semantic-qa-retrieval?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/67bc047714c2c76e1318eb8faa5b208747b62d5e",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/semantic-qa-retrieval"
+    }
+  },
+  {
+    "name": "tensor-playground",
+    "path": "tensor-playground",
+    "sha": "090954a12a47a98250b729b0c01bf804577cb7ad",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/tensor-playground?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/tensor-playground",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/090954a12a47a98250b729b0c01bf804577cb7ad",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/tensor-playground?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/090954a12a47a98250b729b0c01bf804577cb7ad",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/tensor-playground"
+    }
+  },
+  {
+    "name": "test",
+    "path": "test",
+    "sha": "0948c9e369a9734856c5d55b11c9fc7681ca398b",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/test?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/test",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/0948c9e369a9734856c5d55b11c9fc7681ca398b",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/test?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/0948c9e369a9734856c5d55b11c9fc7681ca398b",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/test"
+    }
+  },
+  {
+    "name": "text-search",
+    "path": "text-search",
+    "sha": "7c3eb5ebfa59f0fdc7f1d3cd9601f238c4c1461a",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/text-search?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/text-search",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/7c3eb5ebfa59f0fdc7f1d3cd9601f238c4c1461a",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/text-search?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/7c3eb5ebfa59f0fdc7f1d3cd9601f238c4c1461a",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/text-search"
+    }
+  },
+  {
+    "name": "transformers",
+    "path": "transformers",
+    "sha": "43a907697bbb4a6baa673a3005bc009adff16cf3",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/transformers?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/transformers",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/43a907697bbb4a6baa673a3005bc009adff16cf3",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/transformers?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/43a907697bbb4a6baa673a3005bc009adff16cf3",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/transformers"
+    }
+  },
+  {
+    "name": "use-case-shopping",
+    "path": "use-case-shopping",
+    "sha": "7083dda1a5d3ad4ea5b349e67cdd2ab9b57dc305",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/use-case-shopping?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/use-case-shopping",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/7083dda1a5d3ad4ea5b349e67cdd2ab9b57dc305",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/use-case-shopping?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/7083dda1a5d3ad4ea5b349e67cdd2ab9b57dc305",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/use-case-shopping"
+    }
+  },
+  {
+    "name": "vespa-chinese-linguistics",
+    "path": "vespa-chinese-linguistics",
+    "sha": "de804dec91603fc905c82dbb982ca9c2dbeea99c",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-chinese-linguistics?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-chinese-linguistics",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/de804dec91603fc905c82dbb982ca9c2dbeea99c",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-chinese-linguistics?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/de804dec91603fc905c82dbb982ca9c2dbeea99c",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-chinese-linguistics"
+    }
+  },
+  {
+    "name": "vespa-cloud",
+    "path": "vespa-cloud",
+    "sha": "1f4ae8043e03f1d31bd361f1635cf3fe7dfe7c0b",
+    "size": 0,
+    "url": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud?ref=master",
+    "html_url": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud",
+    "git_url": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1f4ae8043e03f1d31bd361f1635cf3fe7dfe7c0b",
+    "download_url": null,
+    "type": "dir",
+    "_links": {
+      "self": "https://api.github.com/repos/vespa-engine/sample-apps/contents/vespa-cloud?ref=master",
+      "git": "https://api.github.com/repos/vespa-engine/sample-apps/git/trees/1f4ae8043e03f1d31bd361f1635cf3fe7dfe7c0b",
+      "html": "https://github.com/vespa-engine/sample-apps/tree/master/vespa-cloud"
+    }
+  }
+]

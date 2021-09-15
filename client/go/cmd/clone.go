@@ -22,10 +22,11 @@ import (
 
 // Set this to test without downloading this file from github
 var existingSampleAppsZip string
+var listApps bool
 
 func init() {
-	existingSampleAppsZip = ""
 	rootCmd.AddCommand(cloneCmd)
+	cloneCmd.Flags().BoolVarP(&listApps, "list", "l", false, "List available sample applications")
 }
 
 var cloneCmd = &cobra.Command{
@@ -37,9 +38,23 @@ var cloneCmd = &cobra.Command{
 The application package is copied from a sample application in https://github.com/vespa-engine/sample-apps`,
 	Example:           "$ vespa clone vespa-cloud/album-recommendation my-app",
 	DisableAutoGenTag: true,
-	Args:              cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		cloneApplication(args[0], args[1])
+		if listApps {
+			apps, err := listSampleApps()
+			if err != nil {
+				printErr(err, "Could not list sample applications")
+				return
+			}
+			for _, app := range apps {
+				log.Print(app)
+			}
+		} else {
+			if len(args) != 2 {
+				fatalErr(nil, "Expected exactly 2 arguments")
+				return
+			}
+			cloneApplication(args[0], args[1])
+		}
 	},
 }
 
