@@ -29,10 +29,20 @@ public abstract class ExpressionTransformer<CONTEXT extends TransformContext> {
      */
     protected CompositeNode transformChildren(CompositeNode node, CONTEXT context) {
         List<ExpressionNode> children = node.children();
-        List<ExpressionNode> transformedChildren = new ArrayList<>(children.size());
-        for (ExpressionNode child : children)
-            transformedChildren.add(transform(child, context));
-        return node.setChildren(transformedChildren);
+        List<ExpressionNode> transformedChildren = null;
+
+        for (int i = 0; i < children.size(); ++i) {
+            ExpressionNode child = children.get(i);
+            ExpressionNode transformedChild = transform(child, context);
+            if (child != transformedChild) {
+                if (transformedChildren == null) {
+                    transformedChildren = new ArrayList<>(children);
+                }
+                transformedChildren.set(i, transformedChild);
+            }
+        }
+
+        return transformedChildren == null ? node : node.setChildren(transformedChildren);
     }
 
 
