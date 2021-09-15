@@ -108,9 +108,9 @@ public class JRTConfigRequestV3Test {
         serverReq.addOkResponse(payload, 999999, false, PayloadChecksums.fromPayload(payload));
         serverReq.addErrorResponse(ErrorCode.OUTDATED_CONFIG, "error message");
         JRTClientConfigRequest next = clientReq.nextRequest(6);
-        // Should use config md5 and generation from the request, not the response
-        // when there are errors
-        assertThat(next.getRequestConfigMd5(), is(clientReq.getRequestConfigMd5()));
+        // Should use config checksums and generation from the request (not the response) when there are errors
+        assertThat(next.getRequestConfigChecksums().getForType(MD5), is(clientReq.getRequestConfigChecksums().getForType(MD5)));
+        assertThat(next.getRequestConfigChecksums().getForType(XXHASH64), is(clientReq.getRequestConfigChecksums().getForType(XXHASH64)));
         assertThat(next.getRequestGeneration(), is(clientReq.getRequestGeneration()));
     }
 
@@ -118,12 +118,14 @@ public class JRTConfigRequestV3Test {
     public void ok_response_is_added() {
         Payload payload = createPayload("vale");
         String md5 = ConfigUtils.getMd5(payload.getData());
+        String xxhash64 = ConfigUtils.getXxhash64(payload.getData());
         long generation = 4L;
         serverReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
         assertTrue(clientReq.validateResponse());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is(payload.getData().toString()));
         assertThat(clientReq.getNewGeneration(), is(4L));
-        assertThat(clientReq.getNewConfigMd5(), is(md5));
+        assertThat(clientReq.getNewChecksums().getForType(MD5).asString(), is(md5));
+        assertThat(clientReq.getNewChecksums().getForType(XXHASH64).asString(), is(xxhash64));
         assertTrue(clientReq.hasUpdatedConfig());
         assertTrue(clientReq.hasUpdatedGeneration());
     }

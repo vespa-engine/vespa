@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.jrt.Acceptor;
@@ -270,7 +270,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      */
     private void getConfigImpl(JRTServerConfigRequest request) {
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy getConfig()");
-        log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",configmd5=" + request.getRequestConfigMd5());
+        log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",config checksums=" + request.getRequestConfigChecksums());
         if (!request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());

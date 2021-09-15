@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -129,7 +130,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());
-        configInstance.setConfigMd5(jrtRequest.getNewConfigMd5()); // Note: Sets configmd5 in ConfigInstance
+        configInstance.setConfigMd5(jrtRequest.getNewChecksums().getForType(MD5).asString()); // Note: Sets configmd5 in ConfigInstance
         return configInstance;
     }
 
