@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
+import com.yahoo.concurrent.Sleeper;
 import com.yahoo.text.Lowercase;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
@@ -42,19 +43,20 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     private final Map<String, ArtifactProducer> artifactProducers;
 
     public VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository) {
-        this(container, syncClient, nodeRepository, Clock.systemUTC());
+        this(container, syncClient, nodeRepository, Clock.systemUTC(), Sleeper.DEFAULT);
     }
 
     // For unit testing
     VespaServiceDumperImpl(ContainerOperations container, SyncClient syncClient, NodeRepository nodeRepository,
-                           Clock clock) {
+                           Clock clock, Sleeper sleeper) {
         this.container = container;
         this.syncClient = syncClient;
         this.nodeRepository = nodeRepository;
         this.clock = clock;
         List<AbstractProducer> producers = List.of(
                 new JvmDumpProducer(container),
-                new PerfReportProducer(container));
+                new PerfReportProducer(container),
+                new JavaFlightRecorder(container, sleeper));
         this.artifactProducers = producers.stream()
                 .collect(Collectors.toMap(ArtifactProducer::name, Function.identity()));
     }
