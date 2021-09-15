@@ -210,7 +210,7 @@ public class Flags {
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 8192,
-            List.of("baldersheim"), "2021-06-09", "2021-09-15",
+            List.of("baldersheim"), "2021-06-09", "2021-10-15",
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
