@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.http.application;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
@@ -84,6 +85,8 @@ public class ApplicationMetricsHandlerTest {
         ApplicationMetricsHandler handler = new ApplicationMetricsHandler(Executors.newSingleThreadExecutor(),
                                                                           applicationMetricsRetriever,
                                                                           getMetricsConsumers());
+        applicationMetricsRetriever.getMetrics(ConsumerId.toConsumerId(CUSTOM_CONSUMER));
+        applicationMetricsRetriever.startPollAnwWait();
         testDriver = new RequestHandlerTestDriver(handler);
     }
 

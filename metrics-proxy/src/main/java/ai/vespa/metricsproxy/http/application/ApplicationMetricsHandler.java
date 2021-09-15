@@ -50,6 +50,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
         super(executor);
         this.metricsRetriever = metricsRetriever;
         this.metricsConsumers = metricsConsumers;
+        metricsRetriever.startPollAnwWait();
     }
 
     @Override

@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
@@ -38,7 +39,6 @@ public class NodeMetricsClient {
 
     private static final Logger log = Logger.getLogger(NodeMetricsClient.class.getName());
 
-    static final Duration METRICS_TTL = Duration.ofSeconds(30);
     private static final int MAX_DIMENSIONS = 10;
 
     final Node node;
@@ -46,7 +46,7 @@ public class NodeMetricsClient {
     private final Clock clock;
 
     private final Map<ConsumerId, Snapshot> snapshots = new ConcurrentHashMap<>();
-    private long snapshotsRetrieved = 0;
+    private AtomicLong snapshotsRetrieved = new AtomicLong();
 
     NodeMetricsClient(HttpClient httpClient, Node node, Clock clock) {
         this.httpClient = httpClient;
@@ -54,15 +54,18 @@ public class NodeMetricsClient {
         this.clock = clock;
     }
 
-    public List<MetricsPacket> getMetrics(ConsumerId consumer) {
-        var currentSnapshot = snapshots.get(consumer);
-        if (currentSnapshot == null || currentSnapshot.isStale(clock) || currentSnapshot.metrics.isEmpty()) {
-            Snapshot snapshot = retrieveMetrics(consumer);
-            snapshots.put(consumer, snapshot);
-            return snapshot.metrics;
-        } else {
-            return snapshots.get(consumer).metrics;
-        }
+    List<MetricsPacket> getMetrics(ConsumerId consumer) {
+        var snapshot = snapshots.get(consumer);
+        return (snapshot != null) ? snapshot.metrics : List.of();
+    }
+
+    boolean updateSnapshots(ConsumerId consumer, Duration ttl) {
+        var snapshot = snapshots.get(consumer);
+        if ((snapshot) != null && clock.instant().isBefore(snapshot.timestamp.plus(ttl))) return true;
+
+        snapshot = retrieveMetrics(consumer);
+        snapshots.put(consumer, snapshot);
+        return ! snapshot.metrics.isEmpty();
     }
 
     private Snapshot retrieveMetrics(ConsumerId consumer) {
@@ -76,7 +79,7 @@ public class NodeMetricsClient {
                                           new ServiceIdDimensionProcessor(),
                                           new ClusterIdDimensionProcessor(),
                                           new PublicDimensionsProcessor(MAX_DIMENSIONS));
-            snapshotsRetrieved ++;
+            snapshotsRetrieved.incrementAndGet();
             log.log(FINE, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + metricsUri);
 
             return new Snapshot(Instant.now(clock), metrics);
@@ -95,7 +98,7 @@ public class NodeMetricsClient {
     }
 
     long snapshotsRetrieved() {
-        return snapshotsRetrieved;
+        return snapshotsRetrieved.get();
     }
 
     /**
@@ -109,10 +112,6 @@ public class NodeMetricsClient {
         Snapshot(Instant timestamp, List<MetricsPacket> metrics) {
             this.timestamp = timestamp;
             this.metrics = metrics;
-        }
-
-        boolean isStale(Clock clock) {
-            return Instant.now(clock).isAfter(timestamp.plus(METRICS_TTL));
         }
     }
 
