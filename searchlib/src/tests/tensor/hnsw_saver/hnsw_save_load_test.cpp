@@ -2,7 +2,7 @@
 
 #include <vespa/searchlib/tensor/hnsw_graph.h>
 #include <vespa/searchlib/tensor/hnsw_index_saver.h>
-#include <vespa/searchlib/tensor/hnsw_index_loader.h>
+#include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -29,6 +29,22 @@ public:
             output.push_back(tmp[i]);
         }
         rewind();
+    }
+};
+
+class VectorBufferReader {
+private:
+    const std::vector<char>& _data;
+    size_t _pos;
+
+public:
+    VectorBufferReader(const std::vector<char>& data) : _data(data), _pos(0) {}
+    uint32_t readHostOrder() {
+        uint32_t result = 0;
+        assert(_pos + sizeof(uint32_t) <= _data.size());
+        std::memcpy(&result, _data.data() + _pos, sizeof(uint32_t));
+        _pos += sizeof(uint32_t);
+        return result;
     }
 };
 
@@ -103,7 +119,7 @@ public:
         return vector_writer.output;
     }
     void load_copy(std::vector<char> data) {
-        HnswIndexLoader loader(copy, std::make_unique<LoadedBuffer>(&data[0], data.size()));
+        HnswIndexLoader<VectorBufferReader> loader(copy, std::make_unique<VectorBufferReader>(data));
         while (loader.load_next()) {}
     }
 

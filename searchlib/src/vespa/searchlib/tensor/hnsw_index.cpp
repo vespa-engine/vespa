@@ -4,7 +4,7 @@
 #include "distance_function.h"
 #include "hash_set_visited_tracker.h"
 #include "hnsw_index.h"
-#include "hnsw_index_loader.h"
+#include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
 #include "reusable_set_visited_tracker.h"
@@ -696,10 +696,12 @@ HnswIndex::make_saver() const
 }
 
 std::unique_ptr<NearestNeighborIndexLoader>
-HnswIndex::make_loader(std::unique_ptr<fileutil::LoadedBuffer> buf)
+HnswIndex::make_loader(FastOS_FileInterface& file)
 {
     assert(get_entry_docid() == 0); // cannot load after index has data
-    return std::make_unique<HnswIndexLoader>(_graph, std::move(buf));
+    using ReaderType = FileReader<uint32_t>;
+    using LoaderType = HnswIndexLoader<ReaderType>;
+    return std::make_unique<LoaderType>(_graph, std::make_unique<ReaderType>(file));
 }
 
 struct NeighborsByDocId {

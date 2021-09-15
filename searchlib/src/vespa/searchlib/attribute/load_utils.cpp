@@ -24,8 +24,6 @@ LoadUtils::openFile(const AttributeVector& attr, const vespalib::string& suffix)
     return FileUtil::openFile(attr.getBaseFileName() + "." + suffix);
 }
 
-
-
 FileInterfaceUP
 LoadUtils::openDAT(const AttributeVector& attr)
 {

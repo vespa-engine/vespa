@@ -17,7 +17,6 @@ vespa_add_library(searchlib_tensor OBJECT
     hash_set_visited_tracker.cpp
     hnsw_graph.cpp
     hnsw_index.cpp
-    hnsw_index_loader.cpp
     hnsw_index_saver.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp

@@ -1,30 +1,29 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#pragma once
+
 #include "hnsw_index_loader.h"
 #include "hnsw_graph.h"
 #include <vespa/searchlib/util/fileutil.h>
 
 namespace search::tensor {
 
+template <typename ReaderType>
 void
-HnswIndexLoader::init()
+HnswIndexLoader<ReaderType>::init()
 {
-    size_t num_readable = _buf->size(sizeof(uint32_t));
-    _ptr = static_cast<const uint32_t *>(_buf->buffer());
-    _end = _ptr + num_readable;
     _entry_docid = next_int();
     _entry_level = next_int();
     _num_nodes = next_int();
 }
 
-HnswIndexLoader::~HnswIndexLoader() {}
+template <typename ReaderType>
+HnswIndexLoader<ReaderType>::~HnswIndexLoader() {}
 
-
-HnswIndexLoader::HnswIndexLoader(HnswGraph& graph, std::unique_ptr<fileutil::LoadedBuffer> buf)
+template <typename ReaderType>
+HnswIndexLoader<ReaderType>::HnswIndexLoader(HnswGraph& graph, std::unique_ptr<ReaderType> reader)
     : _graph(graph),
-      _buf(std::move(buf)),
-      _ptr(nullptr),
-      _end(nullptr),
+      _reader(std::move(reader)),
       _entry_docid(0),
       _entry_level(0),
       _num_nodes(0),
@@ -35,8 +34,9 @@ HnswIndexLoader::HnswIndexLoader(HnswGraph& graph, std::unique_ptr<fileutil::Loa
     init();
 }
 
+template <typename ReaderType>
 bool
-HnswIndexLoader::load_next()
+HnswIndexLoader<ReaderType>::load_next()
 {
     assert(!_complete);
     if (_docid < _num_nodes) {

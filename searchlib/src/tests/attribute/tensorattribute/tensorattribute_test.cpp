@@ -94,17 +94,15 @@ public:
 class MockIndexLoader : public NearestNeighborIndexLoader {
 private:
     int& _index_value;
-    std::unique_ptr<search::fileutil::LoadedBuffer> _buf;
+    search::FileReader<int> _reader;
 
 public:
-    MockIndexLoader(int& index_value,
-                    std::unique_ptr<search::fileutil::LoadedBuffer> buf)
+    MockIndexLoader(int& index_value, FastOS_FileInterface& file)
         : _index_value(index_value),
-          _buf(std::move(buf))
+          _reader(file)
     {}
     bool load_next() override {
-        ASSERT_EQUAL(sizeof(int), _buf->size());
-        _index_value = (reinterpret_cast<const int*>(_buf->buffer()))[0];
+        _index_value = _reader.readHostOrder();
         return false;
     }
 };
@@ -240,8 +238,8 @@ public:
         }
         return std::unique_ptr<NearestNeighborIndexSaver>();
     }
-    std::unique_ptr<NearestNeighborIndexLoader> make_loader(std::unique_ptr<search::fileutil::LoadedBuffer> buf) override {
-        return std::make_unique<MockIndexLoader>(_index_value, std::move(buf));
+    std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file) override {
+        return std::make_unique<MockIndexLoader>(_index_value, file);
     }
     std::vector<Neighbor> find_top_k(uint32_t k, vespalib::eval::TypedCells vector, uint32_t explore_k,
                                      double distance_threshold) const override

@@ -15,7 +15,7 @@ public:
      * Loads the next part of the index (e.g. the node corresponding to a given document)
      * and returns whether there is more data to load.
      *
-     * This might throw vespalib::IoException.
+     * This might throw std::runtime_error.
      */
     virtual bool load_next() = 0;
 };

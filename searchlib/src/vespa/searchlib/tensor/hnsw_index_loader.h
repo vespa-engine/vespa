@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 
-namespace search::fileutil { class LoadedBuffer; }
+class FastOS_FileInterface;
 
 namespace search::tensor {
 
@@ -17,12 +17,11 @@ struct HnswGraph;
 /**
  * Implements loading of HNSW graph structure from binary format.
  **/
+template <typename ReaderType>
 class HnswIndexLoader : public NearestNeighborIndexLoader {
 private:
     HnswGraph& _graph;
-    std::unique_ptr<fileutil::LoadedBuffer> _buf;
-    const uint32_t* _ptr;
-    const uint32_t* _end;
+    std::unique_ptr<ReaderType> _reader;
     uint32_t _entry_docid;
     int32_t _entry_level;
     uint32_t _num_nodes;
@@ -32,17 +31,11 @@ private:
 
     void init();
     uint32_t next_int() {
-        if (__builtin_expect((_ptr == _end), false)) {
-            throw vespalib::IoException
-                    (vespalib::IoException::createMessage("Already at the end of buffer when trying to get next int",
-                                                          vespalib::IoException::CORRUPT_DATA),
-                     vespalib::IoException::CORRUPT_DATA, "");
-        }
-        return *_ptr++;
+        return _reader->readHostOrder();
     }
 
 public:
-    HnswIndexLoader(HnswGraph& graph, std::unique_ptr<fileutil::LoadedBuffer> buf);
+    HnswIndexLoader(HnswGraph& graph, std::unique_ptr<ReaderType> reader);
     virtual ~HnswIndexLoader();
     bool load_next() override;
 };
