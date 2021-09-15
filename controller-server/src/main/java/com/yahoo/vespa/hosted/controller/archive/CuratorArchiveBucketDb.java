@@ -33,6 +33,8 @@ public class CuratorArchiveBucketDb {
      * Policy size limit is 20kb, about 550 bytes for non-tenant related policies. Each tenant
      * needs about 500 + len(role_arn) bytes, we limit role_arn to 100 characters, so we can
      * fit about (20k - 550) / 600 ~ 32 tenants per bucket.
+     *
+     * This limit is only enforced for public systems as non-public systems does not use tenant specific policies.
      */
     private final static int TENANTS_PER_BUCKET = 30;
 
@@ -82,7 +84,7 @@ public class CuratorArchiveBucketDb {
                     .orElseGet(() -> {
                         // If not, find an existing bucket with space
                         Optional<ArchiveBucket> unfilledBucket = zoneBuckets.stream()
-                                .filter(bucket -> bucket.tenants().size() < TENANTS_PER_BUCKET)
+                                .filter(bucket -> !system.isPublic() || bucket.tenants().size() < TENANTS_PER_BUCKET)
                                 .findAny();
 
                         // And place the tenant in that bucket.
