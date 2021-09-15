@@ -4,10 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,11 +23,8 @@ class PerfReportProducer extends AbstractProducer {
     @Override
     public void produceArtifact(NodeAgentContext context, String configId, ServiceDumpReport.DumpOptions options,
                                 UnixPath resultDirectoryInNode) throws IOException {
-        Path findPidBinary = context.pathInNodeUnderVespaHome("libexec/vespa/find-pid");
-        CommandResult findPidResult = executeCommand(context, List.of(findPidBinary.toString(), configId), true);
-        String pid = findPidResult.getOutput();
-        int duration = options != null && options.duration() != null && options.duration() > 0
-                ? options.duration().intValue() : 30;
+        int pid = findVespaServicePid(context, configId);
+        int duration = (int) duration(context, options, 30.0);
         List<String> perfRecordCommand = new ArrayList<>(List.of("perf", "record"));
         if (options != null && Boolean.TRUE.equals(options.callGraphRecording())) {
             perfRecordCommand.add("-g");

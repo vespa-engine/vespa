@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+import com.yahoo.yolean.concurrent.Sleeper;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -73,7 +74,7 @@ class VespaServiceDumperImplTest {
         NodeSpec initialSpec = createNodeSpecWithDumpRequest(nodeRepository, JvmDumpProducer.NAME, null);
 
         // Create dumper and invoke tested method
-        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock);
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock, Sleeper.NOOP);
         NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(initialSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -106,7 +107,7 @@ class VespaServiceDumperImplTest {
         ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
         NodeSpec nodeSpec = createNodeSpecWithDumpRequest(nodeRepository, PerfReportProducer.NAME, new ServiceDumpReport.DumpOptions(true, 45.0));
 
-        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock);
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock, Sleeper.NOOP);
         NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
                 .fileSystem(fileSystem)
                 .build();
@@ -120,6 +121,34 @@ class VespaServiceDumperImplTest {
         verify(operations).executeCommandInContainerAsRoot(
                 context, "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-report/perf-record.bin" +
                         " > /opt/vespa/tmp/vespa-service-dump/perf-report/perf-report.txt");
+    }
+
+    @Test
+    void invokes_jcmd_commands_when_creating_jfr_recording() {
+        // Setup mocks
+        ContainerOperations operations = mock(ContainerOperations.class);
+        when(operations.executeCommandInContainerAsRoot(any(), any()))
+                .thenReturn(new CommandResult(null, 0, "12345"))
+                .thenReturn(new CommandResult(null, 0, "ok"))
+                .thenReturn(new CommandResult(null, 0, "name=host-admin success"));
+        SyncClient syncClient = createSyncClientMock();
+        NodeRepoMock nodeRepository = new NodeRepoMock();
+        ManualClock clock = new ManualClock(Instant.ofEpochMilli(1600001000000L));
+        NodeSpec nodeSpec = createNodeSpecWithDumpRequest(
+                nodeRepository, JavaFlightRecorder.NAME, new ServiceDumpReport.DumpOptions(null, null));
+
+        VespaServiceDumper reporter = new VespaServiceDumperImpl(operations, syncClient, nodeRepository, clock, Sleeper.NOOP);
+        NodeAgentContextImpl context = new NodeAgentContextImpl.Builder(nodeSpec)
+                .fileSystem(fileSystem)
+                .build();
+        reporter.processServiceDumpRequest(context);
+
+        verify(operations).executeCommandInContainerAsRoot(
+                context, "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
+        verify(operations).executeCommandInContainerAsRoot(
+                context, "jcmd", "12345", "JFR.start", "name=host-admin", "path-to-gc-roots=true", "settings=profile",
+                "filename=/opt/vespa/tmp/vespa-service-dump/jfr-recording/recording.jfr", "duration=30s");
+        verify(operations).executeCommandInContainerAsRoot(context, "jcmd", "12345", "JFR.check", "name=host-admin");
     }
 
     private static NodeSpec createNodeSpecWithDumpRequest(NodeRepoMock repository, String artifactName, ServiceDumpReport.DumpOptions options) {
