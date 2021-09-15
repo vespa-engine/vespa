@@ -50,22 +50,23 @@ public interface ConfigResponseFactory {
     default PayloadChecksums generatePayloadChecksums(AbstractUtf8Array rawPayload, PayloadChecksums requestsPayloadChecksums) {
         PayloadChecksum requestChecksumMd5 = requestsPayloadChecksums.getForType(MD5);
         PayloadChecksum requestChecksumXxhash64 = requestsPayloadChecksums.getForType(XXHASH64);
+        PayloadChecksum xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
 
-        PayloadChecksum md5 = PayloadChecksum.empty(MD5);
-        PayloadChecksum xxhash64 = PayloadChecksum.empty(XXHASH64);
-        // Response contains same checksum type as in request, except when both are empty,
-        // then use both checksum types in response
-        if (requestChecksumMd5.isEmpty() && requestChecksumXxhash64.isEmpty()
-                || ( ! requestChecksumMd5.isEmpty() && ! requestChecksumXxhash64.isEmpty())) {
+        if (requestChecksumMd5 == null)
+            return PayloadChecksums.from(xxhash64);
+
+        // Return xxhash64 checksum, even if none in request
+        if (requestChecksumXxhash64 == null)
+            return PayloadChecksums.from(new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5), xxhash64);
+
+        // Response always contains xxhash64 checksum, md5 checksum is included
+        // when both are present, both are absent or only md5 is present in request
+        PayloadChecksum md5 = null;
+        if (( ! requestChecksumMd5.isEmpty() && ! requestChecksumXxhash64.isEmpty())
+                || (requestChecksumMd5.isEmpty() && requestChecksumXxhash64.isEmpty())) {
             md5 = new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5);
-            xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
-        } else if ( ! requestChecksumMd5.isEmpty()) {
+        } else if (! requestChecksumMd5.isEmpty() && requestChecksumXxhash64.isEmpty()) {
             md5 = new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5);
-        } else if (requestChecksumMd5.isEmpty() && !requestChecksumXxhash64.isEmpty()) {
-            xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
-        } else {
-            md5 = new PayloadChecksum(ConfigUtils.getMd5(rawPayload), MD5);
-            xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
         }
 
         return PayloadChecksums.from(md5, xxhash64);
