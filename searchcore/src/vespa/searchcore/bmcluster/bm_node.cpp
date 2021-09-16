@@ -456,6 +456,7 @@ public:
     void wait_service_layer_slobrok() override;
     void wait_distributor_slobrok() override;
     std::shared_ptr<BmStorageLinkContext> get_storage_link_context(bool distributor) override;
+    bool has_storage_layer(bool distributor) const override;
     PersistenceProvider* get_persistence_provider() override;
 };
 
@@ -633,6 +634,12 @@ std::shared_ptr<BmStorageLinkContext>
 MyBmNode::get_storage_link_context(bool distributor)
 {
     return distributor ? _distributor_chain_context : _service_layer_chain_context;
+}
+
+bool
+MyBmNode::has_storage_layer(bool distributor) const
+{
+    return distributor ? static_cast<bool>(_distributor) : static_cast<bool>(_service_layer);
 }
 
 PersistenceProvider*

@@ -36,15 +36,15 @@ BmFeeder::BmFeeder(std::shared_ptr<const DocumentTypeRepo> repo, IBmFeedHandler&
       _bucket_space(document::test::makeBucketSpace("test")),
       _feed_handler(feed_handler),
       _executor(executor),
-      _all_fields(document::AllFields::NAME)
-
+      _all_fields(document::AllFields::NAME),
+      _use_timestamp(!_feed_handler.manages_timestamp())
 {
 }
 
 BmFeeder::~BmFeeder() = default;
 
 void
-BmFeeder::feed_operation(uint32_t op_idx, vespalib::nbostream &serialized_feed, int64_t time_bias, bool use_timestamp, PendingTracker& tracker)
+BmFeeder::feed_operation(uint32_t op_idx, vespalib::nbostream &serialized_feed, int64_t time_bias, PendingTracker& tracker)
 {
     document::BucketId bucket_id;
     BmFeedOperation feed_op;
@@ -57,7 +57,7 @@ BmFeeder::feed_operation(uint32_t op_idx, vespalib::nbostream &serialized_feed, 
         serialized_feed >> bucket_id;
         document::Bucket bucket(_bucket_space, bucket_id);
         auto document = std::make_unique<Document>(*_repo, serialized_feed);
-        _feed_handler.put(bucket, std::move(document), (use_timestamp ? (time_bias + op_idx) : 0), tracker);
+        _feed_handler.put(bucket, std::move(document), (_use_timestamp ? (time_bias + op_idx) : 0), tracker);
     }
     break;
     case BmFeedOperation::UPDATE_OPERATION:
@@ -65,7 +65,7 @@ BmFeeder::feed_operation(uint32_t op_idx, vespalib::nbostream &serialized_feed, 
         serialized_feed >> bucket_id;
         document::Bucket bucket(_bucket_space, bucket_id);
         auto document_update = DocumentUpdate::createHEAD(*_repo, serialized_feed);
-        _feed_handler.update(bucket, std::move(document_update), (use_timestamp ? (time_bias + op_idx) : 0), tracker);
+        _feed_handler.update(bucket, std::move(document_update), (_use_timestamp ? (time_bias + op_idx) : 0), tracker);
     }
     break;
     case BmFeedOperation::GET_OPERATION:
@@ -81,7 +81,7 @@ BmFeeder::feed_operation(uint32_t op_idx, vespalib::nbostream &serialized_feed, 
         serialized_feed >> bucket_id;
         document::Bucket bucket(_bucket_space, bucket_id);
         DocumentId document_id(serialized_feed);
-        _feed_handler.remove(bucket, document_id, (use_timestamp ? (time_bias + op_idx) : 0), tracker);
+        _feed_handler.remove(bucket, document_id, (_use_timestamp ? (time_bias + op_idx) : 0), tracker);
     }
     break;
     default:
@@ -99,9 +99,8 @@ BmFeeder::feed_task(uint32_t max_pending, BmRange range, const vespalib::nbostre
     PendingTracker pending_tracker(max_pending);
     _feed_handler.attach_bucket_info_queue(pending_tracker);
     vespalib::nbostream is(serialized_feed.data(), serialized_feed.size());
-    bool use_timestamp = !_feed_handler.manages_timestamp();
     for (uint32_t i = range.get_start(); i < range.get_end(); ++i) {
-        feed_operation(i, is, time_bias, use_timestamp, pending_tracker);
+        feed_operation(i, is, time_bias, pending_tracker);
     }
     assert(is.empty());
     pending_tracker.drain();
