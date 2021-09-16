@@ -5,11 +5,11 @@ import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class LargeRankExpressions {
-    private final Map<String, RankExpressionBody> expressions = new HashMap<>();
+    private final Map<String, RankExpressionBody> expressions = new ConcurrentHashMap<>();
     private final FileRegistry fileRegistry;
 
     public LargeRankExpressions(FileRegistry fileRegistry) {
@@ -17,23 +17,18 @@ public class LargeRankExpressions {
     }
 
     public void add(RankExpressionBody expression) {
-        expression.validate();
-        expression.register(fileRegistry);
         String name = expression.getName();
-        if (expressions.containsKey(name)) {
-            if ( ! expressions.get(name).getBlob().equals(expression.getBlob())) {
+        RankExpressionBody prev = expressions.putIfAbsent(name, expression);
+        if (prev == null) {
+            expression.validate();
+            expression.register(fileRegistry);
+        } else {
+            if ( ! prev.getBlob().equals(expression.getBlob())) {
                 throw new IllegalArgumentException("Rank expression '" + name +
-                        "' defined twice. Previous blob with " + expressions.get(name).getBlob().remaining() +
+                        "' defined twice. Previous blob with " + prev.getBlob().remaining() +
                         " bytes, while current has " + expression.getBlob().remaining() + " bytes");
             }
-        } else {
-            expressions.put(name, expression);
         }
-    }
-
-    /** Returns the ranking constant with the given name, or null if not present */
-    public RankExpressionBody get(String name) {
-        return expressions.get(name);
     }
 
     /** Returns a read-only map of the ranking constants in this indexed by name */
