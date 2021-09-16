@@ -3,6 +3,7 @@
 package com.yahoo.language.sentencepiece;
 
 import com.google.common.annotations.Beta;
+import com.google.inject.Inject;
 import com.yahoo.io.IOUtils;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Segmenter;
@@ -30,8 +31,7 @@ import java.util.stream.Collectors;
 public class SentencePieceEncoder implements Segmenter {
 
     // TODO: Support characters beyond BMP
-
-    public enum TokenType { text, control, userDefined, unknown, unused }
+    enum TokenType { text, control, userDefined, unknown, unused }
 
     /** The scoring strategy to use for picking segments */
     public enum Scoring {
@@ -48,6 +48,11 @@ public class SentencePieceEncoder implements Segmenter {
 
     private final Map<Language, Model> models;
 
+    @Inject
+    public SentencePieceEncoder(SentencePieceConfig config) {
+        this(new Builder(config));
+    }
+
     public SentencePieceEncoder(Builder builder) {
         collapseUnknowns = builder.getCollapseUnknowns();
         scoring = builder.getScoring();
@@ -56,6 +61,8 @@ public class SentencePieceEncoder implements Segmenter {
                         .stream()
                         .map(e -> new Model(e.getKey(), e.getValue()))
                         .collect(Collectors.toUnmodifiableMap(m -> m.language, m -> m));
+        if (models.isEmpty())
+            throw new IllegalArgumentException("SentencePieceEncoder requires at least one model configured");
     }
 
     /**
@@ -250,6 +257,7 @@ public class SentencePieceEncoder implements Segmenter {
 
     private static final class Model {
 
+        final Path source;
         final Language language;
         final float minScore;
         final float maxScore;
@@ -257,6 +265,7 @@ public class SentencePieceEncoder implements Segmenter {
 
         Model(Language language, Path path) {
             try {
+                this.source = path;
                 this.language = language;
                 var sp = SentencepieceModel.ModelProto.parseFrom(IOUtils.readFileBytes(path.toFile()));
                 float minScore = Float.MAX_VALUE;
@@ -271,8 +280,13 @@ public class SentencePieceEncoder implements Segmenter {
                 this.maxScore = maxScore;
             }
             catch (IOException e) {
-                throw new IllegalArgumentException("Could not read a SentencePiece model from '" + path + "'", e);
+                throw new IllegalArgumentException("Could not read a SentencePiece model from " + path, e);
             }
+        }
+
+        @Override
+        public String toString() {
+            return "SentencePiece model for " + language + ": '" + source + "'";
         }
 
     }
@@ -282,6 +296,18 @@ public class SentencePieceEncoder implements Segmenter {
         private final Map<Language, Path> models = new HashMap<>();
         private boolean collapseUnknowns = true;
         private Scoring scoring = Scoring.fewestSegments;
+
+        public Builder() {
+        }
+
+        private Builder(SentencePieceConfig config) {
+            collapseUnknowns = config.collapseUnknowns();
+            scoring = config.scoring() == SentencePieceConfig.Scoring.fewestSegments ? Scoring.fewestSegments
+                                                                                     : Scoring.highestScore;
+            for (SentencePieceConfig.Model model : config.model()) {
+                addModel(Language.fromLanguageTag(model.language()), model.path());
+            }
+        }
 
         public void addModel(Language language, Path model) {
             models.put(language, model);
@@ -307,9 +333,7 @@ public class SentencePieceEncoder implements Segmenter {
         }
         public boolean getCollapseUnknowns() { return collapseUnknowns; }
 
-        /**
-         * Sets the scoring strategy to use when picking a segmentation. Default: fewestTokens.
-         */
+        /** Sets the scoring strategy to use when picking a segmentation. Default: fewestSegments. */
         public Builder setScoring(Scoring scoring) {
             this.scoring = scoring;
             return this;
