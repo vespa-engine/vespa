@@ -10,16 +10,8 @@ public interface HorizonClient {
 
     HorizonResponse getUser();
 
-    HorizonResponse getDashboard(String dashboardId);
-
-    HorizonResponse getFavorite(String userId);
+    HorizonResponse getDashboard();
 
     HorizonResponse getTopFolders();
-
-    HorizonResponse getRecent(String userId);
-
-    HorizonResponse getClipboard(String dashboardId);
-
-    HorizonResponse getMetaData(byte[] query);
 
 }

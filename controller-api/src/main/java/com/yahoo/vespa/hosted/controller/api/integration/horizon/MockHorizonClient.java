@@ -17,12 +17,7 @@ public class MockHorizonClient implements HorizonClient {
     }
 
     @Override
-    public HorizonResponse getDashboard(String dashboardId) {
-        return HorizonResponse.empty();
-    }
-
-    @Override
-    public HorizonResponse getFavorite(String userId) {
+    public HorizonResponse getDashboard() {
         return HorizonResponse.empty();
     }
 
@@ -31,18 +26,4 @@ public class MockHorizonClient implements HorizonClient {
         return HorizonResponse.empty();
     }
 
-    @Override
-    public HorizonResponse getRecent(String userId) {
-        return HorizonResponse.empty();
-    }
-
-    @Override
-    public HorizonResponse getClipboard(String dashboardId) {
-        return HorizonResponse.empty();
-    }
-
-    @Override
-    public HorizonResponse getMetaData(byte[] query) {
-        return HorizonResponse.empty();
-    }
 }

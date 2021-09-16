@@ -87,16 +87,13 @@ public class HorizonApiHandler extends LoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/horizon/v1/config/dashboard/topFolders")) return new JsonInputStreamResponse(client.getTopFolders());
-        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return new JsonInputStreamResponse(client.getDashboard(path.get("id")));
-        if (path.matches("/horizon/v1/config/dashboard/favorite")) return new JsonInputStreamResponse(client.getFavorite(request.getProperty("user")));
-        if (path.matches("/horizon/v1/config/dashboard/recent")) return new JsonInputStreamResponse(client.getRecent(request.getProperty("user")));
+        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return new JsonInputStreamResponse(client.getDashboard());
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request, authorizedTenants, operator, true);
-        if (path.matches("/horizon/v1/meta/search/timeseries")) return tsdbQuery(request, authorizedTenants, operator, false);
+        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request, authorizedTenants, operator);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -106,10 +103,10 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse tsdbQuery(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator, boolean isMetricQuery) {
+    private HttpResponse tsdbQuery(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
         try {
             byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), authorizedTenants, operator, systemName);
-            return new JsonInputStreamResponse(isMetricQuery ? client.getMetrics(data) : client.getMetaData(data));
+            return new JsonInputStreamResponse(client.getMetrics(data));
         } catch (TsdbQueryRewriter.UnauthorizedException e) {
             return ErrorResponse.forbidden("Access denied");
         } catch (IOException e) {
