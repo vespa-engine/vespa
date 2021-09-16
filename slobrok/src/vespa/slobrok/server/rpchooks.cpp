@@ -54,9 +54,7 @@ RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrv
 
 RPCHooks::~RPCHooks() = default;
 
-void
-RPCHooks::reportMetrics()
-{
+void RPCHooks::reportMetrics() {
     EV_COUNT("heartbeats_failed", _cnts.heartBeatFails);
     EV_COUNT("register_reqs", _cnts.registerReqs);
     EV_COUNT("mirror_reqs", _cnts.mirrorReqs);
@@ -68,9 +66,7 @@ RPCHooks::reportMetrics()
 }
 
 
-void
-RPCHooks::initRPC(FRT_Supervisor *supervisor)
-{
+void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);
 
     FRT_ReflectionBuilder rb(supervisor);
@@ -220,9 +216,7 @@ bool RPCHooks::useNewLogic() const {
     return _env.useNewLogic();
 }
 
-void
-RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);
     dst.SetString(names, _env.mySpec().c_str());
@@ -230,44 +224,7 @@ RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
     return;
 }
 
-void
-RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req)
-{
-    if (useNewLogic()) {
-        return new_registerRpcServer(req);
-    }
-    FRT_Values &args   = *req->GetParams();
-    const char *dName  = args[0]._string._str;
-    const char *dSpec  = args[1]._string._str;
-
-    LOG(debug, "RPC: invoked registerRpcServer(%s,%s)", dName, dSpec);
-    _cnts.registerReqs++;
-    {
-        // TODO: run only this path, and complete the request instead of ignoring
-        ServiceMapping mapping{dName, dSpec};
-        _env.localMonitorMap().addLocal(mapping, std::make_unique<RequestCompletionHandler>(nullptr));
-    }
-    // is this already OK?
-    if (_rpcsrvmanager.alreadyManaged(dName, dSpec)) {
-        LOG(debug, "registerRpcServer(%s,%s) OK, already managed",
-            dName, dSpec);
-        return;
-    }
-    // can we say now, that this will fail?
-    OkState state = _rpcsrvmanager.addMyReservation(dName, dSpec);
-    if (state.failed()) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
-        LOG(info, "cannot register %s at %s: %s", dName, dSpec, state.errorMsg.c_str());
-        return;
-    }
-    // need to actually setup management and decide result later
-    req->Detach();
-    ScriptCommand completer
-        = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, req);
-    completer.doRequest();
-}
-
-void RPCHooks::new_registerRpcServer(FRT_RPCRequest *req) {
+void RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req) {
     FRT_Values &args   = *req->GetParams();
     const char *dName  = args[0]._string._str;
     const char *dSpec  = args[1]._string._str;
@@ -288,28 +245,7 @@ void RPCHooks::new_registerRpcServer(FRT_RPCRequest *req) {
     return;
 }
 
-void
-RPCHooks::rpc_unregisterRpcServer(FRT_RPCRequest *req)
-{
-    if (useNewLogic()) {
-        return new_unregisterRpcServer(req);
-    }
-    FRT_Values &args   = *req->GetParams();
-    const char *dName  = args[0]._string._str;
-    const char *dSpec  = args[1]._string._str;
-    OkState state = _rpcsrvmanager.removeLocal(dName, dSpec);
-    if (state.failed()) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
-    }
-    LOG(debug, "unregisterRpcServer(%s,%s) %s: %s",
-        dName, dSpec,
-        state.ok() ? "OK" : "failed",
-        state.errorMsg.c_str());
-    _cnts.otherReqs++;
-    return;
-}
-
-void RPCHooks::new_unregisterRpcServer(FRT_RPCRequest *req) {
+void RPCHooks::rpc_unregisterRpcServer(FRT_RPCRequest *req) {
     FRT_Values &args   = *req->GetParams();
     const char *dName  = args[0]._string._str;
     const char *dSpec  = args[1]._string._str;
@@ -321,9 +257,7 @@ void RPCHooks::new_unregisterRpcServer(FRT_RPCRequest *req) {
     return;
 }
 
-void
-RPCHooks::rpc_addPeer(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_addPeer(FRT_RPCRequest *req) {
     FRT_Values &args = *req->GetParams();
     const char *remslobrok = args[0]._string._str;
     const char *remsbspec  = args[1]._string._str;
@@ -340,10 +274,7 @@ RPCHooks::rpc_addPeer(FRT_RPCRequest *req)
     return;
 }
 
-
-void
-RPCHooks::rpc_removePeer(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_removePeer(FRT_RPCRequest *req) {
     FRT_Values &args = *req->GetParams();
     const char *remslobrok = args[0]._string._str;
     const char *remsbspec  = args[1]._string._str;
@@ -360,33 +291,7 @@ RPCHooks::rpc_removePeer(FRT_RPCRequest *req)
     return;
 }
 
-
-void
-RPCHooks::rpc_wantAdd(FRT_RPCRequest *req)
-{
-    if (useNewLogic()) {
-        return new_wantAdd(req);
-    }
-    FRT_Values &args   = *req->GetParams();
-    const char *remsb  = args[0]._string._str;
-    const char *dName  = args[1]._string._str;
-    const char *dSpec  = args[2]._string._str;
-    FRT_Values &retval = *req->GetReturn();
-    OkState state = _rpcsrvmanager.addRemReservation(remsb, dName, dSpec);
-    if (state.failed()) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
-    }
-    retval.AddInt32(state.errorCode);
-    retval.AddString(state.errorMsg.c_str());
-    LOG(debug, "%s->wantAdd(%s,%s) %s: %s",
-        remsb, dName, dSpec,
-        state.ok() ? "OK" : "failed",
-        state.errorMsg.c_str());
-    _cnts.wantAddReqs++;
-    return;
-}
-
-void RPCHooks::new_wantAdd(FRT_RPCRequest *req) {
+void RPCHooks::rpc_wantAdd(FRT_RPCRequest *req) {
     FRT_Values &args   = *req->GetParams();
     const char *remsb  = args[0]._string._str;
     const char *dName  = args[1]._string._str;
@@ -412,32 +317,7 @@ void RPCHooks::new_wantAdd(FRT_RPCRequest *req) {
     return;
 }
 
-void
-RPCHooks::rpc_doRemove(FRT_RPCRequest *req)
-{
-    if (useNewLogic()) {
-        return new_doRemove(req);
-    }
-    FRT_Values &args   = *req->GetParams();
-    const char *rname  = args[0]._string._str;
-    const char *dname  = args[1]._string._str;
-    const char *dspec  = args[2]._string._str;
-    FRT_Values &retval = *req->GetReturn();
-    OkState state = _rpcsrvmanager.removeRemote(dname, dspec);
-    retval.AddInt32(state.errorCode);
-    retval.AddString(state.errorMsg.c_str());
-    if (state.errorCode > 1) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
-    }
-    LOG(debug, "%s->doRemove(%s,%s) %s: %s",
-        rname, dname, dspec,
-        state.ok() ? "OK" : "failed",
-        state.errorMsg.c_str());
-    _cnts.doRemoveReqs++;
-    return;
-}
-
-void RPCHooks::new_doRemove(FRT_RPCRequest *req) {
+void RPCHooks::rpc_doRemove(FRT_RPCRequest *req) {
     FRT_Values &args   = *req->GetParams();
     const char *rname  = args[0]._string._str;
     const char *dname  = args[1]._string._str;
@@ -452,32 +332,7 @@ void RPCHooks::new_doRemove(FRT_RPCRequest *req) {
     return;
 }
 
-void
-RPCHooks::rpc_doAdd(FRT_RPCRequest *req)
-{
-    if (useNewLogic()) {
-        return new_doAdd(req);
-    }
-    FRT_Values &args   = *req->GetParams();
-    const char *rname  = args[0]._string._str;
-    const char *dname  = args[1]._string._str;
-    const char *dspec  = args[2]._string._str;
-    FRT_Values &retval = *req->GetReturn();
-    OkState state = _rpcsrvmanager.addRemote(dname, dspec);
-    retval.AddInt32(state.errorCode);
-    retval.AddString(state.errorMsg.c_str());
-    if (state.errorCode > 1) {
-        req->SetError(FRTE_RPC_METHOD_FAILED, state.errorMsg.c_str());
-    }
-    LOG(debug, "%s->doAdd(%s,%s) %s: %s",
-        rname, dname, dspec,
-        state.ok() ? "OK" : "failed",
-        state.errorMsg.c_str());
-    _cnts.doAddReqs++;
-    return;
-}
-
-void RPCHooks::new_doAdd(FRT_RPCRequest *req) {
+void RPCHooks::rpc_doAdd(FRT_RPCRequest *req) {
     FRT_Values &args   = *req->GetParams();
     const char *remsb  = args[0]._string._str;
     const char *dName  = args[1]._string._str;
@@ -500,9 +355,7 @@ void RPCHooks::new_doAdd(FRT_RPCRequest *req) {
     return;
 }
 
-void
-RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req) {
     _cnts.otherReqs++;
     FRT_Values &args = *req->GetParams();
     const char *rpcserverPattern = args[0]._string._str;
@@ -539,10 +392,7 @@ RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
     return;
 }
 
-
-void
-RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req) {
     _cnts.adminReqs++;
     // TODO: use local history here
     const auto & visible = _env.globalHistory();
@@ -561,9 +411,7 @@ RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req)
     return;
 }
 
-void
-RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req) {
     _cnts.adminReqs++;
     FRT_Values &args = *req->GetParams();
     const char *name = args[0]._string._str;
@@ -583,9 +431,7 @@ RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
     return;
 }
 
-void
-RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req) {
     _cnts.adminReqs++;
     const auto & visible = _env.globalHistory();
     auto diff = visible.makeDiffFrom(0);
@@ -605,10 +451,7 @@ RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
     return;
 }
 
-
-void
-RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_incrementalFetch(FRT_RPCRequest *req) {
     _cnts.mirrorReqs++;
     FRT_Values &args = *req->GetParams();
     vespalib::GenCnt gencnt(args[0]._intval32);
@@ -626,21 +469,15 @@ void RPCHooks::rpc_fetchLocalView(FRT_RPCRequest *req) {
                                              _localHistory, gencnt).invoke(msTimeout);
 }
 
-
 // System API methods
-void
-RPCHooks::rpc_stop(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_stop(FRT_RPCRequest *req) {
     _cnts.adminReqs++;
     (void) req;
     LOG(debug, "RPC stop command received, initiating shutdown");
     _env.shutdown();
 }
 
-
-void
-RPCHooks::rpc_version(FRT_RPCRequest *req)
-{
+void RPCHooks::rpc_version(FRT_RPCRequest *req) {
     _cnts.adminReqs++;
     std::string ver;
 
@@ -694,6 +531,5 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
     req->GetReturn()->AddString(ver.c_str());
     return;
 }
-
 
 } // namespace slobrok
