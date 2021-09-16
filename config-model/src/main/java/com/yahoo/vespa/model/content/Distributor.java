@@ -52,6 +52,8 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
         if (numDistributorStripesFlag == -1) {
             if (getHostResource() != null) {
                 int cores = (int)getHostResource().realResources().vcpu();
+                // This should match the calculation used when node flavor is not available:
+                // storage/src/vespa/storage/common/bucket_stripe_utils.cpp
                 if (cores <= 16) {
                     return 1;
                 } else if (cores <= 64) {
