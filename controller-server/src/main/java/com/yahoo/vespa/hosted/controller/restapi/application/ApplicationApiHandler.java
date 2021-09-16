@@ -2086,7 +2086,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (report != null) {
             Cursor cursor = report.get();
             // Note: same behaviour for both value '0' and missing value.
-            if (cursor.field("failedAt").asLong() == 0 && cursor.field("completedAt").asLong() == 0) {
+            boolean force = request.getBooleanProperty("force");
+            if (!force && cursor.field("failedAt").asLong() == 0 && cursor.field("completedAt").asLong() == 0) {
                 throw new IllegalArgumentException("Service dump already in progress for " + cursor.field("configId").asString());
             }
         }
