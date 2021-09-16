@@ -10,7 +10,6 @@ import java.time.Duration;
 import java.util.Arrays;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
-import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MAX_THREADS;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MAX_TIMEOUT;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MIN_TIMEOUT;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.timeout;
@@ -145,13 +144,13 @@ public class ApplicationMetricsRetrieverTest {
 
     @Test
     public void test_timeout_calculation() {
-        assertEquals(MIN_TIMEOUT, timeout(1, 1));
-        assertEquals(MIN_TIMEOUT, timeout(MAX_THREADS, MAX_THREADS));
+        assertEquals(MIN_TIMEOUT, timeout(1));
+        assertEquals(MIN_TIMEOUT, timeout(20));
 
         // These values must be updated if the calculation in the timeout method itself is changed.
-        assertEquals(Duration.ofSeconds(100), timeout(100, MAX_THREADS));
-        assertEquals(Duration.ofSeconds(200), timeout(200, MAX_THREADS));
-        assertEquals(MAX_TIMEOUT, timeout(240, MAX_THREADS));
+        assertEquals(Duration.ofSeconds(100), timeout(100));
+        assertEquals(Duration.ofSeconds(200), timeout(200));
+        assertEquals(MAX_TIMEOUT, timeout(240));
     }
 
     private MetricsNodesConfig nodesConfig(String... paths) {

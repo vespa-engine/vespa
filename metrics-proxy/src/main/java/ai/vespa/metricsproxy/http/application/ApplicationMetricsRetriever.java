@@ -3,15 +3,16 @@ package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
@@ -20,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -41,7 +40,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
 
     private static final Logger log = Logger.getLogger(ApplicationMetricsRetriever.class.getName());
 
-    static final int MAX_THREADS = 20;
     static final Duration MIN_TIMEOUT = Duration.ofSeconds(60);
     static final Duration MAX_TIMEOUT = Duration.ofSeconds(240);
 
@@ -49,9 +47,8 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private static final int HTTP_SOCKET_TIMEOUT = 30000;
     private static final Duration METRICS_TTL = Duration.ofSeconds(30);
 
-    private final HttpClient httpClient = createHttpClient();
+    private final CloseableHttpAsyncClient httpClient = createHttpClient();
     private final List<NodeMetricsClient> clients;
-    private final ExecutorService fetchPool;
     private final Thread pollThread;
     private final Set<ConsumerId> consumerSet;
     private long pollCount = 0;
@@ -63,12 +60,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
         clients = createNodeClients(nodesConfig);
-        int numThreads = Math.min(clients.size(), MAX_THREADS);
-        taskTimeout = timeout(clients.size(), numThreads);
-        fetchPool = Executors.newFixedThreadPool(numThreads, ThreadFactoryFactory.getDaemonThreadFactory("metrics-fetcher"));
+        taskTimeout = timeout(clients.size());
         stopped = false;
         consumerSet = new HashSet<>();
         consumerSet.add(defaultMetricsConsumerId);
+        httpClient.start();
         pollThread = new Thread(this, "metrics-poller");
         pollThread.setDaemon(true);
         pollThread.start();
@@ -107,7 +103,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
             stopped = true;
             pollThread.notifyAll();
         }
-        fetchPool.shutdownNow();
+        try {
+            httpClient.close();
+        } catch (IOException e) {
+            log.warning("Failed closing httpclient: " + e);
+        }
         try {
             pollThread.join();
         } catch (InterruptedException e) {}
@@ -151,14 +151,15 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private int fetchMetricsAsync(ConsumerId consumer) {
         Map<Node, Future<Boolean>> futures = new HashMap<>();
         for (NodeMetricsClient client : clients) {
-            futures.put(client.node, fetchPool.submit(() -> updateMetrics(client, consumer)));
+            var optional = client.startSnapshotUpdate(consumer, METRICS_TTL);
+            optional.ifPresent(future -> futures.put(client.node, future));
         }
         int numOk = 0;
         int numTried = futures.size();
         for (Map.Entry<Node, Future<Boolean>> entry : futures.entrySet()) {
             try {
                 Boolean result = entry.getValue().get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
-                if (result != null && result) numOk++;
+                if ((result != null) && result) numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 // Since the task is a ForkJoinTask, we don't need special handling of InterruptedException
                 log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : ", e);
@@ -168,24 +169,16 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         return numTried - numOk;
     }
 
-    private boolean updateMetrics(NodeMetricsClient client, ConsumerId consumer) {
-        try {
-            return client.updateSnapshots(consumer, METRICS_TTL);
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Could not retrieve metrics from " + client.node.metricsUri(consumer), e);
-            return false;
-        }
-    }
-
     private List<NodeMetricsClient> createNodeClients(MetricsNodesConfig nodesConfig) {
         return nodesConfig.node().stream()
                 .map(Node::new)
                 .map(node-> new NodeMetricsClient(httpClient, node, Clock.systemUTC()))
                 .collect(Collectors.toList());
-   }
+    }
 
-    private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create()
+    static CloseableHttpAsyncClient createHttpClient() {
+        return VespaAsyncHttpClientBuilder.create()
+                .setIOReactorConfig(IOReactorConfig.custom().setIoThreadCount(2).build())
                 .setUserAgent("application-metrics-retriever")
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout(Timeout.ofMilliseconds(HTTP_CONNECT_TIMEOUT))
@@ -194,8 +187,8 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 .build();
     }
 
-    static Duration timeout(int clients, int numThreads) {
-        Duration timeout = Duration.ofSeconds(Long.max(MIN_TIMEOUT.toSeconds(), 20 * clients / numThreads));
+    static Duration timeout(int clients) {
+        Duration timeout = Duration.ofSeconds(Long.max(MIN_TIMEOUT.toSeconds(), clients));
         return timeout.compareTo(MAX_TIMEOUT) > 0 ? MAX_TIMEOUT : timeout;
     }
 
