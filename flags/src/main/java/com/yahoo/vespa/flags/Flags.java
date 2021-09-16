@@ -288,7 +288,7 @@ public class Flags {
             List.of("bjorncs"), "2021-09-14", "2021-12-31",
             "Enable tenant S3 buckets in cd/main. Must be set on controller cluster only.",
             "Takes effect immediately",
-            ZONE_ID
+            ZONE_ID, TENANT_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
