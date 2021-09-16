@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/logrusorgru/aurora"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -33,9 +31,6 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 	if client != nil {
 		util.ActiveHttpClient = client
 	}
-
-	// Never print colors in tests
-	color = aurora.NewAurora(false)
 
 	// Set config dir. Use a separate one per test if none is specified
 	if cmd.homeDir == "" {
@@ -62,7 +57,9 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 
 	// Capture stdout and execute command
 	var b bytes.Buffer
-	log.SetOutput(&b)
+	stdout = &b
+
+	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
 	rootCmd.Execute()
 	out, err := ioutil.ReadAll(&b)

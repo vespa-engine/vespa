@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -79,8 +80,14 @@ var getConfigCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 { // Print all values
-			printOption(cfg, targetFlag)
-			printOption(cfg, applicationFlag)
+			var flags []string
+			for flag := range flagToConfigBindings {
+				flags = append(flags, flag)
+			}
+			sort.Strings(flags)
+			for _, flag := range flags {
+				printOption(cfg, flag)
+			}
 		} else {
 			printOption(cfg, args[0])
 		}
@@ -218,6 +225,12 @@ func (c *Config) Set(option, value string) error {
 		}
 		viper.Set(option, value)
 		return nil
+	case colorFlag:
+		switch value {
+		case "auto", "never", "always":
+			viper.Set(option, value)
+			return nil
+		}
 	}
 	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }

@@ -22,7 +22,7 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, nil))
 	assert.Equal(t, "application = t1.a1.i1\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "application"}}, t, nil))
 
-	assert.Equal(t, "target = https://127.0.0.1\napplication = t1.a1.i1\n", execute(command{homeDir: homeDir, args: []string{"config", "get"}}, t, nil))
+	assert.Equal(t, "application = t1.a1.i1\ncolor = auto\ntarget = https://127.0.0.1\nwait = 0\n", execute(command{homeDir: homeDir, args: []string{"config", "get"}}, t, nil))
 
 	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "wait", "60"}}, t, nil))
 	assert.Equal(t, "wait option must be an integer >= 0, got \"foo\"\n", execute(command{homeDir: homeDir, args: []string{"config", "set", "wait", "foo"}}, t, nil))
