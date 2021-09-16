@@ -20,7 +20,7 @@ public:
 TEST("slow event loop") {
   vespalib::steady_time t(vespalib::duration::zero());
 
-  FNET_Scheduler scheduler(&t, &t);
+  FNET_Scheduler scheduler(&t);
   MyTask         task(scheduler);
   MyTask         task2(scheduler);
 

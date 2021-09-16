@@ -81,7 +81,7 @@ public:
 
 TEST("schedule") {
   _time = steady_time(vespalib::duration::zero());
-  _scheduler = new FNET_Scheduler(&_time, &_time);
+  _scheduler = new FNET_Scheduler(&_time);
 
   RealTimeTask rt_task1;
   RealTimeTask rt_task2;

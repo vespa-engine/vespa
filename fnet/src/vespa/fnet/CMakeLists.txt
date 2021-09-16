@@ -19,6 +19,7 @@ vespa_add_library(fnet
     simplepacketstreamer.cpp
     task.cpp
     transport.cpp
+    transport_debugger.cpp
     transport_thread.cpp
     $<TARGET_OBJECTS:fnet_frt>
     INSTALL lib64
