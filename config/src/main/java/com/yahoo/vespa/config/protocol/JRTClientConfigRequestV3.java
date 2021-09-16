@@ -178,7 +178,7 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         StringBuilder sb = new StringBuilder();
         sb.append("request='").append(getConfigKey())
                 .append(",").append(getClientHostName())
-                .append(",").append(getRequestConfigMd5())
+                .append(",").append(getRequestConfigChecksums())
                 .append(",").append(getRequestGeneration())
                 .append(",").append(getTimeout())
                 .append(",").append(getVespaVersion().map(VespaVersion::toString).orElse(""))
@@ -231,12 +231,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         PayloadChecksums newChecksum = getNewChecksums();
         if (PayloadChecksums.empty().equals(newChecksum)) return getRequestConfigChecksums();
         return newChecksum;
-    }
-
-    protected String newConfMd5() {
-        String newMd5 = getNewConfigMd5();
-        if ("".equals(newMd5)) return getRequestConfigMd5();
-        return newMd5;
     }
 
     protected long newGen() {
@@ -309,11 +303,6 @@ public class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     public boolean validateParameters() {
         int errorCode = RequestValidation.validateRequest(this);
         return (errorCode == 0);
-    }
-
-    @Override
-    public String getNewConfigMd5() {
-        return responseData.getResponseConfigMd5().asString();
     }
 
     @Override

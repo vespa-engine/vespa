@@ -152,7 +152,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         StringBuilder sb = new StringBuilder();
         sb.append("request='").append(getConfigKey())
                 .append(",").append(getClientHostName())
-                .append(",").append(getRequestConfigMd5())
+                .append(",").append(getRequestConfigChecksums())
                 .append(",").append(getRequestGeneration())
                 .append(",").append(getTimeout()).append("'\n");
         return sb.toString();

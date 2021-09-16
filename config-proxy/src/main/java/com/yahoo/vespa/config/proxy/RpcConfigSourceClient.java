@@ -10,11 +10,6 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
@@ -22,10 +17,14 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -134,7 +133,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         RawConfig ret = null;
         if (cachedConfig != null) {
             log.log(Level.FINE, () -> "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
-                    ",configmd5=" + cachedConfig.getConfigMd5());
+                    ",config checksums=" + cachedConfig.getPayloadChecksums());
             log.log(Level.FINEST, () -> "input config=" + input + ",cached config=" + cachedConfig);
             if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
                 log.log(Level.FINEST, () -> "Cached config is not equal to requested, will return it");

@@ -76,7 +76,7 @@ public class ConfigUtilsTest {
         String md5 = getMd5(lines);
         assertThat(md5, is(not(expectedMd5)));
 
-        // Check that added characters aft comment character in string leads to a different md5 than above
+        // Check that added characters after comment character in string leads to a different md5 than above
         lines.add("foo=\"1#hello and some more and even more\"");
         assertThat(getMd5(lines), is(not(md5)));
     }

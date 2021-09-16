@@ -99,8 +99,8 @@ public class RawConfigTest {
     public void payload() {
         RawConfig config = new RawConfig(key, defMd5, payload, payloadChecksums, generation, false, defContent, Optional.empty());
         assertEquals(config.getPayload(), payload);
-        assertEquals(config.getConfigMd5(), payloadChecksums.getForType(MD5).asString());
         assertEquals(config.getPayloadChecksums().getForType(XXHASH64), payloadChecksums.getForType(XXHASH64));
+        assertEquals(config.getPayloadChecksums().getForType(MD5), payloadChecksums.getForType(MD5));
         assertEquals(config.getGeneration(), generation);
         assertEquals(config.getDefContent(), defContent);
     }

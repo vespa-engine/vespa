@@ -59,13 +59,6 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
     boolean responseIsApplyOnRestart();
 
     /**
-     * Gets the config md5 of the config returned by the server. Returns an empty string if no response has been returned.
-     *
-     * @return a config md5.
-     */
-    String getNewConfigMd5();
-
-    /**
      * Gets the config checksums of the config returned by the server. Returns an empty string if no response has been returned.
      *
      * @return a config checksum.
