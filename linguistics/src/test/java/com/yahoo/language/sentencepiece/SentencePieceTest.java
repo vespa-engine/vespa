@@ -6,10 +6,6 @@ import com.yahoo.language.Language;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author bratseth
@@ -61,37 +57,14 @@ public class SentencePieceTest {
     }
 
     @Test
-    public void testJapaneseTokenization() throws IOException {
+    public void testMultiLanguageTokenization() {
         SentencePieceEncoder.Builder builder = new SentencePieceEncoder.Builder();
         builder.addModel(Language.JAPANESE, new File("src/test/models/sentencepiece/ja.wiki.bpe.vs5000.model").toPath());
         builder.addModel(Language.ENGLISH, new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
         var tester = new SentencePieceTester(builder);
         tester.assertSegmented(Language.JAPANESE, "いくつかの通常のテキスト", "▁", "いく", "つか", "の", "通常", "の", "テ", "キ", "スト");
-    }
-
-    private static class SentencePieceTester {
-
-        private final SentencePieceEncoder encoder;
-
-        public SentencePieceTester(Path model) {
-            this(new SentencePieceEncoder.Builder().addDefaultModel(model));
-        }
-
-        public SentencePieceTester(SentencePieceEncoder.Builder builder) {
-            encoder = builder.build();
-        }
-
-        private void assertEncoded(String input, Integer ... expectedCodes) {
-            assertArrayEquals(expectedCodes, encoder.encode(input, Language.UNKNOWN).toArray());
-        }
-
-        private void assertSegmented(String input, String ... expectedSegments) {
-            assertSegmented(Language.UNKNOWN, input, expectedSegments);
-        }
-        private void assertSegmented(Language language, String input, String ... expectedSegments) {
-            assertArrayEquals(expectedSegments, encoder.segment(input, language).toArray());
-        }
-
+        tester.assertSegmented(Language.ENGLISH, "hello", "▁hel", "lo");
+        tester.assertSegmented(Language.JAPANESE, "hello", "▁h", "ell", "o");
     }
 
 }
