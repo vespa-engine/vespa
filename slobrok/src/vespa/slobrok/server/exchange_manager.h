@@ -14,8 +14,6 @@ namespace slobrok {
 //-----------------------------------------------------------------------------
 
 class SBEnv;
-class RpcServerMap;
-class RpcServerManager;
 
 //-----------------------------------------------------------------------------
 
@@ -78,20 +76,16 @@ private:
     };
 
     SBEnv             &_env;
-    RpcServerManager  &_rpcsrvmanager;
-    RpcServerMap      &_rpcsrvmap;
 
     vespalib::string diffLists(const ServiceMappingList &lhs, const ServiceMappingList &rhs);
 
 public:
     ExchangeManager(const ExchangeManager &) = delete;
     ExchangeManager &operator=(const ExchangeManager &) = delete;
-    ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap);
+    ExchangeManager(SBEnv &env);
     ~ExchangeManager();
 
     SBEnv             &env() { return _env; }
-    RpcServerManager  &rpcServerManager() { return _rpcsrvmanager; }
-    RpcServerMap      &rpcServerMap() { return _rpcsrvmap; }
 
     OkState addPartner(const std::string & spec);
     void removePartner(const std::string & spec);

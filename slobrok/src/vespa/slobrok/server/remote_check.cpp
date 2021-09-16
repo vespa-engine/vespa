@@ -13,12 +13,9 @@ LOG_SETUP(".slobrok.server.remote_check");
 
 namespace slobrok {
 
-RemoteCheck::RemoteCheck(FNET_Scheduler *sched,
-                         RpcServerMap& rpcsrvmap,
-                         RpcServerManager& rpcsrvman,
-                         ExchangeManager& exch)
+RemoteCheck::RemoteCheck(FNET_Scheduler *sched, ExchangeManager& exch)
     : FNET_Task(sched),
-      _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman), _exchanger(exch)
+      _exchanger(exch)
 {
     double seconds = randomIn(15.3, 27.9);
     Schedule(seconds);

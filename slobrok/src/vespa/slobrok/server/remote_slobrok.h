@@ -12,7 +12,6 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-class RpcServerManager;
 class ExchangeManager;
 
 //-----------------------------------------------------------------------------
@@ -43,7 +42,6 @@ private:
     };
 
     ExchangeManager     &_exchanger;
-    RpcServerManager    &_rpcsrvmanager;
     FRT_Target          *_remote;
     ServiceMapMirror     _serviceMapMirror;
     ManagedRpcServer     _rpcserver;

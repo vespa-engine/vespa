@@ -109,7 +109,7 @@ SBEnv::SBEnv(const ConfigShim &shim, bool useNewConsensusLogic)
       _partnerList(),
       _me(createSpec(_configShim.portNumber())),
       _rpcHooks(*this),
-      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
+      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)),
       _health(),
       _metrics(_rpcHooks, *_transport),
       _components(),
@@ -118,8 +118,7 @@ SBEnv::SBEnv(const ConfigShim &shim, bool useNewConsensusLogic)
                               return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
                           }),
       _rpcsrvmanager(*this),
-      _exchanger(*this, _rpcsrvmap),
-      _rpcsrvmap()
+      _exchanger(*this)
 {
     srandom(time(nullptr) ^ getpid());
     // note: feedback loop between these two:

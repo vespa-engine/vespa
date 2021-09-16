@@ -18,7 +18,6 @@ namespace slobrok {
 RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
                              ExchangeManager &manager)
     : _exchanger(manager),
-      _rpcsrvmanager(manager.rpcServerManager()),
       _remote(nullptr),
       _serviceMapMirror(),
       _rpcserver(name, spec, *this),

@@ -14,11 +14,9 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-ExchangeManager::ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap)
+ExchangeManager::ExchangeManager(SBEnv &env)
     : _partners(),
-      _env(env),
-      _rpcsrvmanager(env.rpcServerManager()),
-      _rpcsrvmap(rpcsrvmap)
+      _env(env)
 {
 }
 
