@@ -77,7 +77,6 @@ import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -87,6 +86,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
@@ -2122,7 +2122,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
         var reportsUpdate = Map.of("serviceDump", new String(uncheck(() -> SlimeUtils.toJsonBytes(dumpRequest))));
         nodeRepository.updateReports(zone, hostname, reportsUpdate);
-        return new MessageResponse("Request created");
+        boolean wait = request.getBooleanProperty("wait");
+        if (!wait) return new MessageResponse("Request created");
+        return waitForServiceDumpResult(nodeRepository, zone, tenant, application, instance, hostname);
     }
 
     private HttpResponse getServiceDump(String tenant, String application, String instance, String environment,
@@ -2131,6 +2133,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         ZoneId zone = requireZone(environment, region);
         Slime report = getReport(nodeRepository, zone, tenant, application, instance, hostname)
             .orElseThrow(() -> new NotExistsException("No service dump for node " + hostname));
+        return new SlimeJsonResponse(report);
+    }
+
+    private HttpResponse waitForServiceDumpResult(NodeRepository nodeRepository, ZoneId zone, String tenant,
+                                                  String application, String instance, String hostname) {
+        int pollInterval = 2;
+        Slime report;
+        while (true) {
+            report = getReport(nodeRepository, zone, tenant, application, instance, hostname).get();
+            Cursor cursor = report.get();
+            if (cursor.field("completedAt").asLong() > 0 || cursor.field("failedAt").asLong() > 0) {
+                break;
+            }
+            final Slime copyForLambda = report;
+            log.fine(() -> uncheck(() -> new String(SlimeUtils.toJsonBytes(copyForLambda))));
+            log.fine("Sleeping " + pollInterval + " seconds before checking report status again");
+            controller.sleeper().sleep(Duration.ofSeconds(pollInterval));
+        }
         return new SlimeJsonResponse(report);
     }
 
