@@ -12,22 +12,20 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.util.Timeout;
 
-import java.util.ArrayList;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
-
-import java.time.Clock;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -60,7 +58,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private boolean stopped;
 
     // Non-final for testing
-    private Duration taskTimeout;
+    private volatile Duration taskTimeout;
 
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
@@ -135,7 +133,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         return metrics;
     }
 
-    void startPollAnwWait() {
+    void startPollAndWait() {
         try {
             synchronized (pollThread) {
                 if ( ! pollThread.isAlive()) {

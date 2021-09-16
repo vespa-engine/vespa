@@ -86,7 +86,7 @@ public class ApplicationMetricsHandlerTest {
                                                                           applicationMetricsRetriever,
                                                                           getMetricsConsumers());
         applicationMetricsRetriever.getMetrics(ConsumerId.toConsumerId(CUSTOM_CONSUMER));
-        applicationMetricsRetriever.startPollAnwWait();
+        applicationMetricsRetriever.startPollAndWait();
         testDriver = new RequestHandlerTestDriver(handler);
     }
 
