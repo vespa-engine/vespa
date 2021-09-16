@@ -147,6 +147,12 @@ public class Flags {
             "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
             "Takes effect on next host-admin tick.");
 
+    public static final UnboundBooleanFlag LIMIT_DISK_MODIFICATIONS = defineFeatureFlag(
+            "limit-disk-modifications", true,
+            List.of("hakonhall"), "2021-09-16", "2021-10-16",
+            "Only allow modifications of disks by disk task in limited situations.",
+            "Takes effect on next host-admin tick.");
+
     public static final UnboundBooleanFlag NEW_SPARE_DISKS = defineFeatureFlag(
             "new-spare-disks", false,
             List.of("hakonhall"), "2021-09-08", "2021-11-08",
