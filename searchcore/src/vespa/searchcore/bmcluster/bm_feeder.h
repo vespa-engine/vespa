@@ -24,6 +24,7 @@ class AvgSampler;
 class BmFeedParams;
 class BmRange;
 class IBmFeedHandler;
+class PendingTracker;
 
 /*
  * Class to feed serialized feed operations to a feed handler.
@@ -33,17 +34,13 @@ class BmFeeder {
     document::BucketSpace                             _bucket_space;
     IBmFeedHandler&                                   _feed_handler;
     vespalib::ThreadStackExecutor&                    _executor;
+    vespalib::string                                  _all_fields;
 public:
     BmFeeder(std::shared_ptr<const document::DocumentTypeRepo> repo, IBmFeedHandler& feed_handler, vespalib::ThreadStackExecutor& executor);
     ~BmFeeder();
-    void put_async_task(uint32_t max_pending, BmRange range, const vespalib::nbostream &serialized_feed, int64_t time_bias);
-    void update_async_task(uint32_t max_pending, BmRange range, const vespalib::nbostream &serialized_feed, int64_t time_bias);
-    void get_async_task(uint32_t max_pending, BmRange range, const vespalib::nbostream &serialized_feed);
-    void remove_async_task(uint32_t max_pending, BmRange range, const vespalib::nbostream &serialized_feed, int64_t time_bias);
-    void run_put_async_tasks(int pass, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler);
-    void run_update_async_tasks(int pass, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler);
-    void run_get_async_tasks(int pass, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler);
-    void run_remove_async_tasks(int pass, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler);
+    void feed_operation(uint32_t op_idx, vespalib::nbostream &serialized_feed, int64_t time_bias, bool use_timestamp, PendingTracker& tracker);
+    void feed_task(uint32_t max_pending, BmRange range, const vespalib::nbostream &serialized_feed, int64_t time_bias);
+    void run_feed_tasks(int pass, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed_v, const BmFeedParams& params, AvgSampler& sampler, const vespalib::string& op_name);
     IBmFeedHandler& get_feed_handler() const { return _feed_handler; }
 };
 

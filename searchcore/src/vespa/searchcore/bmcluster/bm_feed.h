@@ -38,6 +38,7 @@ class BmFeed {
     const document::Field&                            _field;
     uint32_t                                          _bucket_bits;
     document::BucketSpace                             _bucket_space;
+    vespalib::nbostream make_get_or_remove_feed(BmRange range, BucketSelector bucket_selector, bool make_removes);
 public:
 
     BmFeed(std::shared_ptr<const document::DocumentTypeRepo> document_types);
@@ -51,6 +52,7 @@ public:
     std::unique_ptr<document::DocumentUpdate> make_document_update(uint32_t n, uint32_t i) const;
     vespalib::nbostream make_put_feed(BmRange range, BucketSelector bucket_selector);
     vespalib::nbostream make_update_feed(BmRange range, BucketSelector bucket_selector);
+    vespalib::nbostream make_get_feed(BmRange range, BucketSelector bucket_selector);
     vespalib::nbostream make_remove_feed(BmRange range, BucketSelector bucket_selector);
     std::vector<vespalib::nbostream> make_feed(vespalib::ThreadStackExecutor& executor, const BmFeedParams& bm_params, std::function<vespalib::nbostream(BmRange,BucketSelector)> func, uint32_t num_buckets, const vespalib::string& label);
 };
