@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "stripe_access_guard.h" // TODO STRIPE break up
+#include "stripe_access_guard.h"
 
 namespace storage::lib {
 class ClusterState;

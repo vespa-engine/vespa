@@ -171,7 +171,7 @@ TEST_F(TopLevelDistributorTest, distributor_considered_initialized_once_self_obs
     EXPECT_TRUE(_distributor->done_initializing());
 }
 
-// TODO STRIPE consider moving to generic test, not specific to top-level distributor or stripe
+// TODO consider moving to generic test, not specific to top-level distributor or stripe
 TEST_F(TopLevelDistributorTest, contains_time_statement) {
     setup_distributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 

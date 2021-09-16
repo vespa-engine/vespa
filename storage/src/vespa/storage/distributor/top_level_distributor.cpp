@@ -410,8 +410,6 @@ TopLevelDistributor::stripe_of_bucket_id(const document::BucketId& bucket_id, co
 bool
 TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    // TODO STRIPE can we route both requests and responses that are BucketCommand|Reply based on their bucket alone?
-    //   that covers most operations already...
     if (_use_legacy_mode) {
         return _stripe->handle_or_enqueue_message(msg);
     } else {
@@ -434,12 +432,10 @@ TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 bool
 TopLevelDistributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    // TODO STRIPE this is used by tests. Do we need to invoke TopLevelBucketDBUpdater for any of them?
     assert(_use_legacy_mode);
     return _stripe->handleReply(reply);
 }
 
-// TODO STRIPE we need to reintroduce the top-level message queue...
 bool
 TopLevelDistributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
 {
@@ -640,7 +636,7 @@ TopLevelDistributor::doCriticalTick(framework::ThreadIndex idx)
         fetch_external_messages();
     }
     // Propagates any new configs down to stripe(s)
-    enableNextConfig();
+    enable_next_config_if_changed();
     if (_use_legacy_mode) {
         _stripe->doCriticalTick(idx);
         _tickResult.merge(_stripe->_tickResult);
@@ -665,7 +661,7 @@ TopLevelDistributor::doNonCriticalTick(framework::ThreadIndex idx)
 }
 
 void
-TopLevelDistributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_changed()?
+TopLevelDistributor::enable_next_config_if_changed()
 {
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {

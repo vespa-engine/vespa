@@ -230,7 +230,6 @@ TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicate
     ASSERT_EQ(6, _sender.commands().size());
 }
 
-// TODO STRIPE also need to impl/test cross-stripe cluster state changes
 TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 {
     setup_stripe(Redundancy(1), NodeCount(2),
@@ -333,7 +332,6 @@ TEST_F(DistributorStripeTest, update_bucket_database)
               updateBucketDB("0:456", "2:333", ResetTrusted(true)));
 }
 
-// TODO STRIPE need to impl/test cross-stripe config propagation
 TEST_F(DistributorStripeTest, priority_config_is_propagated_to_distributor_configuration)
 {
     using namespace vespa::config::content::core;
@@ -734,8 +732,6 @@ void assert_invalid_stats_for_all_spaces(
 
 }
 
-// TODO STRIPE must impl/test cross-stripe bucket space stats
-// TODO STRIPE cross-stripe recovery mode handling how?
 TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
 {
     // Set up a cluster state + DB contents which implies merge maintenance ops
