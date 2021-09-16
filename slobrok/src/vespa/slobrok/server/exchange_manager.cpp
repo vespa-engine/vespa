@@ -128,22 +128,8 @@ void
 ExchangeManager::healthCheck()
 {
     auto newWorldList = env().consensusMap().currentConsensus();
-    if (! _env.useNewLogic()) {
-        auto oldWorldServices = env().rpcServerMap().allManaged();
-        ServiceMappingList oldWorldList;
-        for (const auto *nsp : oldWorldServices) {
-            oldWorldList.emplace_back(nsp->getName(), nsp->getSpec());
-        }
-        std::sort(oldWorldList.begin(), oldWorldList.end());
-        vespalib::string diff = diffLists(oldWorldList, newWorldList);
-        if (! diff.empty()) {
-            LOG(warning, "Diff from old world rpcServerMap to new world consensus map: %s",
-                diff.c_str());
-        }
-    }
     for (const auto & [ name, partner ] : _partners) {
         partner->maybeStartFetch();
-        partner->maybePushMine();
         auto remoteList = partner->remoteMap().allMappings();
         // 0 is expected (when remote is down)
         if (remoteList.size() != 0) {
