@@ -40,8 +40,6 @@ public:
 
 private:
     SBEnv &_env;
-    RpcServerMap &_rpcsrvmap;
-    RpcServerManager &_rpcsrvmanager;
     ServiceMapHistory &_globalHistory;
     ServiceMapHistory &_localHistory;
 
@@ -49,7 +47,7 @@ private:
     std::unique_ptr<FNET_Task> _m_reporter;
 
 public:
-    RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman);
+    RPCHooks(SBEnv &env);
     ~RPCHooks() override;
 
     static bool match(const char *name, const char *pattern);

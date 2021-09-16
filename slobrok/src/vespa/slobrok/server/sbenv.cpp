@@ -108,7 +108,7 @@ SBEnv::SBEnv(const ConfigShim &shim, bool useNewConsensusLogic)
       _useNewLogic(useNewConsensusLogic),
       _partnerList(),
       _me(createSpec(_configShim.portNumber())),
-      _rpcHooks(*this, _rpcsrvmap, _rpcsrvmanager),
+      _rpcHooks(*this),
       _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _rpcsrvmap, _rpcsrvmanager, _exchanger)),
       _health(),
       _metrics(_rpcHooks, *_transport),

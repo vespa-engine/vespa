@@ -42,8 +42,8 @@ public:
 
 //-----------------------------------------------------------------------------
 
-RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman)
-    : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
+RPCHooks::RPCHooks(SBEnv &env)
+    : _env(env),
       _globalHistory(env.globalHistory()),
       _localHistory(env.localHistory()),
       _cnts(Metrics::zero()),
