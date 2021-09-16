@@ -1,7 +1,6 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
-import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -9,8 +8,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MAX_THREADS;
@@ -24,7 +21,6 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -58,7 +54,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
-        retriever.startPollAnwWait();
+        retriever.startPollAndWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(1, metricsByNode.size());
         assertEquals(4, metricsByNode.get(node).size());
@@ -76,7 +72,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
-        retriever.startPollAnwWait();
+        retriever.startPollAndWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(2, metricsByNode.size());
         assertEquals(4, metricsByNode.get(node0).size());
@@ -105,7 +101,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
-        retriever.startPollAnwWait();
+        retriever.startPollAndWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(2, metricsByNode.size());
         assertEquals(0, metricsByNode.get(node0).size());
@@ -123,7 +119,7 @@ public class ApplicationMetricsRetrieverTest {
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
         retriever.setTaskTimeout(Duration.ofMillis(1));
-        retriever.startPollAnwWait();
+        retriever.startPollAndWait();
         assertTrue(retriever.getMetrics().get(node).isEmpty());
 
     }
@@ -140,7 +136,7 @@ public class ApplicationMetricsRetrieverTest {
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
         retriever.setTaskTimeout(Duration.ofMillis(1));
-        retriever.startPollAnwWait();
+        retriever.startPollAndWait();
         assertTrue(retriever.getMetrics().get(node).isEmpty());
         // Verify successful retrieving
         wireMockRule.removeStubMapping(delayedStub);
