@@ -57,6 +57,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
+import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -387,7 +388,8 @@ public final class ControllerTester {
                                                new MockMavenRepository(),
                                                serviceRegistry,
                                                new MetricsMock(), new SecretStoreMock(),
-                                               new ControllerConfig.Builder().build());
+                                               new ControllerConfig.Builder().build(),
+                                               Sleeper.NOOP);
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

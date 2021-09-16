@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
+import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -73,6 +74,7 @@ public class Controller extends AbstractComponent {
     private final TenantController tenantController;
     private final JobController jobController;
     private final Clock clock;
+    private final Sleeper sleeper;
     private final ZoneRegistry zoneRegistry;
     private final ServiceRegistry serviceRegistry;
     private final AuditLogger auditLogger;
@@ -97,18 +99,20 @@ public class Controller extends AbstractComponent {
                       MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig) {
         this(curator, rotationsConfig, accessControl, com.yahoo.net.HostName::getLocalhost, flagSource,
-             mavenRepository, serviceRegistry, metric, secretStore, controllerConfig);
+             mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
                       Supplier<String> hostnameSupplier, FlagSource flagSource, MavenRepository mavenRepository,
-                      ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore, ControllerConfig controllerConfig) {
+                      ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
+                      ControllerConfig controllerConfig, Sleeper sleeper) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.zoneRegistry = Objects.requireNonNull(serviceRegistry.zoneRegistry(), "ZoneRegistry cannot be null");
         this.clock = Objects.requireNonNull(serviceRegistry.clock(), "Clock cannot be null");
+        this.sleeper = Objects.requireNonNull(sleeper);
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
         this.metric = Objects.requireNonNull(metric, "Metric cannot be null");
@@ -157,6 +161,8 @@ public class Controller extends AbstractComponent {
     }
 
     public Clock clock() { return clock; }
+
+    public Sleeper sleeper() { return sleeper; }
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
