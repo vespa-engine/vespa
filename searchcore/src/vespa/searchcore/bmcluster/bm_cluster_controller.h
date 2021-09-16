@@ -4,11 +4,9 @@
 
 #include <cstdint>
 
-namespace storage::api { class StorageMessageAddress; }
-namespace storage::rpc { class SharedRpcResources; }
-
 namespace search::bmcluster {
 
+class BmCluster;
 class IBmDistribution;
 
 /*
@@ -16,11 +14,13 @@ class IBmDistribution;
  */
 class BmClusterController
 {
-    storage::rpc::SharedRpcResources& _shared_rpc_resources;
+    const BmCluster&                  _cluster;
     const IBmDistribution&            _distribution;
 public:
-    BmClusterController(storage::rpc::SharedRpcResources& shared_rpc_resources_in, const IBmDistribution& distribution);
-    void set_cluster_up(uint32_t node_idx, bool distributor);
+    BmClusterController(BmCluster& cluster, const IBmDistribution& distribution);
+    void propagate_cluster_state(uint32_t node_idx, bool distributor);
+    void propagate_cluster_state(bool distributor);
+    void propagate_cluster_state();
 };
 
 }

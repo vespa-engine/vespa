@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_cluster_controller.h"
+#include "bm_cluster.h"
+#include "bm_node.h"
 #include "i_bm_distribution.h"
 #include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
@@ -35,25 +37,45 @@ make_set_cluster_state_request(const IBmDistribution& distribution)
 
 }
 
-BmClusterController::BmClusterController(SharedRpcResources& shared_rpc_resources_in, const IBmDistribution &distribution)
-    : _shared_rpc_resources(shared_rpc_resources_in),
+BmClusterController::BmClusterController(BmCluster& cluster, const IBmDistribution &distribution)
+    : _cluster(cluster),
       _distribution(distribution)
 {
 }
 
 void
-BmClusterController::set_cluster_up(uint32_t node_idx, bool distributor)
+BmClusterController::propagate_cluster_state(uint32_t node_idx, bool distributor)
 {
     static vespalib::string _storage("storage");
     StorageMessageAddress storage_address(&_storage, distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE, node_idx);
     auto req = make_set_cluster_state_request(_distribution);
-    auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(_shared_rpc_resources.slobrok_mirror(),
-                                                                                    _shared_rpc_resources.target_factory(), 1);
+    auto& shared_rpc_resources = _cluster.get_rpc_client();
+    auto target_resolver = std::make_unique<storage::rpc::CachingRpcTargetResolver>(shared_rpc_resources.slobrok_mirror(),
+                                                                                    shared_rpc_resources.target_factory(), 1);
     uint64_t fake_bucket_id = 0;
     auto target = target_resolver->resolve_rpc_target(storage_address, fake_bucket_id);
     target->get()->InvokeSync(req, 10.0); // 10 seconds timeout
     assert(!req->IsError());
     req->SubRef();
+}
+
+void
+BmClusterController::propagate_cluster_state(bool distributor)
+{
+    uint32_t num_nodes = _cluster.get_num_nodes();
+    for (uint32_t node_idx = 0; node_idx < num_nodes; ++node_idx) {
+        auto node = _cluster.get_node(node_idx);
+        if (node && node->has_storage_layer(distributor)) {
+            propagate_cluster_state(node_idx, distributor);
+        }
+    }
+}
+
+void
+BmClusterController::propagate_cluster_state()
+{
+    propagate_cluster_state(false);
+    propagate_cluster_state(true);
 }
 
 }

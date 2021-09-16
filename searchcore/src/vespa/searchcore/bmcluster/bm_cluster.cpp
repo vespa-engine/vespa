@@ -149,6 +149,7 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
       _field_set_repo(std::make_unique<const document::FieldSetRepo>(*_repo)),
       _distribution(std::make_shared<const BmDistribution>(params.get_num_nodes())),
       _nodes(params.get_num_nodes()),
+      _cluster_controller(std::make_shared<BmClusterController>(*this, *_distribution)),
       _feed_handler()
 {
     _message_bus_config->add_builders(*_config_set);
@@ -307,14 +308,7 @@ BmCluster::start_service_layers()
             node->wait_service_layer_slobrok();
         }
     }
-    BmClusterController fake_controller(get_rpc_client(), *_distribution);
-    uint32_t node_idx = 0;
-    for (const auto &node : _nodes) {
-        if (node) {
-            fake_controller.set_cluster_up(node_idx, false);
-        }
-        ++node_idx;
-    }
+    _cluster_controller->propagate_cluster_state(false);
 }
 
 void
@@ -330,14 +324,7 @@ BmCluster::start_distributors()
             node->wait_distributor_slobrok();
         }
     }
-    BmClusterController fake_controller(get_rpc_client(), *_distribution);
-    uint32_t node_idx = 0;
-    for (const auto &node : _nodes) {
-        if (node) {
-            fake_controller.set_cluster_up(node_idx, true);
-        }
-        ++node_idx;
-    }
+    _cluster_controller->propagate_cluster_state(true);
     // Wait for bucket ownership transfer safe time
     std::this_thread::sleep_for(2s);
 }
