@@ -186,7 +186,7 @@ private:
      */
     void propagateInternalScanMetricsToExternal();
     void scanAllBuckets();
-    void enableNextConfig();
+    void enable_next_config_if_changed();
     void fetch_status_requests();
     void handle_status_requests();
     void signal_work_was_done();
@@ -224,7 +224,6 @@ private:
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
     std::shared_ptr<IdealStateTotalMetrics> _ideal_state_total_metrics;
     ChainedMessageSender*                 _messageSender;
-    // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     uint8_t                               _n_stripe_bits;
     std::unique_ptr<DistributorStripe>    _stripe;
     DistributorStripePool&                _stripe_pool;

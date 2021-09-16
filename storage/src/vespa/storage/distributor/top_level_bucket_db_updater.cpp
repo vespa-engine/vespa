@@ -97,7 +97,6 @@ TopLevelBucketDBUpdater::propagate_distribution_config(const BucketSpaceDistribu
 void
 TopLevelBucketDBUpdater::flush()
 {
-    // TODO STRIPE: Consider if this must flush_and_close() all stripes
 }
 
 void
@@ -142,8 +141,6 @@ TopLevelBucketDBUpdater::remove_superfluous_buckets(
                 old_cluster_state.toString().c_str(), new_cluster_state->toString().c_str());
             continue;
         }
-        // TODO STRIPE should we also pass old state and distr config? Must ensure we're in sync with stripe...
-        //   .. but config is set synchronously via the guard upon pending state creation edge
         auto maybe_lost = guard.remove_superfluous_buckets(elem.first, *new_cluster_state, is_distribution_config_change);
         if (maybe_lost.buckets != 0) {
             LOGBM(info, "After cluster state change %s, %zu buckets no longer "
@@ -213,7 +210,7 @@ TopLevelBucketDBUpdater::storage_distribution_changed(const BucketSpaceDistribut
             std::move(clusterInfo),
             _sender,
             _op_ctx.bucket_space_repo(), // TODO STRIPE cannot use!
-            _op_ctx.generate_unique_timestamp()); // TODO STRIPE must ensure no stripes can generate < this
+            _op_ctx.generate_unique_timestamp());
     _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
     guard->set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());

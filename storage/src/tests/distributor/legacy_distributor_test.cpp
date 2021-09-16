@@ -33,7 +33,6 @@ using namespace ::testing;
 
 namespace storage::distributor {
 
-// TODO STRIPE: Add variant of this test for the new stripe mode.
 // TODO STRIPE: Remove this test when legacy mode is gone.
 struct LegacyDistributorTest : Test, DistributorTestUtil {
     LegacyDistributorTest();
@@ -65,7 +64,7 @@ struct LegacyDistributorTest : Test, DistributorTestUtil {
 
     void configureDistributor(const ConfigBuilder& config) {
         getConfig().configure(config);
-        _distributor->enableNextConfig();
+        _distributor->enable_next_config_if_changed();
     }
 
     auto currentReplicaCountingMode() const noexcept {
@@ -774,7 +773,7 @@ LegacyDistributorTest::configureMaxClusterClockSkew(int seconds) {
     ConfigBuilder builder;
     builder.maxClusterClockSkewSec = seconds;
     getConfig().configure(builder);
-    _distributor->enableNextConfig();
+    _distributor->enable_next_config_if_changed();
 }
 
 // Migrated to DistributorStripeTest
@@ -866,7 +865,7 @@ void LegacyDistributorTest::configure_mutation_sequencing(bool enabled) {
     ConfigBuilder builder;
     builder.sequenceMutatingOperations = enabled;
     getConfig().configure(builder);
-    _distributor->enableNextConfig();
+    _distributor->enable_next_config_if_changed();
 }
 
 // Migrated to DistributorStripeTest
@@ -892,7 +891,7 @@ LegacyDistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
     ConfigBuilder builder;
     builder.inhibitMergeSendingOnBusyNodeDurationSec = seconds;
     getConfig().configure(builder);
-    _distributor->enableNextConfig();
+    _distributor->enable_next_config_if_changed();
 }
 
 // Migrated to DistributorStripeTest

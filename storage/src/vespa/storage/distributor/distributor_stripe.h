@@ -45,7 +45,11 @@ class StripeHostInfoNotifier;
 class ThrottlingOperationStarter;
 
 /**
- * TODO STRIPE add class comment.
+ * A DistributorStripe encapsulates client operation handling and maintenance of a subset of the
+ * bucket space that the full distributor has responsibility for.
+ *
+ * Each distributor stripe is responsible for a completely disjoint subset of the bucket space of all
+ * other distributor stripes in the process (and transitively, in the entire cluster).
  */
 class DistributorStripe final
     : public DistributorStripeInterface,

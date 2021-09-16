@@ -57,7 +57,6 @@ getRequestBucketInfoStrings(uint32_t count)
 
 }
 
-// TODO STRIPE: Add variant of this test for the new stripe mode.
 // TODO STRIPE: Remove this test when legacy mode is gone.
 class LegacyBucketDBUpdaterTest : public Test,
                                   public DistributorTestUtil

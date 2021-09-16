@@ -28,12 +28,6 @@ using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
-/* TODO STRIPE
- *  - need a DistributorStripeComponent per stripe
- *    - or better, remove entirely!
- *    - probably also DistributorStripeInterface since it's used to send
- *  - metrics aggregation
- */
 DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      DistributorMetricSet& metrics,
                                      IdealStateMetricSet& ideal_state_metrics,
