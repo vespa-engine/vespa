@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.util;
 
 import com.yahoo.collections.Tuple2;
@@ -46,40 +46,16 @@ public class ConfigUtils {
     private static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
     private static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
 
-    /**
-     * Computes Md5 hash of a list of strings.
-     *
-     * @param payload a config payload
-     * @return the Md5 hash of the list, with lowercase letters
-     */
     public static String getMd5(ConfigPayload payload) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            payload.serialize(baos, new JsonFormat(true));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return getMd5(baos.toByteArray());
+        return getMd5(getByteBuffer(payload));
     }
 
-    /**
-     * Computes Md5 hash of a string.
-     *
-     * @param input the input String
-     * @return the Md5 hash of the input, with lowercase letters
-     */
-    public static String getMd5(String input) {
-        return getMd5(input.getBytes(StandardCharsets.UTF_8));
+  public static String getMd5(String input) {
+        return getMd5(ByteBuffer.wrap(input.getBytes(StandardCharsets.UTF_8)));
     }
 
     public static String getMd5(AbstractUtf8Array input) {
         return getMd5(input.wrap());
-    }
-
-    public static String getMd5(byte[] input) {
-        MessageDigest md5 = getMd5Instance();
-        md5.update(input);
-        return HexDump.toHexString(md5.digest()).toLowerCase();
     }
 
     public static String getMd5(ByteBuffer input) {
@@ -104,6 +80,21 @@ public class ConfigUtils {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         return Long.toHexString(hasher.hash(input, 0)).toLowerCase();
     }
+
+    public static String getXxhash64(ConfigPayload payload) {
+        return getXxhash64(getByteBuffer(payload));
+    }
+
+    private static ByteBuffer getByteBuffer(ConfigPayload payload) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            payload.serialize(baos, new JsonFormat(true));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return ByteBuffer.wrap(baos.toByteArray());
+    }
+
 
     /**
      * Replaces sequences of spaces with 1 space, unless inside quotes. Public for testing;
