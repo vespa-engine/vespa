@@ -85,7 +85,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 for (ConsumerId consumer : consumers) {
                     int numFailed = fetchMetricsAsync(consumer);
                     if (numFailed > 0 ) {
-                        log.log(Level.WARNING, "Updated metrics for consumer '" + consumer +"' failed for " + numFailed + " services");
+                        log.log(Level.INFO, "Updated metrics for consumer '" + consumer +"' failed for " + numFailed + " services");
                     } else {
                         log.log(Level.FINE, "Updated metrics for consumer '" + consumer +"'.");
                     }
@@ -164,7 +164,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : ", e);
             }
         }
-        log.log(Level.INFO, () -> "Finished retrieving metrics from " + clients.size() + " nodes.");
+        log.log(Level.FINE, () -> "Finished retrieving metrics from " + clients.size() + " nodes.");
         return numTried - numOk;
     }
 
