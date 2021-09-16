@@ -36,7 +36,7 @@ public class ZtsClientMock implements ZtsClient {
 
     @Override
     public List<AthenzDomain> getTenantDomains(AthenzIdentity providerIdentity, AthenzIdentity userIdentity, String roleName) {
-        log.log(Level.INFO, String.format("getTenantDomains(providerIdentity='%s', userIdentity='%s', roleName='%s')",
+        log.log(Level.FINE, String.format("getTenantDomains(providerIdentity='%s', userIdentity='%s', roleName='%s')",
                                           providerIdentity.getFullName(), userIdentity.getFullName(), roleName));
         return athenz.domains.values().stream()
                 .filter(domain -> domain.tenantAdmins.contains(userIdentity) || domain.admins.contains(userIdentity))

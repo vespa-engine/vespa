@@ -92,16 +92,6 @@ fi
 jvm_pid=$($VESPA_HOME/libexec/vespa/find-pid "$service")
 echo "Pid for '${service}' is '${jvm_pid}'"
 
-echo "Starting Java Flight Recorder recording"
-jcmd ${jvm_pid} JFR.start name=vespa-jvm-dumper path-to-gc-roots=true settings=profile filename=${output_directory}/jvm-jfr-dump.jfr
-
-readonly sleep_seconds=15
-echo "Waiting ${sleep_seconds} before stopping Java Flight Recorder"
-sleep ${sleep_seconds}s
-
-echo "Dumping Java Flight Recorder recording to file"
-jcmd ${jvm_pid} JFR.dump name=vespa-jvm-dumper
-
 echo "Creating heap dump"
 readonly heap_dump_file=${output_directory}/jvm-heap-dump.hprof
 if test -f "${heap_dump_file}"; then
