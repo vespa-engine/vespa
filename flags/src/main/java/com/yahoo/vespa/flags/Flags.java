@@ -229,7 +229,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED = defineFeatureFlag(
-            "throw-exception-if-resource-limits-specified", false,
+            "throw-exception-if-resource-limits-specified", true,
             List.of("hmusum"), "2021-06-07", "2021-10-01",
             "Whether to throw an exception in hosted Vespa if the application specifies resource limits in services.xml",
             "Takes effect on next deployment through controller",
