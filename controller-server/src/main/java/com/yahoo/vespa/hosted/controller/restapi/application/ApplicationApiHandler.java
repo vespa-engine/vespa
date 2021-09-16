@@ -2120,6 +2120,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (expiresAt > 0) {
             dumpRequestCursor.setLong("expiresAt", expiresAt);
         }
+        Cursor dumpOptionsCursor = requestPayloadCursor.field("dumpOptions");
+        if (dumpOptionsCursor.children() > 0) {
+            SlimeUtils.copyObject(dumpOptionsCursor, dumpRequestCursor.setObject("dumpOptions"));
+        }
         var reportsUpdate = Map.of("serviceDump", new String(uncheck(() -> SlimeUtils.toJsonBytes(dumpRequest))));
         nodeRepository.updateReports(zone, hostname, reportsUpdate);
         boolean wait = request.getBooleanProperty("wait");
