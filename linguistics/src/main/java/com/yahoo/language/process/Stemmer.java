@@ -6,9 +6,9 @@ import com.yahoo.language.Language;
 import java.util.List;
 
 /**
- * <p>Interface providing stemming of single words.</p>
+ * Interface providing stemming of single words.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public interface Stemmer {
 
