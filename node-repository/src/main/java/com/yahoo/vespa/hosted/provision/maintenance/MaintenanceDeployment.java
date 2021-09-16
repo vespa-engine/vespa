@@ -23,6 +23,8 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.flags.Flags.USE_APPLICATION_LOCK_IN_MAINTENANCE_DEPLOYMENT;
+
 /**
  * A wrapper of a deployment suitable for maintenance.
  * This is a single-use, single-thread object.
@@ -46,7 +48,11 @@ class MaintenanceDeployment implements Closeable {
                                  NodeRepository nodeRepository) {
         this.application = application;
         this.metric = metric;
-        Optional<Mutex> lock = tryLock(application, nodeRepository);
+
+        Optional<Mutex> lock = USE_APPLICATION_LOCK_IN_MAINTENANCE_DEPLOYMENT.bindTo(nodeRepository.flagSource()).value()
+                ? tryLock(application, nodeRepository)
+                : Optional.of(() -> { });
+
         try {
             deployment = tryDeployment(lock, application, deployer, nodeRepository);
             this.lock = lock;
