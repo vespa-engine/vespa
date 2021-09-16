@@ -61,7 +61,7 @@ public class NodeMetricsClient {
 
     boolean updateSnapshots(ConsumerId consumer, Duration ttl) {
         var snapshot = snapshots.get(consumer);
-        if ((snapshot) != null && clock.instant().isBefore(snapshot.timestamp.plus(ttl))) return true;
+        if ((snapshot != null) && snapshot.isValid(clock.instant(), ttl)) return true;
 
         snapshot = retrieveMetrics(consumer);
         snapshots.put(consumer, snapshot);
@@ -112,6 +112,9 @@ public class NodeMetricsClient {
         Snapshot(Instant timestamp, List<MetricsPacket> metrics) {
             this.timestamp = timestamp;
             this.metrics = metrics;
+        }
+        boolean isValid(Instant now, Duration ttl) {
+            return (metrics != null) && !metrics.isEmpty() && now.isBefore(timestamp.plus(ttl));
         }
     }
 
