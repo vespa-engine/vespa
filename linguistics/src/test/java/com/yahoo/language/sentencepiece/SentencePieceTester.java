@@ -4,10 +4,13 @@
 package com.yahoo.language.sentencepiece;
 
 import com.yahoo.language.Language;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 
 import java.nio.file.Path;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 class SentencePieceTester {
 
@@ -27,6 +30,12 @@ class SentencePieceTester {
 
     public void assertEncoded(String input, Integer... expectedCodes) {
         assertArrayEquals(expectedCodes, encoder.encode(input, Language.UNKNOWN).toArray());
+    }
+
+    public void assertEncoded(String input, String tensorType, String tensor) {
+        TensorType type = TensorType.fromSpec(tensorType);
+        Tensor expected = Tensor.from(type, tensor);
+        assertEquals(expected, encoder.encode(input, Language.UNKNOWN, type));
     }
 
     public void assertSegmented(String input, String... expectedSegments) {

@@ -3,6 +3,7 @@
 package com.yahoo.language.sentencepiece;
 
 import com.yahoo.language.Language;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import java.io.File;
@@ -33,8 +34,27 @@ public class SentencePieceTest {
         tester.assertSegmented(")(/&#(small)/\"in quotes\")", "▁)", "(", "/", "&", "#", "(", "sm", "all", ")", "/", "\"", "in", "▁qu", "otes", "\")");
         tester.assertSegmented("x.400AS", "▁x", ".", "4", "00", "AS");
         tester.assertSegmented("A normal sentence. Yes one more.", "▁", "A", "▁normal", "▁sentence", ".", "▁", "Y", "es", "▁one", "▁more", ".");
+    }
+
+    @Test
+    public void testIntegerListEncoding() {
+        var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
         tester.assertEncoded("hello, world!", 908, 1418, 9934, 501, 9960);
         tester.assertEncoded("Hello, world!", 9912, 0, 6595, 9934, 501, 9960);
+    }
+
+    @Test
+    public void testDenseTensorEncoding() {
+        var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
+        tester.assertEncoded("hello, world!", "tensor(d[10])", "[908,1418,9934,501,9960,0,0,0,0,0]");
+        tester.assertEncoded("Hello, world!", "tensor(d[10])", "[9912,0,6595,9934,501,9960,0,0,0,0]");
+        tester.assertEncoded("hello, world!", "tensor(d[2])", "[908,1418]");
+    }
+
+    @Test
+    public void testSparseTensorEncoding() {
+        var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
+        tester.assertEncoded("hello", "tensor(token{})", "{lo:1.0,'▁hel':0.0}");
     }
 
     @Test

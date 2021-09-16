@@ -882,6 +882,7 @@
       "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder)",
       "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
       "public java.util.List encode(java.lang.String, com.yahoo.language.Language)",
+      "public com.yahoo.tensor.Tensor encode(java.lang.String, com.yahoo.language.Language, com.yahoo.tensor.TensorType)",
       "public java.lang.String normalize(java.lang.String)"
     ],
     "fields": []
