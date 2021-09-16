@@ -52,6 +52,12 @@ public class SentencePieceTest {
     }
 
     @Test
+    public void testSparseTensorEncoding() {
+        var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
+        tester.assertEncoded("hello", "tensor(token{})", "{lo:1.0,'▁hel':0.0}");
+    }
+
+    @Test
     public void testNoCollapse() {
         var tester = new SentencePieceTester(new SentencePieceEncoder.Builder()
                                                      .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())

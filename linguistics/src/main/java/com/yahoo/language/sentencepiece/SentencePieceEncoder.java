@@ -8,6 +8,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import sentencepiece.SentencepieceModel;
 
@@ -119,6 +120,15 @@ public class SentencePieceEncoder implements Segmenter {
             Tensor.Builder builder = Tensor.Builder.of(type);
             for (int i = 0; i < maxSize; i++)
                 builder.cell(values.get(i), i);
+            return builder.build();
+        }
+        else if (type.dimensions().size() == 1 && type.dimensions().get(0).isMapped()) {
+            // Build to a list first since we can't reverse a tensor builder
+            List<String> values = segment(rawInput, language);
+
+            Tensor.Builder builder = Tensor.Builder.of(type);
+            for (int i = 0; i < values.size(); i++)
+                builder.cell(TensorAddress.ofLabels(values.get(i)), i);
             return builder.build();
         }
         else {
