@@ -57,7 +57,6 @@ public:
     virtual void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) = 0;
     virtual void clear_read_only_bucket_repo_databases() = 0;
 
-    // TODO STRIPE: Add merge() function.
     struct PendingOperationStats {
         size_t external_load_operations;
         size_t maintenance_operations;
@@ -65,6 +64,11 @@ public:
                               size_t maintenance_operations_in)
             : external_load_operations(external_load_operations_in),
               maintenance_operations(maintenance_operations_in) {}
+
+        void merge(const PendingOperationStats& rhs) noexcept {
+            external_load_operations += rhs.external_load_operations;
+            maintenance_operations   += rhs.maintenance_operations;
+        }
     };
 
     // Functions used for state reporting

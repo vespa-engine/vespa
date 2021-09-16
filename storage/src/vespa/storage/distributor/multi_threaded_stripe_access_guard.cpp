@@ -140,8 +140,11 @@ void MultiThreadedStripeAccessGuard::report_bucket_db_status(document::BucketSpa
 
 StripeAccessGuard::PendingOperationStats
 MultiThreadedStripeAccessGuard::pending_operation_stats() const {
-    // TODO STRIPE multiple stripes
-    return first_stripe().pending_operation_stats();
+    StripeAccessGuard::PendingOperationStats stats(0, 0);
+    for_each_stripe([&](const TickableStripe& stripe) {
+        stats.merge(stripe.pending_operation_stats());
+    });
+    return stats;
 }
 
 void MultiThreadedStripeAccessGuard::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
