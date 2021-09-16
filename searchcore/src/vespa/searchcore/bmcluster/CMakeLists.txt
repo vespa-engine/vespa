@@ -6,6 +6,8 @@ vespa_add_library(searchcore_bmcluster STATIC
     bm_cluster_params.cpp
     bm_distribution.cpp
     bm_feed.cpp
+    bm_feeder.cpp
+    bm_feed_params.cpp
     bm_message_bus.cpp
     bm_message_bus_routes.cpp
     bm_node.cpp
