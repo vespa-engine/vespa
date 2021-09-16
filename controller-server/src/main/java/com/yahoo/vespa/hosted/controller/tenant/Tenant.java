@@ -78,7 +78,10 @@ public abstract class Tenant {
         athenz,
 
         /** Tenant authenticated through some cloud identity provider. */
-        cloud
+        cloud,
+
+        /** Tenant has been deleted. */
+        deleted,
 
     }
 

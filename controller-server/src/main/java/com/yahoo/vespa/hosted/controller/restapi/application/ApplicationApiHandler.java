@@ -108,6 +108,7 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
@@ -371,7 +372,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         Cursor tenantArray = slime.setArray();
         List<Application> applications = controller.applications().asList();
-        for (Tenant tenant : controller.tenants().asList())
+        for (Tenant tenant : controller.tenants().asList(includeDeleted(request)))
             toSlime(tenantArray.addObject(),
                     tenant,
                     applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).collect(toList()),
@@ -388,13 +389,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse tenants(HttpRequest request) {
         Slime slime = new Slime();
         Cursor response = slime.setArray();
-        for (Tenant tenant : controller.tenants().asList())
+        for (Tenant tenant : controller.tenants().asList(includeDeleted(request)))
             tenantInTenantsListToSlime(tenant, request.getUri(), response.addObject());
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse tenant(String tenantName, HttpRequest request) {
-        return controller.tenants().get(TenantName.from(tenantName))
+        return controller.tenants().get(TenantName.from(tenantName), includeDeleted(request))
                          .map(tenant -> tenant(tenant, request))
                          .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
@@ -556,8 +557,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
-        if (controller.tenants().get(tenantName).isEmpty())
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        getTenantOrThrow(tenantName);
 
         List<Application> applications = applicationName.isEmpty() ?
                 controller.applications().asList(tenant) :
@@ -2015,17 +2015,17 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
-        Optional<Tenant> tenant = controller.tenants().get(tenantName);
-        if (tenant.isEmpty())
-            return ErrorResponse.notFoundError("Could not delete tenant '" + tenantName + "': Tenant not found");
+        boolean forget = request.getBooleanProperty("forget");
+        if (forget && !isOperator(request))
+            return ErrorResponse.forbidden("Only operators can forget a tenant");
 
-        controller.tenants().delete(tenant.get().name(),
-                                    accessControlRequests.credentials(tenant.get().name(),
+        controller.tenants().delete(TenantName.from(tenantName),
+                                    () -> accessControlRequests.credentials(TenantName.from(tenantName),
                                                                       toSlime(request.getData()).get(),
-                                                                      request.getJDiscRequest()));
+                                                                      request.getJDiscRequest()),
+                                    forget);
 
-        // TODO: Change to a message response saying the tenant was deleted
-        return tenant(tenant.get(), request);
+        return new MessageResponse("Deleted tenant " + tenantName);
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
@@ -2220,6 +2220,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
                 break;
             }
+            case deleted: break;
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         // TODO jonmv: This should list applications, not instances.
@@ -2309,6 +2310,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 metaData.setString("property", athenzTenant.property().id());
                 break;
             case cloud: break;
+            case deleted: break;
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
@@ -2332,6 +2334,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                        .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
                                                        .max(Comparator.naturalOrder());
         object.setLong("createdAtMillis", tenant.createdAt().toEpochMilli());
+        if (tenant.type() == Tenant.Type.deleted)
+            object.setLong("deletedAtMillis", ((DeletedTenant) tenant).deletedAt().toEpochMilli());
         lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDevMillis", instant.toEpochMilli()));
         lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProdMillis", instant.toEpochMilli()));
 
@@ -2536,10 +2540,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return "true".equals(request.getProperty("activeInstances"));
     }
 
+    private static boolean includeDeleted(HttpRequest request) {
+        return "true".equals(request.getProperty("includeDeleted"));
+    }
+
     private static String tenantType(Tenant tenant) {
         switch (tenant.type()) {
             case athenz: return "ATHENS";
             case cloud: return "CLOUD";
+            case deleted: return "DELETED";
             default: throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
         }
     }

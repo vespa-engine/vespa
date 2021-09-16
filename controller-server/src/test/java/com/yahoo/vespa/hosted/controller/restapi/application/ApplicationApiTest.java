@@ -863,7 +863,32 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE an empty tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              new File("tenant-without-applications.json"));
+                              "{\"message\":\"Deleted tenant tenant1\"}");
+
+        // The tenant is not found
+        tester.assertResponse(request("/application/v4/tenant/tenant1", GET).userIdentity(USER_ID)
+                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}", 404);
+
+        // ... unless we specify to show deleted tenants
+        tester.assertResponse(request("/application/v4/tenant/tenant1", GET).properties(Map.of("includeDeleted", "true"))
+                        .userIdentity(HOSTED_VESPA_OPERATOR),
+                new File("tenant1-deleted.json"));
+
+        // Tenant cannot be recreated
+        tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
+                        .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'tenant1' already exists\"}", 400);
+
+
+        // Forget a deleted tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).properties(Map.of("forget", "true"))
+                        .userIdentity(HOSTED_VESPA_OPERATOR),
+                "{\"message\":\"Deleted tenant tenant1\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1", GET).properties(Map.of("includeDeleted", "true"))
+                        .userIdentity(HOSTED_VESPA_OPERATOR),
+                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'tenant1' does not exist\"}", 404);
     }
 
     private void addIssues(DeploymentTester tester, TenantAndApplicationId id) {
@@ -1217,11 +1242,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete instance 'tenant1.application1.instance1': Instance not found\"}",
                               404);
 
+        // DELETE and forget an application as non-operator
+        tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).properties(Map.of("forget", "true"))
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Only operators can forget a tenant\"}",
+                              403);
+
         // DELETE tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              new File("tenant-without-applications.json"));
+                              "{\"message\":\"Deleted tenant tenant1\"}");
         // DELETE tenant again returns 403 as tenant access cannot be determined when the tenant does not exist
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
                                       .userIdentity(USER_ID),
