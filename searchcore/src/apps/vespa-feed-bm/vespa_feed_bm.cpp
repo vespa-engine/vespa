@@ -133,63 +133,21 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
 PersistenceProviderFixture::~PersistenceProviderFixture() = default;
 
 void
-benchmark_async_put(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, const BMParams& params)
+benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, const BMParams& params, uint32_t passes, const vespalib::string &op_name)
 {
-    AvgSampler sampler;
-    LOG(info, "--------------------------------");
-    LOG(info, "putAsync: %u small documents, passes=%u", params.get_documents(), params.get_put_passes());
-    for (uint32_t pass = 0; pass < params.get_put_passes(); ++pass) {
-        feeder.run_put_async_tasks(pass, time_bias, serialized_feed, params, sampler);
-    }
-    LOG(info, "putAsync: AVG puts/s: %8.2f", sampler.avg());
-}
-
-void
-benchmark_async_update(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, const BMParams& params)
-{
-    if (params.get_update_passes() == 0) {
+    if (passes == 0) {
         return;
     }
     AvgSampler sampler;
     LOG(info, "--------------------------------");
-    LOG(info, "updateAsync: %u small documents, passes=%u", params.get_documents(), params.get_update_passes());
-    for (uint32_t pass = 0; pass < params.get_update_passes(); ++pass) {
-        feeder.run_update_async_tasks(pass, time_bias, serialized_feed, params, sampler);
+    LOG(info, "%sAsync: %u small documents, passes=%u", op_name.c_str(), params.get_documents(), passes);
+    for (uint32_t pass = 0; pass < passes; ++pass) {
+        feeder.run_feed_tasks(pass, time_bias, serialized_feed, params, sampler, op_name);
     }
-    LOG(info, "updateAsync: AVG updates/s: %8.2f", sampler.avg());
+    LOG(info, "%sAsync: AVG %s/s: %8.2f", op_name.c_str(), op_name.c_str(), sampler.avg());
 }
 
-void
-benchmark_async_get(BmFeeder& feeder, const std::vector<vespalib::nbostream>& serialized_feed, const BMParams& params)
-{
-    if (params.get_get_passes() == 0) {
-        return;
-    }
-    LOG(info, "--------------------------------");
-    LOG(info, "getAsync: %u small documents, passes=%u", params.get_documents(), params.get_get_passes());
-    AvgSampler sampler;
-    for (uint32_t pass = 0; pass < params.get_get_passes(); ++pass) {
-        feeder.run_get_async_tasks(pass, serialized_feed, params, sampler);
-    }
-    LOG(info, "getAsync: AVG gets/s: %8.2f", sampler.avg());
-}
-
-void
-benchmark_async_remove(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, const BMParams& params)
-{
-    if (params.get_remove_passes() == 0) {
-        return;
-    }
-    LOG(info, "--------------------------------");
-    LOG(info, "removeAsync: %u small documents, passes=%u", params.get_documents(), params.get_remove_passes());
-    AvgSampler sampler;
-    for (uint32_t pass = 0; pass < params.get_remove_passes(); ++pass) {
-        feeder.run_remove_async_tasks(pass, time_bias, serialized_feed, params, sampler);
-    }
-    LOG(info, "removeAsync: AVG removes/s: %8.2f", sampler.avg());
-}
-
-void benchmark_async(const BMParams &bm_params)
+void benchmark(const BMParams &bm_params)
 {
     vespalib::rmdir(base_dir, true);
     PersistenceProviderFixture f(bm_params);
@@ -200,13 +158,14 @@ void benchmark_async(const BMParams &bm_params)
     auto& feed = f._feed;
     auto put_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_put_feed(range, bucket_selector); }, f._feed.num_buckets(), "put");
     auto update_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_update_feed(range, bucket_selector); }, f._feed.num_buckets(), "update");
+    auto get_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_get_feed(range, bucket_selector); }, f._feed.num_buckets(), "get");
     auto remove_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_remove_feed(range, bucket_selector); }, f._feed.num_buckets(), "remove");
     int64_t time_bias = 1;
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
-    benchmark_async_put(feeder, time_bias, put_feed, bm_params);
-    benchmark_async_update(feeder, time_bias, update_feed, bm_params);
-    benchmark_async_get(feeder, remove_feed, bm_params);
-    benchmark_async_remove(feeder, time_bias, remove_feed, bm_params);
+    benchmark_feed(feeder, time_bias, put_feed, bm_params, bm_params.get_put_passes(), "put");
+    benchmark_feed(feeder, time_bias, update_feed, bm_params, bm_params.get_update_passes(), "update");
+    benchmark_feed(feeder, time_bias, get_feed, bm_params, bm_params.get_get_passes(), "get");
+    benchmark_feed(feeder, time_bias, remove_feed, bm_params, bm_params.get_remove_passes(), "remove");
     LOG(info, "--------------------------------");
 
     cluster.stop();
@@ -413,7 +372,7 @@ App::Main()
         usage();
         return 1;
     }
-    benchmark_async(_bm_params);
+    benchmark(_bm_params);
     return 0;
 }
 
