@@ -31,5 +31,10 @@ uint8_t calc_num_stripe_bits(uint32_t n_stripes) noexcept;
  */
 [[nodiscard]] uint32_t adjusted_num_stripes(uint32_t n_stripes) noexcept;
 
+/**
+ * Tune the number of stripes based on the number of CPU cores.
+ */
+uint32_t tune_num_stripes_based_on_cpu_cores(uint32_t cpu_cores) noexcept;
+
 }
 
