@@ -11,6 +11,10 @@ namespace search::bmcluster {
 
 class BmCluster;
 
+/*
+ * Class handling background reporting of node stats during feed or
+ * document redistribution.
+ */
 class BmNodeStatsReporter {
     BmCluster&                    _cluster;
     vespalib::ThreadStackExecutor _executor;
