@@ -147,7 +147,7 @@ func getTarget() vespa.Target {
 		if err != nil {
 			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
 		}
-		return vespa.CloudTarget(deployment, kp, apiKey)
+		return vespa.CloudTarget(deployment, kp, apiKey, vespa.LogOptions{Writer: stdout, Level: vespa.LogLevel(logLevelArg)})
 	}
 	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil

@@ -13,11 +13,13 @@ import (
 )
 
 const (
-	zoneFlag = "zone"
+	zoneFlag     = "zone"
+	logLevelFlag = "log-level"
 )
 
 var (
-	zoneArg string
+	zoneArg     string
+	logLevelArg string
 )
 
 func init() {
@@ -25,6 +27,7 @@ func init() {
 	rootCmd.AddCommand(prepareCmd)
 	rootCmd.AddCommand(activateCmd)
 	deployCmd.PersistentFlags().StringVarP(&zoneArg, zoneFlag, "z", "dev.aws-us-east-1c", "The zone to use for deployment")
+	deployCmd.PersistentFlags().StringVarP(&logLevelArg, logLevelFlag, "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
 }
 
 var deployCmd = &cobra.Command{

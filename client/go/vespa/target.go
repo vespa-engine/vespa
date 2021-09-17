@@ -4,9 +4,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
+	"strconv"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/util"
@@ -45,6 +48,12 @@ type Target interface {
 	DiscoverServices(timeout time.Duration, runID int64) error
 }
 
+// LogOptions configures the log output to produce when waiting for services.
+type LogOptions struct {
+	Writer io.Writer
+	Level  int
+}
+
 type customTarget struct {
 	targetType string
 	baseURL    string
@@ -74,7 +83,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 		return 0, err
 	}
 	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
-	return wait(okFunc, req, &s.certificate, timeout)
+	return wait(okFunc, func() *http.Request { return req }, &s.certificate, timeout)
 }
 
 func (s *Service) Description() string {
@@ -145,7 +154,7 @@ func (t *customTarget) DiscoverServices(timeout time.Duration, runID int64) erro
 		converged = resp.Converged
 		return converged, nil
 	}
-	if _, err := wait(convergedFunc, req, nil, timeout); err != nil {
+	if _, err := wait(convergedFunc, func() *http.Request { return req }, nil, timeout); err != nil {
 		return err
 	}
 	if !converged {
@@ -160,6 +169,7 @@ type cloudTarget struct {
 	deployment Deployment
 	keyPair    tls.Certificate
 	apiKey     []byte
+	logOptions LogOptions
 
 	queryURL    string
 	documentURL string
@@ -206,8 +216,15 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 	if err != nil {
 		return err
 	}
-	if err := signer.SignRequest(req); err != nil {
-		return err
+	lastID := int64(-1)
+	requestFunc := func() *http.Request {
+		q := req.URL.Query()
+		q.Set("after", strconv.FormatInt(lastID, 10))
+		req.URL.RawQuery = q.Encode()
+		if err := signer.SignRequest(req); err != nil {
+			panic(err)
+		}
+		return req
 	}
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
 		if status/100 != 2 {
@@ -217,6 +234,9 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, nil
 		}
+		if t.logOptions.Writer != nil {
+			lastID = t.printLog(resp, lastID)
+		}
 		if resp.Active {
 			return false, nil
 		}
@@ -225,8 +245,30 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		}
 		return true, nil
 	}
-	_, err = wait(jobSuccessFunc, req, &t.keyPair, timeout)
+	_, err = wait(jobSuccessFunc, requestFunc, &t.keyPair, timeout)
 	return err
+}
+
+func (t *cloudTarget) printLog(response jobResponse, last int64) int64 {
+	if response.LastID == 0 {
+		return last
+	}
+	var msgs []logMessage
+	for step, stepMsgs := range response.Log {
+		for _, msg := range stepMsgs {
+			if step == "copyVespaLogs" && LogLevel(msg.Type) > t.logOptions.Level {
+				continue
+			}
+			msgs = append(msgs, msg)
+		}
+	}
+	sort.Slice(msgs, func(i, j int) bool { return msgs[i].At < msgs[j].At })
+	for _, msg := range msgs {
+		tm := time.Unix(msg.At/1000, (msg.At%1000)*1000)
+		fmtTime := tm.Format("15:04:05")
+		fmt.Fprintf(t.logOptions.Writer, "[%s] %-7s %s\n", fmtTime, msg.Type, msg.Message)
+	}
+	return response.LastID
 }
 
 func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Duration) error {
@@ -256,7 +298,7 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 		endpointURL = resp.Endpoints[0].URL
 		return true, nil
 	}
-	if _, err = wait(endpointFunc, req, &t.keyPair, timeout); err != nil {
+	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.keyPair, timeout); err != nil {
 		return err
 	}
 	if endpointURL == "" {
@@ -278,13 +320,28 @@ func CustomTarget(baseURL string) Target {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud platform.
-func CloudTarget(deployment Deployment, keyPair tls.Certificate, apiKey []byte) Target {
+func CloudTarget(deployment Deployment, keyPair tls.Certificate, apiKey []byte, logOptions LogOptions) Target {
 	return &cloudTarget{
 		cloudAPI:   defaultCloudAPI,
 		targetType: cloudTargetType,
 		deployment: deployment,
 		keyPair:    keyPair,
 		apiKey:     apiKey,
+		logOptions: logOptions,
+	}
+}
+
+// LogLevel returns an int representing a named log level.
+func LogLevel(name string) int {
+	switch name {
+	case "error":
+		return 0
+	case "warning":
+		return 1
+	case "info":
+		return 2
+	default: // everything else, e.g. debug
+		return 3
 	}
 }
 
@@ -296,18 +353,28 @@ type deploymentResponse struct {
 	Endpoints []deploymentEndpoint `json:"endpoints"`
 }
 
-type jobResponse struct {
-	Active bool   `json:"active"`
-	Status string `json:"status"`
-}
-
 type serviceConvergeResponse struct {
 	Converged bool `json:"converged"`
 }
 
+type jobResponse struct {
+	Active bool                    `json:"active"`
+	Status string                  `json:"status"`
+	Log    map[string][]logMessage `json:"log"`
+	LastID int64                   `json:"lastId"`
+}
+
+type logMessage struct {
+	At      int64  `json:"at"`
+	Type    string `json:"type"`
+	Message string `json:"message"`
+}
+
 type responseFunc func(status int, response []byte) (bool, error)
 
-func wait(fn responseFunc, req *http.Request, certificate *tls.Certificate, timeout time.Duration) (int, error) {
+type requestFunc func() *http.Request
+
+func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, timeout time.Duration) (int, error) {
 	if certificate != nil {
 		util.ActiveHttpClient.UseCertificate(*certificate)
 	}
@@ -319,7 +386,7 @@ func wait(fn responseFunc, req *http.Request, certificate *tls.Certificate, time
 	deadline := time.Now().Add(timeout)
 	loopOnce := timeout == 0
 	for time.Now().Before(deadline) || loopOnce {
-		response, httpErr = util.HttpDo(req, 10*time.Second, "")
+		response, httpErr = util.HttpDo(reqFn(), 10*time.Second, "")
 		if httpErr == nil {
 			statusCode = response.StatusCode
 			body, err := ioutil.ReadAll(response.Body)
