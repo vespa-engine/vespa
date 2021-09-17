@@ -133,3 +133,48 @@ jobs:
     steps:
       - cleanup: |
           screwdriver/delete-old-artifactory-artifacts.sh
+
+  release-vespa:
+    requires: [~pr]
+    annotations:
+      screwdriver.cd/cpu: 7
+      screwdriver.cd/ram: 16
+      screwdriver.cd/timeout: 300
+      #screwdriver.cd/buildPeriodically: H 4,10,16,22 * * 1,2,3,4
+      screwdriver.cd/dockerEnabled: true
+      screwdriver.cd/dockerCpu: TURBO
+      screwdriver.cd/dockerRam: TURBO
+    environment:
+      USER_SHELL_BIN: bash
+    secrets:
+      - PUBLIC_SD_DOCKER_IMAGE_PIPELINE_TOKEN
+    steps:
+      - set-x: set -x
+      - install-deps: |
+          yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          yum install -y docker-ce docker-ce-cli containerd.io
+          docker system info
+      - get-release-candidate: |
+          # Fetch this from factory
+          # factory create-release --start_at $__START__ --system opensource
+          export VESPA_VERSION=7.466.3
+          export VESPA_REF=c12ca01e6796f882ff76fe946bbb3de342881a32
+          echo "VESPA_VERSION=$VESPA_VERSION"
+          echo "VESPA_VERSION=$VESPA_REF"
+      - release-to-copr: |
+          screwdriver/release-vespa-on-copr.sh $VESPA_VERSION $VESPA_REF
+      - release-to-dockerhub: |
+          # Don't trig rebuild of the container image if it exists
+          if ! docker pull docker.io/vespaengine/vespa:$VESPA_VERSION &> /dev/null; then
+            set +x
+            export PIPELINE_TOKEN=$PUBLIC_SD_DOCKER_IMAGE_PIPELINE_TOKEN
+            set -x
+            #trigger-sd4-job.sh api.screwdriver.cd 7827 publish "{ \"vespa\": { \"version\": \"$VESPA_VERSION\" } }" "Trigging docker image build for version $VESPA_VERSION."
+          fi
+      - release-to-promote-central: |
+          screwdriver/release-vespa-on-maven-central.sh $VESPA_VERSION $VESPA_REF
+      - update-sample-apps: |
+          screwdriver/release-vespa-in-sample-apps.sh $VESPA_VERSION
+      - update-release-time: |
+          #factory update-released-time --version $VESPA_VERSION --system opensource
+          echo
