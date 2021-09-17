@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import org.apache.hc.client5.http.HttpHostConnectException;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
@@ -161,8 +162,13 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 Boolean result = entry.getValue().get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
                 if ((result != null) && result) numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                // Since the task is a ForkJoinTask, we don't need special handling of InterruptedException
-                log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : ", e);
+                Throwable cause = e.getCause();
+                if ( e instanceof ExecutionException && (cause != null) && (cause instanceof HttpHostConnectException)) {
+                    // Remove once we have some track time.
+                    log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : ", e.getMessage());
+                } else {
+                    log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
+                }
             }
         }
         log.log(Level.FINE, () -> "Finished retrieving metrics from " + clients.size() + " nodes.");
