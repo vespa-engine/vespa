@@ -117,7 +117,6 @@ SBEnv::SBEnv(const ConfigShim &shim, bool useNewConsensusLogic)
                           [this] (MappingMonitorOwner &owner) {
                               return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
                           }),
-      _rpcsrvmanager(*this),
       _exchanger(*this)
 {
     srandom(time(nullptr) ^ getpid());
@@ -200,7 +199,6 @@ SBEnv::MainLoop()
     return 0;
 }
 
-
 void
 SBEnv::setup(const std::vector<std::string> &cfg)
 {
@@ -271,7 +269,7 @@ SBEnv::removePeer(const std::string &name, const std::string &spec)
     if (partner == nullptr) {
         return OkState(0, "remote slobrok not a partner");
     }
-    _exchanger.removePartner(name);
+    _exchanger.removePartner(spec);
     return OkState(0, "done");
 }
 

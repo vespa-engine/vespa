@@ -67,35 +67,13 @@ ExchangeManager::getPartnerList()
 void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, *this,
-                                           ScriptCommand::makeIgnoreCmd(_env, name, spec));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, ServiceMapping{name, spec}, *this);
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
     package->expedite();
 }
 
-void
-ExchangeManager::doAdd(ScriptCommand rdc)
-{
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, *this, std::move(rdc));
-
-    for (const auto & entry : _partners) {
-        package->addItem(entry.second.get());
-    }
-    package->expedite();
-}
-
-
-void
-ExchangeManager::wantAdd(ScriptCommand rdc)
-{
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, *this, std::move(rdc));
-    for (const auto & entry : _partners) {
-        package->addItem(entry.second.get());
-    }
-    package->expedite();
-}
 
 RemoteSlobrok *
 ExchangeManager::lookupPartner(const std::string & name) const {
@@ -189,14 +167,12 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 }
 
 
-ExchangeManager::WorkPackage::WorkPackage(op_type op,
-                                          ExchangeManager &exchanger,
-                                          ScriptCommand script)
+ExchangeManager::WorkPackage::WorkPackage(op_type op, const ServiceMapping &mapping, ExchangeManager &exchanger)
     : _work(),
       _doneCnt(0),
       _numDenied(0),
-      _script(std::move(script)),
       _exchanger(exchanger),
+      _mapping(mapping),
       _optype(op)
 {
 }
@@ -214,9 +190,7 @@ ExchangeManager::WorkPackage::doneItem(bool denied)
         (int)_doneCnt, (int)_work.size(), (int)_numDenied);
     if (_doneCnt == _work.size()) {
         if (_numDenied > 0) {
-            _script.doneHandler(OkState(_numDenied, "denied by remote"));
-        } else {
-            _script.doneHandler(OkState());
+            LOG(debug, "work package: %zd/%zd denied by remote", _numDenied, _doneCnt);
         }
         delete this;
     }
@@ -229,8 +203,8 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
     if (! partner->isConnected()) {
         return;
     }
-    const char *name_p = _script.name().c_str();
-    const char *spec_p = _script.spec().c_str();
+    const char *name_p = _mapping.name.c_str();
+    const char *spec_p = _mapping.spec.c_str();
 
     FRT_RPCRequest *r = _exchanger._env.getSupervisor()->AllocRPCRequest();
     // XXX should recheck rpcsrvmap again
@@ -258,7 +232,6 @@ ExchangeManager::WorkPackage::expedite()
     size_t sz = _work.size();
     if (sz == 0) {
         // no remotes need doing.
-        _script.doneHandler(OkState());
         delete this;
         return;
     }

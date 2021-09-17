@@ -2,7 +2,6 @@
 #pragma once
 
 #include "ok_state.h"
-#include "cmd.h"
 #include "remote_slobrok.h"
 
 #include <deque>
@@ -59,19 +58,17 @@ private:
         std::vector<std::unique_ptr<WorkItem>> _work;
         size_t        _doneCnt;
         size_t        _numDenied;
-        ScriptCommand _script;
     public:
         ExchangeManager &_exchanger;
         enum op_type { OP_NOP, OP_WANTADD, OP_DOADD, OP_REMOVE };
-        op_type _optype;
+        const ServiceMapping _mapping;
+        const op_type _optype;
         void addItem(RemoteSlobrok *partner);
         void doneItem(bool denied);
         void expedite();
         WorkPackage(const WorkPackage&) = delete;
         WorkPackage& operator= (const WorkPackage&) = delete;
-        WorkPackage(op_type op,
-                    ExchangeManager &exchanger,
-                    ScriptCommand  donehandler);
+        WorkPackage(op_type op, const ServiceMapping &mapping, ExchangeManager &exchanger);
         ~WorkPackage();
     };
 
@@ -92,9 +89,6 @@ public:
     std::vector<std::string> getPartnerList();
 
     void forwardRemove(const std::string & name, const std::string & spec);
-
-    void wantAdd(ScriptCommand rdc);
-    void doAdd(ScriptCommand rdc);
 
     RemoteSlobrok *lookupPartner(const std::string & name) const;
     void healthCheck();

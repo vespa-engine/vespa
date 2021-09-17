@@ -17,7 +17,6 @@ namespace slobrok {
 
 RpcServerManager::RpcServerManager(SBEnv &sbenv)
     : FNET_Task(sbenv.getScheduler()),
-      _rpcsrvmap(sbenv.rpcServerMap()),
       _exchanger(sbenv.exchangeManager()),
       _env(sbenv),
       _addManageds(),

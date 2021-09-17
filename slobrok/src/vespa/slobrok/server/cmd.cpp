@@ -2,7 +2,6 @@
 
 
 #include "cmd.h"
-#include "rpc_server_map.h"
 #include "reserved_name.h"
 #include "remote_slobrok.h"
 #include "sbenv.h"
@@ -47,45 +46,11 @@ ScriptCommand::operator= (ScriptCommand &&) = default;
 ScriptCommand::~ScriptCommand() = default;
 
 ScriptCommand
-ScriptCommand::makeRegRpcSrvCmd(SBEnv &env,
-                                const std::string &name, const std::string &spec,
-                                FRT_RPCRequest *req)
-{
-    return ScriptCommand(std::make_unique<ScriptData>(env, name, spec, req));
-}
-
-ScriptCommand
 ScriptCommand::makeIgnoreCmd(SBEnv &env, const std::string & name, const std::string &spec)
 {
     auto data = std::make_unique<ScriptData>(env, name, spec, nullptr);
     data->_state = ScriptData::XCH_IGNORE;
     return ScriptCommand(std::move(data));
-}
-
-ScriptCommand
-ScriptCommand::makeRegCompleter(SBEnv &env,
-                                const std::string &name, const std::string &spec,
-                                FRT_RPCRequest *req)
-{
-    auto data = std::make_unique<ScriptData>(env, name, spec, req);
-    data->_state = ScriptData::XCH_DOADD;
-    return ScriptCommand(std::move(data));
-}
-
-void
-ScriptCommand::doRequest()
-{
-    LOG_ASSERT(_data->_state == ScriptData::RDC_INIT);
-    doneHandler(OkState());
-}
-
-void cleanupReservation(ScriptData & data)
-{
-    RpcServerMap &map = data.env.rpcServerMap();
-    const ReservedName *rsvp = map.getReservation(data.name.c_str());
-    if (rsvp != nullptr && rsvp->isLocal) {
-        map.removeReservation(data.name.c_str());
-    }
 }
 
 void
@@ -97,52 +62,10 @@ ScriptCommand::doneHandler(OkState result)
     ScriptData & data = *dataUP;
     const char *name_p = data.name.c_str();
     const char *spec_p = data.spec.c_str();
-    ExchangeManager &xch = data.env.exchangeManager();
-    RpcServerManager &rsm = data.env.rpcServerManager();
 
     if (result.failed()) {
         LOG(warning, "failed [%s->%s] in state %d: %s", name_p, spec_p, data._state, result.errorMsg.c_str());
-        if (data._state != ScriptData::XCH_IGNORE) {
-            cleanupReservation(data);
-        }
-        // XXX should handle different state errors differently?
-        if (data.registerRequest != nullptr) {
-            data.registerRequest->SetError(FRTE_RPC_METHOD_FAILED, result.errorMsg.c_str());
-            data.registerRequest->Return();
-        } else {
-            LOG(warning, "ignored: %s", result.errorMsg.c_str());
-        }
-        return;
     }
-    if (data._state == ScriptData::RDC_INIT) {
-        LOG(spam, "phase wantAdd(%s,%s)", name_p, spec_p);
-        data._state = ScriptData::XCH_WANTADD;
-        xch.wantAdd(std::move(dataUP));
-        return;
-    } else if (data._state == ScriptData::XCH_WANTADD) {
-        LOG(spam, "phase addManaged(%s,%s)", name_p, spec_p);
-        data._state = ScriptData::CHK_RPCSRV;
-        rsm.addManaged(std::move(dataUP));
-        return;
-    } else if (data._state == ScriptData::CHK_RPCSRV) {
-        LOG(spam, "phase doAdd(%s,%s)", name_p, spec_p);
-        data._state = ScriptData::XCH_DOADD;
-        xch.doAdd(std::move(dataUP));
-        return;
-    } else if (data._state == ScriptData::XCH_DOADD) {
-        LOG(debug, "done doAdd(%s,%s)", name_p, spec_p);
-        data._state = ScriptData::RDC_INVAL;
-        // all OK
-        if (data.registerRequest != nullptr) {
-            data.registerRequest->Return();
-        }
-        cleanupReservation(data);
-        return;
-    } else if (data._state == ScriptData::XCH_IGNORE) {
-        return;
-    }
-    // no other state should be possible
-    LOG_ABORT("should not be reached");
 }
 
 //-----------------------------------------------------------------------------

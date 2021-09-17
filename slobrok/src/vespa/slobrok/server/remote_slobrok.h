@@ -2,7 +2,6 @@
 #pragma once
 
 #include "ok_state.h"
-#include "cmd.h"
 #include "i_rpc_server_manager.h"
 #include "managed_rpc_server.h"
 #include "service_map_mirror.h"

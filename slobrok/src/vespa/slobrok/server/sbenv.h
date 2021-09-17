@@ -62,9 +62,7 @@ private:
     UnionServiceMap                            _consensusMap;
     ServiceMapHistory                          _globalVisibleHistory;
 
-    RpcServerManager                           _rpcsrvmanager;
     ExchangeManager                            _exchanger;
-    RpcServerMap                               _rpcsrvmap;
 
     std::unique_ptr<MapSubscription>           _localMonitorSubscription;
     std::unique_ptr<MapSubscription>           _consensusSubscription;
@@ -83,9 +81,7 @@ public:
     void suspend();
     void resume();
 
-    RpcServerManager& rpcServerManager() { return _rpcsrvmanager; }
     ExchangeManager& exchangeManager() { return _exchanger; }
-    RpcServerMap& rpcServerMap() { return _rpcsrvmap; }
 
     ServiceMapHistory& globalHistory() {
         return _globalVisibleHistory;
@@ -111,8 +107,8 @@ public:
 
     int MainLoop();
 
-    OkState addPeer(const std::string& name, const std::string &spec);
-    OkState removePeer(const std::string& name, const std::string &spec);
+    OkState addPeer(const std::string& name, const std::string& spec);
+    OkState removePeer(const std::string& name, const std::string& spec);
 
     void countFailedHeartbeat() { _rpcHooks.countFailedHeartbeat(); }
 };

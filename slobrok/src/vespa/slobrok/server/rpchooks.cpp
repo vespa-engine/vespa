@@ -234,6 +234,26 @@ bool RPCHooks::useNewLogic() const {
     return _env.useNewLogic();
 }
 
+bool RPCHooks::match(const char *name, const char *pattern) {
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
+    while (*pattern != '\0') {
+        if (*name == *pattern) {
+            ++name;
+            ++pattern;
+        } else if (*pattern == '*') {
+            ++pattern;
+            while (*name != '/' && *name != '\0') {
+                ++name;
+            }
+        } else {
+            return false;
+        }
+    }
+    return (*name == *pattern);
+}
+
+
 void RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);
@@ -257,11 +277,6 @@ void RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req) {
     }
     req->Detach();
     _env.localMonitorMap().addLocal(mapping, std::make_unique<RequestCompletionHandler>(req));
-    if (! useNewLogic()) {
-        // TODO: remove this
-        auto script = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, nullptr);
-        script.doRequest();
-    }
     return;
 }
 

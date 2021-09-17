@@ -50,8 +50,6 @@ public:
     RPCHooks(SBEnv &env);
     ~RPCHooks() override;
 
-    static bool match(const char *name, const char *pattern);
-
     void initRPC(FRT_Supervisor *supervisor);
     void reportMetrics();
     const Metrics& getMetrics() const { return _cnts; }
@@ -59,6 +57,7 @@ public:
 
 private:
     bool useNewLogic() const;
+    static bool match(const char *name, const char *pattern);
 
     void rpc_lookupRpcServer(FRT_RPCRequest *req);
 
