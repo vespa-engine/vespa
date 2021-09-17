@@ -3,7 +3,6 @@
 package com.yahoo.language.sentencepiece;
 
 import com.yahoo.language.Language;
-import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import java.io.File;
@@ -69,7 +68,7 @@ public class SentencePieceTest {
     public void testHighestScore() {
         var tester = new SentencePieceTester(new SentencePieceEncoder.Builder()
                                                      .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())
-                                                     .setScoring(SentencePieceEncoder.Scoring.highestScore));
+                                                     .setScoring(Scoring.highestScore));
         tester.assertSegmented("h", "▁h");
         tester.assertSegmented("he", "▁he");
         tester.assertSegmented("hel", "▁h", "el");
