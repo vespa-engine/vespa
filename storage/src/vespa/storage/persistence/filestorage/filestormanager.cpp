@@ -60,7 +60,7 @@ FileStorManager::
 FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& provider,
                 ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler,
                 HostInfo& hostInfoReporterRegistrar)
-    : StorageLinkQueued("File store manager", compReg),
+    : StorageLink("File store manager"),
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
       _component(compReg, "filestormanager"),
@@ -329,7 +329,7 @@ FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>&
         reply->setResult(errorCode);
         LOG(spam, "Received persistence message %s. Returning reply: %s",
             msg->getType().getName().c_str(), errorCode.toString().c_str());
-        dispatchUp(reply);
+        sendUp(reply);
     }
     return true;
 }
@@ -785,7 +785,7 @@ FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
     // Currently we need to dispatch due to replies sent by remapQueue
     // function in handlerimpl, as filestorthread keeps bucket db lock
     // while running this function
-    dispatchUp(reply);
+    sendUp(reply);
 }
 
 void
@@ -801,12 +801,6 @@ FileStorManager::sendReplyDirectly(const std::shared_ptr<api::StorageReply>& rep
     sendUp(reply);
 }
 
-void
-FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
-{
-    StorageLinkQueued::sendUp(msg);
-}
-
 void FileStorManager::onClose()
 {
     LOG(debug, "Start closing");
@@ -818,7 +812,6 @@ void FileStorManager::onClose()
     _filestorHandler->close();
     LOG(debug, "Closed _filestorHandler.");
     _closed = true;
-    StorageLinkQueued::onClose();
     LOG(debug, "Done closing");
 }
 
@@ -842,7 +835,6 @@ void FileStorManager::onFlush(bool downwards)
                    "during shutdown as load then is supposed to have been "
                    "stopped: Queue size is %u", queue_size);
     }
-    StorageLinkQueued::onFlush(downwards);
     LOG(debug, "Done Flushing");
 }
 
