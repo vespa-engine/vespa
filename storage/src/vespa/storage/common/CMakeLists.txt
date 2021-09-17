@@ -17,6 +17,5 @@ vespa_add_library(storage_common OBJECT
     storage_chain_builder.cpp
     storagecomponent.cpp
     storagelink.cpp
-    storagelinkqueued.cpp
     DEPENDS
 )
