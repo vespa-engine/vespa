@@ -159,14 +159,6 @@ void MultiThreadedStripeAccessGuard::report_delayed_single_bucket_requests(vespa
     });
 }
 
-TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
-    return _stripe_pool.stripe_thread(0).stripe();
-}
-
-const TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() const noexcept {
-    return _stripe_pool.stripe_thread(0).stripe();
-}
-
 template <typename Func>
 void MultiThreadedStripeAccessGuard::for_each_stripe(Func&& f) {
     for (auto& stripe_thread : _stripe_pool) {

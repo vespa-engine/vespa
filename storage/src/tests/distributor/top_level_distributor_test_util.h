@@ -69,7 +69,6 @@ public:
     TopLevelBucketDBUpdater& bucket_db_updater();
     const IdealStateMetricSet& total_ideal_state_metrics() const;
     const DistributorMetricSet& total_distributor_metrics() const;
-    const storage::distributor::DistributorNodeContext& node_context() const;
 
     DistributorBucketSpace& distributor_bucket_space(const document::BucketId& id);
     const DistributorBucketSpace& distributor_bucket_space(const document::BucketId& id) const;

@@ -15,15 +15,12 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     distributor_stripe_pool_test.cpp
     distributor_stripe_test.cpp
     distributor_stripe_test_util.cpp
-    distributortestutil.cpp
     externaloperationhandlertest.cpp
     garbagecollectiontest.cpp
     getoperationtest.cpp
     gtest_runner.cpp
     idealstatemanagertest.cpp
     joinbuckettest.cpp
-    legacy_bucket_db_updater_test.cpp
-    legacy_distributor_test.cpp
     maintenanceschedulertest.cpp
     mergelimitertest.cpp
     mergeoperationtest.cpp

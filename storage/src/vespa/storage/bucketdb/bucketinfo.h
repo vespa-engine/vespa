@@ -9,7 +9,6 @@ namespace storage {
 
 namespace distributor {
     class DistributorStripeTestUtil;
-    class DistributorTestUtil;
     class TopLevelDistributorTestUtil;
 }
 
@@ -205,7 +204,6 @@ public:
 
 private:
     friend class distributor::DistributorStripeTestUtil;
-    friend class distributor::DistributorTestUtil;
     friend class distributor::TopLevelDistributorTestUtil;
 
     /**

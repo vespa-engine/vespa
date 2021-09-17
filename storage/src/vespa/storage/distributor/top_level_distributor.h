@@ -101,8 +101,6 @@ public:
 
     void storageDistributionChanged() override;
 
-    bool handleReply(const std::shared_ptr<api::StorageReply>& reply);
-
     // StatusReporter implementation
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
@@ -134,43 +132,12 @@ public:
 
 private:
     friend class DistributorStripeTestUtil;
-    friend class DistributorTestUtil;
     friend class TopLevelDistributorTestUtil;
-    friend class LegacyBucketDBUpdaterTest;
     friend class MetricUpdateHook;
     friend struct DistributorStripeTest;
-    friend struct LegacyDistributorTest;
     friend struct TopLevelDistributorTest;
 
     void setNodeStateUp();
-    bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
-
-    /**
-     * Enables a new cluster state. Used by tests to bypass TopLevelBucketDBUpdater.
-     */
-    void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle);
-
-    // Accessors used by tests
-    std::string getActiveIdealStateOperations() const;
-    const lib::ClusterStateBundle& getClusterStateBundle() const;
-    const DistributorConfiguration& getConfig() const;
-    bool isInRecoveryMode() const noexcept;
-    PendingMessageTracker& getPendingMessageTracker();
-    const PendingMessageTracker& getPendingMessageTracker() const;
-    DistributorBucketSpaceRepo& getBucketSpaceRepo() noexcept;
-    const DistributorBucketSpaceRepo& getBucketSpaceRepo() const noexcept;
-    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept;
-    const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept;
-    storage::distributor::DistributorStripeComponent& distributor_component() noexcept;
-    std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept;
-
-    StripeBucketDBUpdater& bucket_db_updater();
-    const StripeBucketDBUpdater& bucket_db_updater() const;
-    IdealStateManager& ideal_state_manager();
-    const IdealStateManager& ideal_state_manager() const;
-    ExternalOperationHandler& external_operation_handler();
-    const ExternalOperationHandler& external_operation_handler() const;
-    BucketDBMetricUpdater& bucket_db_metric_updater() const noexcept;
 
     /**
      * Return a copy of the latest min replica data, see MinReplicaProvider.
@@ -185,7 +152,6 @@ private:
      * Takes metric lock.
      */
     void propagateInternalScanMetricsToExternal();
-    void scanAllBuckets();
     void enable_next_config_if_changed();
     void fetch_status_requests();
     void handle_status_requests();
@@ -217,15 +183,11 @@ private:
     const NodeIdentity                    _node_identity;
     DistributorComponentRegister&         _comp_reg;
     DoneInitializeHandler&                _done_init_handler;
-    const bool                            _use_legacy_mode;
     bool                                  _done_initializing;
-    std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<DistributorTotalMetrics> _total_metrics;
-    std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
     std::shared_ptr<IdealStateTotalMetrics> _ideal_state_total_metrics;
     ChainedMessageSender*                 _messageSender;
     uint8_t                               _n_stripe_bits;
-    std::unique_ptr<DistributorStripe>    _stripe;
     DistributorStripePool&                _stripe_pool;
     std::vector<std::unique_ptr<DistributorStripe>> _stripes;
     std::unique_ptr<StripeAccessor>      _stripe_accessor;
