@@ -164,7 +164,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 Throwable cause = e.getCause();
                 if ( e instanceof ExecutionException && (cause != null) && (cause instanceof HttpHostConnectException)) {
                     // Remove once we have some track time.
-                    log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : ", e.getMessage());
+                    log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : " + cause.getMessage());
                 } else {
                     log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
                 }
