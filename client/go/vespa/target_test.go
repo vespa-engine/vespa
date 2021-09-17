@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -128,7 +129,10 @@ func TestCloudTargetWait(t *testing.T) {
 	assertServiceWait(t, 500, target, "query")
 	assertServiceWait(t, 500, target, "document")
 
-	assert.Equal(t, "[14:08:28] info    Deploying platform version 7.465.17 and application version 1.0.2 ...\n", logWriter.String())
+	// Log timestamp is converted to local time, do the same here in case the local time where tests are run varies
+	tm := time.Unix(1631707708, 431000)
+	expectedTime := tm.Format("[15:04:05]")
+	assert.Equal(t, expectedTime+" info    Deploying platform version 7.465.17 and application version 1.0.2 ...\n", logWriter.String())
 }
 
 func assertServiceURL(t *testing.T, url string, target Target, service string) {
