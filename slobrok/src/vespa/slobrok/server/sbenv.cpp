@@ -121,20 +121,11 @@ SBEnv::SBEnv(const ConfigShim &shim, bool)
       _exchanger(*this, _rpcsrvmap),
       _rpcsrvmap()
 {
-    if (useNewLogic()) {
-        srandom(time(nullptr) ^ getpid());
-        // note: feedback loop between these two:
-        _localMonitorSubscription = MapSubscription::subscribe(_consensusMap, _localRpcMonitorMap);
-        _consensusSubscription = MapSubscription::subscribe(_localRpcMonitorMap.dispatcher(), _consensusMap);
-        _globalHistorySubscription = MapSubscription::subscribe(_consensusMap, _globalVisibleHistory);
-        _rpcHooks.initRPC(getSupervisor());
-        return;
-    }
     srandom(time(nullptr) ^ getpid());
     // note: feedback loop between these two:
     _localMonitorSubscription = MapSubscription::subscribe(_consensusMap, _localRpcMonitorMap);
     _consensusSubscription = MapSubscription::subscribe(_localRpcMonitorMap.dispatcher(), _consensusMap);
-    _globalHistorySubscription = MapSubscription::subscribe(_rpcsrvmap.proxy(), _globalVisibleHistory);
+    _globalHistorySubscription = MapSubscription::subscribe(_consensusMap, _globalVisibleHistory);
     _rpcHooks.initRPC(getSupervisor());
 }
 
