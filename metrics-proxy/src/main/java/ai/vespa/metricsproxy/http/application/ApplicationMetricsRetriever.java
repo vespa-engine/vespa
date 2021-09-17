@@ -7,7 +7,6 @@ import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import org.apache.hc.client5.http.HttpHostConnectException;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.reactor.IOReactorConfig;
