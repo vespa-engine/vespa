@@ -9,7 +9,7 @@ shared:
 
 jobs:
   build-vespa:
-    requires: [~pr, ~commit]
+    requires: [~commit]
     annotations:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
