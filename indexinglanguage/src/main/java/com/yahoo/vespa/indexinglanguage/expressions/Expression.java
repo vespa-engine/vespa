@@ -101,7 +101,7 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(DataType val) {
-        return verify(new VerificationContext().setValue(val));
+        return verify(new VerificationContext().setValueType(val));
     }
 
     public final Document verify(Document doc) {
@@ -147,7 +147,7 @@ public abstract class Expression extends Selectable {
 
     public final DataType verify(VerificationContext context) {
         if (inputType != null) {
-            DataType input = context.getValue();
+            DataType input = context.getValueType();
             if (input == null) {
                 throw new VerificationException(this, "Expected " + inputType.getName() + " input, got null.");
             }
@@ -162,7 +162,7 @@ public abstract class Expression extends Selectable {
         doVerify(context);
         DataType outputType = createdOutputType();
         if (outputType != null) {
-            DataType output = context.getValue();
+            DataType output = context.getValueType();
             if (output == null) {
                 throw new VerificationException(this, "Expected " + outputType.getName() + " output, got null.");
             }
@@ -174,7 +174,7 @@ public abstract class Expression extends Selectable {
                                                       output.getName() + ".");
             }
         }
-        return context.getValue();
+        return context.getValueType();
     }
 
     protected abstract void doVerify(VerificationContext context);

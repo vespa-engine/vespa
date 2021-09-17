@@ -50,7 +50,7 @@ public final class ScriptParser {
         });
     }
 
-    private static interface ParserMethod<T extends Expression> {
+    private interface ParserMethod<T extends Expression> {
 
         T call(IndexingParser parser) throws ParseException;
     }

@@ -2,10 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 
@@ -33,7 +31,7 @@ public final class ToBoolExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.vespa.objects.ObjectOperation;
@@ -97,12 +96,12 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
-        context.setValue(input).execute(lhs);
-        context.setValue(input).execute(rhs);
-        context.setValue(input).execute(ifTrue);
-        context.setValue(input).execute(ifFalse);
-        context.setValue(input);
+        DataType input = context.getValueType();
+        context.setValueType(input).execute(lhs);
+        context.setValueType(input).execute(rhs);
+        context.setValueType(input).execute(ifTrue);
+        context.setValueType(input).execute(ifFalse);
+        context.setValueType(input);
     }
 
     @Override

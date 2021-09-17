@@ -45,11 +45,11 @@ public final class JoinExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (!(input instanceof ArrayDataType)) {
             throw new VerificationException(this, "Expected Array input, got " + input.getName() + ".");
         }
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

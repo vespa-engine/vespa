@@ -29,7 +29,7 @@ public final class ToArrayExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(DataType.getArray(context.getValue()));
+        context.setValueType(DataType.getArray(context.getValueType()));
     }
 
     @Override

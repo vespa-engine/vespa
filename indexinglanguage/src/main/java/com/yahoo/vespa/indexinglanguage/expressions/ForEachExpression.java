@@ -33,8 +33,8 @@ public final class ForEachExpression extends CompositeExpression {
             FieldValue next = new MyConverter(context, exp).convert(input);
             if (next == null) {
                 VerificationContext vctx = new VerificationContext(context);
-                vctx.setValue(input.getDataType()).execute(this);
-                next = vctx.getValue().createFieldValue();
+                vctx.setValueType(input.getDataType()).execute(this);
+                next = vctx.getValueType().createFieldValue();
             }
             context.setValue(next);
         } else if (input instanceof Struct) {
@@ -47,25 +47,25 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (input instanceof ArrayDataType || input instanceof WeightedSetDataType) {
-            context.setValue(((CollectionDataType)input).getNestedType()).execute(exp);
+            context.setValueType(((CollectionDataType)input).getNestedType()).execute(exp);
             if (input instanceof ArrayDataType) {
-                context.setValue(DataType.getArray(context.getValue()));
+                context.setValueType(DataType.getArray(context.getValueType()));
             } else {
                 WeightedSetDataType wset = (WeightedSetDataType)input;
-                context.setValue(DataType.getWeightedSet(context.getValue(), wset.createIfNonExistent(), wset.removeIfZero()));
+                context.setValueType(DataType.getWeightedSet(context.getValueType(), wset.createIfNonExistent(), wset.removeIfZero()));
             }
         } else if (input instanceof StructDataType) {
             for (Field field : ((StructDataType)input).getFields()) {
                 DataType fieldType = field.getDataType();
-                DataType valueType = context.setValue(fieldType).execute(exp).getValue();
+                DataType valueType = context.setValueType(fieldType).execute(exp).getValueType();
                 if (!fieldType.isAssignableFrom(valueType)) {
                     throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
                                                           valueType.getName() + ".");
                 }
             }
-            context.setValue(input);
+            context.setValueType(input);
         } else {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
                                                   input.getName() + ".");

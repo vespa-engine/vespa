@@ -209,7 +209,7 @@ public class ForEachTestCase {
         type.addField(new Field("my_int", DataType.INT));
 
         VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setValue(type);
+        ctx.setValueType(type);
 
         try {
             new ForEachExpression(new ToArrayExpression()).verify(ctx);

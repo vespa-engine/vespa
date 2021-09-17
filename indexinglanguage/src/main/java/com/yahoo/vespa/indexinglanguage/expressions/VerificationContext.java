@@ -49,11 +49,12 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
         return this;
     }
 
-    public DataType getValue() {
+    /** Returns the output type that will result from executing the statement verified by this */
+    public DataType getValueType() {
         return value;
     }
 
-    public VerificationContext setValue(DataType value) {
+    public VerificationContext setValueType(DataType value) {
         this.value = value;
         return this;
     }

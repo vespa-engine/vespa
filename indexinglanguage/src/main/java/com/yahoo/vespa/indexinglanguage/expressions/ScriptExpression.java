@@ -43,11 +43,11 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         for (Expression exp : this) {
-            context.setValue(input).execute(exp);
+            context.setValueType(input).execute(exp);
         }
-        context.setValue(input);
+        context.setValueType(input);
     }
 
     private static DataType resolveInputType(Collection<? extends StatementExpression> list) {

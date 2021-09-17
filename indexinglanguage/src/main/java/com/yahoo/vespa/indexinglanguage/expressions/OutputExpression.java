@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 
 /**
  * @author Simon Thoresen Hult
@@ -29,7 +28,7 @@ public abstract class OutputExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.tryOutputType(this, fieldName, context.getValue());
+        context.tryOutputType(this, fieldName, context.getValueType());
     }
 
     @Override

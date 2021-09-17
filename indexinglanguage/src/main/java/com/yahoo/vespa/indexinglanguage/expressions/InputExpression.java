@@ -9,7 +9,6 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Simon Thoresen Hult
@@ -43,7 +42,7 @@ public final class InputExpression extends Expression {
         if (val == null) {
             throw new VerificationException(this, "Field '" + fieldName + "' not found.");
         }
-        context.setValue(val);
+        context.setValueType(val);
     }
 
     @Override

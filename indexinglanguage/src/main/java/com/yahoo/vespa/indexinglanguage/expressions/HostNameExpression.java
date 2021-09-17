@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -22,7 +21,7 @@ public final class HostNameExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

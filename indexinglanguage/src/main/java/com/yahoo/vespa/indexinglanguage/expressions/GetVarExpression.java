@@ -30,7 +30,7 @@ public final class GetVarExpression extends Expression {
         if (input == null) {
             throw new VerificationException(this, "Variable '" + varName + "' not found.");
         }
-        context.setValue(input);
+        context.setValueType(input);
     }
 
     @Override

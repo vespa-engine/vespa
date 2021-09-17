@@ -70,4 +70,5 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
             exp.select(predicate, operation);
         }
     }
+
 }

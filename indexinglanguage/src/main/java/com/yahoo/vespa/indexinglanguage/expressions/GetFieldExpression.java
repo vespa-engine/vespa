@@ -40,7 +40,7 @@ public final class GetFieldExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getValue();
+        DataType input = context.getValueType();
         if (!(input instanceof StructuredDataType)) {
             throw new VerificationException(this, "Expected structured input, got " + input.getName() + ".");
         }
@@ -49,7 +49,7 @@ public final class GetFieldExpression extends Expression {
             throw new VerificationException(this, "Field '" + fieldName + "' not found in struct type '" +
                                                   input.getName() + "'");
         }
-        context.setValue(field.getDataType());
+        context.setValueType(field.getDataType());
     }
 
     @Override

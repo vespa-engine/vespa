@@ -31,7 +31,7 @@ public final class SetValueExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(value.getDataType());
+        context.setValueType(value.getDataType());
     }
 
     @Override
