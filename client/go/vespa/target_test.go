@@ -1,11 +1,13 @@
 package vespa
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +30,11 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 		if v.deploymentConverged {
 			response = `{"active": false, "status": "success"}`
 		} else {
-			response = `{"active": true, "status": "running"}`
+			response = `{"active": true, "status": "running",
+                         "lastId": 42,
+                         "log": {"deployReal": [{"at": 1631707708431,
+                                                 "type": "info",
+                                                 "message": "Deploying platform version 7.465.17 and application version 1.0.2 ..."}]}}`
 		}
 		w.Write([]byte(response))
 	case "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge":
@@ -94,13 +100,15 @@ func TestCloudTargetWait(t *testing.T) {
 	apiKey, err := CreateAPIKey()
 	assert.Nil(t, err)
 
+	var logWriter bytes.Buffer
 	target := CloudTarget(
 		Deployment{
 			Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 			Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
 		},
 		x509KeyPair,
-		apiKey)
+		apiKey,
+		LogOptions{Writer: &logWriter})
 	if ct, ok := target.(*cloudTarget); ok {
 		ct.cloudAPI = srv.URL
 	} else {
@@ -120,6 +128,11 @@ func TestCloudTargetWait(t *testing.T) {
 
 	assertServiceWait(t, 500, target, "query")
 	assertServiceWait(t, 500, target, "document")
+
+	// Log timestamp is converted to local time, do the same here in case the local time where tests are run varies
+	tm := time.Unix(1631707708, 431000)
+	expectedTime := tm.Format("[15:04:05]")
+	assert.Equal(t, expectedTime+" info    Deploying platform version 7.465.17 and application version 1.0.2 ...\n", logWriter.String())
 }
 
 func assertServiceURL(t *testing.T, url string, target Target, service string) {
