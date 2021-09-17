@@ -4,6 +4,7 @@
 #include "bm_cluster.h"
 #include "bm_cluster_params.h"
 #include "bm_message_bus.h"
+#include "bm_node_stats.h"
 #include "bm_storage_chain_builder.h"
 #include "bm_storage_link_context.h"
 #include "storage_api_chain_bm_feed_handler.h"
@@ -44,6 +45,7 @@
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
+#include <vespa/searchcore/proton/server/document_meta_store_read_guards.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
@@ -54,6 +56,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/storage/bucketdb/config-stor-bucket-init.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
+#include <vespa/storage/common/storagelink.h>
 #include <vespa/storage/config/config-stor-bouncer.h>
 #include <vespa/storage/config/config-stor-communicationmanager.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
@@ -62,10 +65,12 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
+#include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/servicelayerprocess.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -93,6 +98,7 @@ using proton::HwInfo;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using search::transactionlog::TransLogServer;
+using storage::distributor::BucketSpacesStatsProvider;
 using storage::rpc::SharedRpcResources;
 using storage::rpc::StorageApiRpcService;
 using storage::spi::PersistenceProvider;
@@ -147,6 +153,20 @@ int port_number(int base_port, PortBias bias)
 }
 
 storage::spi::Context context(storage::spi::Priority(0), 0);
+
+BucketSpacesStatsProvider* extract_bucket_spaces_stats_provider(storage::DistributorProcess& distributor)
+{
+    auto& node = distributor.getNode();
+    auto *link = node.getChain();
+    while (link != nullptr) {
+        link = link->getNextLink();
+        auto provider = dynamic_cast<BucketSpacesStatsProvider*>(link);
+        if (provider != nullptr) {
+            return provider;
+        }
+    }
+    return nullptr;
+}
 
 }
 
@@ -441,6 +461,8 @@ class MyBmNode : public BmNode
     std::unique_ptr<MyServiceLayerProcess>     _service_layer;
     std::shared_ptr<BmStorageLinkContext>      _distributor_chain_context;
     std::unique_ptr<storage::DistributorProcess> _distributor;
+    BucketSpacesStatsProvider*                 _bucket_spaces_stats_provider;
+    std::mutex                                 _lock;
 
     void create_document_db(const BmClusterParams&  params);
 public:
@@ -458,6 +480,7 @@ public:
     std::shared_ptr<BmStorageLinkContext> get_storage_link_context(bool distributor) override;
     bool has_storage_layer(bool distributor) const override;
     PersistenceProvider* get_persistence_provider() override;
+    void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state) override;
 };
 
 MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
@@ -500,7 +523,9 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _service_layer_chain_context(),
       _service_layer(),
       _distributor_chain_context(),
-      _distributor()
+      _distributor(),
+      _bucket_spaces_stats_provider(nullptr),
+      _lock()
 {
     _persistence_engine = std::make_unique<proton::PersistenceEngine>(_persistence_owner, _write_filter, _disk_mem_usage_notifier, -1, false);
     create_document_db(params);
@@ -608,6 +633,9 @@ MyBmNode::start_distributor(const BmClusterParams& params)
     }
     _distributor->setupConfig(100ms);
     _distributor->createNode();
+    auto bucket_spaces_stats_provider = extract_bucket_spaces_stats_provider(*_distributor);
+    std::lock_guard<std::mutex> guard(_lock);
+    _bucket_spaces_stats_provider = bucket_spaces_stats_provider;
 }
 
 void
@@ -615,6 +643,10 @@ MyBmNode::shutdown_distributor()
 {
     if (_distributor) {
         LOG(info, "stop distributor");
+        {
+            std::lock_guard guard(_lock);
+            _bucket_spaces_stats_provider = nullptr;
+        }
         _distributor->getNode().requestShutdown("controlled shutdown");
         _distributor->shutdown();
     }
@@ -672,6 +704,56 @@ unsigned int
 BmNode::num_ports()
 {
     return static_cast<unsigned int>(PortBias::NUM_PORTS);
+}
+
+void
+MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state)
+{
+    auto& storage_node_state = baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::STORAGE, _node_idx));
+    if (storage_node_state.getState().oneOf("uir")) {
+        // TODO: Check cluster state and ignore nodes that are down.
+        if (_document_db) {
+            proton::DocumentMetaStoreReadGuards dmss(_document_db->getDocumentSubDBs());
+            uint32_t active_docs = dmss.numActiveDocs();
+            uint32_t ready_docs = dmss.numReadyDocs();
+            uint32_t total_docs = dmss.numTotalDocs();
+            uint32_t removed_docs = dmss.numRemovedDocs();
+            
+            if (_node_idx < node_stats.size()) {
+                node_stats[_node_idx].set_document_db_stats(BmDocumentDbStats(active_docs, ready_docs, total_docs, removed_docs));
+            }
+        }
+    }
+    auto& distributor_node_state = baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::DISTRIBUTOR, _node_idx));
+    if (distributor_node_state.getState().oneOf("u")) {
+        std::optional<BucketSpacesStatsProvider::PerNodeBucketSpacesStats> per_node_bucket_spaces_stats;
+        {
+            std::lock_guard<std::mutex> guard(_lock);
+            if (_bucket_spaces_stats_provider) {
+                per_node_bucket_spaces_stats = _bucket_spaces_stats_provider->getBucketSpacesStats();
+            }
+        }
+        if (per_node_bucket_spaces_stats.has_value()) {
+            for (auto &node_idx_and_stats : per_node_bucket_spaces_stats.value()) {
+                uint32_t node_idx = node_idx_and_stats.first;
+                if (node_idx < node_stats.size()) {
+                    auto& stats = node_idx_and_stats.second;
+                    for (auto &bucket_space_and_stat : stats) {
+                        auto& stat = bucket_space_and_stat.second;
+                        uint32_t buckets = stat.bucketsTotal();
+                        uint32_t buckets_pending = stat.bucketsPending();
+                        bool buckets_valid = stat.valid();
+                        node_stats[node_idx].merge_bucket_stats(BmBucketsStats(buckets, buckets_pending, buckets_valid));
+                    }
+                }
+            }
+        } else {
+            // Incomplete bucket stats
+            for (uint32_t node_idx = 0; node_idx < node_stats.size(); ++node_idx) {
+                node_stats[node_idx].merge_bucket_stats(BmBucketsStats());
+            }
+        }
+    }
 }
 
 std::unique_ptr<BmNode>

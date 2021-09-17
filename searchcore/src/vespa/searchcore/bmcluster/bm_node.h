@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vector>
 
 namespace document {
 
@@ -16,12 +17,14 @@ class Field;
 
 namespace document::internal { class InternalDocumenttypesType; }
 
+namespace storage::lib { class ClusterState; }
 namespace storage::spi { struct PersistenceProvider; }
 
 namespace search::bmcluster {
 
 class BmCluster;
 class BmClusterParams;
+class BmNodeStats;
 struct BmStorageLinkContext;
 class IBmFeedHandler;
 class IBMDistribution;
@@ -47,6 +50,7 @@ public:
     virtual std::shared_ptr<BmStorageLinkContext> get_storage_link_context(bool distributor) = 0;
     virtual bool has_storage_layer(bool distributor) const = 0;
     virtual storage::spi::PersistenceProvider *get_persistence_provider() = 0;
+    virtual void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state) = 0;
     static unsigned int num_ports();
     static std::unique_ptr<BmNode> create(const vespalib::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<const document::internal::InternalDocumenttypesType> document_types, int slobrok_port);
 };
