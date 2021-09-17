@@ -29,6 +29,10 @@ for i in 1 2 3; do
   git pull --rebase
 done
 
+# Create a proper release tag
+git tag -a "v$VERSION" -m "Release $VERSION" $GITREF
+git push origin "v$VERSION"
+
 # Delete existing branch if exists and create new one
 git push --delete origin $RPM_BRANCH &> /dev/null || true
 git branch -D $RPM_BRANCH &> /dev/null || true 
