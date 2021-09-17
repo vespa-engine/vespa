@@ -6,6 +6,7 @@
 #include "bm_feed.h"
 #include "bm_message_bus.h"
 #include "bm_node.h"
+#include "bm_node_stats.h"
 #include "document_api_message_bus_bm_feed_handler.h"
 #include "spi_bm_feed_handler.h"
 #include "storage_api_chain_bm_feed_handler.h"
@@ -422,6 +423,19 @@ IBmFeedHandler*
 BmCluster::get_feed_handler()
 {
     return _feed_handler.get();
+}
+
+std::vector<BmNodeStats>
+BmCluster::get_node_stats()
+{
+    std::vector<BmNodeStats> node_stats(_nodes.size());
+    storage::lib::ClusterState baseline_state(*_distribution->get_cluster_state_bundle().getBaselineClusterState());
+    for (const auto &node : _nodes) {
+        if (node) {
+            node->merge_node_stats(node_stats, baseline_state);
+        }
+    }
+    return node_stats;
 }
 
 }

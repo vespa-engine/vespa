@@ -29,6 +29,7 @@ class BmClusterController;
 class BmFeed;
 class BmMessageBus;
 class BmNode;
+class BmNodeStats;
 class IBmDistribution;
 class IBmFeedHandler;
 
@@ -88,6 +89,7 @@ public:
     IBmFeedHandler* get_feed_handler();
     uint32_t get_num_nodes() const { return _nodes.size(); }
     BmNode *get_node(uint32_t node_idx) const { return node_idx < _nodes.size() ? _nodes[node_idx].get() : nullptr; }
+    std::vector<BmNodeStats> get_node_stats();
 };
 
 }

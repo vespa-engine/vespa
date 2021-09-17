@@ -12,6 +12,8 @@
 #include <vespa/searchcore/bmcluster/bm_feeder.h>
 #include <vespa/searchcore/bmcluster/bm_feed_params.h>
 #include <vespa/searchcore/bmcluster/bm_node.h>
+#include <vespa/searchcore/bmcluster/bm_node_stats.h>
+#include <vespa/searchcore/bmcluster/bm_node_stats_reporter.h>
 #include <vespa/searchcore/bmcluster/bm_range.h>
 #include <vespa/searchcore/bmcluster/bucket_selector.h>
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
@@ -45,6 +47,7 @@ using search::bmcluster::BmFeed;
 using search::bmcluster::BmFeedParams;
 using search::bmcluster::BmFeeder;
 using search::bmcluster::BmNode;
+using search::bmcluster::BmNodeStatsReporter;
 using search::bmcluster::BmRange;
 using search::bmcluster::BucketSelector;
 using search::index::DummyFileHeaderContext;
@@ -160,12 +163,19 @@ void benchmark(const BMParams &bm_params)
     auto update_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_update_feed(range, bucket_selector); }, f._feed.num_buckets(), "update");
     auto get_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_get_feed(range, bucket_selector); }, f._feed.num_buckets(), "get");
     auto remove_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_remove_feed(range, bucket_selector); }, f._feed.num_buckets(), "remove");
-    int64_t time_bias = 1;
+    BmNodeStatsReporter reporter(cluster);
+    reporter.start(500ms);
+    int64_t time_bias = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count();
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
     benchmark_feed(feeder, time_bias, put_feed, bm_params, bm_params.get_put_passes(), "put");
+    reporter.report_now();
     benchmark_feed(feeder, time_bias, update_feed, bm_params, bm_params.get_update_passes(), "update");
+    reporter.report_now();
     benchmark_feed(feeder, time_bias, get_feed, bm_params, bm_params.get_get_passes(), "get");
+    reporter.report_now();
     benchmark_feed(feeder, time_bias, remove_feed, bm_params, bm_params.get_remove_passes(), "remove");
+    reporter.report_now();
+    reporter.stop();
     LOG(info, "--------------------------------");
 
     cluster.stop();
