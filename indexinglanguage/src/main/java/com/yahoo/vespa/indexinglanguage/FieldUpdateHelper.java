@@ -126,4 +126,5 @@ public abstract class FieldUpdateHelper {
         }
         throw new UnsupportedOperationException("Value update type " + upd.getClass().getName() + " not supported.");
     }
+
 }

@@ -76,7 +76,6 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
         }
     }
 
-    @SuppressWarnings({ "unchecked" })
     @Override
     public SimpleDocumentAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
         Field field = output.getField(fieldName);
@@ -87,4 +86,5 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
         output.setFieldValue(field, fieldValue);
         return this;
     }
+
 }
