@@ -47,8 +47,6 @@ private:
 public:
     OkState checkPartner(const std::string & remslobrok);
 
-    OkState addPeer(const std::string & remsbname, const std::string & remsbspec);
-    OkState removePeer(const std::string & remsbname, const std::string &  remsbspec);
     OkState addRemote(const std::string & name, const std::string & spec);
 
     OkState addRemReservation(const std::string & remslobrok, const std::string & name, const std::string & spec);

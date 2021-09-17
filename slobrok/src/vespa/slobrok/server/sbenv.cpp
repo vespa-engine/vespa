@@ -223,7 +223,7 @@ SBEnv::setup(const std::vector<std::string> &cfg)
         std::string slobrok = cfg[i];
         discard(oldList, slobrok);
         if (slobrok != mySpec()) {
-            OkState res = _rpcsrvmanager.addPeer(slobrok, slobrok.c_str());
+            OkState res = _exchanger.addPartner(slobrok);
             if (!res.ok()) {
                 LOG(warning, "could not add peer %s: %s", slobrok.c_str(), res.errorMsg.c_str());
             } else {
@@ -232,7 +232,7 @@ SBEnv::setup(const std::vector<std::string> &cfg)
         }
     }
     for (uint32_t i = 0; i < oldList.size(); ++i) {
-        OkState res = _rpcsrvmanager.removePeer(oldList[i], oldList[i].c_str());
+        OkState res = removePeer(oldList[i], oldList[i]);
         if (!res.ok()) {
             LOG(warning, "could not remove peer %s: %s", oldList[i].c_str(), res.errorMsg.c_str());
         } else {
@@ -247,6 +247,9 @@ SBEnv::setup(const std::vector<std::string> &cfg)
 OkState
 SBEnv::addPeer(const std::string &name, const std::string &spec)
 {
+    if (name != spec) {
+        return OkState(FRTE_RPC_METHOD_FAILED, "peer location brokers must have name equal to spec");
+    }
     if (spec == mySpec()) {
         return OkState(FRTE_RPC_METHOD_FAILED, "cannot add my own spec as peer");
     }
@@ -261,12 +264,15 @@ SBEnv::addPeer(const std::string &name, const std::string &spec)
                      spec.c_str(), peers.c_str());
         _partnerList.push_back(spec);
     }
-    return _rpcsrvmanager.addPeer(name, spec.c_str());
+    return _exchanger.addPartner(spec);
 }
 
 OkState
 SBEnv::removePeer(const std::string &name, const std::string &spec)
 {
+    if (name != spec) {
+        return OkState(FRTE_RPC_METHOD_FAILED, "peer location brokers must have name equal to spec");
+    }
     if (spec == mySpec()) {
         return OkState(FRTE_RPC_METHOD_FAILED, "cannot remove my own spec as peer");
     }
@@ -275,7 +281,12 @@ SBEnv::removePeer(const std::string &name, const std::string &spec)
             return OkState(FRTE_RPC_METHOD_FAILED, "configured partner list contains peer, cannot remove");
         }
     }
-    return _rpcsrvmanager.removePeer(name, spec.c_str());
+    const RemoteSlobrok *partner = _exchanger.lookupPartner(name);
+    if (partner == nullptr) {
+        return OkState(0, "remote slobrok not a partner");
+    }
+    _exchanger.removePartner(name);
+    return OkState(0, "done");
 }
 
 } // namespace slobrok
