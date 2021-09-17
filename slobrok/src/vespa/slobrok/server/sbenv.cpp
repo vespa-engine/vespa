@@ -232,12 +232,8 @@ SBEnv::setup(const std::vector<std::string> &cfg)
         }
     }
     for (uint32_t i = 0; i < oldList.size(); ++i) {
-        OkState res = removePeer(oldList[i], oldList[i]);
-        if (!res.ok()) {
-            LOG(warning, "could not remove peer %s: %s", oldList[i].c_str(), res.errorMsg.c_str());
-        } else {
-            LOG(config, "removed peer %s", oldList[i].c_str());
-        }
+        _exchanger.removePartner(oldList[i]);
+        LOG(config, "removed peer %s", oldList[i].c_str());
     }
     int64_t curGen = _configurator->getGeneration();
     vespalib::ComponentConfigProducer::Config current("slobroks", curGen, "ok");
