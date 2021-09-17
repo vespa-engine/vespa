@@ -13,7 +13,7 @@
 #include <vespa/storage/bucketdb/config-stor-bucketdb.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storage/common/storagelinkqueued.h>
+#include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
