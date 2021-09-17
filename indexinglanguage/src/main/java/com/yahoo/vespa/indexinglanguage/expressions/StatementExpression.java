@@ -20,6 +20,9 @@ import java.util.List;
  */
 public final class StatementExpression extends ExpressionList<Expression> {
 
+    /** The type of the output created by this statement, or null if no output */
+    private final DataType outputType;
+
     public StatementExpression(Expression... lst) {
         this(Arrays.asList(lst));
     }
@@ -30,10 +33,12 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
         super(list, resolveInputType(list));
+        outputType = resolveOutputType(list);
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
+        context.setOutputType(createdOutputType());
         for (Expression exp : this) {
             context.execute(exp);
         }
@@ -61,16 +66,18 @@ public final class StatementExpression extends ExpressionList<Expression> {
         return null;
     }
 
-    @Override
-    public DataType createdOutputType() {
-        for (int i = size(); --i >= 0; ) {
-            DataType type = get(i).createdOutputType();
-            if (type != null) {
-                return type;
-            }
+    private static DataType resolveOutputType(Iterable<Expression> expressions) {
+        DataType lastOutput = null;
+        for (var expression : expressions) {
+            DataType output = expression.createdOutputType();
+            if (output != null)
+                lastOutput = output;
         }
-        return null;
+        return lastOutput;
     }
+
+    @Override
+    public DataType createdOutputType() { return outputType; }
 
     @Override
     public String toString() {
@@ -90,7 +97,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     /** Creates an expression with simple lingustics for testing */
-    @SuppressWarnings("deprecation")
     public static StatementExpression fromString(String expression) throws ParseException {
         return fromString(expression, new SimpleLinguistics());
     }
