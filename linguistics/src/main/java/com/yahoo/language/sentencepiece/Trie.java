@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A simple trie for sentencepiece token lookup
+ * A simple trie for sentencepiece token lookups.
  *
  * @author bratseth
  */
