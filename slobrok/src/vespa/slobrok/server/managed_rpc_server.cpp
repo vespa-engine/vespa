@@ -23,7 +23,7 @@ ManagedRpcServer::ManagedRpcServer(const std::string & name,
       _monitoredServer(nullptr),
       _checkServerReq(nullptr)
 {
-    double seconds = randomIn(0.2, 0.8);
+    double seconds = randomIn(2.5, 2.9);
     LOG(debug, "first healthcheck for %s in %g seconds", name.c_str(), seconds);
     Schedule(seconds);
 }
@@ -35,7 +35,7 @@ void ManagedRpcServer::PerformTask() {
     if (_checkServerReq == nullptr) {
         _checkServerReq = _mmanager.getSupervisor()->AllocRPCRequest();
         _checkServerReq->SetMethodName("slobrok.callback.listNamesServed");
-        _monitoredServer->InvokeAsync(_checkServerReq, 25.0, this);
+        _monitoredServer->InvokeAsync(_checkServerReq, 5.0, this);
     }
     double seconds = randomIn(2.5, 2.9);
     LOG(debug, "next healthcheck for %s in %g seconds", getName().c_str(), seconds);
