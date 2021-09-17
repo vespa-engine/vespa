@@ -50,10 +50,10 @@ TransportDebugger::attach(std::initializer_list<std::reference_wrapper<FNET_Tran
 }
 
 void
-TransportDebugger::step()
+TransportDebugger::step(vespalib::duration time_passed)
 {
     REQUIRE(_meet);
-    _time += 5ms; // pretend 5ms passes between each event loop iteration
+    _time += time_passed; // pretend time passes between each event loop iteration
     REQUIRE(_meet->rendezvous(true)); // release transport threads
     REQUIRE(_meet->rendezvous(true)); // capture transport threads
 }

@@ -21,10 +21,10 @@ namespace fnet {
  * is used to start controlling event loop execution. While attached,
  * calling the step function will run each transport thread event loop
  * exactly once (in parallel), wait for pending dns resolving, wait
- * for pending tls handshake work and advance the current time with
- * 5ms (making sure 'time passes' and 'stuff happens' at a reasonable
- * relative rate). It is important to call detach to release the
- * transports before trying to shut them down.
+ * for pending tls handshake work and advance the current time (the
+ * default 5ms will make sure 'time passes' and 'stuff happens' at a
+ * reasonable relative rate). It is important to call detach to
+ * release the transports before trying to shut them down.
  * 
  * Note that both server and client should be controlled by the same
  * debugger when testing rpc. Using external services will result in
@@ -53,7 +53,15 @@ public:
         return TimeTools::make_debug(vespalib::duration::zero(), [this]() noexcept { return time(); });
     }
     void attach(std::initializer_list<std::reference_wrapper<FNET_Transport> > list);
-    void step();
+    void step(vespalib::duration time_passed = 5ms);
+    template <typename Pred>
+    bool step_until(Pred pred, vespalib::duration time_limit = 120s) {
+        auto start = time();
+        while (!pred() && ((time() - start) < time_limit)) {
+            step();
+        }
+        return pred();
+    }
     void detach();
 };
 

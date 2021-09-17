@@ -12,7 +12,7 @@ struct MappingMonitorOwner {
     virtual void up(const ServiceMapping& mapping) = 0;
     virtual void down(const ServiceMapping& mapping) = 0;
 protected:
-    ~MappingMonitorOwner() = default;
+    virtual ~MappingMonitorOwner() = default;
 };
 
 struct MappingMonitor {
