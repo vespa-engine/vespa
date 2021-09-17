@@ -14,9 +14,9 @@ public final class HexEncodeExpression extends Expression {
         super(DataType.LONG);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        long input = ((LongFieldValue)ctx.getValue()).getLong();
-        ctx.setValue(new StringFieldValue(Long.toHexString(input)));
+    protected void doExecute(ExecutionContext context) {
+        long input = ((LongFieldValue) context.getValue()).getLong();
+        context.setValue(new StringFieldValue(Long.toHexString(input)));
     }
 
     @Override

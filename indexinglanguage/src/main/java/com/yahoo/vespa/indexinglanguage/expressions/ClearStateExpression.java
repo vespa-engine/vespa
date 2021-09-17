@@ -13,8 +13,8 @@ public final class ClearStateExpression extends Expression {
         super(null);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.clear();
+    protected void doExecute(ExecutionContext context) {
+        context.clear();
     }
 
     @Override

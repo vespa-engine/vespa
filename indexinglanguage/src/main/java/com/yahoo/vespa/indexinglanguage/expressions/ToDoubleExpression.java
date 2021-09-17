@@ -13,8 +13,8 @@ public final class ToDoubleExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new DoubleFieldValue(Double.valueOf(String.valueOf(ctx.getValue()))));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new DoubleFieldValue(Double.valueOf(String.valueOf(context.getValue()))));
     }
 
     @Override

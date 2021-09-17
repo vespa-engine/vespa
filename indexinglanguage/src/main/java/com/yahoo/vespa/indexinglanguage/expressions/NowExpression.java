@@ -25,8 +25,8 @@ public final class NowExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new LongFieldValue(timer.currentTimeSeconds()));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new LongFieldValue(timer.currentTimeSeconds()));
     }
 
     @Override

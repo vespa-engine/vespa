@@ -29,11 +29,11 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         if (fieldPath != null) {
-            ctx.setValue(ctx.getInputValue(fieldPath));
+            context.setValue(context.getInputValue(fieldPath));
         } else {
-            ctx.setValue(ctx.getInputValue(fieldName));
+            context.setValue(context.getInputValue(fieldName));
         }
     }
 

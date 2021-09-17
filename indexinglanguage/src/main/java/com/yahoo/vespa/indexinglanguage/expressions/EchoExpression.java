@@ -26,8 +26,8 @@ public final class EchoExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        out.println(String.valueOf(ctx.getValue()));
+    protected void doExecute(ExecutionContext context) {
+        out.println(String.valueOf(context.getValue()));
     }
 
     @Override

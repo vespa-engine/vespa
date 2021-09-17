@@ -20,8 +20,8 @@ public final class GetVarExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(ctx.getVariable(varName));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(context.getVariable(varName));
     }
 
     @Override

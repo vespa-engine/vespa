@@ -19,6 +19,13 @@ public abstract class Expression extends Selectable {
 
     private final DataType inputType;
 
+    /**
+     * Creates an expression
+     *
+     * @param inputType the type of the input this expression can work with.
+     *        UnresolvedDataType.INSTANCE if it works with any type,
+     *        and null if it does not consume any input.
+     */
     protected Expression(DataType inputType) {
         this.inputType = inputType;
     }
@@ -87,7 +94,7 @@ public abstract class Expression extends Selectable {
         return context.getValue();
     }
 
-    protected abstract void doExecute(ExecutionContext ctx);
+    protected abstract void doExecute(ExecutionContext context);
 
     public final DataType verify() {
         return verify(new VerificationContext());

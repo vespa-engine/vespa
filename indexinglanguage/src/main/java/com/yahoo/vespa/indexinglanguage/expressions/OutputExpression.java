@@ -23,8 +23,8 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setOutputValue(this, fieldName, ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        context.setOutputValue(this, fieldName, context.getValue());
     }
 
     @Override

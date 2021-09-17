@@ -33,9 +33,9 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         for (Expression exp : this) {
-            ctx.execute(exp);
+            context.execute(exp);
         }
     }
 

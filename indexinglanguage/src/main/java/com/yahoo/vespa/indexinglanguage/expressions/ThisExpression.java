@@ -13,7 +13,7 @@ public final class ThisExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         // empty
     }
 

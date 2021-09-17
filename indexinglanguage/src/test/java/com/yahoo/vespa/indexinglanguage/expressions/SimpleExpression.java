@@ -40,9 +40,9 @@ final class SimpleExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         if (hasExecuteValue) {
-            ctx.setValue(executeValue);
+            context.setValue(executeValue);
         }
     }
 

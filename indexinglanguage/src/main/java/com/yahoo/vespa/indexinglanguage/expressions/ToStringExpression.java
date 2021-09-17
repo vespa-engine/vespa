@@ -13,8 +13,8 @@ public final class ToStringExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(String.valueOf(ctx.getValue())));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new StringFieldValue(String.valueOf(context.getValue())));
     }
 
     @Override

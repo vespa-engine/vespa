@@ -25,12 +25,12 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        StringFieldValue input = (StringFieldValue)ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        StringFieldValue input = (StringFieldValue) context.getValue();
         if (input.getString().isEmpty()) return;
 
         StringFieldValue output = input.clone();
-        ctx.setValue(output);
+        context.setValue(output);
 
         String prev = output.getString();
         String next = toLowerCase(prev);

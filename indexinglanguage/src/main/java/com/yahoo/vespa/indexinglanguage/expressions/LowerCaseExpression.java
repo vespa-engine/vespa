@@ -15,8 +15,8 @@ public final class LowerCaseExpression extends Expression {
         super(DataType.STRING);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(toLowerCase(String.valueOf(ctx.getValue()))));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new StringFieldValue(toLowerCase(String.valueOf(context.getValue()))));
     }
 
     @Override

@@ -15,8 +15,8 @@ public final class TrimExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(String.valueOf(ctx.getValue()).trim()));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new StringFieldValue(String.valueOf(context.getValue()).trim()));
     }
 
     @Override

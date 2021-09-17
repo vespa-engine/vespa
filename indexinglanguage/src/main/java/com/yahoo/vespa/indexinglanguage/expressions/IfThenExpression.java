@@ -75,23 +75,23 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
-        FieldValue lhsVal = ctx.setValue(input).execute(lhs).getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
+        FieldValue lhsVal = context.setValue(input).execute(lhs).getValue();
         if (lhsVal == null) {
-            ctx.setValue(null);
+            context.setValue(null);
             return;
         }
-        FieldValue rhsVal = ctx.setValue(input).execute(rhs).getValue();
+        FieldValue rhsVal = context.setValue(input).execute(rhs).getValue();
         if (rhsVal == null) {
-            ctx.setValue(null);
+            context.setValue(null);
             return;
         }
-        ctx.setValue(input);
+        context.setValue(input);
         if (isTrue(lhsVal, cmp, rhsVal)) {
-            ifTrue.execute(ctx);
+            ifTrue.execute(context);
         } else if (ifFalse != null) {
-            ifFalse.execute(ctx);
+            ifFalse.execute(context);
         }
     }
 

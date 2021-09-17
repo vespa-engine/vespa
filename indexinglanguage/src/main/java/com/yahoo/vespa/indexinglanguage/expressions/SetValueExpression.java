@@ -25,8 +25,8 @@ public final class SetValueExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(value);
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(value);
     }
 
     @Override

@@ -246,8 +246,8 @@ public class ForEachTestCase {
             super(null);
         }
         @Override
-        protected void doExecute(ExecutionContext ctx) {
-            lst.add(ctx.getValue());
+        protected void doExecute(ExecutionContext context) {
+            lst.add(context.getValue());
         }
 
         @Override

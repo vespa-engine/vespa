@@ -27,18 +27,18 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(final ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(final ExecutionContext context) {
+        FieldValue input = context.getValue();
         if (input instanceof Array || input instanceof WeightedSet) {
-            FieldValue next = new MyConverter(ctx, exp).convert(input);
+            FieldValue next = new MyConverter(context, exp).convert(input);
             if (next == null) {
-                VerificationContext vctx = new VerificationContext(ctx);
+                VerificationContext vctx = new VerificationContext(context);
                 vctx.setValue(input.getDataType()).execute(this);
                 next = vctx.getValue().createFieldValue();
             }
-            ctx.setValue(next);
+            context.setValue(next);
         } else if (input instanceof Struct) {
-            ctx.setValue(new MyConverter(ctx, exp).convert(input));
+            context.setValue(new MyConverter(context, exp).convert(input));
         } else {
             throw new IllegalArgumentException("Expected Array, Struct or WeightedSet input, got " +
                                                input.getDataType().getName() + ".");

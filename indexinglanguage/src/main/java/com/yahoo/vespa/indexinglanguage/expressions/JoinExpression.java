@@ -28,8 +28,8 @@ public final class JoinExpression extends Expression {
 
     @SuppressWarnings({ "unchecked" })
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         if (!(input instanceof Array)) {
             throw new IllegalArgumentException("Expected Array input, got " + input.getDataType().getName() + ".");
         }
@@ -40,7 +40,7 @@ public final class JoinExpression extends Expression {
                 output.append(delimiter);
             }
         }
-        ctx.setValue(new StringFieldValue(output.toString()));
+        context.setValue(new StringFieldValue(output.toString()));
     }
 
     @Override

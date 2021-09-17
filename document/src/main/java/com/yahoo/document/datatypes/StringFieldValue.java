@@ -74,7 +74,6 @@ public class StringFieldValue extends FieldValue {
      * Returns {@link com.yahoo.document.DataType}.STRING.
      *
      * @return DataType.STRING, always
-     * @see com.yahoo.document.DataType
      */
     @Override
     public DataType getDataType() {

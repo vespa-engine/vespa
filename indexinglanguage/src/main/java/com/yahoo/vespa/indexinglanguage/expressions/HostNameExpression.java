@@ -16,8 +16,8 @@ public final class HostNameExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new StringFieldValue(normalizeHostName(getDefaults().vespaHostname())));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new StringFieldValue(normalizeHostName(getDefaults().vespaHostname())));
     }
 
     @Override

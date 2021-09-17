@@ -46,8 +46,8 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         Expression exp = null;
         if (input != null) {
             if (!(input instanceof StringFieldValue)) {
@@ -60,9 +60,9 @@ public final class SwitchExpression extends CompositeExpression {
             exp = defaultExp;
         }
         if (exp != null) {
-            exp.execute(ctx);
+            exp.execute(context);
         }
-        ctx.setValue(input);
+        context.setValue(input);
     }
 
     @Override

@@ -14,8 +14,8 @@ public final class ToPositionExpression extends Expression {
         super(DataType.STRING);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(PositionDataType.fromString(String.valueOf(ctx.getValue())));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(PositionDataType.fromString(String.valueOf(context.getValue())));
     }
 
     @Override

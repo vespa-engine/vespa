@@ -17,14 +17,14 @@ public final class ZCurveExpression extends Expression {
         super(PositionDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        Struct input = ((Struct)ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        Struct input = ((Struct) context.getValue());
         Integer x = getFieldValue(input, PositionDataType.FIELD_X);
         Integer y = getFieldValue(input, PositionDataType.FIELD_Y);
         if (x != null && y != null) {
-            ctx.setValue(new LongFieldValue(ZCurve.encode(x, y)));
+            context.setValue(new LongFieldValue(ZCurve.encode(x, y)));
         } else {
-            ctx.setValue(DataType.LONG.createFieldValue());
+            context.setValue(DataType.LONG.createFieldValue());
         }
     }
 

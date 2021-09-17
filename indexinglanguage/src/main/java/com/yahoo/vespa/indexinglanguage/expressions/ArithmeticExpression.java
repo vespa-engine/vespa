@@ -68,10 +68,10 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
-        ctx.setValue(evaluate(ctx.setValue(input).execute(lhs).getValue(),
-                              ctx.setValue(input).execute(rhs).getValue()));
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
+        context.setValue(evaluate(context.setValue(input).execute(lhs).getValue(),
+                                  context.setValue(input).execute(rhs).getValue()));
     }
 
     @Override

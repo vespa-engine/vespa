@@ -23,8 +23,8 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        innerExp.execute(ctx);
+    protected void doExecute(ExecutionContext context) {
+        innerExp.execute(context);
     }
 
     @Override

@@ -63,5 +63,6 @@ public class VerificationContext implements FieldTypeAdapter, Cloneable {
         value = null;
         return this;
     }
+
 }
 

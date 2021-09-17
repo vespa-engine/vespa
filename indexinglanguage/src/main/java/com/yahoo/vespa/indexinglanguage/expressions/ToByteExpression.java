@@ -13,8 +13,8 @@ public final class ToByteExpression extends Expression {
         super(UnresolvedDataType.INSTANCE);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.setValue(new ByteFieldValue(Byte.valueOf(String.valueOf(ctx.getValue()))));
+    protected void doExecute(ExecutionContext context) {
+        context.setValue(new ByteFieldValue(Byte.valueOf(String.valueOf(context.getValue()))));
     }
 
     @Override

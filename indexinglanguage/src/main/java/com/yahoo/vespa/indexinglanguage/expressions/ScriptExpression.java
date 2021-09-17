@@ -33,12 +33,12 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         for (Expression exp : this) {
-            ctx.setValue(input).execute(exp);
+            context.setValue(input).execute(exp);
         }
-        ctx.setValue(input);
+        context.setValue(input);
     }
 
     @Override
