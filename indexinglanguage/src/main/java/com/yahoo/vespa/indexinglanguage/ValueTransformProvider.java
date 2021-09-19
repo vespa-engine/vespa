@@ -60,4 +60,5 @@ public abstract class ValueTransformProvider extends ExpressionConverter {
     protected abstract boolean requiresTransform(Expression exp);
 
     protected abstract Expression newTransform();
+
 }

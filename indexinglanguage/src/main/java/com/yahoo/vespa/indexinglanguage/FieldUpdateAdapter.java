@@ -255,4 +255,5 @@ public class FieldUpdateAdapter implements UpdateAdapter {
             return super.createValueUpdates(val, nullAssign);
         }
     }
+
 }

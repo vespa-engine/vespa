@@ -13,6 +13,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
@@ -125,6 +126,7 @@ public class IndexingProcessorTestCase {
     private static IndexingProcessor newProcessor(String configId) {
         return new IndexingProcessor(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId),
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
-                                     new SimpleLinguistics());
+                                     new SimpleLinguistics(),
+                                     Encoder.throwsOnUse);
     }
 }

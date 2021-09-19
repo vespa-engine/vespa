@@ -2,7 +2,9 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
@@ -20,6 +22,9 @@ import java.util.List;
  */
 public final class StatementExpression extends ExpressionList<Expression> {
 
+    /** The name of the (last) output field tthis statement will write to, or null if none */
+    private String outputField;
+
     public StatementExpression(Expression... lst) {
         this(Arrays.asList(lst));
     }
@@ -33,17 +38,21 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
+    protected void doExecute(ExecutionContext context) {
         for (Expression exp : this) {
-            ctx.execute(exp);
+            context.execute(exp);
         }
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        for (Expression exp : this) {
-            context.execute(exp);
+        for (Expression expression : this) {
+            if (expression instanceof OutputExpression)
+                outputField = ((OutputExpression)expression).getFieldName();
         }
+        context.setOutputField(outputField);
+        for (Expression expression : this)
+            context.execute(expression);
     }
 
     private static DataType resolveInputType(Iterable<Expression> lst) {
@@ -90,13 +99,12 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     /** Creates an expression with simple lingustics for testing */
-    @SuppressWarnings("deprecation")
     public static StatementExpression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics());
+        return fromString(expression, new SimpleLinguistics(), Encoder.throwsOnUse);
     }
 
-    public static StatementExpression fromString(String expression, Linguistics linguistics) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics).setInputStream(new IndexingInput(expression)));
+    public static StatementExpression fromString(String expression, Linguistics linguistics, Encoder encoder) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, encoder).setInputStream(new IndexingInput(expression)));
     }
 
     public static StatementExpression newInstance(ScriptParserContext config) throws ParseException {

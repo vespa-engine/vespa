@@ -16,7 +16,7 @@ import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 import java.util.Iterator;
 
 /**
- * A filter which splits incoming text into n-grams
+ * A filter which splits incoming text into n-grams.
  *
  * @author bratseth
  */
@@ -28,7 +28,7 @@ public final class NGramExpression extends Expression {
     /**
      * Creates an executable ngram expression
      *
-     * @param linguistics  the gram splitter to use, or null if this is used for representation and will not be executed
+     * @param linguistics the gram splitter to use, or null if this is used for representation and will not be executed
      * @param gramSize the gram size
      */
     public NGramExpression(Linguistics linguistics, int gramSize) {
@@ -46,14 +46,14 @@ public final class NGramExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        StringFieldValue input = (StringFieldValue)ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        StringFieldValue input = (StringFieldValue) context.getValue();
         if (input.getSpanTree(SpanTrees.LINGUISTICS) != null) {
             // This expression is already executed for this input instance
             return;
         }
         StringFieldValue output = input.clone();
-        ctx.setValue(output);
+        context.setValue(output);
 
         SpanList spanList = output.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS)).spanList();
         int lastPosition = 0;

@@ -9,7 +9,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
  */
 public interface DocumentAdapter extends FieldValueAdapter {
 
-    public Document getFullOutput();
+    Document getFullOutput();
 
-    public Document getUpdatableOutput();
+    Document getUpdatableOutput();
+
 }

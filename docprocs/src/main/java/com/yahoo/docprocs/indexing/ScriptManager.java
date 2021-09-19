@@ -5,6 +5,8 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
+
+import com.yahoo.language.process.Encoder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -26,9 +28,9 @@ public class ScriptManager {
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager docTypeMgr;
 
-    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics) {
+    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Encoder encoder) {
         this.docTypeMgr = docTypeMgr;
-        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics);
+        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, encoder);
     }
 
 
@@ -72,9 +74,10 @@ public class ScriptManager {
 
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
-                                                                              Linguistics linguistics) {
+                                                                              Linguistics linguistics,
+                                                                              Encoder encoder) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, encoder);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
 

@@ -16,10 +16,10 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        String input = String.valueOf(ctx.getValue());
+    protected void doExecute(ExecutionContext context) {
+        String input = String.valueOf(context.getValue());
         if (input.isEmpty()) {
-            ctx.setValue(new LongFieldValue(Long.MIN_VALUE));
+            context.setValue(new LongFieldValue(Long.MIN_VALUE));
             return;
         }
         if (input.length() > 12) {
@@ -33,12 +33,12 @@ public final class Base64DecodeExpression extends Expression {
         for (int i = decoded.length; --i >= 0;) {
             output = (output << 8) + (((int)decoded[i]) & 0xff);
         }
-        ctx.setValue(new LongFieldValue(output));
+        context.setValue(new LongFieldValue(output));
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(createdOutputType());
+        context.setValueType(createdOutputType());
     }
 
     @Override

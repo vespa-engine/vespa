@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,8 +12,8 @@ public final class ClearStateExpression extends Expression {
         super(null);
     }
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        ctx.clear();
+    protected void doExecute(ExecutionContext context) {
+        context.clear();
     }
 
     @Override

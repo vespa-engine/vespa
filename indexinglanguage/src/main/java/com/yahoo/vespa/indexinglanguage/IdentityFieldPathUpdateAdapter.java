@@ -65,4 +65,5 @@ public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
         fwdAdapter.tryOutputType(exp, fieldName, valueType);
     }
+
 }

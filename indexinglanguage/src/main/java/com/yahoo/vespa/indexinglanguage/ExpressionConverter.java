@@ -121,7 +121,6 @@ public abstract class ExpressionConverter implements Cloneable {
     }
 
     @Override
-    @SuppressWarnings("CloneDoesntDeclareCloneNotSupportedException")
     public ExpressionConverter clone() {
         try {
             return (ExpressionConverter)super.clone();

@@ -9,8 +9,9 @@ import com.yahoo.document.datatypes.FieldValue;
  */
 public interface FieldValueAdapter extends FieldTypeAdapter {
 
-    public FieldValue getInputValue(String fieldName);
-    public FieldValue getInputValue(FieldPath fieldPath);
+    FieldValue getInputValue(String fieldName);
+    FieldValue getInputValue(FieldPath fieldPath);
 
-    public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue);
+    FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue);
+
 }

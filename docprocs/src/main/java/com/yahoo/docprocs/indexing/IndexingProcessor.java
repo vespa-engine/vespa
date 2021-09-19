@@ -20,6 +20,8 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
+
+import com.yahoo.language.process.Encoder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
@@ -52,9 +54,10 @@ public class IndexingProcessor extends DocumentProcessor {
     @Inject
     public IndexingProcessor(DocumentmanagerConfig documentmanagerConfig,
                              IlscriptsConfig ilscriptsConfig,
-                             Linguistics linguistics) {
+                             Linguistics linguistics,
+                             Encoder encoder) {
         docTypeMgr = DocumentTypeManagerConfigurer.configureNewManager(documentmanagerConfig);
-        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics);
+        scriptMgr = new ScriptManager(docTypeMgr, ilscriptsConfig, linguistics, encoder);
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 

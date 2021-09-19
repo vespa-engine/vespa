@@ -14,6 +14,9 @@ import java.util.List;
  */
 public interface Encoder {
 
+    /** An instance of this which throws IllegalStateException if attempted used */
+    Encoder throwsOnUse = new FailingEncoder();
+
     /**
      * Encodes text into tokens in a list of ids.
      *
@@ -35,5 +38,19 @@ public interface Encoder {
      * @throws IllegalArgumentException if the language or tensor type is not supported by this encoder
      */
     Tensor encode(String text, Language language, TensorType tensorType);
+
+    class FailingEncoder implements Encoder {
+
+        @Override
+        public List<Integer> encode(String text, Language language) {
+            throw new IllegalStateException("No encoder has been configured");
+        }
+
+        @Override
+        public Tensor encode(String text, Language language, TensorType tensorType) {
+            throw new IllegalStateException("No encoder has been configured");
+        }
+
+    }
 
 }

@@ -243,6 +243,6 @@ public class CatTestCase {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("a", typeA), new Field("b", typeB));
         VerificationContext ctx = new VerificationContext(adapter);
         new CatExpression(new InputExpression("a"), new InputExpression("b")).verify(ctx);
-        return ctx.getValue();
+        return ctx.getValueType();
     }
 }

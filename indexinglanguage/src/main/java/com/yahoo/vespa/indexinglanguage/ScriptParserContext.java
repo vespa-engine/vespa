@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
@@ -13,11 +14,13 @@ public class ScriptParserContext {
 
     private AnnotatorConfig annotatorConfig = new AnnotatorConfig();
     private Linguistics linguistics;
+    private final Encoder encoder;
     private String defaultFieldName = null;
     private CharStream inputStream = null;
 
-    public ScriptParserContext(Linguistics linguistics) {
+    public ScriptParserContext(Linguistics linguistics, Encoder encoder) {
         this.linguistics = linguistics;
+        this.encoder = encoder;
     }
 
     public AnnotatorConfig getAnnotatorConfig() {
@@ -38,6 +41,10 @@ public class ScriptParserContext {
         return this;
     }
 
+    public Encoder getEncoder() {
+        return encoder;
+    }
+
     public String getDefaultFieldName() {
         return defaultFieldName;
     }
@@ -55,4 +62,5 @@ public class ScriptParserContext {
         inputStream = stream;
         return this;
     }
+
 }

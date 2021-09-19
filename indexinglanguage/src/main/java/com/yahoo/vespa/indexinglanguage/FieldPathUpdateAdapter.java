@@ -123,4 +123,5 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
                                                              update.getOriginalWhereClause()));
         }
     }
+
 }

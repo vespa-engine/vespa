@@ -16,20 +16,20 @@ public final class ToArrayExpression extends Expression {
     }
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    protected void doExecute(ExecutionContext ctx) {
-        FieldValue input = ctx.getValue();
+    protected void doExecute(ExecutionContext context) {
+        FieldValue input = context.getValue();
         DataType inputType = input.getDataType();
 
         ArrayDataType outputType = DataType.getArray(inputType);
         Array output = outputType.createFieldValue();
         output.add(input);
 
-        ctx.setValue(output);
+        context.setValue(output);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setValue(DataType.getArray(context.getValue()));
+        context.setValueType(DataType.getArray(context.getValueType()));
     }
 
     @Override

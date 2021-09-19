@@ -58,6 +58,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class SDParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics());
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Encoder.throwsOnUse);
     }
 
     /**
@@ -120,13 +121,13 @@ public class SDParser {
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics) throws ParseException {
+    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Encoder encoder) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {
             input.backup(token.next.image.length());
         }
         try {
-            return IndexingOperation.fromStream(input, multiline, linguistics);
+            return IndexingOperation.fromStream(input, multiline, linguistics, encoder);
         } finally {
             token.next = null;
             jj_ntk = -1;
