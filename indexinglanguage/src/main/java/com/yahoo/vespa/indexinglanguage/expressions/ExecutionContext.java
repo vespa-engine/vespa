@@ -20,7 +20,6 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     private final FieldValueAdapter adapter;
     private FieldValue value;
     private Language language;
-    private DataType outputType = null;
 
     public ExecutionContext() {
         this(null);
@@ -63,14 +62,6 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
         adapter.tryOutputType(exp, fieldName, valueType);
     }
-
-    /** Sets the output type created by this execution */
-    public void setOutputType(DataType type) {
-        this.outputType = type;
-    }
-
-    /** Returns the output type created by this execution, or null if none */
-    public DataType getOutputType() { return outputType; }
 
     @Override
     public ExecutionContext setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {

@@ -25,9 +25,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     /** The name of the (last) output field tthis statement will write to, or null if none */
     private String outputField;
 
-    /** The type of the output created by this statement, or null if no output */
-    private DataType outputType;
-
     public StatementExpression(Expression... lst) {
         this(Arrays.asList(lst));
     }
@@ -38,12 +35,10 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
         super(list, resolveInputType(list));
-        outputType = resolveOutputType(list);
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        context.setOutputType(outputType);
         for (Expression exp : this) {
             context.execute(exp);
         }
@@ -58,7 +53,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
         context.setOutputField(outputField);
         for (Expression expression : this)
             context.execute(expression);
-        outputType = context.getValueType();
     }
 
     private static DataType resolveInputType(Iterable<Expression> lst) {
@@ -76,18 +70,16 @@ public final class StatementExpression extends ExpressionList<Expression> {
         return null;
     }
 
-    private static DataType resolveOutputType(Iterable<Expression> expressions) {
-        DataType lastOutput = null;
-        for (var expression : expressions) {
-            DataType output = expression.createdOutputType();
-            if (output != null)
-                lastOutput = output;
-        }
-        return lastOutput;
-    }
-
     @Override
-    public DataType createdOutputType() { return outputType; }
+    public DataType createdOutputType() {
+        for (int i = size(); --i >= 0; ) {
+            DataType type = get(i).createdOutputType();
+            if (type != null) {
+                return type;
+            }
+        }
+        return null;
+    }
 
     @Override
     public String toString() {
