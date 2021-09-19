@@ -57,4 +57,5 @@ public abstract class OutputExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + (fieldName != null ? fieldName.hashCode() : 0);
     }
+
 }

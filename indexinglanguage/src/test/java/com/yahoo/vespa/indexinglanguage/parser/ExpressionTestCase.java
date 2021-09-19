@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.parser;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import org.junit.Test;
@@ -84,9 +85,9 @@ public class ExpressionTestCase {
 
     private static void assertExpression(Class expectedClass, String str) throws ParseException {
         Linguistics linguistics = new SimpleLinguistics();
-        Expression foo = Expression.fromString(str, linguistics);
+        Expression foo = Expression.fromString(str, linguistics, Encoder.throwsOnUse);
         assertEquals(expectedClass, foo.getClass());
-        Expression bar = Expression.fromString(foo.toString(), linguistics);
+        Expression bar = Expression.fromString(foo.toString(), linguistics, Encoder.throwsOnUse);
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);
     }

@@ -19,4 +19,5 @@ final class UnresolvedDataType extends PrimitiveDataType {
     public boolean isValueCompatible(FieldValue value) {
         return value != null;
     }
+
 }

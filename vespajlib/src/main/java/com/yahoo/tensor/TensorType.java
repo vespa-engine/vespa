@@ -187,7 +187,7 @@ public class TensorType {
     }
 
     /**
-     * Returns whether or not this type can simply be renamed to
+     * Returns whether this type can simply be renamed to
      * the given type. This is the same as being assignable, but disregarding
      * dimension names.
      */

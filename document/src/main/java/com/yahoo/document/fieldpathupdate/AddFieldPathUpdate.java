@@ -11,9 +11,10 @@ import com.yahoo.document.serialization.DocumentUpdateReader;
 import com.yahoo.document.serialization.VespaDocumentSerializer6;
 
 /**
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class AddFieldPathUpdate extends FieldPathUpdate {
+
     class IteratorHandler extends FieldPathIteratorHandler {
         Array newValues;
 

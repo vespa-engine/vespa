@@ -21,7 +21,7 @@ public class TensorDataType extends DataType {
     public static int classId = registerClass(Ids.document + 59, TensorDataType.class);
 
     public TensorDataType(TensorType tensorType) {
-        super(tensorType.toString(), DataType.tensorDataTypeCode);
+        super(tensorType == null ? "tensor" : tensorType.toString(), DataType.tensorDataTypeCode);
         this.tensorType = tensorType;
     }
 

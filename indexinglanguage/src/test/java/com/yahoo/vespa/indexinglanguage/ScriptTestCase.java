@@ -4,11 +4,27 @@ package com.yahoo.vespa.indexinglanguage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.FieldPath;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.language.Language;
+import com.yahoo.language.process.Encoder;
+import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -84,10 +100,49 @@ public class ScriptTestCase {
         Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue("in-1", new StringFieldValue("foo"));
         var expression = Expression.fromString("if (input 'in-1' == \"foo\") { true | summary 'mybool' | attribute 'mybool' }");
-        System.out.println(expression);
         Document output = Expression.execute(expression, input);
         assertNotNull(output);
         assertEquals(new BoolFieldValue(true), output.getFieldValue("mybool"));
+    }
+
+    @Test
+    public void testEncode() throws ParseException {
+        TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
+        var expression = Expression.fromString("input myText | encode | attribute 'myTensor'",
+                                               new SimpleLinguistics(),
+                                               new MockEncoder());
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        adapter.createField(new Field("myTensor", new TensorDataType(tensorType)));
+        adapter.setValue("myText", new StringFieldValue("input text"));
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(TensorDataType.class, expression.verify(verificationContext).getClass());
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setValue(new StringFieldValue("input text"));
+        expression.execute(context);
+        assertNotNull(context);
+        //assertTrue(context.getOutputType() instanceof TensorDataType);
+        assertTrue(adapter.values.containsKey("myTensor"));
+        assertEquals(Tensor.from(tensorType, "[7,3,0,0]"),
+                     ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());
+    }
+
+    private static class MockEncoder implements Encoder {
+
+        @Override
+        public List<Integer> encode(String text, Language language) {
+            return null;
+        }
+
+        @Override
+        public Tensor encode(String text, Language language, TensorType tensorType) {
+            return Tensor.from(tensorType, "[7,3,0,0]");
+        }
+
     }
 
 }

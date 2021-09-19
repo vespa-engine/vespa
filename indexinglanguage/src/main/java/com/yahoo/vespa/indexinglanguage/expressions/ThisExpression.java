@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 
 /**
  * @author Simon Thoresen Hult

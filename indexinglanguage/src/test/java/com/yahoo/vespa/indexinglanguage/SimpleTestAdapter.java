@@ -17,8 +17,8 @@ import java.util.Map;
  */
 public class SimpleTestAdapter implements FieldValueAdapter {
 
-    private final Map<String, DataType> types = new HashMap<String, DataType>();
-    private final Map<String, FieldValue> values = new HashMap<String, FieldValue>();
+    final Map<String, DataType> types = new HashMap<>();
+    final Map<String, FieldValue> values = new HashMap<>();
 
     public SimpleTestAdapter(Field... fields) {
         for (Field field : fields) {
@@ -58,9 +58,15 @@ public class SimpleTestAdapter implements FieldValueAdapter {
         }
     }
 
+    public SimpleTestAdapter setValue(String fieldName, FieldValue fieldValue) {
+        values.put(fieldName, fieldValue);
+        return this;
+    }
+
     @Override
     public SimpleTestAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
         values.put(fieldName, fieldValue);
         return this;
     }
+
 }
