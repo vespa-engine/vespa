@@ -212,7 +212,6 @@ public:
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;
-    std::unique_ptr<framework::TickingThreadPool> _threadPool;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
     std::unique_ptr<DistributorStripe> _stripe;

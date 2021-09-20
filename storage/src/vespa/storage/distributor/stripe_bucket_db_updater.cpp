@@ -31,25 +31,19 @@ namespace storage::distributor {
 StripeBucketDBUpdater::StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
                                              DistributorStripeOperationContext& op_ctx,
                                              DistributorStripeInterface& owner,
-                                             DistributorMessageSender& sender,
-                                             bool use_legacy_mode)
+                                             DistributorMessageSender& sender)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _node_ctx(node_ctx),
       _op_ctx(op_ctx),
       _distributor_interface(owner),
       _delayedRequests(),
       _sentMessages(),
-      _pendingClusterState(),
-      _history(),
       _sender(sender),
       _enqueuedRechecks(),
-      _outdatedNodesMap(),
-      _transitionTimer(_node_ctx.clock()),
       _stale_reads_enabled(false),
       _active_distribution_contexts(),
       _explicit_transition_read_guard(),
-      _distribution_context_mutex(),
-      _use_legacy_mode(use_legacy_mode)
+      _distribution_context_mutex()
 {
     for (auto& elem : _op_ctx.bucket_space_repo()) {
         _active_distribution_contexts.emplace(
@@ -223,66 +217,18 @@ public:
 
 }
 
-void
-StripeBucketDBUpdater::removeSuperfluousBuckets(
-        const lib::ClusterStateBundle& newState,
-        bool is_distribution_config_change)
-{
-    assert(_use_legacy_mode);
-    const bool move_to_read_only_db = shouldDeferStateEnabling();
-    const char* up_states = storage_node_up_states();
-    for (auto& elem : _op_ctx.bucket_space_repo()) {
-        const auto& newDistribution(elem.second->getDistribution());
-        const auto& oldClusterState(elem.second->getClusterState());
-        const auto& new_cluster_state = newState.getDerivedClusterState(elem.first);
-
-        // Running a full DB sweep is expensive, so if the cluster state transition does
-        // not actually indicate that buckets should possibly be removed, we elide it entirely.
-        if (!is_distribution_config_change
-            && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
-        {
-            LOG(debug, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
-                document::FixedBucketSpaces::to_string(elem.first).data(),
-                oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
-            continue;
-        }
-
-        auto& bucketDb(elem.second->getBucketDatabase());
-        auto& readOnlyDb(_op_ctx.read_only_bucket_space_repo().get(elem.first).getBucketDatabase());
-
-        // Remove all buckets not belonging to this distributor, or
-        // being on storage nodes that are no longer up.
-        MergingNodeRemover proc(
-                oldClusterState,
-                *new_cluster_state,
-                _node_ctx.node_index(),
-                newDistribution,
-                up_states,
-                move_to_read_only_db);
-
-        bucketDb.merge(proc);
-        if (move_to_read_only_db) {
-            ReadOnlyDbMergingInserter read_only_merger(proc.getNonOwnedEntries());
-            readOnlyDb.merge(read_only_merger);
-        }
-        maybe_inject_simulated_db_pruning_delay();
-    }
-}
-
 PotentialDataLossReport
 StripeBucketDBUpdater::remove_superfluous_buckets(
             document::BucketSpace bucket_space,
             const lib::ClusterState& new_state,
             bool is_distribution_change)
 {
-    assert(!_use_legacy_mode);
     (void)is_distribution_change; // TODO remove if not needed
     const bool move_to_read_only_db = shouldDeferStateEnabling();
     const char* up_states = storage_node_up_states();
 
     auto& s = _op_ctx.bucket_space_repo().get(bucket_space);
     const auto& new_distribution = s.getDistribution();
-    const auto& old_cluster_state = s.getClusterState();
     // Elision of DB sweep is done at a higher level, so we don't have to do that here.
     auto& bucket_db = s.getBucketDatabase();
     auto& read_only_db = _op_ctx.read_only_bucket_space_repo().get(bucket_space).getBucketDatabase();
@@ -290,7 +236,6 @@ StripeBucketDBUpdater::remove_superfluous_buckets(
     // Remove all buckets not belonging to this distributor, or
     // being on storage nodes that are no longer up.
     MergingNodeRemover proc(
-            old_cluster_state,
             new_state,
             _node_ctx.node_index(),
             new_distribution,
@@ -303,7 +248,7 @@ StripeBucketDBUpdater::remove_superfluous_buckets(
         read_only_db.merge(read_only_merger);
     }
     PotentialDataLossReport report;
-    report.buckets = proc.removed_buckets();
+    report.buckets   = proc.removed_buckets();
     report.documents = proc.removed_documents();
     return report;
 }
@@ -317,7 +262,6 @@ StripeBucketDBUpdater::merge_entries_into_db(document::BucketSpace bucket_space,
                                              const std::unordered_set<uint16_t>& outdated_nodes,
                                              const std::vector<dbtransition::Entry>& entries)
 {
-    assert(!_use_legacy_mode);
     auto& s = _op_ctx.bucket_space_repo().get(bucket_space);
     auto& bucket_db = s.getBucketDatabase();
 
@@ -326,90 +270,12 @@ StripeBucketDBUpdater::merge_entries_into_db(document::BucketSpace bucket_space,
     bucket_db.merge(merger);
 }
 
-namespace {
-
-void maybe_sleep_for(std::chrono::milliseconds ms) {
-    if (ms.count() > 0) {
-        std::this_thread::sleep_for(ms);
-    }
-}
-
-}
-
-void
-StripeBucketDBUpdater::maybe_inject_simulated_db_pruning_delay() {
-    maybe_sleep_for(_op_ctx.distributor_config().simulated_db_pruning_latency());
-}
-
-void
-StripeBucketDBUpdater::maybe_inject_simulated_db_merging_delay() {
-    maybe_sleep_for(_op_ctx.distributor_config().simulated_db_merging_latency());
-}
-
-void
-StripeBucketDBUpdater::ensureTransitionTimerStarted()
-{
-    // Don't overwrite start time if we're already processing a state, as
-    // that will make transition times appear artificially low.
-    if (!hasPendingClusterState()) {
-        _transitionTimer = framework::MilliSecTimer(
-                _node_ctx.clock());
-    }
-}
-
-void
-StripeBucketDBUpdater::completeTransitionTimer()
-{
-    _distributor_interface.getMetrics()
-            .stateTransitionTime.addValue(_transitionTimer.getElapsedTimeAsDouble());
-}
-
 void
 StripeBucketDBUpdater::clearReadOnlyBucketRepoDatabases()
 {
     for (auto& space : _op_ctx.read_only_bucket_space_repo()) {
         space.second->getBucketDatabase().clear();
     }
-}
-
-void
-StripeBucketDBUpdater::storageDistributionChanged()
-{
-    ensureTransitionTimerStarted();
-
-    removeSuperfluousBuckets(_op_ctx.cluster_state_bundle(), true);
-
-    auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
-            _node_ctx.node_index(),
-            _op_ctx.cluster_state_bundle(),
-            storage_node_up_states());
-    _pendingClusterState = PendingClusterState::createForDistributionChange(
-            _node_ctx.clock(),
-            std::move(clusterInfo),
-            _sender,
-            _op_ctx.bucket_space_repo(),
-            _op_ctx.generate_unique_timestamp());
-    _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
-    _op_ctx.bucket_space_repo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
-}
-
-void
-StripeBucketDBUpdater::replyToPreviousPendingClusterStateIfAny()
-{
-    if (_pendingClusterState.get() && _pendingClusterState->hasCommand()) {
-        _distributor_interface.getMessageSender().sendUp(
-                std::make_shared<api::SetSystemStateReply>(*_pendingClusterState->getCommand()));
-    }
-}
-
-void
-StripeBucketDBUpdater::replyToActivationWithActualVersion(
-        const api::ActivateClusterStateVersionCommand& cmd,
-        uint32_t actualVersion)
-{
-    auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(cmd);
-    reply->setActualVersion(actualVersion);
-    _distributor_interface.getMessageSender().sendUp(reply); // TODO let API accept rvalues
 }
 
 void StripeBucketDBUpdater::update_read_snapshot_before_db_pruning() {
@@ -427,7 +293,6 @@ void StripeBucketDBUpdater::update_read_snapshot_before_db_pruning() {
         _explicit_transition_read_guard[elem.first] = elem.second->getBucketDatabase().acquire_read_guard();
     }
 }
-
 
 void StripeBucketDBUpdater::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) {
     std::lock_guard lock(_distribution_context_mutex);
@@ -465,88 +330,6 @@ void StripeBucketDBUpdater::update_read_snapshot_after_activation(const lib::Clu
                         std::move(new_distribution),
                         _node_ctx.node_index()));
     }
-}
-
-bool
-StripeBucketDBUpdater::onSetSystemState(
-        const std::shared_ptr<api::SetSystemStateCommand>& cmd)
-{
-    assert(_use_legacy_mode);
-    LOG(debug,
-        "Received new cluster state %s",
-        cmd->getSystemState().toString().c_str());
-
-    const lib::ClusterStateBundle oldState = _op_ctx.cluster_state_bundle();
-    const lib::ClusterStateBundle& state = cmd->getClusterStateBundle();
-
-    if (state == oldState) {
-        return false;
-    }
-    ensureTransitionTimerStarted();
-    // Separate timer since _transition_timer might span multiple pending states.
-    framework::MilliSecTimer process_timer(_node_ctx.clock());
-    update_read_snapshot_before_db_pruning();
-    const auto& bundle = cmd->getClusterStateBundle();
-    removeSuperfluousBuckets(bundle, false);
-    update_read_snapshot_after_db_pruning(bundle);
-    replyToPreviousPendingClusterStateIfAny();
-
-    auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
-                _node_ctx.node_index(),
-                _op_ctx.cluster_state_bundle(),
-                storage_node_up_states());
-    _pendingClusterState = PendingClusterState::createForClusterStateChange(
-            _node_ctx.clock(),
-            std::move(clusterInfo),
-            _sender,
-            _op_ctx.bucket_space_repo(),
-            cmd,
-            _outdatedNodesMap,
-            _op_ctx.generate_unique_timestamp());
-    _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
-
-    _distributor_interface.getMetrics().set_cluster_state_processing_time.addValue(
-            process_timer.getElapsedTimeAsDouble());
-
-    _op_ctx.bucket_space_repo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
-    if (isPendingClusterStateCompleted()) {
-        processCompletedPendingClusterState();
-    }
-    return true;
-}
-
-bool
-StripeBucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
-{
-    assert(_use_legacy_mode);
-    if (hasPendingClusterState() && _pendingClusterState->isVersionedTransition()) {
-        const auto pending_version = _pendingClusterState->clusterStateVersion();
-        if (pending_version == cmd->version()) {
-            if (isPendingClusterStateCompleted()) {
-                assert(_pendingClusterState->isDeferred());
-                activatePendingClusterState();
-            } else {
-                LOG(error, "Received cluster state activation for pending version %u "
-                           "without pending state being complete yet. This is not expected, "
-                           "as no activation should be sent before all distributors have "
-                           "reported that state processing is complete.", pending_version);
-                replyToActivationWithActualVersion(*cmd, 0);  // Invalid version, will cause re-send (hopefully when completed).
-                return true;
-            }
-        } else {
-            replyToActivationWithActualVersion(*cmd, pending_version);
-            return true;
-        }
-    } else if (shouldDeferStateEnabling()) {
-        // Likely just a resend, but log warn for now to get a feel of how common it is.
-        LOG(warning, "Received cluster state activation command for version %u, which "
-                     "has no corresponding pending state. Likely resent operation.", cmd->version());
-    } else {
-        LOG(debug, "Received cluster state activation command for version %u, but distributor "
-                   "config does not have deferred activation enabled. Treating as no-op.", cmd->version());
-    }
-    // Fall through to next link in call chain that cares about this message.
-    return false;
 }
 
 StripeBucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
@@ -646,28 +429,7 @@ bool
 StripeBucketDBUpdater::onRequestBucketInfoReply(
         const std::shared_ptr<api::RequestBucketInfoReply> & repl)
 {
-    if (pendingClusterStateAccepted(repl)) {
-        return true;
-    }
     return processSingleBucketInfoReply(repl);
-}
-
-bool
-StripeBucketDBUpdater::pendingClusterStateAccepted(
-        const std::shared_ptr<api::RequestBucketInfoReply> & repl)
-{
-    if (_pendingClusterState.get()
-        && _pendingClusterState->onRequestBucketInfoReply(repl))
-    {
-        if (isPendingClusterStateCompleted()) {
-            processCompletedPendingClusterState();
-        }
-        return true;
-    }
-    LOG(spam,
-        "Reply %s was not accepted by pending cluster state",
-        repl->toString().c_str());
-    return false;
 }
 
 void
@@ -688,9 +450,6 @@ StripeBucketDBUpdater::handleSingleBucketInfoFailure(
 void
 StripeBucketDBUpdater::resendDelayedMessages()
 {
-    if (_pendingClusterState) {
-        _pendingClusterState->resendDelayedMessages();
-    }
     if (_delayedRequests.empty()) {
         return; // Don't fetch time if not needed
     }
@@ -803,98 +562,9 @@ StripeBucketDBUpdater::updateDatabase(document::BucketSpace bucketSpace, uint16_
     }
 }
 
-bool
-StripeBucketDBUpdater::isPendingClusterStateCompleted() const
-{
-    return _pendingClusterState.get() && _pendingClusterState->done();
-}
-
-void
-StripeBucketDBUpdater::processCompletedPendingClusterState()
-{
-    if (_pendingClusterState->isDeferred()) {
-        LOG(debug, "Deferring completion of pending cluster state version %u until explicitly activated",
-                   _pendingClusterState->clusterStateVersion());
-        assert(_pendingClusterState->hasCommand()); // Deferred transitions should only ever be created by state commands.
-        // Sending down SetSystemState command will reach the state manager and a reply
-        // will be auto-sent back to the cluster controller in charge. Once this happens,
-        // it will send an explicit activation command once all distributors have reported
-        // that their pending cluster states have completed.
-        // A booting distributor will treat itself as "system Up" before the state has actually
-        // taken effect via activation. External operation handler will keep operations from
-        // actually being scheduled until state has been activated. The external operation handler
-        // needs to be explicitly aware of the case where no state has yet to be activated.
-        _distributor_interface.getMessageSender().sendDown(
-                _pendingClusterState->getCommand());
-        _pendingClusterState->clearCommand();
-        return;
-    }
-    // Distribution config change or non-deferred cluster state. Immediately activate
-    // the pending state without being told to do so explicitly.
-    activatePendingClusterState();
-}
-
-void
-StripeBucketDBUpdater::activatePendingClusterState()
-{
-    framework::MilliSecTimer process_timer(_node_ctx.clock());
-
-    _pendingClusterState->mergeIntoBucketDatabases();
-    maybe_inject_simulated_db_merging_delay();
-
-    if (_pendingClusterState->isVersionedTransition()) {
-        LOG(debug, "Activating pending cluster state version %u", _pendingClusterState->clusterStateVersion());
-        enableCurrentClusterStateBundleInDistributor();
-        if (_pendingClusterState->hasCommand()) {
-            _distributor_interface.getMessageSender().sendDown(
-                    _pendingClusterState->getCommand());
-        }
-        addCurrentStateToClusterStateHistory();
-    } else {
-        LOG(debug, "Activating pending distribution config");
-        // TODO distribution changes cannot currently be deferred as they are not
-        // initiated by the cluster controller!
-        _distributor_interface.notifyDistributionChangeEnabled();
-    }
-
-    update_read_snapshot_after_activation(_pendingClusterState->getNewClusterStateBundle());
-    _pendingClusterState.reset();
-    _outdatedNodesMap.clear();
-    _op_ctx.bucket_space_repo().clear_pending_cluster_state_bundle(); // TODO also read only bucket space..?
-    sendAllQueuedBucketRechecks();
-    completeTransitionTimer();
-    clearReadOnlyBucketRepoDatabases();
-
-    _distributor_interface.getMetrics().activate_cluster_state_processing_time.addValue(
-            process_timer.getElapsedTimeAsDouble());
-}
-
-void
-StripeBucketDBUpdater::enableCurrentClusterStateBundleInDistributor()
-{
-    const lib::ClusterStateBundle& state(
-            _pendingClusterState->getNewClusterStateBundle());
-
-    LOG(debug,
-        "StripeBucketDBUpdater finished processing state %s",
-        state.getBaselineClusterState()->toString().c_str());
-
-    _distributor_interface.enableClusterStateBundle(state);
-}
-
 void StripeBucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state) {
     update_read_snapshot_after_activation(activated_state);
     _distributor_interface.enableClusterStateBundle(activated_state);
-}
-
-void
-StripeBucketDBUpdater::addCurrentStateToClusterStateHistory()
-{
-    _history.push_back(_pendingClusterState->getSummary());
-
-    if (_history.size() > 50) {
-        _history.pop_front();
-    }
 }
 
 vespalib::string
@@ -952,19 +622,7 @@ StripeBucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
         << XmlTag("systemstate_active")
         << XmlContent(_op_ctx.cluster_state_bundle().getBaselineClusterState()->toString())
         << XmlEndTag();
-    if (_pendingClusterState) {
-        xos << *_pendingClusterState;
-    }
-    xos << XmlTag("systemstate_history");
-    for (auto i(_history.rbegin()), e(_history.rend()); i != e; ++i) {
-        xos << XmlTag("change")
-            << XmlAttribute("from", i->_prevClusterState)
-            << XmlAttribute("to", i->_newClusterState)
-            << XmlAttribute("processingtime", i->_processingTime)
-            << XmlEndTag();
-    }
-    xos << XmlEndTag()
-        << XmlTag("single_bucket_requests");
+    xos << XmlTag("single_bucket_requests");
     report_single_bucket_requests(xos);
     xos << XmlEndTag()
         << XmlTag("delayed_single_bucket_requests");
@@ -990,14 +648,12 @@ StripeBucketDBUpdater::report_delayed_single_bucket_requests(vespalib::xml::XmlO
 }
 
 StripeBucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
-        const lib::ClusterState& oldState,
         const lib::ClusterState& s,
         uint16_t localIndex,
         const lib::Distribution& distribution,
         const char* upStates,
         bool track_non_owned_entries)
-    : _oldState(oldState),
-      _state(s),
+    : _state(s),
       _available_nodes(),
       _nonOwnedBuckets(),
       _removed_buckets(0),
@@ -1140,15 +796,6 @@ StripeBucketDBUpdater::MergingNodeRemover::storage_node_is_available(uint16_t in
     return ((index < _available_nodes.size()) && _available_nodes[index]);
 }
 
-StripeBucketDBUpdater::MergingNodeRemover::~MergingNodeRemover()
-{
-    if (_removed_buckets != 0) {
-        LOGBM(info, "After cluster state change %s, %zu buckets no longer "
-                    "have available replicas. %zu documents in these buckets will "
-                    "be unavailable until nodes come back up",
-                    _oldState.getTextualDifference(_state).c_str(),
-                    _removed_buckets, _removed_documents);
-    }
-}
+StripeBucketDBUpdater::MergingNodeRemover::~MergingNodeRemover() = default;
 
 } // distributor

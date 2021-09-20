@@ -303,11 +303,6 @@ TopLevelDistributorTestUtil::total_distributor_metrics() const
     return *_distributor->_total_metrics;
 }
 
-const storage::distributor::DistributorNodeContext&
-TopLevelDistributorTestUtil::node_context() const {
-    return _distributor->distributor_component();
-}
-
 DistributorBucketSpace&
 TopLevelDistributorTestUtil::distributor_bucket_space(const document::BucketId& id)
 {

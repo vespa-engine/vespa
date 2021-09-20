@@ -20,7 +20,6 @@ namespace storage::distributor {
 DistributorStripeTestUtil::DistributorStripeTestUtil()
     : _config(),
       _node(),
-      _threadPool(),
       _stripe(),
       _sender(),
       _senderDown(),
@@ -37,18 +36,14 @@ void
 DistributorStripeTestUtil::createLinks()
 {
     _node.reset(new TestDistributorApp(_config.getConfigId()));
-    _threadPool = framework::TickingThreadPool::createDefault("distributor");
     _metrics = std::make_shared<DistributorMetricSet>();
     _ideal_state_metrics = std::make_shared<IdealStateMetricSet>();
     _stripe = std::make_unique<DistributorStripe>(_node->getComponentRegister(),
                                                   *_metrics,
                                                   *_ideal_state_metrics,
                                                   _node->node_identity(),
-                                                  *_threadPool,
-                                                  *this,
                                                   _messageSender,
                                                   *this,
-                                                  false,
                                                   _done_initializing);
 }
 

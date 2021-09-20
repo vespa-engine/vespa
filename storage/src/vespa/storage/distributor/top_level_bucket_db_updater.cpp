@@ -91,9 +91,6 @@ TopLevelBucketDBUpdater::propagate_distribution_config(const BucketSpaceDistribu
     }
 }
 
-// FIXME what about bucket DB replica update timestamp allocations?! Replace with u64 counter..?
-//   Must at the very least ensure we use stripe-local TS generation for DB inserts...! i.e. no global TS
-//   Or do we have to touch these at all here? Just defer all this via stripe interface?
 void
 TopLevelBucketDBUpdater::flush()
 {
