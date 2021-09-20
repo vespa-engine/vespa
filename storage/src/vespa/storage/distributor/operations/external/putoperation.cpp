@@ -4,13 +4,14 @@
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/distributor/activecopy.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/storage/distributor/storage_node_up_states.h>
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>

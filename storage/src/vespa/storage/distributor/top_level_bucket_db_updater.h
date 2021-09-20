@@ -2,7 +2,7 @@
 #pragma once
 
 #include "bucketlistmerger.h"
-#include "distributor_stripe_component.h"
+#include "distributor_component.h"
 #include "distributormessagesender.h"
 #include "messageguard.h"
 #include "operation_routing_snapshot.h"

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "bucket_space_state_map.h"
 #include "distributor_interface.h"
 #include "distributor_node_context.h"
 #include "distributor_operation_context.h"
@@ -22,9 +23,8 @@ class DistributorComponent : public storage::DistributorComponent,
                              public DistributorOperationContext {
 private:
     DistributorInterface& _distributor;
-    // TODO STRIPE: When legacy mode is removed, replace this with BucketSpaceStateMap.
-    std::unique_ptr<DistributorBucketSpaceRepo> _bucket_space_repo;
-    std::unique_ptr<DistributorBucketSpaceRepo> _read_only_bucket_space_repo;
+    BucketSpaceStateMap _bucket_space_states;
+
 
 public:
     DistributorComponent(DistributorInterface& distributor,
@@ -45,23 +45,15 @@ public:
     api::Timestamp generate_unique_timestamp() override {
         return getUniqueTimestamp();
     }
-    const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override {
-        return *_bucket_space_repo;
+    const BucketSpaceStateMap& bucket_space_states() const noexcept override {
+        return _bucket_space_states;
     }
-    DistributorBucketSpaceRepo& bucket_space_repo() noexcept override {
-        return *_bucket_space_repo;
-    }
-    const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept override {
-        return *_read_only_bucket_space_repo;
-    }
-    DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept override {
-        return *_read_only_bucket_space_repo;
+    BucketSpaceStateMap& bucket_space_states() noexcept override {
+        return _bucket_space_states;
     }
     const storage::DistributorConfiguration& distributor_config() const noexcept override {
         return _distributor.config();
     }
-
-
 };
 
 }

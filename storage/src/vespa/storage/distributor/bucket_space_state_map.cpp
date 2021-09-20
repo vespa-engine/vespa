@@ -32,6 +32,22 @@ BucketSpaceStateMap::BucketSpaceStateMap()
     _map.emplace(document::FixedBucketSpaces::global_space(), std::make_unique<BucketSpaceState>());
 }
 
+const BucketSpaceState&
+BucketSpaceStateMap::get(document::BucketSpace space) const
+{
+    auto itr = _map.find(space);
+    assert(itr != _map.end());
+    return *itr->second;
+}
+
+BucketSpaceState&
+BucketSpaceStateMap::get(document::BucketSpace space)
+{
+    auto itr = _map.find(space);
+    assert(itr != _map.end());
+    return *itr->second;
+}
+
 void
 BucketSpaceStateMap::set_cluster_state(std::shared_ptr<const lib::ClusterState> cluster_state)
 {

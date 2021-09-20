@@ -1,14 +1,15 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blockingoperationstarter.h"
-#include "distributor_stripe.h"
-#include "distributor_status.h"
 #include "distributor_bucket_space.h"
+#include "distributor_status.h"
+#include "distributor_stripe.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
-#include "stripe_host_info_notifier.h"
 #include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
+#include "storage_node_up_states.h"
+#include "stripe_host_info_notifier.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>

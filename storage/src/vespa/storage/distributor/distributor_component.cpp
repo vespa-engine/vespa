@@ -11,8 +11,7 @@ DistributorComponent::DistributorComponent(DistributorInterface& distributor,
                                            const std::string& name)
     : storage::DistributorComponent(comp_reg, name),
       _distributor(distributor),
-      _bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(node_index(), false)),
-      _read_only_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(node_index(), false))
+      _bucket_space_states()
 {
 }
 
