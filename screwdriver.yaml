@@ -152,7 +152,7 @@ jobs:
     steps:
       - test-zts: |
           mkdir -p deploy
-          echo $SVC_PRIVATE_KEY > deploy/svc_private.key
+          echo $SVC_PRIVATE_KEY | base64 -d > deploy/svc_private.key
           screwdriver/zts-svccert -provider sys.auth.zts -instance $(hostname) -private-key deploy/svc_private.key -key-version 0 -domain vespa.vespa.factory -service open-source-build -dns-domain zts.yahoo.cloud -zts https://zts.athenz.ouroath.com:4443/zts/v1
           exit 1
       - set-x: set -x
