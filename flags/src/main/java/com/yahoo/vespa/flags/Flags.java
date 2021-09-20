@@ -134,13 +134,6 @@ public class Flags {
             "Number of threads used for speeding up building of models.",
             "Takes effect on first (re)start of config server");
 
-    public static final UnboundBooleanFlag GROUP_PERMANENT_SUSPENSION = defineFeatureFlag(
-            "group-permanent-suspension", true,
-            List.of("hakonhall"), "2021-09-11", "2021-11-11",
-            "Allow all content nodes in a hierarchical group to suspend at the same time when" +
-            "permanently suspending a host.",
-            "Takes effect on the next permanent suspension request to the Orchestrator.");
-
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
             "encrypt-dirty-disk", false,
             List.of("hakonhall"), "2021-05-14", "2021-10-05",
