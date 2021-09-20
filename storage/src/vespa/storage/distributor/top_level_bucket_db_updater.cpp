@@ -58,10 +58,8 @@ TopLevelBucketDBUpdater::~TopLevelBucketDBUpdater() = default;
 
 void
 TopLevelBucketDBUpdater::propagate_active_state_bundle_internally() {
-    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
-        for (auto& iter : *repo) {
-            iter.second->setClusterState(_active_state_bundle.getDerivedClusterState(iter.first));
-        }
+    for (auto& elem : _op_ctx.bucket_space_states()) {
+        elem.second->set_cluster_state(_active_state_bundle.getDerivedClusterState(elem.first));
     }
     if (_state_activation_listener) {
         _state_activation_listener->on_cluster_state_bundle_activated(_active_state_bundle);
@@ -71,23 +69,19 @@ TopLevelBucketDBUpdater::propagate_active_state_bundle_internally() {
 void
 TopLevelBucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
-        repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
-        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
-    }
+    _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::default_space()).set_distribution(distribution);
+    _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::global_space()).set_distribution(global_distr);
     // TODO STRIPE do we need to bootstrap the stripes as well here? Or do they do this on their own volition?
     //   ... need to take a guard if so, so can probably not be done at ctor time..?
 }
 
 void
 TopLevelBucketDBUpdater::propagate_distribution_config(const BucketSpaceDistributionConfigs& configs) {
-    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
-        if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::default_space())) {
-            repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distr);
-        }
-        if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::global_space())) {
-            repo->get(document::FixedBucketSpaces::global_space()).setDistribution(distr);
-        }
+    if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::default_space())) {
+        _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::default_space()).set_distribution(distr);
+    }
+    if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::global_space())) {
+        _op_ctx.bucket_space_states().get(document::FixedBucketSpaces::global_space()).set_distribution(distr);
     }
 }
 
@@ -122,10 +116,8 @@ TopLevelBucketDBUpdater::remove_superfluous_buckets(
         bool is_distribution_config_change)
 {
     const char* up_states = storage_node_up_states();
-    // TODO STRIPE explicit space -> config mapping, don't get via repo
-    //   ... but we need to get the current cluster state per space..!
-    for (auto& elem : _op_ctx.bucket_space_repo()) {
-        const auto& old_cluster_state(elem.second->getClusterState());
+    for (auto& elem : _op_ctx.bucket_space_states()) {
+        const auto& old_cluster_state(elem.second->get_cluster_state());
         const auto& new_cluster_state = new_state.getDerivedClusterState(elem.first);
 
         // Running a full DB sweep is expensive, so if the cluster state transition does
@@ -206,7 +198,7 @@ TopLevelBucketDBUpdater::storage_distribution_changed(const BucketSpaceDistribut
             _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
-            _op_ctx.bucket_space_repo(), // TODO STRIPE cannot use!
+            _op_ctx.bucket_space_states(),
             _op_ctx.generate_unique_timestamp());
     _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
@@ -263,7 +255,7 @@ TopLevelBucketDBUpdater::onSetSystemState(
             _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
-            _op_ctx.bucket_space_repo(), // TODO STRIPE remove
+            _op_ctx.bucket_space_states(),
             cmd,
             _outdated_nodes_map,
             _op_ctx.generate_unique_timestamp()); // FIXME STRIPE must be atomic across all threads

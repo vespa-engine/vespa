@@ -364,7 +364,7 @@ public:
             OutdatedNodesMap outdated_nodes_map;
             state = PendingClusterState::createForClusterStateChange(
                     clock, cluster_info, sender,
-                    owner.top_level_bucket_space_repo(),
+                    owner.bucket_space_states(),
                     cmd, outdated_nodes_map, api::Timestamp(1));
         }
 
@@ -374,7 +374,7 @@ public:
         {
             auto cluster_info = owner.create_cluster_info(old_cluster_state);
             state = PendingClusterState::createForDistributionChange(
-                    clock, cluster_info, sender, owner.top_level_bucket_space_repo(), api::Timestamp(1));
+                    clock, cluster_info, sender, owner.bucket_space_states(), api::Timestamp(1));
         }
     };
 
@@ -1389,7 +1389,7 @@ TopLevelBucketDBUpdaterTest::get_sent_nodes_distribution_changed(const std::stri
     auto cluster_info = create_cluster_info(old_cluster_state);
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForDistributionChange(
-                    clock, cluster_info, sender, top_level_bucket_space_repo(), api::Timestamp(1)));
+                    clock, cluster_info, sender, bucket_space_states(), api::Timestamp(1)));
 
     sort_sent_messages_by_index(sender);
 
@@ -1514,7 +1514,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_receive) {
     OutdatedNodesMap outdated_nodes_map;
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForClusterStateChange(
-                    clock, cluster_info, sender, top_level_bucket_space_repo(),
+                    clock, cluster_info, sender, bucket_space_states(),
                     cmd, outdated_nodes_map, api::Timestamp(1)));
 
     ASSERT_EQ(message_count(3), sender.commands().size());
@@ -1670,7 +1670,7 @@ TopLevelBucketDBUpdaterTest::merge_bucket_lists(
         auto cluster_info = create_cluster_info("cluster:d");
 
         auto state = PendingClusterState::createForClusterStateChange(
-                clock, cluster_info, sender, top_level_bucket_space_repo(),
+                clock, cluster_info, sender, bucket_space_states(),
                 cmd, outdated_nodes_map, before_time);
 
         parse_input_data(existing_data, before_time, *state, include_bucket_info);
@@ -1690,7 +1690,7 @@ TopLevelBucketDBUpdaterTest::merge_bucket_lists(
         auto cluster_info = create_cluster_info(old_state.toString());
 
         auto state = PendingClusterState::createForClusterStateChange(
-                        clock, cluster_info, sender, top_level_bucket_space_repo(),
+                        clock, cluster_info, sender, bucket_space_states(),
                         cmd, outdated_nodes_map, after_time);
 
         parse_input_data(new_data, after_time, *state, include_bucket_info);

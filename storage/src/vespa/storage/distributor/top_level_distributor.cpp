@@ -573,7 +573,7 @@ TopLevelDistributor::reportStatus(std::ostream& out,
         } else {
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             const auto& op_ctx = _component;
-            for (const auto& space : op_ctx.bucket_space_repo()) {
+            for (const auto& space : op_ctx.bucket_space_states()) {
                 out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first << "</h2>\n";
                 guard->report_bucket_db_status(space.first, out);
             }
