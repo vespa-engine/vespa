@@ -189,7 +189,9 @@ ExchangeManager::WorkPackage::doneItem(bool denied)
         (int)_doneCnt, (int)_work.size(), (int)_numDenied);
     if (_doneCnt == _work.size()) {
         if (_numDenied > 0) {
-            LOG(debug, "work package: %zd/%zd denied by remote", _numDenied, _doneCnt);
+            LOG(debug, "work package [%s->%s]: %zd/%zd denied by remote",
+                _mapping.name.c_str(), _mapping.spec.c_str(),
+                _numDenied, _doneCnt);
         }
         delete this;
     }
@@ -206,14 +208,8 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
     const char *spec_p = _mapping.spec.c_str();
 
     FRT_RPCRequest *r = _exchanger._env.getSupervisor()->AllocRPCRequest();
-    // XXX should recheck rpcsrvmap again
-    if (_optype == OP_REMOVE) {
-        r->SetMethodName("slobrok.internal.doRemove");
-    } else if (_optype == OP_WANTADD) {
-        r->SetMethodName("slobrok.internal.wantAdd");
-    } else if (_optype == OP_DOADD) {
-        r->SetMethodName("slobrok.internal.doAdd");
-    }
+    LOG_ASSERT(_optype == OP_REMOVE);
+    r->SetMethodName("slobrok.internal.doRemove");
     r->GetParams()->AddString(_exchanger._env.mySpec().c_str());
     r->GetParams()->AddString(name_p);
     r->GetParams()->AddString(spec_p);

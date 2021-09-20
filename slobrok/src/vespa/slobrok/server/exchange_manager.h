@@ -60,7 +60,7 @@ private:
         size_t        _numDenied;
     public:
         ExchangeManager &_exchanger;
-        enum op_type { OP_NOP, OP_WANTADD, OP_DOADD, OP_REMOVE };
+        enum op_type { OP_REMOVE };
         const ServiceMapping _mapping;
         const op_type _optype;
         void addItem(RemoteSlobrok *partner);
