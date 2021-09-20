@@ -96,7 +96,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"tokle", "bjorncs"}, removeAfter = "7.450") default boolean enableCustomAclMapping() { return true; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean requireConnectivityCheck() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean throwIfResourceLimitsSpecified() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.470") default boolean throwIfResourceLimitsSpecified() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }

@@ -123,8 +123,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
             var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor,
                                                                    stateIsHosted(deployState),
-                                                                   deployState.featureFlags().throwIfResourceLimitsSpecified(),
-                                                                   deployState.getDeployLogger(),
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    deployState.featureFlags().resourceLimitMemory())
                     .build(contentElement);
