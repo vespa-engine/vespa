@@ -93,8 +93,8 @@ public:
     RpcServerManager  &rpcServerManager() { return _rpcsrvmanager; }
     RpcServerMap      &rpcServerMap() { return _rpcsrvmap; }
 
-    OkState addPartner(const std::string & name, const std::string & spec);
-    void removePartner(const std::string & name);
+    OkState addPartner(const std::string & spec);
+    void removePartner(const std::string & spec);
     std::vector<std::string> getPartnerList();
 
     void forwardRemove(const std::string & name, const std::string & spec);

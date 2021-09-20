@@ -33,7 +33,7 @@ sleep 1
 [ "${VALGRIND}" ] && sleep 9
 
 ./slobrok_rpc_info_app \
-	tcp/localhost:18481 verbose > rpc-method-list
+        tcp/localhost:18481 verbose > rpc-method-list
 
 echo port 18481:
 ${SBCMD} 18481 slobrok.callback.listNamesServed

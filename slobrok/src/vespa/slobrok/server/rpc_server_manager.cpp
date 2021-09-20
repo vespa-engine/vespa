@@ -91,34 +91,6 @@ RpcServerManager::addRemReservation(const std::string & remslobrok, const std::s
 
 
 OkState
-RpcServerManager::addPeer(const std::string & remsbname, const std::string &remsbspec)
-{
-    if (remsbname == _env.mySpec()) {
-        return OkState(13, "cannot add remote slobrok with my rpcserver name");
-    }
-    return _exchanger.addPartner(remsbname, remsbspec);
-}
-
-
-OkState
-RpcServerManager::removePeer(const std::string & remsbname, const std::string & remsbspec)
-{
-    if (remsbname == _env.mySpec()) {
-        return OkState(13, "cannot remove my own rpcserver name");
-    }
-    const RemoteSlobrok *partner = _exchanger.lookupPartner(remsbname);
-    if (partner == nullptr) {
-        return OkState(0, "remote slobrok not a partner");
-    }
-    if (partner->getSpec() != remsbspec) {
-        return OkState(13, "peer registered with different spec");
-    }
-    _exchanger.removePartner(remsbname);
-    return OkState(0, "done");
-}
-
-
-OkState
 RpcServerManager::addMyReservation(const std::string & name, const std::string & spec)
 {
     OkState valid = validateName(name);

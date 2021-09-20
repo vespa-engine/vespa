@@ -35,19 +35,6 @@ RpcServerMap::remove(const std::string & name)
 }
 
 std::vector<const NamedService *>
-RpcServerMap::lookupPattern(const char *pattern) const
-{
-    std::vector<const NamedService *> retval;
-    for (const auto & entry : _myrpcsrv_map) {
-        if (match(entry.first.c_str(), pattern)) {
-            retval.push_back(entry.second.get());
-        }
-    }
-    return retval;
-}
-
-
-std::vector<const NamedService *>
 RpcServerMap::allManaged() const
 {
     std::vector<const NamedService *> retval;
@@ -136,27 +123,6 @@ RpcServerMap::getReservation(const std::string &name) const {
 RpcServerMap::RpcServerMap() = default;
 
 RpcServerMap::~RpcServerMap() = default;
-
-bool
-RpcServerMap::match(const char *name, const char *pattern)
-{
-    LOG_ASSERT(name != nullptr);
-    LOG_ASSERT(pattern != nullptr);
-    while (*pattern != '\0') {
-        if (*name == *pattern) {
-            ++name;
-            ++pattern;
-        } else if (*pattern == '*') {
-            ++pattern;
-            while (*name != '/' && *name != '\0') {
-                ++name;
-            }
-        } else {
-            return false;
-        }
-    }
-    return (*name == *pattern);
-}
 
 void
 RpcServerMap::removeReservation(const std::string & name)

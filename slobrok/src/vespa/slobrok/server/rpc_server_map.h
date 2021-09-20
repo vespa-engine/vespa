@@ -36,8 +36,6 @@ private:
     void add(NamedService *rpcsrv);
 
 public:
-    static bool match(const char *name, const char *pattern);
-
     typedef std::vector<const NamedService *> RpcSrvlist;
 
     MapSource &proxy() { return _proxy; }
@@ -45,7 +43,6 @@ public:
     ManagedRpcServer *lookupManaged(const std::string & name) const;
 
     const NamedService *    lookup(const std::string & name) const;
-    RpcSrvlist        lookupPattern(const char *pattern) const;
     RpcSrvlist        allManaged() const;
 
     void              addNew(std::unique_ptr<ManagedRpcServer> rpcsrv);

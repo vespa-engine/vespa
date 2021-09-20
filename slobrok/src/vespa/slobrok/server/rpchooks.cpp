@@ -65,6 +65,24 @@ void RPCHooks::reportMetrics() {
     EV_COUNT("other_reqs", _cnts.otherReqs);
 }
 
+bool RPCHooks::match(const char *name, const char *pattern) {
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
+    while (*pattern != '\0') {
+        if (*name == *pattern) {
+            ++name;
+            ++pattern;
+        } else if (*pattern == '*') {
+            ++pattern;
+            while (*name != '/' && *name != '\0') {
+                ++name;
+            }
+        } else {
+            return false;
+        }
+    }
+    return (*name == *pattern);
+}
 
 void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);
@@ -365,7 +383,7 @@ void RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req) {
     auto diff = visible.makeDiffFrom(0);
     std::vector<ServiceMapping> matches;
     for (const auto & entry : diff.updated) {
-        if (RpcServerMap::match(entry.name.c_str(), rpcserverPattern)) {
+        if (match(entry.name.c_str(), rpcserverPattern)) {
             matches.push_back(entry);
         }
     }

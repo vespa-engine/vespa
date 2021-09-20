@@ -25,9 +25,9 @@ ExchangeManager::ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap)
 ExchangeManager::~ExchangeManager() = default;
 
 OkState
-ExchangeManager::addPartner(const std::string & name, const std::string & spec)
+ExchangeManager::addPartner(const std::string & spec)
 {
-    if (RemoteSlobrok *oldremote = lookupPartner(name)) {
+    if (RemoteSlobrok *oldremote = lookupPartner(spec)) {
         // already a partner, should be OK
         if (spec != oldremote->getSpec()) {
             return OkState(FRTE_RPC_METHOD_FAILED, "name already partner with different spec");
@@ -38,7 +38,7 @@ ExchangeManager::addPartner(const std::string & name, const std::string & spec)
         }
         return OkState();
     }
-    auto [ it, wasNew ] = _partners.emplace(name, std::make_unique<RemoteSlobrok>(name, spec, *this));
+    auto [ it, wasNew ] = _partners.emplace(spec, std::make_unique<RemoteSlobrok>(spec, spec, *this));
     LOG_ASSERT(wasNew);
     RemoteSlobrok & partner = *it->second;
     partner.tryConnect();
