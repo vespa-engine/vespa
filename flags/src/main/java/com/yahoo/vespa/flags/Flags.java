@@ -153,7 +153,7 @@ public class Flags {
             "Takes effect on first run of DiskTask, typically after host-admin restart/upgrade.");
 
     public static final UnboundBooleanFlag USE_UNKNOWN_SERVICE_STATUS = defineFeatureFlag(
-            "use-unknown-service-status", false,
+            "use-unknown-service-status", true,
             List.of("hakonhall"), "2021-09-13", "2021-10-13",
             "Whether to use the UNKNOWN ServiceStatus for services that have not yet been probed by service monitor.",
             "Takes effect on first (re)start of config server.");
