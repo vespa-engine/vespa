@@ -18,6 +18,7 @@ class BmClusterParams
     bool     _enable_service_layer;
     vespalib::string _indexing_sequencer;
     uint32_t _num_nodes;
+    uint32_t _redundancy;
     uint32_t _response_threads;
     uint32_t _rpc_events_before_wakeup;
     uint32_t _rpc_network_threads;
@@ -36,6 +37,7 @@ public:
     bool get_enable_distributor() const { return _enable_distributor; }
     const vespalib::string & get_indexing_sequencer() const { return _indexing_sequencer; }
     uint32_t get_num_nodes() const { return _num_nodes; }
+    uint32_t get_redundancy() const { return _redundancy; }
     uint32_t get_response_threads() const { return _response_threads; }
     uint32_t get_rpc_events_before_wakeup() const { return _rpc_events_before_wakeup; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
@@ -55,6 +57,7 @@ public:
     void set_enable_service_layer(bool value) { _enable_service_layer = value; }
     void set_indexing_sequencer(vespalib::stringref sequencer) { _indexing_sequencer = sequencer; }
     void set_num_nodes(uint32_t value) { _num_nodes = value; }
+    void set_redundancy(uint32_t value) { _redundancy = value; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_rpc_events_before_wakeup(uint32_t value) { _rpc_events_before_wakeup = value; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }

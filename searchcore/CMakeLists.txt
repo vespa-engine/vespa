@@ -50,6 +50,7 @@ vespa_define_module(
     src/apps/vespa-feed-bm
     src/apps/vespa-gen-testdocs
     src/apps/vespa-proton-cmd
+    src/apps/vespa-redistribute-bm
     src/apps/vespa-transactionlog-inspect
 
     TESTS

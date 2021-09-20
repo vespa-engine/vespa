@@ -16,11 +16,29 @@ using vespalib::makeLambdaTask;
 
 namespace search::bmcluster {
 
+namespace {
+
+bool steady_buckets_stats(const std::optional<BmBucketsStats> buckets)
+{
+    if (!buckets.has_value()) {
+        return false; // No info available
+    }
+    auto& value = buckets.value();
+    if (!value.get_valid()) {
+        return false; // Some information still missing
+    }
+    return value.get_buckets_pending() == 0u;
+}
+
+}
+
 BmNodeStatsReporter::BmNodeStatsReporter(BmCluster &cluster)
     : _cluster(cluster),
       _executor(1, 128_Ki),
       _mutex(),
       _cond(),
+      _change_time(),
+      _prev_node_stats(),
       _pending_report(1u),
       _started(false),
       _stop(false)
@@ -99,6 +117,10 @@ BmNodeStatsReporter::report()
     }
     vespalib::string ss(s.str());
     LOG(info, "%s", ss.c_str());
+    if (!(node_stats == _prev_node_stats) || !steady_buckets_stats(total_buckets)) {
+        _change_time = std::chrono::steady_clock::now();
+        _prev_node_stats = node_stats;
+    }
 }
 
 void
