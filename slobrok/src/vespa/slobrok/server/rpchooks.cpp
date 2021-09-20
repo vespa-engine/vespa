@@ -227,12 +227,6 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     //-------------------------------------------------------------------------
 }
 
-
-bool RPCHooks::useNewLogic() const {
-    return _env.useNewLogic();
-}
-
-
 void RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);

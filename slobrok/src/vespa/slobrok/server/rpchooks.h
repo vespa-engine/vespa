@@ -56,33 +56,24 @@ public:
     void countFailedHeartbeat() { _cnts.heartBeatFails++; }
 
 private:
-    bool useNewLogic() const;
-
-    void rpc_lookupRpcServer(FRT_RPCRequest *req);
-
-    void new_registerRpcServer(FRT_RPCRequest *req);
-    void new_unregisterRpcServer(FRT_RPCRequest *req);
-    void new_wantAdd(FRT_RPCRequest *req);
-    void new_doRemove(FRT_RPCRequest *req);
-    void new_doAdd(FRT_RPCRequest *req);
-
     void rpc_registerRpcServer(FRT_RPCRequest *req);
     void rpc_unregisterRpcServer(FRT_RPCRequest *req);
-
     void rpc_addPeer(FRT_RPCRequest *req);
     void rpc_removePeer(FRT_RPCRequest *req);
+    void rpc_incrementalFetch(FRT_RPCRequest *req);
+    void rpc_doRemove(FRT_RPCRequest *req);
+    void rpc_fetchLocalView(FRT_RPCRequest *req);
+    void rpc_listNamesServed(FRT_RPCRequest *req);
+
+    /** for unit tests and debugging, consider removing some of these: */
+    void rpc_lookupRpcServer(FRT_RPCRequest *req);
     void rpc_listManagedRpcServers(FRT_RPCRequest *req);
     void rpc_lookupManaged(FRT_RPCRequest *req);
     void rpc_listAllRpcServers(FRT_RPCRequest *req);
-    void rpc_incrementalFetch(FRT_RPCRequest *req);
     void rpc_wantAdd(FRT_RPCRequest *req);
     void rpc_doAdd(FRT_RPCRequest *req);
-    void rpc_doRemove(FRT_RPCRequest *req);
-    void rpc_fetchLocalView(FRT_RPCRequest *req);
 
-    void rpc_listNamesServed(FRT_RPCRequest *req);
-    void rpc_getRpcServerHistory(FRT_RPCRequest *req);
-
+    /** consider removing: */
     void rpc_stop(FRT_RPCRequest *req);
     void rpc_version(FRT_RPCRequest *req);
 };

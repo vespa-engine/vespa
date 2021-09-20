@@ -42,7 +42,6 @@ private:
     ConfigShim         _configShim;
     Configurator::UP   _configurator;
     bool               _shuttingDown;
-    const bool         _useNewLogic;
 
     SBEnv(const SBEnv &);            // Not used
     SBEnv &operator=(const SBEnv &); // Not used
@@ -68,7 +67,6 @@ private:
 
 public:
     explicit SBEnv(const ConfigShim &shim);
-    SBEnv(const ConfigShim &shim, bool useNewConsensusLogic);
     ~SBEnv();
 
     FNET_Transport *getTransport() { return _transport.get(); }
@@ -101,7 +99,6 @@ public:
 
     bool isSuspended() const { return false; }
     bool isShuttingDown() const { return _shuttingDown; }
-    bool useNewLogic() const { return _useNewLogic; }
 
     int MainLoop();
 
