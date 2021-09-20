@@ -10,7 +10,6 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.policy.ClusterParams;
@@ -182,18 +181,6 @@ public class ClusterApiImplTest {
             fail();
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: " +
-                            "Suspension of service with type 'configserver' not allowed: 33% are suspended already. " +
-                            "Services down on resumed hosts: [1 missing config server]."));
-        }
-
-        flagSource.withBooleanFlag(Flags.GROUP_PERMANENT_SUSPENSION.id(), true);
-
-        try {
-            policy.verifyGroupGoingDownIsFine(clusterApi);
-            fail();
-        } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(),
                     containsString("Suspension of service with type 'configserver' not allowed: 33% are suspended already. " +
                             "Services down on resumed hosts: [1 missing config server]."));
         }
@@ -208,18 +195,6 @@ public class ClusterApiImplTest {
                 ServiceStatus.UP);
 
         HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource, zone);
-
-        try {
-            policy.verifyGroupGoingDownIsFine(clusterApi);
-            fail();
-        } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: " +
-                            "Suspension of service with type 'hostadmin' not allowed: 33% are suspended already. " +
-                            "Services down on resumed hosts: [1 missing config server host]."));
-        }
-
-        flagSource.withBooleanFlag(Flags.GROUP_PERMANENT_SUSPENSION.id(), true);
 
         try {
             policy.verifyGroupGoingDownIsFine(clusterApi);

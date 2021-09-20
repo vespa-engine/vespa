@@ -63,7 +63,7 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.clusterId()).thenReturn(VespaModelUtil.ADMIN_CLUSTER_ID);
         when(clusterApi.serviceType()).thenReturn(ServiceType.SLOBROK);
         assertEquals(ConcurrentSuspensionLimitForCluster.ONE_NODE,
-                policy.getConcurrentSuspensionLimit(clusterApi, false));
+                policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
     @Test
@@ -71,46 +71,38 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.clusterId()).thenReturn(VespaModelUtil.ADMIN_CLUSTER_ID);
         when(clusterApi.serviceType()).thenReturn(new ServiceType("non-slobrok-service-type"));
         assertEquals(ConcurrentSuspensionLimitForCluster.ALL_NODES,
-                policy.getConcurrentSuspensionLimit(clusterApi, false));
+                policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
     @Test
     public void testStorageSuspensionLimit() {
         when(clusterApi.serviceType()).thenReturn(ServiceType.STORAGE);
         when(clusterApi.clusterId()).thenReturn(new ClusterId("some-cluster-id"));
-        when(clusterApi.isStorageCluster()).thenReturn(true);
         assertEquals(ConcurrentSuspensionLimitForCluster.ALL_NODES,
-                policy.getConcurrentSuspensionLimit(clusterApi, true));
-    }
-
-    @Test
-    public void testStorageSuspensionLimit_legacy() {
-        when(clusterApi.clusterId()).thenReturn(new ClusterId("some-cluster-id"));
-        when(clusterApi.isStorageCluster()).thenReturn(true);
-        assertEquals(ConcurrentSuspensionLimitForCluster.ONE_NODE,
-                policy.getConcurrentSuspensionLimit(clusterApi, false));
+                policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
     @Test
     public void testTenantHostSuspensionLimit() {
         when(applicationApi.applicationId()).thenReturn(VespaModelUtil.TENANT_HOST_APPLICATION_ID);
-        when(clusterApi.isStorageCluster()).thenReturn(false);
+        when(clusterApi.clusterId()).thenReturn(ClusterId.TENANT_HOST);
+        when(clusterApi.serviceType()).thenReturn(ServiceType.HOST_ADMIN);
         assertEquals(ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT,
-                policy.getConcurrentSuspensionLimit(clusterApi, false));
+                     policy.getConcurrentSuspensionLimit(clusterApi));
 
 
         when(zone.system()).thenReturn(SystemName.cd);
         assertEquals(ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT,
-                     policy.getConcurrentSuspensionLimit(clusterApi, false));
+                     policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
     @Test
     public void testDefaultSuspensionLimit() {
         when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("a:b:c"));
         when(clusterApi.clusterId()).thenReturn(new ClusterId("some-cluster-id"));
-        when(clusterApi.isStorageCluster()).thenReturn(false);
+        when(clusterApi.serviceType()).thenReturn(new ServiceType("some-service-type"));
         assertEquals(ConcurrentSuspensionLimitForCluster.TEN_PERCENT,
-                policy.getConcurrentSuspensionLimit(clusterApi, false));
+                     policy.getConcurrentSuspensionLimit(clusterApi));
     }
 
     @Test
@@ -141,7 +133,7 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.noServicesOutsideGroupIsDown()).thenReturn(noServicesOutsideGroupIsDown);
         when(clusterApi.reasonsForNoServicesInGroupIsUp()).thenReturn(noServicesInGroupIsUp);
         when(clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()).thenReturn(20);
-        doReturn(ConcurrentSuspensionLimitForCluster.TEN_PERCENT).when(policy).getConcurrentSuspensionLimit(clusterApi, false);
+        doReturn(ConcurrentSuspensionLimitForCluster.TEN_PERCENT).when(policy).getConcurrentSuspensionLimit(clusterApi);
 
         when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("a:b:c"));
         when(clusterApi.serviceType()).thenReturn(new ServiceType("service-type"));
