@@ -109,7 +109,9 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             for (String artifactType : artifactTypes) {
                 ArtifactProducer producer = artifactProducers.get(artifactType);
                 if (producer == null) {
-                    handleFailure(context, request, startedAt, "No artifact producer exists for '" + artifactType + "'");
+                    String supportedValues = String.join(",", artifactProducers.keySet());
+                    handleFailure(context, request, startedAt, "No artifact producer exists for '" + artifactType + "'. " +
+                            "Following values are allowed: " + supportedValues);
                     return;
                 }
                 context.log(log, "Producing artifact of type '" + artifactType + "'");
