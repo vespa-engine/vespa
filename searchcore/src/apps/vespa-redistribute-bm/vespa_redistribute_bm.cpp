@@ -138,7 +138,7 @@ estimate_moved_docs_ratio_shrink(uint32_t redundancy, uint32_t retired_nodes, ui
 }
 
 double
-estimate_moved_nodes_ratio_crash(uint32_t redundancy, uint32_t crashed_nodes, uint32_t num_nodes)
+estimate_moved_docs_ratio_crash(uint32_t redundancy, uint32_t crashed_nodes, uint32_t num_nodes)
 {
     double old_redundancy = redundancy;
     double old_per_node_doc_ratio = old_redundancy / num_nodes;
@@ -152,7 +152,7 @@ estimate_moved_nodes_ratio_crash(uint32_t redundancy, uint32_t crashed_nodes, ui
 }
 
 double
-estimate_moved_nodes_ratio_replace(uint32_t redundancy, uint32_t added_nodes, uint32_t retired_nodes, uint32_t num_nodes)
+estimate_moved_docs_ratio_replace(uint32_t redundancy, uint32_t added_nodes, uint32_t retired_nodes, uint32_t num_nodes)
 {
     uint32_t old_nodes = num_nodes - added_nodes;
     double old_redundancy = std::min(redundancy, old_nodes);
@@ -163,9 +163,8 @@ estimate_moved_nodes_ratio_replace(uint32_t redundancy, uint32_t added_nodes, ui
     double moved_ratio = new_per_node_doc_ratio * added_nodes;
     uint32_t stable_nodes = num_nodes - added_nodes - retired_nodes;
     // Account for extra documents moved from retired nodes to stable nodes
-    // TODO: Fix calculation
-    double extra_moved_ratio = (new_per_node_doc_ratio - old_per_node_doc_ratio) * stable_nodes;
-    extra_moved_ratio += new_per_node_doc_ratio * stable_nodes * retired_nodes / new_nodes;
+    double extra_per_stable_node_doc_ratio = new_per_node_doc_ratio * added_nodes / old_nodes;
+    double extra_moved_ratio = (std::min(1.0, new_per_node_doc_ratio + extra_per_stable_node_doc_ratio) - old_per_node_doc_ratio) * stable_nodes;
     moved_ratio += extra_moved_ratio;
     LOG(info, "estimated_moved_docs_ratio_replace(%u,%u,%u,%u)=%4.2f, (of which %4.2f extra)", redundancy, added_nodes, retired_nodes, num_nodes, moved_ratio, extra_moved_ratio);
     return moved_ratio;
@@ -410,9 +409,9 @@ Benchmark::estimate_moved_docs()
         return _params.get_documents() * estimate_moved_docs_ratio_shrink(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
     case Mode::PERM_CRASH:
     case Mode::TEMP_CRASH:
-        return _params.get_documents() * estimate_moved_nodes_ratio_crash(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
+        return _params.get_documents() * estimate_moved_docs_ratio_crash(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
     case Mode::REPLACE:
-        return _params.get_documents() * estimate_moved_nodes_ratio_replace(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
+        return _params.get_documents() * estimate_moved_docs_ratio_replace(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
     default:
         return 0.0;
     }
