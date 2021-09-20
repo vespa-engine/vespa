@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "remote_slobrok.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "exchange_manager.h"
 #include "sbenv.h"
 #include <vespa/fnet/frt/supervisor.h>

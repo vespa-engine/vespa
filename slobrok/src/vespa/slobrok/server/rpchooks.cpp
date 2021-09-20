@@ -4,8 +4,6 @@
 #include "ok_state.h"
 #include "named_service.h"
 #include "request_completion_handler.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "remote_slobrok.h"
 #include "sbenv.h"
 #include "rpcmirror.h"

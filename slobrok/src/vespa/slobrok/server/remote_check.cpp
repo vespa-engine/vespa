@@ -2,8 +2,6 @@
 
 #include "remote_check.h"
 #include "named_service.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "remote_slobrok.h"
 #include "random.h"
 #include "exchange_manager.h"

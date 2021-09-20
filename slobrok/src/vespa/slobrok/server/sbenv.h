@@ -3,8 +3,6 @@
 
 #include "named_service.h"
 #include "rpc_mapping_monitor.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "remote_slobrok.h"
 #include "exchange_manager.h"
 #include "configshim.h"
