@@ -3,7 +3,10 @@ package com.yahoo.search.query.profile.types.test;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.language.Language;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
 import com.yahoo.processing.request.CompoundName;
@@ -21,6 +24,8 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -80,6 +85,7 @@ public class QueryProfileTypeTestCase {
         type.addField(new FieldDescription("ranking.features.query(myTensor1)", FieldType.fromString("tensor(a{},b{})", registry)), registry);
         type.addField(new FieldDescription("ranking.features.query(myTensor2)", FieldType.fromString("tensor(x[2],y[2])", registry)), registry);
         type.addField(new FieldDescription("ranking.features.query(myTensor3)", FieldType.fromString("tensor<float>(x{})",registry)), registry);
+        type.addField(new FieldDescription("ranking.features.query(myTensor4)", FieldType.fromString("tensor<float>(x[5])",registry)), registry);
         type.addField(new FieldDescription("myQuery", FieldType.fromString("query", registry)), registry);
         type.addField(new FieldDescription("myQueryProfile", FieldType.fromString("query-profile", registry),"qp"), registry);
     }
@@ -400,15 +406,15 @@ public class QueryProfileTypeTestCase {
     }
 
     @Test
-    public void testTensorRankFeatureInRequest() throws UnsupportedEncodingException {
+    public void testTensorRankFeatureInRequest() {
         QueryProfile profile = new QueryProfile("test");
         profile.setType(testtype);
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
-        Query query = new Query(HttpRequest.createTestRequest("?" + encode("ranking.features.query(myTensor1)") +
-                                                              "=" + encode(tensorString),
+        Query query = new Query(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
+                                                              "=" + urlEncode(tensorString),
                                                               com.yahoo.jdisc.http.HttpRequest.Method.GET),
                                 cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
@@ -418,15 +424,15 @@ public class QueryProfileTypeTestCase {
 
     // Expected to work exactly as testTensorRankFeatureInRequest
     @Test
-    public void testTensorRankFeatureInRequestWithInheritedQueryProfileType() throws UnsupportedEncodingException {
+    public void testTensorRankFeatureInRequestWithInheritedQueryProfileType() {
         QueryProfile profile = new QueryProfile("test");
         profile.setType(emptyInheritingTesttype);
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
-        Query query = new Query(HttpRequest.createTestRequest("?" + encode("ranking.features.query(myTensor1)") +
-                                                              "=" + encode(tensorString),
+        Query query = new Query(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
+                                                              "=" + urlEncode(tensorString),
                                                               com.yahoo.jdisc.http.HttpRequest.Method.GET),
                                 cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
@@ -434,8 +440,41 @@ public class QueryProfileTypeTestCase {
         assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
     }
 
-    private String encode(String s) throws UnsupportedEncodingException {
-        return URLEncoder.encode(s, "utf8");
+    @Test
+    public void testUnencodedTensorRankFeatureInRequest() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setType(testtype);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        String textToEncode = "text to encode as tensor";
+        Tensor expectedTensor = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
+        Query query1 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor4)") +
+                                                                                   "=" + urlEncode("encode(" + textToEncode + ")"),
+                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                                         .setQueryProfile(cRegistry.getComponent("test"))
+                                         .setEncoder(new MockEncoder(textToEncode, Language.UNKNOWN, expectedTensor))
+                                         .build();
+        assertEquals(0, query1.errors().size());
+        assertEquals(expectedTensor, query1.properties().get("ranking.features.query(myTensor4)"));
+        assertEquals(expectedTensor, query1.getRanking().getFeatures().getTensor("query(myTensor4)").get());
+
+        // Explicit language
+        Query query2 = new Query.Builder().setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor4)") +
+                                                                                   "=" + urlEncode("encode(" + textToEncode + ")") +
+                                                                                   "&language=en",
+                                                                                   com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                                         .setQueryProfile(cRegistry.getComponent("test"))
+                                         .setEncoder(new MockEncoder(textToEncode, Language.ENGLISH, expectedTensor))
+                                         .build();
+        assertEquals(0, query2.errors().size());
+        assertEquals(expectedTensor, query2.properties().get("ranking.features.query(myTensor4)"));
+        assertEquals(expectedTensor, query2.getRanking().getFeatures().getTensor("query(myTensor4)").get());
+
+    }
+
+    private String urlEncode(String s) {
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     @Test
@@ -682,6 +721,36 @@ public class QueryProfileTypeTestCase {
         catch (IllegalArgumentException e) {
             assertTrue(Exceptions.toMessageString(e).startsWith("Could not set '" + name + "' to '" + value + "': '" + localName + "' is not declared"));
         }
+    }
+
+    private static final class MockEncoder implements Encoder {
+
+        private final String expectedText;
+        private final Language expectedLanguage;
+        private final Tensor tensorToReturn;
+
+        public MockEncoder(String expectedText,
+                           Language expectedLanguage,
+                           Tensor tensorToReturn) {
+            this.expectedText = expectedText;
+            this.expectedLanguage = expectedLanguage;
+            this.tensorToReturn = tensorToReturn;
+        }
+
+        @Override
+        public List<Integer> encode(String text, Language language) {
+            fail("Unexpected call");
+            return null;
+        }
+
+        @Override
+        public Tensor encode(String text, Language language, TensorType tensorType) {
+            assertEquals(expectedText, text);
+            assertEquals(expectedLanguage, language);
+            assertEquals(tensorToReturn.type(), tensorType);
+            return tensorToReturn;
+        }
+
     }
 
 }
