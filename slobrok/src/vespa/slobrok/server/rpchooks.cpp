@@ -38,6 +38,25 @@ public:
     ~MetricsReport() override { Kill(); }
 };
 
+bool match(const char *name, const char *pattern) {
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
+    while (*pattern != '\0') {
+        if (*name == *pattern) {
+            ++name;
+            ++pattern;
+        } else if (*pattern == '*') {
+            ++pattern;
+            while (*name != '/' && *name != '\0') {
+                ++name;
+            }
+        } else {
+            return false;
+        }
+    }
+    return (*name == *pattern);
+}
+
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -63,25 +82,6 @@ void RPCHooks::reportMetrics() {
     EV_COUNT("doremove_reqs", _cnts.doRemoveReqs);
     EV_COUNT("admin_reqs", _cnts.adminReqs);
     EV_COUNT("other_reqs", _cnts.otherReqs);
-}
-
-bool RPCHooks::match(const char *name, const char *pattern) {
-    LOG_ASSERT(name != nullptr);
-    LOG_ASSERT(pattern != nullptr);
-    while (*pattern != '\0') {
-        if (*name == *pattern) {
-            ++name;
-            ++pattern;
-        } else if (*pattern == '*') {
-            ++pattern;
-            while (*name != '/' && *name != '\0') {
-                ++name;
-            }
-        } else {
-            return false;
-        }
-    }
-    return (*name == *pattern);
 }
 
 void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
@@ -232,25 +232,6 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
 
 bool RPCHooks::useNewLogic() const {
     return _env.useNewLogic();
-}
-
-bool RPCHooks::match(const char *name, const char *pattern) {
-    LOG_ASSERT(name != nullptr);
-    LOG_ASSERT(pattern != nullptr);
-    while (*pattern != '\0') {
-        if (*name == *pattern) {
-            ++name;
-            ++pattern;
-        } else if (*pattern == '*') {
-            ++pattern;
-            while (*name != '/' && *name != '\0') {
-                ++name;
-            }
-        } else {
-            return false;
-        }
-    }
-    return (*name == *pattern);
 }
 
 

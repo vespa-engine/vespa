@@ -57,7 +57,6 @@ public:
 
 private:
     bool useNewLogic() const;
-    static bool match(const char *name, const char *pattern);
 
     void rpc_lookupRpcServer(FRT_RPCRequest *req);
 
