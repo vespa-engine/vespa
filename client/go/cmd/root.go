@@ -49,6 +49,14 @@ const (
 	colorFlag       = "color"
 )
 
+func isTerminal() bool {
+	file, ok := stdout.(*os.File)
+	if ok {
+		return isatty.IsTerminal(file.Fd())
+	}
+	return false
+}
+
 func configureOutput() {
 	log.SetFlags(0) // No timestamps
 	log.SetOutput(stdout)
@@ -65,10 +73,7 @@ func configureOutput() {
 	colorize := false
 	switch colorValue {
 	case "auto":
-		file, ok := stdout.(*os.File)
-		if ok {
-			colorize = isatty.IsTerminal(file.Fd())
-		}
+		colorize = isTerminal()
 	case "always":
 		colorize = true
 	case "never":
