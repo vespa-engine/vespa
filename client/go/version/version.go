@@ -11,9 +11,22 @@ type Version struct {
 	Major int
 	Minor int
 	Patch int
+	Label string
 }
 
-func (v Version) String() string { return fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch) }
+func (v Version) String() string {
+	var sb strings.Builder
+	sb.WriteString(strconv.Itoa(v.Major))
+	sb.WriteRune('.')
+	sb.WriteString(strconv.Itoa(v.Minor))
+	sb.WriteRune('.')
+	sb.WriteString(strconv.Itoa(v.Patch))
+	if v.Label != "" {
+		sb.WriteRune('-')
+		sb.WriteString(v.Label)
+	}
+	return sb.String()
+}
 
 // Compare returns a positive integer if v1 is greater than v2, a negative integer if v1 is less than v2 and zero if they
 // are equal.
@@ -29,6 +42,19 @@ func (v1 Version) Compare(v2 Version) int {
 	result = v1.Patch - v2.Patch
 	if result != 0 {
 		return result
+	}
+	// Version without label always sorts first
+	if v1.Label == "" && v2.Label != "" {
+		return 1
+	}
+	if v1.Label != "" && v2.Label == "" {
+		return -1
+	}
+	if v1.Label > v2.Label {
+		return 1
+	}
+	if v1.Label < v2.Label {
+		return -1
 	}
 	return 0
 }
@@ -53,9 +79,14 @@ func Parse(s string) (Version, error) {
 	if err != nil {
 		return Version{}, fmt.Errorf("invalid minor version: %s", parts[1])
 	}
-	patch, err := strconv.Atoi(parts[2])
+	parts2 := strings.SplitN(parts[2], "-", 2)
+	patch, err := strconv.Atoi(parts2[0])
 	if err != nil {
 		return Version{}, fmt.Errorf("invalid patch version: %s", parts[2])
 	}
-	return Version{Major: major, Minor: minor, Patch: patch}, nil
+	v := Version{Major: major, Minor: minor, Patch: patch}
+	if len(parts2) > 1 {
+		v.Label = parts2[1]
+	}
+	return v, nil
 }

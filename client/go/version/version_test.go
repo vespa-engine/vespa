@@ -11,9 +11,6 @@ func TestParse(t *testing.T) {
 	_, err := Parse("foo")
 	assert.NotNil(t, err)
 
-	_, err = Parse("1.2.3-foo") // Labels are unsupported
-	assert.NotNil(t, err)
-
 	v, err := Parse("1.2.3")
 	assert.Nil(t, err)
 	assert.Equal(t, "1.2.3", v.String())
@@ -21,6 +18,10 @@ func TestParse(t *testing.T) {
 	v, err = Parse("v4.5.6")
 	assert.Nil(t, err)
 	assert.Equal(t, "4.5.6", v.String())
+
+	v, err = Parse("1.2.3-foo")
+	assert.Nil(t, err)
+	assert.Equal(t, "1.2.3-foo", v.String())
 }
 
 func TestCompare(t *testing.T) {
@@ -38,6 +39,12 @@ func TestCompare(t *testing.T) {
 
 	assertComparison(t, "2.0.0", '>', "1.2.3")
 	assertComparison(t, "1.2.3", '<', "2.0.0")
+
+	assertComparison(t, "1.2.3-alpha1", '<', "1.2.3")
+	assertComparison(t, "1.2.3", '>', "1.2.3-alpha1")
+	assertComparison(t, "1.2.3-alpha1", '=', "1.2.3-alpha1")
+	assertComparison(t, "1.2.3-alpha1", '<', "1.2.3-alpha2")
+	assertComparison(t, "1.2.3-alpha2", '>', "1.2.3-alpha1")
 }
 
 func assertComparison(t *testing.T, s1 string, cmp rune, s2 string) {
