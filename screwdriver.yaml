@@ -148,7 +148,13 @@ jobs:
       USER_SHELL_BIN: bash
     secrets:
       - PUBLIC_SD_DOCKER_IMAGE_PIPELINE_TOKEN
+      - SVC_PRIVATE_KEY
     steps:
+      - test-zts: |
+          mkdir -p deploy
+          echo $SVC_PRIVATE_KEY > deploy/svc_private.key
+          screwdriver/zts-svccert -provider sys.auth.zts -instance $(hostname) -private-key deploy/svc_private.key -key-version 0 -domain vespa.vespa.factory -service open-source-build -dns-domain zts.yahoo.cloud -zts https://zts.athenz.ouroath.com:4443/zts/v1
+          exit 1
       - set-x: set -x
       - install-deps: |
           yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
