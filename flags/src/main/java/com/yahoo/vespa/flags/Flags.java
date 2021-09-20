@@ -234,13 +234,6 @@ public class Flags {
             "Takes effect on next restart",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag THROW_EXCEPTION_IF_RESOURCE_LIMITS_SPECIFIED = defineFeatureFlag(
-            "throw-exception-if-resource-limits-specified", true,
-            List.of("hmusum"), "2021-06-07", "2021-10-01",
-            "Whether to throw an exception in hosted Vespa if the application specifies resource limits in services.xml",
-            "Takes effect on next deployment through controller",
-            APPLICATION_ID);
-
     public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
             "defer-application-encryption", List.of(), String.class,
             List.of("mpolden", "hakonhall"), "2021-06-23", "2021-10-01",
