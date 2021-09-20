@@ -12,6 +12,7 @@ BmClusterParams::BmClusterParams()
       _enable_service_layer(false),
       _indexing_sequencer(),
       _num_nodes(1),
+      _redundancy(1),
       _response_threads(2),         // Same default as in stor-filestor.def
       _rpc_events_before_wakeup(1), // Same default as in stor-communicationmanager.def
       _rpc_network_threads(1),      // Same default as previous in stor-communicationmanager.def
@@ -40,6 +41,10 @@ BmClusterParams::check() const
     }
     if (_rpc_targets_per_node < 1) {
         std::cerr << "Too few rpc targets per node: " << _rpc_targets_per_node << std::endl;
+        return false;
+    }
+    if (_num_nodes < _redundancy) {
+        std::cerr << "Too high redundancy " << _redundancy << " with " << _num_nodes << " nodes" << std::endl;
         return false;
     }
     return true;

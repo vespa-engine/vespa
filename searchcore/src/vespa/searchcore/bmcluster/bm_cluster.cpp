@@ -148,7 +148,8 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
       _document_types(std::move(document_types)),
       _repo(std::move(repo)),
       _field_set_repo(std::make_unique<const document::FieldSetRepo>(*_repo)),
-      _distribution(std::make_shared<const BmDistribution>(params.get_num_nodes())),
+      _real_distribution(std::make_shared<BmDistribution>(params.get_num_nodes(), params.get_redundancy())),
+      _distribution(_real_distribution),
       _nodes(params.get_num_nodes()),
       _cluster_controller(std::make_shared<BmClusterController>(*this, *_distribution)),
       _feed_handler()
@@ -436,6 +437,12 @@ BmCluster::get_node_stats()
         }
     }
     return node_stats;
+}
+
+void
+BmCluster::propagate_cluster_state()
+{
+    _cluster_controller->propagate_cluster_state();
 }
 
 }

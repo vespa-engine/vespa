@@ -26,6 +26,7 @@ namespace storage::rpc { class SharedRpcResources; }
 namespace search::bmcluster {
 
 class BmClusterController;
+class BmDistribution;
 class BmFeed;
 class BmMessageBus;
 class BmNode;
@@ -55,6 +56,7 @@ class BmCluster {
     std::shared_ptr<DocumenttypesConfig>              _document_types;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     std::unique_ptr<const document::FieldSetRepo>     _field_set_repo;
+    std::shared_ptr<BmDistribution>                   _real_distribution;
     std::shared_ptr<const IBmDistribution>            _distribution;
     std::vector<std::unique_ptr<BmNode>>              _nodes;
     std::shared_ptr<BmClusterController>              _cluster_controller;
@@ -90,6 +92,8 @@ public:
     uint32_t get_num_nodes() const { return _nodes.size(); }
     BmNode *get_node(uint32_t node_idx) const { return node_idx < _nodes.size() ? _nodes[node_idx].get() : nullptr; }
     std::vector<BmNodeStats> get_node_stats();
+    BmDistribution& get_real_distribution() { return *_real_distribution; }
+    void propagate_cluster_state();
 };
 
 }

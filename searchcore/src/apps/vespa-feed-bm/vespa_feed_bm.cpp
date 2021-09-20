@@ -51,8 +51,6 @@ using search::bmcluster::BmNodeStatsReporter;
 using search::bmcluster::BmRange;
 using search::bmcluster::BucketSelector;
 using search::index::DummyFileHeaderContext;
-using storage::spi::PersistenceProvider;
-using vespalib::makeLambdaTask;
 
 namespace {
 
@@ -114,71 +112,73 @@ BMParams::check() const
 
 }
 
-struct PersistenceProviderFixture {
+class Benchmark {
+    BMParams                                   _params;
     std::shared_ptr<const DocumenttypesConfig> _document_types;
     std::shared_ptr<const DocumentTypeRepo>    _repo;
-    std::unique_ptr<BmCluster>                 _bm_cluster;
+    std::unique_ptr<BmCluster>                 _cluster;
     BmFeed                                     _feed;
 
-    explicit PersistenceProviderFixture(const BMParams& params);
-    ~PersistenceProviderFixture();
+    void benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, uint32_t passes, const vespalib::string &op_name);
+public:
+    explicit Benchmark(const BMParams& params);
+    ~Benchmark();
+    void run();
 };
 
-PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
-    : _document_types(make_document_types()),
+Benchmark::Benchmark(const BMParams& params)
+    : _params(params),
+      _document_types(make_document_types()),
       _repo(document::DocumentTypeRepoFactory::make(*_document_types)),
-      _bm_cluster(std::make_unique<BmCluster>(base_dir, base_port, params, _document_types, _repo)),
+      _cluster(std::make_unique<BmCluster>(base_dir, base_port, _params, _document_types, _repo)),
       _feed(_repo)
 {
-    _bm_cluster->make_nodes();
+    _cluster->make_nodes();
 }
 
-PersistenceProviderFixture::~PersistenceProviderFixture() = default;
+Benchmark::~Benchmark() = default;
 
 void
-benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, const BMParams& params, uint32_t passes, const vespalib::string &op_name)
+Benchmark::benchmark_feed(BmFeeder& feeder, int64_t& time_bias, const std::vector<vespalib::nbostream>& serialized_feed, uint32_t passes, const vespalib::string &op_name)
 {
     if (passes == 0) {
         return;
     }
     AvgSampler sampler;
     LOG(info, "--------------------------------");
-    LOG(info, "%sAsync: %u small documents, passes=%u", op_name.c_str(), params.get_documents(), passes);
+    LOG(info, "%sAsync: %u small documents, passes=%u", op_name.c_str(), _params.get_documents(), passes);
     for (uint32_t pass = 0; pass < passes; ++pass) {
-        feeder.run_feed_tasks(pass, time_bias, serialized_feed, params, sampler, op_name);
+        feeder.run_feed_tasks(pass, time_bias, serialized_feed, _params, sampler, op_name);
     }
     LOG(info, "%sAsync: AVG %s/s: %8.2f", op_name.c_str(), op_name.c_str(), sampler.avg());
 }
 
-void benchmark(const BMParams &bm_params)
+void
+Benchmark::run()
 {
-    vespalib::rmdir(base_dir, true);
-    PersistenceProviderFixture f(bm_params);
-    auto& cluster = *f._bm_cluster;
-    cluster.start(f._feed);
-    vespalib::ThreadStackExecutor executor(bm_params.get_client_threads(), 128_Ki);
-    BmFeeder feeder(f._repo, *cluster.get_feed_handler(), executor);
-    auto& feed = f._feed;
-    auto put_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_put_feed(range, bucket_selector); }, f._feed.num_buckets(), "put");
-    auto update_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_update_feed(range, bucket_selector); }, f._feed.num_buckets(), "update");
-    auto get_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_get_feed(range, bucket_selector); }, f._feed.num_buckets(), "get");
-    auto remove_feed = feed.make_feed(executor, bm_params, [&feed](BmRange range, BucketSelector bucket_selector) { return feed.make_remove_feed(range, bucket_selector); }, f._feed.num_buckets(), "remove");
-    BmNodeStatsReporter reporter(cluster);
+    _cluster->start(_feed);
+    vespalib::ThreadStackExecutor executor(_params.get_client_threads(), 128_Ki);
+    BmFeeder feeder(_repo, *_cluster->get_feed_handler(), executor);
+    auto put_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_put_feed(range, bucket_selector); }, _feed.num_buckets(), "put");
+    auto update_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_update_feed(range, bucket_selector); }, _feed.num_buckets(), "update");
+    auto get_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_get_feed(range, bucket_selector); }, _feed.num_buckets(), "get");
+    auto remove_feed = _feed.make_feed(executor, _params, [this](BmRange range, BucketSelector bucket_selector) { return _feed.make_remove_feed(range, bucket_selector); }, _feed.num_buckets(), "remove");
+    BmNodeStatsReporter reporter(*_cluster);
     reporter.start(500ms);
     int64_t time_bias = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch() - 24h).count();
     LOG(info, "Feed handler is '%s'", feeder.get_feed_handler().get_name().c_str());
-    benchmark_feed(feeder, time_bias, put_feed, bm_params, bm_params.get_put_passes(), "put");
+    benchmark_feed(feeder, time_bias, put_feed, _params.get_put_passes(), "put");
     reporter.report_now();
-    benchmark_feed(feeder, time_bias, update_feed, bm_params, bm_params.get_update_passes(), "update");
+    benchmark_feed(feeder, time_bias, update_feed, _params.get_update_passes(), "update");
     reporter.report_now();
-    benchmark_feed(feeder, time_bias, get_feed, bm_params, bm_params.get_get_passes(), "get");
+    benchmark_feed(feeder, time_bias, get_feed, _params.get_get_passes(), "get");
     reporter.report_now();
-    benchmark_feed(feeder, time_bias, remove_feed, bm_params, bm_params.get_remove_passes(), "remove");
+    benchmark_feed(feeder, time_bias, remove_feed, _params.get_remove_passes(), "remove");
     reporter.report_now();
     reporter.stop();
     LOG(info, "--------------------------------");
 
-    cluster.stop();
+    _cluster->stop();
 }
 
 class App : public FastOS_Application
@@ -382,7 +382,9 @@ App::Main()
         usage();
         return 1;
     }
-    benchmark(_bm_params);
+    vespalib::rmdir(base_dir, true);
+    Benchmark bm(_bm_params);
+    bm.run();
     return 0;
 }
 

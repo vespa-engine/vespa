@@ -10,6 +10,7 @@
 namespace search::bmcluster {
 
 class BmCluster;
+class BmNodeStats;
 
 /*
  * Class handling background reporting of node stats during feed or
@@ -20,6 +21,8 @@ class BmNodeStatsReporter {
     vespalib::ThreadStackExecutor _executor;
     std::mutex                    _mutex;
     std::condition_variable       _cond;
+    std::chrono::time_point<std::chrono::steady_clock> _change_time;
+    std::vector<BmNodeStats>      _prev_node_stats;
     uint32_t                      _pending_report;
     bool                          _started;
     bool                          _stop;
@@ -32,6 +35,7 @@ public:
     void start(std::chrono::milliseconds interval);
     void stop();
     void report_now();
+    std::chrono::time_point<std::chrono::steady_clock> get_change_time() const noexcept { return _change_time; }
 };
 
 }

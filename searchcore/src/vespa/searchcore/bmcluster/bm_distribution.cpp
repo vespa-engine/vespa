@@ -5,7 +5,12 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 
+using storage::lib::ClusterState;
 using storage::lib::ClusterStateBundle;
+using storage::lib::Node;
+using storage::lib::NodeState;
+using storage::lib::NodeType;
+using storage::lib::State;
 
 namespace search::bmcluster {
 
@@ -14,7 +19,7 @@ using DistributionConfigBuilder = BmDistribution::DistributionConfigBuilder;
 namespace {
 
 BmDistribution::DistributionConfig
-make_distribution_config(uint32_t num_nodes)
+make_distribution_config(uint32_t num_nodes, uint32_t redundancy)
 {
     DistributionConfigBuilder dc;
     {
@@ -32,27 +37,28 @@ make_distribution_config(uint32_t num_nodes)
         group.partitions = "";
         dc.group.push_back(std::move(group));
     }
-    dc.redundancy = 1;
-    dc.readyCopies = 1;
+    dc.redundancy = redundancy;
+    dc.readyCopies = redundancy;
     return dc;
 }
 
-ClusterStateBundle
-make_cluster_state_bundle(uint32_t num_nodes)
+ClusterState
+make_cluster_state(uint32_t num_nodes)
 {
     vespalib::asciistream s;
     s << "version:2 distributor:" << num_nodes << " storage:" << num_nodes;
-    storage::lib::ClusterStateBundle bundle(storage::lib::ClusterState(s.str()));
-    return bundle;
+    return storage::lib::ClusterState(s.str());
 }
 
 }
 
-BmDistribution::BmDistribution(uint32_t num_nodes)
+BmDistribution::BmDistribution(uint32_t num_nodes, uint32_t redundancy)
     : _num_nodes(num_nodes),
-      _distribution_config(make_distribution_config(num_nodes)),
+      _distribution_config(make_distribution_config(num_nodes, redundancy)),
       _distribution(_distribution_config),
-      _cluster_state_bundle(make_cluster_state_bundle(num_nodes))
+      _pending_cluster_state(make_cluster_state(num_nodes)),
+      _cluster_state_bundle(_pending_cluster_state),
+      _has_pending_cluster_state(false)
 {
 }
 
@@ -93,6 +99,35 @@ ClusterStateBundle
 BmDistribution::get_cluster_state_bundle() const
 {
     return _cluster_state_bundle;
+}
+
+void
+BmDistribution::set_node_state(uint32_t node_idx, bool distributor, const State& state)
+{
+    const NodeType& node_type = distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE;
+    Node node(node_type, node_idx);
+    NodeState node_state(node_type, state);
+    _pending_cluster_state.setNodeState(node, node_state);
+    if (!_has_pending_cluster_state) {
+        _pending_cluster_state.setVersion(_pending_cluster_state.getVersion() + 1);
+        _has_pending_cluster_state = true;
+    }
+}
+
+void
+BmDistribution::set_node_state(uint32_t node_idx, const State& state)
+{
+    set_node_state(node_idx, false, state);
+    set_node_state(node_idx, true, state);
+}
+
+void
+BmDistribution::commit_cluster_state_change()
+{
+    if (_has_pending_cluster_state) {
+        _cluster_state_bundle = ClusterStateBundle(_pending_cluster_state);
+        _has_pending_cluster_state = false;
+    }
 }
 
 };
