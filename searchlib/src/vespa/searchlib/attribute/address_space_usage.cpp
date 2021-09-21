@@ -12,15 +12,6 @@ AddressSpaceUsage::AddressSpaceUsage()
 {
 }
 
-AddressSpaceUsage::AddressSpaceUsage(const AddressSpace& enum_store_usage,
-                                     const AddressSpace& multi_value_usage)
-    : _map()
-{
-    // TODO: Remove this constructor and instead add usage for each relevant component explicit.
-    set(AddressSpaceComponents::enum_store, enum_store_usage);
-    set(AddressSpaceComponents::multi_value, multi_value_usage);
-}
-
 void
 AddressSpaceUsage::set(const vespalib::string& component, const vespalib::AddressSpace& usage)
 {
