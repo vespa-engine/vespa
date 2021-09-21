@@ -37,6 +37,12 @@ public interface ConfigServerApi extends AutoCloseable {
 
         public Optional<Duration> getConnectionTimeout() { return connectionTimeout; }
 
+        /** Set the retry policy to use against the config servers. */
+        public Params<T> setRetryPolicy(RetryPolicy<T> retryPolicy) {
+            this.retryPolicy = retryPolicy;
+            return this;
+        }
+
         public RetryPolicy<T> getRetryPolicy() { return retryPolicy; }
     }
 
