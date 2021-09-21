@@ -47,8 +47,7 @@ class DistributorBucketSpace {
     bool owns_bucket_in_state(const lib::Distribution& distribution, const lib::ClusterState& cluster_state, document::BucketId bucket) const;
 public:
     explicit DistributorBucketSpace();
-    // TODO STRIPE: Remove the use_bucket_db parameter when legacy mode is gone.
-    explicit DistributorBucketSpace(uint16_t node_index, bool use_bucket_db = true);
+    explicit DistributorBucketSpace(uint16_t node_index);
     ~DistributorBucketSpace();
 
     DistributorBucketSpace(const DistributorBucketSpace&) = delete;
