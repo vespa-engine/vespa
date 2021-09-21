@@ -104,13 +104,13 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
             pollThread.notifyAll();
         }
         try {
+            pollThread.join();
+        } catch (InterruptedException e) {}
+        try {
             httpClient.close();
         } catch (IOException e) {
             log.warning("Failed closing httpclient: " + e);
         }
-        try {
-            pollThread.join();
-        } catch (InterruptedException e) {}
         super.deconstruct();
     }
 
