@@ -259,14 +259,19 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry) {
+    public void approvePendingRoleMembership(AthenzRole athenzRole, AthenzUser athenzUser, Instant expiry, Optional<String> reason) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s/decision", athenzRole.domain().getName(), athenzRole.roleName(), athenzUser.getFullName()));
         MembershipEntity membership = new MembershipEntity.RoleMembershipEntity(athenzUser.getFullName(), true, athenzRole.roleName(), Long.toString(expiry.getEpochSecond()));
-        HttpUriRequest request = RequestBuilder.put()
+
+        var requestBuilder = RequestBuilder.put()
                 .setUri(uri)
-                .setEntity(toJsonStringEntity(membership))
-                .build();
-        execute(request, response -> readEntity(response, Void.class));
+                .setEntity(toJsonStringEntity(membership));
+
+        if (reason.filter(s -> !s.isBlank()).isPresent()) {
+            requestBuilder.addHeader("Y-Audit-Ref", reason.get());
+        }
+
+        execute(requestBuilder.build(), response -> readEntity(response, Void.class));
     }
 
     @Override
