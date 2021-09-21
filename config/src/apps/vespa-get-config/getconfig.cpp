@@ -240,7 +240,7 @@ GetConfig::Main()
             printf("defNamespace %s\n", rKey.getDefNamespace().c_str());
 
             printf("configID   %s\n", rKey.getConfigId().c_str());
-            printf("configMD5  %s\n", rState.md5.c_str());
+            printf("configXxhash64  %s\n", rState.xxhash64.c_str());
 
             printf("generation  %" PRId64 "\n", rState.generation);
             printf("trace       %s\n", response->getTrace().toString().c_str());

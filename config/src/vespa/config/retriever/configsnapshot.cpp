@@ -150,7 +150,7 @@ void
 ConfigSnapshot::serializeValueV2(Cursor & cursor, const Value & value) const
 {
     cursor.setDouble("lastChanged", value.first);
-    cursor.setString("md5", Memory(value.second.getMd5()));
+    cursor.setString("xxhash64", Memory(value.second.getXxhash64()));
     value.second.serializeV2(cursor.setObject("payload"));
 }
 
@@ -225,7 +225,7 @@ ConfigSnapshot::deserializeValueV1(Inspector & inspector) const
     for (size_t i = 0; i < s.children(); i++) {
         payload.push_back(s[i].asString().make_string());
     }
-    return Value(lastChanged, ConfigValue(payload, calculateContentMd5(payload)));
+    return Value(lastChanged, ConfigValue(payload, calculateContentXxhash64(payload)));
 }
 
 namespace {

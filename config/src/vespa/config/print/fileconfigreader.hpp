@@ -44,7 +44,7 @@ FileConfigReader<ConfigType>::read()
     for (std::getline(f, line); f; std::getline(f, line)) {
         lines.push_back(line);
     }
-    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentMd5(lines))));
+    return std::unique_ptr<ConfigType>(new ConfigType(ConfigValue(lines, calculateContentXxhash64(lines))));
 }
 
 } // namespace config
