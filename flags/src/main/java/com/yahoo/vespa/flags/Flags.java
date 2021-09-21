@@ -152,6 +152,12 @@ public class Flags {
             "Use a new algorithm to calculate the spare disks of a host.",
             "Takes effect on first run of DiskTask, typically after host-admin restart/upgrade.");
 
+    public static final UnboundBooleanFlag LOCAL_SUSPEND = defineFeatureFlag(
+            "local-suspend", true,
+            List.of("hakonhall"), "2021-09-21", "2021-10-21",
+            "Whether the cfghost host admin should suspend against only the local cfg (true and legacy) or all.",
+            "Takes effect immediately.");
+
     public static final UnboundBooleanFlag USE_UNKNOWN_SERVICE_STATUS = defineFeatureFlag(
             "use-unknown-service-status", true,
             List.of("hakonhall"), "2021-09-13", "2021-10-13",

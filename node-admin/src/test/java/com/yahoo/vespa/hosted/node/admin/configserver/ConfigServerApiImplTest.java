@@ -116,7 +116,7 @@ public class ConfigServerApiImplTest {
     public void testBasicSuccessWithCustomTimeouts() {
         mockReturnCode = TIMEOUT_RETURN_CODE;
 
-        var params = new ConfigServerApi.Params();
+        var params = new ConfigServerApi.Params<TestPojo>();
         params.setConnectionTimeout(Duration.ofSeconds(3));
 
         try {
