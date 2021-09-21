@@ -918,16 +918,5 @@
       "public java.lang.String normalize(java.lang.String)"
     ],
     "fields": []
-  },
-  "com.yahoo.language.sentencepiece.Trie": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()"
-    ],
-    "fields": []
   }
 }

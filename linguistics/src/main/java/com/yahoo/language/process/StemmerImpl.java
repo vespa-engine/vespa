@@ -43,4 +43,5 @@ public class StemmerImpl implements Stemmer {
             }
         }
     }
+
 }

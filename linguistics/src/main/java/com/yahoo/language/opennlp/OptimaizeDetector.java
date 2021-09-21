@@ -32,10 +32,10 @@ import java.util.logging.Level;
  */
 public class OptimaizeDetector implements Detector {
 
-    static private Object initGuard = new Object();
-    static private TextObjectFactory textObjectFactory = null;
-    static private LanguageDetector languageDetector = null;
-    static private final Logger log = Logger.getLogger(OptimaizeDetector.class.getName());
+    private static final Object initGuard = new Object();
+    private static TextObjectFactory textObjectFactory = null;
+    private static LanguageDetector languageDetector = null;
+    private static final Logger log = Logger.getLogger(OptimaizeDetector.class.getName());
 
     static private void initOptimaize() {
         synchronized (initGuard) {
@@ -60,7 +60,7 @@ public class OptimaizeDetector implements Detector {
         }
     }
 
-    private SimpleDetector simpleDetector = new SimpleDetector();
+    private final SimpleDetector simpleDetector = new SimpleDetector();
 
     public OptimaizeDetector() {
         initOptimaize();
