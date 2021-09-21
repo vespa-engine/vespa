@@ -52,7 +52,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private final Thread pollThread;
     private final Set<ConsumerId> consumerSet;
     private long pollCount = 0;
-    private boolean stopped;
+    private volatile boolean stopped;
 
     // Non-final for testing
     private volatile Duration taskTimeout;
