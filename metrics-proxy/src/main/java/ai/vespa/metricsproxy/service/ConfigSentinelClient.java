@@ -35,8 +35,11 @@ public class ConfigSentinelClient extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        if (connection != null) {
-            connection.close();
+        synchronized (this) {
+            if (connection != null) {
+                connection.close();
+                connection = null;
+            }
         }
         supervisor.transport().shutdown().join();
         super.deconstruct();
