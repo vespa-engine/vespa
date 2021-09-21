@@ -20,8 +20,6 @@ private:
 
 public:
     AddressSpaceUsage();
-    AddressSpaceUsage(const vespalib::AddressSpace& enum_store_usage,
-                      const vespalib::AddressSpace& multi_value_usage);
     void set(const vespalib::string& component, const vespalib::AddressSpace& usage);
     vespalib::AddressSpace get(const vespalib::string& component) const;
     const AddressSpaceMap& get_all() const { return _map; }
