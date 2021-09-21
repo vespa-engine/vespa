@@ -32,8 +32,8 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public HealthMetric getHealth(int fetchCount) {
-        try {
-            return createHealthMetrics(getJson(), fetchCount);
+        try (InputStream stream = getJson()) {
+            return createHealthMetrics(stream, fetchCount);
         } catch (IOException | InterruptedException | ExecutionException e) {
             logMessageNoResponse(errMsgNoResponse(e), fetchCount);
             byte [] empty = {'{','}'};
