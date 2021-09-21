@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.yahoo.language.process.Encoder;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 
@@ -37,7 +38,7 @@ public class PrimitiveFieldType extends FieldType {
     }
 
     @Override
-    public Object convertFrom(Object object, CompiledQueryProfileRegistry registry) {
+    public Object convertFrom(Object object, ConversionContext context) {
         return convertFrom(object, (QueryProfileRegistry)null);
     }
 
