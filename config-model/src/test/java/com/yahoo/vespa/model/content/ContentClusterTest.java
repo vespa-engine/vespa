@@ -1057,30 +1057,22 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
     }
 
-    private int resolveNumDistributorStripesConfigWithFeatureFlag(TestProperties props, Optional<Flavor> flavor) throws Exception {
-        var cc = createOneNodeCluster(props, flavor);
+    private int resolveNumDistributorStripesConfig(Optional<Flavor> flavor) throws Exception {
+        var cc = createOneNodeCluster(new TestProperties(), flavor);
         var builder = new StorDistributormanagerConfig.Builder();
         cc.getDistributorNodes().getChildren().get("0").getConfig(builder);
         return (new StorDistributormanagerConfig(builder)).num_distributor_stripes();
     }
 
-    private int resolveNumDistributorStripesConfigWithFeatureFlag(int numStripes) throws Exception {
-        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(numStripes), Optional.empty());
-    }
-
     private int resolveTunedNumDistributorStripesConfig(int numCpuCores) throws Exception {
         var flavor = new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().name("test").minCpuCores(numCpuCores)));
-        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(-1),
-                Optional.of(flavor));
+        return resolveNumDistributorStripesConfig(Optional.of(flavor));
     }
 
     @Test
-    public void num_distributor_stripes_config_controlled_by_properties() throws Exception {
-        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties(), Optional.empty()));
-        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(0));
-        assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(1));
-        assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(-1));
-        assertEquals(4, resolveNumDistributorStripesConfigWithFeatureFlag(4));
+    public void num_distributor_stripes_config_defaults_to_zero() throws Exception {
+        // This triggers tuning when starting the distributor process, based on CPU core sampling on the node.
+        assertEquals(0, resolveNumDistributorStripesConfig(Optional.empty()));
     }
 
     @Test
