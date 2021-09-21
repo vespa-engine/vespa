@@ -88,4 +88,5 @@ public interface Linguistics {
 
     /** Check if another instance is equivalent to this one */
     boolean equals(Linguistics other);
+
 }

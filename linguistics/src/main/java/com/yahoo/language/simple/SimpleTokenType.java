@@ -65,4 +65,5 @@ public class SimpleTokenType {
         }
         throw new UnsupportedOperationException(String.valueOf(Character.getType(codePoint)));
     }
+
 }

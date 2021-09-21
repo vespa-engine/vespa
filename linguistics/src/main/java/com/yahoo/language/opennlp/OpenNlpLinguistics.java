@@ -49,4 +49,5 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
 
     @Override
     public boolean equals(Linguistics other) { return (other instanceof OpenNlpLinguistics); }
+
 }

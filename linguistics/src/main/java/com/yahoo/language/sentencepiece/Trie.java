@@ -9,7 +9,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class Trie {
+class Trie {
 
     final Node root = new Node();
 

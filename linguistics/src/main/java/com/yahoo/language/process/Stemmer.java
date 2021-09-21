@@ -18,7 +18,7 @@ public interface Stemmer {
      * @param input    the string to stem.
      * @param mode     the stemming mode
      * @param language the language to use for stemming
-     * @return list of possible stems. Empty if none.
+     * @return a list of possible stems. Empty if none.
      * @throws ProcessingException thrown if there is an exception stemming this input
      */
     List<StemList> stem(String input, StemMode mode, Language language);
