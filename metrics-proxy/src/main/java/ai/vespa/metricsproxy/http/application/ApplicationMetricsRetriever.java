@@ -63,7 +63,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         taskTimeout = timeout(clients.size());
         stopped = false;
         consumerSet = new HashSet<>();
-        consumerSet.add(defaultMetricsConsumerId);
         httpClient.start();
         pollThread = new Thread(this, "metrics-poller");
         pollThread.setDaemon(true);
@@ -114,7 +113,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
         super.deconstruct();
     }
 
-    public Map<Node, List<MetricsPacket>> getMetrics() {
+    Map<Node, List<MetricsPacket>> getMetrics() {
         return getMetrics(defaultMetricsConsumerId);
     }
 
@@ -141,7 +140,8 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 }
                 long before = pollCount;
                 pollThread.notifyAll();
-                while (pollCount == before) {
+                while (pollCount <= before + 1) {
+                    pollThread.notifyAll();
                     pollThread.wait();
                 }
             }
