@@ -305,6 +305,13 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_ALGORITHM = defineStringFlag(
+            "endpoint-certificate-algorithm", "", // Blank means don't set - use cameo default as before
+            List.of("andreer"), "2021-09-21", "2022-01-01",
+            "Selects algorithm used for an applications endpoint certificate",
+            "Takes effect when a new endpoint certificate is requested (first deployment of new application/instance)",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
