@@ -35,7 +35,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
             handleException(e, data, fetchCount);
         }
     }
-    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) throws IOException {
+    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) {
         try {
             MetricsParser.parse(data, consumer);
         } catch (Exception e) {
