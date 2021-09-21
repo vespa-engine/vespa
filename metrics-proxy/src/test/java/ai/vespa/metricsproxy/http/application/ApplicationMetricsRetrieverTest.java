@@ -53,6 +53,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.getMetrics();
         retriever.startPollAndWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(1, metricsByNode.size());
@@ -71,6 +72,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.getMetrics();
         retriever.startPollAndWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(2, metricsByNode.size());
@@ -100,6 +102,7 @@ public class ApplicationMetricsRetrieverTest {
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.getMetrics();
         retriever.startPollAndWait();
         var metricsByNode = retriever.getMetrics();
         assertEquals(2, metricsByNode.size());
@@ -134,6 +137,7 @@ public class ApplicationMetricsRetrieverTest {
                                                                            .withFixedDelay(10)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
+        retriever.getMetrics();
         retriever.setTaskTimeout(Duration.ofMillis(1));
         retriever.startPollAndWait();
         assertTrue(retriever.getMetrics().get(node).isEmpty());
