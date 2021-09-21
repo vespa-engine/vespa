@@ -306,9 +306,10 @@ public class Flags {
     );
 
     public static final UnboundStringFlag ENDPOINT_CERTIFICATE_ALGORITHM = defineStringFlag(
-            "endpoint-certificate-algorithm", "", // Blank means don't set - use cameo default as before
+            "endpoint-certificate-algorithm", "",
+            // Acceptable values are: "rsa_2048", "rsa_4096", "ecdsa_p256"
             List.of("andreer"), "2021-09-21", "2022-01-01",
-            "Selects algorithm used for an applications endpoint certificate",
+            "Selects algorithm used for an applications endpoint certificate, or use provider default if blank",
             "Takes effect when a new endpoint certificate is requested (first deployment of new application/instance)",
             APPLICATION_ID);
 
