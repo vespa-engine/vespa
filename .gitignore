@@ -46,3 +46,4 @@ Testing
 install_manifest.txt
 *.cbp
 !/.copr/Makefile
+frt_*_proto_*
