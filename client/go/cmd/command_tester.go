@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // A helper for testing commands
 // Author: bratseth
 
@@ -17,7 +17,6 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -27,7 +26,7 @@ type command struct {
 	moreArgs []string
 }
 
-func execute(cmd command, t *testing.T, client *mockHttpClient) string {
+func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string) {
 	if client != nil {
 		util.ActiveHttpClient = client
 	}
@@ -56,19 +55,20 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) string {
 	exitFunc = func(code int) {}
 
 	// Capture stdout and execute command
-	var b bytes.Buffer
-	stdout = &b
+	var capturedOut bytes.Buffer
+	var capturedErr bytes.Buffer
+	stdout = &capturedOut
+	stderr = &capturedErr
 
 	// Execute command and return output
 	rootCmd.SetArgs(append(cmd.args, cmd.moreArgs...))
 	rootCmd.Execute()
-	out, err := ioutil.ReadAll(&b)
-	assert.Nil(t, err, "No error")
-	return string(out)
+	return capturedOut.String(), capturedErr.String()
 }
 
 func executeCommand(t *testing.T, client *mockHttpClient, args []string, moreArgs []string) string {
-	return execute(command{args: args, moreArgs: moreArgs}, t, client)
+	out, _ := execute(command{args: args, moreArgs: moreArgs}, t, client)
+	return out
 }
 
 type mockHttpClient struct {

@@ -31,9 +31,9 @@ const (
 
 // Service represents a Vespa service.
 type Service struct {
-	BaseURL     string
-	Name        string
-	certificate tls.Certificate
+	BaseURL    string
+	Name       string
+	TLSOptions TLSOptions
 }
 
 // Target represents a Vespa platform, running named Vespa services.
@@ -46,6 +46,13 @@ type Target interface {
 
 	// DiscoverServices queries for services available on this target after the deployment run has completed.
 	DiscoverServices(timeout time.Duration, runID int64) error
+}
+
+// TLSOptions configures the certificate to use for service requests.
+type TLSOptions struct {
+	KeyPair         tls.Certificate
+	CertificateFile string
+	PrivateKeyFile  string
 }
 
 // LogOptions configures the log output to produce when waiting for services.
@@ -61,8 +68,8 @@ type customTarget struct {
 
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
-	if s.certificate.Certificate != nil {
-		util.ActiveHttpClient.UseCertificate(s.certificate)
+	if s.TLSOptions.KeyPair.Certificate != nil {
+		util.ActiveHttpClient.UseCertificate(s.TLSOptions.KeyPair)
 	}
 	return util.HttpDo(request, timeout, s.Description())
 }
@@ -83,7 +90,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 		return 0, err
 	}
 	okFunc := func(status int, response []byte) (bool, error) { return status/100 == 2, nil }
-	return wait(okFunc, func() *http.Request { return req }, &s.certificate, timeout)
+	return wait(okFunc, func() *http.Request { return req }, &s.TLSOptions.KeyPair, timeout)
 }
 
 func (s *Service) Description() string {
@@ -167,8 +174,8 @@ type cloudTarget struct {
 	cloudAPI   string
 	targetType string
 	deployment Deployment
-	keyPair    tls.Certificate
 	apiKey     []byte
+	tlsOptions TLSOptions
 	logOptions LogOptions
 
 	queryURL    string
@@ -185,12 +192,12 @@ func (t *cloudTarget) Service(name string) (*Service, error) {
 		if t.queryURL == "" {
 			return nil, fmt.Errorf("service %s not discovered", name)
 		}
-		return &Service{Name: name, BaseURL: t.queryURL, certificate: t.keyPair}, nil
+		return &Service{Name: name, BaseURL: t.queryURL, TLSOptions: t.tlsOptions}, nil
 	case documentService:
 		if t.documentURL == "" {
 			return nil, fmt.Errorf("service %s not discovered", name)
 		}
-		return &Service{Name: name, BaseURL: t.documentURL, certificate: t.keyPair}, nil
+		return &Service{Name: name, BaseURL: t.documentURL, TLSOptions: t.tlsOptions}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
@@ -245,7 +252,7 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		}
 		return true, nil
 	}
-	_, err = wait(jobSuccessFunc, requestFunc, &t.keyPair, timeout)
+	_, err = wait(jobSuccessFunc, requestFunc, &t.tlsOptions.KeyPair, timeout)
 	return err
 }
 
@@ -298,7 +305,7 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 		endpointURL = resp.Endpoints[0].URL
 		return true, nil
 	}
-	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.keyPair, timeout); err != nil {
+	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.tlsOptions.KeyPair, timeout); err != nil {
 		return err
 	}
 	if endpointURL == "" {
@@ -320,13 +327,13 @@ func CustomTarget(baseURL string) Target {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud platform.
-func CloudTarget(deployment Deployment, keyPair tls.Certificate, apiKey []byte, logOptions LogOptions) Target {
+func CloudTarget(deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions) Target {
 	return &cloudTarget{
 		cloudAPI:   defaultCloudAPI,
 		targetType: cloudTargetType,
 		deployment: deployment,
-		keyPair:    keyPair,
 		apiKey:     apiKey,
+		tlsOptions: tlsOptions,
 		logOptions: logOptions,
 	}
 }

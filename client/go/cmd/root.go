@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Root Cobra command: vespa
 // author: bratseth
 
@@ -17,7 +17,6 @@ import (
 
 var (
 	// TODO: add timeout flag
-	// TODO: add flag to show http request made
 	rootCmd = &cobra.Command{
 		Use:   "vespa command-name",
 		Short: "The command-line tool for Vespa.ai",
@@ -40,6 +39,7 @@ Vespa documentation: https://docs.vespa.ai`,
 
 	color  = aurora.NewAurora(false)
 	stdout = colorable.NewColorableStdout()
+	stderr = colorable.NewColorableStderr()
 )
 
 const (
