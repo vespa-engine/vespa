@@ -16,7 +16,6 @@ namespace storage::distributor {
 
 /**
  * Represents cluster state and distribution for a given bucket space.
- * TODO STRIPE: Make DistributorBucketSpace inherit this class.
  */
 class BucketSpaceState {
 private:
