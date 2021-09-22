@@ -658,6 +658,7 @@
       "public static void logAndDie(java.lang.String, boolean)",
       "public static void logAndDie(java.lang.String, java.lang.Throwable)",
       "public static void logAndDie(java.lang.String, java.lang.Throwable, boolean)",
+      "public static void dumpHeap(java.lang.String, boolean)",
       "public static void dumpThreads()"
     ],
     "fields": []
