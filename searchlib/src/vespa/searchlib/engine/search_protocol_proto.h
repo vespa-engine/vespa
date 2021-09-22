@@ -7,6 +7,6 @@
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-#include "search_protocol.pb.h"
+#include <vespa/searchlib/engine/search_protocol.pb.h>
 
 #pragma GCC diagnostic pop
