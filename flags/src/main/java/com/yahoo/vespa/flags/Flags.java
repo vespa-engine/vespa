@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
@@ -278,7 +279,7 @@ public class Flags {
             List.of("olaa"), "2021-09-13", "2021-12-31",
             "Enable Horizon dashboard",
             "Takes effect immediately",
-            TENANT_ID
+            TENANT_ID, CONSOLE_USER_EMAIL
     );
 
     public static final UnboundBooleanFlag ENABLE_ONPREM_TENANT_S3_ARCHIVE = defineFeatureFlag(
@@ -416,8 +417,8 @@ public class Flags {
      *
      * <p>NOT thread-safe. Tests using this cannot run in parallel.
      */
-    public static Replacer clearFlagsForTesting() {
-        return new Replacer();
+    public static Replacer clearFlagsForTesting(FlagId... flagsToKeep) {
+        return new Replacer(flagsToKeep);
     }
 
     public static class Replacer implements AutoCloseable {
@@ -425,10 +426,11 @@ public class Flags {
 
         private final TreeMap<FlagId, FlagDefinition> savedFlags;
 
-        private Replacer() {
+        private Replacer(FlagId... flagsToKeep) {
             verifyAndSetFlagsCleared(true);
             this.savedFlags = Flags.flags;
             Flags.flags = new TreeMap<>();
+            List.of(flagsToKeep).forEach(id -> Flags.flags.put(id, savedFlags.get(id)));
         }
 
         @Override

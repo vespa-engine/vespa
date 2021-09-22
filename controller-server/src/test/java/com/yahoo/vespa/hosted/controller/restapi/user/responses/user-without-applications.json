@@ -14,5 +14,6 @@
     "hostedOperator",
     "hostedSupporter",
     "hostedAccountant"
-  ]
+  ],
+  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
 }

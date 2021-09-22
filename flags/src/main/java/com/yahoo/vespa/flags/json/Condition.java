@@ -52,6 +52,16 @@ public interface Condition extends Predicate<FetchVector> {
         public FetchVector.Dimension dimension() { return dimension; }
         public List<String> values() { return values; }
         public Optional<String> predicate() { return predicate; }
+
+        public Condition createAs(Condition.Type type) {
+            switch (type) {
+                case WHITELIST: return WhitelistCondition.create(this);
+                case BLACKLIST: return BlacklistCondition.create(this);
+                case RELATIONAL: return RelationalCondition.create(this);
+            }
+
+            throw new IllegalArgumentException("Unknown type '" + type + "'");
+        }
     }
 
     static Condition fromWire(WireCondition wireCondition) {
@@ -70,14 +80,14 @@ public interface Condition extends Predicate<FetchVector> {
             params.withPredicate(wireCondition.predicate);
         }
 
-        switch (type) {
-            case WHITELIST: return WhitelistCondition.create(params);
-            case BLACKLIST: return BlacklistCondition.create(params);
-            case RELATIONAL: return RelationalCondition.create(params);
-        }
-
-        throw new IllegalArgumentException("Unknown type '" + type + "'");
+        return params.createAs(type);
     }
+
+    Condition.Type type();
+
+    FetchVector.Dimension dimension();
+
+    CreateParams toCreateParams();
 
     WireCondition toWire();
 }
