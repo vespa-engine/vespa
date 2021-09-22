@@ -168,7 +168,7 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
     vespa_add_source_target("configgen_${TARGET}_${CONFIG_NAME}" DEPENDS ${CONFIG_H_PATH} ${CONFIG_CPP_PATH})
 endfunction()
 
-function(vespa_generate_protobuf_cpp TARGET RELATIVE_PROTO_PATH)
+function(vespa_generate_protobuf_frt TARGET RELATIVE_PROTO_PATH)
     # Generate from RELATIVE_PROTO_PATH
     # Destination directory is always where generate is called (or, in the case of out-of-source builds, in the build-tree parallel)
     # This may not be the same directory as where the .def file is located.
@@ -180,25 +180,30 @@ function(vespa_generate_protobuf_cpp TARGET RELATIVE_PROTO_PATH)
     # Config destination is the current dir (in the build tree)
     set(PROTO_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-    set(PROTO_H_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_api.h)
-    set(PROTO_CPP_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_client.cpp)
+    set(PROTO_API_H_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_api.h)
+    set(PROTO_CLI_H_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_client.h)
+    set(PROTO_CLI_C_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_client.cpp)
+    set(PROTO_SRV_H_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_server.h)
+    set(PROTO_SRV_C_PATH ${PROTO_DEST_DIR}/frt_${PROTO_NAME}_proto_server.cpp)
+
+    set(PROTO_GEN_FILES ${PROTO_API_H_PATH} ${PROTO_CLI_H_PATH} ${PROTO_CLI_C_PATH} ${PROTO_SRV_H_PATH} ${PROTO_SRV_C_PATH})
 
     add_custom_command(
-	OUTPUT ${PROTO_H_PATH} ${PROTO_CPP_PATH}
+        OUTPUT ${PROTO_GEN_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMAND protoc -I ${PROTO_DIR} --plugin=${PROJECT_SOURCE_DIR}/frt-protoc/protoc-gen-frt --frt_out=${PROTO_DEST_DIR} ${PROTO_FILENAME}
-	COMMENT "Generating cpp protobuf files for ${PROTO_NAME} in ${PROTO_DEST_DIR}"
-        MAIN_DEPENDENCY ${CONFIG_DEF_PATH}
-	DEPENDS protoc-gen-frt
+        COMMAND protoc -I ${PROTO_DIR} --plugin=${PROJECT_BINARY_DIR}/frt-protoc/protoc-gen-frt --frt_out=${PROTO_DEST_DIR} ${PROTO_FILENAME}
+        COMMENT "Generating cpp protobuf files for ${PROTO_NAME} in ${PROTO_DEST_DIR}"
+        MAIN_DEPENDENCY ${RELATIVE_PROTO_PATH}
+        DEPENDS protoc-gen-frt
         )
 
     # Add generated to sources for target
-    target_sources(${TARGET} PRIVATE ${PROTO_H_PATH} ${PROTO_CPP_PATH})
+    target_sources(${TARGET} PRIVATE ${PROTO_GEN_FILES})
 
     # Needed to be able to do a #include for this target
-    target_include_directories(${TARGET} PRIVATE ${PROTO_DEST_DIRNAME})
+    target_include_directories(${TARGET} PUBLIC ${PROTO_DEST_DIR})
 
-    vespa_add_source_target("frt_proto_gen_${TARGET}_${PROTO_NAME}" DEPENDS ${PROTO_H_PATH} ${PROTO_CPP_PATH})
+    vespa_add_source_target("frt_gen_${TARGET}_${PROTO_NAME}" DEPENDS ${PROTO_API_H_PATH})
 endfunction()
 
 macro(__split_sources_list)

@@ -24,7 +24,7 @@ vespa_add_library(logd STATIC
     DEPENDS
 )
 
-vespa_generate_protobuf_cpp(logd ../../../logserver/src/protobuf/log_protocol.proto)
+vespa_generate_protobuf_frt(logd ../../../logserver/src/protobuf/log_protocol.proto)
 
 vespa_generate_config(logd ../main/resources/configdefinitions/logd.def)
 install_config_definition(../main/resources/configdefinitions/logd.def cloud.config.log.logd.def)
