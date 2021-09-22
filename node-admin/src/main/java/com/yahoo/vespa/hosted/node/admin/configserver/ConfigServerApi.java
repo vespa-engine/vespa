@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -19,13 +20,13 @@ public interface ConfigServerApi extends AutoCloseable {
      * @param <T> the type of the returned jackson response
      */
     interface RetryPolicy<T> {
-        boolean tryNextConfigServer(T response);
+        boolean tryNextConfigServer(URI configServerEndpoint, T response);
     }
 
     class Params<T> {
         private Optional<Duration> connectionTimeout = Optional.empty();
 
-        private RetryPolicy<T> retryPolicy = response -> false;
+        private RetryPolicy<T> retryPolicy = (configServerEndpoint, response) -> false;
 
         public Params() {}
 

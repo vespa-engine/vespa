@@ -9,9 +9,11 @@ import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * @author stiankri
@@ -19,6 +21,8 @@ import java.util.Optional;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
+    private static final Logger logger = Logger.getLogger(OrchestratorImpl.class.getName());
+
     // The server-side Orchestrator has an internal timeout of 10s.
     //
     // Note: A 409 has been observed to be returned after 33s in a case possibly involving
@@ -68,14 +72,23 @@ public class OrchestratorImpl implements Orchestrator {
     private static ConfigServerApi.RetryPolicy<UpdateHostResponse> createRetryPolicyForSuspend() {
         return new ConfigServerApi.RetryPolicy<UpdateHostResponse>() {
             @Override
-            public boolean tryNextConfigServer(UpdateHostResponse response) {
+            public boolean tryNextConfigServer(URI configServerEndpoint, UpdateHostResponse response) {
                 HostStateChangeDenialReason reason = response.reason();
                 if (reason == null) {
                     return false;
                 }
 
                 // The config server has likely just bootstrapped, so try the next.
-                return "unknown-service-status".equals(reason.constraintName());
+                if ("unknown-service-status".equals(reason.constraintName())) {
+                    // Warn for now and until this feature has proven to work well
+                    logger.warning("Config server at [" + configServerEndpoint +
+                                   "] failed with transient error (will try next): " +
+                                   reason.message());
+
+                    return true;
+                }
+
+                return false;
             }
         };
     }
