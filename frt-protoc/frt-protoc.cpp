@@ -9,7 +9,7 @@ using namespace google::protobuf::compiler;
 class MyGen : public CodeGenerator {
 public:
     bool Generate(const FileDescriptor * file, const std::string & parameter,
-              GeneratorContext * generator_context, std::string * error) const override;
+                  GeneratorContext * generator_context, std::string * error) const override;
     ~MyGen();
 };
 
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     return PluginMain(argc, argv, &generator);
 }
 
-bool write_line(io::ZeroCopyOutputStream *target, const std::string &line) {
+void write_line(io::ZeroCopyOutputStream *target, const std::string &line) {
     void *data = nullptr;
     const char *src = line.c_str();
     int left = line.size() + 1;
@@ -35,7 +35,7 @@ bool write_line(io::ZeroCopyOutputStream *target, const std::string &line) {
                 if (size > left) {
                     target->BackUp(size - left);
                 }
-                left = 0;
+                return;
             } else {
                 memcpy(data, src, size);
                 left -= size;
@@ -43,62 +43,86 @@ bool write_line(io::ZeroCopyOutputStream *target, const std::string &line) {
             }
         } else {
             perror("target->Next() returned false");
-            return false;
+            std::string message = "Error writing output: ";
+            message += strerror(errno);
+            throw message;
         }
     }
-    return true;
 }
 
-#define WL(target, line) do { \
-    if (! write_line(target, line)) { \
-        *error = name + ": Error writing output: "+strerror(errno); \
-        return false; \
-    } \
-} while (0)
+void my_generate(const std::string &name,
+                 const FileDescriptor &file,
+                 GeneratorContext &context)
+{
+    if (file.dependency_count() > 0
+        || file.public_dependency_count() > 0
+        || file.weak_dependency_count() > 0)
+    {
+        std::string message = "Importing dependencies not supported";
+        throw message;
+    }
+    if (file.extension_count() > 0) {
+        std::string message = "Extensions not supported";
+        throw message;
+    }
+    if (file.is_placeholder()) {
+        std::string message = "Unexpected placeholder file";
+        throw message;
+    }
+    auto filename_ah = "frt_" + name + "_proto_api.h";
+    auto api_header = context.Open(filename_ah);
+    write_line(api_header, "// API header for protobuf file "+name);
+    write_line(api_header, "#pragma once");
+
+    auto filename_ch = "frt_" + name + "_proto_client.h";
+    auto cli_header = context.Open(filename_ch);
+    write_line(cli_header, "// Client header for protobuf file "+name);
+    write_line(cli_header, "#pragma once");
+    write_line(cli_header, "#include \"" + filename_ah + "\"");
+
+    auto filename_cc = "frt_" + name + "_proto_client.cpp";
+    auto cli_cpp = context.Open(filename_cc);
+    write_line(cli_cpp, "// Client implementation for protobuf file "+name);
+    write_line(cli_cpp, "#include \"" + filename_ch + "\"");
+
+    auto filename_sh = "frt_" + name + "_proto_server.h";
+    auto srv_header = context.Open(filename_sh);
+    write_line(srv_header, "// Server header for protobuf file "+name);
+    write_line(srv_header, "#pragma once");
+    write_line(srv_header, "#include \"" + filename_ah + "\"");
+
+    auto filename_sc = "frt_" + name + "_proto_server.cpp";
+    auto srv_cpp = context.Open(filename_sc);
+    write_line(srv_cpp, "// Server implementation for protobuf file "+name);
+    write_line(srv_cpp, "#include \"" + filename_sh + "\"");
+    // TODO: write code for services etc, traversing *file
+}
 
 bool MyGen::Generate(const FileDescriptor * file, const std::string & parameter, 
                      GeneratorContext * generator_context, std::string * error) const
 {
-    if (file == nullptr) {
-        *error = "No FileDescriptor";
+    std::string name = "[unknown]";
+    try {
+        if (file == nullptr) {
+            std::string m = "No FileDescriptor";
+            throw m;
+        }
+        name = file->name();
+        if (name.ends_with(".proto")) {
+            name = name.substr(0, name.size() - 6);
+        }
+        if (generator_context == nullptr) {
+            std::string m = "No GeneratorContext";
+            throw m;
+        }
+        if (! parameter.empty()) {
+            std::string m = "unknown command line parameter "+parameter;
+            throw m;
+        }
+        my_generate(name, *file, *generator_context);
+    } catch (const std::string &message) {
+        *error = name + ": " + message;
         return false;
     }
-    auto name = file->name();
-    if (name.ends_with(".proto")) {
-        name = name.substr(0, name.size() - 6);
-    }
-    if (! parameter.empty()) {
-        *error = name + ": unknown command line parameter "+parameter;
-        return false;
-    }
-    if (file->dependency_count() > 0
-        || file->public_dependency_count() > 0
-        || file->weak_dependency_count() > 0)
-    {
-        *error = name + ": Importing dependencies not supported";
-        return false;
-    }
-    if (file->extension_count() > 0) {
-        *error = name + ": Extensions not supported";
-        return false;
-    }
-    if (file->is_placeholder()) {
-        *error = name + ": Unexpected placeholder file";
-        return false;
-    }
-    auto filename_ah = "frt_" + name + "_proto_api.h";
-    auto api_header = generator_context->Open(filename_ah);
-    WL(api_header, "// API header for protobuf file "+name);
-    WL(api_header, "#pragma once");
-    auto filename_ch = "frt_" + name + "_proto_client.h";
-    auto cli_header = generator_context->Open(filename_ch);
-    WL(cli_header, "// Client header for protobuf file "+name);
-    WL(cli_header, "#pragma once");
-    WL(cli_header, "#include \"" + filename_ah + "\"");
-    auto filename_cc = "frt_" + name + "_proto_client.cpp";
-    auto cli_cpp = generator_context->Open(filename_cc);
-    WL(cli_cpp, "// Client implementation for protobuf file "+name);
-    WL(cli_cpp, "#include \"" + filename_ch + "\"");
-    // TODO: write code for services etc, traversing *file
     return true;
 }
