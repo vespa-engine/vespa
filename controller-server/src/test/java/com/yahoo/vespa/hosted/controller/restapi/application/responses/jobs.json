@@ -4,6 +4,37 @@
       "jobName": "dev-us-east-1",
       "runs": [
         {
+          "id": 2,
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/run/2",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "status": "success",
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "build": 1
+            },
+            "sourcePlatform":"6.1.0",
+            "sourceApplication": {
+              "build": 1
+            }
+          },
+          "steps": [
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            }
+          ]
+        },
+        {
           "id": 1,
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/run/1",
           "start": "(ignore)",

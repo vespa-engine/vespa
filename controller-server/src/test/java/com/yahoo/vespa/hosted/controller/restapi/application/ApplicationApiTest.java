@@ -271,6 +271,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
         app1.runJob(JobType.devUsEast1);
 
+        // POST (deploy) a job to restart a manual deployment to dev
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered dev-us-east-1 for tenant1.application1.instance1\"}");
+        app1.runJob(JobType.devUsEast1);
+
         // GET dev application package
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/package", GET)
                                       .userIdentity(USER_ID),
