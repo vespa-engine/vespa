@@ -416,8 +416,8 @@ public class Flags {
      *
      * <p>NOT thread-safe. Tests using this cannot run in parallel.
      */
-    public static Replacer clearFlagsForTesting() {
-        return new Replacer();
+    public static Replacer clearFlagsForTesting(FlagId... flagsToKeep) {
+        return new Replacer(flagsToKeep);
     }
 
     public static class Replacer implements AutoCloseable {
@@ -425,10 +425,11 @@ public class Flags {
 
         private final TreeMap<FlagId, FlagDefinition> savedFlags;
 
-        private Replacer() {
+        private Replacer(FlagId... flagsToKeep) {
             verifyAndSetFlagsCleared(true);
             this.savedFlags = Flags.flags;
             Flags.flags = new TreeMap<>();
+            List.of(flagsToKeep).forEach(id -> Flags.flags.put(id, savedFlags.get(id)));
         }
 
         @Override
