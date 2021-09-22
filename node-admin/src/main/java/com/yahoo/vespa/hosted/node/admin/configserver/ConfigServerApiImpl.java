@@ -125,7 +125,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                     throw new UncheckedIOException("Failed parse response from config server", e);
                 }
 
-                if (params.getRetryPolicy().tryNextConfigServer(result)) {
+                if (params.getRetryPolicy().tryNextConfigServer(configServer, result)) {
                     lastResult = result;
                     lastException = null;
                 } else {
