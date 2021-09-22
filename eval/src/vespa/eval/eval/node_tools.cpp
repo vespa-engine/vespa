@@ -183,6 +183,7 @@ struct CopyNode : NodeTraverser, NodeVisitor {
     void visit(const Elu            &node) override { copy_call(node); }
     void visit(const Erf            &node) override { copy_call(node); }
     void visit(const Bit            &node) override { copy_call(node); }
+    void visit(const Hamming        &node) override { copy_call(node); }
 
     // traverse nodes
     bool open(const Node &) override { return !error; }

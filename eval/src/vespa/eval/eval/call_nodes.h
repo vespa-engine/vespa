@@ -140,6 +140,7 @@ struct Sigmoid : CallHelper<Sigmoid> { Sigmoid() : Helper("sigmoid", 1) {} };
 struct Elu : CallHelper<Elu> { Elu() : Helper("elu", 1) {} };
 struct Erf : CallHelper<Erf> { Erf() : Helper("erf", 1) {} };
 struct Bit : CallHelper<Bit> { Bit() : Helper("bit", 2) {} };
+struct Hamming : CallHelper<Hamming> { Hamming() : Helper("hamming", 2) {} };
 
 //-----------------------------------------------------------------------------
 
