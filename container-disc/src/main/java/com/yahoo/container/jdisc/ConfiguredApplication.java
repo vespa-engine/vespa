@@ -403,7 +403,7 @@ public final class ConfiguredApplication implements Application {
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         long delayMillis = 50 * 1000;
         shutdownDeadlineExecutor.schedule(() -> {
-            String heapDumpName = Defaults.getDefaults().underVespaHome("tmp/java_shutdown.") + ProcessHandle.current().pid() + ".hprof";
+            String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + ProcessHandle.current().pid() + ".hprof";
             try {
                 com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
             } catch (IOException e) {
