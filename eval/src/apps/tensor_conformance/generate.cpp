@@ -286,8 +286,9 @@ void generate_join(TestBuilder &dst) {
     generate_op2_join("min(a,b)", Div16(N()), dst);
     generate_op2_join("max(a,b)", Div16(N()), dst);
     generate_op2_join("bit(a,b)", Seq({-128, -43, -1, 0, 85, 127}), Seq({0, 1, 2, 3, 4, 5, 6, 7}), dst);
-    IgnoreJava ignore_java(dst);
-    generate_op2_join("hamming(a,b)", Seq({-128, -43, -1, 0, 85, 127}), ignore_java); // TODO: require java
+    // TODO: add ignored Java test when it can be ignored
+    // IgnoreJava ignore_java(dst);
+    // generate_op2_join("hamming(a,b)", Seq({-128, -43, -1, 0, 85, 127}), ignore_java); // TODO: require java
     // inverted lambda
     generate_join_expr("join(a,b,f(a,b)(b-a))", Div16(N()), dst);
     // custom lambda
@@ -346,8 +347,9 @@ void generate_merge(TestBuilder &dst) {
     generate_op2_merge("min(a,b)", Div16(N()), dst);
     generate_op2_merge("max(a,b)", Div16(N()), dst);
     generate_op2_merge("bit(a,b)", Seq({-128, -43, -1, 0, 85, 127}), Seq({0, 1, 2, 3, 4, 5, 6, 7}), dst);
-    IgnoreJava ignore_java(dst);
-    generate_op2_merge("hamming(a,b)", Seq({-128, -43, -1, 0, 85, 127}), ignore_java); // TODO: require java
+    // TODO: add ignored Java test when it can be ignored
+    // IgnoreJava ignore_java(dst);
+    // generate_op2_merge("hamming(a,b)", Seq({-128, -43, -1, 0, 85, 127}), ignore_java); // TODO: require java
     // inverted lambda
     generate_merge_expr("merge(a,b,f(a,b)(b-a))", Div16(N()), dst);
     // custom lambda
