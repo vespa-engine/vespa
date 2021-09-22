@@ -60,6 +60,7 @@ vespalib::string name_of(join_fun_t fun) {
     if (fun == operation::Min::f) return "min";
     if (fun == operation::Max::f) return "max";
     if (fun == operation::Bit::f) return "bit";
+    if (fun == operation::Hamming::f) return "hamming";
     return "[other join function]";
 }
 

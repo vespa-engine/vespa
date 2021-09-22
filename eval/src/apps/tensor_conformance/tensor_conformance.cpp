@@ -167,6 +167,15 @@ void print_test(const Inspector &test, OutputWriter &dst) {
     }
     auto result = eval_expr(test, prod_factory);
     dst.printf("result: %s\n", result.to_string().c_str());
+    auto ignore = extract_fields(test["ignore"]);
+    if (!ignore.empty()) {
+        dst.printf("ignore:");
+        for (const auto &impl: ignore) {
+            REQUIRE(test["ignore"][impl].asBool());
+            dst.printf(" %s", impl.c_str());
+        }
+        dst.printf("\n");
+    }
 }
 
 //-----------------------------------------------------------------------------
