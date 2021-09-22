@@ -75,6 +75,7 @@ public final class Process {
     }
 
     public static void dumpHeap(String filePath, boolean live) throws IOException {
+        log.log(Level.INFO, "Will dump the heap to '" + filePath + "', with the live = " + live);
         getHotspotMXBean().dumpHeap(filePath, live);
     }
 
