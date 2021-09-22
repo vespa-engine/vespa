@@ -14,7 +14,7 @@ func TestVersion(t *testing.T) {
 	util.ActiveHttpClient = c
 
 	sp = &mockSubprocess{}
-	out := execute(command{args: []string{"version"}}, t, nil)
+	out, _ := execute(command{args: []string{"version"}}, t, nil)
 	assert.Contains(t, out, "vespa version 0.0.0-devel compiled with")
 	assert.Contains(t, out, "New release available: 1.2.3\nhttps://github.com/vespa-engine/vespa/releases/tag/v1.2.3")
 }
@@ -25,7 +25,7 @@ func TestVersionCheckHomebrew(t *testing.T) {
 	util.ActiveHttpClient = c
 
 	sp = &mockSubprocess{programPath: "/usr/local/bin/vespa", output: "/usr/local"}
-	out := execute(command{args: []string{"version"}}, t, nil)
+	out, _ := execute(command{args: []string{"version"}}, t, nil)
 	assert.Contains(t, out, "vespa version 0.0.0-devel compiled with")
 	assert.Contains(t, out, "New release available: 1.2.3\n"+
 		"https://github.com/vespa-engine/vespa/releases/tag/v1.2.3\n"+

@@ -8,23 +8,28 @@ import (
 
 func TestConfig(t *testing.T) {
 	homeDir := t.TempDir()
-	assert.Equal(t, "invalid option or value: \"foo\": \"bar\"\n", execute(command{homeDir: homeDir, args: []string{"config", "set", "foo", "bar"}}, t, nil))
-	assert.Equal(t, "foo = <unset>\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "foo"}}, t, nil))
-	assert.Equal(t, "target = local\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "target"}}, t, nil))
-	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, nil))
-	assert.Equal(t, "target = cloud\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "target"}}, t, nil))
-	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "http://127.0.0.1:8080"}}, t, nil))
-	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "https://127.0.0.1"}}, t, nil))
-	assert.Equal(t, "target = https://127.0.0.1\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "target"}}, t, nil))
+	assertConfigCommand(t, "invalid option or value: \"foo\": \"bar\"\n", homeDir, "config", "set", "foo", "bar")
+	assertConfigCommand(t, "foo = <unset>\n", homeDir, "config", "get", "foo")
+	assertConfigCommand(t, "target = local\n", homeDir, "config", "get", "target")
+	assertConfigCommand(t, "", homeDir, "config", "set", "target", "cloud")
+	assertConfigCommand(t, "target = cloud\n", homeDir, "config", "get", "target")
+	assertConfigCommand(t, "", homeDir, "config", "set", "target", "http://127.0.0.1:8080")
+	assertConfigCommand(t, "", homeDir, "config", "set", "target", "https://127.0.0.1")
+	assertConfigCommand(t, "target = https://127.0.0.1\n", homeDir, "config", "get", "target")
 
-	assert.Equal(t, "invalid application: \"foo\"\n", execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "foo"}}, t, nil))
-	assert.Equal(t, "application = <unset>\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "application"}}, t, nil))
-	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, nil))
-	assert.Equal(t, "application = t1.a1.i1\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "application"}}, t, nil))
+	assertConfigCommand(t, "invalid application: \"foo\"\n", homeDir, "config", "set", "application", "foo")
+	assertConfigCommand(t, "application = <unset>\n", homeDir, "config", "get", "application")
+	assertConfigCommand(t, "", homeDir, "config", "set", "application", "t1.a1.i1")
+	assertConfigCommand(t, "application = t1.a1.i1\n", homeDir, "config", "get", "application")
 
-	assert.Equal(t, "application = t1.a1.i1\ncolor = auto\ntarget = https://127.0.0.1\nwait = 0\n", execute(command{homeDir: homeDir, args: []string{"config", "get"}}, t, nil))
+	assertConfigCommand(t, "application = t1.a1.i1\ncolor = auto\ntarget = https://127.0.0.1\nwait = 0\n", homeDir, "config", "get")
 
-	assert.Equal(t, "", execute(command{homeDir: homeDir, args: []string{"config", "set", "wait", "60"}}, t, nil))
-	assert.Equal(t, "wait option must be an integer >= 0, got \"foo\"\n", execute(command{homeDir: homeDir, args: []string{"config", "set", "wait", "foo"}}, t, nil))
-	assert.Equal(t, "wait = 60\n", execute(command{homeDir: homeDir, args: []string{"config", "get", "wait"}}, t, nil))
+	assertConfigCommand(t, "", homeDir, "config", "set", "wait", "60")
+	assertConfigCommand(t, "wait option must be an integer >= 0, got \"foo\"\n", homeDir, "config", "set", "wait", "foo")
+	assertConfigCommand(t, "wait = 60\n", homeDir, "config", "get", "wait")
+}
+
+func assertConfigCommand(t *testing.T, expected, homeDir string, args ...string) {
+	out, _ := execute(command{homeDir: homeDir, args: args}, t, nil)
+	assert.Equal(t, expected, out)
 }
