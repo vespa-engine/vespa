@@ -360,9 +360,6 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const Bit &node) override {
         make_join(node, operation::Bit::f);
     }
-    void visit(const Hamming &node) override {
-        make_join(node, operation::Hamming::f);
-    }
 
     //-------------------------------------------------------------------------
 

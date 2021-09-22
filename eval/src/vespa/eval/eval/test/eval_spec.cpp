@@ -8,24 +8,6 @@
 
 namespace vespalib::eval::test {
 
-namespace {
-
-double byte(const vespalib::string &bits) {
-    int8_t res = 0;
-    assert(bits.size() == 8);
-    for (const auto &c: bits) {
-        if (c == '1') {
-            res = (res << 1) | 1;
-        } else {
-            assert(c == '0');
-            res = (res << 1);
-        }
-    }
-    return res;
-}
-
-} // <unnamed>
-
 constexpr double my_nan = std::numeric_limits<double>::quiet_NaN();
 constexpr double my_inf = std::numeric_limits<double>::infinity();
 
@@ -187,9 +169,6 @@ EvalSpec::add_function_call_cases() {
         .add_case({85, 3}, 0.0).add_case({85, 2}, 1.0).add_case({85, 1}, 0.0).add_case({85, 0}, 1.0)
         .add_case({127, 7}, 0.0).add_case({127, 6}, 1.0).add_case({127, 5}, 1.0).add_case({127, 4}, 1.0)
         .add_case({127, 3}, 1.0).add_case({127, 2}, 1.0).add_case({127, 1}, 1.0).add_case({127, 0}, 1.0);
-    add_expression({"a", "b"}, "hamming(a,b)")
-        .add_case({0, 0}, 0.0).add_case({-1, -1}, 0.0).add_case({-1, 0}, 8.0).add_case({0, -1}, 8.0)
-        .add_case({byte("11001100"), byte("10101010")}, 4.0).add_case({byte("11001100"), byte("11110000")}, 4.0);
 }
 
 void
