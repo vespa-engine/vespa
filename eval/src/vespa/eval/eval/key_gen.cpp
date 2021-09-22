@@ -88,6 +88,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const Elu            &) override { add_byte(61); }
     void visit(const Erf            &) override { add_byte(62); }
     void visit(const Bit            &) override { add_byte(63); }
+    void visit(const Hamming        &) override { add_byte(64); }
 
     // traverse
     bool open(const Node &node) override { node.accept(*this); return true; }
