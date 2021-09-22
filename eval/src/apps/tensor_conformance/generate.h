@@ -18,6 +18,11 @@ struct TestBuilder {
     {
         add(expression, inputs, {});
     }
+    void add_ignore_java(const vespalib::string &expression,
+                         const std::map<vespalib::string,TensorSpec> &inputs)
+    {
+        add(expression, inputs, {"vespajlib"});
+    }
     virtual ~TestBuilder() {}
 };
 
