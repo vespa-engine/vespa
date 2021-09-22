@@ -1023,6 +1023,26 @@ public class NodesV2ApiTest {
         tester.assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "archiveUri", false);
     }
 
+    @Test
+    public void trusted_certificates_patch()  throws IOException {
+        String url = "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com";
+        tester.assertPartialResponse(new Request(url), "\"trustStore\":[]", true); // initially empty list
+
+        String trustStore = "\"trustStore\":[" +
+                            "{" +
+                            "\"fingerprint\":\"foo\"," +
+                            "\"expiry\":1632302251000" +
+                            "}," +
+                            "{" +
+                            "\"fingerprint\":\"bar\"," +
+                            "\"expiry\":1758532706000" +
+                            "}" +
+                            "]";
+        assertResponse(new Request(url, Utf8.toBytes("{"+trustStore+"}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        tester.assertPartialResponse(new Request(url), trustStore, true);
+    }
+
     private static String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
         return asDockerNodeJson(hostname, NodeType.tenant, parentHostname, ipAddress);
     }
