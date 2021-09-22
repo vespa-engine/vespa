@@ -106,29 +106,4 @@
     </plugins>
   </build>
 
-  <profiles>
-    <!-- Exclude TF JNI when building for rhel6, which needs a special, natively installed variant -->
-    <profile>
-      <id>rhel6</id>
-      <activation>
-        <property>
-          <name>target.env</name>
-          <value>rhel6</value>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.tensorflow</groupId>
-          <artifactId>tensorflow</artifactId>
-          <exclusions>
-            <exclusion>
-              <groupId>org.tensorflow</groupId>
-              <artifactId>libtensorflow_jni</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
-
 </project>
