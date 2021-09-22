@@ -190,6 +190,12 @@ public class PermanentFlags {
             APPLICATION_ID, HOSTNAME
     );
 
+    public static final UnboundStringFlag CONFIG_PROXY_JVM_ARGS = defineStringFlag(
+            "config-proxy-jvm-args", "",
+            "Sets jvm args for config proxy (added at the end of startup command, will override existing ones)",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
