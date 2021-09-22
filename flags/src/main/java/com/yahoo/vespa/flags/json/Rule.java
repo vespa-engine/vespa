@@ -27,8 +27,22 @@ public class Rule {
         this.valueToApply = valueToApply;
     }
 
+    public List<Condition> conditions() {
+        return andConditions;
+    }
+
+    /** Returns true if all the conditions satisfy the given fetch vector */
     public boolean match(FetchVector fetchVector) {
         return andConditions.stream().allMatch(condition -> condition.test(fetchVector));
+    }
+
+    /**
+     * Returns true if all the conditions on dimensions set in the fetch vector are satisfied.
+     * Conditions on dimensions not specified in the given fetch vector are ignored.
+     */
+    public boolean partialMatch(FetchVector fetchVector) {
+        return andConditions.stream()
+                .allMatch(condition -> !fetchVector.hasDimension(condition.dimension()) || condition.test(fetchVector));
     }
 
     public Optional<RawFlag> getValueToApply() {

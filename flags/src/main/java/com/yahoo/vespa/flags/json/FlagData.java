@@ -49,6 +49,10 @@ public class FlagData {
         return id;
     }
 
+    public List<Rule> rules() {
+        return rules;
+    }
+
     public boolean isEmpty() { return rules.isEmpty() && defaultFetchVector.isEmpty(); }
 
     public Optional<RawFlag> resolve(FetchVector fetchVector) {

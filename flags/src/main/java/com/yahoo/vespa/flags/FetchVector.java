@@ -91,6 +91,10 @@ public class FetchVector {
 
     public boolean isEmpty() { return map.isEmpty(); }
 
+    public boolean hasDimension(FetchVector.Dimension dimension) {
+        return map.containsKey(dimension);
+    }
+
     /**
      * Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}.
      * Dimension is removed if the value is null.

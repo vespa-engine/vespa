@@ -27,6 +27,21 @@ public abstract class ListCondition implements Condition {
     }
 
     @Override
+    public Type type() {
+        return type;
+    }
+
+    @Override
+    public FetchVector.Dimension dimension() {
+        return dimension;
+    }
+
+    @Override
+    public CreateParams toCreateParams() {
+        return new CreateParams(dimension).withValues(values);
+    }
+
+    @Override
     public boolean test(FetchVector fetchVector) {
         boolean listContainsValue = fetchVector.getValue(dimension).map(values::contains).orElse(false);
         return isWhitelist == listContainsValue;
