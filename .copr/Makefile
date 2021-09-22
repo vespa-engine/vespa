@@ -2,7 +2,7 @@
 TOP = $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # Version
-VESPA_VERSION := $(shell git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | sort -V | tail -1)
+VESPA_VERSION = $(shell git tag --points-at HEAD | grep -oP "\d+\.\d+\.\d+" | sort -V | tail -1)
 
 RPMTOPDIR := $(HOME)/rpmbuild
 SOURCEDIR := $(RPMTOPDIR)/SOURCES
@@ -10,7 +10,7 @@ SPECDIR := $(RPMTOPDIR)/SPECS
 SPECFILE := $(SPECDIR)/vespa-$(VESPA_VERSION).spec
 
 srpm:
-	dnf install -y rpmdevtools
+	dnf install -y git rpmdevtools
 	$(TOP)/../dist.sh $(VESPA_VERSION)
 	spectool -g -C $(SOURCEDIR) $(SPECFILE)
 	rpmbuild -bs --define "_topdir $(RPMTOPDIR)" $(SPECFILE)
