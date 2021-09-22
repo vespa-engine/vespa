@@ -34,6 +34,12 @@ public interface ZmsClient extends AutoCloseable {
     void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
                                      OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
+    /** For manual tenancy provisioning - only creates roles/policies on provider domain */
+    void createTenantResourceGroup(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup,
+                                   Set<RoleAction> roleActions);
+
+    Set<RoleAction> getTenantResourceGroups(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup);
+
     void addRoleMember(AthenzRole role, AthenzIdentity member, Optional<String> reason);
 
     void deleteRoleMember(AthenzRole role, AthenzIdentity member);
