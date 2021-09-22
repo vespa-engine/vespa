@@ -85,6 +85,8 @@ public class NodeRepositoryNode {
     public String exclusiveTo;
     @JsonProperty("history")
     public List<Event> history;
+    @JsonProperty("trustStore")
+    public Set<TrustStoreItem> trustStore;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
@@ -219,6 +221,19 @@ public class NodeRepositoryNode {
                     ", event=" + event +
                     ", at=" + at +
                     '}';
+        }
+    }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class TrustStoreItem {
+        @JsonProperty ("fingerprint")
+        public String fingerprint;
+        @JsonProperty ("expiry")
+        public long expiry;
+
+        public TrustStoreItem(@JsonProperty("fingerprint") String fingerprint, @JsonProperty("expiry") long expiry) {
+            this.fingerprint = fingerprint;
+            this.expiry = expiry;
         }
     }
 }

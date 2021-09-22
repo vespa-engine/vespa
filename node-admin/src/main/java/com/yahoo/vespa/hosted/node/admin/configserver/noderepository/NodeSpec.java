@@ -68,6 +68,8 @@ public class NodeSpec {
 
     private final Optional<ApplicationId> exclusiveTo;
 
+    private final Set<TrustStoreItem> trustStore;
+
     public NodeSpec(
             String hostname,
             Optional<String> id,
@@ -98,7 +100,8 @@ public class NodeSpec {
             List<Event> events,
             Optional<String> parentHostname,
             Optional<URI> archiveUri,
-            Optional<ApplicationId> exclusiveTo) {
+            Optional<ApplicationId> exclusiveTo,
+            Set<TrustStoreItem> trustStore) {
         if (state == NodeState.active) {
             requireOptional(owner, "owner");
             requireOptional(membership, "membership");
@@ -138,6 +141,7 @@ public class NodeSpec {
         this.parentHostname = Objects.requireNonNull(parentHostname);
         this.archiveUri = Objects.requireNonNull(archiveUri);
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo);
+        this.trustStore = Objects.requireNonNull(trustStore);
     }
 
     public String hostname() {
@@ -319,7 +323,8 @@ public class NodeSpec {
                 Objects.equals(events, that.events) &&
                 Objects.equals(parentHostname, that.parentHostname) &&
                 Objects.equals(archiveUri, that.archiveUri) &&
-                Objects.equals(exclusiveTo, that.exclusiveTo);
+                Objects.equals(exclusiveTo, that.exclusiveTo) &&
+                Objects.equals(trustStore, that.trustStore);
     }
 
     @Override
@@ -354,7 +359,8 @@ public class NodeSpec {
                 events,
                 parentHostname,
                 archiveUri,
-                exclusiveTo);
+                exclusiveTo,
+                trustStore);
     }
 
     @Override
@@ -390,6 +396,7 @@ public class NodeSpec {
                 + " parentHostname=" + parentHostname
                 + " archiveUri=" + archiveUri
                 + " exclusiveTo=" + exclusiveTo
+                + " trustStore=" + trustStore
                 + " }";
     }
 
@@ -424,6 +431,7 @@ public class NodeSpec {
         private Optional<String> parentHostname = Optional.empty();
         private Optional<URI> archiveUri = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
+        private Set<TrustStoreItem> trustStore = Set.of();
 
         public Builder() {}
 
@@ -456,6 +464,7 @@ public class NodeSpec {
             node.parentHostname.ifPresent(this::parentHostname);
             node.archiveUri.ifPresent(this::archiveUri);
             node.exclusiveTo.ifPresent(this::exclusiveTo);
+            trustStore(node.trustStore);
         }
 
         public Builder hostname(String hostname) {
@@ -633,12 +642,19 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder trustStore(Set<TrustStoreItem> trustStore) {
+            this.trustStore = Set.copyOf(trustStore);
+            return this;
+        }
+
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
             attributes.getHostId().ifPresent(this::id);
             attributes.getDockerImage().ifPresent(this::currentDockerImage);
             attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
+            // Always replace entire trust store
+            trustStore(attributes.getTrustStore());
             this.reports.updateFromRawMap(attributes.getReports());
 
             return this;
@@ -752,7 +768,7 @@ public class NodeSpec {
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
                     resources, realResources, ipAddresses, additionalIpAddresses,
-                    reports, events, parentHostname, archiveUri, exclusiveTo);
+                    reports, events, parentHostname, archiveUri, exclusiveTo, trustStore);
         }
 
 
