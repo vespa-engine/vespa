@@ -180,8 +180,11 @@ public class DeploymentTrigger {
     public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
-        DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
+        if (job.type().environment().isManuallyDeployed())
+            return forceTriggerManualJob(job);
+
+        DeploymentStatus status = jobs.deploymentStatus(application);
         Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.readSystemVersion());
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
         if (jobs.isEmpty() || ! requireTests)
@@ -190,6 +193,16 @@ public class DeploymentTrigger {
             trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), clock.instant()));
         });
         return List.copyOf(jobs.keySet());
+    }
+
+    private List<JobId> forceTriggerManualJob(JobId job) {
+        Run last = jobs.last(job).orElseThrow(() -> new IllegalArgumentException(job + " has never been run"));
+        Versions target = new Versions(controller.readSystemVersion(),
+                                       last.versions().targetApplication(),
+                                       Optional.of(last.versions().targetPlatform()),
+                                       Optional.of(last.versions().targetApplication()));
+        jobs.start(job.application(), job.type(), target, true);
+        return List.of(job);
     }
 
     /** Retrigger job. If the job is already running, it will be canceled, and retrigger enqueued. */
