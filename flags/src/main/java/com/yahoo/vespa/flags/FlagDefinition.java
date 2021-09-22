@@ -3,8 +3,6 @@ package com.yahoo.vespa.flags;
 
 import javax.annotation.concurrent.Immutable;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -35,7 +33,7 @@ public class FlagDefinition {
         this.expiresAt = expiresAt;
         this.description = description;
         this.modificationEffect = modificationEffect;
-        this.dimensions = Collections.unmodifiableList(Arrays.asList(dimensions));
+        this.dimensions = List.of(dimensions);
     }
 
     public UnboundFlag<?, ?, ?> getUnboundFlag() {

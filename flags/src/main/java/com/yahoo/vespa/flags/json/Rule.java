@@ -6,7 +6,6 @@ import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.wire.WireRule;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -20,11 +19,11 @@ public class Rule {
     private final Optional<RawFlag> valueToApply;
 
     public Rule(Optional<RawFlag> valueToApply, Condition... andConditions) {
-        this(valueToApply, Arrays.asList(andConditions));
+        this(valueToApply, List.of(andConditions));
     }
 
     public Rule(Optional<RawFlag> valueToApply, List<Condition> andConditions) {
-        this.andConditions = andConditions;
+        this.andConditions = List.copyOf(andConditions);
         this.valueToApply = valueToApply;
     }
 

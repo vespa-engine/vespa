@@ -4,9 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.vespa.flags.json.DimensionHelper;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,15 +70,15 @@ public class FetchVector {
     private final Map<Dimension, String> map;
 
     public FetchVector() {
-        this.map = Collections.emptyMap();
+        this.map = Map.of();
     }
 
     public static FetchVector fromMap(Map<Dimension, String> map) {
-        return new FetchVector(new HashMap<>(map));
+        return new FetchVector(map);
     }
 
     private FetchVector(Map<Dimension, String> map) {
-        this.map = Collections.unmodifiableMap(map);
+        this.map = Map.copyOf(map);
     }
 
     public Optional<String> getValue(Dimension dimension) {
