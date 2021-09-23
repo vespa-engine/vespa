@@ -55,8 +55,8 @@ public class ClusterState implements Cloneable {
             NodeState ns = nodeStates.get(index);
             if (ns != null) return ns;
             return (index >= getMaxIndex() || ! upNodes.get(index))
-                    ? defaultDown()
-                    : defaultUp();
+                    ? new NodeState(type, State.DOWN)
+                    : new NodeState(type, State.UP);
         }
 
         private void validateInput(Node node, NodeState ns) {
