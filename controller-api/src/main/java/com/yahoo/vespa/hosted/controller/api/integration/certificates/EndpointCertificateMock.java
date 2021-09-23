@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * @author tokle
@@ -16,6 +17,7 @@ import java.util.Optional;
 public class EndpointCertificateMock implements EndpointCertificateProvider {
 
     private final Map<ApplicationId, List<String>> dnsNames = new HashMap<>();
+    private final Map<String, EndpointCertificateMetadata> providerMetadata = new HashMap<>();
 
     public List<String> dnsNamesOf(ApplicationId application) {
         return Collections.unmodifiableList(dnsNames.getOrDefault(application, List.of()));
@@ -28,18 +30,22 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
                 applicationId.application(), applicationId.instance());
         long epochSecond = Instant.now().getEpochSecond();
         long inAnHour = epochSecond + 3600;
-        return new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0,
-                "mock-id-string", dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
+        String requestId = UUID.randomUUID().toString();
+        EndpointCertificateMetadata metadata = new EndpointCertificateMetadata(endpointCertificatePrefix + "-key", endpointCertificatePrefix + "-cert", 0, 0,
+                requestId, dnsNames, "mockCa", Optional.of(inAnHour), Optional.of(epochSecond));
+        providerMetadata.put(requestId, metadata);
+        return metadata;
     }
 
     @Override
     public List<EndpointCertificateMetadata> listCertificates() {
-        return List.of();
+        return List.copyOf(providerMetadata.values());
     }
 
     @Override
     public void deleteCertificate(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
         dnsNames.remove(applicationId);
+        providerMetadata.remove(endpointCertificateMetadata.requestId());
     }
 
 }
