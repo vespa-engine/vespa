@@ -35,11 +35,12 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
             handleException(e, data, fetchCount);
         }
     }
-    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) {
+    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) throws IOException {
         try {
             MetricsParser.parse(data, consumer);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
+            while (data.read() != -1) {}
         }
     }
 }
