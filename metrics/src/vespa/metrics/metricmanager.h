@@ -43,7 +43,7 @@
  */
 #pragma once
 
-#include "config-metricsmanager.h"
+#include <vespa/metrics/config-metricsmanager.h>
 #include "metricset.h"
 #include "metricsnapshot.h"
 #include "memoryconsumption.h"

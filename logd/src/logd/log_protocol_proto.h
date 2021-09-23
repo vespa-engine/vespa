@@ -7,7 +7,7 @@
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-#include "log_protocol.pb.h"
+#include <logd/log_protocol.pb.h>
 
 #pragma GCC diagnostic pop
 
