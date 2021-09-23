@@ -58,8 +58,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return;
         }
 
-        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi)
-                .asPercentage();
+        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi).asPercentage();
         if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
             return;
         }
