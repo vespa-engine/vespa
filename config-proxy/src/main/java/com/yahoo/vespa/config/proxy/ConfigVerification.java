@@ -1,5 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config;
+package com.yahoo.vespa.config.proxy;
 
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.slime.ArrayTraverser;
