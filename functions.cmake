@@ -191,7 +191,7 @@ function(vespa_generate_protobuf_frt TARGET RELATIVE_PROTO_PATH)
     add_custom_command(
         OUTPUT ${PROTO_GEN_FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND protoc -I ${PROTO_DIR} --plugin=${PROJECT_BINARY_DIR}/frt-protoc/protoc-gen-frt --frt_out=${PROTO_DEST_DIR} ${PROTO_FILENAME}
+        COMMAND protobuf::protoc -I ${PROTO_DIR} --plugin=${PROJECT_BINARY_DIR}/frt-protoc/protoc-gen-frt --frt_out=${PROTO_DEST_DIR} ${PROTO_FILENAME}
         COMMENT "Generating cpp protobuf files for ${PROTO_NAME} in ${PROTO_DEST_DIR}"
         MAIN_DEPENDENCY ${RELATIVE_PROTO_PATH}
         DEPENDS protoc-gen-frt
