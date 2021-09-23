@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -135,7 +134,6 @@ public class NodeAttributes {
 
     @Override
     public boolean equals(final Object o) {
-        Comparator<TrustStoreItem> comparing = Comparator.comparing(TrustStoreItem::fingerprint);
         if (!(o instanceof NodeAttributes)) {
             return false;
         }
