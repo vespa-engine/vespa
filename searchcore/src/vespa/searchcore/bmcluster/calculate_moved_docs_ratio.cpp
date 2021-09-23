@@ -5,6 +5,15 @@
 
 namespace search::bmcluster {
 
+namespace {
+
+uint32_t make_bit_range(uint32_t low, uint32_t high)
+{
+    return (1u << high) - (1u << low);
+}
+
+}
+
 struct CalculateMovedDocsRatio::Placements
 {
     uint32_t _mask;
@@ -56,6 +65,40 @@ CalculateMovedDocsRatio::CalculateMovedDocsRatio(uint32_t nodes, uint32_t redund
 }
 
 CalculateMovedDocsRatio::~CalculateMovedDocsRatio() = default;
+
+CalculateMovedDocsRatio
+CalculateMovedDocsRatio::make_grow_calculator(uint32_t redundancy, uint32_t added_nodes, uint32_t nodes)
+{
+    uint32_t old_placement_mask = make_bit_range(added_nodes, nodes);
+    uint32_t new_placement_mask = make_bit_range(0, nodes);
+    return CalculateMovedDocsRatio(nodes, redundancy, old_placement_mask, new_placement_mask, new_placement_mask);
+}
+
+CalculateMovedDocsRatio
+CalculateMovedDocsRatio::make_shrink_calculator(uint32_t redundancy, uint32_t retired_nodes, uint32_t nodes)
+{
+    uint32_t old_placement_mask = make_bit_range(0, nodes);
+    uint32_t new_placement_mask = make_bit_range(retired_nodes, nodes);
+    return CalculateMovedDocsRatio(nodes, redundancy, old_placement_mask, new_placement_mask, old_placement_mask);
+}
+
+CalculateMovedDocsRatio
+CalculateMovedDocsRatio::make_crash_calculator(uint32_t redundancy, uint32_t crashed_nodes, uint32_t nodes)
+{
+    uint32_t old_placement_mask = make_bit_range(0, nodes);
+    uint32_t new_placement_mask = make_bit_range(crashed_nodes, nodes);
+    return CalculateMovedDocsRatio(nodes, redundancy, old_placement_mask, new_placement_mask, new_placement_mask);
+
+}
+
+CalculateMovedDocsRatio
+CalculateMovedDocsRatio::make_replace_calculator(uint32_t redundancy, uint32_t added_nodes, uint32_t retired_nodes, uint32_t nodes)
+{
+    uint32_t old_placement_mask = make_bit_range(added_nodes, nodes);
+    uint32_t new_placement_mask = make_bit_range(added_nodes + retired_nodes, nodes) | make_bit_range(0, added_nodes);
+    uint32_t new_up_mask = make_bit_range(0, nodes);
+    return CalculateMovedDocsRatio(nodes, redundancy, old_placement_mask, new_placement_mask, new_up_mask);
+}
 
 void
 CalculateMovedDocsRatio::scan(Placements selected, Placements old_placement, Placements new_placement)

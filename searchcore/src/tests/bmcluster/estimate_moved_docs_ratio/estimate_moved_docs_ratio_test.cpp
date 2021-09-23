@@ -20,9 +20,7 @@ TEST(EstimateMovedDocsRatioTest, estimate_lost_docs_ratio)
     for (uint32_t nodes = 1; nodes < 2; ++nodes) {
         for (uint32_t redundancy = 1; redundancy <= nodes; ++redundancy) {
             for (uint32_t lost_nodes = 0; lost_nodes <= nodes; ++lost_nodes) {
-                uint32_t old_placement_mask = (1u << nodes) - 1u;
-                uint32_t new_placement_mask = (1u << nodes) - (1u << lost_nodes);
-                CalculateMovedDocsRatio scanner(nodes, redundancy, old_placement_mask, new_placement_mask, new_placement_mask);
+                auto scanner = CalculateMovedDocsRatio::make_crash_calculator(redundancy, lost_nodes, nodes);
                 scanner.scan();
                 double lost_docs_base_ratio = scanner.get_lost_docs_base_ratio();
                 double estimated_lost_docs_base_ratio = EstimateMovedDocsRatio().estimate_lost_docs_base_ratio(redundancy, lost_nodes, nodes);
@@ -37,9 +35,7 @@ TEST(EstimateMovedDocsRatioTest, estimate_moved_docs_ratio_grow)
     for (uint32_t nodes = 1; nodes < 10; ++nodes) {
         for (uint32_t redundancy = 1; redundancy <= nodes; ++redundancy) {
             for (uint32_t added_nodes = 0; added_nodes <= nodes; ++added_nodes) {
-                uint32_t old_placement_mask = (1u << nodes) - (1u << added_nodes);
-                uint32_t new_placement_mask = (1u << nodes) - 1;
-                CalculateMovedDocsRatio scanner(nodes, redundancy, old_placement_mask, new_placement_mask, new_placement_mask);
+                auto scanner = CalculateMovedDocsRatio::make_grow_calculator(redundancy, added_nodes, nodes);
                 scanner.scan();
                 double moved_docs_ratio = scanner.get_moved_docs_ratio();
                 double estimated_moved_docs_ratio = EstimateMovedDocsRatio().estimate_moved_docs_ratio_grow(redundancy, added_nodes, nodes);
@@ -54,9 +50,7 @@ TEST(EstimateMovedDocsRatioTest, estimate_moved_docs_ratio_shrink)
     for (uint32_t nodes = 1; nodes < 10; ++nodes) {
         for (uint32_t redundancy = 1; redundancy <= nodes; ++redundancy) {
             for (uint32_t retired_nodes = 0; retired_nodes <= nodes; ++retired_nodes) {
-                uint32_t old_placement_mask = (1u << nodes) - 1;
-                uint32_t new_placement_mask = (1u << nodes) - (1u << retired_nodes);
-                CalculateMovedDocsRatio scanner(nodes, redundancy, old_placement_mask, new_placement_mask, old_placement_mask);
+                auto scanner = CalculateMovedDocsRatio::make_shrink_calculator(redundancy, retired_nodes, nodes);
                 scanner.scan();
                 double moved_docs_ratio = scanner.get_moved_docs_ratio();
                 double estimated_moved_docs_ratio = EstimateMovedDocsRatio().estimate_moved_docs_ratio_shrink(redundancy, retired_nodes, nodes);
@@ -72,9 +66,7 @@ TEST(EstimateMovedDocsRatioTest, estimate_moved_docs_ratio_crash)
     for (uint32_t nodes = 1; nodes < 10; ++nodes) {
         for (uint32_t redundancy = 1; redundancy <= nodes; ++redundancy) {
             for (uint32_t crashed_nodes = 0; crashed_nodes <= nodes; ++crashed_nodes) {
-                uint32_t old_placement_mask = (1u << nodes) - 1;
-                uint32_t new_placement_mask = (1u << nodes) - (1u << crashed_nodes);
-                CalculateMovedDocsRatio scanner(nodes, redundancy, old_placement_mask, new_placement_mask, new_placement_mask);
+                auto scanner = CalculateMovedDocsRatio::make_crash_calculator(redundancy, crashed_nodes, nodes);
                 scanner.scan();
                 double moved_docs_ratio = scanner.get_moved_docs_ratio();
                 double estimated_moved_docs_ratio = EstimateMovedDocsRatio().estimate_moved_docs_ratio_crash(redundancy, crashed_nodes, nodes);
@@ -96,13 +88,7 @@ TEST(EstimateMovedDocsRatioTest, estimate_moved_docs_ratio_replace)
             for (uint32_t retired_nodes = 0; retired_nodes <= nodes; ++retired_nodes) {
                 for (uint32_t added_nodes = 0; added_nodes <= nodes - retired_nodes; ++added_nodes) {
                     // std::cout << "Estimate moved docs ratio replace " << retired_nodes << " of " << nodes << " retired, added " << added_nodes << " nodes ,redundancy " << redundancy << std::endl;
-                    uint32_t old_placement_mask = (1u << nodes) - (1u << added_nodes);
-                    uint32_t new_placement_mask = (1u << nodes) - (((1u << retired_nodes) - 1)  << added_nodes) - 1;
-                    uint32_t new_up_mask = (1u << nodes) - 1u;
-                    if (verbose) {
-                        std::cout << "0x" << std::hex << old_placement_mask << ", 0x" << std::hex << new_placement_mask << ", 0x" << new_up_mask << std::dec << std::endl;
-                    }
-                    CalculateMovedDocsRatio scanner(nodes, redundancy, old_placement_mask, new_placement_mask, new_up_mask);
+                    auto scanner = CalculateMovedDocsRatio::make_replace_calculator(redundancy, added_nodes, retired_nodes, nodes);
                     scanner.scan();
                     double moved_docs_ratio = scanner.get_moved_docs_ratio();
                     double estimated_moved_docs_ratio = EstimateMovedDocsRatio(verbose).estimate_moved_docs_ratio_replace(redundancy, added_nodes, retired_nodes, nodes);

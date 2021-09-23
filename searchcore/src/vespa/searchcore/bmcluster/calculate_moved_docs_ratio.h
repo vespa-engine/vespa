@@ -31,6 +31,10 @@ class CalculateMovedDocsRatio
 public:
     CalculateMovedDocsRatio(uint32_t nodes, uint32_t redundancy, uint32_t old_placement_mask, uint32_t new_placement_mask, uint32_t new_up_mask);
     ~CalculateMovedDocsRatio();
+    static CalculateMovedDocsRatio make_grow_calculator(uint32_t redundancy, uint32_t added_nodes, uint32_t nodes);
+    static CalculateMovedDocsRatio make_shrink_calculator(uint32_t redundancy, uint32_t retired_nodes, uint32_t nodes);
+    static CalculateMovedDocsRatio make_crash_calculator(uint32_t redundancy, uint32_t crashed_nodes, uint32_t nodes);
+    static CalculateMovedDocsRatio make_replace_calculator(uint32_t redundancy, uint32_t added_nodes, uint32_t retired_nodes, uint32_t nodes);
     void scan();
     uint32_t get_lost_docs_base() const noexcept { return _lost_docs_base; }
     uint32_t get_checked_states() const noexcept { return _checked_states; }

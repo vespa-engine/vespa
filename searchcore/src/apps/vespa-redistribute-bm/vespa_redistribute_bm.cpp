@@ -347,10 +347,7 @@ Benchmark::estimate_moved_docs()
     case Mode::REPLACE:
         if (_params.get_num_nodes() < 10) {
             // Calculate better estimate for moved docs ratio with brute force
-            uint32_t old_placement_mask = (1u << _params.get_num_nodes()) - (1u << _params.get_flip_nodes());
-            uint32_t new_placement_mask = (1u << _params.get_num_nodes()) - (((1u << _params.get_flip_nodes()) - 1)  << _params.get_flip_nodes()) - 1;
-            uint32_t new_up_mask = (1u << _params.get_num_nodes()) - 1u;
-            CalculateMovedDocsRatio scanner(_params.get_num_nodes(), _params.get_redundancy(), old_placement_mask, new_placement_mask, new_up_mask);
+            auto scanner = CalculateMovedDocsRatio::make_replace_calculator(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
             scanner.scan();
             return _params.get_documents() * scanner.get_moved_docs_ratio();
         } else {
