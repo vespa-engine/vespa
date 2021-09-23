@@ -518,6 +518,8 @@ public class JobController {
                   type,
                   new Versions(platform.orElse(applicationPackage.deploymentSpec().majorVersion()
                                                                  .flatMap(controller.applications()::lastCompatibleVersion)
+                                                                 .or(() -> lastRun.map(run -> run.versions().targetPlatform())
+                                                                                  .filter(controller.readVersionStatus()::isActive))
                                                                  .orElseGet(controller::readSystemVersion)),
                                version,
                                lastRun.map(run -> run.versions().targetPlatform()),
