@@ -23,18 +23,15 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
     @Override
     public SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        return verifyGroupGoingDownIsFine(clusterApi, true);
+        return verifyGroupGoingDownIsFine(clusterApi, false);
     }
 
     @Override
     public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        // This policy is similar to verifyGroupGoingDownIsFine, except that having no services up in the group will
-        // not allow the suspension:  We are a bit more cautious when removing nodes.
-
-        verifyGroupGoingDownIsFine(clusterApi, false);
+        verifyGroupGoingDownIsFine(clusterApi, true);
     }
 
-    private SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi, boolean allowIfAllServicesAreDown)
+    private SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi, boolean permanent)
             throws HostStateChangeDeniedException {
         if (clusterApi.noServicesOutsideGroupIsDown()) {
             return SuspensionReasons.nothingNoteworthy();
@@ -45,11 +42,14 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             return SuspensionReasons.nothingNoteworthy();
         }
 
-        // Disallow suspending a 2nd and downed config server to avoid losing ZK quorum.
-        if (!clusterApi.isConfigServerLike()) {
-            Optional<SuspensionReasons> suspensionReasons = clusterApi.allServicesDown();
-            if (suspensionReasons.isPresent()) {
-                return suspensionReasons.get();
+        // Be a bit more cautious when removing nodes permanently
+        if (!permanent) {
+            // Disallow suspending a 2nd and downed config server to avoid losing ZK quorum.
+            if (!clusterApi.isConfigServerLike()) {
+                Optional<SuspensionReasons> suspensionReasons = clusterApi.allServicesDown();
+                if (suspensionReasons.isPresent()) {
+                    return suspensionReasons.get();
+                }
             }
         }
 
