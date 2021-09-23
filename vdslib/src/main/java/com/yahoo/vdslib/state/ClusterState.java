@@ -84,7 +84,7 @@ public class ClusterState implements Cloneable {
 
         private static boolean equalsWithDescription(NodeState a, NodeState b) {
             // TODO Why does not NodeState.equals consider description.
-            return a.equals(b) && a.getDescription().equals(b.getDescription());
+            return a.equals(b) && ((a.getState() != State.DOWN) || a.getDescription().equals(b.getDescription()));
         }
 
         private void setNodeStateInternal(int index, NodeState ns) {
