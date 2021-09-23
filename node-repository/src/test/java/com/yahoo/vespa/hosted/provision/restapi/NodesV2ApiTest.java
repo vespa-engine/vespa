@@ -1026,7 +1026,7 @@ public class NodesV2ApiTest {
     @Test
     public void trusted_certificates_patch()  throws IOException {
         String url = "http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com";
-        tester.assertPartialResponse(new Request(url), "\"trustStore\":[]", true); // initially empty list
+        tester.assertPartialResponse(new Request(url), "\"trustStore\":[]", false); // initially empty list
 
         String trustStore = "\"trustStore\":[" +
                             "{" +

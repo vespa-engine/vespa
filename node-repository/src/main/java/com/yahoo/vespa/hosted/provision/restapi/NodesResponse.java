@@ -183,7 +183,7 @@ class NodesResponse extends SlimeJsonResponse {
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
         nodeRepository.archiveUris().archiveUriFor(node).ifPresent(uri -> object.setString("archiveUri", uri));
-        trustedCertsToSlime(node.trustedCertificates(), object.setArray("trustStore"));
+        trustedCertsToSlime(node.trustedCertificates(), object);
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
@@ -230,7 +230,9 @@ class NodesResponse extends SlimeJsonResponse {
         addresses.forEach(address -> addressesArray.addString(address.hostname()));
     }
 
-    private void trustedCertsToSlime(Set<TrustStoreItem> trustStoreItems, Cursor array) {
+    private void trustedCertsToSlime(Set<TrustStoreItem> trustStoreItems, Cursor object) {
+        if (trustStoreItems.isEmpty()) return;
+        Cursor array = object.setArray("trustStore");
         trustStoreItems.forEach(cert -> cert.toSlime(array));
     }
 
