@@ -40,8 +40,10 @@ import com.yahoo.log.LogSetup;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -400,9 +402,17 @@ public final class ConfiguredApplication implements Application {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         long delayMillis = 50 * 1000;
-        shutdownDeadlineExecutor.schedule(() -> com.yahoo.protect.Process.logAndDie(
-                "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                        "drain their request content channels.", true), delayMillis, TimeUnit.MILLISECONDS);
+        shutdownDeadlineExecutor.schedule(() -> {
+            String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + ProcessHandle.current().pid() + ".hprof";
+            try {
+                com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Failed writing heap dump:", e);
+            }
+            com.yahoo.protect.Process.logAndDie(
+                    "Timed out waiting for application shutdown. Please check that all your request handlers " +
+                            "drain their request content channels.", true);
+        }, delayMillis, TimeUnit.MILLISECONDS);
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,

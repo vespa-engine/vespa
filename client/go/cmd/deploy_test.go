@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // deploy command tests
 // Author: bratseth
 
@@ -130,9 +130,10 @@ func assertActivate(applicationPackage string, arguments []string, t *testing.T)
 	if err := cfg.WriteSessionID(vespa.DefaultApplication, 42); err != nil {
 		t.Fatal(err)
 	}
+	out, _ := execute(command{args: arguments, homeDir: homeDir}, t, client)
 	assert.Equal(t,
 		"Success: Activated "+applicationPackage+" with session 42\n",
-		execute(command{args: arguments, homeDir: homeDir}, t, client))
+		out)
 	url := "http://127.0.0.1:19071/application/v2/tenant/default/session/42/active"
 	assert.Equal(t, url, client.lastRequest.URL.String())
 	assert.Equal(t, "PUT", client.lastRequest.Method)

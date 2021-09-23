@@ -9,9 +9,7 @@ using search::AddressSpaceComponents;
 namespace proton {
 
 AttributeUsageStats::AttributeUsageStats()
-    : _enumStoreUsage(AddressSpaceComponents::default_enum_store_usage()),
-      _multiValueUsage(AddressSpaceComponents::default_multi_value_usage()),
-      _max_usage(vespalib::AddressSpace())
+    : _max_usage(vespalib::AddressSpace())
 {
 }
 
@@ -22,8 +20,6 @@ AttributeUsageStats::merge(const search::AddressSpaceUsage &usage,
                            const vespalib::string &attributeName,
                            const vespalib::string &subDbName)
 {
-    _enumStoreUsage.merge(usage.enum_store_usage(), attributeName, AddressSpaceComponents::enum_store, subDbName);
-    _multiValueUsage.merge(usage.multi_value_usage(), attributeName, AddressSpaceComponents::multi_value, subDbName);
     for (const auto& entry : usage.get_all()) {
         _max_usage.merge(entry.second, attributeName, entry.first, subDbName);
     }
@@ -32,9 +28,7 @@ AttributeUsageStats::merge(const search::AddressSpaceUsage &usage,
 std::ostream&
 operator<<(std::ostream& out, const AttributeUsageStats& rhs)
 {
-    out << "{enum_store=" << rhs.enumStoreUsage() <<
-            ", multi_value=" << rhs.multiValueUsage() <<
-            ", max_address_space_usage=" << rhs.max_address_space_usage() << "}";
+    out << "{max_address_space_usage=" << rhs.max_address_space_usage() << "}";
     return out;
 }
 

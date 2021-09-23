@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Helpers used by multiple sub-commands.
 // Author: mpolden
 
@@ -147,7 +147,16 @@ func getTarget() vespa.Target {
 		if err != nil {
 			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
 		}
-		return vespa.CloudTarget(deployment, kp, apiKey, vespa.LogOptions{Writer: stdout, Level: vespa.LogLevel(logLevelArg)})
+		return vespa.CloudTarget(deployment, apiKey,
+			vespa.TLSOptions{
+				KeyPair:         kp,
+				CertificateFile: certificateFile,
+				PrivateKeyFile:  privateKeyFile,
+			},
+			vespa.LogOptions{
+				Writer: stdout,
+				Level:  vespa.LogLevel(logLevelArg),
+			})
 	}
 	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil

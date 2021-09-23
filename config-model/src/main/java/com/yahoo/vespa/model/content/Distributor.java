@@ -18,7 +18,6 @@ import org.w3c.dom.Element;
 public class Distributor extends ContentNode implements StorDistributormanagerConfig.Producer {
 
     PersistenceEngine provider;
-    private final int numDistributorStripesFlag;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<Distributor> {
         ModelElement clusterXml;
@@ -41,7 +40,6 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
              StorageNode.rootFolder + parent.getClusterName() + "/distributor/" + distributionKey, distributionKey);
 
         this.provider = provider;
-        this.numDistributorStripesFlag = properties.featureFlags().numDistributorStripes();
 
         if (distributorBasePort != null) {
             setBasePort(distributorBasePort);
@@ -49,23 +47,21 @@ public class Distributor extends ContentNode implements StorDistributormanagerCo
     }
 
     private int tuneNumDistributorStripes() {
-        if (numDistributorStripesFlag == -1) {
-            if (getHostResource() != null) {
-                int cores = (int)getHostResource().realResources().vcpu();
-                // This should match the calculation used when node flavor is not available:
-                // storage/src/vespa/storage/common/bucket_stripe_utils.cpp
-                if (cores <= 16) {
-                    return 1;
-                } else if (cores <= 64) {
-                    return 2;
-                } else {
-                    return 4;
-                }
-            } else {
+        if (getHostResource() != null &&
+                !getHostResource().realResources().isUnspecified()) {
+            int cores = (int)getHostResource().realResources().vcpu();
+            // This should match the calculation used when node flavor is not available:
+            // storage/src/vespa/storage/common/bucket_stripe_utils.cpp
+            if (cores <= 16) {
                 return 1;
+            } else if (cores <= 64) {
+                return 2;
+            } else {
+                return 4;
             }
+        } else {
+            return 0;
         }
-        return numDistributorStripesFlag;
     }
 
     @Override

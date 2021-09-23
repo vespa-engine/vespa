@@ -24,7 +24,9 @@ import java.util.logging.Logger;
 public class ConfigSentinelClient extends AbstractComponent {
     private final static Logger log = Logger.getLogger(ConfigSentinelClient.class.getName());
 
+    private static final Spec SPEC = new Spec("localhost", 19097);
     private final Supervisor supervisor;
+    private Target connection = null;
 
     @Inject
     public ConfigSentinelClient() {
@@ -33,6 +35,12 @@ public class ConfigSentinelClient extends AbstractComponent {
 
     @Override
     public void deconstruct() {
+        synchronized (this) {
+            if (connection != null) {
+                connection.close();
+                connection = null;
+            }
+        }
         supervisor.transport().shutdown().join();
         super.deconstruct();
     }
@@ -126,7 +134,7 @@ public class ConfigSentinelClient extends AbstractComponent {
         }
 
         for (int i = 1; i < parts.length; i++) {
-            String keyValue[] = parts[i].split("=");
+            String [] keyValue = parts[i].split("=");
 
             String key = keyValue[0];
             String value = keyValue[1];
@@ -155,26 +163,24 @@ public class ConfigSentinelClient extends AbstractComponent {
 
     String sentinelLs() {
         String servicelist = "";
-        int rpcPort = 19097;
-        Spec spec = new Spec("localhost", rpcPort);
-        Target connection = supervisor.connect(spec);
-        try {
-            if (connection.isValid()) {
-                Request req = new Request("sentinel.ls");
-                connection.invokeSync(req, 5.0);
-                if (req.errorCode() == ErrorCode.NONE &&
-                    req.checkReturnTypes("s"))
-                {
-                    servicelist = req.returnValues().get(0).asString();
-                } else {
-                    log.log(Level.WARNING, "Bad answer to RPC request: " + req.errorMessage());
-                }
-            } else {
-                log.log(Level.WARNING, "Could not connect to sentinel at: "+spec);
+        synchronized (this) {
+            if (connection == null || ! connection.isValid()) {
+                connection = supervisor.connect(SPEC);
             }
-            return servicelist;
-        } finally {
-            connection.close();
         }
+        if (connection.isValid()) {
+            Request req = new Request("sentinel.ls");
+            connection.invokeSync(req, 5.0);
+            if (req.errorCode() == ErrorCode.NONE &&
+                req.checkReturnTypes("s"))
+            {
+                servicelist = req.returnValues().get(0).asString();
+            } else {
+                log.log(Level.WARNING, "Bad answer to RPC request: " + req.errorMessage());
+            }
+        } else {
+            log.log(Level.WARNING, "Could not connect to sentinel at: " + SPEC);
+        }
+        return servicelist;
     }
 }

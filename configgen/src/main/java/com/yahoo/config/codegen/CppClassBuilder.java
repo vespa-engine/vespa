@@ -98,8 +98,12 @@ public class CppClassBuilder implements ClassBuilder {
             String newHeader = headerWriter.toString();
             String newBody = bodyWriter.toString();
 
-            File headerFile = new File(rootDir, relativePathUnderRoot + "/" + getFileName(root, "h"));
-            File bodyFile = new File(rootDir, relativePathUnderRoot + "/" + getFileName(root, "cpp"));
+            String prefix = "";
+            if (relativePathUnderRoot != null) {
+                prefix = relativePathUnderRoot + "/";
+            }
+            File headerFile = new File(rootDir, prefix + getFileName(root, "h"));
+            File bodyFile = new File(rootDir, prefix + getFileName(root, "cpp"));
 
             writeFile(headerFile, newHeader);
             writeFile(bodyFile, newBody);

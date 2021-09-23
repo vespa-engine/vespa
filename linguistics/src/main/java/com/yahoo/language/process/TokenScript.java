@@ -5,7 +5,7 @@ package com.yahoo.language.process;
  * List of token scripts (e.g. latin, japanese, chinese, etc.) which may warrant different
  * linguistics treatment.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public enum TokenScript {
 

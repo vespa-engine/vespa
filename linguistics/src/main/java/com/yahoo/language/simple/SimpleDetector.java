@@ -70,15 +70,6 @@ public class SimpleDetector implements Detector {
                 block == Character.UnicodeBlock.HANGUL_COMPATIBILITY_JAMO) {
                 return Language.KOREAN;
             }
-            // katakana phonetic extensions.
-            if (0x31f0 <= c && c <= 0x31ff) {
-                // See http://www.unicode.org/charts/PDF/U31F0.pdf
-                // This is a special case because This range of character
-                // codes is classified as unasigned in
-                // Character.UnicodeBlock.  But clearly it is assigned as
-                // per above.
-                return Language.JAPANESE;
-            }
             if (0x31f0 <= c && c <= 0x31ff || // these are standard character blocks for japanese characters.
                 block == Character.UnicodeBlock.HIRAGANA ||
                 block == Character.UnicodeBlock.KATAKANA ||

@@ -23,6 +23,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Encoder;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.query.parser.ParseException;
@@ -105,6 +106,8 @@ public class SearchHandler extends LoggingRequestHandler {
     
     private final String selfHostname = HostName.getLocalhost();
 
+    private final Encoder encoder;
+
     private final ExecutionFactory executionFactory;
 
     private final AtomicLong numRequestsLeftToTrace;
@@ -129,6 +132,22 @@ public class SearchHandler extends LoggingRequestHandler {
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          ContainerThreadPool threadpool,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         Encoder encoder,
+                         ExecutionFactory executionFactory) {
+        this(statistics, metric, threadpool.executor(), queryProfileRegistry, encoder, executionFactory,
+             config.numQueriesToTraceOnDebugAfterConstruction(),
+             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
+    }
+
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         ContainerThreadPool threadpool,
                          AccessLog ignored,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig config,
@@ -136,6 +155,10 @@ public class SearchHandler extends LoggingRequestHandler {
         this(statistics, metric, threadpool.executor(), ignored, queryProfileRegistry, config, executionFactory);
     }
 
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
@@ -147,6 +170,7 @@ public class SearchHandler extends LoggingRequestHandler {
              metric,
              executor,
              queryProfileRegistry,
+             Encoder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
@@ -168,12 +192,17 @@ public class SearchHandler extends LoggingRequestHandler {
              metric,
              executor,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
+             Encoder.throwsOnUse,
              executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
                      Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
 
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
@@ -181,19 +210,22 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
-        this(statistics, metric, executor, queryProfileRegistry, executionFactory, 0, hostResponseHeaderKey);
+        this(statistics, metric, executor, queryProfileRegistry, Encoder.throwsOnUse,
+             executionFactory, 0, hostResponseHeaderKey);
     }
 
     private SearchHandler(Statistics statistics,
                          Metric metric,
                          Executor executor,
                          CompiledQueryProfileRegistry queryProfileRegistry,
+                         Encoder encoder,
                          ExecutionFactory executionFactory,
                          long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
         super(executor, metric, true);
         log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
+        this.encoder = encoder;
         this.executionFactory = executionFactory;
 
         this.maxThreads = examineExecutor(executor);
@@ -297,7 +329,11 @@ public class SearchHandler extends LoggingRequestHandler {
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
-        Query query = new Query(request, requestMap, queryProfile);
+        Query query = new Query.Builder().setRequest(request)
+                                         .setRequestMap(requestMap)
+                                         .setQueryProfile(queryProfile)
+                                         .setEncoder(encoder)
+                                         .build();
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());

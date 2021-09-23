@@ -791,7 +791,6 @@ fi
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configdefinitions-jar-with-dependencies.jar
-%{_prefix}/lib/jars/configgen.jar
 %{_prefix}/lib/jars/config-model-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-provisioning-jar-with-dependencies.jar
@@ -799,7 +798,6 @@ fi
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-gui-jar-with-dependencies.jar
-%{_prefix}/lib/jars/defaults-jar-with-dependencies.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar
 %{_prefix}/lib/jars/flags-jar-with-dependencies.jar
 %{_prefix}/lib/jars/hk2-*.jar

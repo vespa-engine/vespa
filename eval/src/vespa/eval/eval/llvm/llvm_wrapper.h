@@ -20,6 +20,7 @@ extern "C" {
     double vespalib_eval_sigmoid(double a);
     double vespalib_eval_elu(double a);
     double vespalib_eval_bit(double a, double b);
+    double vespalib_eval_hamming(double a, double b);
 };
 
 namespace vespalib::eval {

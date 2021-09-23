@@ -106,8 +106,8 @@ func TestCloudTargetWait(t *testing.T) {
 			Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 			Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
 		},
-		x509KeyPair,
 		apiKey,
+		TLSOptions{KeyPair: x509KeyPair},
 		LogOptions{Writer: &logWriter})
 	if ct, ok := target.(*cloudTarget); ok {
 		ct.cloudAPI = srv.URL
