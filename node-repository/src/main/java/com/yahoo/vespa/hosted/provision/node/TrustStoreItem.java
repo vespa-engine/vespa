@@ -8,7 +8,11 @@ import com.yahoo.slime.Inspector;
 import java.time.Instant;
 import java.util.Objects;
 
-
+/**
+ * Contains the fingerprint and expiry of certificates in a hosts truststore.
+ *
+ * @author mortent
+ */
 public class TrustStoreItem {
     private static final String FINGERPRINT_FIELD = "fingerprint";
     private static final String EXPIRY_FIELD = "expiry";

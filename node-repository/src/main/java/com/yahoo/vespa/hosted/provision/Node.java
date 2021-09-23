@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A node in the node repository. The identity of a node is given by its id.
@@ -99,7 +100,7 @@ public final class Node implements Nodelike {
         this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId cannot be null");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType cannot be null");
         this.switchHostname = requireNonEmptyString(switchHostname, "switchHostname cannot be null");
-        this.trustStoreItems = trustStoreItems;
+        this.trustStoreItems = trustStoreItems.stream().distinct().collect(Collectors.toUnmodifiableList());
 
         if (state == State.active)
             requireNonEmpty(ipConfig.primary(), "Active node " + hostname + " must have at least one valid IP address");
@@ -211,7 +212,7 @@ public final class Node implements Nodelike {
         return switchHostname;
     }
 
-    /** Returns the trusted Certificates for this host if any. */
+    /** Returns the trusted certificates for this host if any. */
     public List<TrustStoreItem> trustedCertificates() {
         return trustStoreItems;
     }
