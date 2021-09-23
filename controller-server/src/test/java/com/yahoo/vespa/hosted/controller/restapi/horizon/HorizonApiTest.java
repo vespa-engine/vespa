@@ -4,7 +4,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
@@ -32,8 +31,6 @@ public class HorizonApiTest extends ControllerContainerCloudTest {
 
         ((InMemoryFlagSource) tester.controller().flagSource())
                 .withBooleanFlag(Flags.ENABLED_HORIZON_DASHBOARD.id(), true);
-
-        tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), true);
 
         tester.assertResponse(request("/horizon/v1/config/dashboard/topFolders")
                         .roles(Set.of(Role.reader(tenantName))),
