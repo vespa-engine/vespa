@@ -23,30 +23,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
 
     @Override
     public SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
-        if (clusterApi.noServicesOutsideGroupIsDown()) {
-            return SuspensionReasons.nothingNoteworthy();
-        }
-
-        int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi).asPercentage();
-        if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
-            return SuspensionReasons.nothingNoteworthy();
-        }
-
-        Optional<SuspensionReasons> suspensionReasons = clusterApi.reasonsForNoServicesInGroupIsUp();
-        if (suspensionReasons.isPresent()) {
-            return suspensionReasons.get();
-        }
-
-        String message = percentageOfServicesAllowedToBeDown <= 0
-                ? "Suspension of service with type '" + clusterApi.serviceType() + "' not allowed: "
-                  + clusterApi.percentageOfServicesDown() + "% are suspended already." + clusterApi.downDescription()
-                : "Suspension of service with type '" + clusterApi.serviceType()
-                  + "' would increase from " + clusterApi.percentageOfServicesDown()
-                  + "% to " + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()
-                  + "%, over the limit of " + percentageOfServicesAllowedToBeDown + "%."
-                  + clusterApi.downDescription();
-
-        throw new HostStateChangeDeniedException(clusterApi.getNodeGroup(), ENOUGH_SERVICES_UP_CONSTRAINT, message);
+        return verifyGroupGoingDownIsFine(clusterApi, true);
     }
 
     @Override
@@ -54,22 +31,37 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
         // This policy is similar to verifyGroupGoingDownIsFine, except that having no services up in the group will
         // not allow the suspension:  We are a bit more cautious when removing nodes.
 
+        verifyGroupGoingDownIsFine(clusterApi, false);
+    }
+
+    private SuspensionReasons verifyGroupGoingDownIsFine(ClusterApi clusterApi, boolean allowIfAllServicesAreDown)
+            throws HostStateChangeDeniedException {
         if (clusterApi.noServicesOutsideGroupIsDown()) {
-            return;
+            return SuspensionReasons.nothingNoteworthy();
         }
 
         int percentageOfServicesAllowedToBeDown = getConcurrentSuspensionLimit(clusterApi).asPercentage();
         if (clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() <= percentageOfServicesAllowedToBeDown) {
-            return;
+            return SuspensionReasons.nothingNoteworthy();
         }
 
-        throw new HostStateChangeDeniedException(
-                clusterApi.getNodeGroup(),
-                ENOUGH_SERVICES_UP_CONSTRAINT,
-                "Down percentage for service type " + clusterApi.serviceType()
-                        + " would increase to " + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown()
-                        + "%, over the limit of " + percentageOfServicesAllowedToBeDown + "%."
-                        + clusterApi.downDescription());
+        // Disallow suspending a 2nd and downed config server to avoid losing ZK quorum.
+        if (!clusterApi.isConfigServerLike()) {
+            Optional<SuspensionReasons> suspensionReasons = clusterApi.allServicesDown();
+            if (suspensionReasons.isPresent()) {
+                return suspensionReasons.get();
+            }
+        }
+
+        String message = percentageOfServicesAllowedToBeDown <= 0
+                ? clusterApi.percentageOfServicesDownOutsideGroup() + "% of the " + clusterApi.serviceDescription(true)
+                  + " are down or suspended already:" + clusterApi.downDescription()
+                : "The percentage of downed or suspended " + clusterApi.serviceDescription(true)
+                  + " would increase from " + clusterApi.percentageOfServicesDownOutsideGroup() + "% to "
+                  + clusterApi.percentageOfServicesDownIfGroupIsAllowedToBeDown() + "% (limit is "
+                  + percentageOfServicesAllowedToBeDown + "%):" + clusterApi.downDescription();
+
+        throw new HostStateChangeDeniedException(clusterApi.getNodeGroup(), ENOUGH_SERVICES_UP_CONSTRAINT, message);
     }
 
     // Non-private for testing purposes

@@ -113,6 +113,14 @@ public class ServiceCluster {
     }
 
     public String nodeDescription(boolean plural) {
+        return entityDescription("node", plural);
+    }
+
+    public String serviceDescription(boolean plural) {
+        return entityDescription("service", plural);
+    }
+
+    private String entityDescription(String entity, boolean plural) {
         String pluralSuffix = plural ? "s" : "";
         return isConfigServer() ? "config server" + pluralSuffix :
                isConfigServerHost() ? "config server host" + pluralSuffix :
@@ -121,7 +129,7 @@ public class ServiceCluster {
                isProxy() ? (plural ? "proxies" : "proxy") :
                isProxyHost() ? "proxy host" + pluralSuffix :
                isTenantHost() ? "tenant host" + pluralSuffix :
-               "node" + pluralSuffix + " of {" + serviceType + "," + clusterId + "}";
+               entity + pluralSuffix + " of {" + serviceType + "," + clusterId + "}";
     }
 
     private boolean isHostedVespaApplicationWithId(ApplicationInstanceId id) {
