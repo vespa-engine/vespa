@@ -50,6 +50,7 @@ struct Sigmoid { static double f(double a); };
 struct Elu { static double f(double a); };
 struct Erf { static double f(double a); };
 struct Bit { static double f(double a, double b); };
+struct Hamming { static double f(double a, double b); };
 //-----------------------------------------------------------------------------
 struct Inv { static double f(double a); };
 struct Square { static double f(double a); };
