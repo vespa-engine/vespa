@@ -23,11 +23,11 @@ public class ClusterState implements Cloneable {
     private static final NodeState DEFAULT_DISTRIBUTOR_DOWN_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.DOWN);
 
     /**
-     * Maintains a bitset where all non-down dows have a bit set. All nodes that differs from defaultUp
+     * Maintains a bitset where all non-down nodes have a bit set. All nodes that differs from defaultUp
      * and defaultDown are store explicit in a hash map.
      */
     private static class Nodes {
-        private int maxIndex;
+        private int logicalNodeCount;
         private final NodeType type;
         private final BitSet upNodes;
         private final Map<Integer, NodeState> nodeStates = new HashMap<>();
@@ -36,25 +36,25 @@ public class ClusterState implements Cloneable {
             upNodes = new BitSet();
         }
         Nodes(Nodes b) {
-            maxIndex = b.maxIndex;
+            logicalNodeCount = b.logicalNodeCount;
             type = b.type;
             upNodes = (BitSet) b.upNodes.clone();
             b.nodeStates.forEach((key, value) -> nodeStates.put(key, value.clone()));
         }
 
         void updateMaxIndex(int index) {
-            if (index > maxIndex) {
-                upNodes.set(maxIndex, index);
-                maxIndex = index;
+            if (index > logicalNodeCount) {
+                upNodes.set(logicalNodeCount, index);
+                logicalNodeCount = index;
             }
         }
 
-        int getMaxIndex() { return maxIndex; }
+        int getLogicalNodeCount() { return logicalNodeCount; }
 
         NodeState getNodeState(int index) {
             NodeState ns = nodeStates.get(index);
             if (ns != null) return ns;
-            return (index >= getMaxIndex() || ! upNodes.get(index))
+            return (index >= getLogicalNodeCount() || ! upNodes.get(index))
                     ? new NodeState(type, State.DOWN)
                     : new NodeState(type, State.UP);
         }
@@ -69,8 +69,8 @@ public class ClusterState implements Cloneable {
         void setNodeState(Node node, NodeState ns) {
             validateInput(node, ns);
             int index = node.getIndex();
-            if (index >= maxIndex) {
-                maxIndex = index + 1;
+            if (index >= logicalNodeCount) {
+                logicalNodeCount = index + 1;
             }
             setNodeStateInternal(index, ns);
         }
@@ -83,7 +83,7 @@ public class ClusterState implements Cloneable {
         }
 
         private static boolean equalsWithDescription(NodeState a, NodeState b) {
-            // TODO Why does not NodeState.equals consider description.
+            // This is due to NodeState.equals considers semantic equality, and description is not part of that.
             return a.equals(b) && ((a.getState() != State.DOWN) || a.getDescription().equals(b.getDescription()));
         }
 
@@ -104,7 +104,7 @@ public class ClusterState implements Cloneable {
 
         boolean similarToImpl(Nodes other, final NodeStateCmp nodeStateCmp) {
             // TODO verify behavior of C++ impl against this
-            if (maxIndex != other.maxIndex) return false;
+            if (logicalNodeCount != other.logicalNodeCount) return false;
             if (type != other.type) return false;
             if ( ! upNodes.equals(other.upNodes)) return false;
             for (Integer node : unionNodeSetWith(other.nodeStates.keySet())) {
@@ -129,7 +129,7 @@ public class ClusterState implements Cloneable {
         String toString(boolean verbose) {
             StringBuilder sb = new StringBuilder();
 
-            int nodeCount = verbose ? getMaxIndex() : upNodes.length();
+            int nodeCount = verbose ? getLogicalNodeCount() : upNodes.length();
             if ( nodeCount > 0 ) {
                 sb.append(type == NodeType.DISTRIBUTOR ? " distributor:" : " storage:").append(nodeCount);
                 for (int i = 0; i < nodeCount; i++) {
@@ -146,7 +146,7 @@ public class ClusterState implements Cloneable {
         public boolean equals(Object obj) {
             if (! (obj instanceof Nodes)) return false;
             Nodes b = (Nodes) obj;
-            if (maxIndex != b.maxIndex) return false;
+            if (logicalNodeCount != b.logicalNodeCount) return false;
             if (type != b.type) return false;
             if (!upNodes.equals(b.upNodes)) return false;
             if (!nodeStates.equals(b.nodeStates)) return false;
@@ -155,7 +155,7 @@ public class ClusterState implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(maxIndex, type, nodeStates, upNodes);
+            return Objects.hash(logicalNodeCount, type, nodeStates, upNodes);
         }
         private NodeState defaultDown() {
             return type == NodeType.STORAGE
@@ -489,7 +489,7 @@ public class ClusterState implements Cloneable {
      * E.g. if node X is down and without description, but nodex X-1 is up, then Y is 1.
      * The node count for distributors is then X + 1 - Y.
      */
-    public int getNodeCount(NodeType type) { return getNodes(type).getMaxIndex(); }
+    public int getNodeCount(NodeType type) { return getNodes(type).getLogicalNodeCount(); }
 
     /**
      * Returns the state of a node.

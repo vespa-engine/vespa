@@ -51,7 +51,7 @@ public class NodeState implements Cloneable {
     public boolean equals(Object o) {
         if (!(o instanceof NodeState)) { return false; }
         NodeState ns = (NodeState) o;
-        // Note that 'description' is not considered. Intentional ?
+        // Note that 'description' is not considered as it carries semantics.
         if (state != ns.state
             || Math.abs(capacity - ns.capacity)         > 0.0000000001
             || Math.abs(initProgress - ns.initProgress) > 0.0000000001
