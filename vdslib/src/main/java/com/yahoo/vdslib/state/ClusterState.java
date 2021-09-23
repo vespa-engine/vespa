@@ -3,11 +3,13 @@ package com.yahoo.vdslib.state;
 import com.yahoo.text.StringUtilities;
 
 import java.text.ParseException;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * Be careful about changing this class, as it mirrors the ClusterState in C++.
@@ -17,88 +19,106 @@ public class ClusterState implements Cloneable {
 
     private static final NodeState DEFAULT_STORAGE_UP_NODE_STATE = new NodeState(NodeType.STORAGE, State.UP);
     private static final NodeState DEFAULT_DISTRIBUTOR_UP_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.UP);
+    private static final NodeState DEFAULT_STORAGE_DOWN_NODE_STATE = new NodeState(NodeType.STORAGE, State.DOWN);
+    private static final NodeState DEFAULT_DISTRIBUTOR_DOWN_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.DOWN);
 
+    /**
+     * Maintains a bitset where all non-down dows have a bit set. All nodes that differs from defaultUp
+     * and defaultDown are store explicit in a hash map.
+     */
     private static class Nodes {
-        // TODO Make more space efficient
-        // nodeStates maps each of the non-up nodes that have an index <= the node count for its type.
-        private int maxIndex = 0;
+        private int maxIndex;
         private final NodeType type;
-        private final Map<Node, NodeState> nodeStates = new TreeMap<>();
+        private final BitSet upNodes;
+        private final Map<Integer, NodeState> nodeStates = new HashMap<>();
         Nodes(NodeType type) {
             this.type = type;
+            upNodes = new BitSet();
         }
         Nodes(Nodes b) {
             maxIndex = b.maxIndex;
-            this.type = b.type;
+            type = b.type;
+            upNodes = (BitSet) b.upNodes.clone();
             b.nodeStates.forEach((key, value) -> nodeStates.put(key, value.clone()));
         }
 
         void updateMaxIndex(int index) {
-            maxIndex = Math.max(maxIndex, index);
+            if (index > maxIndex) {
+                upNodes.set(maxIndex, index);
+                maxIndex = index;
+            }
         }
 
         int getMaxIndex() { return maxIndex; }
 
-        NodeState getNodeState(Node node) {
-            if (node.getIndex() >= maxIndex)
-                return new NodeState(node.getType(), State.DOWN);
-            return nodeStates.getOrDefault(node, new NodeState(node.getType(), State.UP));
+        NodeState getNodeState(int index) {
+            NodeState ns = nodeStates.get(index);
+            if (ns != null) return ns;
+            return (index >= getMaxIndex() || ! upNodes.get(index))
+                    ? defaultDown()
+                    : defaultUp();
+        }
+
+        private void validateInput(Node node, NodeState ns) {
+            ns.verifyValidInSystemState(node.getType());
+            if (node.getType() != type) {
+                throw new IllegalArgumentException("NodeType '" + node.getType() + "' differs from '" + type + "'");
+            }
+        }
+
+        void setNodeState(Node node, NodeState ns) {
+            validateInput(node, ns);
+            int index = node.getIndex();
+            if (index >= maxIndex) {
+                maxIndex = index + 1;
+            }
+            setNodeStateInternal(index, ns);
         }
 
         void addNodeState(Node node, NodeState ns) {
-            if (!ns.equals(defaultUpNodeState(node.getType()))) {
-                nodeStates.put(node, ns);
-            }
-            if (maxIndex <= node.getIndex()) {
-                maxIndex = node.getIndex() + 1;
+            validateInput(node, ns);
+            int index = node.getIndex();
+            updateMaxIndex(index + 1);
+            setNodeStateInternal(index, ns);
+        }
+
+        private static boolean equalsWithDescription(NodeState a, NodeState b) {
+            // TODO Why does not NodeState.equals consider description.
+            return a.equals(b) && a.getDescription().equals(b.getDescription());
+        }
+
+        private void setNodeStateInternal(int index, NodeState ns) {
+            nodeStates.remove(index);
+            if (ns.getState() == State.DOWN) {
+                upNodes.clear(index);
+                if ( ! equalsWithDescription(defaultDown(), ns)) {
+                    nodeStates.put(index, ns);
+                }
+            } else {
+                upNodes.set(index);
+                if ( ! equalsWithDescription(defaultUp(), ns)) {
+                    nodeStates.put(index, ns);
+                }
             }
         }
 
-        void setNodeState(Node node, NodeState newState) {
-            newState.verifyValidInSystemState(node.getType());
-            if (node.getIndex() >= maxIndex) {
-                for (int i= maxIndex; i<node.getIndex(); ++i) {
-                    nodeStates.put(new Node(node.getType(), i), new NodeState(node.getType(), State.DOWN));
-                }
-                maxIndex = node.getIndex() + 1;
-            }
-            if (newState.equals(new NodeState(node.getType(), State.UP))) {
-                nodeStates.remove(node);
-            } else {
-                nodeStates.put(node, newState);
-            }
-            if (newState.getState().equals(State.DOWN)) {
-                // We might be setting the last node down, so we can remove some states
-                removeLastNodesDownWithoutReason();
-            }
-        }
-        private void removeLastNodesDownWithoutReason() {
-            for (int index = maxIndex - 1; index >= 0; --index) {
-                Node node = new Node(type, index);
-                NodeState nodeState = nodeStates.get(node);
-                if (nodeState == null) break; // Node not existing is up
-                if ( ! nodeState.getState().equals(State.DOWN)) break; // Node not down can not be removed
-                if (nodeState.hasDescription()) break; // Node have reason to be down. Don't remove node as we will forget reason
-                nodeStates.remove(node);
-                maxIndex = node.getIndex();
-            }
-        }
         boolean similarToImpl(Nodes other, final NodeStateCmp nodeStateCmp) {
             // TODO verify behavior of C++ impl against this
-            if (type != other.type) return false;
             if (maxIndex != other.maxIndex) return false;
-            for (Node node : unionNodeSetWith(other.nodeStates.keySet())) {
+            if (type != other.type) return false;
+            if ( ! upNodes.equals(other.upNodes)) return false;
+            for (Integer node : unionNodeSetWith(other.nodeStates.keySet())) {
                 final NodeState lhs = nodeStates.get(node);
                 final NodeState rhs = other.nodeStates.get(node);
-                if (!nodeStateCmp.similar(node.getType(), lhs, rhs)) {
+                if (!nodeStateCmp.similar(type, lhs, rhs)) {
                     return false;
                 }
             }
             return true;
         }
 
-        private Set<Node> unionNodeSetWith(final Set<Node> otherNodes) {
-            final Set<Node> unionNodeSet = new TreeSet<>(nodeStates.keySet());
+        private Set<Integer> unionNodeSetWith(final Set<Integer> otherNodes) {
+            final Set<Integer> unionNodeSet = new HashSet<>(nodeStates.keySet());
             unionNodeSet.addAll(otherNodes);
             return unionNodeSet;
         }
@@ -109,20 +129,13 @@ public class ClusterState implements Cloneable {
         String toString(boolean verbose) {
             StringBuilder sb = new StringBuilder();
 
-            int nodeCount = maxIndex;
-            // If not printing verbose, we're not printing descriptions, so we can remove tailing nodes that are down that has descriptions too
-            if (!verbose) {
-                while (nodeCount > 0 && getNodeState(new Node(type, nodeCount - 1)).getState().equals(State.DOWN))
-                    --nodeCount;
-            }
-            if (nodeCount > 0) {
+            int nodeCount = verbose ? getMaxIndex() : upNodes.length();
+            if ( nodeCount > 0 ) {
                 sb.append(type == NodeType.DISTRIBUTOR ? " distributor:" : " storage:").append(nodeCount);
-                for (Map.Entry<Node, NodeState> entry : nodeStates.entrySet()) {
-                    if (entry.getKey().getIndex() < nodeCount) {
-                        String nodeState = entry.getValue().serialize(entry.getKey().getIndex(), verbose);
-                        if (!nodeState.isEmpty()) {
-                            sb.append(' ').append(nodeState);
-                        }
+                for (int i = 0; i < nodeCount; i++) {
+                    String nodeState = getNodeState(i).serialize(i, verbose);
+                    if (!nodeState.isEmpty()) {
+                        sb.append(' ').append(nodeState);
                     }
                 }
             }
@@ -134,13 +147,23 @@ public class ClusterState implements Cloneable {
             if (! (obj instanceof Nodes)) return false;
             Nodes b = (Nodes) obj;
             if (maxIndex != b.maxIndex) return false;
+            if (type != b.type) return false;
+            if (!upNodes.equals(b.upNodes)) return false;
             if (!nodeStates.equals(b.nodeStates)) return false;
             return true;
         }
 
         @Override
         public int hashCode() {
-            return super.hashCode();
+            return Objects.hash(maxIndex, type, nodeStates, upNodes);
+        }
+        private NodeState defaultDown() {
+            return type == NodeType.STORAGE
+                    ? DEFAULT_STORAGE_DOWN_NODE_STATE
+                    : DEFAULT_DISTRIBUTOR_DOWN_NODE_STATE;
+        }
+        private NodeState defaultUp() {
+            return defaultUpNodeState(type);
         }
     }
 
@@ -393,8 +416,6 @@ public class ClusterState implements Cloneable {
             // Ignore unknown nodeStates
         }
         nodeData.addNodeState();
-        distributorNodes.removeLastNodesDownWithoutReason();
-        storageNodes.removeLastNodesDownWithoutReason();
     }
 
     public String getTextualDifference(ClusterState other) {
@@ -476,7 +497,7 @@ public class ClusterState implements Cloneable {
      * and DOWN otherwise.
      */
     public NodeState getNodeState(Node node) {
-        return getNodes(node.getType()).getNodeState(node);
+        return getNodes(node.getType()).getNodeState(node.getIndex());
     }
 
     /**
