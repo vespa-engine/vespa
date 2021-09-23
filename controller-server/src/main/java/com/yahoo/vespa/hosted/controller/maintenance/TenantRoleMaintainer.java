@@ -7,6 +7,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
@@ -27,9 +28,10 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
         var tenants = controller().tenants().asList();
 
         // Create separate athenz service for all tenants
-        tenants.stream()
-                .map(Tenant::name)
-                .forEach(roleService::createTenantRole);
+        for (Tenant t : tenants) {
+            if (t instanceof AthenzTenant) roleService.createTenantRole(t.name(), ((AthenzTenant)t).domain().getName());
+            else roleService.createTenantRole(t.name());
+        }
 
         // Until we have moved to separate athenz service per tenant, make sure we update the shared policy
         // to allow ssh logins for hosts in prod/perf with a separate tenant iam role.

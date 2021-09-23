@@ -11,6 +11,10 @@ import java.util.Optional;
  */
 public interface RoleService {
 
+    default Optional<TenantRoles> createTenantRole(TenantName tenant, String tenantDomain) {
+        return createTenantRole(tenant);
+    }
+
     Optional<TenantRoles> createTenantRole(TenantName tenant);
 
     /** Retrieve the names of the tenant roles (host and container). Does not guarantee these roles exist */
