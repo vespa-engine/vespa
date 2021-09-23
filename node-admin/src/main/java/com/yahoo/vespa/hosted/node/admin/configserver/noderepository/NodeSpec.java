@@ -287,6 +287,10 @@ public class NodeSpec {
         return exclusiveTo;
     }
 
+    public List<TrustStoreItem> trustStore() {
+        return trustStore;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
