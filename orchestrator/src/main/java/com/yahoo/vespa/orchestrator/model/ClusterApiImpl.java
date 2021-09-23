@@ -107,6 +107,11 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
+    public String serviceDescription(boolean plural) {
+        return serviceCluster.serviceDescription(plural);
+    }
+
+    @Override
     public boolean isStorageCluster() {
         return VespaModelUtil.isStorage(serviceCluster);
     }
@@ -117,7 +122,12 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public Optional<SuspensionReasons> reasonsForNoServicesInGroupIsUp() {
+    public boolean isConfigServerLike() {
+        return serviceCluster.isConfigServerLike();
+    }
+
+    @Override
+    public Optional<SuspensionReasons> allServicesDown() {
         SuspensionReasons reasons = new SuspensionReasons();
 
         for (ServiceInstance service : servicesInGroup) {
@@ -157,9 +167,8 @@ class ClusterApiImpl implements ClusterApi {
     }
 
     @Override
-    public int percentageOfServicesDown() {
-        int servicesDownInGroupCount = (int) servicesInGroup.stream().filter(this::serviceEffectivelyDown).count();
-        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices + servicesDownInGroupCount;
+    public int percentageOfServicesDownOutsideGroup() {
+        int numberOfServicesDown = servicesDownAndNotInGroup().size() + missingServices;
         return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
@@ -187,12 +196,11 @@ class ClusterApiImpl implements ClusterApi {
             description.append(" ");
 
             final int nodeLimit = 3;
-            description.append("Suspended hosts: ");
             description.append(suspended.stream().sorted().distinct().limit(nodeLimit).collect(Collectors.toList()).toString());
             if (suspended.size() > nodeLimit) {
-                description.append(", and " + (suspended.size() - nodeLimit) + " more");
+                description.append(" and " + (suspended.size() - nodeLimit) + " others");
             }
-            description.append(".");
+            description.append(" are suspended.");
         }
 
         Set<ServiceInstance> downElsewhere = servicesDownAndNotInGroup().stream()
@@ -204,7 +212,6 @@ class ClusterApiImpl implements ClusterApi {
             description.append(" ");
 
             final int serviceLimit = 2; // services info is verbose
-            description.append("Services down on resumed hosts: ");
             description.append(Stream.concat(
                     downElsewhere.stream().map(ServiceInstance::toString).sorted(),
                     missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
@@ -213,9 +220,9 @@ class ClusterApiImpl implements ClusterApi {
                     .toString());
 
             if (downElsewhereTotal > serviceLimit) {
-                description.append(", and " + (downElsewhereTotal - serviceLimit) + " more");
+                description.append(" and " + (downElsewhereTotal - serviceLimit) + " others");
             }
-            description.append(".");
+            description.append(" are down.");
         }
 
         return description.toString();
