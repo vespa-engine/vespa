@@ -124,6 +124,7 @@ TOKEN :
     // MIN
     <POW: "pow"> |
     <BIT: "bit"> |
+    <HAMMING: "hamming"> |
 
     <MAP: "map"> |
     <REDUCE: "reduce"> |
@@ -735,7 +736,8 @@ Function binaryFunctionName() : { }
     <MAX>   { return Function.max;   } |
     <MIN>   { return Function.min;   } |
     <POW>   { return Function.pow;   } |
-    <BIT>   { return Function.bit;   }
+    <BIT>   { return Function.bit;   } |
+    <HAMMING> { return Function.hamming; }
 }
 
 List<ExpressionNode> expressionList() :

@@ -1203,6 +1203,7 @@
       "public com.yahoo.tensor.Tensor notEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor approxEqual(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor bit(com.yahoo.tensor.Tensor)",
+      "public com.yahoo.tensor.Tensor hamming(com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.Tensor avg()",
       "public com.yahoo.tensor.Tensor avg(java.lang.String)",
       "public com.yahoo.tensor.Tensor avg(java.util.List)",
@@ -2189,6 +2190,22 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ScalarFunctions$Hamming": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.DoubleBinaryOperator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static double hamming(double, double)",
+      "public double applyAsDouble(double, double)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ScalarFunctions$LeakyRelu": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -2557,6 +2574,7 @@
       "public static java.util.function.DoubleBinaryOperator pow()",
       "public static java.util.function.DoubleBinaryOperator squareddifference()",
       "public static java.util.function.DoubleBinaryOperator subtract()",
+      "public static java.util.function.DoubleBinaryOperator hamming()",
       "public static java.util.function.DoubleUnaryOperator abs()",
       "public static java.util.function.DoubleUnaryOperator acos()",
       "public static java.util.function.DoubleUnaryOperator asin()",
