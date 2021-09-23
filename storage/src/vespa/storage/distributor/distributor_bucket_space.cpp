@@ -50,7 +50,7 @@ DistributorBucketSpace::enumerate_available_nodes()
     _distribution_bits = _clusterState->getDistributionBitCount();
     auto node_count = _clusterState->getNodeCount(lib::NodeType::STORAGE);
     if (_pending_cluster_state) {
-        _distribution_bits = std::min(_distribution_bits, _pending_cluster_state->getDistributionBitCount());
+        _distribution_bits = std::max(_distribution_bits, _pending_cluster_state->getDistributionBitCount());
         node_count = std::min(node_count, _pending_cluster_state->getNodeCount(lib::NodeType::STORAGE));
     }
     std::vector<bool> nodes(node_count);
