@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public abstract class ClientBase implements AutoCloseable {
 
-    private static final Logger logger = Logger.getLogger(ClientBase.class.getName());
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
