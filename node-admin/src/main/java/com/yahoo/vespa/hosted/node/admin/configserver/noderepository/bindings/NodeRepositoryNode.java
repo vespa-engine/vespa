@@ -86,7 +86,8 @@ public class NodeRepositoryNode {
     @JsonProperty("history")
     public List<Event> history;
     @JsonProperty("trustStore")
-    public Set<TrustStoreItem> trustStore;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<TrustStoreItem> trustStore;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;

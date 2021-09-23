@@ -234,10 +234,10 @@ public class NodePatcher implements AutoCloseable {
     }
 
     private Node nodeWithTrustStore(Node node, Inspector inspector) {
-        Set<TrustStoreItem> trustStoreItems =
+        List<TrustStoreItem> trustStoreItems =
                 SlimeUtils.entriesStream(inspector)
                         .map(TrustStoreItem::fromSlime)
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toList());
         return node.with(trustStoreItems);
     }
 

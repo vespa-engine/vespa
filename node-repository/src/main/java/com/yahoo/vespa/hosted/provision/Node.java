@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -51,7 +52,7 @@ public final class Node implements Nodelike {
     private final Optional<ApplicationId> exclusiveToApplicationId;
     private final Optional<ClusterSpec.Type> exclusiveToClusterType;
     private final Optional<String> switchHostname;
-    private final Set<TrustStoreItem> trustStoreItems;
+    private final List<TrustStoreItem> trustStoreItems;
 
     /** Record of the last event of each type happening to this node */
     private final History history;
@@ -81,7 +82,7 @@ public final class Node implements Nodelike {
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation, History history, NodeType type,
                 Reports reports, Optional<String> modelName, Optional<TenantName> reservedTo,
                 Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
-                Optional<String> switchHostname, Set<TrustStoreItem> trustStoreItems) {
+                Optional<String> switchHostname, List<TrustStoreItem> trustStoreItems) {
         this.id = Objects.requireNonNull(id, "A node must have an ID");
         this.hostname = requireNonEmptyString(hostname, "A node must have a hostname");
         this.ipConfig = Objects.requireNonNull(ipConfig, "A node must a have an IP config");
@@ -211,7 +212,7 @@ public final class Node implements Nodelike {
     }
 
     /** Returns the trusted Certificates for this host if any. */
-    public Set<TrustStoreItem> trustedCertificates() {
+    public List<TrustStoreItem> trustedCertificates() {
         return trustStoreItems;
     }
 
@@ -466,7 +467,7 @@ public final class Node implements Nodelike {
                         allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId, exclusiveToClusterType, switchHostname, trustStoreItems);
     }
 
-    public Node with(Set<TrustStoreItem> trustStoreItems) {
+    public Node with(List<TrustStoreItem> trustStoreItems) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
                         allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId, exclusiveToClusterType, switchHostname,
                         trustStoreItems);
@@ -608,7 +609,7 @@ public final class Node implements Nodelike {
         private Status status;
         private Reports reports;
         private History history;
-        private Set<TrustStoreItem> trustStoreItems;
+        private List<TrustStoreItem> trustStoreItems;
 
         private Builder(String id, String hostname, Flavor flavor, State state, NodeType type) {
             this.id = id;
@@ -678,7 +679,7 @@ public final class Node implements Nodelike {
             return this;
         }
 
-        public Builder trustedCertificates(Set<TrustStoreItem> trustStoreItems) {
+        public Builder trustedCertificates(List<TrustStoreItem> trustStoreItems) {
             this.trustStoreItems = trustStoreItems;
             return this;
         }
@@ -689,7 +690,7 @@ public final class Node implements Nodelike {
                             Optional.ofNullable(history).orElseGet(History::empty), type, Optional.ofNullable(reports).orElseGet(Reports::new),
                             Optional.ofNullable(modelName), Optional.ofNullable(reservedTo), Optional.ofNullable(exclusiveToApplicationId),
                             Optional.ofNullable(exclusiveToClusterType), Optional.ofNullable(switchHostname),
-                            Optional.ofNullable(trustStoreItems).orElseGet(Set::of));
+                            Optional.ofNullable(trustStoreItems).orElseGet(List::of));
         }
     }
 

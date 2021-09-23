@@ -243,7 +243,7 @@ public class NodeSerializer {
         });
     }
 
-    private void trustedCertificatesToSlime(Set<TrustStoreItem> trustStoreItems, Cursor array) {
+    private void trustedCertificatesToSlime(List<TrustStoreItem> trustStoreItems, Cursor array) {
         trustStoreItems.forEach(cert -> {
             Cursor object = array.addObject();
             object.setString(fingerprintKey, cert.fingerprint());
@@ -435,11 +435,11 @@ public class NodeSerializer {
         return Optional.of(ClusterSpec.Type.from(object.asString()));
     }
 
-    private Set<TrustStoreItem> trustedCertificatesFromSlime(Inspector object) {
+    private List<TrustStoreItem> trustedCertificatesFromSlime(Inspector object) {
         return SlimeUtils.entriesStream(object.field(trustedCertificatesKey))
                 .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
                                                 Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

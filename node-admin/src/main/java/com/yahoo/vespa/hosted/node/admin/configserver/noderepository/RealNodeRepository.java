@@ -155,9 +155,9 @@ public class RealNodeRepository implements NodeRepository {
                 .map(event -> new Event(event.agent, event.event, Optional.ofNullable(event.at).map(Instant::ofEpochMilli).orElse(Instant.EPOCH)))
                 .collect(Collectors.toUnmodifiableList());
 
-        Set<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(Set.of()).stream()
+        List<TrustStoreItem> trustStore = Optional.ofNullable(node.trustStore).orElse(List.of()).stream()
                 .map(item -> new TrustStoreItem(item.fingerprint, Instant.ofEpochMilli(item.expiry)))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
 
         return new NodeSpec(
@@ -278,7 +278,7 @@ public class RealNodeRepository implements NodeRepository {
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
         node.trustStore = nodeAttributes.getTrustStore().stream()
                 .map(item -> new NodeRepositoryNode.TrustStoreItem(item.fingerprint(), item.expiry().toEpochMilli()))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
         Map<String, JsonNode> reports = nodeAttributes.getReports();
         node.reports = reports == null || reports.isEmpty() ? null : new TreeMap<>(reports);
 

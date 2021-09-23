@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,7 +31,7 @@ public class NodeAttributes {
     private Optional<Version> vespaVersion = Optional.empty();
     private Optional<Version> currentOsVersion = Optional.empty();
     private Optional<Instant> currentFirmwareCheck = Optional.empty();
-    private Set<TrustStoreItem> trustStore = Set.of();
+    private List<TrustStoreItem> trustStore = List.of();
     /** The list of reports to patch. A null value is used to remove the report. */
     private Map<String, JsonNode> reports = new TreeMap<>();
 
@@ -151,12 +151,12 @@ public class NodeAttributes {
                 && Objects.equals(trustStore, other.trustStore);
     }
 
-    public NodeAttributes withTrustStore(Set<TrustStoreItem> trustStore) {
-        this.trustStore = Set.copyOf(trustStore);
+    public NodeAttributes withTrustStore(List<TrustStoreItem> trustStore) {
+        this.trustStore = List.copyOf(trustStore);
         return this;
     }
 
-    public Set<TrustStoreItem> getTrustStore() {
+    public List<TrustStoreItem> getTrustStore() {
         return trustStore;
     }
 
@@ -170,7 +170,7 @@ public class NodeAttributes {
                          currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
                          currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
                          Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports),
-                         Optional.of("trustStore:" + trustStore))
+                         Optional.ofNullable(trustStore.isEmpty() ? null : "trustStore=" + trustStore))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.joining(", ", "{", "}"));

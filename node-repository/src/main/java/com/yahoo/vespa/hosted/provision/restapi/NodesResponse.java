@@ -230,7 +230,7 @@ class NodesResponse extends SlimeJsonResponse {
         addresses.forEach(address -> addressesArray.addString(address.hostname()));
     }
 
-    private void trustedCertsToSlime(Set<TrustStoreItem> trustStoreItems, Cursor object) {
+    private void trustedCertsToSlime(List<TrustStoreItem> trustStoreItems, Cursor object) {
         if (trustStoreItems.isEmpty()) return;
         Cursor array = object.setArray("trustStore");
         trustStoreItems.forEach(cert -> cert.toSlime(array));

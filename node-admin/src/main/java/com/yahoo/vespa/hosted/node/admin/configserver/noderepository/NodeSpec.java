@@ -68,7 +68,7 @@ public class NodeSpec {
 
     private final Optional<ApplicationId> exclusiveTo;
 
-    private final Set<TrustStoreItem> trustStore;
+    private final List<TrustStoreItem> trustStore;
 
     public NodeSpec(
             String hostname,
@@ -101,7 +101,7 @@ public class NodeSpec {
             Optional<String> parentHostname,
             Optional<URI> archiveUri,
             Optional<ApplicationId> exclusiveTo,
-            Set<TrustStoreItem> trustStore) {
+            List<TrustStoreItem> trustStore) {
         if (state == NodeState.active) {
             requireOptional(owner, "owner");
             requireOptional(membership, "membership");
@@ -431,7 +431,7 @@ public class NodeSpec {
         private Optional<String> parentHostname = Optional.empty();
         private Optional<URI> archiveUri = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
-        private Set<TrustStoreItem> trustStore = Set.of();
+        private List<TrustStoreItem> trustStore = List.of();
 
         public Builder() {}
 
@@ -642,8 +642,8 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder trustStore(Set<TrustStoreItem> trustStore) {
-            this.trustStore = Set.copyOf(trustStore);
+        public Builder trustStore(List<TrustStoreItem> trustStore) {
+            this.trustStore = List.copyOf(trustStore);
             return this;
         }
 

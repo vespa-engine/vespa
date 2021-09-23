@@ -466,8 +466,8 @@ public class NodeSerializerTest {
     @Test
     public void truststore_serialization() {
         Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
-        assertEquals(Set.of(), node.trustedCertificates());
-        Set<TrustStoreItem> trustStoreItems = Set.of(new TrustStoreItem("foo", Instant.parse("2023-09-01T23:59:59Z")), new TrustStoreItem("bar", Instant.parse("2025-05-20T23:59:59Z")));
+        assertEquals(List.of(), node.trustedCertificates());
+        List<TrustStoreItem> trustStoreItems = List.of(new TrustStoreItem("foo", Instant.parse("2023-09-01T23:59:59Z")), new TrustStoreItem("bar", Instant.parse("2025-05-20T23:59:59Z")));
         node = node.with(trustStoreItems);
         node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
         assertEquals(trustStoreItems, node.trustedCertificates());
