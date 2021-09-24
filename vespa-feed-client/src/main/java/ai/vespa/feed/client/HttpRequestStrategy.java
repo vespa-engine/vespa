@@ -163,9 +163,9 @@ class HttpRequestStrategy implements RequestStrategy {
             return true;
         }
 
-        breaker.failure(response);
         logResponse(FINE, response, request, attempt);
         if (response.code() == 500 || response.code() == 502 || response.code() == 504) { // Hopefully temporary errors.
+            breaker.failure(response);
             return retry(request, attempt);
         }
 
