@@ -66,6 +66,21 @@ func vespaCliHome() (string, error) {
 	return home, nil
 }
 
+func vespaCliCacheDir() (string, error) {
+	cacheDir := os.Getenv("VESPA_CLI_CACHE_DIR")
+	if cacheDir == "" {
+		userCacheDir, err := os.UserCacheDir()
+		if err != nil {
+			return "", err
+		}
+		cacheDir = filepath.Join(userCacheDir, "vespa")
+	}
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return "", err
+	}
+	return cacheDir, nil
+}
+
 func deploymentFromArgs() vespa.Deployment {
 	zone, err := vespa.ZoneFromString(zoneArg)
 	if err != nil {
