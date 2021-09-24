@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.aws;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,11 +12,7 @@ import java.util.Optional;
  */
 public interface RoleService {
 
-    default Optional<TenantRoles> createTenantRole(TenantName tenant, String tenantDomain) {
-        return createTenantRole(tenant);
-    }
-
-    Optional<TenantRoles> createTenantRole(TenantName tenant);
+    Optional<TenantRoles> createTenantRole(Tenant tenant);
 
     /** Retrieve the names of the tenant roles (host and container). Does not guarantee these roles exist */
     TenantRoles getTenantRole(TenantName tenant);
