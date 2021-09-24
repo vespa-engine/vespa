@@ -20,72 +20,6 @@ using namespace vespalib::eval::test;
 
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
-TensorSpec makeTensor(size_t numCells, double cellBias) {
-    return GenSpec(cellBias).idx("x", numCells).cells(CellType::INT8);
-}
-
-const double leftBias = 3.0;
-const double rightBias = 5.0;
-
-double calcHammingDistance(size_t numCells) {
-    double result = 0;
-    for (size_t i = 0; i < numCells; ++i) {
-        uint8_t a = (i + leftBias);
-        uint8_t b = (i + rightBias);
-        uint8_t bits = a ^ b;
-        for (int j = 0; j < 8; ++j) {
-            if (bits & 1) {
-                result += 1;
-            }
-            bits >>= 1;
-        }
-    }
-    return result;
-}
-
-void check_gen_with_result(size_t sz, double wanted) {
-    EvalFixture::ParamRepo param_repo;
-    param_repo.add("a", makeTensor(sz, leftBias));
-    param_repo.add("b", makeTensor(sz, rightBias));
-    vespalib::string expr = "reduce(hamming(a,b),sum,x)";
-    EvalFixture evaluator(prod_factory, expr, param_repo, true);
-    EXPECT_EQ(GenSpec(wanted).gen(), evaluator.result());
-    EXPECT_EQ(evaluator.result(), EvalFixture::ref(expr, param_repo));
-    auto info = evaluator.find_all<DenseHammingDistance>();
-    EXPECT_EQ(info.size(), 1u);
-};
-
-TEST(DenseHammingDistanceTest, basic_hamming_distance_computation) {
-    check_gen_with_result(1, 2); // 3 ^ 5 = 6
-    check_gen_with_result(2, 3); // 4 ^ 6 = 2
-    check_gen_with_result(3, 4); // 5 ^ 7 = 2
-    check_gen_with_result(4, 7); // 6 ^ 8 = 14
-    check_gen_with_result(5, 10); // 7 ^ 9 = 14
-}
-
-void assertHammingDistance(size_t numCells) {
-    check_gen_with_result(numCells, calcHammingDistance(numCells));
-}
-
-TEST(DenseHammingDistanceTest, compare_hamming_distance_results) {
-    assertHammingDistance(8);
-    assertHammingDistance(16);
-    assertHammingDistance(32);
-    assertHammingDistance(64);
-    assertHammingDistance(128);
-    assertHammingDistance(256);
-    assertHammingDistance(512);
-    assertHammingDistance(1024);
-    assertHammingDistance(8 + 3);
-    assertHammingDistance(16 + 3);
-    assertHammingDistance(32 + 3);
-    assertHammingDistance(64 + 3);
-    assertHammingDistance(128 + 3);
-    assertHammingDistance(256 + 3);
-    assertHammingDistance(512 + 3);
-    assertHammingDistance(1024 + 3);
-}
-
 struct FunInfo {
     using LookFor = DenseHammingDistance;
     void verify(const LookFor &fun) const {
@@ -113,9 +47,20 @@ TEST(DenseHammingDistanceOptimizer, hamming_distance_works_with_tensor_function)
 }
 
 TEST(DenseHammingDistanceOptimizer, hamming_distance_with_compatible_dimensions_is_optimized) {
+    // various vector sizes
     assertOptimized("reduce(hamming(x1$1,x1$2),sum)");
     assertOptimized("reduce(hamming(x3$1,x3$2),sum)");
+    assertOptimized("reduce(hamming(x7$1,x7$2),sum)");
+    assertOptimized("reduce(hamming(x8$1,x8$2),sum)");
+    assertOptimized("reduce(hamming(x9$1,x9$2),sum)");
     assertOptimized("reduce(hamming(x17$1,x17$2),sum)");
+    // multiple dimensions
+    assertOptimized("reduce(hamming(x3y3$1,x3y3$2),sum)");
+    assertOptimized("reduce(hamming(x3y4$1,x3y4$2),sum)");
+    // with trivial dimensions
+    assertOptimized("reduce(hamming(a1x3$1,x3$2),sum)");
+    assertOptimized("reduce(hamming(x3$1z1,x3$2),sum)");
+    assertOptimized("reduce(hamming(a1x3$1,b1x3$2z1),sum)");
 }
 
 TEST(DenseHammingDistanceOptimizer, hamming_distance_with_mapped_dimensions_is_NOT_optimized) {
@@ -132,10 +77,6 @@ TEST(DenseHammingDistanceOptimizer, hamming_distance_with_incompatible_dimension
 
 TEST(DenseHammingDistanceOptimizer, expressions_similar_to_hamming_distance_are_not_optimized) {
     assertNotOptimized("reduce(hamming(x3$1,x3$2),prod)");
-}
-
-TEST(DenseHammingDistanceOptimizer, multi_dimensional_hamming_distance_can_be_optimized) {
-    assertOptimized("reduce(hamming(x3y3$1,x3y3$2),sum)");
 }
 
 TEST(DenseHammingDistanceOptimizer, result_must_be_double_to_trigger_optimization) {
