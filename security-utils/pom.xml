@@ -111,6 +111,7 @@
             <Embed-Transitive>true</Embed-Transitive>
             <Export-Package>com.yahoo.security.*;version=1.0.0;-noimport:=true</Export-Package>
             <_nouses>true</_nouses>
+            <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages> <!-- Hide warnings for bouncycastle multi-release jars -->
           </instructions>
         </configuration>
       </plugin>
