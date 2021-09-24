@@ -102,6 +102,7 @@ func TestCloudTargetWait(t *testing.T) {
 
 	var logWriter bytes.Buffer
 	target := CloudTarget(
+		"https://example.com",
 		Deployment{
 			Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 			Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
@@ -110,7 +111,7 @@ func TestCloudTargetWait(t *testing.T) {
 		TLSOptions{KeyPair: x509KeyPair},
 		LogOptions{Writer: &logWriter})
 	if ct, ok := target.(*cloudTarget); ok {
-		ct.cloudAPI = srv.URL
+		ct.apiURL = srv.URL
 	} else {
 		t.Fatalf("Wrong target type %T", ct)
 	}

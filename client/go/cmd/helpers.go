@@ -16,8 +16,6 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-const defaultConsoleURL = "https://console.vespa.oath.cloud"
-
 var exitFunc = os.Exit // To allow overriding Exit in tests
 
 func fatalErrHint(err error, hints ...string) {
@@ -114,6 +112,23 @@ func getService(service string, sessionOrRunID int64) *vespa.Service {
 	return s
 }
 
+func getConsoleURL() string {
+	system := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
+	if system == "publiccd" {
+		return "https://console-cd.vespa.oath.cloud"
+	}
+	return "https://console.vespa.oath.cloud"
+
+}
+
+func getApiURL() string {
+	system := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
+	if system == "publiccd" {
+		return "https://api.vespa-external-cd.aws.oath.cloud:4443"
+	}
+	return "https://api.vespa-external.aws.oath.cloud:4443"
+}
+
 func getTarget() vespa.Target {
 	targetType := getTargetType()
 	if strings.HasPrefix(targetType, "http") {
@@ -147,7 +162,7 @@ func getTarget() vespa.Target {
 		if err != nil {
 			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
 		}
-		return vespa.CloudTarget(deployment, apiKey,
+		return vespa.CloudTarget(getApiURL(), deployment, apiKey,
 			vespa.TLSOptions{
 				KeyPair:         kp,
 				CertificateFile: certificateFile,

@@ -39,7 +39,11 @@ When this returns successfully the application package has been validated
 and activated on config servers. The process of applying it on individual nodes
 has started but may not have completed.
 
-If application directory is not specified, it defaults to working directory.`,
+If application directory is not specified, it defaults to working directory.
+
+When deploying to Vespa Cloud the system can be overridden by setting the
+environment variable VESPA_CLI_CLOUD_SYSTEM. This is intended for internal use
+only.`,
 	Example:           "$ vespa deploy .",
 	Args:              cobra.MaximumNArgs(1),
 	DisableAutoGenTag: true,
@@ -78,7 +82,7 @@ If application directory is not specified, it defaults to working directory.`,
 			if opts.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.Cyan("vespa status"))
 				log.Print(color.Cyan(fmt.Sprintf("%s/tenant/%s/application/%s/dev/instance/%s/job/%s-%s/run/%d",
-					defaultConsoleURL,
+					getConsoleURL(),
 					opts.Deployment.Application.Tenant, opts.Deployment.Application.Application, opts.Deployment.Application.Instance,
 					opts.Deployment.Zone.Environment, opts.Deployment.Zone.Region,
 					sessionOrRunID)))
