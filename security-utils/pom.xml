@@ -26,13 +26,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <!-- required for bundle-plugin to generate import-package statements for Java's standard library -->
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
 
     <!-- compile scope -->
     <dependency>
