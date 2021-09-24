@@ -3,6 +3,7 @@ package com.yahoo.messagebus.network.rpc;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Class used to reuse services for the same address when sending messages over the rpc network.
@@ -34,10 +35,10 @@ public class RPCServicePool {
      * @return A service address for the given pattern.
      */
     public RPCServiceAddress resolve(String pattern) {
-        RPCService service = services.get().get(pattern);
+        RPCService service = services.get().get(new Key(net, pattern));
         if (service == null) {
             service = new RPCService(net.getMirror(), pattern);
-            services.get().put(pattern, service);
+            services.get().put(new Key(net, pattern), service);
         }
         return service.resolve();
     }
@@ -59,7 +60,7 @@ public class RPCServicePool {
      * @return True if a corresponding service is in the pool.
      */
     public boolean hasService(String pattern) {
-        return services.get().containsKey(pattern);
+        return services.get().containsKey(new Key(net, pattern));
     }
 
     private class ThreadLocalCache extends ThreadLocal<ServiceLRUCache> {
@@ -70,15 +71,41 @@ public class RPCServicePool {
         }
     }
 
-    private class ServiceLRUCache extends LinkedHashMap<String, RPCService> {
+    private class ServiceLRUCache extends LinkedHashMap<Key, RPCService> {
 
         ServiceLRUCache() {
             super(16, 0.75f, true);
         }
 
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, RPCService> entry) {
+        protected boolean removeEldestEntry(Map.Entry<Key, RPCService> entry) {
             return size() > maxSize;
         }
     }
+
+    private static class Key {
+
+        private final RPCNetwork net;
+        private final String pattern;
+
+        private Key(RPCNetwork net, String pattern) {
+            this.net = net;
+            this.pattern = pattern;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            return net.equals(key.net) && pattern.equals(key.pattern);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(net, pattern);
+        }
+
+    }
+
 }
