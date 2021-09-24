@@ -36,7 +36,7 @@ public class RPCServicePool {
     public RPCServiceAddress resolve(String pattern) {
         RPCService service = services.get().get(pattern);
         if (service == null) {
-            service = new RPCService(net.getMirror(), pattern);
+            service = RPCService.create(net.getMirror(), pattern);
             services.get().put(pattern, service);
         }
         return service.resolve();

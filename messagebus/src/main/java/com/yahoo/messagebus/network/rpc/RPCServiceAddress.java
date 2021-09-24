@@ -34,6 +34,13 @@ public class RPCServiceAddress implements ServiceAddress {
     public RPCServiceAddress(String serviceName, String connectionSpec) {
         this(serviceName, new Spec(connectionSpec));
     }
+    public RPCServiceAddress(RPCServiceAddress blueprint) {
+        serviceName = blueprint.serviceName;
+        sessionName = blueprint.sessionName;
+        connectionSpec = blueprint.connectionSpec;
+        target = null;
+    }
+
 
     @Override
     public boolean equals(Object obj) {
