@@ -84,12 +84,6 @@
             <version>6.0.4</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>http-utils</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
 
         <!-- test -->
         <dependency>
