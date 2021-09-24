@@ -10,5 +10,5 @@ import com.yahoo.messagebus.Result;
  */
 public interface ClientSession extends SharedResource {
 
-    public Result sendMessage(Message msg);
+    Result sendMessage(Message msg);
 }

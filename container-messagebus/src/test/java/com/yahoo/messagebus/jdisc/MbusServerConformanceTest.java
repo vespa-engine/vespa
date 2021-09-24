@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.messagebus.ErrorCode.APP_FATAL_ERROR;
+import static com.yahoo.messagebus.ErrorCode.SEND_QUEUE_CLOSED;
 import static com.yahoo.messagebus.ErrorCode.SESSION_BUSY;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -50,7 +51,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Test
     public void testContainerNotReadyException() throws Throwable {
         new TestRunner().setRequestTimeout(100, TimeUnit.MILLISECONDS)
-                        .expectError(is(SESSION_BUSY))
+                        .expectError(is(SEND_QUEUE_CLOSED))
                         .executeAndClose();
     }
 
