@@ -49,4 +49,10 @@ public class GetConfigContext {
     public String logPre() {
         return TenantRepository.logPre(app);
     }
+
+    @Override
+    public String toString() {
+        return "get config context for application " + app + ", having handler " + requestHandler;
+    }
+
 }

@@ -149,6 +149,7 @@ public class FileSender implements Serializable {
         String path = builder.getValue();
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
+
             reference = fileRegistry.addFile(path);
             send(reference, services);
             sentFiles.put(path, reference);

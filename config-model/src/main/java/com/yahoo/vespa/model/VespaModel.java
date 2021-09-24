@@ -492,8 +492,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         boolean found = configProducer.cascadeConfig(builder);
         boolean foundOverride = configProducer.addUserConfig(builder);
         log.log(Level.FINE, () -> "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
-                " for config id " + quote(configProducer.getConfigId()) +
-                ", found=" + found + ", foundOverride=" + foundOverride);
+                                  " for config id " + quote(configProducer.getConfigId()) +
+                                  ", found=" + found + ", foundOverride=" + foundOverride);
     }
 
     /**
