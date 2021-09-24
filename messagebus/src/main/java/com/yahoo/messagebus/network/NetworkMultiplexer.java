@@ -7,10 +7,10 @@ import com.yahoo.text.Utf8Array;
 
 import java.util.Deque;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -33,15 +33,16 @@ public class NetworkMultiplexer implements NetworkOwner {
     private final Network net;
     private final Deque<NetworkOwner> owners = new ConcurrentLinkedDeque<>();
     private final Map<String, Deque<NetworkOwner>> sessions = new ConcurrentHashMap<>();
-    private final boolean shared;
+    private final AtomicBoolean destructible;
 
     private NetworkMultiplexer(Network net, boolean shared) {
         net.attach(this);
         this.net = net;
-        this.shared = shared;
+        this.destructible = new AtomicBoolean( ! shared);
     }
 
-    /** Returns a network multiplexer which will be shared between several {@link NetworkOwner}s. */
+    /** Returns a network multiplexer which will be shared between several {@link NetworkOwner}s,
+     * and will shut down when all these have detached, and {@link #destroy()} has been called, in any order. */
     public static NetworkMultiplexer shared(Network net) {
         return new NetworkMultiplexer(net, true);
     }
@@ -111,19 +112,21 @@ public class NetworkMultiplexer implements NetworkOwner {
         if ( ! owners.remove(owner))
             throw new IllegalArgumentException(owner + " not attached to this");
 
-        if ( ! shared && owners.isEmpty())
-            net.shutdown();
+        countDown();
     }
 
     public void destroy() {
-        if ( ! shared)
-            throw new UnsupportedOperationException("Destroy called on a dedicated multiplexer; " +
-                                                    "this automatically shuts down when detached from");
+        if (destructible.getAndSet(true))
+            throw new IllegalStateException("Destroy called on a dedicated multiplexer--" +
+                                            "this automatically shuts down when detached from--or " +
+                                            "called multiple times on a shared multiplexer");
 
-        if ( ! owners.isEmpty())
-            log.warning("NetworkMultiplexer destroyed before all owners detached: " + this);
+        countDown();
+    }
 
-        net.shutdown();
+    private void countDown() {
+        if (destructible.get() && owners.isEmpty())
+            net.shutdown();
     }
 
     public Network net() {
@@ -136,7 +139,7 @@ public class NetworkMultiplexer implements NetworkOwner {
                "net=" + net +
                ", owners=" + owners +
                ", sessions=" + sessions +
-               ", shared=" + shared +
+               ", destructible=" + destructible +
                '}';
     }
 
