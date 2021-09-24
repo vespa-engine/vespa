@@ -34,6 +34,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;

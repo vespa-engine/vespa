@@ -23,7 +23,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-import com.yahoo.vespa.model.container.PlatformBundles;
+import com.yahoo.vespa.model.container.xml.PlatformBundles;
 
 import java.util.Set;
 import java.util.TreeSet;
