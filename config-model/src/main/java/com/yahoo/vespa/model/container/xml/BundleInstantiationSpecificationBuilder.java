@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
