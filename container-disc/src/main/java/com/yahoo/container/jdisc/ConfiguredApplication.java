@@ -100,7 +100,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
-        log.log(Level.INFO, "Starting container" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
+        log.log(Level.INFO, "Starting jdisc" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
     }
 
     /**
