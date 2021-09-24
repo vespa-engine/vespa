@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -48,6 +49,21 @@ func printErr(err error, msg ...interface{}) {
 
 func printSuccess(msg ...interface{}) {
 	log.Print(color.Green("Success: "), fmt.Sprint(msg...))
+}
+
+func vespaCliHome() (string, error) {
+	home := os.Getenv("VESPA_CLI_HOME")
+	if home == "" {
+		userHome, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		home = filepath.Join(userHome, ".vespa")
+	}
+	if err := os.MkdirAll(home, 0700); err != nil {
+		return "", err
+	}
+	return home, nil
 }
 
 func deploymentFromArgs() vespa.Deployment {
