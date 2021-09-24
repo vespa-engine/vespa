@@ -5,6 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.component.Vtag;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
@@ -99,7 +100,7 @@ public final class ConfiguredApplication implements Application {
 
     static {
         LogSetup.initVespaLogging("Container");
-        log.log(Level.INFO, "Starting container");
+        log.log(Level.INFO, "Starting container" + (Vtag.currentVersion.isEmpty() ? "" : " at version " + Vtag.currentVersion));
     }
 
     /**
