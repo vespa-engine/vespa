@@ -14,20 +14,7 @@ using namespace tensor_function;
 
 namespace {
 
-/**
-template <typename LCT, typename RCT>
-struct MyHammingDistance {
-    static double apply(const LCT * lhs, const RCT * rhs, size_t count) {
-        double result = 0.0;
-        for (size_t i = 0; i < count; ++i) {
-            result += hamming_distance(lhs[i], rhs[i]);
-        }
-        return result;
-    }
-};
-**/
-
-float binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) {
+size_t binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) {
     const uint64_t *words_a = static_cast<const uint64_t *>(lhs);
     const uint64_t *words_b = static_cast<const uint64_t *>(rhs);
     size_t sum = 0;
@@ -44,46 +31,23 @@ float binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) {
             sum += __builtin_popcountl(xor_bits);
         }
     }
-    return (float)sum;
-};
-
-struct DenseHammingDistanceParam {
-    ValueType res_type;
-    size_t vector_size;
-    size_t out_subspace_size;
-
-    DenseHammingDistanceParam(const ValueType &res_type_in,
-                              const ValueType &mix_type,
-                              const ValueType &vec_type)
-        : res_type(res_type_in),
-          vector_size(vec_type.dense_subspace_size()),
-          out_subspace_size(res_type.dense_subspace_size())
-    {
-        assert(vector_size * out_subspace_size == mix_type.dense_subspace_size());
-    }
+    return sum;
 };
 
 void int8_hamming_to_double_op(InterpretedFunction::State &state, uint64_t vector_size) {
     const auto &lhs = state.peek(1);
     const auto &rhs = state.peek(0);
-    LOG_ASSERT(lhs.index().size() == 1);
-    LOG_ASSERT(rhs.index().size() == 1);
     auto a = lhs.cells();
     auto b = rhs.cells();
-    LOG_ASSERT(a.type == CellType::INT8);
-    LOG_ASSERT(b.type == CellType::INT8);
-    LOG_ASSERT(a.size == vector_size);
-    LOG_ASSERT(b.size == vector_size);
     double result = binary_hamming_distance(a.data, b.data, vector_size);
     state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
 } // namespace <unnamed>
 
-DenseHammingDistance::DenseHammingDistance(const ValueType &res_type_in,
-                                           const TensorFunction &dense_child,
+DenseHammingDistance::DenseHammingDistance(const TensorFunction &dense_child,
                                            const TensorFunction &vector_child)
-    : tensor_function::Op2(res_type_in, dense_child, vector_child)
+    : tensor_function::Op2(ValueType::double_type(), dense_child, vector_child)
 {
 }
 
@@ -98,11 +62,11 @@ DenseHammingDistance::compile_self(const ValueBuilderFactory &, Stash &) const
 }
 
 bool DenseHammingDistance::compatible_types(const ValueType &lhs, const ValueType &rhs) {
-    if (lhs.cell_type() != CellType::INT8) return false;
-    if (rhs.cell_type() != CellType::INT8) return false;
-    if (! lhs.is_dense()) return false;
-    if (! rhs.is_dense()) return false;
-    return (lhs.nontrivial_indexed_dimensions() == rhs.nontrivial_indexed_dimensions());
+    return ((lhs.cell_type() == CellType::INT8) &&
+            (rhs.cell_type() == CellType::INT8) &&
+            lhs.is_dense() &&
+            rhs.is_dense() &&
+            (lhs.nontrivial_indexed_dimensions() == rhs.nontrivial_indexed_dimensions()));
 }
 
 const TensorFunction &
@@ -116,7 +80,7 @@ DenseHammingDistance::optimize(const TensorFunction &expr, Stash &stash)
             const TensorFunction &lhs = join->lhs();
             const TensorFunction &rhs = join->rhs();
             if (compatible_types(lhs.result_type(), rhs.result_type())) {
-                return stash.create<DenseHammingDistance>(res_type, lhs, rhs);
+                return stash.create<DenseHammingDistance>(lhs, rhs);
             }
         }
     }

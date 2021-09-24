@@ -12,8 +12,7 @@ namespace vespalib::eval {
 class DenseHammingDistance : public tensor_function::Op2
 {
 public:
-    DenseHammingDistance(const ValueType &res_type_in,
-                         const TensorFunction &lhs_child,
+    DenseHammingDistance(const TensorFunction &lhs_child,
                          const TensorFunction &rhs_child);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     bool result_is_mutable() const override { return false; }
