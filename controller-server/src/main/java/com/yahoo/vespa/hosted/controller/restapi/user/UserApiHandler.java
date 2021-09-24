@@ -20,10 +20,7 @@ import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.configserver.flags.FlagsDb;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -71,9 +68,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     private final UserManagement users;
     private final Controller controller;
     private final FlagsDb flagsDb;
-    private final BooleanFlag enable_public_signup_flow;
     private final IntFlag maxTrialTenants;
-    private final BooleanFlag enabledHorizonDashboard;
 
     @Inject
     public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource, FlagsDb flagsDb) {
@@ -81,9 +76,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         this.users = users;
         this.controller = controller;
         this.flagsDb = flagsDb;
-        this.enable_public_signup_flow = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
         this.maxTrialTenants = PermanentFlags.MAX_TRIAL_TENANTS.bindTo(flagSource);
-        this.enabledHorizonDashboard = Flags.ENABLED_HORIZON_DASHBOARD.bindTo(flagSource);
     }
 
     @Override
@@ -173,9 +166,6 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         root.setBool("isPublic", controller.system().isPublic());
         root.setBool("isCd", controller.system().isCd());
-        // TODO (freva): Remove after users have migrated to use 'flags'
-        root.setBool(enable_public_signup_flow.id().toString(),
-                enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value());
         root.setBool("hasTrialCapacity", hasTrialCapacity());
 
         toSlime(root.setObject("user"), user);
@@ -190,10 +180,6 @@ public class UserApiHandler extends LoggingRequestHandler {
                     Cursor tenantRolesObject = tenantObject.setArray("roles");
                     tenantRolesByTenantName.getOrDefault(tenant, List.of())
                             .forEach(role -> tenantRolesObject.addString(role.definition().name()));
-                    if (controller.system().isPublic()) {
-                        tenantObject.setBool(enabledHorizonDashboard.id().toString(),
-                                enabledHorizonDashboard.with(FetchVector.Dimension.TENANT_ID, tenant.value()).value());
-                    }
                 });
 
         if (!operatorRoles.isEmpty()) {
