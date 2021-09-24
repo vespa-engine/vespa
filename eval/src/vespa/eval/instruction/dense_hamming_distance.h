@@ -15,8 +15,7 @@ public:
     DenseHammingDistance(const TensorFunction &lhs_child,
                          const TensorFunction &rhs_child);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
-    bool result_is_mutable() const override { return false; }
-    static bool compatible_types(const ValueType &lhs, const ValueType &rhs);
+    bool result_is_mutable() const override { return true; }
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
 };
 

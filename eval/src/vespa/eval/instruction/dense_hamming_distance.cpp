@@ -14,6 +14,7 @@ using namespace tensor_function;
 
 namespace {
 
+
 size_t binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) {
     const uint64_t *words_a = static_cast<const uint64_t *>(lhs);
     const uint64_t *words_b = static_cast<const uint64_t *>(rhs);
@@ -43,6 +44,14 @@ void int8_hamming_to_double_op(InterpretedFunction::State &state, uint64_t vecto
     state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
+bool compatible_types(const ValueType &lhs, const ValueType &rhs) {
+    return ((lhs.cell_type() == CellType::INT8) &&
+            (rhs.cell_type() == CellType::INT8) &&
+            lhs.is_dense() &&
+            rhs.is_dense() &&
+            (lhs.nontrivial_indexed_dimensions() == rhs.nontrivial_indexed_dimensions()));
+}
+
 } // namespace <unnamed>
 
 DenseHammingDistance::DenseHammingDistance(const TensorFunction &dense_child,
@@ -59,14 +68,6 @@ DenseHammingDistance::compile_self(const ValueBuilderFactory &, Stash &) const
     const auto &rhs_type = rhs().result_type();
     LOG_ASSERT(lhs_type.dense_subspace_size() == rhs_type.dense_subspace_size());
     return InterpretedFunction::Instruction(op, lhs_type.dense_subspace_size());
-}
-
-bool DenseHammingDistance::compatible_types(const ValueType &lhs, const ValueType &rhs) {
-    return ((lhs.cell_type() == CellType::INT8) &&
-            (rhs.cell_type() == CellType::INT8) &&
-            lhs.is_dense() &&
-            rhs.is_dense() &&
-            (lhs.nontrivial_indexed_dimensions() == rhs.nontrivial_indexed_dimensions()));
 }
 
 const TensorFunction &

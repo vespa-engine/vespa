@@ -23,7 +23,7 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 struct FunInfo {
     using LookFor = DenseHammingDistance;
     void verify(const LookFor &fun) const {
-        EXPECT_FALSE(fun.result_is_mutable());
+        EXPECT_TRUE(fun.result_is_mutable());
     }
 };
 
