@@ -51,7 +51,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Test
     public void testContainerNotReadyException() throws Throwable {
         new TestRunner().setRequestTimeout(100, TimeUnit.MILLISECONDS)
-                        .expectError(is(SEND_QUEUE_CLOSED))
+                        .expectError(is(SESSION_BUSY))
                         .executeAndClose();
     }
 
