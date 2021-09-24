@@ -83,7 +83,7 @@ fi
 
 readonly service=$1
 readonly pid_file="$VESPA_HOME/var/run/$service.pid"
-if [ -f "$VESPA_HOME/var/run/$service.pid" ]; then
+if [ -f "$pid_file" ]; then
   parent_pid=$(cat "$pid_file")
   pid=$(pgrep --parent $parent_pid)
 else
