@@ -811,6 +811,7 @@ fi
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jersey-*.jar
+%{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/alpn-*.jar
 %{_prefix}/lib/jars/http2-*.jar
 %{_prefix}/lib/jars/jetty-*.jar
