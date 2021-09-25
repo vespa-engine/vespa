@@ -189,6 +189,8 @@ public class ModelContextImpl implements ModelContext {
         private final int metricsproxyNumThreads;
         private final boolean enforceRankProfileInheritance;
         private final boolean newLocationBrokerLogic;
+        private final boolean containerDumpHeapOnShutdownTimeout;
+        private final double containerShutdownTimeout;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -216,6 +218,8 @@ public class ModelContextImpl implements ModelContext {
             this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
             this.enforceRankProfileInheritance = flagValue(source, appId, Flags.ENFORCE_RANK_PROFILE_INHERITANCE);
             this.newLocationBrokerLogic = flagValue(source, appId, Flags.NEW_LOCATION_BROKER_LOGIC);
+            this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
+            this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -245,6 +249,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public int metricsproxyNumThreads() { return metricsproxyNumThreads; }
         @Override public boolean newLocationBrokerLogic() { return newLocationBrokerLogic; }
+        @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
+        @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
 
         @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
 
