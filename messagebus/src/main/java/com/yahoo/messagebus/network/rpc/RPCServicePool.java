@@ -38,13 +38,7 @@ public class RPCServicePool {
      */
     public RPCServiceAddress resolve(String pattern) {
 
-        ServiceLRUCache cache = getPerThreadCache();
-        RPCService service = cache.get(pattern);
-        if (service == null) {
-            service = RPCService.create(net.getMirror(), pattern);
-            cache.put(pattern, service);
-        }
-        return service.resolve();
+        return getPerThreadCache().computeIfAbsent(pattern, (key) -> RPCService.create(net.getMirror(), key)).resolve();
     }
 
     private ServiceLRUCache getPerThreadCache() {
