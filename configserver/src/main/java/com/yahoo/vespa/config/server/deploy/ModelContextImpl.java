@@ -187,7 +187,6 @@ public class ModelContextImpl implements ModelContext {
         private final double resourceLimitMemory;
         private final double minNodeRatioPerGroup;
         private final int metricsproxyNumThreads;
-        private final boolean enforceRankProfileInheritance;
         private final boolean newLocationBrokerLogic;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -214,7 +213,6 @@ public class ModelContextImpl implements ModelContext {
             this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
             this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
             this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
-            this.enforceRankProfileInheritance = flagValue(source, appId, Flags.ENFORCE_RANK_PROFILE_INHERITANCE);
             this.newLocationBrokerLogic = flagValue(source, appId, Flags.NEW_LOCATION_BROKER_LOGIC);
         }
 
@@ -245,8 +243,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public int metricsproxyNumThreads() { return metricsproxyNumThreads; }
         @Override public boolean newLocationBrokerLogic() { return newLocationBrokerLogic; }
-
-        @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

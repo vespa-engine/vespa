@@ -80,7 +80,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int metricsproxyNumThreads() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enforceRankProfileInheritance() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.472") default boolean enforceRankProfileInheritance() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int largeRankExpressionLimit() { return 8192; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.468") default boolean useExternalRankExpressions() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.468") default boolean distributeExternalRankExpressions() { return true; }

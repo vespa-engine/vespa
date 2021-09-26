@@ -105,12 +105,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int metricsproxyNumThreads() { return 1; }
-    @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
 
-    public TestProperties enforceRankProfileInheritance(boolean value) {
-        enforceRankProfileInheritance = value;
-        return this;
-    }
     public TestProperties largeRankExpressionLimit(int value) {
         largeRankExpressionLimit = value;
         return this;
