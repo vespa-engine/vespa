@@ -247,10 +247,10 @@ std::pair<int64_t, ConfigValue>
 ConfigSnapshot::deserializeValueV2(Inspector & inspector) const
 {
     int64_t lastChanged = static_cast<int64_t>(inspector["lastChanged"].asDouble());
-    vespalib::string md5(inspector["md5"].asString().make_string());
+    vespalib::string xxhash64(inspector["xxhash64"].asString().make_string());
     auto payload = std::make_unique<FixedPayload>();
     copySlimeObject(inspector["payload"], payload->getData().setObject());
-    return Value(lastChanged, ConfigValue(std::move(payload) , md5));
+    return Value(lastChanged, ConfigValue(std::move(payload), xxhash64));
 }
 
 }
