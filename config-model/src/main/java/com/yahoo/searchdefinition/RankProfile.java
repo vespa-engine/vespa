@@ -227,12 +227,7 @@ public class RankProfile implements Cloneable {
                 String msg = "rank-profile '" + getName() + "' inherits '" + inheritedName +
                         "', but it does not exist anywhere in the inheritance of search '" +
                         ((getSearch() != null) ? getSearch().getName() : " global rank profiles") + "'.";
-                if (search.getDeployProperties().featureFlags().enforceRankProfileInheritance()) {
-                    throw new IllegalArgumentException(msg);
-                } else {
-                    deployLogger.logApplicationPackage(Level.WARNING, msg);
-                    inherited = resolveIndependentOfInheritance();
-                }
+                throw new IllegalArgumentException(msg);
             } else {
                 List<String> children = new ArrayList<>();
                 children.add(createFullyQualifiedName());
@@ -241,12 +236,7 @@ public class RankProfile implements Cloneable {
         }
         return inherited;
     }
-    private RankProfile resolveIndependentOfInheritance() {
-        for (RankProfile rankProfile : rankProfileRegistry.all()) {
-            if (rankProfile.getName().equals(inheritedName)) return rankProfile;
-        }
-        return null;
-    }
+
     private String createFullyQualifiedName() {
         return (search != null)
                 ? (search.getName() + "." + getName())

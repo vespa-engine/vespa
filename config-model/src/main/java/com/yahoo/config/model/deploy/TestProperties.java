@@ -107,7 +107,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int metricsproxyNumThreads() { return 1; }
-    @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
@@ -116,10 +115,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties containerShutdownTimeout(double value) {
         containerShutdownTimeout = value;
-        return this;
-    }
-    public TestProperties enforceRankProfileInheritance(boolean value) {
-        enforceRankProfileInheritance = value;
         return this;
     }
     public TestProperties largeRankExpressionLimit(int value) {
