@@ -10,13 +10,13 @@ import com.yahoo.language.process.Encoder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * @author Simon Thoresen Hult
@@ -86,11 +86,17 @@ public class ScriptManager {
             List<StatementExpression> expressions = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
             for (String content : ilscript.content()) {
-                expressions.add(parse(ilscript.doctype(), parserContext, content));
                 StatementExpression statement = parse(ilscript.doctype(), parserContext, content);
+                expressions.add(statement);
                 InputExpression.InputFieldNameExtractor inputFieldNameExtractor = new InputExpression.InputFieldNameExtractor();
                 statement.select(inputFieldNameExtractor, inputFieldNameExtractor);
+                OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
+                statement.select(outputFieldNameExtractor, outputFieldNameExtractor);
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
+                if ( ! outputFieldNameExtractor.getOutputFieldNames().isEmpty()) {
+                    String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
+                    statement.setStatementOutputType(docTypeMgr.getDocumentType(ilscript.doctype()).getField(outputFieldName).getDataType());
+                }
                 if (inputFieldNameExtractor.getInputFieldNames().size() == 1) {
                     String fieldName = inputFieldNameExtractor.getInputFieldNames().get(0);
                     ScriptExpression script;
