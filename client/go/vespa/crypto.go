@@ -147,6 +147,9 @@ func (rs *RequestSigner) SignRequest(request *http.Request) error {
 	}
 	base64Signature := base64.StdEncoding.EncodeToString(signature)
 	request.Body = ioutil.NopCloser(body)
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
 	request.Header.Set("X-Timestamp", timestamp)
 	request.Header.Set("X-Content-Hash", contentHash)
 	request.Header.Set("X-Key-Id", rs.KeyID)
