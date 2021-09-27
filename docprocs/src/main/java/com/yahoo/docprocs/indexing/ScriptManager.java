@@ -95,7 +95,7 @@ public class ScriptManager {
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
                 if ( ! outputFieldNameExtractor.getOutputFieldNames().isEmpty()) {
                     String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
-                    statement.setStatementOutputType(docTypeMgr.getDocumentType(ilscript.doctype()).getField(outputFieldName).getDataType());
+		    statement.setStatementOutputType(docTypeMgr.getDocumentType(ilscript.doctype()).getField(outputFieldName).getDataType());
                 }
                 if (inputFieldNameExtractor.getInputFieldNames().size() == 1) {
                     String fieldName = inputFieldNameExtractor.getInputFieldNames().get(0);

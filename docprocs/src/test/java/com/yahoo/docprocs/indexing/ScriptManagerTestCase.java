@@ -28,7 +28,7 @@ public class ScriptManagerTestCase {
 
         IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newssummary")
-                                                              .content("index"));
+                                                              .content("input title | index title"));
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Encoder.throwsOnUse);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
@@ -43,7 +43,7 @@ public class ScriptManagerTestCase {
 
         IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newsarticle")
-                                                              .content("index"));
+                                                              .content("input title | index title"));
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Encoder.throwsOnUse);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newssummary")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
