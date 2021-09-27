@@ -19,7 +19,7 @@ class SlimeConfigRequest : public FRTConfigRequest {
 public:
     SlimeConfigRequest(Connection * connection,
                        const ConfigKey & key,
-                       const vespalib::string & configMd5,
+                       const vespalib::string & configXxhash64,
                        int64_t currentGeneration,
                        const vespalib::string & hostName,
                        int64_t serverTimeout,
@@ -33,7 +33,7 @@ public:
     virtual ConfigResponse::UP createResponse(FRT_RPCRequest * request) const override = 0;
 private:
     void populateSlimeRequest(const ConfigKey & key,
-                              const vespalib::string & configMd5,
+                              const vespalib::string & configXxhash64,
                               int64_t currentGeneration,
                               const vespalib::string & hostName,
                               int64_t serverTimeout,

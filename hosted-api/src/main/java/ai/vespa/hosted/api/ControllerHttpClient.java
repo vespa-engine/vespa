@@ -340,7 +340,6 @@ public abstract class ControllerHttpClient {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
         deployment.version().ifPresent(version -> rootObject.setString("vespaVersion", version));
-        rootObject.setBool("deployDirectly", true);
         return toJson(slime);
     }
 

@@ -69,4 +69,10 @@ public class Component<CHILD extends AbstractConfigProducer<?>, MODEL extends Co
         return getComponentId().compareTo(other.getComponentId());
     }
 
+    @Override
+    public String toString() {
+        return "component " + getClassId() +
+               (getClassId().toString().equals(getComponentId().toString()) ? "" : ": " + getComponentId());
+    }
+
 }

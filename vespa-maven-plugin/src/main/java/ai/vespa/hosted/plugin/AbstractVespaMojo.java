@@ -108,7 +108,10 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     private Optional<Path> apiKeyPath(String tenant) {
         if (!isNullOrBlank(apiKeyFile)) return Optional.of(Paths.get(apiKeyFile));
 
-        Path cliApiKeyFile = Paths.get(System.getProperty("user.home"), ".vespa", tenant + ".api-key.pem");
+        Path cliApiKeyFile = Optional.ofNullable(System.getenv("VESPA_CLI_HOME"))
+                                     .map(Paths::get)
+                                     .orElseGet(() -> Paths.get(System.getProperty("user.home"), ".vespa"))
+                                     .resolve(tenant + ".api-key.pem");
         if (Files.exists(cliApiKeyFile)) return Optional.of(cliApiKeyFile);
 
         return Optional.empty();

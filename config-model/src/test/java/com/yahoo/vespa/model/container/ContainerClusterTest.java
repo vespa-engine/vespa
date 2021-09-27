@@ -38,8 +38,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -383,10 +383,7 @@ public class ContainerClusterTest {
         cluster.getConfig(bundleBuilder);
         List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
-        assertEquals(expectedBundleNames.size(), installedBundles.size());
-        assertThat(installedBundles, containsInAnyOrder(
-                expectedBundleNames.stream().map(CoreMatchers::endsWith).collect(Collectors.toList())
-        ));
+        expectedBundleNames.forEach(b -> assertThat(installedBundles, hasItem(CoreMatchers.endsWith(b))));
     }
 
 

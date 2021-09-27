@@ -223,15 +223,11 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
             didApply = parent.addUserConfig(builder);
         }
 
-        if (log.isLoggable(Level.FINEST)) {
-            log.log(Level.FINEST, "User configs is: " + userConfigs.toString());
-        }
+        log.log(Level.FINEST, () -> "User configs is: " + userConfigs.toString());
         // TODO: What do we do with md5. Currently ignored for user configs?
         ConfigDefinitionKey key = new ConfigDefinitionKey(builder.getDefName(), builder.getDefNamespace());
         if (userConfigs.get(key) != null) {
-            if (log.isLoggable(Level.FINEST)) {
-                log.log(Level.FINEST, "Apply in " + configId);
-            }
+            log.log(Level.FINEST, () -> "Apply in " + configId);
             applyUserConfig(builder, userConfigs.get(key));
             didApply = true;
         }

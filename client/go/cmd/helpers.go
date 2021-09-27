@@ -10,13 +10,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
-
-const defaultConsoleURL = "https://console.vespa.oath.cloud"
 
 var exitFunc = os.Exit // To allow overriding Exit in tests
 
@@ -48,6 +47,36 @@ func printErr(err error, msg ...interface{}) {
 
 func printSuccess(msg ...interface{}) {
 	log.Print(color.Green("Success: "), fmt.Sprint(msg...))
+}
+
+func vespaCliHome() (string, error) {
+	home := os.Getenv("VESPA_CLI_HOME")
+	if home == "" {
+		userHome, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		home = filepath.Join(userHome, ".vespa")
+	}
+	if err := os.MkdirAll(home, 0700); err != nil {
+		return "", err
+	}
+	return home, nil
+}
+
+func vespaCliCacheDir() (string, error) {
+	cacheDir := os.Getenv("VESPA_CLI_CACHE_DIR")
+	if cacheDir == "" {
+		userCacheDir, err := os.UserCacheDir()
+		if err != nil {
+			return "", err
+		}
+		cacheDir = filepath.Join(userCacheDir, "vespa")
+	}
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return "", err
+	}
+	return cacheDir, nil
 }
 
 func deploymentFromArgs() vespa.Deployment {
@@ -102,16 +131,30 @@ func getService(service string, sessionOrRunID int64) *vespa.Service {
 	t := getTarget()
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
-		log.Printf("Waiting up to %d %s for services to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
+		log.Printf("Waiting up to %d %s for service to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
-	if err := t.DiscoverServices(timeout, sessionOrRunID); err != nil {
-		fatalErr(err, "Services unavailable")
-	}
-	s, err := t.Service(service)
+	s, err := t.Service(service, timeout, sessionOrRunID)
 	if err != nil {
-		fatalErr(err, "Invalid service")
+		fatalErr(err, "Invalid service: ", service)
 	}
 	return s
+}
+
+func getConsoleURL() string {
+	system := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
+	if system == "publiccd" {
+		return "https://console-cd.vespa.oath.cloud"
+	}
+	return "https://console.vespa.oath.cloud"
+
+}
+
+func getApiURL() string {
+	system := os.Getenv("VESPA_CLI_CLOUD_SYSTEM")
+	if system == "publiccd" {
+		return "https://api.vespa-external-cd.aws.oath.cloud:4443"
+	}
+	return "https://api.vespa-external.aws.oath.cloud:4443"
 }
 
 func getTarget() vespa.Target {
@@ -147,7 +190,7 @@ func getTarget() vespa.Target {
 		if err != nil {
 			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
 		}
-		return vespa.CloudTarget(deployment, apiKey,
+		return vespa.CloudTarget(getApiURL(), deployment, apiKey,
 			vespa.TLSOptions{
 				KeyPair:         kp,
 				CertificateFile: certificateFile,

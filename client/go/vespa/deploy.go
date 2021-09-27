@@ -71,7 +71,7 @@ func (d DeploymentOpts) String() string {
 func (d *DeploymentOpts) IsCloud() bool { return d.Target.Type() == cloudTargetType }
 
 func (d *DeploymentOpts) url(path string) (*url.URL, error) {
-	service, err := d.Target.Service("deploy")
+	service, err := d.Target.Service(deployService, 0, 0)
 	if err != nil {
 		return nil, err
 	}

@@ -5,7 +5,6 @@ import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 
 /**
- *
  * A generic config with an internal generic builder that mimics a real config builder in order to support builders
  * when we don't have the schema.
  *

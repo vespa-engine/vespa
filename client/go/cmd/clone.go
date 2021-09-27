@@ -6,11 +6,10 @@ package cmd
 
 import (
 	"archive/zip"
+	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,22 +19,29 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
-// Set this to test without downloading this file from github
-var existingSampleAppsZip string
+const sampleAppsCacheTTL = time.Hour * 168 // 1 week
+
 var listApps bool
+var forceClone bool
 
 func init() {
 	rootCmd.AddCommand(cloneCmd)
 	cloneCmd.Flags().BoolVarP(&listApps, "list", "l", false, "List available sample applications")
+	cloneCmd.Flags().BoolVarP(&forceClone, "force", "f", false, "Ignore cache and force downloading the latest sample application from GitHub")
 }
 
 var cloneCmd = &cobra.Command{
-	// TODO: "application" and "list" subcommands?
 	Use:   "clone sample-application-path target-directory",
 	Short: "Create files and directory structure for a new Vespa application from a sample application",
-	Long: `Creates an application package file structure.
+	Long: `Create files and directory structure for a new Vespa application
+from a sample application.
 
-The application package is copied from a sample application in https://github.com/vespa-engine/sample-apps`,
+Sample applications are downloaded from
+https://github.com/vespa-engine/sample-apps.
+
+By default sample applications are cached in the user's cache directory. This
+directory can be overriden by setting the VESPA_CLI_CACHE_DIR environment
+variable.`,
 	Example:           "$ vespa clone vespa-cloud/album-recommendation my-app",
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -60,12 +66,7 @@ The application package is copied from a sample application in https://github.co
 
 func cloneApplication(source string, name string) {
 	zipFile := getSampleAppsZip()
-	if zipFile == nil {
-		return
-	}
-	if existingSampleAppsZip == "" { // Indicates we created a temp file now
-		defer os.Remove(zipFile.Name())
-	}
+	defer zipFile.Close()
 
 	zipReader, zipOpenError := zip.OpenReader(zipFile.Name())
 	if zipOpenError != nil {
@@ -101,45 +102,67 @@ func cloneApplication(source string, name string) {
 	}
 }
 
+func openOutputFile() (*os.File, error) {
+	cacheDir, err := vespaCliCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	cacheFile := filepath.Join(cacheDir, "sample-apps-master.zip")
+	return os.OpenFile(cacheFile, os.O_RDWR|os.O_CREATE, 0755)
+}
+
+func useCache(cacheFile *os.File) (bool, error) {
+	if forceClone {
+		return false, nil
+	}
+	stat, err := cacheFile.Stat()
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	expiry := stat.ModTime().Add(sampleAppsCacheTTL)
+	return stat.Size() > 0 && time.Now().Before(expiry), nil
+}
+
 func getSampleAppsZip() *os.File {
-	if existingSampleAppsZip != "" {
-		existing, openExistingError := os.Open(existingSampleAppsZip)
-		if openExistingError != nil {
-			printErr(openExistingError, "Could not open existing sample apps zip file '", color.Cyan(existingSampleAppsZip), "'")
-		}
-		return existing
+	f, err := openOutputFile()
+	if err != nil {
+		fatalErr(err, "Could not determine location of cache file")
+		return nil
+	}
+	useCache, err := useCache(f)
+	if err != nil {
+		fatalErr(err, "Could not determine cache status", "Try ignoring the cache with the -f flag")
+		return nil
+	}
+	if useCache {
+		log.Print(color.Yellow("Using cached sample apps ..."))
+		return f
 	}
 
-	// TODO: Cache it?
 	log.Print(color.Yellow("Downloading sample apps ...")) // TODO: Spawn thread to indicate progress
-	zipUrl, _ := url.Parse("https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip")
-	request := &http.Request{
-		URL:    zipUrl,
-		Method: "GET",
+	request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
+	if err != nil {
+		fatalErr(err, "Invalid URL")
+		return nil
 	}
-	response, reqErr := util.HttpDo(request, time.Minute*60, "GitHub")
-	if reqErr != nil {
-		printErr(reqErr, "Could not download sample apps from GitHub")
+	response, err := util.HttpDo(request, time.Minute*60, "GitHub")
+	if err != nil {
+		fatalErr(err, "Could not download sample apps from GitHub")
 		return nil
 	}
 	defer response.Body.Close()
 	if response.StatusCode != 200 {
-		printErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
+		fatalErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
 		return nil
 	}
 
-	destination, tempFileError := ioutil.TempFile("", "prefix")
-	if tempFileError != nil {
-		printErr(tempFileError, "Could not create a temporary file to hold sample apps")
-	}
-	// destination, _ := os.Create("./" + name + "/sample-apps.zip")
-	// defer destination.Close()
-	_, err := io.Copy(destination, response.Body)
-	if err != nil {
-		printErr(err, "Could not download sample apps from GitHub")
+	if _, err := io.Copy(f, response.Body); err != nil {
+		fatalErr(err, "Could not write sample apps to file: ", f.Name())
 		return nil
 	}
-	return destination
+	return f
 }
 
 func copy(f *zip.File, destinationDir string, zipEntryPrefix string) error {

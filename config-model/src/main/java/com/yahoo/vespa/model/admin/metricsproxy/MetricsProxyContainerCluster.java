@@ -38,7 +38,7 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.xml.PlatformBundles;
+import com.yahoo.vespa.model.container.PlatformBundles;
 
 import java.nio.file.Path;
 import java.util.Collections;

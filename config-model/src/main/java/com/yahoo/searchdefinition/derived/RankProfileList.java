@@ -100,12 +100,6 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
             remaining.forEach((name, rank) -> {
                 if (areDependenciesReady(rank, rankProfileRegistry)) ready.add(rank);
             });
-            if (ready.isEmpty() && ! deployProperties.featureFlags().enforceRankProfileInheritance()) {
-                // Dirty fallback to allow incorrect rankprofile inheritance to pass for now.
-                // We then handle one by one.
-                // TODO remove ASAP
-                ready.add(remaining.values().iterator().next());
-            }
             processRankProfiles(ready, queryProfiles, importedModels, search, attributeFields, deployProperties, executor);
             ready.forEach(rank -> remaining.remove(rank.getName()));
         }

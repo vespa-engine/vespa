@@ -130,7 +130,7 @@ func assertActivate(applicationPackage string, arguments []string, t *testing.T)
 	if err := cfg.WriteSessionID(vespa.DefaultApplication, 42); err != nil {
 		t.Fatal(err)
 	}
-	out, _ := execute(command{args: arguments, homeDir: homeDir}, t, client)
+	out, _ := execute(command{args: arguments, homeDir: cfg.Home}, t, client)
 	assert.Equal(t,
 		"Success: Activated "+applicationPackage+" with session 42\n",
 		out)

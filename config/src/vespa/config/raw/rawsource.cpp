@@ -16,7 +16,7 @@ void
 RawSource::getConfig()
 {
     auto lines(readConfig());
-    ConfigValue value(lines, calculateContentMd5(lines));
+    ConfigValue value(lines, calculateContentXxhash64(lines));
     _holder->handle(ConfigUpdate::UP(new ConfigUpdate(value, true, 1)));
 }
 

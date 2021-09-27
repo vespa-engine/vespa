@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  * @author ollivir
  */
 public class LocalFileDb implements FileAcquirer, FileRegistry {
+
     private final Map<FileReference, File> fileReferenceToFile = new HashMap<>();
     private final Path appPath;
 
@@ -37,7 +38,7 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
         synchronized (this) {
             File file = fileReferenceToFile.get(reference);
             if (file == null) {
-		return new File(reference.value()); // Downloaded file reference: Will (hopefully) be resolved client side
+                return new File(reference.value()); // Downloaded file reference: Will (hopefully) be resolved client side
             }
             return file;
         }
@@ -48,6 +49,7 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
     }
 
     /* FileRegistry overrides */
+    @Override
     public FileReference addFile(String relativePath) {
         File file = appPath.resolve(relativePath).toFile();
         if (!file.exists()) {

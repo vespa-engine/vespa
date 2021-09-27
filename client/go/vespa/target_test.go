@@ -74,11 +74,11 @@ func TestCustomTargetWait(t *testing.T) {
 	defer srv.Close()
 	target := CustomTarget(srv.URL)
 
-	err := target.DiscoverServices(0, 42)
+	_, err := target.Service("query", time.Millisecond, 42)
 	assert.NotNil(t, err)
 
 	vc.deploymentConverged = true
-	err = target.DiscoverServices(0, 42)
+	_, err = target.Service("query", time.Millisecond, 42)
 	assert.Nil(t, err)
 
 	assertServiceWait(t, 200, target, "deploy")
@@ -102,6 +102,7 @@ func TestCloudTargetWait(t *testing.T) {
 
 	var logWriter bytes.Buffer
 	target := CloudTarget(
+		"https://example.com",
 		Deployment{
 			Application: ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"},
 			Zone:        ZoneID{Environment: "dev", Region: "us-north-1"},
@@ -110,20 +111,17 @@ func TestCloudTargetWait(t *testing.T) {
 		TLSOptions{KeyPair: x509KeyPair},
 		LogOptions{Writer: &logWriter})
 	if ct, ok := target.(*cloudTarget); ok {
-		ct.cloudAPI = srv.URL
+		ct.apiURL = srv.URL
 	} else {
 		t.Fatalf("Wrong target type %T", ct)
 	}
 	assertServiceWait(t, 200, target, "deploy")
 
-	_, err = target.Service("query")
-	assert.NotNil(t, err)
-
-	err = target.DiscoverServices(0, 42)
+	_, err = target.Service("query", time.Millisecond, 42)
 	assert.NotNil(t, err)
 
 	vc.deploymentConverged = true
-	err = target.DiscoverServices(0, 42)
+	_, err = target.Service("query", time.Millisecond, 42)
 	assert.Nil(t, err)
 
 	assertServiceWait(t, 500, target, "query")
@@ -136,13 +134,13 @@ func TestCloudTargetWait(t *testing.T) {
 }
 
 func assertServiceURL(t *testing.T, url string, target Target, service string) {
-	s, err := target.Service(service)
+	s, err := target.Service(service, 0, 42)
 	assert.Nil(t, err)
 	assert.Equal(t, url, s.BaseURL)
 }
 
 func assertServiceWait(t *testing.T, expectedStatus int, target Target, service string) {
-	s, err := target.Service(service)
+	s, err := target.Service(service, 0, 42)
 	assert.Nil(t, err)
 
 	status, err := s.Wait(0)
