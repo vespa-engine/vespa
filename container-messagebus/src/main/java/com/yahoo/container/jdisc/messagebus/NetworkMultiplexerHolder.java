@@ -39,7 +39,7 @@ public class NetworkMultiplexerHolder extends AbstractComponent {
     public void deconstruct() {
         synchronized (monitor) {
             if (net != null) {
-                net.destroy();
+                net.disown();
                 net = null;
             }
             destroyed = true;
