@@ -1,39 +1,53 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms.bindings;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
  */
-public class ProviderResourceGroupRolesRequestEntity {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ResourceGroupRolesEntity {
 
     @JsonProperty("domain")
-    private final String domain;
+    public final String domain;
 
     @JsonProperty("service")
-    private final String service;
+    public final String service;
 
     @JsonProperty("tenant")
-    private final String tenant;
+    public final String tenant;
 
     @JsonProperty("roles")
-    private final List<TenantRoleAction> roles;
+    public final List<TenantRoleAction> roles;
 
     @JsonProperty("resourceGroup")
-    private final String resourceGroup;
+    public final String resourceGroup;
 
-    public ProviderResourceGroupRolesRequestEntity(AthenzIdentity providerService, AthenzDomain tenantDomain, Set<RoleAction> rolesActions, String resourceGroup) {
+    @JsonCreator
+    public ResourceGroupRolesEntity(@JsonProperty("domain") String domain,
+                                    @JsonProperty("service") String service,
+                                    @JsonProperty("tenant") String tenant,
+                                    @JsonProperty("roles") List<TenantRoleAction> roles,
+                                    @JsonProperty("resourceGroup") String resourceGroup) {
+        this.domain = domain;
+        this.service = service;
+        this.tenant = tenant;
+        this.roles = roles;
+        this.resourceGroup = resourceGroup;
+    }
+
+    public ResourceGroupRolesEntity(AthenzIdentity providerService, AthenzDomain tenantDomain, Set<RoleAction> rolesActions, String resourceGroup) {
         this.domain = providerService.getDomainName();
         this.service = providerService.getName();
         this.tenant = tenantDomain.getName();
@@ -43,10 +57,10 @@ public class ProviderResourceGroupRolesRequestEntity {
 
     public static class TenantRoleAction {
         @JsonProperty("role")
-        private final String role;
+        public final String role;
 
         @JsonProperty("action")
-        private final String action;
+        public final String action;
 
         public TenantRoleAction(String role, String action) {
             this.role = role;

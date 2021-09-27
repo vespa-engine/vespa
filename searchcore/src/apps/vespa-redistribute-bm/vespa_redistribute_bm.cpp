@@ -17,6 +17,8 @@
 #include <vespa/searchcore/bmcluster/bm_node_stats_reporter.h>
 #include <vespa/searchcore/bmcluster/bm_range.h>
 #include <vespa/searchcore/bmcluster/bucket_selector.h>
+#include <vespa/searchcore/bmcluster/calculate_moved_docs_ratio.h>
+#include <vespa/searchcore/bmcluster/estimate_moved_docs_ratio.h>
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -51,6 +53,8 @@ using search::bmcluster::BmNode;
 using search::bmcluster::BmNodeStatsReporter;
 using search::bmcluster::BmRange;
 using search::bmcluster::BucketSelector;
+using search::bmcluster::CalculateMovedDocsRatio;
+using search::bmcluster::EstimateMovedDocsRatio;
 using search::index::DummyFileHeaderContext;
 using storage::lib::State;
 
@@ -98,76 +102,6 @@ Mode get_mode(const vespalib::string& mode_name) {
 vespalib::string& get_mode_name(Mode mode) {
     uint32_t i = static_cast<uint32_t>(mode);
     return (i < mode_names.size()) ? mode_names[i] : bad_mode_name;
-}
-
-double
-estimate_lost_docs_base_ratio(uint32_t redundancy, uint32_t lost_nodes, uint32_t num_nodes)
-{
-    if (redundancy > lost_nodes) {
-        return 0.0;
-    }
-    double loss_ratio = 1.0;
-    for (uint32_t i = 0; i < redundancy; ++i) {
-        loss_ratio *= ((double) (lost_nodes - i)) / (num_nodes - i);
-    }
-    LOG(info, "estimated lost docs base ratio: %4.2f", loss_ratio);
-    return loss_ratio;
-}
-
-double
-estimate_moved_docs_ratio_grow(uint32_t redundancy, uint32_t added_nodes, uint32_t num_nodes)
-{
-    double new_redundancy = redundancy;
-    double new_per_node_doc_ratio = new_redundancy / num_nodes;
-    double moved_ratio = new_per_node_doc_ratio * added_nodes;
-    LOG(info, "estimated_moved_docs_ratio_grow(%u,%u,%u)=%4.2f", redundancy, added_nodes, num_nodes, moved_ratio);
-    return moved_ratio;
-}
-
-double
-estimate_moved_docs_ratio_shrink(uint32_t redundancy, uint32_t retired_nodes, uint32_t num_nodes)
-{
-    double old_redundancy = redundancy;
-    double old_per_node_doc_ratio = old_redundancy / num_nodes;
-    uint32_t new_nodes = num_nodes - retired_nodes;
-    double new_redundancy = std::min(redundancy, new_nodes);
-    double new_per_node_doc_ratio = new_redundancy / new_nodes;
-    double moved_ratio = (new_per_node_doc_ratio - old_per_node_doc_ratio) * new_nodes;
-    LOG(info, "estimated_moved_docs_ratio_shrink(%u,%u,%u)=%4.2f", redundancy, retired_nodes, num_nodes, moved_ratio);
-    return moved_ratio;
-}
-
-double
-estimate_moved_docs_ratio_crash(uint32_t redundancy, uint32_t crashed_nodes, uint32_t num_nodes)
-{
-    double old_redundancy = redundancy;
-    double old_per_node_doc_ratio = old_redundancy / num_nodes;
-    uint32_t new_nodes = num_nodes - crashed_nodes;
-    double new_redundancy = std::min(redundancy, new_nodes);
-    double new_per_node_doc_ratio = new_redundancy / new_nodes;
-    double lost_docs_ratio = estimate_lost_docs_base_ratio(redundancy, crashed_nodes, num_nodes) * new_redundancy;
-    double moved_ratio = (new_per_node_doc_ratio - old_per_node_doc_ratio) * new_nodes - lost_docs_ratio;
-    LOG(info, "estimated_moved_docs_ratio_crash(%u,%u,%u)=%4.2f", redundancy, crashed_nodes, num_nodes, moved_ratio);
-    return moved_ratio;
-}
-
-double
-estimate_moved_docs_ratio_replace(uint32_t redundancy, uint32_t added_nodes, uint32_t retired_nodes, uint32_t num_nodes)
-{
-    uint32_t old_nodes = num_nodes - added_nodes;
-    double old_redundancy = std::min(redundancy, old_nodes);
-    double old_per_node_doc_ratio = old_redundancy / old_nodes;
-    uint32_t new_nodes = num_nodes - retired_nodes;
-    double new_redundancy = std::min(redundancy, new_nodes);
-    double new_per_node_doc_ratio = new_redundancy / new_nodes;
-    double moved_ratio = new_per_node_doc_ratio * added_nodes;
-    uint32_t stable_nodes = num_nodes - added_nodes - retired_nodes;
-    // Account for extra documents moved from retired nodes to stable nodes
-    double extra_per_stable_node_doc_ratio = new_per_node_doc_ratio * added_nodes / old_nodes;
-    double extra_moved_ratio = (std::min(1.0, new_per_node_doc_ratio + extra_per_stable_node_doc_ratio) - old_per_node_doc_ratio) * stable_nodes;
-    moved_ratio += extra_moved_ratio;
-    LOG(info, "estimated_moved_docs_ratio_replace(%u,%u,%u,%u)=%4.2f, (of which %4.2f extra)", redundancy, added_nodes, retired_nodes, num_nodes, moved_ratio, extra_moved_ratio);
-    return moved_ratio;
 }
 
 class BMParams : public BmClusterParams,
@@ -391,7 +325,7 @@ Benchmark::estimate_lost_docs()
     case Mode::TEMP_CRASH:
     {
         double new_redundancy = std::min(_params.get_redundancy(), _params.get_num_nodes() - _params.get_flip_nodes());
-        auto lost_docs_ratio = estimate_lost_docs_base_ratio(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes()) * new_redundancy;
+        auto lost_docs_ratio = EstimateMovedDocsRatio().estimate_lost_docs_base_ratio(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes()) * new_redundancy;
         return _params.get_documents() * lost_docs_ratio;
     }
     default:
@@ -404,14 +338,21 @@ Benchmark::estimate_moved_docs()
 {
     switch(_params.get_mode()) {
     case Mode::GROW:
-        return _params.get_documents() * estimate_moved_docs_ratio_grow(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
+        return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_grow(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
     case Mode::SHRINK:
-        return _params.get_documents() * estimate_moved_docs_ratio_shrink(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
+        return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_shrink(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
     case Mode::PERM_CRASH:
     case Mode::TEMP_CRASH:
-        return _params.get_documents() * estimate_moved_docs_ratio_crash(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
+        return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_crash(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
     case Mode::REPLACE:
-        return _params.get_documents() * estimate_moved_docs_ratio_replace(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
+        if (_params.get_num_nodes() < 10) {
+            // Calculate better estimate for moved docs ratio with brute force
+            auto scanner = CalculateMovedDocsRatio::make_replace_calculator(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
+            scanner.scan();
+            return _params.get_documents() * scanner.get_moved_docs_ratio();
+        } else {
+            return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_replace(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
+        }
     default:
         return 0.0;
     }

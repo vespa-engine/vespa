@@ -60,7 +60,7 @@ struct RPCServer : public FRT_Invokable {
         info.setString("uncompressedSize", "0");
         root.setString(RESPONSE_CONFIGID, "myId");
         root.setString(RESPONSE_CLIENT_HOSTNAME, "myhost");
-        root.setString(RESPONSE_CONFIG_MD5, "md5");
+        root.setString(RESPONSE_CONFIG_XXHASH64, "xxhash64");
         root.setLong(RESPONSE_CONFIG_GENERATION, gen);
         root.setObject(RESPONSE_TRACE);
         Slime payload;

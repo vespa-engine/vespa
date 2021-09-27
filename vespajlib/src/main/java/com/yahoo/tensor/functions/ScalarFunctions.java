@@ -33,6 +33,7 @@ public class ScalarFunctions {
     public static DoubleBinaryOperator pow() { return new Pow(); }
     public static DoubleBinaryOperator squareddifference() { return new SquaredDifference(); }
     public static DoubleBinaryOperator subtract() { return new Subtract(); }
+    public static DoubleBinaryOperator hamming() { return new Hamming(); }
 
     public static DoubleUnaryOperator abs() { return new Abs(); }
     public static DoubleUnaryOperator acos() { return new Acos(); }
@@ -150,6 +151,26 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left - right; }
         @Override
         public String toString() { return "f(a,b)(a - b)"; }
+    }
+
+    
+    public static class Hamming implements DoubleBinaryOperator {
+        public static double hamming(double left, double right) {
+            double distance = 0;
+            byte a = (byte) left;
+            byte b = (byte) right;
+            for (int i = 0; i < 8; i++) {
+                byte bit = (byte) (1 << i);
+                if ((a & bit) != (b & bit)) {
+                    distance += 1;
+                }
+            }
+            return distance;
+        }
+        @Override
+        public double applyAsDouble(double left, double right) { return hamming(left, right); }
+        @Override
+        public String toString() { return "f(a,b)(hamming(a,b))"; }
     }
 
 

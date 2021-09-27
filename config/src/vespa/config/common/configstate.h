@@ -13,17 +13,17 @@ struct ConfigState
 {
 public:
     ConfigState()
-        : md5(""),
+        : xxhash64(""),
           generation(0),
           applyOnRestart(false)
     { }
-    ConfigState(const vespalib::string & md5sum, int64_t gen, bool _applyOnRestart)
-        : md5(md5sum),
+    ConfigState(const vespalib::string & xxhash, int64_t gen, bool _applyOnRestart)
+        : xxhash64(xxhash),
           generation(gen),
           applyOnRestart(_applyOnRestart)
     { }
 
-    vespalib::string md5;
+    vespalib::string xxhash64;
     int64_t generation;
     bool applyOnRestart;
 
@@ -32,7 +32,7 @@ public:
     }
 
     bool hasDifferentPayloadFrom(const ConfigState & other) const {
-        return (md5.compare(other.md5) != 0);
+        return (xxhash64.compare(other.xxhash64) != 0);
     }
 };
 

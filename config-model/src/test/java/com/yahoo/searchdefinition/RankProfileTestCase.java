@@ -118,13 +118,8 @@ public class RankProfileTestCase extends SchemaTestCase {
 
     @Test
     public void requireThatSidewaysInheritanceIsImpossible() throws ParseException {
-        verifySidewaysInheritance(false);
-        verifySidewaysInheritance(true);
-    }
-    private void verifySidewaysInheritance(boolean enforce) throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes(),
-                                                  new TestProperties().enforceRankProfileInheritance(enforce));
+        SearchBuilder builder = new SearchBuilder(registry, setupQueryProfileTypes());
         builder.importString(joinLines(
                 "schema child1 {",
                 "  document child1 {",
@@ -168,15 +163,8 @@ public class RankProfileTestCase extends SchemaTestCase {
                 "}"));
         try {
             builder.build(true);
-            if (enforce) {
-                fail("Sideways inheritance should have been enforced");
-            } else {
-                assertNotNull(builder.getSearch("child2"));
-                assertNotNull(builder.getSearch("child1"));
-                assertTrue(registry.get("child1", "child").inherits("parent"));
-            }
+            fail("Sideways inheritance should have been enforced");
         } catch (IllegalArgumentException e) {
-            if (!enforce) fail("Sideways inheritance should have been allowed");
             assertEquals("rank-profile 'child' inherits 'parent', but it does not exist anywhere in the inheritance of search 'child1'.", e.getMessage());
         }
     }

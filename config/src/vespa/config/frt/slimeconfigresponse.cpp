@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "slimeconfigresponse.h"
 #include <vespa/config/common/misc.h>
 #include <vespa/fnet/frt/values.h>
@@ -66,7 +66,7 @@ ConfigState
 SlimeConfigResponse::readState() const
 {
     const Slime & data(*_data);
-    return ConfigState(data.get()[RESPONSE_CONFIG_MD5].asString().make_string(),
+    return ConfigState(data.get()[RESPONSE_CONFIG_XXHASH64].asString().make_string(),
                        data.get()[RESPONSE_CONFIG_GENERATION].asLong(),
                        data.get()[RESPONSE_APPLY_ON_RESTART].asBool());
 }

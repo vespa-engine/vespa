@@ -79,6 +79,7 @@ BuildRequires: cmake3
 BuildRequires: llvm7.0-devel
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-gtest >= 1.8.1-1
+%define _use_vespa_gtest 1
 BuildRequires: vespa-icu-devel >= 65.1.0-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
@@ -108,6 +109,7 @@ BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1l-1
 %define _use_vespa_openssl 1
 BuildRequires: vespa-gtest >= 1.8.1-1
+%define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-protobuf-devel = 3.17.3
@@ -233,6 +235,7 @@ Requires: llvm7.0
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.17.0-1
 %endif
+Requires: vespa-gtest >= 1.8.1-1
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include
@@ -247,10 +250,12 @@ Requires: vespa-valgrind >= 3.17.0-1
 %else
 %define _vespa_llvm_version 10
 %endif
+Requires: vespa-gtest >= 1.8.1-1
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?fedora}
+Requires: gtest
 %if 0%{?fc32}
 %define _vespa_llvm_version 10
 %endif
@@ -285,7 +290,7 @@ Requires: %{name}-tools = %{version}-%{release}
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(icui18n|icuuc|lz4|protobuf|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(icui18n|icuuc|lz4|protobuf|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash}%{?_use_vespa_gtest:|(gtest|gmock)(_main)?})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 
 %description

@@ -230,6 +230,25 @@ TEST_F(DistributorStripeTest, operations_generated_and_started_without_duplicate
     ASSERT_EQ(6, _sender.commands().size());
 }
 
+TEST_F(DistributorStripeTest, maintenance_scheduling_inhibited_if_cluster_state_is_pending)
+{
+    setup_stripe(Redundancy(2), NodeCount(4), "storage:3 distributor:1");
+    simulate_set_pending_cluster_state("storage:4 distributor:1");
+
+    _sender.commands().clear(); // Remove pending bucket info requests
+
+    tickDistributorNTimes(1);
+    EXPECT_FALSE(stripe_is_in_recovery_mode());
+
+    for (uint32_t i = 0; i < 6; ++i) {
+        addNodesToBucketDB(document::BucketId(16, i), "0=2"); // Needs activation, merging
+    }
+    tickDistributorNTimes(10);
+
+    // No ops should have been actually generated
+    ASSERT_EQ(0, _sender.commands().size());
+}
+
 TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 {
     setup_stripe(Redundancy(1), NodeCount(2),

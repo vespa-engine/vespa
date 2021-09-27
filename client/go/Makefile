@@ -2,7 +2,7 @@
 
 # The version to release. Defaults to the current tag or revision.
 # Use env VERSION=X.Y.Z make ... to override
-VERSION ?= $(shell git describe --tags 2> /dev/null | sed -E "s/^vespa-|-1$$//g")
+VERSION ?= $(shell git describe --tags 2> /dev/null | sed "s/^v//")
 DEVEL_VERSION := $(shell echo "0.0.0-`git rev-parse --short HEAD`")
 ifeq ($(VERSION),)
 	VERSION = $(DEVEL_VERSION)
@@ -26,10 +26,11 @@ all: test checkfmt install
 #
 # Example:
 #
-# $ git checkout vespa-X.Y.Z-1
-# $ make dist-github
+# $ git checkout vX.Y.Z
+# $ make dist-homebrew
 dist-homebrew: dist-version
-	brew bump-formula-pr --tag vespa-$(VERSION)-1 --version $(VERSION) vespa-cli
+# TODO(mpolden): Remove --version=0 after next release
+	brew bump-formula-pr --tag v$(VERSION) --version=0 vespa-cli
 
 # Create a GitHub release draft for all platforms. Note that this only creates a
 # draft, which is not publicly visible until it's explicitly published.
@@ -40,7 +41,7 @@ dist-homebrew: dist-version
 #
 # Example:
 #
-# $ git checkout vespa-X.Y.Z-1
+# $ git checkout vX.Y.Z
 # $ make dist-github
 dist-github: dist
 	gh release create v$(VERSION) --repo vespa-engine/vespa --notes-file $(CURDIR)/README.md --draft --title "Vespa CLI $(VERSION)" \
@@ -83,7 +84,7 @@ dist-sha256sums:
 
 dist-version:
 ifeq ($(VERSION),$(DEVEL_VERSION))
-	$(error Invalid release version: $(VERSION). Try 'git checkout vespa-X.Y.Z-1' or 'env VERSION=X.Y.Z make ...')
+	$(error Invalid release version: $(VERSION). Try 'git checkout vX.Y.Z' or 'env VERSION=X.Y.Z make ...')
 endif
 
 #

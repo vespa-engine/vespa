@@ -8,9 +8,9 @@
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-#include "feed.pb.h"
-#include "inspect.pb.h"
-#include "visiting.pb.h"
-#include "maintenance.pb.h"
+#include <vespa/storageapi/mbusprot/feed.pb.h>
+#include <vespa/storageapi/mbusprot/inspect.pb.h>
+#include <vespa/storageapi/mbusprot/visiting.pb.h>
+#include <vespa/storageapi/mbusprot/maintenance.pb.h>
 
 #pragma GCC diagnostic pop

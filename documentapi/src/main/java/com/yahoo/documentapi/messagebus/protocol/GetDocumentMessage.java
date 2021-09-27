@@ -16,13 +16,6 @@ public class GetDocumentMessage extends DocumentMessage {
     private String fieldSet = DEFAULT_FIELD_SET;
 
     /**
-     * Constructs a new message for deserialization.
-     */
-    GetDocumentMessage() {
-        // empty
-    }
-
-    /**
      * Constructs a new document get message.
      *
      * @param documentId The identifier of the document to get.

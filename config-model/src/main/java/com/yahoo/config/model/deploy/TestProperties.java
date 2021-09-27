@@ -63,6 +63,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitDisk = 0.8;
     private double resourceLimitMemory = 0.8;
     private double minNodeRatioPerGroup = 0.0;
+    private boolean containerDumpHeapOnShutdownTimeout = false;
+    private double containerShutdownTimeout = 50.0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -105,10 +107,14 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int metricsproxyNumThreads() { return 1; }
-    @Override public boolean enforceRankProfileInheritance() { return enforceRankProfileInheritance; }
-
-    public TestProperties enforceRankProfileInheritance(boolean value) {
-        enforceRankProfileInheritance = value;
+    @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
+    @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
+    public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
+        containerDumpHeapOnShutdownTimeout = value;
+        return this;
+    }
+    public TestProperties containerShutdownTimeout(double value) {
+        containerShutdownTimeout = value;
         return this;
     }
     public TestProperties largeRankExpressionLimit(int value) {

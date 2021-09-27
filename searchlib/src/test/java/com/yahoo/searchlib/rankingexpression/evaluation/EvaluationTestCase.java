@@ -288,6 +288,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {h:0}:1.5, {h:1}:1.5 }", "0.5 + tensor0", "{ {h:0}:1.0,{h:1}:1.0 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0 }",
                                "atan2(tensor0, tensor1)", "{ {x:0}:0, {x:1}:0 }", "{ {y:0}:1 }");
+        tester.assertEvaluates("{ {x:0,y:0}:2, {x:1,y:0}:7 }",
+                               "hamming(tensor0, tensor1)", "{ {x:0}:97, {x:1}:-1 }", "{ {y:0}:1 }");
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
                                "tensor0 > tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
