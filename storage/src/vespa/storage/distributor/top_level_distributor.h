@@ -159,6 +159,7 @@ private:
     [[nodiscard]] bool work_was_done() const noexcept;
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
+    void un_inhibit_maintenance_if_safe_time_passed();
 
     void dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg);
     void fetch_external_messages();
@@ -171,7 +172,8 @@ private:
     uint32_t stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg);
 
     // ClusterStateBundleActivationListener impl:
-    void on_cluster_state_bundle_activated(const lib::ClusterStateBundle&) override;
+    void on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle,
+                                           bool has_bucket_ownership_transfer) override;
 
     struct StripeScanStats {
         bool wants_to_send_host_info = false;
@@ -208,6 +210,10 @@ private:
     std::vector<StripeScanStats>         _stripe_scan_stats; // Indices are 1-1 with _stripes entries
     std::chrono::steady_clock::time_point _last_host_info_send_time;
     std::chrono::milliseconds            _host_info_send_delay;
+    // Ideally this would use steady_clock, but for now let's use the same semantics as
+    // feed blocking during safe time periods.
+    std::chrono::system_clock::time_point _maintenance_safe_time_point;
+    std::chrono::seconds                 _maintenance_safe_time_delay;
     framework::ThreadWaitInfo            _tickResult;
     MetricUpdateHook                     _metricUpdateHook;
     DistributorHostInfoReporter          _hostInfoReporter;

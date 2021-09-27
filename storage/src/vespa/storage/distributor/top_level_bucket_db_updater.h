@@ -75,7 +75,6 @@ public:
 private:
 
     friend class DistributorStripeTestUtil;
-    friend class DistributorTestUtil;
     friend class TopLevelDistributorTestUtil;
     // Only to be used by tests that want to ensure both the TopLevelBucketDBUpdater _and_ the Distributor
     // components agree on the currently active cluster state bundle.
@@ -104,7 +103,7 @@ private:
     void enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard);
     void add_current_state_to_cluster_state_history();
 
-    void propagate_active_state_bundle_internally();
+    void propagate_active_state_bundle_internally(bool has_bucket_ownership_transfer);
 
     void maybe_inject_simulated_db_pruning_delay();
     void maybe_inject_simulated_db_merging_delay();

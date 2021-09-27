@@ -249,6 +249,37 @@ TEST_F(DistributorStripeTest, maintenance_scheduling_inhibited_if_cluster_state_
     ASSERT_EQ(0, _sender.commands().size());
 }
 
+TEST_F(DistributorStripeTest, non_activation_maintenance_inhibited_if_explicitly_toggled)
+{
+    setup_stripe(Redundancy(2), NodeCount(4), "storage:3 distributor:1");
+    tickDistributorNTimes(1);
+    ASSERT_FALSE(stripe_is_in_recovery_mode());
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        addNodesToBucketDB(document::BucketId(16, i), "0=2/3/4/t/a"); // Needs merging, but not activation (already active)
+    }
+    _stripe->inhibit_non_activation_maintenance_operations(true);
+    tickDistributorNTimes(10);
+
+    // No ops should have been actually generated
+    ASSERT_EQ("", _sender.getCommands());
+}
+
+TEST_F(DistributorStripeTest, activation_maintenance_not_inhibited_even_if_explicitly_toggled)
+{
+    setup_stripe(Redundancy(2), NodeCount(4), "storage:3 distributor:1");
+    tickDistributorNTimes(1);
+    ASSERT_FALSE(stripe_is_in_recovery_mode());
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        addNodesToBucketDB(document::BucketId(16, i), "0=2/3/4"); // Needs activation and merging
+    }
+    _stripe->inhibit_non_activation_maintenance_operations(true);
+    tickDistributorNTimes(10);
+
+    ASSERT_EQ("SetBucketState,SetBucketState,SetBucketState", _sender.getCommands());
+}
+
 TEST_F(DistributorStripeTest, recovery_mode_on_cluster_state_change)
 {
     setup_stripe(Redundancy(1), NodeCount(2),

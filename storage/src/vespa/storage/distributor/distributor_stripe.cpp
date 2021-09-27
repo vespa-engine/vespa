@@ -75,8 +75,9 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
-      _must_send_updated_host_info(false),
-      _stripe_index(stripe_index)
+      _stripe_index(stripe_index),
+      _non_activation_maintenance_is_inhibited(false),
+      _must_send_updated_host_info(false)
 {
     propagateDefaultDistribution(_component.getDistribution());
     propagateClusterStates();
@@ -678,7 +679,11 @@ DistributorStripe::startNextMaintenanceOperation()
 {
     _throttlingStarter->setMaxPendingRange(getConfig().getMinPendingMaintenanceOps(),
                                            getConfig().getMaxPendingMaintenanceOps());
-    _scheduler->tick(_schedulingMode);
+    auto effective_scheduling_mode = ((_schedulingMode == MaintenanceScheduler::RECOVERY_SCHEDULING_MODE) ||
+                                      non_activation_maintenance_is_inhibited())
+                                              ? MaintenanceScheduler::RECOVERY_SCHEDULING_MODE
+                                              : MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
+    _scheduler->tick(effective_scheduling_mode);
 }
 
 framework::ThreadWaitInfo

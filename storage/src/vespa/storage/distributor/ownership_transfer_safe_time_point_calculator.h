@@ -4,8 +4,7 @@
 
 #include <chrono>
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 /**
  * When bucket ownership changes in a cluster, there exists a time period
@@ -25,7 +24,6 @@ namespace distributor {
  * equal to or lower than this. The stop-gap also breaks down if, in fact,
  * the clock skew is higher than the expected one.
  *
- * This is an interface to avoid having to do real wall-clocks in unit tests.
  */
 class OwnershipTransferSafeTimePointCalculator {
     std::chrono::seconds _max_cluster_clock_skew;
@@ -46,5 +44,4 @@ public:
     TimePoint safeTimePoint(TimePoint now) const;
 };
 
-}
 }
