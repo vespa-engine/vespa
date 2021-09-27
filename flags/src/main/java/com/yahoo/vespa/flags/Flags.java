@@ -305,6 +305,15 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag ENABLE_TENANT_DEVELOPER_ROLE = defineFeatureFlag(
+            "enable-tenant-developer-role", false,
+            List.of("bjorncs"), "2021-09-23", "2021-12-31",
+            "Enable tenant developer Athenz role in cd/main. Must be set on controller cluster only.",
+            "Takes effect immediately",
+            TENANT_ID
+    );
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
