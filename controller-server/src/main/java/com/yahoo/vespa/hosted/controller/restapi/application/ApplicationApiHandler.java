@@ -1968,7 +1968,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                             .flatMap(options -> optional("vespaVersion", options))
                                             .map(Version::fromString);
 
-        ensureInstanceExistsForPublic(id, request);
+        ensureApplicationExistsForPublic(TenantAndApplicationId.from(id), request);
 
         controller.jobController().deploy(id, type, version, applicationPackage);
         RunId runId = controller.jobController().last(id, type).get().id();
@@ -2728,14 +2728,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             log.fine("Application does not exist in public, creating: " + id);
             var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
             controller.applications().createApplication(id, credentials);
-        }
-    }
-
-    private void ensureInstanceExistsForPublic(ApplicationId id, HttpRequest request) {
-        ensureApplicationExistsForPublic(TenantAndApplicationId.from(id), request);
-        if (controller.system().isPublic() && controller.applications().getInstance(id).isEmpty()) {
-            log.fine("Instance does not exist in public, creating: " + id);
-            controller.applications().createInstance(id);
         }
     }
 
