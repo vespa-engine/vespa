@@ -1672,7 +1672,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Deploy application
         var id = ApplicationId.from("tenant1", "application1", "instance1");
         var appId = TenantAndApplicationId.from(id);
-        var entity = createApplicationDeployData(applicationPackageInstance1, true);
+        var entity = createApplicationDeployData(applicationPackageInstance1);
 
         assertTrue(tester.controller().applications().getApplication(appId).isEmpty());
 
