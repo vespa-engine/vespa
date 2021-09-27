@@ -31,6 +31,8 @@ public abstract class Expression extends Selectable {
         this.inputType = inputType;
     }
 
+    public void setStatementOutputType(DataType type) {}
+
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setValue(val));
     }

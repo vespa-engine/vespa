@@ -94,6 +94,7 @@
         <module>jdisc_jetty</module>
         <module>jrt</module>
         <module>linguistics</module>
+        <module>linguistics-components</module>
         <module>logd</module>
         <module>logserver</module>
         <module>messagebus</module>

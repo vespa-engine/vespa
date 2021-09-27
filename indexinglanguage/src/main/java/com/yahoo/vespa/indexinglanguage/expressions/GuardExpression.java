@@ -27,6 +27,11 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
+    public void setStatementOutputType(DataType type) {
+	exp.setStatementOutputType(type);
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         if (!shouldExecute && context.getAdapter() instanceof UpdateAdapter) {
             context.setValue(null);

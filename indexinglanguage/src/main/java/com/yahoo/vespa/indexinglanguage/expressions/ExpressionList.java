@@ -24,6 +24,12 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
         }
     }
 
+    @Override
+    public void setStatementOutputType(DataType type) {
+        for (Expression expression : expressions)
+            expression.setStatementOutputType(type);
+    }
+
     public int size() {
         return expressions.size();
     }

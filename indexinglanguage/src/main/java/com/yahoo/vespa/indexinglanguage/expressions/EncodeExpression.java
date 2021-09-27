@@ -27,6 +27,11 @@ public class EncodeExpression extends Expression  {
     }
 
     @Override
+    public void setStatementOutputType(DataType type) {
+        targetType = ((TensorDataType)type).getTensorType();
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getValue();
         Tensor tensor = encoder.encode(input.getString(), context.getLanguage(), targetType);
