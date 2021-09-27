@@ -39,11 +39,8 @@ type Target interface {
 	// Type returns this target's type, e.g. local or cloud.
 	Type() string
 
-	// Service returns the service for given name.
-	Service(name string) (*Service, error)
-
-	// DiscoverServices queries for services available on this target after the deployment run has completed.
-	DiscoverServices(timeout time.Duration, runID int64) error
+	// Service returns the service for given name. If timeout is non-zero, wait for the service to converge.
+	Service(name string, timeout time.Duration, sessionOrRunID int64) (*Service, error)
 }
 
 // TLSOptions configures the certificate to use for service requests.
@@ -105,7 +102,12 @@ func (s *Service) Description() string {
 
 func (t *customTarget) Type() string { return t.targetType }
 
-func (t *customTarget) Service(name string) (*Service, error) {
+func (t *customTarget) Service(name string, timeout time.Duration, sessionID int64) (*Service, error) {
+	if timeout > 0 && name != deployService {
+		if err := t.waitForConvergence(timeout); err != nil {
+			return nil, err
+		}
+	}
 	switch name {
 	case deployService, queryService, documentService:
 		url, err := t.urlWithPort(name)
@@ -137,12 +139,12 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 	return u.String(), nil
 }
 
-func (t *customTarget) DiscoverServices(timeout time.Duration, runID int64) error {
-	deployService, err := t.Service("deploy")
+func (t *customTarget) waitForConvergence(timeout time.Duration) error {
+	deployer, err := t.Service(deployService, 0, 0)
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
+	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployer.BaseURL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -182,27 +184,30 @@ type cloudTarget struct {
 
 func (t *cloudTarget) Type() string { return t.targetType }
 
-func (t *cloudTarget) Service(name string) (*Service, error) {
+func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64) (*Service, error) {
+	if timeout > 0 && name != deployService {
+		if err := t.waitForEndpoints(timeout, runID); err != nil {
+			return nil, err
+		}
+	}
 	switch name {
 	case deployService:
 		return &Service{Name: name, BaseURL: t.apiURL}, nil
 	case queryService:
 		if t.queryURL == "" {
-			return nil, fmt.Errorf("service %s not discovered", name)
+			return nil, fmt.Errorf("service %s is not discovered", name)
 		}
 		return &Service{Name: name, BaseURL: t.queryURL, TLSOptions: t.tlsOptions}, nil
 	case documentService:
 		if t.documentURL == "" {
-			return nil, fmt.Errorf("service %s not discovered", name)
+			return nil, fmt.Errorf("service %s is not discovered", name)
 		}
 		return &Service{Name: name, BaseURL: t.documentURL, TLSOptions: t.tlsOptions}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
 
-// DiscoverServices waits for run identified by runID to complete and at least one endpoint is available, or timeout
-// passes.
-func (t *cloudTarget) DiscoverServices(timeout time.Duration, runID int64) error {
+func (t *cloudTarget) waitForEndpoints(timeout time.Duration, runID int64) error {
 	signer := NewRequestSigner(t.deployment.Application.SerializedForm(), t.apiKey)
 	if runID > 0 {
 		if err := t.waitForRun(signer, runID, timeout); err != nil {
@@ -232,8 +237,8 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		return req
 	}
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
-		if status/100 != 2 {
-			return false, nil
+		if ok, err := isOK(status); !ok {
+			return ok, err
 		}
 		var resp jobResponse
 		if err := json.Unmarshal(response, &resp); err != nil {
@@ -290,8 +295,8 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 	}
 	var endpointURL string
 	endpointFunc := func(status int, response []byte) (bool, error) {
-		if status/100 != 2 {
-			return false, nil
+		if ok, err := isOK(status); !ok {
+			return ok, err
 		}
 		var resp deploymentResponse
 		if err := json.Unmarshal(response, &resp); err != nil {
@@ -312,6 +317,13 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 	t.queryURL = endpointURL
 	t.documentURL = endpointURL
 	return nil
+}
+
+func isOK(status int) (bool, error) {
+	if status == 401 {
+		return false, fmt.Errorf("status %d: invalid api key", status)
+	}
+	return status/100 == 2, nil
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
@@ -407,7 +419,8 @@ func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, time
 				return statusCode, nil
 			}
 		}
-		if loopOnce {
+		timeLeft := deadline.Sub(time.Now())
+		if loopOnce || timeLeft < waitRetryInterval {
 			break
 		}
 		time.Sleep(waitRetryInterval)
