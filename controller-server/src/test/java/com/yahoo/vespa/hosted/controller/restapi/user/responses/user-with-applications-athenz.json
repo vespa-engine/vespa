@@ -1,7 +1,6 @@
 {
   "isPublic": false,
   "isCd": false,
-  "enable-public-signup-flow": (ignore),
   "hasTrialCapacity": (ignore),
   "user": {
     "name": "Joe Developer",
