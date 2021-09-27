@@ -95,16 +95,16 @@ BmNodeStatsReporter::report()
     for (auto &node : node_stats) {
         auto& document_db = node.get_document_db_stats();
         if (document_db.has_value()) {
-            s << Width(8) << document_db.value().get_total_docs();
+            s << Width(10) << document_db.value().get_total_docs();
         } else {
-            s << Width(8) << "-";
+            s << Width(10) << "-";
         }
         totals += node;
     }
     if (totals.get_document_db_stats().has_value()) {
-        s << Width(8) << totals.get_document_db_stats().value().get_total_docs();
+        s << Width(10) << totals.get_document_db_stats().value().get_total_docs();
     } else {
-        s << Width(8) << "-";
+        s << Width(10) << "-";
     }
     auto& total_buckets = totals.get_buckets_stats();
     if (total_buckets.has_value()) {
