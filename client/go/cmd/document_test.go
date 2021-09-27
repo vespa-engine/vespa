@@ -67,7 +67,6 @@ func TestDocumentRemoveWithoutIdArg(t *testing.T) {
 func TestDocumentSendMissingId(t *testing.T) {
 	arguments := []string{"document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"}
 	client := &mockHttpClient{}
-	convergeServices(client)
 	assert.Equal(t,
 		"Error: No document id given neither as argument or as a 'put' key in the json file\n",
 		executeCommand(t, client, arguments, []string{}))
@@ -76,7 +75,6 @@ func TestDocumentSendMissingId(t *testing.T) {
 func TestDocumentSendWithDisagreeingOperations(t *testing.T) {
 	arguments := []string{"document", "update", "testdata/A-Head-Full-of-Dreams-Put.json"}
 	client := &mockHttpClient{}
-	convergeServices(client)
 	assert.Equal(t,
 		"Error: Wanted document operation is update but the JSON file specifies put\n",
 		executeCommand(t, client, arguments, []string{}))
@@ -140,7 +138,6 @@ func assertDocumentGet(arguments []string, documentId string, t *testing.T) {
 
 func assertDocumentError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Invalid document operation: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
@@ -151,7 +148,6 @@ func assertDocumentError(t *testing.T, status int, errorMessage string) {
 
 func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Container (document API) at 127.0.0.1:8080: Status "+strconv.Itoa(status)+"\n\n"+errorMessage+"\n",
@@ -161,6 +157,5 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 }
 
 func documentServiceURL(client *mockHttpClient) string {
-	convergeServices(client)
 	return getService("document", 0).BaseURL
 }

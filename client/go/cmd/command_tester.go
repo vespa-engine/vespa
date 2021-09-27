@@ -111,5 +111,3 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (*http
 }
 
 func (c *mockHttpClient) UseCertificate(certificate tls.Certificate) {}
-
-func convergeServices(client *mockHttpClient) { client.NextResponse(200, `{"converged":true}`) }

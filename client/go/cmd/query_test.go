@@ -56,7 +56,6 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 
 func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
@@ -66,7 +65,6 @@ func assertQueryError(t *testing.T, status int, errorMessage string) {
 
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
-	convergeServices(client)
 	client.NextResponse(status, errorMessage)
 	assert.Equal(t,
 		"Error: Status "+strconv.Itoa(status)+" from container at 127.0.0.1:8080\n"+errorMessage+"\n",
@@ -75,6 +73,5 @@ func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 }
 
 func queryServiceURL(client *mockHttpClient) string {
-	convergeServices(client)
 	return getService("query", 0).BaseURL
 }
