@@ -6,7 +6,7 @@
 namespace search::bmcluster {
 
 BmClusterParams::BmClusterParams()
-    : _bucket_db_stripe_bits(0),
+    : _bucket_db_stripe_bits(4),
       _distributor_stripes(0),
       _enable_distributor(false),
       _enable_service_layer(false),
