@@ -87,7 +87,7 @@ public class NetworkMultiplexerTest {
         assertFalse(net.shutDown.get());
 
         shared.attach(owner2);
-        shared.destroy();
+        shared.disown();
         assertFalse(net.shutDown.get());
 
         shared.detach(owner2);
