@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
-import ai.vespa.hosted.api.MultiPartStreamer;
 import ai.vespa.hosted.api.Signatures;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1968,7 +1967,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                             .flatMap(options -> optional("vespaVersion", options))
                                             .map(Version::fromString);
 
-        ensureApplicationExistsForPublic(TenantAndApplicationId.from(id), request);
+        ensureApplicationExists(TenantAndApplicationId.from(id), request);
 
         controller.jobController().deploy(id, type, version, applicationPackage);
         RunId runId = controller.jobController().last(id, type).get().id();
@@ -2620,7 +2619,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
-        ensureApplicationExistsForPublic(TenantAndApplicationId.from(tenant, application), request);
+        ensureApplicationExists(TenantAndApplicationId.from(tenant, application), request);
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
                                                             tenant,
@@ -2723,8 +2722,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                               .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
     }
 
-    private void ensureApplicationExistsForPublic(TenantAndApplicationId id, HttpRequest request) {
-        if (controller.system().isPublic() && controller.applications().getApplication(id).isEmpty()) {
+    private void ensureApplicationExists(TenantAndApplicationId id, HttpRequest request) {
+        if (controller.applications().getApplication(id).isEmpty()) {
             log.fine("Application does not exist in public, creating: " + id);
             var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
             controller.applications().createApplication(id, credentials);
