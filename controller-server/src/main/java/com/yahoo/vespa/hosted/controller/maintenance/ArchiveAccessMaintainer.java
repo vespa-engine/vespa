@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -83,8 +84,9 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
             return tenants.stream()
                     .filter(t -> t instanceof AthenzTenant
                             && enabled(archiveEnabled, t, zone) && enabled(developerRoleEnabled, t, zone))
+                    .map(Tenant::name)
                     .collect(Collectors.toUnmodifiableMap(
-                            Tenant::name, t -> "tenant.access." + t.name().value()));
+                            Function.identity(), t -> zoneRegistry.tenantDeveloperRoleArn(t).orElseThrow()));
 
         }
     }
