@@ -48,7 +48,7 @@ public class ModelsEvaluationHandlerTest {
     public void testListModels() {
         String url = "http://localhost/model-evaluation/v1";
         String expected =
-                "{\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
+                "{\"mnist_softmax\":\"http://localhost/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost/model-evaluation/v1/mnist_softmax_saved\",\"vespa_model\":\"http://localhost/model-evaluation/v1/vespa_model\",\"xgboost_2_2\":\"http://localhost/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost/model-evaluation/v1/lightgbm_regression\"}";
         handler.assertResponse(url, 200, expected);
     }
 
@@ -56,7 +56,7 @@ public class ModelsEvaluationHandlerTest {
     public void testListModelsWithDifferentHost() {
         String url = "http://localhost/model-evaluation/v1";
         String expected =
-                "{\"mnist_softmax\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax_saved\",\"xgboost_2_2\":\"http://localhost:8088/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost:8088/model-evaluation/v1/lightgbm_regression\"}";
+                "{\"mnist_softmax\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax\",\"mnist_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_saved\",\"mnist_softmax_saved\":\"http://localhost:8088/model-evaluation/v1/mnist_softmax_saved\",\"vespa_model\":\"http://localhost:8088/model-evaluation/v1/vespa_model\",\"xgboost_2_2\":\"http://localhost:8088/model-evaluation/v1/xgboost_2_2\",\"lightgbm_regression\":\"http://localhost:8088/model-evaluation/v1/lightgbm_regression\"}";
         handler.assertResponse(url, 200, expected, Map.of("Host", "localhost:8088"));
     }
 
@@ -211,6 +211,36 @@ public class ModelsEvaluationHandlerTest {
         String url = "http://localhost/model-evaluation/v1/mnist_saved/eval";
         String expected = "{\"error\":\"More than one function is available in model 'mnist_saved', but no name is given. Available functions: imported_ml_function_mnist_saved_dnn_hidden1_add, serving_default.y\"}";
         handler.assertResponse(url, 404, expected);
+    }
+
+    @Test
+    public void testVespaModelShortOutput() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("format", "short");
+        String url = "http://localhost/model-evaluation/v1/vespa_model/";
+        handler.assertResponse(url + "test_mapped/eval", properties, 200,
+                "{\"type\":\"tensor(d0{})\",\"value\":{\"a\":1.0,\"b\":2.0}}");
+        handler.assertResponse(url + "test_indexed/eval", properties, 200,
+                "{\"type\":\"tensor(d0[2],d1[3])\",\"value\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}");
+        handler.assertResponse(url + "test_mixed/eval", properties, 200,
+                "{\"type\":\"tensor(x{},y[3])\",\"value\":{\"a\":[1.0,2.0,3.0],\"b\":[4.0,5.0,6.0]}}");
+        handler.assertResponse(url + "test_mixed_2/eval", properties, 200,
+                "{\"type\":\"tensor(a[2],b[2],c{},d[2])\",\"value\":{\"a\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]],\"b\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]}}");
+    }
+
+    @Test
+    public void testVespaModelLiteralOutput() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("format", "literal");
+        String url = "http://localhost/model-evaluation/v1/vespa_model/";
+        handler.assertResponse(url + "test_mapped/eval", properties, 200,
+                "tensor(d0{}):{a:1.0,b:2.0}");
+        handler.assertResponse(url + "test_indexed/eval", properties, 200,
+                "tensor(d0[2],d1[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]");
+        handler.assertResponse(url + "test_mixed/eval", properties, 200,
+                "tensor(x{},y[3]):{a:[1.0, 2.0, 3.0],b:[4.0, 5.0, 6.0]}");
+        handler.assertResponse(url + "test_mixed_2/eval", properties, 200,
+                "tensor(a[2],b[2],c{},d[2]):{a:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]],b:[[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]]}");
     }
 
     @Test

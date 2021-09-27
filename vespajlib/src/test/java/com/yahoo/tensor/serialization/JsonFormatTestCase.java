@@ -122,6 +122,34 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testSingleDimensionSparseTensorShortForm() {
+        assertEncodeShortForm("tensor(x{}):{a:1, b:2}",
+                              "{\"type\":\"tensor(x{})\",\"value\":{\"a\":1.0,\"b\":2.0}}");
+
+        // Multiple mapped dimensions: no short form available
+        assertEncodeShortForm("tensor(x{},y{}):{{x:a,y:b}:1,{x:c,y:d}:2}",
+                              "{\"type\":\"tensor(x{},y{})\",\"value\":{\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"b\"},\"value\":1.0},{\"address\":{\"x\":\"c\",\"y\":\"d\"},\"value\":2.0}]}}");
+    }
+
+    @Test
+    public void testSingleMappedDimensionMixedTensorShortForm() {
+        assertEncodeShortForm("tensor(x{},y[2]):{a:[1,2], b:[3,4] }",
+                              "{\"type\":\"tensor(x{},y[2])\",\"value\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}");
+        assertEncodeShortForm("tensor(x[2],y{}):{a:[1,2], b:[3,4] }",
+                              "{\"type\":\"tensor(x[2],y{})\",\"value\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}");
+        assertEncodeShortForm("tensor(x{},y[2],z[2]):{a:[[1,2],[3,4]], b:[[5,6],[7,8]] }",
+                              "{\"type\":\"tensor(x{},y[2],z[2])\",\"value\":{\"a\":[[1.0,2.0],[3.0,4.0]],\"b\":[[5.0,6.0],[7.0,8.0]]}}");
+        assertEncodeShortForm("tensor(x[1],y{},z[4]):{a:[[1,2,3,4]], b:[[5,6,7,8]] }",
+                              "{\"type\":\"tensor(x[1],y{},z[4])\",\"value\":{\"a\":[[1.0,2.0,3.0,4.0]],\"b\":[[5.0,6.0,7.0,8.0]]}}");
+        assertEncodeShortForm("tensor(x[4],y[1],z{}):{a:[[1],[2],[3],[4]], b:[[5],[6],[7],[8]] }",
+                              "{\"type\":\"tensor(x[4],y[1],z{})\",\"value\":{\"a\":[[1.0],[2.0],[3.0],[4.0]],\"b\":[[5.0],[6.0],[7.0],[8.0]]}}");
+        assertEncodeShortForm("tensor(a[2],b[2],c{},d[2]):{a:[[[1,2], [3,4]], [[5,6], [7,8]]], b:[[[1,2], [3,4]], [[5,6], [7,8]]] }",
+                              "{\"type\":\"tensor(a[2],b[2],c{},d[2])\",\"value\":{" +
+                                    "\"a\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]," +
+                                    "\"b\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]}}");
+    }
+
+    @Test
     public void testInt8VectorInHexForm() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x[2],y[3])"));
         builder.cell().label("x", 0).label("y", 0).value(2.0);
@@ -315,7 +343,7 @@ public class JsonFormatTestCase {
     }
 
     private void assertEncodeShortForm(String tensor, String expected) {
-        byte[] json = JsonFormat.encodeShortForm((IndexedTensor) Tensor.from(tensor));
+        byte[] json = JsonFormat.encodeShortForm(Tensor.from(tensor));
         assertEquals(expected, new String(json, StandardCharsets.UTF_8));
     }
 

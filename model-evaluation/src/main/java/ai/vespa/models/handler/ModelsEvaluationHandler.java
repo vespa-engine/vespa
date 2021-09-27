@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -90,8 +91,11 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Tensor result = evaluator.evaluate();
 
         Optional<String> format = property(request, "format");
-        if (format.isPresent() && format.get().equalsIgnoreCase("short") && result instanceof IndexedTensor) {
-            return new Response(200, JsonFormat.encodeShortForm((IndexedTensor) result));
+        if (format.isPresent() && format.get().equalsIgnoreCase("short")) {
+            return new Response(200, JsonFormat.encodeShortForm(result));
+        }
+        else if (format.isPresent() && format.get().equalsIgnoreCase("literal")) {
+            return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
         }
         return new Response(200, JsonFormat.encode(result));
     }
