@@ -212,6 +212,7 @@ exec $numactlcmd $envcmd java \
         -Djdisc.config.file="$cfpfile" \
         -Djdisc.export.packages=${jdisc_export_packages} \
         -Djdisc.cache.path="$bundlecachedir" \
+        -Djdisc.debug.resources=false \
         -Djdisc.bundle.path="${VESPA_HOME}/lib/jars" \
         -Djdisc.logger.enabled=false \
         -Djdisc.logger.level=ALL \
