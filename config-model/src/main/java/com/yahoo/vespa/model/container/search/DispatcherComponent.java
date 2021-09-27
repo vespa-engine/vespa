@@ -5,7 +5,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.xml.PlatformBundles;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 
 /**
