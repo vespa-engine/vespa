@@ -34,8 +34,16 @@ func init() {
 }
 
 var configCmd = &cobra.Command{
-	Use:               "config",
-	Short:             "Configure default values for flags",
+	Use:   "config",
+	Short: "Configure persistent values for flags",
+	Long: `Configure persistent values for flags.
+
+This command allows setting a persistent value for a given flag. On future
+invocations the flag can then be omitted as it is read from the config file
+instead.
+
+Configuration is written to $HOME/.vespa by default. This path can be
+overridden by setting the VESPA_CLI_HOME environment variable.`,
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Root command does nothing

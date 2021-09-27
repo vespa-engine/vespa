@@ -24,8 +24,6 @@ const (
 	queryService    = "query"
 	documentService = "document"
 
-	defaultCloudAPI = "https://api.vespa-external.aws.oath.cloud:4443"
-
 	waitRetryInterval = 2 * time.Second
 )
 
@@ -171,7 +169,7 @@ func (t *customTarget) DiscoverServices(timeout time.Duration, runID int64) erro
 }
 
 type cloudTarget struct {
-	cloudAPI   string
+	apiURL     string
 	targetType string
 	deployment Deployment
 	apiKey     []byte
@@ -187,7 +185,7 @@ func (t *cloudTarget) Type() string { return t.targetType }
 func (t *cloudTarget) Service(name string) (*Service, error) {
 	switch name {
 	case deployService:
-		return &Service{Name: name, BaseURL: t.cloudAPI}, nil
+		return &Service{Name: name, BaseURL: t.apiURL}, nil
 	case queryService:
 		if t.queryURL == "" {
 			return nil, fmt.Errorf("service %s not discovered", name)
@@ -216,7 +214,7 @@ func (t *cloudTarget) DiscoverServices(timeout time.Duration, runID int64) error
 
 func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout time.Duration) error {
 	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s-%s/run/%d",
-		t.cloudAPI,
+		t.apiURL,
 		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
 		t.deployment.Zone.Environment, t.deployment.Zone.Region, runID)
 	req, err := http.NewRequest("GET", runURL, nil)
@@ -280,7 +278,7 @@ func (t *cloudTarget) printLog(response jobResponse, last int64) int64 {
 
 func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Duration) error {
 	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
-		t.cloudAPI,
+		t.apiURL,
 		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
 		t.deployment.Zone.Environment, t.deployment.Zone.Region)
 	req, err := http.NewRequest("GET", deploymentURL, nil)
@@ -327,9 +325,9 @@ func CustomTarget(baseURL string) Target {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud platform.
-func CloudTarget(deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions) Target {
+func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions) Target {
 	return &cloudTarget{
-		cloudAPI:   defaultCloudAPI,
+		apiURL:     apiURL,
 		targetType: cloudTargetType,
 		deployment: deployment,
 		apiKey:     apiKey,
