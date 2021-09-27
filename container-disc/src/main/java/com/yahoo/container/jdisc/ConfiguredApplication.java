@@ -136,7 +136,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class, true);
-        recofigure(qrConfig);
+        reconfigure(qrConfig);
         hackToInitializeServer(qrConfig);
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
@@ -225,7 +225,7 @@ public final class ConfiguredApplication implements Application {
             while (true) {
                 subscriber.waitNextGeneration(false);
                 QrConfig newConfig = QrConfig.class.cast(first(subscriber.config().values()));
-                recofigure(qrConfig);
+                reconfigure(qrConfig);
                 if (qrConfig.rpc().port() != newConfig.rpc().port()) {
                     com.yahoo.protect.Process.logAndDie(
                             "Rpc port config has changed from " +
@@ -239,7 +239,7 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    void recofigure(QrConfig qrConfig) {
+    void reconfigure(QrConfig qrConfig) {
         dumpHeapOnShutdownTimeout.set(qrConfig.shutdown().dumpHeapOnTimeout());
         shudownTimeoutS.set(qrConfig.shutdown().timeout());
     }
