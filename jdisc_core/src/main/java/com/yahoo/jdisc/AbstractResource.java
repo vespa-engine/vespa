@@ -54,17 +54,15 @@ public abstract class AbstractResource implements SharedResource {
         }
 
         final Throwable referenceStack = new Throwable();
-        final String state;
         synchronized (monitor) {
             if (activeReferences.isEmpty()) {
                 throw new IllegalStateException("Object is already destroyed, no more new references may be created."
                         + " State={ " + currentStateDebugWithLock() + " }");
             }
             activeReferences.add(referenceStack);
-            state = currentStateDebugWithLock();
+            log.log(Level.FINE, referenceStack, () ->
+                    getClass().getName() + "@" + System.identityHashCode(this) + ".refer(): state={ " + currentStateDebugWithLock() + " }");
         }
-        log.log(Level.FINE, referenceStack, () ->
-                getClass().getName() + "@" + System.identityHashCode(this) + ".refer(): state={ " + state + " }");
         return new DebugResourceReference(this, referenceStack);
     }
 
@@ -75,19 +73,17 @@ public abstract class AbstractResource implements SharedResource {
 
     private void removeReferenceStack(final Throwable referenceStack, final Throwable releaseStack) {
         final boolean doDestroy;
-        final String state;
         synchronized (monitor) {
             final boolean wasThere = activeReferences.remove(referenceStack);
-            state = currentStateDebugWithLock();
             if (!wasThere) {
                 throw new IllegalStateException("Reference is already released and can only be released once."
                         + " reference=" + Arrays.toString(referenceStack.getStackTrace())
-                        + ". State={ " + state + "}");
+                        + ". State={ " + currentStateDebugWithLock() + "}");
             }
             doDestroy = activeReferences.isEmpty();
+            log.log(Level.FINE, releaseStack,
+                    () -> getClass().getName() + "@" + System.identityHashCode(this) + " release: state={ " + currentStateDebugWithLock() + " }");
         }
-        log.log(Level.FINE, releaseStack,
-                () ->getClass().getName() + "@" + System.identityHashCode(this) + " release: state={ " + state + " }");
         if (doDestroy) {
             destroy();
         }
