@@ -4,8 +4,6 @@
 #include "ok_state.h"
 #include "named_service.h"
 #include "request_completion_handler.h"
-#include "rpc_server_map.h"
-#include "rpc_server_manager.h"
 #include "remote_slobrok.h"
 #include "sbenv.h"
 #include "rpcmirror.h"
@@ -38,12 +36,31 @@ public:
     ~MetricsReport() override { Kill(); }
 };
 
+bool match(const char *name, const char *pattern) {
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
+    while (*pattern != '\0') {
+        if (*name == *pattern) {
+            ++name;
+            ++pattern;
+        } else if (*pattern == '*') {
+            ++pattern;
+            while (*name != '/' && *name != '\0') {
+                ++name;
+            }
+        } else {
+            return false;
+        }
+    }
+    return (*name == *pattern);
+}
+
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
-RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman)
-    : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
+RPCHooks::RPCHooks(SBEnv &env)
+    : _env(env),
       _globalHistory(env.globalHistory()),
       _localHistory(env.localHistory()),
       _cnts(Metrics::zero()),
@@ -63,25 +80,6 @@ void RPCHooks::reportMetrics() {
     EV_COUNT("doremove_reqs", _cnts.doRemoveReqs);
     EV_COUNT("admin_reqs", _cnts.adminReqs);
     EV_COUNT("other_reqs", _cnts.otherReqs);
-}
-
-bool RPCHooks::match(const char *name, const char *pattern) {
-    LOG_ASSERT(name != nullptr);
-    LOG_ASSERT(pattern != nullptr);
-    while (*pattern != '\0') {
-        if (*name == *pattern) {
-            ++name;
-            ++pattern;
-        } else if (*pattern == '*') {
-            ++pattern;
-            while (*name != '/' && *name != '\0') {
-                ++name;
-            }
-        } else {
-            return false;
-        }
-    }
-    return (*name == *pattern);
 }
 
 void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
@@ -229,11 +227,6 @@ void RPCHooks::initRPC(FRT_Supervisor *supervisor) {
     //-------------------------------------------------------------------------
 }
 
-
-bool RPCHooks::useNewLogic() const {
-    return _env.useNewLogic();
-}
-
 void RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req) {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);
@@ -257,9 +250,6 @@ void RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req) {
     }
     req->Detach();
     _env.localMonitorMap().addLocal(mapping, std::make_unique<RequestCompletionHandler>(req));
-    // TODO: remove this
-    auto script = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, nullptr);
-    script.doRequest();
     return;
 }
 

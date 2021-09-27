@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.protocol;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.DataValue;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
@@ -11,7 +10,7 @@ import com.yahoo.jrt.Value;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.vespa.config.PayloadChecksums;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,8 +25,7 @@ import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
  * The V3 config protocol implemented on the server side. The V3 protocol uses 2 fields:
  *
  * * A metadata field containing json data describing config generation, md5 and compression info
- * * A data field containing compressed or uncompressed json config payload. This field can be empty if the payload
- *   has not changed since last request, triggering an optimization at the client where the previous payload is used instead.
+ * * A data field containing compressed or uncompressed json config payload
  *
  * The implementation of addOkResponse is optimized for doing as little copying of payload data as possible, ensuring
  * that we get a lower memory footprint.
@@ -74,8 +72,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     @Override
     public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums payloadChecksums) {
         this.applyOnRestart = applyOnRestart;
-        boolean changedConfig = !payloadChecksums.equals(getRequestConfigChecksums());
-        boolean changedConfigAndNewGeneration = changedConfig && ConfigUtils.isGenerationNewer(generation, getRequestGeneration());
         Payload responsePayload = payload.withCompression(getCompressionType());
         ByteArrayOutputStream byteArrayOutputStream = new NoCopyByteArrayOutputStream(4096);
         try {
@@ -93,10 +89,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
                 throw new RuntimeException("Payload is null for ' " + this + ", not able to create response");
             }
             CompressionInfo compressionInfo = responsePayload.getCompressionInfo();
-            // If payload is not being sent, we must adjust compression info to avoid client confusion.
-            if (!changedConfigAndNewGeneration) {
-                compressionInfo = CompressionInfo.create(compressionInfo.getCompressionType(), 0);
-            }
             compressionInfo.serialize(jsonGenerator);
             jsonGenerator.writeEndObject();
 
@@ -106,17 +98,13 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             throw new IllegalArgumentException("Could not add OK response for " + this);
         }
         request.returnValues().add(createResponseValue(byteArrayOutputStream));
-        if (changedConfigAndNewGeneration) {
-            ByteBuffer buf = responsePayload.getData().wrap();
-            if (buf.hasArray() && buf.remaining() == buf.array().length) {
-                request.returnValues().add(new DataValue(buf.array()));
-            } else {
-                byte [] dst = new byte[buf.remaining()];
-                buf.get(dst);
-                request.returnValues().add(new DataValue(dst));
-            }
+        ByteBuffer buf = responsePayload.getData().wrap();
+        if (buf.hasArray() && buf.remaining() == buf.array().length) {
+            request.returnValues().add(new DataValue(buf.array()));
         } else {
-            request.returnValues().add(new DataValue(new byte[0]));
+            byte[] dst = new byte[buf.remaining()];
+            buf.get(dst);
+            request.returnValues().add(new DataValue(dst));
         }
     }
 

@@ -17,13 +17,20 @@ public interface ClusterApi {
     String clusterInfo();
     ClusterId clusterId();
     ServiceType serviceType();
+
+    /** Some human-readable string naming the service(s) to a human reader. */
+    String serviceDescription(boolean plural);
+
     boolean isStorageCluster();
 
-    /** Returns the reasons no services are up in the implied group, or empty if some services are up. */
-    Optional<SuspensionReasons> reasonsForNoServicesInGroupIsUp();
+    boolean isConfigServerLike();
+
+    /** Returns the non-empty reasons for why all services are down, or otherwise empty. */
+    Optional<SuspensionReasons> allServicesDown();
+
     boolean noServicesOutsideGroupIsDown() throws HostStateChangeDeniedException;
 
-    int percentageOfServicesDown();
+    int percentageOfServicesDownOutsideGroup();
     int percentageOfServicesDownIfGroupIsAllowedToBeDown();
 
     Optional<StorageNode> storageNodeInGroup();

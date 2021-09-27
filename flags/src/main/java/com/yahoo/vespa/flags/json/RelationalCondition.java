@@ -48,6 +48,21 @@ public class RelationalCondition implements Condition {
     }
 
     @Override
+    public Type type() {
+        return Type.RELATIONAL;
+    }
+
+    @Override
+    public FetchVector.Dimension dimension() {
+        return dimension;
+    }
+
+    @Override
+    public CreateParams toCreateParams() {
+        return new CreateParams(dimension).withPredicate(relationalPredicate.toWire());
+    }
+
+    @Override
     public boolean test(FetchVector fetchVector) {
         return fetchVector.getValue(dimension).map(predicate::test).orElse(false);
     }

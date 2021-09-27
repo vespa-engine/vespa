@@ -19,6 +19,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeStream;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -69,15 +70,17 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private final UserManagement users;
     private final Controller controller;
+    private final FlagsDb flagsDb;
     private final BooleanFlag enable_public_signup_flow;
     private final IntFlag maxTrialTenants;
     private final BooleanFlag enabledHorizonDashboard;
 
     @Inject
-    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource) {
+    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller, FlagSource flagSource, FlagsDb flagsDb) {
         super(parentCtx);
         this.users = users;
         this.controller = controller;
+        this.flagsDb = flagsDb;
         this.enable_public_signup_flow = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
         this.maxTrialTenants = PermanentFlags.MAX_TRIAL_TENANTS.bindTo(flagSource);
         this.enabledHorizonDashboard = Flags.ENABLED_HORIZON_DASHBOARD.bindTo(flagSource);
@@ -170,6 +173,7 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         root.setBool("isPublic", controller.system().isPublic());
         root.setBool("isCd", controller.system().isCd());
+        // TODO (freva): Remove after users have migrated to use 'flags'
         root.setBool(enable_public_signup_flow.id().toString(),
                 enable_public_signup_flow.with(FetchVector.Dimension.CONSOLE_USER_EMAIL, user.email()).value());
         root.setBool("hasTrialCapacity", hasTrialCapacity());
@@ -196,6 +200,8 @@ public class UserApiHandler extends LoggingRequestHandler {
             Cursor operator = root.setArray("operator");
             operatorRoles.forEach(role -> operator.addString(role.definition().name()));
         }
+
+        UserFlagsSerializer.toSlime(root, flagsDb.getAllFlagData(), tenantRolesByTenantName.keySet(), !operatorRoles.isEmpty(), user.email());
 
         return new SlimeJsonResponse(slime);
     }
@@ -249,7 +255,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         });
     }
 
-    private void toSlime(Cursor userObject, User user) {
+    private static void toSlime(Cursor userObject, User user) {
         if (user.name() != null) userObject.setString("name", user.name());
         userObject.setString("email", user.email());
         if (user.nickname() != null) userObject.setString("nickname", user.nickname());
@@ -376,7 +382,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         return Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1 << 10)).get());
     }
 
-    private <Type> Type require(String name, Function<Inspector, Type> mapper, Inspector object) {
+    private static <Type> Type require(String name, Function<Inspector, Type> mapper, Inspector object) {
         if ( ! object.field(name).valid()) throw new IllegalArgumentException("Missing field '" + name + "'.");
         return mapper.apply(object.field(name));
     }

@@ -7,4 +7,4 @@ vespa_define_module(
     src/apps/printdefault
 )
 
-install_fat_java_artifact(defaults)
+# No separate java artifact is installed (part of config-bundle)

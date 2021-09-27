@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,6 +78,25 @@ public class ZmsClientMock implements ZmsClient {
                                             OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         log("deleteProviderResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
         getDomainOrThrow(tenantDomain, true).applications.remove(new ApplicationId(resourceGroup));
+    }
+
+    @Override
+    public void createTenantResourceGroup(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup,
+                                          Set<RoleAction> roleActions) {
+        log("createTenantResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
+        AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
+        ApplicationId applicationId = new ApplicationId(resourceGroup);
+        if (!domain.applications.containsKey(applicationId)) {
+            domain.applications.put(applicationId, new AthenzDbMock.Application());
+        }
+    }
+
+    @Override
+    public Set<RoleAction> getTenantResourceGroups(AthenzDomain tenantDomain, AthenzIdentity provider, String resourceGroup) {
+        Set<RoleAction> result = new HashSet<>();
+        getDomainOrThrow(tenantDomain, true).applications.get(resourceGroup).acl
+                .forEach((role, roleMembers) -> result.add(new RoleAction(role.roleName, role.roleName)));
+        return result;
     }
 
     @Override

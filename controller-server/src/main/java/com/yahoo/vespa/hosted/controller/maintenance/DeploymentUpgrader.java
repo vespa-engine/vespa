@@ -46,7 +46,6 @@ public class DeploymentUpgrader extends ControllerMaintainer {
                         Run last = controller().jobController().last(job).get();
                         Versions target = new Versions(systemVersion, last.versions().targetApplication(), Optional.of(last.versions().targetPlatform()), Optional.of(last.versions().targetApplication()));
                         if ( ! deployment.version().isBefore(target.targetPlatform())) continue;
-                        if (   controller().clock().instant().isBefore(last.start().plus(Duration.ofDays(1)))) continue;
                         if ( ! isLikelyNightFor(job)) continue;
 
                         log.log(Level.FINE, "Upgrading deployment of " + instance.id() + " in " + deployment.zone());

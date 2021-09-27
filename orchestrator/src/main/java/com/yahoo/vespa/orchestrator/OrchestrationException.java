@@ -3,7 +3,7 @@ package com.yahoo.vespa.orchestrator;
 
 import java.util.Arrays;
 
-public class OrchestrationException extends Exception {
+public class OrchestrationException extends RuntimeException {
 
     public OrchestrationException(Throwable cause) {
         super(cause);
