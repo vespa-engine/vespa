@@ -180,7 +180,6 @@ StartCommand() {
         -Djdisc.config.file="$cfpfile" \
         -Djdisc.export.packages= \
         -Djdisc.cache.path="$bundlecachedir" \
-        -Djdisc.debug.resources=false \
         -Djdisc.bundle.path="$VESPA_HOME/lib/jars" \
         -Djdisc.logger.enabled=true \
         -Djdisc.logger.level=ALL \
