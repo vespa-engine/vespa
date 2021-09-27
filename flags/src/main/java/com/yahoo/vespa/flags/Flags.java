@@ -172,6 +172,20 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
+            "container-dump-heap-on-shutdown-timeout", false,
+            List.of("baldersheim"), "2021-09-25", "2021-11-01",
+            "Will trigger a heap dump during if container shutdown times out",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundDoubleFlag CONTAINER_SHUTDOWN_TIMEOUT = defineDoubleFlag(
+            "container-shutdown-timeout", 50.0,
+            List.of("baldersheim"), "2021-09-25", "2021-11-01",
+            "Timeout for shutdown of a jdisc container",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
             List.of("bjorncs", "tokle"), "2021-02-10", "2021-12-01",
