@@ -27,10 +27,10 @@ FileSource::getConfig()
     int64_t last = getLast(_fileName);
 
     if (last > _lastLoaded) {
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, calculateContentMd5(lines)), true, _generation)));
+        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, calculateContentXxhash64(lines)), true, _generation)));
         _lastLoaded = last;
     } else {
-        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, calculateContentMd5(lines)), false, _generation)));
+        _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(lines, calculateContentXxhash64(lines)), false, _generation)));
     }
 }
 

@@ -20,7 +20,7 @@ namespace {
     {
         std::vector< vespalib::string > lines;
         lines.push_back(value);
-        return ConfigValue(lines, calculateContentMd5(lines));
+        return ConfigValue(lines, calculateContentXxhash64(lines));
     }
 
     ConfigValue createFooValue(const std::string & value)
