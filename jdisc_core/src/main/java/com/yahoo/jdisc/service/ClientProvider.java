@@ -2,7 +2,11 @@
 package com.yahoo.jdisc.service;
 
 import com.yahoo.jdisc.Container;
-import com.yahoo.jdisc.application.*;
+import com.yahoo.jdisc.application.BindingRepository;
+import com.yahoo.jdisc.application.ContainerActivator;
+import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.Application;
+import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.jdisc.handler.RequestHandler;
 
 /**
