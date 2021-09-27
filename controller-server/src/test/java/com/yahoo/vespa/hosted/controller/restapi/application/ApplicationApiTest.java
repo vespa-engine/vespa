@@ -1026,6 +1026,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
+    public void testDeployWithApplicationPackage() {
+        // Setup
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+
+        // POST (deploy) a system application with an application package
+        MultiPartStreamer noAppEntity = createApplicationDeployData(Optional.empty());
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
+                                      .data(noAppEntity)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Deployment of system applications during a system upgrade is not allowed\"}",
+                              400);
+        deploymentTester.controllerTester()
+                        .upgradeSystem(deploymentTester.controller().readVersionStatus().controllerVersion().get()
+                                                       .versionNumber());
+        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
+                                      .data(noAppEntity)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              new File("deploy-result.json"));
+    }
+
+    @Test
     public void testMeteringResponses() {
         MockMeteringClient mockMeteringClient = tester.serviceRegistry().meteringService();
 
