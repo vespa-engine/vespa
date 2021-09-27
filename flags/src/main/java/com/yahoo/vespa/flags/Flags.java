@@ -79,13 +79,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENFORCE_RANK_PROFILE_INHERITANCE = defineFeatureFlag(
-            "enforce-rank-profile-inheritance", true,
-            List.of("baldersheim"), "2021-09-07", "2021-10-01",
-            "Should we enforce verification of rank-profile inheritance.",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag SKIP_MBUS_REQUEST_THREAD = defineFeatureFlag(
             "skip-mbus-request-thread", false,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
