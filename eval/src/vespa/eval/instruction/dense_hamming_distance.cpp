@@ -54,9 +54,9 @@ bool compatible_types(const ValueType &lhs, const ValueType &rhs) {
 
 } // namespace <unnamed>
 
-DenseHammingDistance::DenseHammingDistance(const TensorFunction &dense_child,
-                                           const TensorFunction &vector_child)
-    : tensor_function::Op2(ValueType::double_type(), dense_child, vector_child)
+DenseHammingDistance::DenseHammingDistance(const TensorFunction &lhs_child,
+                                           const TensorFunction &rhs_child)
+    : tensor_function::Op2(ValueType::double_type(), lhs_child, rhs_child)
 {
 }
 
