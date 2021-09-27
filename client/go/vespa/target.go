@@ -239,8 +239,8 @@ func (t *cloudTarget) waitForRun(signer *RequestSigner, runID int64, timeout tim
 		return req
 	}
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
-		if status/100 != 2 {
-			return false, nil
+		if ok, err := isOK(status); !ok {
+			return ok, err
 		}
 		var resp jobResponse
 		if err := json.Unmarshal(response, &resp); err != nil {
@@ -297,8 +297,8 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 	}
 	var endpointURL string
 	endpointFunc := func(status int, response []byte) (bool, error) {
-		if status/100 != 2 {
-			return false, nil
+		if ok, err := isOK(status); !ok {
+			return ok, err
 		}
 		var resp deploymentResponse
 		if err := json.Unmarshal(response, &resp); err != nil {
@@ -319,6 +319,13 @@ func (t *cloudTarget) discoverEndpoints(signer *RequestSigner, timeout time.Dura
 	t.queryURL = endpointURL
 	t.documentURL = endpointURL
 	return nil
+}
+
+func isOK(status int) (bool, error) {
+	if status == 401 {
+		return false, fmt.Errorf("status %d: invalid api key", status)
+	}
+	return status/100 == 2, nil
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
