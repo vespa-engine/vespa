@@ -1657,6 +1657,36 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               403);
     }
 
+    @Test
+    public void create_application_on_deploy() {
+        // Setup
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+
+        // Create tenant
+        tester.assertResponse(request("/application/v4/tenant/tenant1", POST).userIdentity(USER_ID)
+                        .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                new File("tenant-without-applications.json"));
+
+        // Deploy application
+        var id = ApplicationId.from("tenant1", "application1", "instance1");
+        var appId = TenantAndApplicationId.from(id);
+        var entity = createApplicationDeployData(applicationPackageInstance1);
+
+        assertTrue(tester.controller().applications().getApplication(appId).isEmpty());
+
+        // POST (deploy) an application to start a manual deployment to dev
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1/", POST)
+                        .data(entity)
+                        .oktaIdentityToken(OKTA_IT)
+                        .oktaAccessToken(OKTA_AT)
+                        .userIdentity(USER_ID),
+                "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
+
+        assertTrue(tester.controller().applications().getApplication(appId).isPresent());
+    }
+
     private static String serializeInstant(Instant i) {
         return DateTimeFormatter.ISO_INSTANT.format(i.truncatedTo(ChronoUnit.SECONDS));
     }
