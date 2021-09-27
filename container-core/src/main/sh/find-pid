@@ -77,20 +77,26 @@ findhost
 set -euo pipefail
 
 if (( $# != 1 )); then
-  echo "Usage: $0 <service-config-id>" >&2
+  echo "Usage: $0 <service-name-or-config-id>" >&2
   exit 1
 fi
 
-readonly config_id=$1
-status=$(vespa-sentinel-cmd list 2>/dev/null | grep "id=\"${config_id}\"")
-if [ -z "${status}" ]; then
-  echo "No service named '${config_id}'" >&2
-  exit 1
-fi
-readonly pid=$(echo ${status} | cut -d " "  -f 4 | cut -d "=" -f 2)
-if ! [[ "${pid}" =~ ^[0-9]+$ ]]; then
-  echo "Could not find valid pid for '${config_id}' (pid='${pid}')" >&2
-  exit 1
+readonly service=$1
+readonly pid_file="$VESPA_HOME/var/run/$service.pid"
+if [ -f "$pid_file" ]; then
+  parent_pid=$(cat "$pid_file")
+  pid=$(pgrep --parent $parent_pid)
+else
+  status=$(vespa-sentinel-cmd list 2>/dev/null | grep --perl-regexp "($service state=|id=\"$service\")")
+  if [ -z "${status}" ]; then
+    echo "No service with name or config id '${service}'" >&2
+    exit 1
+  fi
+  pid=$(echo ${status} | cut -d " "  -f 4 | cut -d "=" -f 2)
+  if ! [[ "${pid}" =~ ^[0-9]+$ ]]; then
+    echo "Could not find valid pid for '${service}' (pid='${pid}')" >&2
+    exit 1
+  fi
 fi
 if [ -z "$(ps -p ${pid} -o pid=)" ]; then
   echo "Could not find process for '${pid}'" >&2
