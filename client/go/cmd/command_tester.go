@@ -22,6 +22,7 @@ import (
 
 type command struct {
 	homeDir  string
+	cacheDir string
 	args     []string
 	moreArgs []string
 }
@@ -31,12 +32,16 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 		util.ActiveHttpClient = client
 	}
 
-	// Set config dir. Use a separate one per test if none is specified
+	// Set Vespa CLI directories. Use a separate one per test if none is specified
 	if cmd.homeDir == "" {
-		cmd.homeDir = t.TempDir()
+		cmd.homeDir = filepath.Join(t.TempDir(), ".vespa")
 		viper.Reset()
 	}
-	os.Setenv("VESPA_CLI_HOME", filepath.Join(cmd.homeDir, ".vespa"))
+	if cmd.cacheDir == "" {
+		cmd.cacheDir = filepath.Join(t.TempDir(), ".cache", "vespa")
+	}
+	os.Setenv("VESPA_CLI_HOME", cmd.homeDir)
+	os.Setenv("VESPA_CLI_CACHE_DIR", cmd.cacheDir)
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
 	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {

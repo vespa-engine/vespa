@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConfig(t *testing.T) {
-	homeDir := t.TempDir()
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	assertConfigCommand(t, "invalid option or value: \"foo\": \"bar\"\n", homeDir, "config", "set", "foo", "bar")
 	assertConfigCommand(t, "foo = <unset>\n", homeDir, "config", "get", "foo")
 	assertConfigCommand(t, "target = local\n", homeDir, "config", "get", "target")

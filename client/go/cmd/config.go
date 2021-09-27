@@ -108,16 +108,8 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	home := os.Getenv("VESPA_CLI_HOME")
-	if home == "" {
-		var err error
-		home, err = os.UserHomeDir()
-		if err != nil {
-			return nil, err
-		}
-		home = filepath.Join(home, ".vespa")
-	}
-	if err := os.MkdirAll(home, 0700); err != nil {
+	home, err := vespaCliHome()
+	if err != nil {
 		return nil, err
 	}
 	c := &Config{Home: home, createDirs: true}
