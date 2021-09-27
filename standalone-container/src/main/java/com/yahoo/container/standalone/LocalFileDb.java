@@ -38,7 +38,7 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
         synchronized (this) {
             File file = fileReferenceToFile.get(reference);
             if (file == null) {
-                throw new RuntimeException("Invalid file reference " + reference);
+                return new File(reference.value()); // Downloaded file reference: Will (hopefully) be resolved client side
             }
             return file;
         }
