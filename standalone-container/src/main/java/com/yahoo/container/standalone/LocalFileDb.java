@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  * @author ollivir
  */
 public class LocalFileDb implements FileAcquirer, FileRegistry {
+
     private final Map<FileReference, File> fileReferenceToFile = new HashMap<>();
     private final Path appPath;
 
@@ -48,6 +49,7 @@ public class LocalFileDb implements FileAcquirer, FileRegistry {
     }
 
     /* FileRegistry overrides */
+    @Override
     public FileReference addFile(String relativePath) {
         File file = appPath.resolve(relativePath).toFile();
         if (!file.exists()) {

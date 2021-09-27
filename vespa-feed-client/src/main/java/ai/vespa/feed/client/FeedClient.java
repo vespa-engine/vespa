@@ -22,18 +22,19 @@ public interface FeedClient extends Closeable {
     /**
      * Send a document put with the given parameters, returning a future with the result of the operation.
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
-     * */
+     */
     CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params);
 
     /**
      * Send a document update with the given parameters, returning a future with the result of the operation.
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
-     * */
+     */
     CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params);
 
-    /** Send a document remove with the given parameters, returning a future with the result of the operation.
-     *  Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
-     *  */
+    /**
+     * Send a document remove with the given parameters, returning a future with the result of the operation.
+     * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
+     */
     CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params);
 
     /** Returns a snapshot of the stats for this feed client, such as requests made, and responses by status. */

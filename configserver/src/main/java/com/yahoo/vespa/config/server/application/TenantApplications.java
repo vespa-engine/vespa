@@ -205,9 +205,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
         Application application = getApplication(appId, vespaVersion);
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant + "' with handler for application '" + application + "'");
-        }
+        log.log(Level.FINE, () -> TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant +
+                                  "' with handler for application '" + application + "'");
         return application.resolveConfig(req, responseFactory);
     }
 

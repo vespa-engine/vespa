@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Objects;
 
 public class DistributableResource {
+
     public enum PathType { FILE, URI, BLOB };
 
     /** The search definition-unique name of this constant */
@@ -95,10 +96,9 @@ public class DistributableResource {
         }
     }
 
+    @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("resource '").append(name).append(" of type '").append(pathType)
-                .append("' with ref '").append(fileReference).append("'");
-        return b.toString();
+        return "resource '" + name + " of type '" + pathType + "' with ref '" + fileReference + "'";
     }
+
 }
