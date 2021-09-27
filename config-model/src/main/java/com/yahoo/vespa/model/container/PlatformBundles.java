@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -49,7 +50,7 @@ public class PlatformBundles {
     }
 
     // Bundles that must be loaded for all container types.
-    private static final Set<String> commonVespaBundles = Set.of(
+    private static final List<String> commonVespaBundles = List.of(
             "zkfacade",
             "zookeeper-server"  // TODO: not necessary in metrics-proxy.
     );
