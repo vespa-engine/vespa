@@ -129,7 +129,7 @@ public class Flags {
             "Takes effect on first (re)start of config server");
 
     public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
-            "encrypt-dirty-disk", false,
+            "encrypt-dirty-disk", true,
             List.of("hakonhall"), "2021-05-14", "2021-10-05",
             "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
             "Takes effect on next host-admin tick.");
