@@ -45,6 +45,7 @@ vespa_define_module(
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
     src/tests/instruction/add_trivial_dimension_optimizer
+    src/tests/instruction/best_similarity_function
     src/tests/instruction/dense_dot_product_function
     src/tests/instruction/dense_hamming_distance
     src/tests/instruction/dense_inplace_join_function
