@@ -185,7 +185,7 @@ type cloudTarget struct {
 func (t *cloudTarget) Type() string { return t.targetType }
 
 func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64) (*Service, error) {
-	if timeout > 0 && name != deployService {
+	if name != deployService {
 		if err := t.waitForEndpoints(timeout, runID); err != nil {
 			return nil, err
 		}
