@@ -315,11 +315,35 @@
             </build>
         </profile>
         <profile>
+            <id>custom-javadoc</id>
+            <activation>
+                <file><exists>src/main/javadoc</exists></file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>generate-javadoc</id>
             <activation>
-                <property>
-                    <name>!skipJavadoc</name>
-                </property>
+                <file><missing>src/main/javadoc</missing></file>
             </activation>
             <build>
                 <plugins>
