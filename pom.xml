@@ -149,5 +149,5 @@
         <module>zookeeper-command-line-client</module>
         <module>zookeeper-server</module>
     </modules>
-</project>
 
+</project>

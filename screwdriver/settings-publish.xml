@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <servers>
+        <server>
+            <id>ossrh</id>
+            <username>${env.OSSRH_USER}</username>
+            <password>${env.OSSRH_TOKEN}</password>
+        </server>
+    </servers>
+
+    <profiles>
+        <profile>
+            <id>ossrh-deploy-vespa</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <snapshotDeploymentRepository>https://oss.sonatype.org/content/repositories/snapshots</snapshotDeploymentRepository>
+                <releaseDeploymentRepository>https://oss.sonatype.org/service/local/staging/deploy/maven2/</releaseDeploymentRepository>
+                <altDeploymentRepository>ossrh::default::${snapshotDeploymentRepository}</altDeploymentRepository>
+                <altSnapshotDeploymentRepository>ossrh::default::${snapshotDeploymentRepository}</altSnapshotDeploymentRepository>
+                <altReleaseDeploymentRepository>ossrh::default::${releaseDeploymentRepository}</altReleaseDeploymentRepository>
+                <gpg.executable>gpg</gpg.executable>
+                <gpg.keyname>${env.GPG_KEYNAME}</gpg.keyname>
+                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+                <gpg.defaultKeyring>false</gpg.defaultKeyring>
+                <gpg.homedir>${env.SD_SOURCE_DIR}/screwdriver/deploy</gpg.homedir>
+                <gpg.publickeyring>pubring.gpg</gpg.publickeyring>
+                <gpg.secretkeyring>secring.gpg</gpg.secretkeyring>
+                <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
+                <nexus.staging.maven.plugin.version>1.6.7</nexus.staging.maven.plugin.version>
+            </properties>
+        </profile>
+    </profiles>
+
+</settings>
