@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -340,6 +340,8 @@ public abstract class ControllerHttpClient {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
         deployment.version().ifPresent(version -> rootObject.setString("vespaVersion", version));
+        if (deployment.isDryRun())
+            rootObject.setString("dryRun", "true");
         return toJson(slime);
     }
 
