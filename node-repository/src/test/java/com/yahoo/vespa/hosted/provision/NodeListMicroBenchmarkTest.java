@@ -46,6 +46,10 @@ public class NodeListMicroBenchmarkTest {
         for (int i = 0; i < iterations; i++) {
             indexes.add(random.nextInt(hostCount));
         }
+        // Warmup for stable results.
+        for (int i = 0; i < 10000; i++) {
+            nodeList.childrenOf(nodes.get(indexes.get(i)));
+        }
 
         Instant start = Instant.now();
         for (int i = 0; i < iterations; i++) {
