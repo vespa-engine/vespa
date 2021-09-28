@@ -17,7 +17,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 
 import java.io.File;
@@ -141,7 +141,7 @@ public class HandlersConfigurerTestWrapper {
             protected void configure() {
                 // Needed by e.g. SearchHandler
                 bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
-                bind(Encoder.class).to(Encoder.FailingEncoder.class).in(Scopes.SINGLETON);
+                bind(Embedder.class).to(Embedder.FailingEmbedder.class).in(Scopes.SINGLETON);
                 bind(ContainerThreadPool.class).to(SimpleContainerThreadpool.class);
                 bind(Metric.class).to(MockMetric.class);
             }

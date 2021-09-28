@@ -100,7 +100,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                    .collect(Collectors.toUnmodifiableSet());
 
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
-        addSimpleComponent("com.yahoo.language.provider.DefaultEncoderProvider");
+        addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");

@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.fieldoperation;
 
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -30,13 +30,13 @@ public class IndexingOperation implements FieldOperation {
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine) throws ParseException {
-        return fromStream(input, multiLine, new SimpleLinguistics(), Encoder.throwsOnUse);
+        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine,
-                                               Linguistics linguistics, Encoder encoder)
+                                               Linguistics linguistics, Embedder embedder)
             throws ParseException {
-        ScriptParserContext config = new ScriptParserContext(linguistics, encoder);
+        ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
         config.setAnnotatorConfig(new AnnotatorConfig());
         config.setInputStream(input);
         ScriptExpression exp;

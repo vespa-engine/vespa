@@ -148,7 +148,7 @@
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
-  "com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder": {
+  "com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
@@ -157,31 +157,31 @@
     "methods": [
       "public void <init>()",
       "public void addModel(com.yahoo.language.Language, java.nio.file.Path)",
-      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder addDefaultModel(java.nio.file.Path)",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder addDefaultModel(java.nio.file.Path)",
       "public java.util.Map getModels()",
-      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder setCollapseUnknowns(boolean)",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder setCollapseUnknowns(boolean)",
       "public boolean getCollapseUnknowns()",
-      "public com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder setScoring(com.yahoo.language.sentencepiece.Scoring)",
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder setScoring(com.yahoo.language.sentencepiece.Scoring)",
       "public com.yahoo.language.sentencepiece.Scoring getScoring()",
-      "public com.yahoo.language.sentencepiece.SentencePieceEncoder build()"
+      "public com.yahoo.language.sentencepiece.SentencePieceEmbedder build()"
     ],
     "fields": []
   },
-  "com.yahoo.language.sentencepiece.SentencePieceEncoder": {
+  "com.yahoo.language.sentencepiece.SentencePieceEmbedder": {
     "superClass": "java.lang.Object",
     "interfaces": [
       "com.yahoo.language.process.Segmenter",
-      "com.yahoo.language.process.Encoder"
+      "com.yahoo.language.process.Embedder"
     ],
     "attributes": [
       "public"
     ],
     "methods": [
       "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig)",
-      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEncoder$Builder)",
+      "public void <init>(com.yahoo.language.sentencepiece.SentencePieceEmbedder$Builder)",
       "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
-      "public java.util.List encode(java.lang.String, com.yahoo.language.Language)",
-      "public com.yahoo.tensor.Tensor encode(java.lang.String, com.yahoo.language.Language, com.yahoo.tensor.TensorType)",
+      "public java.util.List embed(java.lang.String, com.yahoo.language.Language)",
+      "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.Language, com.yahoo.tensor.TensorType)",
       "public java.lang.String normalize(java.lang.String)"
     ],
     "fields": []

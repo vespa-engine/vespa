@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
 
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -28,9 +28,9 @@ public class ScriptManager {
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager docTypeMgr;
 
-    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Encoder encoder) {
+    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics, Embedder embedder) {
         this.docTypeMgr = docTypeMgr;
-        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, encoder);
+        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, embedder);
     }
 
 
@@ -75,9 +75,9 @@ public class ScriptManager {
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
-                                                                              Encoder encoder) {
+                                                                              Embedder embedder) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics, encoder);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedder);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenLength(config.fieldmatchmaxlength());
 

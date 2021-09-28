@@ -5,26 +5,20 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.FieldPath;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.BoolFieldValue;
-import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -106,9 +100,9 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void testEncode() throws ParseException {
+    public void testEmbed() throws ParseException {
         TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
-        var expression = Expression.fromString("input myText | encode | attribute 'myTensor'",
+        var expression = Expression.fromString("input myText | embed | attribute 'myTensor'",
                                                new SimpleLinguistics(),
                                                new MockEncoder());
 
@@ -131,15 +125,15 @@ public class ScriptTestCase {
                      ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());
     }
 
-    private static class MockEncoder implements Encoder {
+    private static class MockEncoder implements Embedder {
 
         @Override
-        public List<Integer> encode(String text, Language language) {
+        public List<Integer> embed(String text, Language language) {
             return null;
         }
 
         @Override
-        public Tensor encode(String text, Language language, TensorType tensorType) {
+        public Tensor embed(String text, Language language, TensorType tensorType) {
             return Tensor.from(tensorType, "[7,3,0,0]");
         }
 
