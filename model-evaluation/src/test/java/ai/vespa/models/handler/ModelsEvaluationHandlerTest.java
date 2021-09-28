@@ -188,7 +188,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("Placeholder", inputTensorShortForm());
         properties.put("format", "short");
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
-        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"value\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
+        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"values\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -219,19 +219,19 @@ public class ModelsEvaluationHandlerTest {
         properties.put("format", "short");
         String url = "http://localhost/model-evaluation/v1/vespa_model/";
         handler.assertResponse(url + "test_mapped/eval", properties, 200,
-                "{\"type\":\"tensor(d0{})\",\"value\":{\"a\":1.0,\"b\":2.0}}");
+                "{\"type\":\"tensor(d0{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}");
         handler.assertResponse(url + "test_indexed/eval", properties, 200,
-                "{\"type\":\"tensor(d0[2],d1[3])\",\"value\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}");
+                "{\"type\":\"tensor(d0[2],d1[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}");
         handler.assertResponse(url + "test_mixed/eval", properties, 200,
-                "{\"type\":\"tensor(x{},y[3])\",\"value\":{\"a\":[1.0,2.0,3.0],\"b\":[4.0,5.0,6.0]}}");
+                "{\"type\":\"tensor(x{},y[3])\",\"blocks\":{\"a\":[1.0,2.0,3.0],\"b\":[4.0,5.0,6.0]}}");
         handler.assertResponse(url + "test_mixed_2/eval", properties, 200,
-                "{\"type\":\"tensor(a[2],b[2],c{},d[2])\",\"value\":{\"a\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]],\"b\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]}}");
+                "{\"type\":\"tensor(a[2],b[2],c{},d[2])\",\"blocks\":{\"a\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]],\"b\":[[[1.0,2.0],[3.0,4.0]],[[5.0,6.0],[7.0,8.0]]]}}");
     }
 
     @Test
     public void testVespaModelLiteralOutput() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("format", "literal");
+        properties.put("format", "string");
         String url = "http://localhost/model-evaluation/v1/vespa_model/";
         handler.assertResponse(url + "test_mapped/eval", properties, 200,
                 "tensor(d0{}):{a:1.0,b:2.0}");
