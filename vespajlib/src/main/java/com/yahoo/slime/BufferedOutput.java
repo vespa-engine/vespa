@@ -3,6 +3,8 @@ package com.yahoo.slime;
 
 import com.yahoo.compress.Compressor;
 
+import java.nio.charset.Charset;
+
 final class BufferedOutput {
 
     private byte[] buf;
@@ -55,6 +57,9 @@ final class BufferedOutput {
         byte[] ret = new byte[pos];
         System.arraycopy(buf, 0, ret, 0, pos);
         return ret;
+    }
+    public String toString(Charset charset) {
+        return new String(buf, 0, pos, charset);
     }
     Compressor.Compression compress(Compressor compressor) {
         return compressor.compress(buf, pos);
