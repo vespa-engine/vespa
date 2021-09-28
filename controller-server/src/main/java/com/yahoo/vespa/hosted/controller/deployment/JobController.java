@@ -475,24 +475,30 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment) {
-        start(id, type, versions, isRedeployment, JobProfile.of(type));
+        start(id, type, versions, isRedeployment, JobProfile.of(type), false);
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, boolean dryRun) {
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
             if (last.flatMap(run -> active(run.id())).isPresent())
                 throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, dryRun));
             metric.jobStarted(newId.job());
         });
     }
 
+
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
+        deploy(id, type, platform, applicationPackage, false);
+    }
+
+    /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment.*/
+    public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage, boolean dryRun) {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
@@ -525,7 +531,8 @@ public class JobController {
                                lastRun.map(run -> run.versions().targetPlatform()),
                                lastRun.map(run -> run.versions().targetApplication())),
                   false,
-                  JobProfile.development);
+                  JobProfile.development,
+                  dryRun);
         });
 
         locked(id, type, __ -> {
