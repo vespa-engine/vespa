@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.flags.FlagDefinition;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireFlagDataChange;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireOperationFailure;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireWarning;
+import org.apache.zookeeper.Op;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -251,6 +253,13 @@ class SystemFlagsDeployResult {
             return new OperationError(message, Set.of(), OperationType.VALIDATE_ARCHIVE, null, null);
         }
 
+        static OperationError dataForUndefinedFlag(FlagsTarget target, FlagId id) {
+            return new OperationError("Flag data present for undefined flag. Remove flag data files if flag's definition " +
+                                      "is already removed from Flags / PermanentFlags. Consult ModelContext.FeatureFlags " +
+                                      "for safe removal of flag used by config-model.",
+                                      Set.of(), OperationType.DATA_FOR_UNDEFINED_FLAG, id, null);
+        }
+
         String message() { return message; }
         Set<FlagsTarget> targets() { return targets; }
         OperationType operation() { return operation; }
@@ -284,7 +293,8 @@ class SystemFlagsDeployResult {
     }
 
     enum OperationType {
-        CREATE("create"), DELETE("delete"), UPDATE("update"), LIST("list"), VALIDATE_ARCHIVE("validate-archive");
+        CREATE("create"), DELETE("delete"), UPDATE("update"), LIST("list"), VALIDATE_ARCHIVE("validate-archive"),
+        DATA_FOR_UNDEFINED_FLAG("data-for-undefined-flag");
 
         private final String stringValue;
 
