@@ -2,7 +2,7 @@
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.language.Language;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 
 import java.util.Map;
@@ -13,12 +13,12 @@ import java.util.Map;
 public class ConversionContext {
 
     private final CompiledQueryProfileRegistry registry;
-    private final Encoder encoder;
+    private final Embedder embedder;
     private final Language language;
 
-    public ConversionContext(CompiledQueryProfileRegistry registry, Encoder encoder, Map<String, String> context) {
+    public ConversionContext(CompiledQueryProfileRegistry registry, Embedder embedder, Map<String, String> context) {
         this.registry = registry;
-        this.encoder = encoder;
+        this.embedder = embedder;
         this.language = context.containsKey("language") ? Language.fromLanguageTag(context.get("language"))
                                                         : Language.UNKNOWN;
     }
@@ -27,14 +27,14 @@ public class ConversionContext {
     CompiledQueryProfileRegistry getRegistry() {return registry;}
 
     /** Returns the configured encoder, never null */
-    Encoder getEncoder() { return encoder; }
+    Embedder getEncoder() { return embedder; }
 
     /** Returns the language, which is never null but may be UNKNOWN */
     Language getLanguage() { return language; }
 
     /** Returns an empty context */
     public static ConversionContext empty() {
-        return new ConversionContext(null, Encoder.throwsOnUse, Map.of());
+        return new ConversionContext(null, Embedder.throwsOnUse, Map.of());
     }
 
 }

@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Simon Thoresen Hult
  */
-public class IntegerEncoderTestCase {
+public class IntegerEmbedderTestCase {
 
     @Test
     public void requireThatIntEncoderWorksAsExpected() {

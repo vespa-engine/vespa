@@ -2,9 +2,8 @@
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.language.Language;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -48,18 +47,18 @@ public class TensorFieldType extends FieldType {
         return convertFrom(o, context.getEncoder(), context.getLanguage());
     }
 
-    private Object convertFrom(Object o, Encoder encoder, Language language) {
+    private Object convertFrom(Object o, Embedder embedder, Language language) {
         if (o instanceof Tensor) return o;
-        if (o instanceof String && ((String)o).startsWith("encode(")) return encode((String)o, encoder, language);
+        if (o instanceof String && ((String)o).startsWith("embed(")) return encode((String)o, embedder, language);
         if (o instanceof String) return Tensor.from(type, (String)o);
         return null;
     }
 
-    private Tensor encode(String s, Encoder encoder, Language language) {
+    private Tensor encode(String s, Embedder embedder, Language language) {
         if ( ! s.endsWith(")"))
-            throw new IllegalArgumentException("Expected any string enclosed in encode(), but the argument does not end by ')'");
-        String text = s.substring("encode(".length(), s.length() - 1);
-        return encoder.encode(text, language, type);
+            throw new IllegalArgumentException("Expected any string enclosed in embed(), but the argument does not end by ')'");
+        String text = s.substring("embed(".length(), s.length() - 1);
+        return embedder.embed(text, language, type);
     }
 
     public static TensorFieldType fromTypeString(String s) {

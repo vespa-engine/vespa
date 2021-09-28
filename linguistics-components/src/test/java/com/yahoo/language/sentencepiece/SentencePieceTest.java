@@ -38,27 +38,27 @@ public class SentencePieceTest {
     @Test
     public void testIntegerListEncoding() {
         var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
-        tester.assertEncoded("hello, world!", 908, 1418, 9934, 501, 9960);
-        tester.assertEncoded("Hello, world!", 9912, 0, 6595, 9934, 501, 9960);
+        tester.assertEmbedded("hello, world!", 908, 1418, 9934, 501, 9960);
+        tester.assertEmbedded("Hello, world!", 9912, 0, 6595, 9934, 501, 9960);
     }
 
     @Test
     public void testDenseTensorEncoding() {
         var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
-        tester.assertEncoded("hello, world!", "tensor(d[10])", "[908,1418,9934,501,9960,0,0,0,0,0]");
-        tester.assertEncoded("Hello, world!", "tensor(d[10])", "[9912,0,6595,9934,501,9960,0,0,0,0]");
-        tester.assertEncoded("hello, world!", "tensor(d[2])", "[908,1418]");
+        tester.assertEmbedded("hello, world!", "tensor(d[10])", "[908,1418,9934,501,9960,0,0,0,0,0]");
+        tester.assertEmbedded("Hello, world!", "tensor(d[10])", "[9912,0,6595,9934,501,9960,0,0,0,0]");
+        tester.assertEmbedded("hello, world!", "tensor(d[2])", "[908,1418]");
     }
 
     @Test
     public void testSparseTensorEncoding() {
         var tester = new SentencePieceTester(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
-        tester.assertEncoded("hello", "tensor(token{})", "{lo:1.0,'▁hel':0.0}");
+        tester.assertEmbedded("hello", "tensor(token{})", "{lo:1.0,'▁hel':0.0}");
     }
 
     @Test
     public void testNoCollapse() {
-        var tester = new SentencePieceTester(new SentencePieceEncoder.Builder()
+        var tester = new SentencePieceTester(new SentencePieceEmbedder.Builder()
                                                      .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())
                                                      .setCollapseUnknowns(false));
         tester.assertSegmented("KHJ hello", "▁", "K", "H", "J", "▁hel", "lo");
@@ -66,7 +66,7 @@ public class SentencePieceTest {
 
     @Test
     public void testHighestScore() {
-        var tester = new SentencePieceTester(new SentencePieceEncoder.Builder()
+        var tester = new SentencePieceTester(new SentencePieceEmbedder.Builder()
                                                      .addDefaultModel(new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath())
                                                      .setScoring(Scoring.highestScore));
         tester.assertSegmented("h", "▁h");
@@ -77,7 +77,7 @@ public class SentencePieceTest {
 
     @Test
     public void testMultiLanguageTokenization() {
-        SentencePieceEncoder.Builder builder = new SentencePieceEncoder.Builder();
+        SentencePieceEmbedder.Builder builder = new SentencePieceEmbedder.Builder();
         builder.addModel(Language.JAPANESE, new File("src/test/models/sentencepiece/ja.wiki.bpe.vs5000.model").toPath());
         builder.addModel(Language.ENGLISH, new File("src/test/models/sentencepiece/en.wiki.bpe.vs10000.model").toPath());
         var tester = new SentencePieceTester(builder);

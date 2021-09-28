@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -34,12 +34,12 @@ public class QueryProperties extends Properties {
 
     private Query query;
     private final CompiledQueryProfileRegistry profileRegistry;
-    private final Encoder encoder;
+    private final Embedder embedder;
 
-    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Encoder encoder) {
+    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
         this.query = query;
         this.profileRegistry = profileRegistry;
-        this.encoder = encoder;
+        this.embedder = embedder;
     }
 
     public void setParentQuery(Query query) {
@@ -380,7 +380,7 @@ public class QueryProperties extends Properties {
         if (type == null) return value; // no type info -> keep as string
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
-        return field.getType().convertFrom(value, new ConversionContext(profileRegistry, encoder, context));
+        return field.getType().convertFrom(value, new ConversionContext(profileRegistry, embedder, context));
     }
 
     private void throwIllegalParameter(String key,String namespace) {

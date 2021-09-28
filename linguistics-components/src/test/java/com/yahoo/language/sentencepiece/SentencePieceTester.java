@@ -14,28 +14,28 @@ import static org.junit.Assert.assertEquals;
 
 class SentencePieceTester {
 
-    private final SentencePieceEncoder encoder;
+    private final SentencePieceEmbedder embedder;
 
     public SentencePieceTester(Path model) {
-        this(new SentencePieceEncoder.Builder().addDefaultModel(model));
+        this(new SentencePieceEmbedder.Builder().addDefaultModel(model));
     }
 
-    public SentencePieceTester(SentencePieceEncoder.Builder builder) {
+    public SentencePieceTester(SentencePieceEmbedder.Builder builder) {
         this(builder.build());
     }
 
-    public SentencePieceTester(SentencePieceEncoder encoder) {
-        this.encoder = encoder;
+    public SentencePieceTester(SentencePieceEmbedder embedder) {
+        this.embedder = embedder;
     }
 
-    public void assertEncoded(String input, Integer... expectedCodes) {
-        assertArrayEquals(expectedCodes, encoder.encode(input, Language.UNKNOWN).toArray());
+    public void assertEmbedded(String input, Integer... expectedCodes) {
+        assertArrayEquals(expectedCodes, embedder.embed(input, Language.UNKNOWN).toArray());
     }
 
-    public void assertEncoded(String input, String tensorType, String tensor) {
+    public void assertEmbedded(String input, String tensorType, String tensor) {
         TensorType type = TensorType.fromSpec(tensorType);
         Tensor expected = Tensor.from(type, tensor);
-        assertEquals(expected, encoder.encode(input, Language.UNKNOWN, type));
+        assertEquals(expected, embedder.embed(input, Language.UNKNOWN, type));
     }
 
     public void assertSegmented(String input, String... expectedSegments) {
@@ -43,7 +43,7 @@ class SentencePieceTester {
     }
 
     public void assertSegmented(Language language, String input, String... expectedSegments) {
-        assertArrayEquals(expectedSegments, encoder.segment(input, language).toArray());
+        assertArrayEquals(expectedSegments, embedder.segment(input, language).toArray());
     }
 
 }

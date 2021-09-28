@@ -3,7 +3,7 @@ package com.yahoo.docprocs.indexing;
 
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -29,7 +29,7 @@ public class ScriptManagerTestCase {
         IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newssummary")
                                                               .content("input title | index title"));
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Encoder.throwsOnUse);
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Embedder.throwsOnUse);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
@@ -44,7 +44,7 @@ public class ScriptManagerTestCase {
         IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newsarticle")
                                                               .content("input title | index title"));
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Encoder.throwsOnUse);
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Embedder.throwsOnUse);
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newssummary")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
@@ -53,7 +53,7 @@ public class ScriptManagerTestCase {
     public void requireThatEmptyConfigurationDoesNotThrow() {
         DocumentTypeManager typeMgr = new DocumentTypeManager();
         typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Encoder.throwsOnUse);
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Embedder.throwsOnUse);
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
 
@@ -61,7 +61,7 @@ public class ScriptManagerTestCase {
     public void requireThatUnknownDocumentTypeReturnsNull() {
         DocumentTypeManager typeMgr = new DocumentTypeManager();
         typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Encoder.throwsOnUse);
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Embedder.throwsOnUse);
         for (Iterator<DocumentType> it = typeMgr.documentTypeIterator(); it.hasNext(); ) {
             assertNull(scriptMgr.getScript(it.next()));
         }

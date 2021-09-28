@@ -9,7 +9,7 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
@@ -426,12 +426,12 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
     public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics(), Encoder.throwsOnUse);
+        parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse);
     }
 
-    public void parseIndexingScript(String script, Linguistics linguistics, Encoder encoder) {
+    public void parseIndexingScript(String script, Linguistics linguistics, Embedder embedder) {
         try {
-            ScriptParserContext config = new ScriptParserContext(linguistics, encoder);
+            ScriptParserContext config = new ScriptParserContext(linguistics, embedder);
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(ScriptExpression.newInstance(config));
         } catch (ParseException e) {

@@ -4,7 +4,7 @@ package com.yahoo.language.sentencepiece;
 import com.google.common.annotations.Beta;
 import com.google.inject.Inject;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -19,26 +19,25 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Integration with https://github.com/google/sentencepiece
- * through http://docs.djl.ai/extensions/sentencepiece/index.html
+ * A native Java implementation of SentencePiece - see https://github.com/google/sentencepiece
  *
- * SentencePiece is a language-agnostic tokenizer for neural nets.
+ * SentencePiece is a language-agnostic segmenter and embedder for neural nets.
  *
  * @author bratseth
  */
 @Beta
-public class SentencePieceEncoder implements Segmenter, Encoder {
+public class SentencePieceEmbedder implements Segmenter, Embedder {
 
     private final Map<Language, Model> models;
 
     private final SentencePieceAlgorithm algorithm;
 
     @Inject
-    public SentencePieceEncoder(SentencePieceConfig config) {
+    public SentencePieceEmbedder(SentencePieceConfig config) {
         this(new Builder(config));
     }
 
-    public SentencePieceEncoder(Builder builder) {
+    public SentencePieceEmbedder(Builder builder) {
         algorithm = new SentencePieceAlgorithm(builder.collapseUnknowns, builder.getScoring());
 
         models = builder.getModels().entrySet()
@@ -46,7 +45,7 @@ public class SentencePieceEncoder implements Segmenter, Encoder {
                         .map(e -> new Model(e.getKey(), e.getValue()))
                         .collect(Collectors.toUnmodifiableMap(m -> m.language, m -> m));
         if (models.isEmpty())
-            throw new IllegalArgumentException("SentencePieceEncoder requires at least one model configured");
+            throw new IllegalArgumentException("SentencePieceEmbedder requires at least one model configured");
     }
 
     /**
@@ -77,7 +76,7 @@ public class SentencePieceEncoder implements Segmenter, Encoder {
      * @return the list of zero or more token ids resulting from segmenting the input text
      */
     @Override
-    public List<Integer> encode(String rawInput, Language language) {
+    public List<Integer> embed(String rawInput, Language language) {
         var resultBuilder = new ResultBuilder<List<Integer>>(new ArrayList<>()) {
             public void add(int segmentStart, int segmentEnd, SentencePieceAlgorithm.SegmentEnd[] segmentEnds) {
                 result().add(segmentEnds[segmentEnd].id);
@@ -89,7 +88,7 @@ public class SentencePieceEncoder implements Segmenter, Encoder {
     }
 
     /**
-     * <p>Encodes directly to a tensor.</p>
+     * <p>Embeds text into a tensor.</p>
      *
      * <p>If the tensor type is indexed 1-d (bound or unbound) this will return a tensor containing the token ids in the order
      * they were encountered in the text. If the dimension is bound and too large it will be zero padded, if too small
@@ -101,10 +100,10 @@ public class SentencePieceEncoder implements Segmenter, Encoder {
      * <p>If the tensor is any other type IllegalArgumentException is thrown.</p>
      */
     @Override
-    public Tensor encode(String rawInput, Language language, TensorType type) {
+    public Tensor embed(String rawInput, Language language, TensorType type) {
         if (type.dimensions().size() == 1 && type.dimensions().get(0).isIndexed()) {
             // Build to a list first since we can't reverse a tensor builder
-            List<Integer> values = encode(rawInput, language);
+            List<Integer> values = embed(rawInput, language);
 
             long maxSize = values.size();
             if (type.dimensions().get(0).size().isPresent())
@@ -125,7 +124,7 @@ public class SentencePieceEncoder implements Segmenter, Encoder {
             return builder.build();
         }
         else {
-            throw new IllegalArgumentException("Don't know how to encode with SentencePiece into " + type);
+            throw new IllegalArgumentException("Don't know how to embed with SentencePiece into " + type);
         }
     }
 
@@ -210,9 +209,9 @@ public class SentencePieceEncoder implements Segmenter, Encoder {
         }
         public Scoring getScoring() { return scoring; }
 
-        public SentencePieceEncoder build() {
+        public SentencePieceEmbedder build() {
             if (models.isEmpty()) throw new IllegalStateException("At least one model must be supplied");
-            return new SentencePieceEncoder(this);
+            return new SentencePieceEmbedder(this);
         }
 
     }

@@ -5,25 +5,25 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.language.process.Encoder;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 /**
- * Encodes a string as a tensor using the configured Encoder component
+ * Embeds a string in a tensor space using the configured Embedder component
  *
  * @author bratseth
  */
-public class EncodeExpression extends Expression  {
+public class EmbedExpression extends Expression  {
 
-    private final Encoder encoder;
+    private final Embedder embedder;
 
-    /** The target type we are encoding to. Set during verification. */
+    /** The target type we are embedding into. */
     private TensorType targetType;
 
-    public EncodeExpression(Encoder encoder) {
+    public EmbedExpression(Embedder embedder) {
         super(DataType.STRING);
-        this.encoder = encoder;
+        this.embedder = embedder;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class EncodeExpression extends Expression  {
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getValue();
-        Tensor tensor = encoder.encode(input.getString(), context.getLanguage(), targetType);
+        Tensor tensor = embedder.embed(input.getString(), context.getLanguage(), targetType);
         context.setValue(new TensorFieldValue(tensor));
     }
 
@@ -43,7 +43,7 @@ public class EncodeExpression extends Expression  {
         String outputField = context.getOutputField();
         if (outputField == null)
             throw new VerificationException(this, "No output field in this statement: " +
-                                                  "Don't know what tensor type to encode to.");
+                                                  "Don't know what tensor type to embed into.");
         DataType outputFieldType = context.getInputType(this, outputField);
         if ( ! (outputFieldType instanceof TensorDataType) )
             throw new VerificationException(this, "The type of the output field " + outputField +
@@ -58,12 +58,12 @@ public class EncodeExpression extends Expression  {
     }
 
     @Override
-    public String toString() { return "encode"; }
+    public String toString() { return "embed"; }
 
     @Override
     public int hashCode() { return 1; }
 
     @Override
-    public boolean equals(Object o) { return o instanceof EncodeExpression; }
+    public boolean equals(Object o) { return o instanceof EmbedExpression; }
 
 }
