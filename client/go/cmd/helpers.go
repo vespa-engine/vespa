@@ -32,16 +32,16 @@ func fatalErr(err error, msg ...interface{}) {
 func printErrHint(err error, hints ...string) {
 	printErr(nil, err.Error())
 	for _, hint := range hints {
-		log.Print(color.Cyan("Hint: "), hint)
+		fmt.Fprintln(stderr, color.Cyan("Hint:"), hint)
 	}
 }
 
 func printErr(err error, msg ...interface{}) {
 	if len(msg) > 0 {
-		log.Print(color.Red("Error: "), fmt.Sprint(msg...))
+		fmt.Fprintln(stderr, color.Red("Error:"), fmt.Sprint(msg...))
 	}
 	if err != nil {
-		log.Print(color.Yellow(err))
+		fmt.Fprintln(stderr, color.Yellow(err))
 	}
 }
 
@@ -215,11 +215,9 @@ func waitForService(service string, sessionOrRunID int64) {
 	if status/100 == 2 {
 		log.Print(s.Description(), " at ", color.Cyan(s.BaseURL), " is ", color.Green("ready"))
 	} else {
-		log.Print(s.Description(), " at ", color.Cyan(s.BaseURL), " is ", color.Red("not ready"))
 		if err == nil {
-			log.Print(color.Yellow(fmt.Sprintf("Status %d", status)))
-		} else {
-			log.Print(color.Yellow(err))
+			err = fmt.Errorf("Status %d", status)
 		}
+		fatalErr(err, s.Description(), " at ", color.Cyan(s.BaseURL), " is ", color.Red("not ready"))
 	}
 }

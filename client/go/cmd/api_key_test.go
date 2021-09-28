@@ -17,7 +17,7 @@ func TestAPIKey(t *testing.T) {
 	out, _ := execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
 	assert.Contains(t, out, "Success: API private key written to "+keyFile+"\n")
 
-	out, _ = execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
-	assert.Contains(t, out, "Error: File "+keyFile+" already exists\nHint: Use -f to overwrite it\n")
+	out, outErr := execute(command{args: []string{"api-key", "-a", "t1.a1.i1"}, homeDir: homeDir}, t, nil)
+	assert.Contains(t, outErr, "Error: File "+keyFile+" already exists\nHint: Use -f to overwrite it\n")
 	assert.Contains(t, out, "This is your public key")
 }

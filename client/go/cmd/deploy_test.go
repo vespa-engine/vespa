@@ -61,9 +61,10 @@ func TestDeployApplicationDirectoryWithPomAndTarget(t *testing.T) {
 
 func TestDeployApplicationDirectoryWithPomAndEmptyTarget(t *testing.T) {
 	client := &mockHttpClient{}
+	_, outErr := execute(command{args: []string{"deploy", "testdata/applications/withEmptyTarget"}}, t, client)
 	assert.Equal(t,
 		"Error: pom.xml exists but no target/application.zip. Run mvn package first\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withEmptyTarget"}, []string{}))
+		outErr)
 }
 
 func TestDeployApplicationPackageErrorWithUnexpectedNonJson(t *testing.T) {
@@ -85,7 +86,7 @@ func TestDeployApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
-         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here\n"
+         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
      }`)
 }
 
@@ -94,7 +95,7 @@ func TestPrepareApplicationPackageErrorWithExpectedFormat(t *testing.T) {
 		"Invalid XML, error in services.xml:\nelement \"nosuch\" not allowed here",
 		`{
          "error-code": "INVALID_APPLICATION_PACKAGE",
-         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here\n"
+         "message": "Invalid XML, error in services.xml: element \"nosuch\" not allowed here"
      }`)
 }
 
@@ -158,18 +159,20 @@ func assertDeployRequestMade(target string, client *mockHttpClient, t *testing.T
 	assertPackageUpload(-1, target+"/application/v2/tenant/default/prepareandactivate", client, t)
 }
 
-func assertApplicationPackageError(t *testing.T, command string, status int, expectedMessage string, returnBody string) {
+func assertApplicationPackageError(t *testing.T, cmd string, status int, expectedMessage string, returnBody string) {
 	client := &mockHttpClient{}
 	client.NextResponse(status, returnBody)
+	_, outErr := execute(command{args: []string{cmd, "testdata/applications/withTarget/target/application.zip"}}, t, client)
 	assert.Equal(t,
 		"Error: Invalid application package (Status "+strconv.Itoa(status)+")\n\n"+expectedMessage+"\n",
-		executeCommand(t, client, []string{command, "testdata/applications/withTarget/target/application.zip"}, []string{}))
+		outErr)
 }
 
 func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
 	client.NextResponse(status, errorMessage)
+	_, outErr := execute(command{args: []string{"deploy", "testdata/applications/withTarget/target/application.zip"}}, t, client)
 	assert.Equal(t,
 		"Error: Error from deploy service at 127.0.0.1:19071 (Status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
-		executeCommand(t, client, []string{"deploy", "testdata/applications/withTarget/target/application.zip"}, []string{}))
+		outErr)
 }

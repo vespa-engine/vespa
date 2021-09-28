@@ -23,6 +23,6 @@ func TestLog(t *testing.T) {
 	expected := "[2021-09-27 10:31:30.905535] host1a.dev.aws-us-east-1c info    logserver-container Container.com.yahoo.container.jdisc.ConfiguredApplication	Switching to the latest deployed set of configurations and components. Application config generation: 52532\n"
 	assert.Equal(t, expected, out)
 
-	out, _ = execute(command{homeDir: homeDir, args: []string{"log", "--from", "2021-09-27T13:12:49Z", "--to", "2021-09-27T13:15:00", "1h"}}, t, httpClient)
-	assert.Equal(t, "Error: Invalid period\ncannot combine --from/--to with relative value: 1h\n", out)
+	_, errOut := execute(command{homeDir: homeDir, args: []string{"log", "--from", "2021-09-27T13:12:49Z", "--to", "2021-09-27T13:15:00", "1h"}}, t, httpClient)
+	assert.Equal(t, "Error: Invalid period\ncannot combine --from/--to with relative value: 1h\n", errOut)
 }
