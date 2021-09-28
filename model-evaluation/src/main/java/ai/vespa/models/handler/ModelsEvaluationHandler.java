@@ -94,7 +94,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         if (format.isPresent() && format.get().equalsIgnoreCase("short")) {
             return new Response(200, JsonFormat.encodeShortForm(result));
         }
-        else if (format.isPresent() && format.get().equalsIgnoreCase("literal")) {
+        else if (format.isPresent() && format.get().equalsIgnoreCase("string")) {
             return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
         }
         return new Response(200, JsonFormat.encode(result));
