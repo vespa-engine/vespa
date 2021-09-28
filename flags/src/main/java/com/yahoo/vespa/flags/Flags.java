@@ -141,7 +141,7 @@ public class Flags {
             "Takes effect on next host-admin tick.");
 
     public static final UnboundBooleanFlag LOCAL_SUSPEND = defineFeatureFlag(
-            "local-suspend", true,
+            "local-suspend", false,
             List.of("hakonhall"), "2021-09-21", "2021-10-21",
             "Whether the cfghost host admin should suspend against only the local cfg (true and legacy) or all.",
             "Takes effect immediately.");
