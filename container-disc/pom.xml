@@ -180,7 +180,7 @@
                 container-apache-http-client-bundle-jar-with-dependencies.jar, <!-- Apache http client repackaged as bundle -->
 
                 <!-- Vespa security utils with necessary 3rd party bundles -->
-                security-utils-jar-with-dependencies.jar,
+                security-utils.jar,
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
 
