@@ -475,7 +475,7 @@ TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iterat
     // added to existing.
     tickDistributorNTimes(50);
 
-    const auto& stats = stripe_maintenance_stats();
+    const auto stats = stripe_maintenance_stats();
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
@@ -501,6 +501,11 @@ TEST_F(DistributorStripeTest, merge_stats_are_accumulated_during_database_iterat
     assertBucketSpaceStats(1, 3, 0, "default", bucketStats);
     assertBucketSpaceStats(0, 1, 1, "default", bucketStats);
     assertBucketSpaceStats(3, 1, 2, "default", bucketStats);
+
+    EXPECT_EQ(stats.perNodeStats.total_replica_stats().movingOut, 1);
+    EXPECT_EQ(stats.perNodeStats.total_replica_stats().copyingOut, 2);
+    EXPECT_EQ(stats.perNodeStats.total_replica_stats().copyingIn, 2);
+    EXPECT_EQ(stats.perNodeStats.total_replica_stats().syncing, 2);
 }
 
 void
@@ -534,7 +539,7 @@ TEST_F(DistributorStripeTest, stats_generated_for_preempted_operations)
     // by activation, we'll see no merge stats at all.
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1,1=2/2/2");
     tickDistributorNTimes(50);
-    const auto& stats = stripe_maintenance_stats();
+    const auto stats = stripe_maintenance_stats();
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;

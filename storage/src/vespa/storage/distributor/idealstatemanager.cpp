@@ -21,8 +21,7 @@ using document::BucketSpace;
 using storage::lib::Node;
 using storage::lib::NodeType;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 IdealStateManager::IdealStateManager(
         const DistributorNodeContext& node_ctx,
@@ -298,5 +297,4 @@ void IdealStateManager::getBucketStatus(std::ostream& out) const {
     }
 }
 
-} // distributor
-} // storage
+} // storage::distributor
