@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -100,6 +100,7 @@ class RunSerializer {
     private static final String noNodesDownSinceField = "noNodesDownSince";
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
+    private static final String isDryRunField = "isDryRun";
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -143,7 +144,8 @@ class RunSerializer {
                        convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
-                               .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
+                               .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())),
+                       runObject.field(isDryRunField).valid() && runObject.field(isDryRunField).asBool());
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -250,6 +252,7 @@ class RunSerializer {
                        .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
                     versionsObject.setObject(sourceField));
         });
+        runObject.setBool(isDryRunField, run.isDryRun());
     }
 
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {

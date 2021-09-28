@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableMap;
@@ -151,8 +151,9 @@ public class RunSerializerTest {
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
+        assertEquals(run.isDryRun(), phoenix.isDryRun());
 
-        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production);
+        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, true);
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 

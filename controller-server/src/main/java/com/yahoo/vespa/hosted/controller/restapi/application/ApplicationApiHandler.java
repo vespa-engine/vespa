@@ -1969,7 +1969,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         ensureApplicationExists(TenantAndApplicationId.from(id), request);
 
-        controller.jobController().deploy(id, type, version, applicationPackage);
+        boolean dryRun = Optional.ofNullable(dataParts.get("deployOptions"))
+                                 .map(json -> SlimeUtils.jsonToSlime(json).get())
+                                 .flatMap(options -> optional("dryRun", options))
+                                 .map(Boolean::valueOf)
+                                 .orElse(false);
+
+        controller.jobController().deploy(id, type, version, applicationPackage, dryRun);
         RunId runId = controller.jobController().last(id, type).get().id();
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();

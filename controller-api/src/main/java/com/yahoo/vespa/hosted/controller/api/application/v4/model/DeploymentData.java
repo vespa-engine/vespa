@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.yahoo.component.Version;
@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -37,7 +36,9 @@ public class DeploymentData {
     private final Quota quota;
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
+    private final boolean dryRun;
 
+    // TODO: Remove when users have been updated to use constructor below
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
@@ -46,6 +47,19 @@ public class DeploymentData {
                           Quota quota,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates) {
+        this(instance, zone, applicationPackage, platform, containerEndpoints, endpointCertificateMetadata,
+             dockerImageRepo, athenzDomain, quota, tenantSecretStores, operatorCertificates, false);
+    }
+
+    public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
+                          Set<ContainerEndpoint> containerEndpoints,
+                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
+                          Optional<DockerImage> dockerImageRepo,
+                          Optional<AthenzDomain> athenzDomain,
+                          Quota quota,
+                          List<TenantSecretStore> tenantSecretStores,
+                          List<X509Certificate> operatorCertificates,
+                          boolean dryRun) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
@@ -57,6 +71,7 @@ public class DeploymentData {
         this.quota = quota;
         this.tenantSecretStores = tenantSecretStores;
         this.operatorCertificates = operatorCertificates;
+        this.dryRun = dryRun;
     }
 
     public ApplicationId instance() {
@@ -102,4 +117,7 @@ public class DeploymentData {
     public List<X509Certificate> operatorCertificates() {
         return operatorCertificates;
     }
+
+    public boolean isDryRun() { return dryRun; }
+
 }

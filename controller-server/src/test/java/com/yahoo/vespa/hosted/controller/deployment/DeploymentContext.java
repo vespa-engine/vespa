@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.base.Supplier;
@@ -323,7 +323,7 @@ public class DeploymentContext {
 
     /** Runs a deployment of the given package to the given dev/perf job, on the given version. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage, Version vespaVersion) {
-        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage);
+        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage, false);
         return runJob(type);
     }
 
