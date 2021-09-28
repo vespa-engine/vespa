@@ -7,8 +7,7 @@ namespace storage {
 namespace distributor {
 
 OwnershipTransferSafeTimePointCalculator::TimePoint
-OwnershipTransferSafeTimePointCalculator::safeTimePoint(
-        TimePoint now) const
+OwnershipTransferSafeTimePointCalculator::safeTimePoint(TimePoint now) const
 {
     if (_max_cluster_clock_skew.count() == 0) {
         return TimePoint{};
@@ -27,8 +26,7 @@ OwnershipTransferSafeTimePointCalculator::safeTimePoint(
     // adding the max skew. This prevents generating time stamps within
     // the same whole second as another distributor already has done for
     // any of the buckets a node now owns.
-    auto now_sec = std::chrono::duration_cast<std::chrono::seconds>(
-            now.time_since_epoch());
+    auto now_sec = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
     return TimePoint(now_sec + std::chrono::seconds(1) + _max_cluster_clock_skew);
 }
 

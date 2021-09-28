@@ -131,7 +131,7 @@ DistributorNode::generate_unique_timestamp()
                 _intra_second_pseudo_usec_counter);
             std::_Exit(65);
         }
-        assert(_intra_second_pseudo_usec_counter < 1'000'000);
+        assert(_intra_second_pseudo_usec_counter < 999'999);
         ++_intra_second_pseudo_usec_counter;
     } else {
         _timestamp_second_counter = now_seconds;

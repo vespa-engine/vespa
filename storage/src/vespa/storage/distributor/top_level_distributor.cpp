@@ -10,7 +10,6 @@
 #include "distributor_stripe_pool.h"
 #include "distributor_stripe_thread.h"
 #include "distributor_total_metrics.h"
-#include "idealstatemetricsset.h"
 #include "multi_threaded_stripe_access_guard.h"
 #include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
@@ -74,6 +73,8 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
       _stripe_scan_stats(),
       _last_host_info_send_time(),
       _host_info_send_delay(1000ms),
+      _maintenance_safe_time_point(),
+      _maintenance_safe_time_delay(1s),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
       _metricUpdateHook(*this),
       _hostInfoReporter(*this, *this),
@@ -421,6 +422,8 @@ TopLevelDistributor::doCriticalTick([[maybe_unused]] framework::ThreadIndex idx)
     fetch_external_messages();
     // Propagates any new configs down to stripe(s)
     enable_next_config_if_changed();
+    un_inhibit_maintenance_if_safe_time_passed();
+
     return _tickResult;
 }
 
@@ -446,14 +449,32 @@ TopLevelDistributor::enable_next_config_if_changed()
             guard->update_total_distributor_config(_component.total_distributor_config_sp());
         }
         _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
+        _maintenance_safe_time_delay = _total_config->getMaxClusterClockSkew();
         _current_internal_config_generation = _component.internal_config_generation();
+    }
+}
+
+void
+TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed()
+{
+    if (_maintenance_safe_time_point.time_since_epoch().count() != 0) {
+        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
+        const auto now = TimePoint(std::chrono::seconds(_component.clock().getTimeInSeconds().getTime()));
+        if (now >= _maintenance_safe_time_point) {
+            // Thread safe. Relaxed store is fine; stripes will eventually observe new flag status.
+            for (auto& stripe : _stripes) {
+                stripe->inhibit_non_activation_maintenance_operations(false);
+            }
+            _maintenance_safe_time_point = TimePoint{};
+            LOG(debug, "Marked all stripes as no longer inhibiting non-activation maintenance operations");
+        }
     }
 }
 
 void
 TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
 {
-    // TODO STRIPE assert(_done_initializing); (can't currently do due to some unit test restrictions; uncomment and find out)
+    assert(_done_initializing);
     LOG(debug, "Stripe %u has signalled an intent to send host info out-of-band", stripe_index);
     std::lock_guard lock(_stripe_scan_notify_mutex);
     assert(stripe_index < _stripe_scan_stats.size());
@@ -500,12 +521,24 @@ TopLevelDistributor::send_host_info_if_appropriate()
 }
 
 void
-TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle)
+TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle,
+                                                       bool has_bucket_ownership_transfer)
 {
     lib::Node my_node(lib::NodeType::DISTRIBUTOR, getDistributorIndex());
     if (!_done_initializing && (new_bundle.getBaselineClusterState()->getNodeState(my_node).getState() == lib::State::UP)) {
         _done_initializing = true;
         _done_init_handler.notifyDoneInitializing();
+    }
+    if (has_bucket_ownership_transfer && _maintenance_safe_time_delay.count() > 0) {
+        OwnershipTransferSafeTimePointCalculator safe_time_calc(_maintenance_safe_time_delay);
+        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
+        const auto now = TimePoint(std::chrono::milliseconds(_component.getClock().getTimeInMillis().getTime()));
+        _maintenance_safe_time_point = safe_time_calc.safeTimePoint(now);
+        // All stripes are in a waiting pattern and will observe this on their next tick.
+        // Memory visibility enforced by all stripes being held under a mutex by our caller.
+        for (auto& stripe : _stripes) {
+            stripe->inhibit_non_activation_maintenance_operations(true);
+        }
     }
     LOG(debug, "Activated new state version in distributor: %s", new_bundle.toString().c_str());
 }
