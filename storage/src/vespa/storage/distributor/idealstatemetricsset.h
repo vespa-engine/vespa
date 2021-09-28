@@ -38,8 +38,11 @@ public:
     metrics::LongValueMetric buckets_toomanycopies;
     metrics::LongValueMetric buckets;
     metrics::LongValueMetric buckets_notrusted;
-    metrics::LongValueMetric buckets_rechecking;
-    metrics::LongAverageMetric startOperationsLatency;
+    metrics::LongValueMetric buckets_rechecking; // TODO remove, not used (but exposed by VespaMetricSet)
+    metrics::LongValueMetric buckets_replicas_moving_out;
+    metrics::LongValueMetric buckets_replicas_copying_in;
+    metrics::LongValueMetric buckets_replicas_copying_out;
+    metrics::LongValueMetric buckets_replicas_syncing;
     metrics::DoubleAverageMetric nodesPerMerge;
 
     void createOperationMetrics();

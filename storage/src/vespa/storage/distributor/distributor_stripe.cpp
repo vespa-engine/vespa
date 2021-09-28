@@ -558,8 +558,14 @@ DistributorStripe::propagateInternalScanMetricsToExternal()
 
     // All shared values are written when _metricLock is held, so no races.
     if (_bucketDBMetricUpdater.hasCompletedRound()) {
-        _bucketDbStats.propagateMetrics(_idealStateManager.getMetrics(), getMetrics());
-        _idealStateManager.getMetrics().setPendingOperations(_maintenanceStats.global.pending);
+        auto& ideal_state_metrics = _idealStateManager.getMetrics();
+        _bucketDbStats.propagateMetrics(ideal_state_metrics, getMetrics());
+        ideal_state_metrics.setPendingOperations(_maintenanceStats.global.pending);
+        const auto& total_stats = _maintenanceStats.perNodeStats.total_replica_stats();
+        ideal_state_metrics.buckets_replicas_moving_out.set(total_stats.movingOut);
+        ideal_state_metrics.buckets_replicas_copying_out.set(total_stats.copyingOut);
+        ideal_state_metrics.buckets_replicas_copying_in.set(total_stats.copyingIn);
+        ideal_state_metrics.buckets_replicas_syncing.set(total_stats.syncing);
     }
 }
 

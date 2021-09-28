@@ -34,9 +34,9 @@ merge_bucket_spaces_stats(NodeMaintenanceStatsTracker::BucketSpacesStats& dest,
 void
 NodeMaintenanceStatsTracker::merge(const NodeMaintenanceStatsTracker& rhs)
 {
-    for (const auto& entry : rhs._stats) {
+    for (const auto& entry : rhs._node_stats) {
         auto node_index = entry.first;
-        merge_bucket_spaces_stats(_stats[node_index], entry.second);
+        merge_bucket_spaces_stats(_node_stats[node_index], entry.second);
     }
 }
 
