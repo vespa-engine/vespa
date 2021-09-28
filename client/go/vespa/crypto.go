@@ -147,6 +147,9 @@ func (rs *RequestSigner) SignRequest(request *http.Request) error {
 	}
 	base64Signature := base64.StdEncoding.EncodeToString(signature)
 	request.Body = ioutil.NopCloser(body)
+	if request.Header == nil {
+		request.Header = make(http.Header)
+	}
 	request.Header.Set("X-Timestamp", timestamp)
 	request.Header.Set("X-Content-Hash", contentHash)
 	request.Header.Set("X-Key-Id", rs.KeyID)
@@ -163,13 +166,24 @@ func (rs *RequestSigner) hashAndSign(privateKey *ecdsa.PrivateKey, request *http
 	return ecdsa.SignASN1(rs.rnd, privateKey, hash)
 }
 
-// ECPrivateKeyFrom reads an EC private key from the PEM-encoded pemPrivateKey.
+// ECPrivateKeyFrom reads an EC private key (in raw or PKCS8 format) from the PEM-encoded pemPrivateKey.
 func ECPrivateKeyFrom(pemPrivateKey []byte) (*ecdsa.PrivateKey, error) {
 	privateKeyBlock, _ := pem.Decode(pemPrivateKey)
 	if privateKeyBlock == nil {
 		return nil, fmt.Errorf("invalid pem private key")
 	}
-	return x509.ParseECPrivateKey(privateKeyBlock.Bytes)
+	if privateKeyBlock.Type == "EC PRIVATE KEY" {
+		return x509.ParseECPrivateKey(privateKeyBlock.Bytes) // Raw EC private key
+	}
+	privateKey, err := x509.ParsePKCS8PrivateKey(privateKeyBlock.Bytes) // Try PKCS8 format
+	if err != nil {
+		return nil, err
+	}
+	ecKey, ok := privateKey.(*ecdsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("invalid private key type: %T", ecKey)
+	}
+	return ecKey, nil
 }
 
 // PEMPublicKeyFrom extracts the public key from privateKey encoded as PEM.
