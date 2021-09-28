@@ -31,6 +31,7 @@ class BmFeed;
 class BmMessageBus;
 class BmNode;
 class BmNodeStats;
+class BucketDbSnapshotVector;
 class IBmDistribution;
 class IBmFeedHandler;
 
@@ -94,6 +95,7 @@ public:
     std::vector<BmNodeStats> get_node_stats();
     BmDistribution& get_real_distribution() { return *_real_distribution; }
     void propagate_cluster_state();
+    BucketDbSnapshotVector get_bucket_db_snapshots();
 };
 
 }
