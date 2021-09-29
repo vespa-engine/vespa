@@ -140,12 +140,6 @@ public class Flags {
             "Only allow modifications of disks by disk task in limited situations.",
             "Takes effect on next host-admin tick.");
 
-    public static final UnboundBooleanFlag USE_UNKNOWN_SERVICE_STATUS = defineFeatureFlag(
-            "use-unknown-service-status", true,
-            List.of("hakonhall"), "2021-09-13", "2021-10-13",
-            "Whether to use the UNKNOWN ServiceStatus for services that have not yet been probed by service monitor.",
-            "Takes effect on first (re)start of config server.");
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2021-11-01",
