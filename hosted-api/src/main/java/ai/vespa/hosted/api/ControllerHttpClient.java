@@ -168,6 +168,13 @@ public abstract class ControllerHttpClient {
                                             GET)));
     }
 
+    /** Returns the application package of the given id. */
+    public HttpResponse<byte[]> applicationPackage(ApplicationId id) {
+        return send(request(HttpRequest.newBuilder(applicationPackagePath(id))
+                                       .timeout(Duration.ofMinutes(2)),
+                            GET));
+    }
+
     /** Follows the given deployment job until it is done, or this thread is interrupted, at which point the current status is returned. */
     public DeploymentLog followDeploymentUntilDone(ApplicationId id, ZoneId zone, long run,
                                                    Consumer<DeploymentLog.Entry> out) {
@@ -263,6 +270,10 @@ public abstract class ControllerHttpClient {
         return withQuery(concatenated(jobPath(id, zone),
                                       "run", Long.toString(run)),
                          "after", Long.toString(after));
+    }
+
+    private URI applicationPackagePath(ApplicationId id) {
+        return concatenated(applicationPath(id.tenant(), id.application()), "package");
     }
 
     private URI defaultRegionPath(Environment environment) {
