@@ -144,4 +144,8 @@ func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
 		}
 		fmt.Fprintln(out, result.Payload)
 	}
+
+	if !result.Success {
+		exitFunc(1)
+	}
 }
