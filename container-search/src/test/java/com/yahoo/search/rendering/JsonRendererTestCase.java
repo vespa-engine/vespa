@@ -124,6 +124,55 @@ public class JsonRendererTestCase {
     }
 
     @Test
+    public void testTensorShortForm() throws ExecutionException, InterruptedException, IOException {
+        String expected = "{" +
+                "\"root\":{" +
+                    "\"id\":\"toplevel\"," +
+                    "\"relevance\":1.0," +
+                    "\"fields\":{" +
+                        "\"totalCount\":1" +
+                    "}," +
+                    "\"children\":[{" +
+                        "\"id\":\"tensors\"," +
+                        "\"relevance\":1.0," +
+                        "\"fields\":{" +
+                            "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
+                            "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
+                            "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
+                            "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}," +
+                            "\"summaryfeatures\":{" +
+                                "\"tensor_standard\":{\"type\":\"tensor(x{},y{})\",\"cells\":[{\"address\":{\"x\":\"a\",\"y\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"b\",\"y\":\"1\"},\"value\":2.0}]}," +
+                                "\"tensor_indexed\":{\"type\":\"tensor(x[2],y[3])\",\"values\":[[1.0,2.0,3.0],[4.0,5.0,6.0]]}," +
+                                "\"tensor_single_mapped\":{\"type\":\"tensor(x{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}," +
+                                "\"tensor_mixed\":{\"type\":\"tensor(x{},y[2])\",\"blocks\":{\"a\":[1.0,2.0],\"b\":[3.0,4.0]}}" +
+                            "}" +
+                        "}" +
+                    "}]" +
+                "}}\n";
+
+        Slime slime = new Slime();
+        Cursor features = slime.setObject();
+        features.setData("tensor_standard", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
+        features.setData("tensor_indexed", TypedBinaryFormat.encode(Tensor.from("tensor(x[2],y[3]):[[1,2,3],[4,5,6]]")));
+        features.setData("tensor_single_mapped", TypedBinaryFormat.encode(Tensor.from("tensor(x{}):{ a:1, b:2 }")));
+        features.setData("tensor_mixed", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
+        FeatureData summaryFeatures = new FeatureData(new SlimeAdapter(slime.get()));
+
+        Hit h = new Hit("tensors");
+        h.setField("tensor_standard", new TensorFieldValue(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
+        h.setField("tensor_indexed", new TensorFieldValue(Tensor.from("tensor(x[2],y[3]):[[1,2,3],[4,5,6]]")));
+        h.setField("tensor_single_mapped", new TensorFieldValue(Tensor.from("tensor(x{}):{ a:1, b:2 }")));
+        h.setField("tensor_mixed", new TensorFieldValue(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
+        h.setField("summaryfeatures", summaryFeatures);
+
+        Result r = new Result(new Query("/?format.tensors=short"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJson(expected, summary);
+    }
+
+    @Test
     public void testDataTypes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
@@ -463,7 +512,6 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-
     @Test
     public void testTracingOfNodesWithBothChildrenAndDataAndEmptySubnode() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
@@ -552,7 +600,6 @@ public class JsonRendererTestCase {
         String summary = render(execution, r);
         assertEqualJson(expected, summary);
     }
-
 
     @Test
     public void test() throws IOException, InterruptedException, ExecutionException {

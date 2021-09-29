@@ -45,6 +45,7 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.serialization.JsonFormat;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -58,7 +59,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -78,6 +78,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
     private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
+    private static final CompoundName TENSOR_FORMAT = new CompoundName("format.tensors");
 
     // if this must be optimized, simply use com.fasterxml.jackson.core.SerializableString
     private static final String BUCKET_LIMITS = "limits";
@@ -127,6 +128,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private LongSupplier timeSource;
     private OutputStream stream;
 
+    private boolean tensorShortFormRendering = false;
+
     public JsonRenderer() {
         this(null);
     }
@@ -166,6 +169,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     public void beginResponse(OutputStream stream) throws IOException {
         beginJsonCallback(stream);
         debugRendering = getDebugRendering(getResult().getQuery());
+        tensorShortFormRendering = getTensorShortFormRendering(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), debugRendering);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
@@ -198,6 +202,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private boolean getDebugRendering(Query q) {
         return q != null && q.properties().getBoolean(DEBUG_RENDERING_KEY, false);
+    }
+
+    private boolean getTensorShortFormRendering(Query q) {
+        if (q == null || q.properties().get(TENSOR_FORMAT) == null)
+            return false;
+        return q.properties().getString(TENSOR_FORMAT).equalsIgnoreCase("short");
     }
 
     protected void renderTrace(Trace trace) throws IOException {
@@ -285,8 +295,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeEndObject();
         }
         generator.writeEndArray();
-
-
     }
 
     protected void renderCoverage() throws IOException {
@@ -510,7 +518,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     protected FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering) {
-        return new FieldConsumer(generator, debugRendering);
+        return new FieldConsumer(generator, debugRendering, tensorShortFormRendering);
     }
 
     /**
@@ -529,12 +537,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private final JsonGenerator generator;
         private final boolean debugRendering;
+        private final boolean tensorShortForm;
 
         private MutableBoolean hasFieldsField;
 
         public FieldConsumer(JsonGenerator generator, boolean debugRendering) {
+            this(generator, debugRendering, false);
+        }
+
+        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm) {
             this.generator = generator;
             this.debugRendering = debugRendering;
+            this.tensorShortForm = tensorShortForm;
         }
 
         /**
@@ -659,7 +673,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
             } else if (field instanceof FeatureData) {
-                generator.writeRawValue(((FeatureData)field).toJson());
+                generator.writeRawValue(((FeatureData)field).toJson(tensorShortForm));
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
@@ -697,26 +711,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
-            generator.writeStartObject();
-            generator.writeArrayFieldStart("cells");
-            if (tensor.isPresent()) {
-                for (Iterator<Tensor.Cell> i = tensor.get().cellIterator(); i.hasNext(); ) {
-                    Tensor.Cell cell = i.next();
-
-                    generator.writeStartObject();
-
-                    generator.writeObjectFieldStart("address");
-                    for (int d = 0; d < cell.getKey().size(); d++)
-                        generator.writeObjectField(tensor.get().type().dimensions().get(d).name(), cell.getKey().label(d));
-                    generator.writeEndObject();
-
-                    generator.writeObjectField("value", cell.getValue());
-
-                    generator.writeEndObject();
-                }
+            if (tensor.isEmpty()) {
+                generator.writeStartObject();
+                generator.writeArrayFieldStart("cells");
+                generator.writeEndArray();
+                generator.writeEndObject();
+                return;
             }
-            generator.writeEndArray();
-            generator.writeEndObject();
+            if (tensorShortForm) {
+                generator.writeRawValue(new String(JsonFormat.encodeShortForm(tensor.get()), StandardCharsets.UTF_8));
+            } else {
+                generator.writeRawValue(new String(JsonFormat.encode(tensor.get()), StandardCharsets.UTF_8));
+            }
         }
 
     }

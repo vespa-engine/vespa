@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.handler;
 
-import ai.vespa.models.evaluation.ModelTester;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporterWithMockedConstants;
 import com.yahoo.config.subscription.ConfigGetter;
@@ -186,7 +185,7 @@ public class ModelsEvaluationHandlerTest {
     public void testMnistSoftmaxEvaluateSpecificFunctionWithShortOutput() {
         Map<String, String> properties = new HashMap<>();
         properties.put("Placeholder", inputTensorShortForm());
-        properties.put("format", "short");
+        properties.put("format.tensors", "short");
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
         String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"values\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
         handler.assertResponse(url, properties, 200, expected);
@@ -216,7 +215,7 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testVespaModelShortOutput() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("format", "short");
+        properties.put("format.tensors", "short");
         String url = "http://localhost/model-evaluation/v1/vespa_model/";
         handler.assertResponse(url + "test_mapped/eval", properties, 200,
                 "{\"type\":\"tensor(d0{})\",\"cells\":{\"a\":1.0,\"b\":2.0}}");
@@ -231,7 +230,7 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testVespaModelLiteralOutput() {
         Map<String, String> properties = new HashMap<>();
-        properties.put("format", "string");
+        properties.put("format.tensors", "string");
         String url = "http://localhost/model-evaluation/v1/vespa_model/";
         handler.assertResponse(url + "test_mapped/eval", properties, 200,
                 "tensor(d0{}):{a:1.0,b:2.0}");

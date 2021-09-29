@@ -7074,6 +7074,7 @@
     ],
     "methods": [
       "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
@@ -7439,6 +7440,7 @@
       "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
+      "public java.lang.String toJson(boolean)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
