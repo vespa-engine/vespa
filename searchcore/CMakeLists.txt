@@ -54,7 +54,6 @@ vespa_define_module(
     src/apps/vespa-transactionlog-inspect
 
     TESTS
-    src/tests/bmcluster/estimate_moved_docs_ratio
     src/tests/grouping
     src/tests/proton/attribute
     src/tests/proton/attribute/attribute_aspect_delayer
