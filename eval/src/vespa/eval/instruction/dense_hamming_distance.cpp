@@ -4,7 +4,6 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/hamming_distance.h>
-#include <vespa/vespalib/util/binary_hamming_distance.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.instruction.dense_hamming_distance");
@@ -14,6 +13,27 @@ namespace vespalib::eval {
 using namespace tensor_function;
 
 namespace {
+
+
+size_t binary_hamming_distance(const void *lhs, const void *rhs, size_t sz) {
+    const uint64_t *words_a = static_cast<const uint64_t *>(lhs);
+    const uint64_t *words_b = static_cast<const uint64_t *>(rhs);
+    size_t sum = 0;
+    size_t i = 0;
+    for (; i * 8 + 7 < sz; ++i) {
+        uint64_t xor_bits = words_a[i] ^ words_b[i];
+        sum += __builtin_popcountl(xor_bits);
+    }
+    if (__builtin_expect((i * 8 < sz), false)) {
+        const uint8_t *bytes_a = static_cast<const uint8_t *>(lhs);
+        const uint8_t *bytes_b = static_cast<const uint8_t *>(rhs);
+        for (i *= 8; i < sz; ++i) {
+            uint64_t xor_bits = bytes_a[i] ^ bytes_b[i];
+            sum += __builtin_popcountl(xor_bits);
+        }
+    }
+    return sum;
+};
 
 void int8_hamming_to_double_op(InterpretedFunction::State &state, uint64_t vector_size) {
     const auto &lhs = state.peek(1);
