@@ -9,6 +9,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -32,6 +33,7 @@ public class NodeListMicroBenchmarkTest {
     private int nodeCounter = 0;
     private static final int hostCount = 1000;
 
+    @Ignore
     @Test
     public void testChildrenOf() {
         List<Node> nodes = createHosts();
