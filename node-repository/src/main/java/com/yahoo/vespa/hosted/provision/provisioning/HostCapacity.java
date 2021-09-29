@@ -97,7 +97,7 @@ public class HostCapacity {
     /** Returns the number of available IP addresses on given host */
     int freeIps(Node host) {
         if (host.type() == NodeType.host) {
-            return host.ipConfig().pool().eventuallyUnusedAddressCount(allNodes.nodes());
+            return (allNodes.eventuallyUnusedIpAddressCount(host));
         }
         return host.ipConfig().pool().findUnusedIpAddresses(allNodes.nodes()).size();
     }

@@ -307,27 +307,6 @@ public class IP {
             return Collections.unmodifiableSet(unusedAddresses);
         }
 
-        /**
-         * Returns the number of unused IP addresses in the pool, assuming any and all unaccounted for hostnames
-         * in the pool are resolved to exactly 1 IP address (or 2 with {@link IpAddresses.Protocol#dualStack}).
-         */
-        public int eventuallyUnusedAddressCount(NodeList nodes) {
-            // The address pool is filled immediately upon provisioning in dynamically provisioned zones,
-            // and within short time the IP address pool is filled.  For all other cases, the IP address
-            // pool is already filled.
-            //
-            // The count in this method relies on the size of the IP address pool if that's non-empty,
-            // otherwise fall back to the address/hostname pool.
-
-
-            Set<String> currentIpAddresses = this.ipAddresses.asSet();
-            if (!currentIpAddresses.isEmpty()) {
-                return findUnusedIpAddresses(nodes).size();
-            }
-
-            return (int) findUnusedAddressStream(nodes).count();
-        }
-
         private Stream<Address> findUnusedAddressStream(NodeList nodes) {
             Set<String> hostnames = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
             return addresses.stream().filter(address -> !hostnames.contains(address.hostname()));
