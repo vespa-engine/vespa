@@ -241,7 +241,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
-        @Override public boolean throwIfResourceLimitsSpecified() { return true; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
