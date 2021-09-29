@@ -5,6 +5,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,15 +23,18 @@ import java.util.stream.Collectors;
  */
 public class HostCapacity {
 
-    private final NodeList allNodes;
+    private final NodesAndHosts<? extends NodeList> allNodes;
     private final HostResourcesCalculator hostResourcesCalculator;
 
     public HostCapacity(NodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
+        this(NodesAndHosts.create(Objects.requireNonNull(allNodes, "allNodes must be non-null")), hostResourcesCalculator);
+    }
+    public HostCapacity(NodesAndHosts<? extends NodeList> allNodes, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
         this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
 
-    public NodeList allNodes() { return allNodes; }
+    public NodeList allNodes() { return allNodes.nodes(); }
 
     /**
      * Spare hosts are the hosts in the system with the most free capacity. A zone may reserve a minimum number of spare
@@ -93,9 +97,9 @@ public class HostCapacity {
     /** Returns the number of available IP addresses on given host */
     int freeIps(Node host) {
         if (host.type() == NodeType.host) {
-            return host.ipConfig().pool().eventuallyUnusedAddressCount(allNodes);
+            return host.ipConfig().pool().eventuallyUnusedAddressCount(allNodes.nodes());
         }
-        return host.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
+        return host.ipConfig().pool().findUnusedIpAddresses(allNodes.nodes()).size();
     }
 
     /** Returns the capacity of given host that is both free and usable */
@@ -122,7 +126,7 @@ public class HostCapacity {
         if (   requireIps && freeIps(host) == 0) return NodeResources.zero();
 
         NodeResources hostResources = hostResourcesCalculator.advertisedResourcesOf(host.flavor());
-        return allNodes.childrenOf(host).asList().stream()
+        return allNodes.childrenOf(host).stream()
                        .filter(node -> !(excludeInactive && inactiveOrRetired(node)))
                        .map(node -> node.flavor().resources().justNumbers())
                        .reduce(hostResources.justNumbers(), NodeResources::subtract)
