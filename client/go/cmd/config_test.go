@@ -24,7 +24,7 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, "", homeDir, "config", "set", "application", "t1.a1.i1")
 	assertConfigCommand(t, "application = t1.a1.i1\n", homeDir, "config", "get", "application")
 
-	assertConfigCommand(t, "application = t1.a1.i1\ncolor = auto\ntarget = https://127.0.0.1\nwait = 0\n", homeDir, "config", "get")
+	assertConfigCommand(t, "application = t1.a1.i1\ncolor = auto\nquiet = false\ntarget = https://127.0.0.1\nwait = 0\n", homeDir, "config", "get")
 
 	assertConfigCommand(t, "", homeDir, "config", "set", "wait", "60")
 	assertConfigCommandErr(t, "wait option must be an integer >= 0, got \"foo\"\n", homeDir, "config", "set", "wait", "foo")
