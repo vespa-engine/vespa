@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
@@ -350,7 +350,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
-        deployment.activate();
+        if ( ! prepareParams.isDryRun())
+            deployment.activate();
 
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
