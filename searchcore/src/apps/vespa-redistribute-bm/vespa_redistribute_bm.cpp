@@ -128,7 +128,7 @@ BMParams::BMParams()
     set_enable_service_layer(true);
     set_enable_distributor(true);
     set_use_document_api(true);
-    set_num_nodes(4);
+    set_nodes_per_group(4);
 }
 
 
@@ -370,10 +370,11 @@ App::usage()
         "[--distributor-stripes stripes]\n"
         "[--documents documents]\n"
         "[--flip-nodes flip-nodes]\n"
+        "[--groups groups]\n"
         "[--indexing-sequencer [latency,throughput,adaptive]]\n"
         "[--max-pending max-pending]\n"
         "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
-        "[--nodes nodes]\n"
+        "[--nodes-per-group nodes-per-group]\n"
         "[--redundancy redundancy]\n"
         "[--rpc-events-before-wakeup events]\n"
         "[--rpc-network-threads threads]\n"
@@ -396,10 +397,11 @@ App::get_options()
         { "distributor-stripes", 1, nullptr, 0 },
         { "documents", 1, nullptr, 0 },
         { "flip-nodes", 1, nullptr, 0 },
+        { "groups", 1, nullptr, 0 },
         { "indexing-sequencer", 1, nullptr, 0 },
         { "max-pending", 1, nullptr, 0 },
         { "mode", 1, nullptr, 0 },
-        { "nodes", 1, nullptr, 0 },
+        { "nodes-per-group", 1, nullptr, 0 },
         { "redundancy", 1, nullptr, 0 },
         { "response-threads", 1, nullptr, 0 },
         { "rpc-events-before-wakeup", 1, nullptr, 0 },
@@ -415,10 +417,11 @@ App::get_options()
         LONGOPT_DISTRIBUTOR_STRIPES,
         LONGOPT_DOCUMENTS,
         LONGOPT_FLIP_NODES,
+        LONGOPT_GROUPS,
         LONGOPT_INDEXING_SEQUENCER,
         LONGOPT_MAX_PENDING,
         LONGOPT_MODE,
-        LONGOPT_NODES,
+        LONGOPT_NODES_PER_GROUP,
         LONGOPT_REDUNDANCY,
         LONGOPT_RESPONSE_THREADS,
         LONGOPT_RPC_EVENTS_BEFORE_WAKEUP,
@@ -449,6 +452,9 @@ App::get_options()
             case LONGOPT_FLIP_NODES:
                 _bm_params.set_flip_nodes(atoi(opt_argument));
                 break;
+            case LONGOPT_GROUPS:
+                _bm_params.set_groups(atoi(opt_argument));
+                break;
             case LONGOPT_INDEXING_SEQUENCER:
                 _bm_params.set_indexing_sequencer(opt_argument);
                 break;
@@ -461,8 +467,8 @@ App::get_options()
                     std::cerr << "Unknown mode name " << opt_argument << std::endl;
                 }
                 break;
-            case LONGOPT_NODES:
-                _bm_params.set_num_nodes(atoi(opt_argument));
+            case LONGOPT_NODES_PER_GROUP:
+                _bm_params.set_nodes_per_group(atoi(opt_argument));
                 break;
             case LONGOPT_REDUNDANCY:
                 _bm_params.set_redundancy(atoi(opt_argument));

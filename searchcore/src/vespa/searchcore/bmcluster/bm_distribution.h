@@ -23,7 +23,7 @@ class BmDistribution : public IBmDistribution
     storage::lib::ClusterStateBundle _cluster_state_bundle;
     bool                             _has_pending_cluster_state;
 public:
-    BmDistribution(uint32_t num_nodes, uint32_t redundancy);
+    BmDistribution(uint32_t groups, uint32_t nodes_per_group, uint32_t redundancy);
     ~BmDistribution() override;
     uint32_t get_num_nodes() const override;
     uint32_t get_service_layer_node_idx(const document::Bucket & bucket) const override;
