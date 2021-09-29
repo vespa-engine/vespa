@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Wraps a NodeList and builds a host -> children mapping for faster access
+ * Wraps a NodeList and builds a host to children mapping for faster access
  * as that is done very frequently.
  *
  * @author baldersheim
@@ -38,11 +39,11 @@ public class NodesAndHosts<NL extends NodeList> {
         return hostAndNodes != null ? NodeList.copyOf(hostAndNodes.children) : NodeList.of();
     }
 
-    public Node parentOf(Node node) {
-        if (node.parentHostname().isEmpty()) return null;
+    public Optional<Node> parentOf(Node node) {
+        if (node.parentHostname().isEmpty()) return Optional.empty();
 
         HostAndNodes hostAndNodes = host2Nodes.get(node.parentHostname().get());
-        return hostAndNodes != null ? hostAndNodes.host : null;
+        return hostAndNodes != null ? Optional.ofNullable(hostAndNodes.host) : Optional.empty();
     }
 
     private static class HostAndNodes {

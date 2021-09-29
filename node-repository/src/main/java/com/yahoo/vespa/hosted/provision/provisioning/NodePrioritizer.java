@@ -179,8 +179,9 @@ public class NodePrioritizer {
 
     /** Create a candidate from given pre-existing node */
     private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
-        Node parent = allNodes.parentOf(node);
-        if (parent != null) {
+        Optional<Node> optionalParent = allNodes.parentOf(node);
+        if (optionalParent.isPresent()) {
+            Node parent = optionalParent.get();
             return NodeCandidate.createChild(node,
                                              capacity.availableCapacityOf(parent),
                                              parent,
@@ -192,8 +193,7 @@ public class NodePrioritizer {
                                                                          capacity.availableCapacityOf(parent),
                                                                          topologyChange,
                                                                          currentClusterSize));
-        }
-        else {
+        } else {
             return NodeCandidate.createStandalone(node, isSurplus, false);
         }
     }
@@ -216,9 +216,8 @@ public class NodePrioritizer {
      */
     private boolean canStillAllocate(Node node) {
         if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
-        Node parent = allNodes.parentOf(node);
-        if (parent == null) return false;
-        return Nodes.canAllocateTenantNodeTo(parent, dynamicProvisioning);
+        Optional<Node> parent = allNodes.parentOf(node);
+        return parent.isPresent() ? Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning) : null;
     }
 
 }

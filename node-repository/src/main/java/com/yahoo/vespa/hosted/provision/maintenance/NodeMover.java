@@ -77,7 +77,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
                 if (spares.contains(toHost.node)) continue; // Do not offer spares as a valid move as they are reserved for replacement of failed nodes
                 if ( ! toHost.hasCapacity(node.resources())) continue;
 
-                MOVE suggestedMove = suggestedMove(node, allNodes.parentOf(node), toHost.node, allNodes);
+                MOVE suggestedMove = suggestedMove(node, allNodes.parentOf(node).get(), toHost.node, allNodes);
                 bestMove = bestMoveOf(bestMove, suggestedMove);
             }
         }
