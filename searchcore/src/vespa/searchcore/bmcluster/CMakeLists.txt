@@ -21,9 +21,7 @@ vespa_add_library(searchcore_bmcluster STATIC
     bucket_db_snapshot.cpp
     bucket_db_snapshot_vector.cpp
     bucket_info_queue.cpp
-    calculate_moved_docs_ratio.cpp
     document_api_message_bus_bm_feed_handler.cpp
-    estimate_moved_docs_ratio.cpp
     pending_tracker.cpp
     pending_tracker_hash.cpp
     spi_bm_feed_handler.cpp

@@ -18,8 +18,6 @@
 #include <vespa/searchcore/bmcluster/bm_range.h>
 #include <vespa/searchcore/bmcluster/bucket_db_snapshot_vector.h>
 #include <vespa/searchcore/bmcluster/bucket_selector.h>
-#include <vespa/searchcore/bmcluster/calculate_moved_docs_ratio.h>
-#include <vespa/searchcore/bmcluster/estimate_moved_docs_ratio.h>
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -54,8 +52,6 @@ using search::bmcluster::BmNode;
 using search::bmcluster::BmNodeStatsReporter;
 using search::bmcluster::BmRange;
 using search::bmcluster::BucketSelector;
-using search::bmcluster::CalculateMovedDocsRatio;
-using search::bmcluster::EstimateMovedDocsRatio;
 using search::index::DummyFileHeaderContext;
 using storage::lib::State;
 
@@ -179,8 +175,6 @@ class Benchmark {
     void adjust_cluster_state_before_feed();
     void adjust_cluster_state_after_feed();
     void adjust_cluster_state_after_first_redistribution();
-    double estimate_lost_unique_docs();
-    double estimate_moved_docs();
     void feed();
     std::chrono::duration<double> redistribute();
 
@@ -318,46 +312,6 @@ Benchmark::redistribute()
     return reporter.get_change_time() - before;
 }
 
-double
-Benchmark::estimate_lost_unique_docs()
-{
-    switch (_params.get_mode()) {
-    case Mode::PERM_CRASH:
-    case Mode::TEMP_CRASH:
-    {
-        auto lost_docs_ratio = EstimateMovedDocsRatio().estimate_lost_docs_base_ratio(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-        return _params.get_documents() * lost_docs_ratio;
-    }
-    default:
-        return 0.0;
-    }
-}
-
-double
-Benchmark::estimate_moved_docs()
-{
-    switch(_params.get_mode()) {
-    case Mode::GROW:
-        return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_grow(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-    case Mode::SHRINK:
-        return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_shrink(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-    case Mode::PERM_CRASH:
-    case Mode::TEMP_CRASH:
-        return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_crash(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_num_nodes());
-    case Mode::REPLACE:
-        if (_params.get_num_nodes() < 10) {
-            // Calculate better estimate for moved docs ratio with brute force
-            auto scanner = CalculateMovedDocsRatio::make_replace_calculator(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
-            scanner.scan();
-            return _params.get_documents() * scanner.get_moved_docs_ratio();
-        } else {
-            return _params.get_documents() * EstimateMovedDocsRatio().estimate_moved_docs_ratio_replace(_params.get_redundancy(), _params.get_flip_nodes(), _params.get_flip_nodes(), _params.get_num_nodes());
-        }
-    default:
-        return 0.0;
-    }
-}
-
 void
 Benchmark::run()
 {
@@ -368,12 +322,10 @@ Benchmark::run()
     auto old_snapshot = _cluster->get_bucket_db_snapshots();
     adjust_cluster_state_after_feed();
     auto elapsed = redistribute();
-    double estimated_moved_docs = estimate_moved_docs();
-    double estimated_lost_unique_docs = estimate_lost_unique_docs();
     auto new_snapshot = _cluster->get_bucket_db_snapshots();
     uint32_t moved_docs = new_snapshot.count_moved_documents(old_snapshot);
     uint32_t lost_unique_docs = new_snapshot.count_lost_unique_documents(old_snapshot);
-    LOG(info, "Redistributed (estimated %4.2f) %u docs in %5.3f seconds, %4.2f docs/s, (estimated %4.2f) %u lost unique docs", estimated_moved_docs, moved_docs, elapsed.count(), moved_docs / elapsed.count(), estimated_lost_unique_docs, lost_unique_docs);
+    LOG(info, "Redistributed %u docs in %5.3f seconds, %4.2f docs/s, %u lost unique docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
     if (_params.get_mode() == Mode::TEMP_CRASH) {
         if (_params.get_use_feed_settle()) {
             LOG(info, "Settling redistribution");
@@ -381,7 +333,7 @@ Benchmark::run()
         }
         adjust_cluster_state_after_first_redistribution();
         elapsed = redistribute();
-        LOG(info, "Cleanup of (estimated %4.2f) %u docs in %5.3f seconds, %4.2f docs/s, (estimated %4.2f) %u refound unique docs", estimated_moved_docs, moved_docs, elapsed.count(), moved_docs / elapsed.count(), estimated_lost_unique_docs, lost_unique_docs);
+        LOG(info, "Cleanup of %u docs in %5.3f seconds, %4.2f docs/s, %u refound unique docs", moved_docs, elapsed.count(), moved_docs / elapsed.count(), lost_unique_docs);
     }
     _cluster->stop();
 }
