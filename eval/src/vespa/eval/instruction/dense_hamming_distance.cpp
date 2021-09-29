@@ -4,7 +4,7 @@
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/hamming_distance.h>
-#include <vespa/vespalib/util/hamming_distance.h>
+#include <vespa/vespalib/util/binary_hamming_distance.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.instruction.dense_hamming_distance");

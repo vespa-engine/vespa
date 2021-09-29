@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hamming_distance.h"
-#include <vespa/vespalib/util/hamming_distance.h>
+#include <vespa/vespalib/util/binary_hamming_distance.h>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;

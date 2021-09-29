@@ -11,6 +11,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     barrier.cpp
     benchmark_timer.cpp
     bfloat16.cpp
+    binary_hamming_distance.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
     child_process.cpp
@@ -26,7 +27,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp
-    hamming_distance.cpp
     hdr_abort.cpp
     host_name.cpp
     joinable.cpp
