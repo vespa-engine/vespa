@@ -16,8 +16,10 @@ class BmClusterParams
     uint32_t _distributor_stripes;
     bool     _enable_distributor;
     bool     _enable_service_layer;
+    uint32_t _groups;
     vespalib::string _indexing_sequencer;
     uint32_t _num_nodes;
+    uint32_t _nodes_per_group;
     uint32_t _redundancy;
     uint32_t _response_threads;
     uint32_t _rpc_events_before_wakeup;
@@ -29,13 +31,16 @@ class BmClusterParams
     bool     _use_document_api;
     bool     _use_message_bus;
     bool     _use_storage_chain;
+    void recalc_nodes();
 public:
     BmClusterParams();
     ~BmClusterParams();
     uint32_t get_bucket_db_stripe_bits() const { return _bucket_db_stripe_bits; }
     uint32_t get_distributor_stripes() const { return _distributor_stripes; }
     bool get_enable_distributor() const { return _enable_distributor; }
+    uint32_t get_groups() const noexcept { return _groups; }
     const vespalib::string & get_indexing_sequencer() const { return _indexing_sequencer; }
+    uint32_t get_nodes_per_group() const noexcept { return _nodes_per_group; }
     uint32_t get_num_nodes() const { return _num_nodes; }
     uint32_t get_redundancy() const { return _redundancy; }
     uint32_t get_response_threads() const { return _response_threads; }
@@ -55,8 +60,9 @@ public:
     void set_distributor_stripes(uint32_t value) { _distributor_stripes = value; }
     void set_enable_distributor(bool value) { _enable_distributor = value; }
     void set_enable_service_layer(bool value) { _enable_service_layer = value; }
+    void set_groups(uint32_t value);
     void set_indexing_sequencer(vespalib::stringref sequencer) { _indexing_sequencer = sequencer; }
-    void set_num_nodes(uint32_t value) { _num_nodes = value; }
+    void set_nodes_per_group(uint32_t value);
     void set_redundancy(uint32_t value) { _redundancy = value; }
     void set_response_threads(uint32_t threads_in) { _response_threads = threads_in; }
     void set_rpc_events_before_wakeup(uint32_t value) { _rpc_events_before_wakeup = value; }
