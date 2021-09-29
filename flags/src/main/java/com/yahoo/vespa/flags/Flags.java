@@ -298,6 +298,14 @@ public class Flags {
             HOSTNAME
     );
 
+    public static final UnboundBooleanFlag ENABLE_TENANT_OPERATOR_ROLE = defineFeatureFlag(
+            "enable-tenant-operator-role", false,
+            List.of("bjorncs"), "2021-09-29", "2021-12-31",
+            "Enable tenant specific operator roles in public systems. For controllers only.",
+            "Takes effect on subsequent maintainer invocation",
+            TENANT_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
