@@ -175,7 +175,8 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     }
 
     private static URI serviceDumpDestination(NodeSpec spec, String dumpId) {
-        URI archiveUri = spec.archiveUri().get();
+        URI archiveUri = spec.archiveUri()
+                .orElseThrow(() -> new IllegalStateException("Archive URI is missing for " + spec.hostname()));
         String targetDirectory = "service-dump/" + dumpId + "/";
         return archiveUri.resolve(targetDirectory);
     }
