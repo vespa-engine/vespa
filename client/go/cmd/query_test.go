@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // query command tests
 // Author: bratseth
 
@@ -57,18 +57,20 @@ func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 func assertQueryError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
 	client.NextResponse(status, errorMessage)
+	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
 	assert.Equal(t,
 		"Error: Invalid query: Status "+strconv.Itoa(status)+"\n"+errorMessage+"\n",
-		executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
+		outErr,
 		"error output")
 }
 
 func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 	client := &mockHttpClient{}
 	client.NextResponse(status, errorMessage)
+	_, outErr := execute(command{args: []string{"query", "yql=select from sources * where title contains 'foo'"}}, t, client)
 	assert.Equal(t,
 		"Error: Status "+strconv.Itoa(status)+" from container at 127.0.0.1:8080\n"+errorMessage+"\n",
-		executeCommand(t, client, []string{"query"}, []string{"yql=select from sources * where title contains 'foo'"}),
+		outErr,
 		"error output")
 }
 

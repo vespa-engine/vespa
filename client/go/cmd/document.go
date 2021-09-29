@@ -5,9 +5,9 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -123,20 +123,29 @@ func curlOutput() io.Writer {
 }
 
 func printResult(result util.OperationResult, payloadOnlyOnSuccess bool) {
+	out := stdout
 	if !result.Success {
-		log.Print(color.Red("Error: "), result.Message)
+		out = stderr
+	}
+
+	if !result.Success {
+		fmt.Fprintln(out, color.Red("Error:"), result.Message)
 	} else if !(payloadOnlyOnSuccess && result.Payload != "") {
-		log.Print(color.Green("Success: "), result.Message)
+		fmt.Fprintln(out, color.Green("Success:"), result.Message)
 	}
 
 	if result.Detail != "" {
-		log.Print(color.Yellow(result.Detail))
+		fmt.Fprintln(out, color.Yellow(result.Detail))
 	}
 
 	if result.Payload != "" {
 		if !payloadOnlyOnSuccess {
-			log.Println("")
+			fmt.Fprintln(out)
 		}
-		log.Print(result.Payload)
+		fmt.Fprintln(out, result.Payload)
+	}
+
+	if !result.Success {
+		exitFunc(1)
 	}
 }

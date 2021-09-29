@@ -27,6 +27,18 @@ type command struct {
 	moreArgs []string
 }
 
+func resetFlag(f *pflag.Flag) {
+	switch v := f.Value.(type) {
+	case pflag.SliceValue:
+		_ = v.Replace([]string{})
+	default:
+		switch v.Type() {
+		case "bool", "string", "int":
+			_ = v.Set(f.DefValue)
+		}
+	}
+}
+
 func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string) {
 	if client != nil {
 		util.ActiveHttpClient = client
@@ -44,17 +56,8 @@ func execute(cmd command, t *testing.T, client *mockHttpClient) (string, string)
 	os.Setenv("VESPA_CLI_CACHE_DIR", cmd.cacheDir)
 
 	// Reset flags to their default value - persistent flags in Cobra persists over tests
-	rootCmd.Flags().VisitAll(func(f *pflag.Flag) {
-		switch v := f.Value.(type) {
-		case pflag.SliceValue:
-			_ = v.Replace([]string{})
-		default:
-			switch v.Type() {
-			case "bool", "string", "int":
-				_ = v.Set(f.DefValue)
-			}
-		}
-	})
+	rootCmd.Flags().VisitAll(resetFlag)
+	documentCmd.Flags().VisitAll(resetFlag)
 
 	// Do not exit in tests
 	exitFunc = func(code int) {}

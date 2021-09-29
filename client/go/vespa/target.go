@@ -1,11 +1,14 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package vespa
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -41,6 +44,9 @@ type Target interface {
 
 	// Service returns the service for given name. If timeout is non-zero, wait for the service to converge.
 	Service(name string, timeout time.Duration, sessionOrRunID int64) (*Service, error)
+
+	// PrintLog writes the logs of this deployment using given options to control output.
+	PrintLog(options LogOptions) error
 }
 
 // TLSOptions configures the certificate to use for service requests.
@@ -50,10 +56,14 @@ type TLSOptions struct {
 	PrivateKeyFile  string
 }
 
-// LogOptions configures the log output to produce when waiting for services.
+// LogOptions configures the log output to produce when writing log messages.
 type LogOptions struct {
-	Writer io.Writer
-	Level  int
+	From    time.Time
+	To      time.Time
+	Follow  bool
+	Dequote bool
+	Writer  io.Writer
+	Level   int
 }
 
 type customTarget struct {
@@ -117,6 +127,10 @@ func (t *customTarget) Service(name string, timeout time.Duration, sessionID int
 		return &Service{BaseURL: url, Name: name}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
+}
+
+func (t *customTarget) PrintLog(options LogOptions) error {
+	return fmt.Errorf("reading logs from non-cloud deployment is currently unsupported")
 }
 
 func (t *customTarget) urlWithPort(serviceName string) (string, error) {
@@ -205,6 +219,64 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64) (
 		return &Service{Name: name, BaseURL: t.documentURL, TLSOptions: t.tlsOptions}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
+}
+
+func (t *cloudTarget) logsURL() string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s/logs",
+		t.apiURL,
+		t.deployment.Application.Tenant, t.deployment.Application.Application, t.deployment.Application.Instance,
+		t.deployment.Zone.Environment, t.deployment.Zone.Region)
+}
+
+func (t *cloudTarget) PrintLog(options LogOptions) error {
+	req, err := http.NewRequest("GET", t.logsURL(), nil)
+	if err != nil {
+		return err
+	}
+	signer := NewRequestSigner(t.deployment.Application.SerializedForm(), t.apiKey)
+	lastFrom := options.From
+	requestFunc := func() *http.Request {
+		fromMillis := lastFrom.Unix() * 1000
+		q := req.URL.Query()
+		q.Set("from", strconv.FormatInt(fromMillis, 10))
+		if !options.To.IsZero() {
+			toMillis := options.To.Unix() * 1000
+			q.Set("to", strconv.FormatInt(toMillis, 10))
+		}
+		req.URL.RawQuery = q.Encode()
+		if err := signer.SignRequest(req); err != nil {
+			panic(err)
+		}
+		return req
+	}
+	logFunc := func(status int, response []byte) (bool, error) {
+		if ok, err := isOK(status); !ok {
+			return ok, err
+		}
+		logEntries, err := ReadLogEntries(bytes.NewReader(response))
+		if err != nil {
+			return true, err
+		}
+		for _, le := range logEntries {
+			if !le.Time.After(lastFrom) {
+				continue
+			}
+			if LogLevel(le.Level) > options.Level {
+				continue
+			}
+			fmt.Fprintln(options.Writer, le.Format(options.Dequote))
+		}
+		if len(logEntries) > 0 {
+			lastFrom = logEntries[len(logEntries)-1].Time
+		}
+		return false, nil
+	}
+	var timeout time.Duration
+	if options.Follow {
+		timeout = math.MaxInt64 // No timeout
+	}
+	_, err = wait(logFunc, requestFunc, &t.tlsOptions.KeyPair, timeout)
+	return err
 }
 
 func (t *cloudTarget) waitForEndpoints(timeout time.Duration, runID int64) error {
@@ -345,20 +417,6 @@ func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions
 		apiKey:     apiKey,
 		tlsOptions: tlsOptions,
 		logOptions: logOptions,
-	}
-}
-
-// LogLevel returns an int representing a named log level.
-func LogLevel(name string) int {
-	switch name {
-	case "error":
-		return 0
-	case "warning":
-		return 1
-	case "info":
-		return 2
-	default: // everything else, e.g. debug
-		return 3
 	}
 }
 

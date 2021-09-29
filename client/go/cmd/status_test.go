@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // status command tests
 // Author: bratseth
 
@@ -78,8 +78,11 @@ func assertDocumentStatus(target string, args []string, t *testing.T) {
 func assertQueryStatusError(target string, args []string, t *testing.T) {
 	client := &mockHttpClient{}
 	client.NextStatus(500)
+	cmd := []string{"status", "container"}
+	cmd = append(cmd, args...)
+	_, outErr := execute(command{args: cmd}, t, client)
 	assert.Equal(t,
-		"Container (query API) at "+target+" is not ready\nStatus 500\n",
-		executeCommand(t, client, []string{"status", "container"}, args),
+		"Error: Container (query API) at "+target+" is not ready\nStatus 500\n",
+		outErr,
 		"vespa status container")
 }
