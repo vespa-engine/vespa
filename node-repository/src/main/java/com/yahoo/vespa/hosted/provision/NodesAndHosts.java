@@ -1,11 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.vespa.hosted.provision.node.IP;
+
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Wraps a NodeList and builds a host to children mapping for faster access
@@ -15,7 +20,9 @@ import java.util.Optional;
  */
 public class NodesAndHosts<NL extends NodeList> {
     private final NL nodes;
-    private final Map<String, HostAndNodes> host2Nodes;
+    private final Map<String, HostAndNodes> host2Nodes = new HashMap<>();
+    private final Set<String> allPrimaryIps = new HashSet<>();
+    private final Set<String> allHostNames;
 
     public static <L extends NodeList> NodesAndHosts<L> create(L nodes) {
         return new NodesAndHosts<L>(nodes);
@@ -23,12 +30,14 @@ public class NodesAndHosts<NL extends NodeList> {
 
     private NodesAndHosts(NL nodes) {
         this.nodes = nodes;
-        host2Nodes = new HashMap<>();
+        nodes.forEach(node -> node.ipConfig().primary().forEach(ip -> allPrimaryIps.add(ip)));
+        allHostNames = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
         nodes.forEach(node -> {
             node.parentHostname().ifPresentOrElse(
                     parent -> host2Nodes.computeIfAbsent(parent, key -> new HostAndNodes()).add(node),
                     () -> host2Nodes.computeIfAbsent(node.hostname(), key -> new HostAndNodes()).setHost(node));
         });
+
     }
 
     /// Return the NodeList used for construction
@@ -44,6 +53,18 @@ public class NodesAndHosts<NL extends NodeList> {
 
         HostAndNodes hostAndNodes = host2Nodes.get(node.parentHostname().get());
         return hostAndNodes != null ? Optional.ofNullable(hostAndNodes.host) : Optional.empty();
+    }
+
+    /**
+     * Returns the number of unused IP addresses in the pool, assuming any and all unaccounted for hostnames
+     * in the pool are resolved to exactly 1 IP address (or 2 with {@link IP.IpAddresses.Protocol#dualStack}).
+     */
+    public int eventuallyUnusedIpAddressCount(Node host) {
+        // The count in this method relies on the size of the IP address pool if that's non-empty,
+        // otherwise fall back to the address/hostname pool.
+        return (int) (host.ipConfig().pool().ipSet().isEmpty()
+                ? host.ipConfig().pool().getAddressList().stream().filter(address -> !allHostNames.contains(address.hostname())).count()
+                : host.ipConfig().pool().ipSet().stream().filter(address -> !allPrimaryIps.contains(address)).count());
     }
 
     private static class HostAndNodes {
