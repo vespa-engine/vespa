@@ -8,6 +8,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
@@ -40,15 +41,15 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
         if (nodeRepository().zone().environment().isTest()) return 1.0; // Short lived deployments; no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
-        NodeList allNodes = nodeRepository().nodes().list();
+        NodesAndHosts<NodeList> allNodes = NodesAndHosts.create(nodeRepository().nodes().list());
         updateSkewMetric(allNodes);
-        if ( ! zoneIsStable(allNodes)) return 1.0;
+        if ( ! zoneIsStable(allNodes.nodes())) return 1.0;
         findBestMove(allNodes).execute(true, Agent.Rebalancer, deployer, metric, nodeRepository());
         return 1.0;
    }
 
     @Override
-    protected Move suggestedMove(Node node, Node fromHost, Node toHost, NodeList allNodes) {
+    protected Move suggestedMove(Node node, Node fromHost, Node toHost, NodesAndHosts<? extends NodeList> allNodes) {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         double skewReductionAtFromHost = skewReductionByRemoving(node, fromHost, capacity);
         double skewReductionAtToHost = skewReductionByAdding(node, toHost, capacity);
@@ -63,11 +64,11 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
     }
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */
-    private void updateSkewMetric(NodeList allNodes) {
+    private void updateSkewMetric(NodesAndHosts<? extends NodeList> allNodes) {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         double totalSkew = 0;
         int hostCount = 0;
-        for (Node host : allNodes.nodeType(NodeType.host).state(Node.State.active)) {
+        for (Node host : allNodes.nodes().nodeType(NodeType.host).state(Node.State.active)) {
             hostCount++;
             totalSkew += Node.skew(host.flavor().resources(), capacity.unusedCapacityOf(host));
         }
