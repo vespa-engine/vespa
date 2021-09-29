@@ -7,6 +7,7 @@
 #include "bm_message_bus.h"
 #include "bm_node.h"
 #include "bm_node_stats.h"
+#include "bucket_db_snapshot_vector.h"
 #include "document_api_message_bus_bm_feed_handler.h"
 #include "spi_bm_feed_handler.h"
 #include "storage_api_chain_bm_feed_handler.h"
@@ -443,6 +444,13 @@ void
 BmCluster::propagate_cluster_state()
 {
     _cluster_controller->propagate_cluster_state();
+}
+
+BucketDbSnapshotVector
+BmCluster::get_bucket_db_snapshots()
+{
+    auto providers = collect_persistence_providers(_nodes);
+    return BucketDbSnapshotVector(providers, _distribution->get_cluster_state_bundle());
 }
 
 }
