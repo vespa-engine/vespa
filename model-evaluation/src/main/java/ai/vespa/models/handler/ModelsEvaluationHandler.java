@@ -10,7 +10,6 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
@@ -90,7 +89,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         }
         Tensor result = evaluator.evaluate();
 
-        Optional<String> format = property(request, "format");
+        Optional<String> format = property(request, "format.tensors");
         if (format.isPresent() && format.get().equalsIgnoreCase("short")) {
             return new Response(200, JsonFormat.encodeShortForm(result));
         }

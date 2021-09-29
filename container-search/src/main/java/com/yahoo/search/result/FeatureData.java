@@ -62,9 +62,17 @@ public class FeatureData implements Inspectable, JsonProducer {
         return jsonForm;
     }
 
+    public String toJson(boolean tensorShortForm) {
+        if (this == empty) return "{}";
+        if (jsonForm != null) return jsonForm;
+
+        jsonForm = JsonRender.render(value, new Encoder(new StringBuilder(), true, tensorShortForm)).toString();
+        return jsonForm;
+    }
+
     @Override
     public StringBuilder writeJson(StringBuilder target) {
-        return JsonRender.render(value, new Encoder(target, true));
+        return JsonRender.render(value, new Encoder(target, true, false));
     }
 
     /**
@@ -162,15 +170,19 @@ public class FeatureData implements Inspectable, JsonProducer {
     /** A JSON encoder which encodes DATA as a tensor */
     private static class Encoder extends JsonRender.StringEncoder {
 
-        Encoder(StringBuilder out, boolean compact) {
+        private final boolean tensorShortForm;
+
+        Encoder(StringBuilder out, boolean compact, boolean tensorShortForm) {
             super(out, compact);
+            this.tensorShortForm = tensorShortForm;
         }
 
         @Override
         public void encodeDATA(byte[] value) {
             // This could be done more efficiently ...
-            target().append(new String(JsonFormat.encodeWithType(TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value))),
-                                       StandardCharsets.UTF_8));
+            Tensor tensor = TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value));
+            byte[] encodedTensor = tensorShortForm ? JsonFormat.encodeShortForm(tensor) : JsonFormat.encodeWithType(tensor);
+            target().append(new String(encodedTensor, StandardCharsets.UTF_8));
         }
 
     }
