@@ -5,9 +5,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
 
 import java.util.ArrayList;
@@ -57,22 +59,23 @@ class Preparer {
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
-        NodeList allNodes = nodeRepository.nodes().list();
-        NodeList appNodes = allNodes.owner(application);
+        NodesAndHosts<LockedNodeList> allNodesAndHosts = groupPreparer.createNodesAndHostUnlocked();
+        NodeList appNodes = allNodesAndHosts.nodes().owner(application);
         List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
         List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
         NodeIndices indices = new NodeIndices(usedIndices, ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
+
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
-            List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
-                                                        requestedNodes.fraction(wantedGroups), surplusNodes,
-                                                        indices, wantedGroups);
-
+            GroupPreparer.PrepareResult result = groupPreparer.prepare(
+                    application, clusterGroup, requestedNodes.fraction(wantedGroups),
+                    surplusNodes, indices, wantedGroups, allNodesAndHosts);
+            allNodesAndHosts = result.allNodesAndHosts; // Might have changed
+            List<Node> accepted = result.prepared;
             if (requestedNodes.rejectNonActiveParent()) {
-                Nodes nodes = nodeRepository.nodes();
-                NodeList activeHosts = nodes.list(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+                NodeList activeHosts = allNodesAndHosts.nodes().state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
                 accepted = accepted.stream()
                         .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
                         .collect(Collectors.toList());
