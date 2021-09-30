@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.vespa.flags.FlagDefinition;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireFlagDataChange;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireOperationFailure;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireWarning;
-import org.apache.zookeeper.Op;
 
 import java.util.ArrayList;
 import java.util.HashMap;
