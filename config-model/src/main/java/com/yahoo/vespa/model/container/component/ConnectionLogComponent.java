@@ -25,6 +25,7 @@ public class ConnectionLogComponent extends SimpleComponent implements Connectio
         this.queueSize = queueSize(cluster).orElse(-1);
     }
 
+    @SuppressWarnings("removal")
     private static OptionalInt queueSize(ContainerCluster<?> cluster) {
         if (cluster == null) return OptionalInt.empty();
         double vcpu = cluster.vcpu().orElse(0);
