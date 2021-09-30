@@ -290,6 +290,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
+            "enable-routing-reuse-port", false,
+            List.of("mortent"), "2021-09-29", "2021-12-31",
+            "Enable reuse port in routing configuration",
+            "Takes effect on container restart",
+            HOSTNAME
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
