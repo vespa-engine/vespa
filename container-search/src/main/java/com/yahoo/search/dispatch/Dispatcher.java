@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.compress.Compressor;
@@ -26,11 +25,9 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -94,10 +91,9 @@ public class Dispatcher extends AbstractComponent {
     public Dispatcher(RpcResourcePool resourcePool,
                       ComponentId clusterId,
                       DispatchConfig dispatchConfig,
-                      ClusterInfoConfig clusterInfoConfig,
                       VipStatus vipStatus,
                       Metric metric) {
-        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,clusterInfoConfig.nodeCount(),
+        this(resourcePool, new SearchCluster(clusterId.stringValue(), dispatchConfig,
                                              vipStatus, new RpcPingFactory(resourcePool)),
              dispatchConfig, metric);
 
