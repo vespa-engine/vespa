@@ -57,12 +57,11 @@ class Preparer {
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
-        List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
+        NodeList allNodes = nodeRepository.nodes().list();
+        NodeList appNodes = allNodes.owner(application);
+        List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
-        List<Integer> usedIndices = nodeRepository.nodes().list()
-                                                  .owner(application)
-                                                  .cluster(cluster.id())
-                                                  .mapToList(node -> node.allocation().get().membership().index());
+        List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
         NodeIndices indices = new NodeIndices(usedIndices, ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
@@ -95,9 +94,9 @@ class Preparer {
      * Returns a list of the nodes which are
      * in groups with index number above or equal the group count
      */
-    private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int wantedGroups) {
+    private List<Node> findNodesInRemovableGroups(NodeList appNodes, ClusterSpec requestedCluster, int wantedGroups) {
         List<Node> surplusNodes = new ArrayList<>(0);
-        for (Node node : nodeRepository.nodes().list(Node.State.active).owner(application)) {
+        for (Node node : appNodes.state(Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;
