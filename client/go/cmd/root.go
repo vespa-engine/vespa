@@ -17,7 +17,6 @@ import (
 )
 
 var (
-	// TODO: add timeout flag
 	rootCmd = &cobra.Command{
 		Use:   "vespa command-name",
 		Short: "The command-line tool for Vespa.ai",

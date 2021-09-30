@@ -15,8 +15,11 @@ import (
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
+var queryTimeoutSecs int
+
 func init() {
 	rootCmd.AddCommand(queryCmd)
+	queryCmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query request in seconds")
 }
 
 var queryCmd = &cobra.Command{
@@ -45,7 +48,7 @@ func query(arguments []string) {
 	}
 	url.RawQuery = urlQuery.Encode()
 
-	response, err := service.Do(&http.Request{URL: url}, time.Second*10)
+	response, err := service.Do(&http.Request{URL: url}, time.Second*time.Duration(queryTimeoutSecs))
 	if err != nil {
 		printErr(nil, "Request failed: ", err)
 		return
