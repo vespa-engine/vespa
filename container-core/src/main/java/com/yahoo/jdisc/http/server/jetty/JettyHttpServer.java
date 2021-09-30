@@ -134,8 +134,11 @@ public class JettyHttpServer extends AbstractServerProvider {
     private static void configureJettyThreadpool(Server server, ServerConfig config) {
         int cpus = Runtime.getRuntime().availableProcessors();
         QueuedThreadPool pool = (QueuedThreadPool) server.getThreadPool();
-        pool.setMaxThreads(config.maxWorkerThreads() > 0 ? config.maxWorkerThreads() : 16 + cpus);
-        pool.setMinThreads(config.minWorkerThreads() >= 0 ? config.minWorkerThreads() : 16 + cpus);
+        int maxThreads = config.maxWorkerThreads() > 0 ? config.maxWorkerThreads() : 16 + cpus;
+        pool.setMaxThreads(maxThreads);
+        int minThreads = config.minWorkerThreads() >= 0 ? config.minWorkerThreads() : 16 + cpus;
+        pool.setMinThreads(minThreads);
+        log.info(String.format("Threadpool size: min=%d, max=%d", minThreads, maxThreads));
     }
 
     private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
@@ -225,10 +228,9 @@ public class JettyHttpServer extends AbstractServerProvider {
             var sslConnectionFactory = serverConnector.getConnectionFactory(SslConnectionFactory.class);
             if (sslConnectionFactory != null) {
                 var sslContextFactory = sslConnectionFactory.getSslContextFactory();
-                log.info(String.format("Enabled SSL cipher suites for port '%d': %s",
-                                       localPort, Arrays.toString(sslContextFactory.getSelectedCipherSuites())));
-                log.info(String.format("Enabled SSL protocols for port '%d': %s",
-                                       localPort, Arrays.toString(sslContextFactory.getSelectedProtocols())));
+                String protocols = Arrays.toString(sslContextFactory.getSelectedProtocols());
+                String cipherSuites = Arrays.toString(sslContextFactory.getSelectedCipherSuites());
+                log.info(String.format("TLS for port '%d': %s with %s", localPort, protocols, cipherSuites));
             }
         }
     }

@@ -22,9 +22,6 @@ public class ContainerDocumentApi {
 
     public static final String DOCUMENT_V1_PREFIX = "/document/v1";
 
-    private static final int FALLBACK_MAX_POOL_SIZE = 0; // Use fallback based on actual logical core count on host
-    private static final int FALLBACK_CORE_POOL_SIZE = 0; // Use fallback based on actual logical core count on host
-
     public ContainerDocumentApi(ContainerCluster<?> cluster, Options options) {
         addRestApiHandler(cluster, options);
         addFeedHandler(cluster, options);
@@ -102,22 +99,7 @@ public class ContainerDocumentApi {
 
             // User options overrides below configuration
             if (hasUserOptions()) return;
-
-            builder.maxThreads(maxPoolSize());
-            builder.minThreads(minPoolSize());
-            builder.queueSize(500);
-        }
-
-        private int maxPoolSize() {
-            double vcpu = cluster.vcpu().orElse(0);
-            if (vcpu == 0) return FALLBACK_MAX_POOL_SIZE;
-            return Math.max(2, (int)Math.ceil(vcpu * 4.0));
-        }
-
-        private int minPoolSize() {
-            double vcpu = cluster.vcpu().orElse(0);
-            if (vcpu == 0) return FALLBACK_CORE_POOL_SIZE;
-            return Math.max(1, (int)Math.ceil(vcpu * 2.0));
+            builder.maxThreads(-4).minThreads(-4).queueSize(500);
         }
     }
 

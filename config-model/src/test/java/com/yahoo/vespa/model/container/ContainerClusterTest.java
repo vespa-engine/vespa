@@ -239,27 +239,15 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatPoolAndQueueCanNotBeControlledByPropertiesWhenNoFlavor() {
+    public void requireThatNonHostedUsesLargerDefaultThreadpool() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(500, threadpoolConfig.maxthreads());
-        assertEquals(0, threadpoolConfig.queueSize());
-    }
-
-    @Test
-    public void requireThatDefaultThreadPoolConfigIsSane() {
-        MockRoot root = new MockRoot("foo");
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root, cluster, "c1", "host-c1");
-        root.freezeModelTopology();
-
-        ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(500, threadpoolConfig.maxthreads());
-        assertEquals(0, threadpoolConfig.queueSize());
+        assertEquals(-4, threadpoolConfig.maxthreads());
+        assertEquals(-40, threadpoolConfig.queueSize());
     }
 
     @Test
@@ -277,28 +265,24 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void config_for_default_threadpool_provider_scales_with_node_resources() {
-        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource();
+    public void config_for_default_threadpool_provider_scales_with_node_resources_in_hosted() {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
+                        .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
-                        .modelHostProvisioner(hostProvisioner)
                         .build());
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        HostResource hostResource = new HostResource(
-                new Host(null, "host-c1"),
-                hostProvisioner.allocateHost("host-c1"));
-        addContainerWithHostResource(root, cluster, "c1", hostResource);
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
-        assertEquals(8, threadpoolConfig.maxthreads());
-        assertEquals(320, threadpoolConfig.queueSize());
+        assertEquals(-2, threadpoolConfig.maxthreads());
+        assertEquals(-40, threadpoolConfig.queueSize());
     }
 
     @Test
-    public void jetty_threadpool_scales_with_node_resources() {
+    public void jetty_threadpool_scales_with_node_resources_in_hosted() {
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()

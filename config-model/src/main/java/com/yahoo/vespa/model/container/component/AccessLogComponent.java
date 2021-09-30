@@ -69,6 +69,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
             throw new RuntimeException("File name pattern required when configuring access log.");
     }
 
+    @SuppressWarnings("removal")
     private static OptionalInt queueSize(ContainerCluster<?> cluster) {
         if (cluster == null) return OptionalInt.empty();
         double vcpu = cluster.vcpu().orElse(0);
