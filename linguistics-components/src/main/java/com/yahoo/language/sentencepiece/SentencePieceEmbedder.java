@@ -73,10 +73,11 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
      *
      * @param rawInput the text to segment. Any sequence of BMP (Unicode-16 the True Unicode) is supported.
      * @param language the model to use, or Language.UNKNOWN to use the default model if any
+     * @param destination ignored
      * @return the list of zero or more token ids resulting from segmenting the input text
      */
     @Override
-    public List<Integer> embed(String rawInput, Language language) {
+    public List<Integer> embed(String rawInput, Language language, String destination) {
         var resultBuilder = new ResultBuilder<List<Integer>>(new ArrayList<>()) {
             public void add(int segmentStart, int segmentEnd, SentencePieceAlgorithm.SegmentEnd[] segmentEnds) {
                 result().add(segmentEnds[segmentEnd].id);
@@ -98,12 +99,17 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
      * position as value.</p>
      *
      * <p>If the tensor is any other type IllegalArgumentException is thrown.</p>
+     *
+     * @param rawInput the text to segment. Any sequence of BMP (Unicode-16 the True Unicode) is supported.
+     * @param language the model to use, or Language.UNKNOWN to use the default model if any
+     * @param destination ignored
+     * @return the list of zero or more token ids resulting from segmenting the input text
      */
     @Override
-    public Tensor embed(String rawInput, Language language, TensorType type) {
+    public Tensor embed(String rawInput, Language language, String destination, TensorType type) {
         if (type.dimensions().size() == 1 && type.dimensions().get(0).isIndexed()) {
             // Build to a list first since we can't reverse a tensor builder
-            List<Integer> values = embed(rawInput, language);
+            List<Integer> values = embed(rawInput, language, destination);
 
             long maxSize = values.size();
             if (type.dimensions().get(0).size().isPresent())
