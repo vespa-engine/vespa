@@ -68,6 +68,7 @@ public final class ConfiguredApplication implements Application {
 
     private static final Logger log = Logger.getLogger(ConfiguredApplication.class.getName());
     private static final Set<ClientProvider> startedClients = Collections.newSetFromMap(new WeakHashMap<>());
+    static final String SANITIZE_FILENAME = "[/,;]";
 
     private static final Set<ServerProvider> startedServers = Collections.newSetFromMap(new IdentityHashMap<>());
     private final SubscriberFactory subscriberFactory;
@@ -407,6 +408,12 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
+    static String santizeFileName(String s) {
+        return s.trim()
+                .replace('\\', '.')
+                .replaceAll(SANITIZE_FILENAME, ".");
+    }
+
     // Workaround for ApplicationLoader.stop not being able to shutdown
     private void startShutdownDeadlineExecutor() {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
@@ -414,7 +421,8 @@ public final class ConfiguredApplication implements Application {
         long delayMillis = (long)(shudownTimeoutS.get() * 1000.0);
         shutdownDeadlineExecutor.schedule(() -> {
             if (dumpHeapOnShutdownTimeout.get()) {
-                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + ProcessHandle.current().pid() + ".hprof";
+                String saneConfigId = configId.replaceAll(SANITIZE_FILENAME, "_");
+                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(saneConfigId) + "." + ProcessHandle.current().pid() + ".hprof";
                 com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
             }
             com.yahoo.protect.Process.logAndDie(
