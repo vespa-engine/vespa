@@ -251,6 +251,13 @@ class SystemFlagsDeployResult {
             return new OperationError(message, Set.of(), OperationType.VALIDATE_ARCHIVE, null, null);
         }
 
+        static OperationError dataForUndefinedFlag(FlagsTarget target, FlagId id) {
+            return new OperationError("Flag data present for undefined flag. Remove flag data files if flag's definition " +
+                                      "is already removed from Flags / PermanentFlags. Consult ModelContext.FeatureFlags " +
+                                      "for safe removal of flag used by config-model.",
+                                      Set.of(), OperationType.DATA_FOR_UNDEFINED_FLAG, id, null);
+        }
+
         String message() { return message; }
         Set<FlagsTarget> targets() { return targets; }
         OperationType operation() { return operation; }
@@ -284,7 +291,8 @@ class SystemFlagsDeployResult {
     }
 
     enum OperationType {
-        CREATE("create"), DELETE("delete"), UPDATE("update"), LIST("list"), VALIDATE_ARCHIVE("validate-archive");
+        CREATE("create"), DELETE("delete"), UPDATE("update"), LIST("list"), VALIDATE_ARCHIVE("validate-archive"),
+        DATA_FOR_UNDEFINED_FLAG("data-for-undefined-flag");
 
         private final String stringValue;
 
