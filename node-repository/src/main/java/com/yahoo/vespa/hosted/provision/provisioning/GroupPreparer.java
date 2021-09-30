@@ -10,6 +10,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 
@@ -55,8 +56,9 @@ public class GroupPreparer {
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         {
+            NodesAndHosts<LockedNodeList> allNodesAndHosts = NodesAndHosts.create(nodeRepository.nodes().list(PROBE_LOCK));
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                               indices::probeNext, wantedGroups, PROBE_LOCK);
+                                                               indices::probeNext, wantedGroups, allNodesAndHosts);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);
@@ -69,9 +71,9 @@ public class GroupPreparer {
         // There were some changes, so re-do the allocation with locks
         try (Mutex lock = nodeRepository.nodes().lock(application);
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
-
+            NodesAndHosts<LockedNodeList> allNodesAndHosts = NodesAndHosts.create(nodeRepository.nodes().list(allocationLock));
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                          indices::next, wantedGroups, allocationLock);
+                                                          indices::next, wantedGroups, allNodesAndHosts);
             NodeType hostType = allocation.nodeType().hostType();
             if (canProvisionDynamically(hostType)) {
                 HostSharing sharing = hostSharing(requestedNodes, hostType);
@@ -115,10 +117,10 @@ public class GroupPreparer {
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                              List<Node> surplusActiveNodes, Supplier<Integer> nextIndex, int wantedGroups,
-                                             Mutex allocationLock) {
-        LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
-        NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes, nextIndex, nodeRepository);
-        NodePrioritizer prioritizer = new NodePrioritizer(allNodes,
+                                             NodesAndHosts<LockedNodeList> allNodesAndHosts) {
+
+        NodeAllocation allocation = new NodeAllocation(allNodesAndHosts, application, cluster, requestedNodes, nextIndex, nodeRepository);
+        NodePrioritizer prioritizer = new NodePrioritizer(allNodesAndHosts,
                                                           application,
                                                           cluster,
                                                           requestedNodes,
