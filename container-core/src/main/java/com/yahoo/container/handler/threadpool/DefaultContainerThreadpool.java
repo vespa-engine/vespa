@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 public class DefaultContainerThreadpool extends AbstractComponent implements AutoCloseable, ContainerThreadPool {
 
     private static final Logger log = Logger.getLogger(DefaultContainerThreadpool.class.getName());
+    private static final int MIN_QUEUE_SIZE = 650;
 
     private final ExecutorServiceWrapper threadpool;
 
@@ -105,7 +106,7 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
     }
 
     private int queueSize(ContainerThreadpoolConfig config, int maxThreads) {
-        return config.queueSize() >= 0 ? config.queueSize() : Math.max(650, Math.abs(config.queueSize()) * maxThreads);
+        return config.queueSize() >= 0 ? config.queueSize() : Math.max(MIN_QUEUE_SIZE, Math.abs(config.queueSize()) * maxThreads);
     }
 
 }
