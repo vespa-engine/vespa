@@ -117,7 +117,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         assertNotNull(connectionLogComponent);
         ConnectionLogConfig config = root.getConfig(ConnectionLogConfig.class, "default/component/com.yahoo.container.logging.FileConnectionLog");
         assertEquals("default", config.cluster());
-        assertEquals(10000, config.queueSize());
+        assertEquals(-1, config.queueSize());
         assertEquals(256*1024, config.bufferSize());
     }
 

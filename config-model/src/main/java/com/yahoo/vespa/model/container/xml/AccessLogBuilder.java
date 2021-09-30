@@ -55,7 +55,6 @@ public class AccessLogBuilder {
         @Override
         protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
             return new AccessLogComponent(
-                    (ContainerCluster<?>) ancestor,
                     accessLogType,
                     compressionType(spec, isHostedVespa),
                     fileNamePattern(spec),
