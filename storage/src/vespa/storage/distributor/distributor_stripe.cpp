@@ -62,7 +62,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
       _blockingStarter(std::make_unique<BlockingOperationStarter>(_component, *_operation_sequencer,
                                                                   *_throttlingStarter)),
-      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb, *_blockingStarter)),
+      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb,
+                                                        *_throttlingStarter, *_blockingStarter)),
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
@@ -709,7 +710,9 @@ DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
     // did any useful work with incoming data, this check must be performed _after_ the call.
     if (!should_inhibit_current_maintenance_scan_tick()) {
         scanNextBucket();
-        startNextMaintenanceOperation();
+        if (!_bucketDBUpdater.hasPendingClusterState()) {
+            startNextMaintenanceOperation();
+        }
         if (isInRecoveryMode()) {
             signalWorkWasDone();
         }

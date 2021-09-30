@@ -9,6 +9,7 @@ namespace storage::distributor {
 
 class MaintenanceOperationGenerator;
 class BucketPriorityDatabase;
+class PendingWindowChecker;
 
 class MaintenanceScheduler
 {
@@ -22,6 +23,7 @@ public:
 
     MaintenanceScheduler(MaintenanceOperationGenerator& operationGenerator,
                          BucketPriorityDatabase& priorityDb,
+                         const PendingWindowChecker& pending_window_checker,
                          OperationStarter& operationStarter);
 
     WaitTimeMs tick(SchedulingMode currentMode);
@@ -40,6 +42,7 @@ private:
 
     MaintenanceOperationGenerator& _operationGenerator;
     BucketPriorityDatabase& _priorityDb;
+    const PendingWindowChecker& _pending_window_checker;
     OperationStarter& _operationStarter;
 };
 

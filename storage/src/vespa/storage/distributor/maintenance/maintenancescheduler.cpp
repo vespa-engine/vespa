@@ -2,6 +2,7 @@
 
 #include "maintenancescheduler.h"
 #include "maintenanceoperationgenerator.h"
+#include "pending_window_checker.h"
 #include <vespa/storage/distributor/operationstarter.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 
@@ -13,9 +14,11 @@ namespace storage::distributor {
 MaintenanceScheduler::MaintenanceScheduler(
         MaintenanceOperationGenerator& operationGenerator,
         BucketPriorityDatabase& priorityDb,
+        const PendingWindowChecker& pending_window_checker,
         OperationStarter& operationStarter)
     : _operationGenerator(operationGenerator),
       _priorityDb(priorityDb),
+      _pending_window_checker(pending_window_checker),
       _operationStarter(operationStarter)
 {
 }
@@ -23,7 +26,7 @@ MaintenanceScheduler::MaintenanceScheduler(
 PrioritizedBucket
 MaintenanceScheduler::getMostImportantBucket()
 {
-    BucketPriorityDatabase::const_iterator mostImportant(_priorityDb.begin());
+    auto mostImportant = _priorityDb.begin();
     if (mostImportant == _priorityDb.end()) {
         return PrioritizedBucket::INVALID;
     }
@@ -38,10 +41,12 @@ MaintenanceScheduler::tick(SchedulingMode currentMode)
     if (!possibleToSchedule(mostImportant, currentMode)) {
         return WaitTimeMs(1);
     }
+    // If we can't start the operation, move on to the next bucket. Bucket will be
+    // re-prioritized when the distributor stripe next scans it.
+    clearPriority(mostImportant);
     if (!startOperation(mostImportant)) {
         return WaitTimeMs(1);
     }
-    clearPriority(mostImportant);
     return WaitTimeMs(0);
 }
 
@@ -49,11 +54,17 @@ bool
 MaintenanceScheduler::possibleToSchedule(const PrioritizedBucket& bucket,
                                          SchedulingMode currentMode) const
 {
+    if (!bucket.valid()) {
+        return false;
+    }
+    // If pending window is full nothing of equal or lower priority can be scheduled, so no point in trying.
+    if (!_pending_window_checker.may_allow_operation_with_priority(convertToOperationPriority(bucket.getPriority()))) {
+        return false;
+    }
     if (currentMode == RECOVERY_SCHEDULING_MODE) {
-        return (bucket.valid()
-                && possibleToScheduleInEmergency(bucket));
+        return possibleToScheduleInEmergency(bucket);
     } else {
-        return bucket.valid();
+        return true;
     }
 }
 

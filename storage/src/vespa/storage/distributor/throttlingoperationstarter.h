@@ -2,23 +2,24 @@
 #pragma once
 
 #include "operationstarter.h"
+#include <vespa/storage/distributor/maintenance/pending_window_checker.h>
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/storage/distributor/operations/operation.h>
 
 namespace storage::distributor {
 
-class ThrottlingOperationStarter : public OperationStarter
+class ThrottlingOperationStarter : public OperationStarter, public PendingWindowChecker
 {
     class ThrottlingOperation : public Operation
     {
     public:
         ThrottlingOperation(const Operation::SP& operation,
-                           ThrottlingOperationStarter& operationStarter)
+                            ThrottlingOperationStarter& operationStarter)
             : _operation(operation),
               _operationStarter(operationStarter)
         {}
 
-        ~ThrottlingOperation();
+        ~ThrottlingOperation() override;
     private:
         Operation::SP _operation;
         ThrottlingOperationStarter& _operationStarter;
@@ -53,7 +54,7 @@ class ThrottlingOperationStarter : public OperationStarter
             HDR_ABORT("should not be reached");
         }
         void onReceive(DistributorStripeMessageSender&,
-                               const std::shared_ptr<api::StorageReply>&) override {
+                       const std::shared_ptr<api::StorageReply>&) override {
             HDR_ABORT("should not be reached");
         }
     };
@@ -66,8 +67,11 @@ public:
           _maxPending(UINT32_MAX),
           _pendingCount(0)
     {}
+    ~ThrottlingOperationStarter() override;
 
     bool start(const std::shared_ptr<Operation>& operation, Priority priority) override;
+
+    bool may_allow_operation_with_priority(Priority priority) const noexcept override;
 
     bool canStart(uint32_t currentOperationCount, Priority priority) const;
 
