@@ -79,6 +79,10 @@ public class AthenzDbMock {
             isVespaTenant = true;
         }
 
+        public boolean hasRole(String name) { return roles.stream().anyMatch(r -> r.name.equals(name)); }
+
+        public boolean hasPolicy(String name) { return policies.containsKey(name); }
+
     }
 
     public static class Application {
