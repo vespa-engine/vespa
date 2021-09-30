@@ -3,6 +3,7 @@
 vespa_add_library(eval_instruction OBJECT
     SOURCES
     add_trivial_dimension_optimizer.cpp
+    best_similarity_function.cpp
     dense_cell_range_function.cpp
     dense_dot_product_function.cpp
     dense_hamming_distance.cpp
