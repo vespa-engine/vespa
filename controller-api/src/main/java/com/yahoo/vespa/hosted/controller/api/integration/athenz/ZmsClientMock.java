@@ -158,7 +158,7 @@ public class ZmsClientMock implements ZmsClient {
             return false;
         } else {
             AthenzDbMock.Domain domain = getDomainOrThrow(resource.getDomain(), false);
-            return domain.policies.stream()
+            return domain.policies.values().stream()
                     .anyMatch(policy ->
                             policy.principalMatches(identity) &&
                             policy.actionMatches(action) &&
@@ -168,17 +168,18 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public void createPolicy(AthenzDomain athenzDomain, String athenzPolicy) {
-        List<AthenzDbMock.Policy> policies = athenz.getOrCreateDomain(athenzDomain).policies;
-        if (policies.stream().anyMatch(p -> p.name().equals(athenzPolicy))) {
+        Map<String, AthenzDbMock.Policy> policies = athenz.getOrCreateDomain(athenzDomain).policies;
+        if (policies.containsKey(athenzPolicy)) {
             throw new IllegalArgumentException("Policy already exists");
         }
-
-        // Policy will be created in the mock when an assertion is added
+        policies.put(athenzPolicy, new AthenzDbMock.Policy(athenzPolicy));
     }
 
     @Override
     public void addPolicyRule(AthenzDomain athenzDomain, String athenzPolicy, String action, AthenzResourceName resourceName, AthenzRole athenzRole) {
-        athenz.getOrCreateDomain(athenzDomain).policies.add(new AthenzDbMock.Policy(athenzPolicy, athenzRole.roleName(), action, resourceName.toResourceNameString()));
+        AthenzDbMock.Policy policy = athenz.getOrCreateDomain(athenzDomain).policies.get(athenzPolicy);
+        if (policy == null) throw new IllegalArgumentException("No policy with name " + athenzPolicy);
+        policy.assertions.add(new AthenzDbMock.Assertion(athenzRole.roleName(), action, resourceName.toResourceNameString()));
     }
 
     @Override
@@ -235,9 +236,7 @@ public class ZmsClientMock implements ZmsClient {
 
     @Override
     public Set<String> listPolicies(AthenzDomain domain) {
-        return athenz.getOrCreateDomain(domain).policies.stream()
-                .map(AthenzDbMock.Policy::name)
-                .collect(Collectors.toSet());
+        return athenz.getOrCreateDomain(domain).policies.keySet();
     }
 
     @Override

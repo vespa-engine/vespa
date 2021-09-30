@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -43,7 +44,7 @@ public class AthenzDbMock {
         public final Map<ApplicationId, Application> applications = new HashMap<>();
         public final Map<String, Service> services = new HashMap<>();
         public final List<Role> roles = new ArrayList<>();
-        public final List<Policy> policies = new ArrayList<>();
+        public final Map<String, Policy> policies = new HashMap<>();
         public boolean isVespaTenant = false;
 
         public Domain(AthenzDomain name) {
@@ -52,7 +53,7 @@ public class AthenzDbMock {
 
         public Domain admin(AthenzIdentity identity) {
             admins.add(identity);
-            policies.add(new Policy("admin", identity.getFullName(), ".*", ".*"));
+            policies.put("admin", new Policy("admin", identity.getFullName(), ".*", ".*"));
             return this;
         }
 
@@ -67,7 +68,7 @@ public class AthenzDbMock {
         }
 
         public Domain withPolicy(String principalRegex, String operation, String resource) {
-            policies.add(new Policy("admin", principalRegex, operation, resource));
+            policies.put("admin", new Policy("admin", principalRegex, operation, resource));
             return this;
         }
 
@@ -107,31 +108,77 @@ public class AthenzDbMock {
 
     public static class Policy {
         private final String name;
-        private final Pattern principal;
-        private final Pattern action;
-        private final Pattern resource;
+        final List<Assertion> assertions = new ArrayList<>();
 
         public Policy(String name, String principal, String action, String resource) {
-            this.name = name;
-            this.principal = Pattern.compile(principal);
-            this.action = Pattern.compile(action);
-            this.resource = Pattern.compile(resource);
+            this(name);
+            this.assertions.add(new Assertion("grant", principal, action, resource));
         }
+
+        public Policy(String name) { this.name = name; }
 
         public String name() {
             return name;
         }
 
         public boolean principalMatches(AthenzIdentity athenzIdentity) {
-            return this.principal.matcher(athenzIdentity.getFullName()).matches();
+            return assertions.get(0).principalMatches(athenzIdentity);
         }
 
         public boolean actionMatches(String operation) {
-            return this.action.matcher(operation).matches();
+            return assertions.get(0).actionMatches(operation);
         }
 
         public boolean resourceMatches(String resource) {
-            return this.resource.matcher(resource).matches();
+            return assertions.get(0).resourceMatches(resource);
+        }
+
+        public boolean hasAssertionMatching(String assertion) {
+            return assertions.stream().anyMatch(a -> a.asString().equals(assertion));
+        }
+    }
+
+    public static class Assertion {
+        private final String effect;
+        private final String role;
+        private final String action;
+        private final String resource;
+
+        public Assertion(String effect, String role, String action, String resource) {
+            this.effect = effect;
+            this.role = role;
+            this.action = action;
+            this.resource = resource;
+        }
+
+        public Assertion(String role, String action, String resource) { this("grant", role, action, resource); }
+
+        public boolean principalMatches(AthenzIdentity athenzIdentity) {
+            return Pattern.compile(role).matcher(athenzIdentity.getFullName()).matches();
+        }
+
+        public boolean actionMatches(String operation) {
+            return Pattern.compile(action).matcher(operation).matches();
+        }
+
+        public boolean resourceMatches(String resource) {
+            return Pattern.compile(resource).matcher(resource).matches();
+        }
+
+        public String asString() { return String.format("%s %s to %s on %s", effect, action, role, resource).toLowerCase(); }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Assertion assertion = (Assertion) o;
+            return Objects.equals(effect, assertion.effect) && Objects.equals(role, assertion.role)
+                    && Objects.equals(action, assertion.action) && Objects.equals(resource, assertion.resource);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(effect, role, action, resource);
         }
     }
 
