@@ -150,4 +150,9 @@
         <module>zookeeper-server</module>
     </modules>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
 </project>
