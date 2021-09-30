@@ -46,13 +46,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
             return;
         }
 
-        double vcpu = cluster.vcpu().orElse(0);
-        if (vcpu == 0) return;
-
-        // Configuration is currently identical to the search handler's threadpool
-        int workerThreads = Math.max(8, (int)Math.ceil(vcpu * 2.0));
-        builder.maxthreads(workerThreads);
-        builder.corePoolSize(workerThreads);
-        builder.queueSize((int)(workerThreads * 40.0));
+        if (!cluster.isHostedVespa()) return;
+        builder.corePoolSize(-2).maxthreads(-2).queueSize(-40);
     }
 }
