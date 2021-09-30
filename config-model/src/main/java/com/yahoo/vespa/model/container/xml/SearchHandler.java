@@ -51,7 +51,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
             if (cluster.isHostedVespa()) {
                 builder.maxThreads(-2).minThreads(-2).queueSize(-40);
             } else {
-                builder.maxThreads(500).minThreads(500).queueSize(0);
+                builder.maxThreads(-4).minThreads(-4).queueSize(-40);
             }
         }
 

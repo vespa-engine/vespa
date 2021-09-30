@@ -46,7 +46,10 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
             return;
         }
 
-        if (!cluster.isHostedVespa()) return;
-        builder.corePoolSize(-2).maxthreads(-2).queueSize(-40);
+        if (cluster.isHostedVespa()) {
+            builder.corePoolSize(-2).maxthreads(-2).queueSize(-40);
+        } else {
+            builder.corePoolSize(-4).maxthreads(-4).queueSize(-40);
+        }
     }
 }
