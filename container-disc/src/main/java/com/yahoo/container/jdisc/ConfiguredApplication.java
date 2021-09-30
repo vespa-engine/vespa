@@ -421,8 +421,7 @@ public final class ConfiguredApplication implements Application {
         long delayMillis = (long)(shudownTimeoutS.get() * 1000.0);
         shutdownDeadlineExecutor.schedule(() -> {
             if (dumpHeapOnShutdownTimeout.get()) {
-                String saneConfigId = configId.replaceAll(SANITIZE_FILENAME, "_");
-                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(saneConfigId) + "." + ProcessHandle.current().pid() + ".hprof";
+                String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(configId) + "." + ProcessHandle.current().pid() + ".hprof";
                 com.yahoo.protect.Process.dumpHeap(heapDumpName, true);
             }
             com.yahoo.protect.Process.logAndDie(
