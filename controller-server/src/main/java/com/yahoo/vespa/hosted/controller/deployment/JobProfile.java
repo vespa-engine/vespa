@@ -68,7 +68,10 @@ public enum JobProfile {
 
     development(EnumSet.of(deployReal,
                            installReal,
-                           copyVespaLogs));
+                           copyVespaLogs)),
+
+    developmentDryRun(EnumSet.of(deployReal,
+                                 copyVespaLogs));
 
 
     private final Set<Step> steps;

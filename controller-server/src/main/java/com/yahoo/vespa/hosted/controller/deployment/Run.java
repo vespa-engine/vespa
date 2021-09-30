@@ -60,11 +60,11 @@ public class Run {
         this.dryRun = dryRun;
     }
 
-    public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile, boolean dryRun) {
+    public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(), running,
-                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty(), dryRun);
+                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty(), profile == JobProfile.developmentDryRun);
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */
