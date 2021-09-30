@@ -55,20 +55,23 @@ public class GroupPreparer {
                               List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups) {
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
-        {
-            NodesAndHosts<LockedNodeList> allNodesAndHosts = NodesAndHosts.create(nodeRepository.nodes().list(PROBE_LOCK));
-            NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                               indices::probeNext, wantedGroups, allNodesAndHosts);
-            if (probeAllocation.fulfilledAndNoChanges()) {
-                List<Node> acceptedNodes = probeAllocation.finalNodes();
-                surplusActiveNodes.removeAll(acceptedNodes);
-                indices.commitProbe();
-                return acceptedNodes;
-            }
+        NodesAndHosts<LockedNodeList> allNodesAndHosts = NodesAndHosts.create(nodeRepository.nodes().list(PROBE_LOCK));
+        NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
+                indices::probeNext, wantedGroups, allNodesAndHosts);
+        if (probeAllocation.fulfilledAndNoChanges()) {
+            List<Node> acceptedNodes = probeAllocation.finalNodes();
+            surplusActiveNodes.removeAll(acceptedNodes);
+            indices.commitProbe();
+            return acceptedNodes;
+        } else {
+            // There were some changes, so re-do the allocation with locks
             indices.resetProbe();
+            return prepareWithLocks(application, cluster, requestedNodes, surplusActiveNodes, indices, wantedGroups);
         }
+    }
 
-        // There were some changes, so re-do the allocation with locks
+    private List<Node> prepareWithLocks(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
+                              List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups) {
         try (Mutex lock = nodeRepository.nodes().lock(application);
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             NodesAndHosts<LockedNodeList> allNodesAndHosts = NodesAndHosts.create(nodeRepository.nodes().list(allocationLock));
