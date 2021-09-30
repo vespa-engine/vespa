@@ -283,6 +283,13 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundIntFlag MAX_CONNECTION_LIFE_IN_HOSTED = defineIntFlag(
+            "max-connection-life-in-hosted", 45,
+            List.of("bjorncs"), "2021-09-30", "2021-12-31",
+            "Max connection life for connections to jdisc endpoints in hosted",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

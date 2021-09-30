@@ -91,6 +91,7 @@ import org.w3c.dom.Node;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -435,6 +436,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // If the deployment contains certificate/private key reference, setup TLS port
         HostedSslConnectorFactory connectorFactory;
         Collection<String> tlsCiphersOverride = deployState.getProperties().tlsCiphersOverride();
+        Duration maxConnectionLife = Duration.ofSeconds(deployState.featureFlags().maxConnectionLifeInHosted());
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
@@ -449,11 +451,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             connectorFactory = authorizeClient
                     ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(
-                            serverName, endpointCertificateSecrets,  getTlsClientAuthorities(deployState), tlsCiphersOverride)
+                            serverName, endpointCertificateSecrets,  getTlsClientAuthorities(deployState), tlsCiphersOverride, maxConnectionLife)
                     : HostedSslConnectorFactory.withProvidedCertificate(
-                            serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride);
+                            serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, tlsCiphersOverride, maxConnectionLife);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride);
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, tlsCiphersOverride, maxConnectionLife);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
