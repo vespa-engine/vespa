@@ -38,12 +38,12 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
-        this(sourceSet, "config-jrt-pool-" + sourceSet.hashCode());
+        this(sourceSet, "config-jrt-pool" + sourceSet.hashCode());
     }
 
     public JRTConnectionPool(ConfigSourceSet sourceSet, String poolName) {
         this.poolName = poolName;
-        supervisor = new Supervisor(new Transport(poolName)).setDropEmptyBuffers(true);
+        supervisor = new Supervisor(new Transport(poolName + "-")).setDropEmptyBuffers(true);
         addSources(sourceSet);
     }
 
@@ -91,7 +91,7 @@ public class JRTConnectionPool implements ConnectionPool {
         List<JRTConnection> sourceCandidates = getSources();
         sourceCandidates.remove(currentConnection);
         JRTConnection newConnection = pickNewConnectionRandomly(sourceCandidates);
-        log.log(Level.INFO, () -> "Switching from " + currentConnection + " to " + newConnection);
+        log.log(Level.INFO, () -> poolName + ": Switching from " + currentConnection + " to " + newConnection);
         return currentConnection = newConnection;
     }
 

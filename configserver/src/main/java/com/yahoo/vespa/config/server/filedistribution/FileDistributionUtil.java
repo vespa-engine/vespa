@@ -50,7 +50,7 @@ public class FileDistributionUtil {
                 .collect(Collectors.toList());
 
         return configServers.size() > 0
-                ? new JRTConnectionPool(new ConfigSourceSet(configServers), "filedistribution-jrt-pool-")
+                ? new JRTConnectionPool(new ConfigSourceSet(configServers), "filedistribution-jrt-pool")
                 : emptyConnectionPool();
     }
 
