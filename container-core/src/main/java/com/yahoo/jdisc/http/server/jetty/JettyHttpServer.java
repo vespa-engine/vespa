@@ -132,9 +132,10 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     private static void configureJettyThreadpool(Server server, ServerConfig config) {
+        int cpus = Runtime.getRuntime().availableProcessors();
         QueuedThreadPool pool = (QueuedThreadPool) server.getThreadPool();
-        pool.setMaxThreads(config.maxWorkerThreads());
-        pool.setMinThreads(config.minWorkerThreads());
+        pool.setMaxThreads(config.maxWorkerThreads() > 0 ? config.maxWorkerThreads() : 16 + cpus);
+        pool.setMinThreads(config.minWorkerThreads() >= 0 ? config.minWorkerThreads() : 16 + cpus);
     }
 
     private static JMXServiceURL createJmxLoopbackOnlyServiceUrl(int port) {
