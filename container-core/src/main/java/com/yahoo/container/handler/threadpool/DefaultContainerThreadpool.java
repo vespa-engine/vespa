@@ -26,6 +26,7 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
 
     private static final Logger log = Logger.getLogger(DefaultContainerThreadpool.class.getName());
     private static final int MIN_QUEUE_SIZE = 650;
+    private static final int MIN_THREADS_WHEN_SCALE_FACTOR = 8;
 
     private final ExecutorServiceWrapper threadpool;
 
@@ -94,14 +95,14 @@ public class DefaultContainerThreadpool extends AbstractComponent implements Aut
     private static int maxThreads(ContainerThreadpoolConfig config, int cpus) {
         if (config.maxThreads() > 0) return config.maxThreads();
         else if (config.maxThreads() == 0) return 4 * cpus;
-        else return Math.abs(config.maxThreads()) * cpus;
+        else return Math.max(MIN_THREADS_WHEN_SCALE_FACTOR, Math.abs(config.maxThreads()) * cpus);
     }
 
     private static int minThreads(ContainerThreadpoolConfig config, int max, int cpus) {
         int threads;
         if (config.minThreads() > 0) threads = config.minThreads();
         else if (config.minThreads() == 0) threads = 4 * cpus;
-        else threads = Math.abs(config.minThreads()) * cpus;
+        else threads = Math.max(MIN_THREADS_WHEN_SCALE_FACTOR, Math.abs(config.minThreads()) * cpus);
         return Math.min(threads, max);
     }
 
