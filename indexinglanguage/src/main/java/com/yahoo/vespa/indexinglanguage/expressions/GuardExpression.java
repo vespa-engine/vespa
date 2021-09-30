@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
 import com.yahoo.vespa.objects.ObjectOperation;
@@ -27,8 +28,8 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
-    public void setStatementOutputType(DataType type) {
-	exp.setStatementOutputType(type);
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        exp.setStatementOutput(documentType, field);
     }
 
     @Override

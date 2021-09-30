@@ -60,7 +60,7 @@ public class QueryProfileFieldType extends FieldType {
         String profileId = object.toString();
         if (profileId.startsWith("ref:"))
             profileId = profileId.substring("ref:".length());
-        CompiledQueryProfile profile = context.getRegistry().getComponent(profileId);
+        CompiledQueryProfile profile = context.registry().getComponent(profileId);
         if (profile == null) return null;
         if (type != null && ! type.equals(profile.getType())) return null;
         return profile;

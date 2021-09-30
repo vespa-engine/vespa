@@ -121,7 +121,8 @@ public class QueryProfileProperties extends Properties {
 
                     if (fieldDescription != null) {
                         if (i == name.size() - 1) { // at the end of the path, check the assignment type
-                            value = fieldDescription.getType().convertFrom(value, new ConversionContext(profile.getRegistry(),
+                            value = fieldDescription.getType().convertFrom(value, new ConversionContext(localName,
+                                                                                                        profile.getRegistry(),
                                                                                                         embedder,
                                                                                                         context));
                             if (value == null)

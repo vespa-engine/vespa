@@ -2,6 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -25,9 +27,9 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
     }
 
     @Override
-    public void setStatementOutputType(DataType type) {
+    public void setStatementOutput(DocumentType documentType, Field field) {
         for (Expression expression : expressions)
-            expression.setStatementOutputType(type);
+            expression.setStatementOutput(documentType, field);
     }
 
     public int size() {

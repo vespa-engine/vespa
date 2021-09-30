@@ -3,7 +3,9 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
@@ -31,7 +33,8 @@ public abstract class Expression extends Selectable {
         this.inputType = inputType;
     }
 
-    public void setStatementOutputType(DataType type) {}
+    /** Sets the document type and field the statement this expression is part of will write to */
+    public void setStatementOutput(DocumentType documentType, Field field) {}
 
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setValue(val));

@@ -2,6 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
@@ -18,6 +20,9 @@ public class EmbedExpression extends Expression  {
 
     private final Embedder embedder;
 
+    /** The destination the embedding will be written to on the form [schema name].[field name] */
+    private String destination;
+
     /** The target type we are embedding into. */
     private TensorType targetType;
 
@@ -27,14 +32,15 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public void setStatementOutputType(DataType type) {
-        targetType = ((TensorDataType)type).getTensorType();
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        targetType = ((TensorDataType)field.getDataType()).getTensorType();
+        destination = documentType.getName() + "." + field.getName();
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getValue();
-        Tensor tensor = embedder.embed(input.getString(), context.getLanguage(), targetType);
+        Tensor tensor = embedder.embed(input.getString(), context.getLanguage(), destination, targetType);
         context.setValue(new TensorFieldValue(tensor));
     }
 

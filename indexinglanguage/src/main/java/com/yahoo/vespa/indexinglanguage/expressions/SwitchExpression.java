@@ -2,6 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
@@ -42,6 +44,13 @@ public final class SwitchExpression extends CompositeExpression {
 
     public Expression getDefaultExpression() {
         return defaultExp;
+    }
+
+    @Override
+    public void setStatementOutput(DocumentType documentType, Field field) {
+        defaultExp.setStatementOutput(documentType, field);
+        for (var expression : cases.values())
+            expression.setStatementOutput(documentType, field);
     }
 
     @Override

@@ -104,12 +104,14 @@ public class ScriptTestCase {
         TensorType tensorType = TensorType.fromSpec("tensor(d[4])");
         var expression = Expression.fromString("input myText | embed | attribute 'myTensor'",
                                                new SimpleLinguistics(),
-                                               new MockEncoder());
+                                               new MockEmbedder("myDocument.myTensor"));
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myText", DataType.STRING));
-        adapter.createField(new Field("myTensor", new TensorDataType(tensorType)));
+        var tensorField = new Field("myTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
         adapter.setValue("myText", new StringFieldValue("input text"));
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
         // Necessary to resolve output type
         VerificationContext verificationContext = new VerificationContext(adapter);
@@ -119,21 +121,27 @@ public class ScriptTestCase {
         context.setValue(new StringFieldValue("input text"));
         expression.execute(context);
         assertNotNull(context);
-        //assertTrue(context.getOutputType() instanceof TensorDataType);
         assertTrue(adapter.values.containsKey("myTensor"));
         assertEquals(Tensor.from(tensorType, "[7,3,0,0]"),
                      ((TensorFieldValue)adapter.values.get("myTensor")).getTensor().get());
     }
 
-    private static class MockEncoder implements Embedder {
+    private static class MockEmbedder implements Embedder {
+
+        private final String expectedDestination;
+
+        public MockEmbedder(String expectedDestination) {
+            this.expectedDestination = expectedDestination;
+        }
 
         @Override
-        public List<Integer> embed(String text, Language language) {
+        public List<Integer> embed(String text, Language language, String destination) {
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Language language, TensorType tensorType) {
+        public Tensor embed(String text, Language language, String destination, TensorType tensorType) {
+            assertEquals(expectedDestination, destination);
             return Tensor.from(tensorType, "[7,3,0,0]");
         }
 
