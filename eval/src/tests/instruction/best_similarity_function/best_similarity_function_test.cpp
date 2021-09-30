@@ -94,6 +94,12 @@ TEST(BestSimilarityFunctionTest, allow_full_reduce_for_outer_dimension) {
     verify(gen_int8("d8", 3), gen_int8("b5_2d8", 7), my_min_hamming);
 }
 
+vespalib::string inv_max_sim = "reduce(reduce(a*b,sum,b),max,d)";
+
+TEST(BestSimilarityFunctionTest, dimensions_can_be_inverted_if_best_dimension_is_sparse) {
+    verify(gen_float("b8", 3), gen_float("b8d5_2", 7), inv_max_sim);
+}
+
 //-----------------------------------------------------------------------------
 
 TEST(BestSimilarityFunctionTest, cell_type_must_match_operation) {
@@ -101,23 +107,19 @@ TEST(BestSimilarityFunctionTest, cell_type_must_match_operation) {
     verify(gen_float("d8", 3), gen_float("b5_2d8", 7), min_hamming, false);
 }
 
-vespalib::string max_sim_2d_dist = "reduce(reduce(a*b,sum,d,e),max,b)";
-
 TEST(BestSimilarityFunctionTest, similarity_must_use_1d_vector) {
+    vespalib::string max_sim_2d_dist = "reduce(reduce(a*b,sum,d,e),max,b)";
     verify(gen_float("d8_1", 3), gen_float("b5d8_1", 7), max_sim, false);
     verify(gen_float("d8e1", 3), gen_float("b5d8e1", 7), max_sim_2d_dist, false);
 }
 
-vespalib::string inv_max_sim = "reduce(reduce(a*b,sum,b),max,d)";
-
 TEST(BestSimilarityFunctionTest, similarity_dimension_must_be_inner) {
     verify(gen_float("d8e3", 3), gen_float("b5d8", 7), max_sim, false);
-    verify(gen_float("d8", 3), gen_float("b5d8", 7), inv_max_sim, false);
+    verify(gen_float("b8", 3), gen_float("b8d5", 7), inv_max_sim, false);
 }
 
-vespalib::string max_sim_2d_best = "reduce(reduce(a*b,sum,d),max,a,b)";
-
 TEST(BestSimilarityFunctionTest, alternatives_must_use_a_single_dimension) {
+    vespalib::string max_sim_2d_best = "reduce(reduce(a*b,sum,d),max,a,b)";
     verify(gen_float("d8", 3), gen_float("a1b5d8", 7), max_sim_2d_best, false);
 }
 
@@ -127,20 +129,25 @@ TEST(BestSimilarityFunctionTest, alternatives_dimension_can_not_be_common) {
 
 TEST(BestSimilarityFunctionTest, extra_common_nontrivial_dimensions_not_allowed) {
     verify(gen_float("a3d8", 3), gen_float("a3b5d8", 7), max_sim, false);
+    verify(gen_float("a3_2d8", 3), gen_float("a3_2b5d8", 7), max_sim, false);
 }
 
 TEST(BestSimilarityFunctionTest, secondary_tensor_must_not_contain_extra_nontrivial_dimensions) {
     verify(gen_float("d8", 3), gen_float("a2b5d8", 7), max_sim, false);
+    verify(gen_float("d8", 3), gen_float("a2_1b5d8", 7), max_sim, false);
 }
 
 //-----------------------------------------------------------------------------
 
-vespalib::string other_join = "reduce(reduce(a+b,sum,d),max,b)";
-vespalib::string mismatch_best = "reduce(reduce(a*b,sum,d),min,b)";
-
 TEST(BestSimilarityFunctionTest, similar_expressions_are_not_optimized) {
+    vespalib::string other_join = "reduce(reduce(a+b,sum,d),max,b)";
+    vespalib::string other_reduce = "reduce(reduce(a*b,min,d),max,b)";
+    vespalib::string mismatch_best_sim = "reduce(reduce(a*b,sum,d),min,b)";
+    vespalib::string mismatch_best_hamming = "reduce(reduce(hamming(a,b),sum,d),max,b)";
     verify(gen_float("d8", 3), gen_float("b5d8", 7), other_join, false);
-    verify(gen_float("d8", 3), gen_float("b5d8", 7), mismatch_best, false);
+    verify(gen_float("d8", 3), gen_float("b5d8", 7), other_reduce, false);
+    verify(gen_float("d8", 3), gen_float("b5d8", 7), mismatch_best_sim, false);
+    verify(gen_int8("d8", 3), gen_int8("b5d8", 7), mismatch_best_hamming, false);
 }
 
 //-----------------------------------------------------------------------------
