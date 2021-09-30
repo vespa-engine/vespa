@@ -64,6 +64,19 @@ struct Value {
 };
 
 /**
+ * Common empty index
+ **/
+class EmptyIndex : public Value::Index {
+private:
+    EmptyIndex();
+    static EmptyIndex _index;
+public:
+    static const EmptyIndex &get() { return _index; }
+    size_t size() const override;
+    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
+};
+
+/**
  * Common index for values without any mapped dimensions.
  **/
 class TrivialIndex : public Value::Index {

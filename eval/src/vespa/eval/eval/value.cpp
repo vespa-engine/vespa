@@ -10,6 +10,11 @@ namespace eval {
 
 namespace {
 
+struct EmptyView : Value::Index::View {
+    void lookup(ConstArrayRef<const string_id*> ) override {}
+    bool next_result(ConstArrayRef<string_id*> , size_t &) override { return false; }
+};
+
 struct TrivialView : Value::Index::View {
     bool first = false;
     void lookup(ConstArrayRef<const string_id*> ) override { first = true; }
@@ -36,6 +41,20 @@ struct MySum {
 
 } // <unnamed>
 
+EmptyIndex::EmptyIndex() = default;
+EmptyIndex EmptyIndex::_index;
+
+size_t
+EmptyIndex::size() const
+{
+    return 0;
+}
+
+std::unique_ptr<Value::Index::View>
+EmptyIndex::create_view(ConstArrayRef<size_t>) const
+{
+    return std::make_unique<EmptyView>();
+}
 
 TrivialIndex::TrivialIndex() = default;
 TrivialIndex TrivialIndex::_index;

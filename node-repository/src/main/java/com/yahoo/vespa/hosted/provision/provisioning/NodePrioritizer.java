@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class NodePrioritizer {
 
     private final List<NodeCandidate> nodes = new ArrayList<>();
-    private final NodesAndHosts<LockedNodeList> allNodes;
+    private final NodesAndHosts<LockedNodeList> allNodesAndHosts;
     private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
@@ -45,21 +45,21 @@ public class NodePrioritizer {
     private final int currentClusterSize;
     private final Set<Node> spareHosts;
 
-    public NodePrioritizer(LockedNodeList allLockedNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
+    public NodePrioritizer(NodesAndHosts<LockedNodeList> allNodesAndHosts, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                            int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver,
                            HostResourcesCalculator hostResourcesCalculator, int spareCount) {
-        this.allNodes = NodesAndHosts.create(allLockedNodes);
-        this.capacity = new HostCapacity(allNodes, hostResourcesCalculator);
+        this.allNodesAndHosts = allNodesAndHosts;
+        this.capacity = new HostCapacity(this.allNodesAndHosts, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.application = application;
         this.dynamicProvisioning = dynamicProvisioning;
         this.spareHosts = dynamicProvisioning ?
-                capacity.findSpareHostsInDynamicallyProvisionedZones(allNodes.nodes().asList()) :
-                capacity.findSpareHosts(allNodes.nodes().asList(), spareCount);
+                capacity.findSpareHostsInDynamicallyProvisionedZones(this.allNodesAndHosts.nodes().asList()) :
+                capacity.findSpareHosts(this.allNodesAndHosts.nodes().asList(), spareCount);
         this.nameResolver = nameResolver;
 
-        NodeList nodesInCluster = allNodes.nodes().owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
+        NodeList nodesInCluster = this.allNodesAndHosts.nodes().owner(application).type(clusterSpec.type()).cluster(clusterSpec.id());
         NodeList nonRetiredNodesInCluster = nodesInCluster.not().retired();
         long currentGroups = nonRetiredNodesInCluster.state(Node.State.active).stream()
                 .flatMap(node -> node.allocation()
@@ -135,7 +135,7 @@ public class NodePrioritizer {
     private void addCandidatesOnExistingHosts() {
         if ( !canAllocateNew) return;
 
-        for (Node host : allNodes.nodes()) {
+        for (Node host : allNodesAndHosts.nodes()) {
             if ( ! Nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
@@ -143,12 +143,12 @@ public class NodePrioritizer {
             if ( ! host.exclusiveToClusterType().map(clusterSpec.type()::equals).orElse(true)) continue;
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
-            if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
+            if ( ! allNodesAndHosts.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
             nodes.add(NodeCandidate.createNewChild(requestedNodes.resources().get(),
                                                    capacity.availableCapacityOf(host),
                                                    host,
                                                    spareHosts.contains(host),
-                                                   allNodes.nodes(),
+                                                   allNodesAndHosts.nodes(),
                                                    nameResolver));
         }
     }
@@ -156,7 +156,7 @@ public class NodePrioritizer {
     /** Add existing nodes allocated to the application */
     private void addApplicationNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
-        allNodes.nodes().stream()
+        allNodesAndHosts.nodes().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
@@ -169,7 +169,7 @@ public class NodePrioritizer {
 
     /** Add nodes already provisioned, but not allocated to any application */
     private void addReadyNodes() {
-        allNodes.nodes().stream()
+        allNodesAndHosts.nodes().stream()
                 .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> node.state() == Node.State.ready)
                 .map(node -> candidateFrom(node, false))
@@ -179,7 +179,7 @@ public class NodePrioritizer {
 
     /** Create a candidate from given pre-existing node */
     private NodeCandidate candidateFrom(Node node, boolean isSurplus) {
-        Optional<Node> optionalParent = allNodes.parentOf(node);
+        Optional<Node> optionalParent = allNodesAndHosts.parentOf(node);
         if (optionalParent.isPresent()) {
             Node parent = optionalParent.get();
             return NodeCandidate.createChild(node,
@@ -191,6 +191,7 @@ public class NodePrioritizer {
                                              parent.exclusiveToApplicationId().isEmpty()
                                              && requestedNodes.canResize(node.resources(),
                                                                          capacity.availableCapacityOf(parent),
+                                                                         clusterSpec.type(),
                                                                          topologyChange,
                                                                          currentClusterSize));
         } else {
@@ -216,7 +217,7 @@ public class NodePrioritizer {
      */
     private boolean canStillAllocate(Node node) {
         if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
-        Optional<Node> parent = allNodes.parentOf(node);
+        Optional<Node> parent = allNodesAndHosts.parentOf(node);
         return parent.isPresent() ? Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning) : null;
     }
 

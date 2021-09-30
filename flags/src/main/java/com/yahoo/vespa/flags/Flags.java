@@ -128,18 +128,6 @@ public class Flags {
             "Number of threads used for speeding up building of models.",
             "Takes effect on first (re)start of config server");
 
-    public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
-            "encrypt-dirty-disk", true,
-            List.of("hakonhall"), "2021-05-14", "2021-10-05",
-            "Allow migrating an unencrypted data partition to being encrypted when (de)provisioned.",
-            "Takes effect on next host-admin tick.");
-
-    public static final UnboundBooleanFlag LIMIT_DISK_MODIFICATIONS = defineFeatureFlag(
-            "limit-disk-modifications", true,
-            List.of("hakonhall"), "2021-09-16", "2021-10-16",
-            "Only allow modifications of disks by disk task in limited situations.",
-            "Takes effect on next host-admin tick.");
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2021-11-01",
@@ -294,6 +282,13 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID
     );
+
+    public static final UnboundIntFlag MAX_CONNECTION_LIFE_IN_HOSTED = defineIntFlag(
+            "max-connection-life-in-hosted", 45,
+            List.of("bjorncs"), "2021-09-30", "2021-12-31",
+            "Max connection life for connections to jdisc endpoints in hosted",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
 
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

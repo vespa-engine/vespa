@@ -153,7 +153,7 @@ public class RunSerializerTest {
         assertEquals(run.steps(), phoenix.steps());
         assertEquals(run.isDryRun(), phoenix.isDryRun());
 
-        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, true);
+        Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production);
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 

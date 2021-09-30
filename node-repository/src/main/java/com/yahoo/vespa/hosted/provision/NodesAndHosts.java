@@ -44,7 +44,10 @@ public class NodesAndHosts<NL extends NodeList> {
     public NL nodes() { return nodes; }
 
     public NodeList childrenOf(Node host) {
-        HostAndNodes hostAndNodes = host2Nodes.get(host.hostname());
+        return childrenOf(host.hostname());
+    }
+    public NodeList childrenOf(String hostname) {
+        HostAndNodes hostAndNodes = host2Nodes.get(hostname);
         return hostAndNodes != null ? NodeList.copyOf(hostAndNodes.children) : NodeList.of();
     }
 

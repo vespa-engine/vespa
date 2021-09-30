@@ -475,18 +475,18 @@ public class JobController {
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment) {
-        start(id, type, versions, isRedeployment, JobProfile.of(type), false);
+        start(id, type, versions, isRedeployment, JobProfile.of(type));
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
-    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile, boolean dryRun) {
+    public void start(ApplicationId id, JobType type, Versions versions, boolean isRedeployment, JobProfile profile) {
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
             if (last.flatMap(run -> active(run.id())).isPresent())
                 throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, dryRun));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile));
             metric.jobStarted(newId.job());
         });
     }
@@ -531,8 +531,7 @@ public class JobController {
                                lastRun.map(run -> run.versions().targetPlatform()),
                                lastRun.map(run -> run.versions().targetApplication())),
                   false,
-                  JobProfile.development,
-                  dryRun);
+                  dryRun ? JobProfile.developmentDryRun : JobProfile.development);
         });
 
         locked(id, type, __ -> {
