@@ -299,23 +299,19 @@ public class ContainerClusterTest {
 
     @Test
     public void jetty_threadpool_scales_with_node_resources() {
-        HostProvisionerWithCustomRealResource hostProvisioner = new HostProvisionerWithCustomRealResource(12);
         MockRoot root = new MockRoot(
                 "foo",
                 new DeployState.Builder()
+                        .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
-                        .modelHostProvisioner(hostProvisioner)
                         .build());
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        HostResource hostResource = new HostResource(
-                new Host(null, "host-c1"),
-                hostProvisioner.allocateHost("host-c1"));
-        addContainerWithHostResource(root, cluster, "c1", hostResource);
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
-        assertEquals(28, cfg.maxWorkerThreads());
-        assertEquals(28, cfg.minWorkerThreads());
+        assertEquals(-1, cfg.maxWorkerThreads()); // Scale with cpu count observed by JVM
+        assertEquals(-1, cfg.minWorkerThreads()); // Scale with cpu count observed by JVM
     }
 
     @Test
