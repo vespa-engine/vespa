@@ -22,6 +22,7 @@ public class OnnxModels {
     public OnnxModels(FileRegistry fileRegistry) {
         this.fileRegistry = fileRegistry;
     }
+
     public void add(OnnxModel model) {
         model.validate();
         model.register(fileRegistry);
